@@ -470,8 +470,8 @@ GEM
     paper_trail (17.0.0)
       activerecord (>= 7.1)
       request_store (~> 1.4)
-    parallel (1.27.0)
-    parser (3.3.10.2)
+    parallel (2.0.1)
+    parser (3.3.11.1)
       ast (~> 2.4.1)
       racc
     pg (1.6.3)
@@ -583,7 +583,7 @@ GEM
     refract (1.1.0)
       prism
       zeitwerk
-    regexp_parser (2.11.3)
+    regexp_parser (2.12.0)
     reline (0.6.3)
       io-console (~> 0.5)
     request_store (1.7.0)
@@ -612,11 +612,11 @@ GEM
       json-schema (>= 2.2, < 7.0)
       railties (>= 5.2, < 8.2)
       rspec-core (>= 2.14)
-    rubocop (1.86.0)
+    rubocop (1.86.1)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
-      parallel (~> 1.10)
+      parallel (>= 1.10)
       parser (>= 3.3.0.2)
       rainbow (>= 2.2.2, < 4.0)
       regexp_parser (>= 2.9.3, < 3.0)
