@@ -222,7 +222,6 @@
     </div>
   <% end %>
   <% if Date.current < Date.new(2026, 3, 9) && current_user&.ref == "willsbuilds" && !current_user&.has_dismissed?("willsbuilds_banner") %>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap">
     <div class="willsbuilds-banner">
       <%= link_to "/shop/order?shop_item_id=101", class: "willsbuilds-banner__link" do %>
         <%= image_tag "willsbuilds.jpg", alt: "Willsbuilds", class: "willsbuilds-banner__image" %>

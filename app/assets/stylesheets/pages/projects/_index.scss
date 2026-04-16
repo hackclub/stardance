@@ -25,7 +25,7 @@
 
   &__title {
     margin: 0;
-    font-family: var(--font-family-jua);
+    font-family: var(--font-family-text);
     font-size: var(--font-size-xxxxl);
     color: var(--color-brown-700);
     line-height: var(--line-height-headers);
@@ -33,7 +33,7 @@
 
   &__subtitle {
     margin: 0;
-    font-family: var(--font-family-jua);
+    font-family: var(--font-family-text);
     font-size: var(--font-size-l);
     color: var(--color-brown-600);
   }
@@ -82,7 +82,7 @@
     border-radius: calc(var(--border-radius) * 1.8);
     background-color: hsla(7, 30%, 37%, 0.3);
     color: var(--color-brown-500);
-    font-family: var(--font-family-jua);
+    font-family: var(--font-family-text);
     font-size: var(--font-size-xl);
     text-decoration: none;
     overflow: hidden;

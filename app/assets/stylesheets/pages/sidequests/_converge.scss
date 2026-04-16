@@ -12,11 +12,7 @@
   --color-content-darker: #f8f8f8;
 
   .sidequest-card__content {
-    font-family:
-      "Lato",
-      -apple-system,
-      BlinkMacSystemFont,
-      sans-serif !important;
+    font-family: var(--font-family-text) !important;
     color: #1d1c1d;
     padding: 1rem;
 
@@ -91,7 +87,7 @@
     display: inline-block;
     background: #f0e6f1;
     color: #4a154b;
-    font-family: "Lato", sans-serif;
+    font-family: var(--font-family-text);
     font-size: 0.75rem;
     font-weight: 700;
     padding: 0.2em 0.6em;
@@ -106,11 +102,7 @@
   border: 1px solid #522653;
   margin: 2rem 0;
   min-height: 520px;
-  font-family:
-    "Lato",
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif !important;
+  font-family: var(--font-family-text) !important;
 
   * {
     font-family: inherit !important;

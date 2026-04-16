@@ -590,7 +590,7 @@
   font-weight: bold;
   font-size: 2rem;
   color: white;
-  font-family: var(--font-family-jua);
+  font-family: var(--font-family-text);
   background-color: var(--color-yellow-400);
   border-radius: 50%;
   position: relative;
@@ -623,7 +623,7 @@
 }
 
 .sidebar__user-name {
-  font-family: var(--font-family-jua);
+  font-family: var(--font-family-text);
   font-size: 1.3rem;
   line-height: 1.2;
   background-color: var(--color-red-500);

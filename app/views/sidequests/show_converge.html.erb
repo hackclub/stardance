@@ -2,10 +2,6 @@
 <% content_for :og_description, truncate(@sidequest.description.to_s, length: 200) %>
 <% content_for :og_image, og_image_url('sidequests', format: :png) %>
 <% content_for :twitter_card, "summary_large_image" %>
-<%= content_for :stylesheets do %>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap">
-<% end %>
-
 <%= render HeadingComponent.new(title: @sidequest.title, tone: :blue, size: :full) %>
 
 <div class="sidequest-show sidequest-show--converge">

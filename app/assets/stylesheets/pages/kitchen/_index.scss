@@ -180,7 +180,7 @@
   &__title {
     margin: 0;
     color: #ffffff;
-    font-family: var(--font-family-jua);
+    font-family: var(--font-family-text);
     font-size: clamp(1.6rem, 3.2vw, 2.4rem);
     line-height: 1;
     display: flex;
@@ -432,7 +432,7 @@
   }
 
   &__title {
-    font-family: "Luckiest Guy", cursive;
+    font-family: var(--font-family-text);
     font-size: 1.4rem;
     line-height: 1.1;
     color: #000;

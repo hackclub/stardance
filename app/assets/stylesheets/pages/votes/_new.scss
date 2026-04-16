@@ -50,7 +50,7 @@
   }
 
   &__payout-meter-count {
-    font-family: var(--font-family-jua);
+    font-family: var(--font-family-text);
     font-size: var(--font-size-s);
     color: var(--color-text-muted);
     white-space: nowrap;
@@ -303,7 +303,7 @@
       -1px 0 0 rgba(102, 64, 43, 0.24);
     background-color: var(--color-brown-500);
     color: var(--color-bg);
-    font-family: var(--font-family-jua);
+    font-family: var(--font-family-text);
     font-size: var(--font-size-xxl);
     writing-mode: vertical-lr;
     text-orientation: mixed;
@@ -622,7 +622,7 @@
   }
 
   &__score {
-    font-family: var(--font-family-jua);
+    font-family: var(--font-family-text);
     font-size: var(--font-size-xl);
     color: var(--color-bg);
     min-width: 2.5rem;

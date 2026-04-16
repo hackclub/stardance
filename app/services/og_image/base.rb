@@ -166,7 +166,7 @@ module OgImage
     end
 
     def font_path
-      @font_path ||= Rails.root.join("app", "assets", "fonts", "Jua-Regular.ttf").to_s
+      @font_path ||= Rails.root.join("app", "assets", "fonts", "Roboto.ttf").to_s
     end
 
     private
