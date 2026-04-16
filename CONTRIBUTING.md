@@ -57,7 +57,7 @@ You'll need Docker Compose, Ruby, and Rails to run Flavortown. We strongly encou
 
     </br>
 
-    `credentials:edit` might fail on your machine outside of the Docker container. For example, on a fresh GitHub Codespaces box, I couldn't install the `faiss` gem, as it failed the build step.
+    `credentials:edit` might fail on your machine outside of the Docker container because some native gems can fail during local builds.
 
     The problem with this is that we have *no* visual editors in the Docker container. As such, you'll have to install one.
 

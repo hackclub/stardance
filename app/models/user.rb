@@ -72,8 +72,6 @@ class User < ApplicationRecord
   has_one :user_profile, dependent: :destroy
   has_paper_trail ignore: [ :projects_count, :votes_count, :updated_at, :shop_region ], on: [ :update, :destroy ]
 
-  has_recommended :projects # you might like these projects...
-
   DISMISSIBLE_THINGS = %w[flagship_ad shop_suggestion_box willsbuilds_banner ai_coding_time_ignored_card].freeze
 
   has_many :identities, class_name: "User::Identity", dependent: :destroy

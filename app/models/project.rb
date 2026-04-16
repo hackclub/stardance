@@ -49,8 +49,6 @@ class Project < ApplicationRecord
 
   has_paper_trail
 
-  has_recommended :projects # more projects like this...
-
   has_many :sidequest_entries, dependent: :destroy
   has_many :sidequests, through: :sidequest_entries
 
