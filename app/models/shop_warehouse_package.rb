@@ -64,19 +64,19 @@ class ShopWarehousePackage < ApplicationRecord
     Rails.logger.info "Sending warehouse package #{id} to Theseus for user #{user_id} with orders #{shop_orders.pluck(:id).join(', ')}\nContents: #{contents.inspect}"
 
     order_ids = shop_orders.order(:id).pluck(:id).join("-")
-    idempotency_key = "flavortown_warehouse_package_#{Rails.env}_#{user_id}_#{order_ids}"
+    idempotency_key = "stardance_warehouse_package_#{Rails.env}_#{user_id}_#{order_ids}"
 
     retries = 0
     begin
       response = TheseusService.create_warehouse_order({
                                                          address: frozen_address.compact_blank,
                                                          contents: contents,
-                                                         tags: [ "flavortown", "YSWS", "flavortown-warehouse-prize" ],
+                                                         tags: [ "stardance", "YSWS", "stardance-warehouse-prize" ],
                                                          recipient_email: user.email,
-                                                         user_facing_title: "Flavortown - #{headline.join ', '}",
+                                                         user_facing_title: "Stardance - #{headline.join ', '}",
                                                          idempotency_key:,
                                                          metadata: {
-                                                           flavortown_user: user.id,
+                                                           stardance_user: user.id,
                                                            orders: shop_orders.map do |order|
                                                              {
                                                                id: order.id,

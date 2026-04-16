@@ -38,7 +38,7 @@ class StartController < ApplicationController
       display_name = session[:start_display_name] || ""
       default_name = "First Project"
       title = display_name.present? ? "#{display_name}'s #{default_name}" : default_name
-      description = "This is my first project on Flavortown. I'm excited to share my progress!"
+      description = "This is my first project on Stardance. I'm excited to share my progress!"
 
       @project_attrs = {
         "title" => title.strip.first(120),

@@ -119,7 +119,7 @@ class ScrapbookService
   def notify_thread(ts)
     SendSlackDmJob.perform_later(
       SCRAPBOOK_CHANNEL_ID,
-      "This scrapbook post has been linked to a Flavortown devlog! :flavortown: " \
+      "This scrapbook post has been linked to a Stardance devlog! :flavortown: " \
       "https://flavortown.hackclub.com/projects/#{devlog.id}",
       thread_ts: ts
     )

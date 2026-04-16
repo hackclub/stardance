@@ -1,7 +1,7 @@
 class ShipCertService
   WEBHOOK_URL = ENV["SW_DASHBOARD_WEBHOOK_URL"]
   CERT_API_KEY = ENV["SW_DASHBOARD_API_KEY"]
-  USER_AGENT = "Flavortown/1.0 (ShipCertService)"
+  USER_AGENT = "Stardance/1.0 (ShipCertService)"
 
   def self.ship_data(project, type: nil, ship_event: nil)
     owner = project.memberships.owner.first&.user

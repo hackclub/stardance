@@ -1,4 +1,4 @@
-# Flavortown Agent Instructions
+# Stardance Agent Instructions
 
 ## Environment
 

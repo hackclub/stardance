@@ -7,7 +7,7 @@ class Api::V1::DocsController < ActionController::Base
       <!doctype html>
       <html>
         <head>
-          <title>Flavortown API Reference</title>
+          <title>Stardance API Reference</title>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>

@@ -95,7 +95,7 @@
 
 <% if show_report_button? %>
   <%= render layout: "shared/modal", locals: { id: report_modal_id, title: "Report project?" } do %>
-    <h2>We want good, high quality projects in Flavortown. If you believe this project violates our community guidelines, please let us know why:</h2>
+    <h2>We want good, high quality projects in Stardance. If you believe this project violates our community guidelines, please let us know why:</h2>
 
     <%= form_with model: Project::Report.new, url: project_reports_path(project), local: true do |f| %>
       <div class="form-field">

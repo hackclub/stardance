@@ -87,7 +87,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: flavortown_test
+          POSTGRES_DB: stardance_test
         ports:
           - 5432:5432
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -96,14 +96,14 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: flavortown_test_embed
+          POSTGRES_DB: stardance_test_embed
         ports:
           - 5433:5432
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
     env:
       RAILS_ENV: test
-      DATABASE_URL: postgresql://postgres:password@localhost:5432/flavortown_test
-      EMBEDDINGS_DATABASE_URL: postgresql://postgres:password@localhost:5433/flavortown_test_embed
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/stardance_test
+      EMBEDDINGS_DATABASE_URL: postgresql://postgres:password@localhost:5433/stardance_test_embed
     steps:
       - uses: actions/checkout@v6
 

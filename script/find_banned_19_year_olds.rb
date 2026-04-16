@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Find verified users who turned 19 after Flavortown launched (Dec 15, 2025)
+# Find verified users who turned 19 after Stardance launched (Dec 15, 2025)
 # and restore their YSWS eligibility by setting manual_ysws_override = true.
 #
 # Filters:

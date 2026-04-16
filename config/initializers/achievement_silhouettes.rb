@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module AchievementSilhouettes
-  SALT = "flavortown-achievements-secret"
+  SALT = "stardance-achievements-secret"
 
   def self.source_dirs
     dirs = [ Rails.root.join("app/assets/images/achievements") ]

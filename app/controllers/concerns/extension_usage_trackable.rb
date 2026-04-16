@@ -47,9 +47,9 @@ module ExtensionUsageTrackable
   def extract_extension_project_ids
     project_ids = []
 
-    request.headers.each do |key, value|
-      if key.to_s.match?(/\AHTTP_X_FLAVORTOWN_EXT_(\d+)\z/i)
-        project_id = key.to_s.match(/\AHTTP_X_FLAVORTOWN_EXT_(\d+)\z/i)[1].to_i
+    request.headers.each do |key, _value|
+      if key.to_s.match?(/\AHTTP_X_(?:STARDANCE|FLAVORTOWN)_EXT_(\d+)\z/i)
+        project_id = key.to_s.match(/\AHTTP_X_(?:STARDANCE|FLAVORTOWN)_EXT_(\d+)\z/i)[1].to_i
         project_ids << project_id if project_id > 0
       end
     end

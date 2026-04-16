@@ -17,7 +17,7 @@ RSpec.configure do |config|
     'openapi.yml' => {
       openapi: existing_openapi.fetch('openapi', '3.0.3'),
       info: existing_openapi.fetch('info', {
-        'title' => 'Flavortown API',
+        'title' => 'Stardance API',
         'version' => 'v1',
         'description' => 'You need an API key to use this! Go to your [account settings](https://flavortown.hackclub.com/kitchen?settings=1) to get one.'
       }),

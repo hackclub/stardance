@@ -18,13 +18,13 @@ class UpdateSlackMessageCountsJob < ApplicationJob
     if flavortown_counts.nil? # || support_counts.nil?
       Rails.logger.error(
         "UpdateSlackMessageCountsJob: Aborting due to API failure. " \
-        "Flavortown: #{flavortown_counts.nil? ? 'FAILED' : 'OK'}" # \
+        "Stardance: #{flavortown_counts.nil? ? 'FAILED' : 'OK'}" # \
         # "Support: #{support_counts.nil? ? 'FAILED' : 'OK'}"
       )
       raise "Slack API failure prevented message count update to avoid data loss"
     end
 
-    Rails.logger.info("UpdateSlackMessageCountsJob: Flavortown counts: #{flavortown_counts.inspect}")
+    Rails.logger.info("UpdateSlackMessageCountsJob: Stardance counts: #{flavortown_counts.inspect}")
     # Rails.logger.info("UpdateSlackMessageCountsJob: Support counts: #{support_counts.inspect}")
 
     # Wrap all database updates in a transaction for atomicity
@@ -46,7 +46,7 @@ class UpdateSlackMessageCountsJob < ApplicationJob
 
     Rails.logger.info(
       "Completed Slack message count updates: " \
-      "#{flavortown_counts.size} users in flavortown" # \
+      "#{flavortown_counts.size} users in stardance" # \
       # "#{support_counts.size} users in support"
     )
   rescue StandardError => e

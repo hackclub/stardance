@@ -3,7 +3,7 @@
         "name": "Flavorpheus",
         "description": "/cook",
         "background_color": "#04264d",
-        "long_description": "run /cook to start a meeting in flavortown. Currently this is euans bot and the code is private. It has no scopes beyond slash commands. the art is by Eleeza :) It just invites people to join you in a room with a JITSI instance"
+        "long_description": "run /cook to start a meeting in stardance. Currently this is euans bot and the code is private. It has no scopes beyond slash commands. the art is by Eleeza :) It just invites people to join you in a room with a JITSI instance"
     },
     "features": {
         "bot_user": {
@@ -15,13 +15,13 @@
                 "command": "/cook",
                 "url": "https://i00k8gsc08swowk00sc8o0o4.cooked.selfhosted.hackclub.com/cook",
                 "description": "lets cook",
-                "usage_hint": "use /cook to generate a meeting in flavortown",
+                "usage_hint": "use /cook to generate a meeting in stardance",
                 "should_escape": false
             },
             {
                 "command": "/cookout",
                 "url": "https://i00k8gsc08swowk00sc8o0o4.cooked.selfhosted.hackclub.com/cookout",
-                "description": "creates an invite to the users house in flavortown",
+                "description": "creates an invite to the users house in stardance",
                 "usage_hint": "use to publicly share an invite to your flavor town home",
                 "should_escape": false
             }

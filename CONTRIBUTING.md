@@ -1,11 +1,11 @@
 # Setting up a development environment
 Heidi, it's time to cook! 🧑‍🍳
 
-You'll need Docker Compose, Ruby, and Rails to run Flavortown. We strongly encourage using a Unix-based system (Linux or macOS). If you're on Windows, check out [GitHub Codespaces](https://github.com/codespaces)!
+You'll need Docker Compose, Ruby, and Rails to run Stardance. We strongly encourage using a Unix-based system (Linux or macOS). If you're on Windows, check out [GitHub Codespaces](https://github.com/codespaces)!
 
 1. Clone this repo!
     ```sh
-    git clone https://github.com/hackclub/flavortown
+    git clone https://github.com/hackclub/stardance
     ```
     (this will already be done for you if you use *GitHub Codespaces!*)
 
@@ -96,7 +96,7 @@ If you already did all of the steps above previously, but e.g. your PC or Codesp
     docker compose run --service-ports web /bin/bash
     ```
 
-3. Some dependencies might've changed from the last time you've worked on Flavortown. Doesn't hurt to check!
+3. Some dependencies might've changed from the last time you've worked on Stardance. Doesn't hurt to check!
     ```sh
     bundle install
     ```

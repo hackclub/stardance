@@ -11,11 +11,11 @@ class KitchenHelpCardsComponent < ApplicationComponent
           end
           div(class: "state-card__title") { "View the FAQ" }
           div(class: "state-card__description") do
-            "The FAQ (on Slack) answers most questions about Flavortown! Give it a read to find out more about how Flavortown works."
+            "The FAQ (on Slack) answers most questions about Stardance! Give it a read to find out more about how Stardance works."
           end
           div(class: "state-card__cta") do
             a(href: "https://hackclub.slack.com/app_redirect?channel=C09MATKQM8C", class: "btn btn--borderless btn--bg_yellow", target: "_blank") do
-              span { "Go to Flavortown FAQ" }
+              span { "Go to Stardance FAQ" }
             end
           end
         end

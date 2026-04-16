@@ -1,4 +1,4 @@
-# flavortown
+# stardance
 
 what's cooking in the hack club kitchen :fire:
 

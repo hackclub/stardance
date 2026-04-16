@@ -1,5 +1,5 @@
 class FlushExtensionUsageJob < ApplicationJob
-  BUFFER_KEY = "flavortown:extension_usage_buffer"
+  BUFFER_KEY = "stardance:extension_usage_buffer"
 
   queue_as :default
 

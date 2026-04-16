@@ -47,7 +47,7 @@ class IdentitiesController < ApplicationController
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.warn("Hackatime identity save failed: #{e.record.errors.full_messages.join(", ")}")
     alert = if e.record.errors.of_kind?(:uid, :taken)
-      "It seems like your Hackatime is already linked to a different Flavortown account. Please contact support!"
+      "It seems like your Hackatime is already linked to a different Stardance account. Please contact support!"
     else
       "Failed to link Hackatime: #{e.record.errors.full_messages.first}"
     end

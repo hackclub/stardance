@@ -2,7 +2,7 @@ class OneTime::FixDuplicateDevlogTimeJob < ApplicationJob
   queue_as :literally_whenever
 
   def perform
-    # This recalculates project time based on anything affected by https://github.com/hackclub/flavortown/pull/827
+    # This recalculates project time based on anything affected by https://github.com/hackclub/stardance/pull/827
     # We only look for cases of projects where the devlog time is greater than the hackatime time,
     # not all cases of devlogs being incorrect.
     # If a devlog got extra time but the user has since logged that extra time,

@@ -1,5 +1,5 @@
 <% content_for :title, @user.display_name %>
-<% content_for :og_title, "#{@user.display_name} on Flavortown" %>
+<% content_for :og_title, "#{@user.display_name} on Stardance" %>
 <% content_for :og_description, "#{@stats[:projects_count]} projects · #{@stats[:ships_count]} ships · #{@stats[:posts_count]} posts" %>
 <% content_for :og_image, user_og_image_url(@user, format: :png) %>
 <% user_profiles_enabled = Flipper.enabled?(:user_profiles) %>

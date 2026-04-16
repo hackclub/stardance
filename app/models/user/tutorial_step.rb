@@ -35,7 +35,7 @@ class User
           ]),
       new(slug: :identity_verified,
         name: "Confirm your age",
-        description: "You must be a teenager to participate in Flavortown",
+        description: "You must be a teenager to participate in Stardance",
         icon: "user",
         link: ->(_) { HCAService.verify_portal_url(return_to: kitchen_url) }),
       new(slug: :setup_hackatime,

@@ -26,7 +26,7 @@ class Airtable::UserClubPullJob < ApplicationJob
       if updates.any?
         newly_linked = user.club_name.blank? && updates[:club_name].present?
         user.update_columns(updates)
-        user.dm_user("🏫 Your Hack Club (*#{updates[:club_name]}*) has been linked to your Flavortown account!") if newly_linked
+        user.dm_user("🏫 Your Hack Club (*#{updates[:club_name]}*) has been linked to your Stardance account!") if newly_linked
       end
     end
   end

@@ -71,7 +71,7 @@ end
 
 Sidequest.find_or_create_by!(slug: "physics_lab") do |sq|
   sq.title = "Physics Lab"
-  sq.description = "Build an interactive physics project and ship it on Flavortown to unlock physics prizes in the shop."
+  sq.description = "Build an interactive physics project and ship it on Stardance to unlock physics prizes in the shop."
 end
 Sidequest.find_or_create_by!(slug: "the_hackazine") do |sq|
   sq.title = "The Hackazine"
@@ -87,7 +87,7 @@ end
 
 Sidequest.find_or_create_by!(slug: "converge") do |sq|
   sq.title = "Converge"
-  sq.description = "Build a Slack or Discord bot that does something useful or creative. Ship it on Flavortown and submit it to unlock Converge prizes in the shop!"
+  sq.description = "Build a Slack or Discord bot that does something useful or creative. Ship it on Stardance and submit it to unlock Converge prizes in the shop!"
 end
 
 Sidequest.find_or_create_by!(

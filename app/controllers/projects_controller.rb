@@ -540,7 +540,7 @@ class ProjectsController < ApplicationController
 
     conn = Faraday.new(
       url: uri.to_s,
-      headers: { "User-Agent" => "Flavortown project validator (https://flavortown.hackclub.com/)" }
+      headers: { "User-Agent" => "Stardance project validator (https://flavortown.hackclub.com/)" }
     ) do |faraday|
       faraday.response :follow_redirects, max_redirects: 3
       faraday.adapter Faraday.default_adapter

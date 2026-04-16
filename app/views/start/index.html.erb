@@ -6,7 +6,7 @@
 
 <div class="start-flow">
   <div class="start-flow__container">
-    <%= render HeadingComponent.new(title: "Welcome to Hack Club Flavortown", tone: :brown) %>
+    <%= render HeadingComponent.new(title: "Welcome to Hack Club Stardance", tone: :brown) %>
 
     <div class="start-flow__progress">
       <div class="start-flow__steps">
@@ -38,10 +38,10 @@
 
 <% if @step == "name" %>
   <%= render DialogueBoxComponent.new(text: [
-    "Hey there, chef! I'm Chef Orpheus, your guide to Flavortown.",
+    "Hey there, chef! I'm Chef Orpheus, your guide to Stardance.",
     "I'll walk you through how the platform works. By the end, you'll earn your first reward and feel right at home here!",
     "Ooo, looks like your first reward just unlocked! Once we finish the tutorial, I'll send you a pack of free, real stickers to your doorstep.",
-    "Let's start simple. Choose a display name. This is what other chefs will see around Flavortown, and it doesn't have to be your real name.",
+    "Let's start simple. Choose a display name. This is what other chefs will see around Stardance, and it doesn't have to be your real name.",
     "Don't worry about making it perfect—we're just building a dummy project to learn the ropes. You can always change everything later!"
   ],
     show_sticker: true,
@@ -51,7 +51,7 @@
 <%# <% elsif @step == "experience" >
   <%= render DialogueBoxComponent.new(text: [
     "Nice to meet you, #{@display_name}! Now let's figure out where you're at.",
-    "On Flavortown, everyone cooks at their own pace. Are you new to building projects, or do you already have ideas cooking?",
+    "On Stardance, everyone cooks at their own pace. Are you new to building projects, or do you already have ideas cooking?",
     "If you're Unseasoned, we'll help you build your first project. If you're Seasoned, you can jump straight into building your own project!",
     "Pick the path that feels right for you."
   ]) %>
@@ -59,7 +59,7 @@
 <% elsif @step == "project" %>
   <%= render DialogueBoxComponent.new(text: [
     "Great! Now let's create your first project.",
-    "On Flavortown, everything starts with a project. It's whatever you're building or working on.",
+    "On Stardance, everything starts with a project. It's whatever you're building or working on.",
     "It could be a game, an app, a website, hardware, or anything else you're making, as long as it's technical.",
     "Give it a name and a short description. Don't worry, you can always change this later!",
     "I've already filled in some example text and an image for you—feel free to change it to whatever you want!",

@@ -13,5 +13,5 @@ section "Order Details:",
 divider
 
 context [
-  mrkdwn_text("Thank you for participating in Flavortown with us!")
+  mrkdwn_text("Thank you for participating in Stardance with us!")
 ]

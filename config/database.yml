@@ -22,7 +22,7 @@ default: &default
 development:
   primary:
     <<: *default
-    database: battlemage_development
+    database: stardance_development
     url: <%= ENV['DATABASE_URL'] %>
 
 # Warning: The database defined as "test" will be erased and
@@ -31,7 +31,7 @@ development:
 test:
   primary:
     <<: *default
-    database: battlemage_test
+    database: stardance_test
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -57,28 +57,28 @@ production:
   primary:
     <<: *default
     url: <%= ENV['DATABASE_URL'] %>
-    database: flavortown_production
+    database: stardance_production
 
   cache:
     <<: *default
     url: <%= ENV['DATABASE_URL'] %>
     migrations_paths: db/cache_migrate
-    database: flavortown_cache
+    database: stardance_cache
 
   queue:
     <<: *default
     url: <%= ENV['SOLID_DATABASE_URL'] %>
     migrations_paths: db/queue_migrate
-    database: flavortown_queue
+    database: stardance_queue
 
   cable:
     <<: *default
     url: <%= ENV['DATABASE_URL'] %>
     migrations_paths: db/cable_migrate
-    database: flavortown_cable
+    database: stardance_cable
 
   ahoy:
     <<: *default
     url: <%= ENV['AHOY_DB_URL'] %>
     migrations_paths: db/ahoy_migrate
-    database: flavortown_ahoy
+    database: stardance_ahoy

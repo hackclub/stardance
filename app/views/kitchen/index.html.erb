@@ -55,7 +55,7 @@
       <div class="dialogue-box-wrapper dialogue-box-wrapper--welcome"
         data-dialogue-type="welcome"
         data-dialogue-iteration-text-value='<%= [
-          "Welcome to the Kitchen, chef! This is your home base on Flavortown.",
+          "Welcome to the Kitchen, chef! This is your home base on Stardance.",
           "The Kitchen is where you'll find your tutorial steps, track your progress, and see what you need to do next.",
           "You'll see cards for each step you need to complete. Once you finish them all, you'll be fully set up and ready to cook!",
           "Let's start by checking out the tutorial steps below. They'll guide you through everything you need to know."
@@ -76,7 +76,7 @@
           </div>
           <div class="dialogue-box__text">
             <div class="dialogue-box__text-content">
-              <span data-dialogue-iteration-target="content">Welcome to the Kitchen, chef! This is your home base on Flavortown.</span>
+              <span data-dialogue-iteration-target="content">Welcome to the Kitchen, chef! This is your home base on Stardance.</span>
             </div>
             <button type="button" class="dialogue-box__text-btn">
               Click to continue...<span>&#8964;</span>
@@ -91,7 +91,7 @@
           data-dialogue-type="hackatime"
           style="display: none;"
           data-dialogue-iteration-text-value='<%= [
-            "On Flavortown, the projects that you build are time tracked!",
+            "On Stardance, the projects that you build are time tracked!",
             "You install an extension in your code editor and the time tracking is automatic.",
             "We need to track how much time you spend to reward you with cookies!",
             "And that's how you're gonna earn cookies :p!",
@@ -113,7 +113,7 @@
             </div>
             <div class="dialogue-box__text">
               <div class="dialogue-box__text-content">
-                <span data-dialogue-iteration-target="content">On Flavortown, the projects that you build are time tracked!</span>
+                <span data-dialogue-iteration-target="content">On Stardance, the projects that you build are time tracked!</span>
               </div>
               <button type="button" class="dialogue-box__text-btn">
                 Click to continue...<span>&#8964;</span>
@@ -131,7 +131,7 @@
           data-dialogue-iteration-text-value='<%= [
             "One more thing, chef!",
             "Join our Slack community to connect with other chefs, share your projects, and get help when you need it.",
-            "It's a great place to meet fellow builders and be part of the Flavortown community!"
+            "It's a great place to meet fellow builders and be part of the Stardance community!"
           ].to_json %>'
           data-dialogue-iteration-sprites-value='<%= (1..12).map { |i| image_path("orpheus_sprites/#{i}.png") }.to_json %>'
           data-action="keydown.enter@window->dialogue-iteration#next click@window->dialogue-iteration#next">
@@ -271,7 +271,7 @@
     <%= image_tag "pyramid/logo.png", alt: "Pyramid Scheme icon", class: "kitchen-pyramid-banner__icon" %>
     <span class="kitchen-pyramid-banner__copy">
       <span class="kitchen-pyramid-banner__title">Referral Program: Pyramid Scheme</span>
-      <span class="kitchen-pyramid-banner__text">Get a Flavortown referral link and invite your friends, put up posters and make videos to earn additional prizes!</span>
+      <span class="kitchen-pyramid-banner__text">Get a Stardance referral link and invite your friends, put up posters and make videos to earn additional prizes!</span>
     </span>
     <span class="kitchen-pyramid-banner__cta" aria-hidden="true">↗</span>
   <% end %>
@@ -315,7 +315,7 @@
   <% end %>
   <% if Flipper.enabled?(:kitchen_comic, current_user) %>
     <div class="kitchen-comic">
-      <%= image_tag "kitchen_comic/title.avif", alt: "How to Flavortown", class: "kitchen-comic__title" %>
+      <%= image_tag "kitchen_comic/title.avif", alt: "How to Stardance", class: "kitchen-comic__title" %>
       <div class="kitchen-comic__cards">
         <%= render ComicCardComponent.new(
           image: "kitchen_comic/1.avif",

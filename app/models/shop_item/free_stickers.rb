@@ -85,7 +85,7 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class ShopItem::FreeStickers < ShopItem
-  QUEUE_ID = "flavortown-tutorial-stickers"
+  QUEUE_ID = "stardance-tutorial-stickers"
 
   def fulfill!(shop_order)
     email   = shop_order.user&.email
@@ -107,7 +107,7 @@ class ShopItem::FreeStickers < ShopItem
       {
         recipient_email: email,
         address: address,
-        idempotency_key: "flavortown_tutorial_stickers_order_#{Rails.env}_#{shop_order.id}"
+        idempotency_key: "stardance_tutorial_stickers_order_#{Rails.env}_#{shop_order.id}"
       }
     )
 

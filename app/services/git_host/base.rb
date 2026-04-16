@@ -43,7 +43,7 @@ module GitHost
     def http_get(url, headers: {})
       response = Faraday.get(url) do |req|
         req.headers["Accept"] = "application/json"
-        req.headers["User-Agent"] = "Flavortown/1.0"
+        req.headers["User-Agent"] = "Stardance/1.0"
         headers.each { |k, v| req.headers[k] = v }
       end
 

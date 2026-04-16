@@ -1,6 +1,6 @@
 <% content_for :title, "Extensions" %>
-<% content_for :og_title, "Flavortown Extensions" %>
-<% content_for :og_description, "Discover community-built tools and integrations for Flavortown." %>
+<% content_for :og_title, "Stardance Extensions" %>
+<% content_for :og_description, "Discover community-built tools and integrations for Stardance." %>
 <% content_for :og_image, og_image_url('extensions', format: :png) %>
 
 <div class="explore explore--extensions" data-controller="load-more" data-load-more-url-value="<%= explore_extensions_path %>">
@@ -10,16 +10,16 @@
 
   <div class="explore__header">
       <p class="explore__description">
-          Projects that integrate with Flavortown, shown by usage.
+          Projects that integrate with Stardance, shown by usage.
           At least 2 weekly users needed to show up.
       </p>
       <details class="explore__details">
           <summary>How to register your extension</summary>
           <div class="explore__details-content">
               <p>Add a header to your HTTP requests identifying your project:</p>
-              <code class="explore__code">X-Flavortown-Ext-{project_id}: true</code>
+              <code class="explore__code">X-Stardance-Ext-{project_id}: true</code>
               <p>For example, if your project ID is <strong>42</strong>:</p>
-              <code class="explore__code">X-Flavortown-Ext-42: true</code>
+              <code class="explore__code">X-Stardance-Ext-42: true</code>
           </div>
       </details>
   </div>

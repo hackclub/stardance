@@ -18,13 +18,13 @@ class Project::MagicHappeningLetterJob < ApplicationJob
     end
 
     response = TheseusService.create_letter_v1(
-      "instant/flavortown-magic-happening",
+      "instant/stardance-magic-happening",
       {
         recipient_email: owner.email,
         address: address,
-        idempotency_key: "flavortown_magic_project_#{project.id}",
+        idempotency_key: "stardance_magic_project_#{project.id}",
         metadata: {
-          flavortown_user: owner.id,
+          stardance_user: owner.id,
           project: project.title,
           reviewer: project.marked_fire_by&.display_name
         }

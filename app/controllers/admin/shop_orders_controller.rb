@@ -609,7 +609,7 @@ class Admin::ShopOrdersController < Admin::ApplicationController
         redirect_to admin_shop_order_path(@order), alert: "Order(s) #{stale_ids.join(', ')} no longer awaiting fulfillment. Please refresh and try again." and return
       end
 
-      letter_id = TheseusService.create_letter(orders_to_send, queue: "flavortown-envelope")
+      letter_id = TheseusService.create_letter(orders_to_send, queue: "stardance-envelope")
       orders_to_send.each { |o| o.mark_fulfilled!(letter_id, nil, "#{current_user.display_name} - Letter Mail (Theseus)") }
 
       notice = "Sent to Theseus (letter #{letter_id})"

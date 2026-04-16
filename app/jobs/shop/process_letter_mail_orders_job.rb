@@ -22,7 +22,7 @@ class Shop::ProcessLetterMailOrdersJob < ApplicationJob
   private
 
   def process_coalesced_orders(orders)
-    letter_id = TheseusService.create_letter(orders, queue: "flavortown-envelope")
+    letter_id = TheseusService.create_letter(orders, queue: "stardance-envelope")
 
     orders.each do |order|
       order.mark_fulfilled!(letter_id, nil, "System - Letter Mail")

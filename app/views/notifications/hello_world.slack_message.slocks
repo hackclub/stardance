@@ -6,7 +6,7 @@ divider
 
 section "Details:",
   fields: [
-    mrkdwn_text("*From:* Flavortown"),
+    mrkdwn_text("*From:* Stardance"),
     mrkdwn_text("*Time:* #{Time.current.strftime('%Y-%m-%d %H:%M')}")
   ]
 

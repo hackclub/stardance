@@ -573,7 +573,7 @@ class User < ApplicationRecord
     return unless slack_id.present?
 
     role_info = User::Role.find(role)
-    message = "🎉 Congratulations! You've been granted the *#{role_info.name.to_s.titleize}* role on Flavortown."
+    message = "🎉 Congratulations! You've been granted the *#{role_info.name.to_s.titleize}* role on Stardance."
     dm_user(message)
   end
 

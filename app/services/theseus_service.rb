@@ -33,10 +33,10 @@ module TheseusService
           recipient_email: first_order.user.email,
           address: first_order.frozen_address,
           rubber_stamps: rubber_stamps,
-          idempotency_key: "flavortown_letter_#{Rails.env}_#{coalesced_key}",
+          idempotency_key: "stardance_letter_#{Rails.env}_#{coalesced_key}",
           metadata: {
-            flavortown_user_id: first_order.user_id,
-            flavortown_order_ids: shop_orders.map(&:id),
+            stardance_user_id: first_order.user_id,
+            stardance_order_ids: shop_orders.map(&:id),
             items: shop_orders.map { |o| { shop_item_id: o.shop_item_id, name: o.shop_item.name, quantity: o.quantity } }
           }
         })
