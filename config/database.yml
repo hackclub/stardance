@@ -24,11 +24,6 @@ development:
     <<: *default
     database: battlemage_development
     url: <%= ENV['DATABASE_URL'] %>
-  embeddings:
-    <<: *default
-    database: battlemage_embeddings
-    url: <%= ENV['EMBEDDINGS_DATABASE_URL'] %>
-    migrations_paths: db/embeddings_migrate
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -37,10 +32,6 @@ test:
   primary:
     <<: *default
     database: battlemage_test
-  embeddings:
-    <<: *default
-    database: flavortown_embeddings_test
-    migrations_paths: db/embeddings_migrate
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -91,9 +82,3 @@ production:
     url: <%= ENV['AHOY_DB_URL'] %>
     migrations_paths: db/ahoy_migrate
     database: flavortown_ahoy
-
-  embeddings:
-    <<: *default
-    url: <%= ENV['EMBEDDINGS_DATABASE_URL'] %>
-    migrations_paths: db/embeddings_migrate
-    database: flavortown_embeddings

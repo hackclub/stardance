@@ -1,6 +1,6 @@
-class CreateVoteReasonEmbeddings < ActiveRecord::Migration[8.1]
+class CreateVoteReasonEmbeddingsInPrimary < ActiveRecord::Migration[8.1]
   def up
-    enable_extension "vector"
+    enable_extension "vector" unless extension_enabled?("vector")
 
     create_table :vote_reason_embeddings do |t|
       t.bigint :vote_id, null: false
@@ -14,6 +14,5 @@ class CreateVoteReasonEmbeddings < ActiveRecord::Migration[8.1]
 
   def down
     drop_table :vote_reason_embeddings
-    disable_extension "vector"
   end
 end
