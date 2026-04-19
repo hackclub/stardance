@@ -64,6 +64,13 @@ Rails.application.routes.draw do
   # RSVPs
   resources :rsvps, only: [ :create ]
 
+  # Source-tag redirect URLs — add new slugs to this list.
+  # Each slug sets cookies[:referral_code] directly (no ?ref= query param,
+  # which some ad blockers strip), then redirects to /.
+  %w[amd github nasa rmrrf].each do |slug|
+    get "/#{slug}", to: "sources#capture", defaults: { src_slug: slug }, as: "source_#{slug}"
+  end
+
   # Shop
   get "shop", to: "shop#index"
   get "shop/my_orders", to: "shop#my_orders"

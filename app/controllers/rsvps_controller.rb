@@ -8,7 +8,7 @@ class RsvpsController < ApplicationController
     )
 
     if @rsvp.save
-      redirect_to root_path, notice: "We'll send an email soon - check your inbox!"
+      redirect_to root_path, notice: "We'll email you when we're ready for liftoff"
     else
       redirect_to root_path, alert: "Please enter a valid email address."
     end
