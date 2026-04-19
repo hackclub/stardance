@@ -26,8 +26,10 @@
 #  fk_rails_...  (shop_item_id => shop_items.id)
 #  fk_rails_...  (user_id => users.id)
 #
-one: {}
-# column: value
-#
-two: {}
-# column: value
+one:
+  shop_item: one
+  user: one
+
+two:
+  shop_item: two
+  user: two

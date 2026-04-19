@@ -24,6 +24,7 @@
 #  fk_rails_...  (user_id => users.id)
 #
 one:
+  user: one
   ledgerable: one
   ledgerable_type: Ledgerable
   amount: 1
@@ -31,6 +32,7 @@ one:
   created_by: one
 
 two:
+  user: two
   ledgerable: two
   ledgerable_type: Ledgerable
   amount: 1

@@ -31,8 +31,12 @@
 #
 #  fk_rails_...  (user_id => users.id)
 #
-one: {}
-# column: value
-#
-two: {}
-# column: value
+one:
+  user: one
+  provider: github
+  uid: fixture-user-identity-one
+
+two:
+  user: two
+  provider: github
+  uid: fixture-user-identity-two

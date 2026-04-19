@@ -18,7 +18,9 @@
 #  index_sidequests_on_slug  (slug) UNIQUE
 #
 one:
-  name: MyString
+  title: MyString
+  slug: sidequest-one
 
 two:
-  name: MyString
+  title: MyString
+  slug: sidequest-two
