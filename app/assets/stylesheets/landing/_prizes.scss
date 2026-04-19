@@ -19,7 +19,7 @@
   }
 
   &__title {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 700;
     font-size: clamp(32px, 3.6vw, 56px);
     color: white;
@@ -27,7 +27,7 @@
   }
 
   &__subtitle {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 400;
     font-size: clamp(14px, 1.4vw, 22px);
     color: white;
@@ -55,7 +55,7 @@
 
   &__label {
     position: absolute;
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-style: italic;
     font-size: clamp(10px, 1.15vw, 18px);
     color: #eee7bb;
@@ -63,15 +63,57 @@
     pointer-events: none;
 
     // Per-label positioning relative to parent item, compensating for rotation.
-    &--bambu    { right: 7.2%; bottom: -4.1%; transform: rotate(-6.43deg); left: 25.8%; }
-    &--8bitdo   { left: 15.8%; top: 10%; transform: rotate(-14.47deg); }
-    &--raspi    { right: -9%; bottom: 29.4%; transform: rotate(-59deg); }
-    &--airpods  { left: 15.4%; bottom: -6.9%; transform: rotate(-0.04deg); }
-    &--polaroid { left: 28.5%; top: -14%; transform: rotate(0.44deg); }
-    &--flipper  { left: 23.7%; bottom: 126.5%; transform: rotate(0.29deg); top: -15.2%; width: 18%; z-index: 2; right: -4.2%; }
-    &--blahaj   { left: 8.1%; bottom: 1.3%; rotate: 5deg; z-index: 5; }
-    &--mouse    { right: 42.3%; bottom: -11.3%; transform: rotate(2.56deg); }
-    &--playdate { left: 18.1%; top: -8.1%; transform: rotate(0.93deg); }
+    &--bambu {
+      right: 7.2%;
+      bottom: -4.1%;
+      transform: rotate(-6.43deg);
+      left: 25.8%;
+    }
+    &--8bitdo {
+      left: 15.8%;
+      top: 10%;
+      transform: rotate(-14.47deg);
+    }
+    &--raspi {
+      right: -9%;
+      bottom: 29.4%;
+      transform: rotate(-59deg);
+    }
+    &--airpods {
+      left: 15.4%;
+      bottom: -6.9%;
+      transform: rotate(-0.04deg);
+    }
+    &--polaroid {
+      left: 28.5%;
+      top: -14%;
+      transform: rotate(0.44deg);
+    }
+    &--flipper {
+      left: 23.7%;
+      bottom: 126.5%;
+      transform: rotate(0.29deg);
+      top: -15.2%;
+      width: 18%;
+      z-index: 2;
+      right: -4.2%;
+    }
+    &--blahaj {
+      left: 8.1%;
+      bottom: 1.3%;
+      rotate: 5deg;
+      z-index: 5;
+    }
+    &--mouse {
+      right: 42.3%;
+      bottom: -11.3%;
+      transform: rotate(2.56deg);
+    }
+    &--playdate {
+      left: 18.1%;
+      top: -8.1%;
+      transform: rotate(0.93deg);
+    }
   }
 
   &__item-star {

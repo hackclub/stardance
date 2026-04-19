@@ -28,7 +28,7 @@
   }
 
   &__partnership-text {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(22px, 1.55vw, 32px);
     color: white;
     text-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
@@ -36,7 +36,7 @@
   }
 
   &__nasa-text {
-    font-family: 'Arc Space', sans-serif;
+    font-family: "Arc Space", sans-serif;
     font-size: clamp(32px, 2.25vw, 46px);
     line-height: 1;
     transform: translateY(5px);
@@ -67,7 +67,11 @@
       margin-left: -32px;
     }
 
-    &__partnership-text { display: none; }
-    &__nasa-text { font-size: 22px; }
+    &__partnership-text {
+      display: none;
+    }
+    &__nasa-text {
+      font-size: 22px;
+    }
   }
 }

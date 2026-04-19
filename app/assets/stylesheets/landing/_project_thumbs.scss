@@ -17,13 +17,19 @@
     flex-shrink: 0;
 
     // margin-top is set dynamically by the project-thumbs-scroll controller.
-    &--1, &--2, &--3, &--4, &--5 { margin-top: 0; }
+    &--1,
+    &--2,
+    &--3,
+    &--4,
+    &--5 {
+      margin-top: 0;
+    }
   }
 
   &__tab {
     background: white;
     color: black;
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-size: 16px;
     padding: 4px 10px 1px;
     border-radius: 8px 8px 0 0;

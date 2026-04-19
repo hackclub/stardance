@@ -35,7 +35,7 @@
   }
 
   &__title {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(36px, 4.5vw, 58px);
     font-weight: 700;
     color: white;
@@ -54,9 +54,17 @@
     margin: 0 auto;
 
     // Cascading stagger: each card sits 88px lower than the previous (Figma).
-    > .heres-how__card--0 { margin-top: -106px; margin-left: -260px; }
-    > .heres-how__card--2 { margin-top: 88px; }
-    > .heres-how__card--3 { margin-top: 176px; margin-right: -260px; }
+    > .heres-how__card--0 {
+      margin-top: -106px;
+      margin-left: -260px;
+    }
+    > .heres-how__card--2 {
+      margin-top: 88px;
+    }
+    > .heres-how__card--3 {
+      margin-top: 176px;
+      margin-right: -260px;
+    }
   }
 
   &__card {
@@ -78,7 +86,9 @@
     text-align: center;
     flex-shrink: 0;
 
-    &--2 { width: 396px; }
+    &--2 {
+      width: 396px;
+    }
 
     // Peek cards (left & right): blue border, image bg, image clipped inside
     // but the card itself doesn't clip (so star can hang off).
@@ -118,14 +128,18 @@
 
     // --3 lets the star hang outside the card; the image is still clipped
     // by .heres-how__card-image-wrap.
-    &--3 { overflow: visible; }
+    &--3 {
+      overflow: visible;
+    }
 
     &--placeholder {
       opacity: 0;
       pointer-events: none;
       flex-shrink: 0;
 
-      @media (max-width: 900px) { display: none; }
+      @media (max-width: 900px) {
+        display: none;
+      }
     }
   }
 
@@ -146,12 +160,18 @@
     pointer-events: none;
     z-index: 0;
 
-    &--left  { left: -17px; top: 55%; }
-    &--right { right: -17px; top: 20%; }
+    &--left {
+      left: -17px;
+      top: 55%;
+    }
+    &--right {
+      right: -17px;
+      top: 20%;
+    }
   }
 
   &__card-title {
-    font-family: 'Playfair Display', serif;
+    font-family: "Playfair Display", serif;
     font-style: italic;
     font-weight: 700;
     font-size: clamp(28px, 3vw, 40px);
@@ -162,7 +182,7 @@
   }
 
   &__card p {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(16px, 1.5vw, 20px);
     color: rgba(255, 255, 255, 0.9);
     margin: 0;
@@ -193,12 +213,13 @@
   }
 
   &__repeat {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-style: italic;
     font-size: clamp(16px, 1.4vw, 22px);
     color: rgba(255, 255, 255, 0.7);
     text-align: right;
-    margin: calc(-1 * var(--space-m)) max(var(--space-xl), calc(50% - 412px)) 0 auto;
+    margin: calc(-1 * var(--space-m)) max(var(--space-xl), calc(50% - 412px)) 0
+      auto;
     position: absolute;
     right: 0;
     bottom: 20%;
@@ -211,7 +232,11 @@
       gap: var(--space-l);
     }
 
-    &__card { width: min(386px, 100%); }
-    &__repeat { display: none; }
+    &__card {
+      width: min(386px, 100%);
+    }
+    &__repeat {
+      display: none;
+    }
   }
 }

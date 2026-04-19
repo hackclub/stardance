@@ -20,8 +20,14 @@ export default class extends Controller {
     const footerRect = this.element.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
     return {
-      x: ((elRect.left + elRect.width / 2 - footerRect.left) / footerRect.width) * 100,
-      y: ((elRect.top + elRect.height / 2 - footerRect.top) / footerRect.height) * 100,
+      x:
+        ((elRect.left + elRect.width / 2 - footerRect.left) /
+          footerRect.width) *
+        100,
+      y:
+        ((elRect.top + elRect.height / 2 - footerRect.top) /
+          footerRect.height) *
+        100,
     };
   }
 
@@ -42,7 +48,7 @@ export default class extends Controller {
     }
 
     // Remap 0.2–1.0 → 0–0.8
-    const t = Math.min(0.8, (progress - 0.2) / 0.8 * 0.8);
+    const t = Math.min(0.8, ((progress - 0.2) / 0.8) * 0.8);
 
     // Derive start/end from the two star targets if available,
     // otherwise fall back to hardcoded positions.

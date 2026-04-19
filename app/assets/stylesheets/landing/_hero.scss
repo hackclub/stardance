@@ -49,12 +49,16 @@
         flex-wrap: nowrap;
         position: relative;
       }
-
     }
 
     @keyframes carat-bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-16px); }
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-16px);
+      }
     }
 
     .carat {
@@ -63,13 +67,14 @@
       align-self: flex-end;
       margin-right: 44px;
       animation: carat-bounce 1.2s infinite cubic-bezier(0.4, 0, 0.6, 1);
-      filter: brightness(0) saturate(100%) invert(94%) sepia(15%) saturate(540%) hue-rotate(8deg) brightness(96%) contrast(89%);
+      filter: brightness(0) saturate(100%) invert(94%) sepia(15%) saturate(540%)
+        hue-rotate(8deg) brightness(96%) contrast(89%);
     }
   }
 }
 
 .hero__eyebrow {
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   font-size: clamp(22px, 2.4vw, 52px);
   font-weight: 700;
   color: white;
@@ -78,7 +83,7 @@
 }
 
 .hero__headline {
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   font-size: clamp(44px, 4.6vw, 96px);
   font-weight: 700;
   color: #fefdfb;
@@ -90,14 +95,14 @@
   // App-wide `* { font-family: Jua }` breaks inheritance into spans;
   // force Exo 2 on descendants and restore Playfair on the italic one.
   span {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     display: block;
     white-space: nowrap;
   }
 
   &--italic,
   span.hero__headline--italic {
-    font-family: 'Playfair Display', serif;
+    font-family: "Playfair Display", serif;
     font-style: italic;
     font-weight: 700;
     display: inline;
@@ -105,7 +110,7 @@
 }
 
 .hero__subhead {
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   font-size: clamp(15px, 1.4vw, 28px);
   color: white;
   text-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
@@ -126,7 +131,7 @@
 }
 
 .hero__caption {
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   font-size: 18px;
   font-style: italic;
   color: #eee7bb;
@@ -142,7 +147,11 @@
   top: 0;
   width: 100%;
   height: 100%;
-  background-image: linear-gradient(#0E0810 0%, #140D16 77%, rgb(8, 6, 30) 100%);
+  background-image: linear-gradient(
+    #0e0810 0%,
+    #140d16 77%,
+    rgb(8, 6, 30) 100%
+  );
   z-index: 0;
   pointer-events: none;
   padding-bottom: 25%;

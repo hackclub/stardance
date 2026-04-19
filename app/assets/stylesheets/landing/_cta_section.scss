@@ -8,20 +8,20 @@
   color: white;
 
   &__title {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 700;
     font-size: clamp(36px, 4.4vw, 56px);
     text-align: center;
     margin: 0 0 var(--space-m);
 
     &--italic {
-      font-family: 'Playfair Display', serif;
+      font-family: "Playfair Display", serif;
       font-style: italic;
     }
   }
 
   &__subtitle {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(16px, 1.6vw, 22px);
     text-align: center;
     color: rgba(255, 255, 255, 0.8);
@@ -30,7 +30,7 @@
   }
 
   &__caption {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-style: italic;
     font-size: 18px;
     color: #eee7bb;

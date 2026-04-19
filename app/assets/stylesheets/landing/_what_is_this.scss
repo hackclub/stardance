@@ -40,10 +40,26 @@
     backdrop-filter: blur(12px);
     background: #08061e;
 
-    &--1 { border-radius: 28px; opacity: 0.10; margin: 0; }
-    &--2 { border-radius: 22px; opacity: 0.20; margin: 10px; }
-    &--3 { border-radius: 16px; opacity: 0.40; margin: 19px; }
-    &--4 { border-radius: 12px; opacity: 0.70; margin: 28px; }
+    &--1 {
+      border-radius: 28px;
+      opacity: 0.1;
+      margin: 0;
+    }
+    &--2 {
+      border-radius: 22px;
+      opacity: 0.2;
+      margin: 10px;
+    }
+    &--3 {
+      border-radius: 16px;
+      opacity: 0.4;
+      margin: 19px;
+    }
+    &--4 {
+      border-radius: 12px;
+      opacity: 0.7;
+      margin: 28px;
+    }
   }
 
   &__inner {
@@ -59,12 +75,12 @@
   }
 
   &__title {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 700;
     font-size: clamp(36px, 4.4vw, 56px);
 
     &--italic {
-      font-family: 'Playfair Display', serif;
+      font-family: "Playfair Display", serif;
       font-style: italic;
     }
   }
@@ -77,7 +93,9 @@
 
     p {
       margin: var(--space-m) 0;
-      &:last-child { margin-bottom: 0; }
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
   }
 }

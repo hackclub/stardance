@@ -6,11 +6,13 @@
   position: relative;
   margin-top: 0;
   color: white;
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   overflow: hidden;
 
   // Override the global `* { font-family: Roboto }` from _base.scss.
-  * { font-family: 'Exo 2', sans-serif; }
+  * {
+    font-family: "Exo 2", sans-serif;
+  }
 
   &__scene {
     position: relative;
@@ -37,10 +39,26 @@
       mix-blend-mode: normal;
     }
 
-    &--2 { left: 4.66%;  top: 32.04%; width: 20.38%; }
-    &--3 { left: 76.06%; top: 37.00%; width: 18.31%; }
-    &--4 { left: 68.13%; top: 28.66%; width: 13.08%; }
-    &--1 { left: 10.96%; top: 21.02%; width: 12.93%; }
+    &--2 {
+      left: 4.66%;
+      top: 32.04%;
+      width: 20.38%;
+    }
+    &--3 {
+      left: 76.06%;
+      top: 37%;
+      width: 18.31%;
+    }
+    &--4 {
+      left: 68.13%;
+      top: 28.66%;
+      width: 13.08%;
+    }
+    &--1 {
+      left: 10.96%;
+      top: 21.02%;
+      width: 12.93%;
+    }
   }
 
   &__content {
@@ -90,7 +108,9 @@
     a {
       color: white;
       text-decoration: none;
-      &:hover { text-decoration: underline; }
+      &:hover {
+        text-decoration: underline;
+      }
     }
   }
 
@@ -103,7 +123,9 @@
 
     p {
       margin: 0 0 1em;
-      &:last-child { margin-bottom: 0; }
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
   }
 
@@ -141,10 +163,18 @@
   }
 
   @media (max-width: 900px) {
-    &__top-row { flex-direction: column; }
-    &__links { text-align: left; }
-    &__content { padding: 0 1.5rem clamp(4rem, 10vw, 8rem); }
+    &__top-row {
+      flex-direction: column;
+    }
+    &__links {
+      text-align: left;
+    }
+    &__content {
+      padding: 0 1.5rem clamp(4rem, 10vw, 8rem);
+    }
     &__creature,
-    &__rocket { display: none; }
+    &__rocket {
+      display: none;
+    }
   }
 }

@@ -6,15 +6,19 @@
   align-items: center;
   padding: var(--space-xl) 0 var(--space-l);
   color: white;
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
 
   &__border {
     width: 100%;
     height: auto;
     display: block;
 
-    &--top { margin-bottom: var(--space-xxxxl); }
-    &--bottom { margin-top: var(--space-xxxxl); }
+    &--top {
+      margin-bottom: var(--space-xxxxl);
+    }
+    &--bottom {
+      margin-top: var(--space-xxxxl);
+    }
   }
 
   &__star-artwork {
@@ -28,7 +32,7 @@
   }
 
   &__title {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 700;
     font-size: clamp(36px, 4.4vw, 56px);
     text-align: center;
@@ -36,7 +40,7 @@
   }
 
   &__subtitle {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 400;
     font-size: clamp(16px, 1.7vw, 22px);
     text-align: center;
@@ -66,9 +70,15 @@
     align-items: center;
 
     // Figma widths: 315 / 376 / 349.
-    &:nth-child(1) { flex: 0 1 315px; }
-    &:nth-child(2) { flex: 0 1 376px; }
-    &:nth-child(3) { flex: 0 1 349px; }
+    &:nth-child(1) {
+      flex: 0 1 315px;
+    }
+    &:nth-child(2) {
+      flex: 0 1 376px;
+    }
+    &:nth-child(3) {
+      flex: 0 1 349px;
+    }
   }
 
   &__card-star {
@@ -96,13 +106,13 @@
   }
 
   &__card-number {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 700;
     font-size: clamp(36px, 4.4vw, 56px);
   }
 
   &__card-desc {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 400;
     font-size: clamp(16px, 1.7vw, 22px);
     max-width: 302px;
@@ -114,6 +124,8 @@
       align-items: center;
     }
 
-    &__card { max-width: 100%; }
+    &__card {
+      max-width: 100%;
+    }
   }
 }

@@ -61,7 +61,7 @@ export default class extends Controller {
     const inverse = matrix.inverse();
 
     const pt = inverse.transformPoint(
-      new DOMPoint(e.clientX - cx, e.clientY - cy)
+      new DOMPoint(e.clientX - cx, e.clientY - cy),
     );
 
     const origW = this.element.offsetWidth;

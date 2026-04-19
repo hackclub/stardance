@@ -7,7 +7,7 @@
   color: white;
 
   &__title {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 700;
     font-size: clamp(46px, 5.5vw, 70px);
     text-align: center;
@@ -33,19 +33,27 @@
     cursor: pointer;
     transition: background 0.2s;
 
-    &:first-child { margin-top: 0; }
-    &:hover { background: rgba(255, 255, 255, 0.05); }
+    &:first-child {
+      margin-top: 0;
+    }
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
   }
 
   &__number,
   &__question {
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-weight: 500;
     font-size: clamp(16px, 1.7vw, 22px);
   }
 
-  &__number { min-width: 2em; }
-  &__question { flex: 1; }
+  &__number {
+    min-width: 2em;
+  }
+  &__question {
+    flex: 1;
+  }
 
   &__arrow {
     font-size: 14px;
@@ -59,7 +67,7 @@
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease;
-    font-family: 'Exo 2', sans-serif;
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(14px, 1.4vw, 18px);
     color: rgba(255, 255, 255, 0.75);
     line-height: 1.6;
