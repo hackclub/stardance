@@ -10,7 +10,7 @@ default: &default
       polling_interval: 0.05
     # Default and scheduled jobs
     - queues: "*"
-      threads: 12
+      threads: 2
       processes: <%= ENV.fetch("JOB_CONCURRENCY", 8) %>
       polling_interval: 0.1
 
