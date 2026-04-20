@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-export OPENAPI_GENERATION=1
-export RAILS_ENV="${RAILS_ENV:-test}"
-export PATTERN="${PATTERN:-spec/requests/api/v1/openapi_spec.rb}"
-export ADDITIONAL_RSPEC_OPTS="${ADDITIONAL_RSPEC_OPTS:---require rswag/specs/swagger_formatter}"
-
-exec bundle exec rails rswag:specs:swaggerize "$@"

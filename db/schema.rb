@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_100616) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_103039) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -188,18 +188,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_100616) do
     t.datetime "updated_at", null: false
     t.index ["item_type", "item_id"], name: "index_disco_recommendations_on_item"
     t.index ["subject_type", "subject_id"], name: "index_disco_recommendations_on_subject"
-  end
-
-  create_table "extension_usages", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "project_id", null: false
-    t.datetime "recorded_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["project_id", "recorded_at"], name: "index_extension_usages_on_project_id_and_recorded_at"
-    t.index ["project_id"], name: "index_extension_usages_on_project_id"
-    t.index ["recorded_at"], name: "index_extension_usages_on_recorded_at"
-    t.index ["user_id"], name: "index_extension_usages_on_user_id"
   end
 
   create_table "flavortime_sessions", force: :cascade do |t|
@@ -834,7 +822,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_100616) do
 
   create_table "users", force: :cascade do |t|
     t.string "airtable_record_id"
-    t.string "api_key"
     t.boolean "banned", default: false, null: false
     t.datetime "banned_at"
     t.text "banned_reason"
@@ -883,7 +870,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_100616) do
     t.boolean "voting_locked", default: false, null: false
     t.boolean "ysws_eligible", default: false, null: false
     t.index ["airtable_record_id"], name: "index_users_on_airtable_record_id", unique: true
-    t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["email"], name: "index_users_on_email"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
     t.index ["slack_id"], name: "index_users_on_slack_id", unique: true
@@ -945,8 +931,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_100616) do
   add_foreign_key "comments", "users"
   add_foreign_key "devlog_versions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "users"
-  add_foreign_key "extension_usages", "projects"
-  add_foreign_key "extension_usages", "users"
   add_foreign_key "flavortime_sessions", "users"
   add_foreign_key "fulfillment_payout_lines", "fulfillment_payout_runs"
   add_foreign_key "fulfillment_payout_lines", "users"

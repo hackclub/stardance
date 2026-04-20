@@ -6,7 +6,6 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
   include Pagy::Method
   include Achievementable
-  include ExtensionUsageTrackable
 
   before_action :store_referral_code
   before_action :persist_challenger_source

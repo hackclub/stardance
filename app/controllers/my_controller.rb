@@ -25,24 +25,6 @@ class MyController < ApplicationController
     redirect_back fallback_location: root_path, notice: "Settings saved"
   end
 
-  def roll_api_key
-    current_user.generate_api_key!
-
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "api_key",
-          partial: "users/api_key",
-          locals: { user: current_user, just_generated: true }
-        )
-      end
-
-      format.html do
-        redirect_back fallback_location: root_path, notice: "API key rolled"
-      end
-    end
-  end
-
   def unlink_club
     current_user.update!(club_name: nil, club_link: nil)
     redirect_back fallback_location: root_path, notice: "Club unlinked"

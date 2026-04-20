@@ -8,31 +8,24 @@
       <%= inline_svg "icons/ship.svg" %>
       Gallery
     <% end %>
-    <%= link_to explore_extensions_path, class: "explore__nav-component #{'selected' if current_page?(explore_extensions_path)}" do %>
-      <%= inline_svg "icons/globe2.svg" %>
-      Extensions
-    <% end %>
   </div>
   <div class="explore__nav--type explore__nav--mobile">
     <%= render DropdownComponent.new(
       label: "Section",
       options: [
         { label: "Devlogs", value: explore_index_path },
-        { label: "Gallery", value: explore_gallery_path },
-        { label: "Extensions", value: explore_extensions_path }
+        { label: "Gallery", value: explore_gallery_path }
       ],
       selected_option: (
         if current_page?(explore_index_path)
           "Devlogs"
         elsif current_page?(explore_gallery_path)
           "Gallery"
-        elsif current_page?(explore_extensions_path)
-          "Extensions"
         else
           "Devlogs"
         end
       ),
-      longest_option_string: "Extensions",
+      longest_option_string: "Devlogs",
       color: :brown
     ) %>
   </div>

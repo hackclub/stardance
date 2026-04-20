@@ -89,8 +89,6 @@ Rails.application.routes.draw do
   get "explore", to: "explore#index", as: :explore_index
   get "explore/gallery", to: "explore#gallery", as: :explore_gallery
   get "explore/following", to: "explore#following", as: :explore_following
-  get "explore/extensions", to: "explore#extensions", as: :explore_extensions
-
   # Sidequests (formerly Nibbles)
   get "nibbles", to: redirect("/sidequests")
   resources :sidequests, only: [ :index, :show ]
@@ -142,60 +140,13 @@ Rails.application.routes.draw do
   # My
   get "my/balance", to: "my#balance", as: :my_balance
   patch "my/settings", to: "my#update_settings", as: :my_settings
-  post "my/roll_api_key", to: "my#roll_api_key", as: :roll_api_key
   post "my/cookie_click", to: "my#cookie_click", as: :my_cookie_click
   post "my/dismiss_thing", to: "my#dismiss_thing", as: :dismiss_thing
   delete "my/club", to: "my#unlink_club", as: :my_club
   get "my/achievements", to: "achievements#index", as: :my_achievements
 
-  # API
   namespace :webhooks do
     post "ship_cert", to: "ship_cert#update_status"
-  end
-
-  namespace :api do
-    get "/", to: "root#index"
-
-    namespace :v1 do
-      resources :projects, only: [ :index, :show, :create, :update ] do
-        member do
-          get :ban_status
-        end
-        collection do
-          get :random
-          get :search
-        end
-        resource :report, only: [ :create ], controller: "external_reports"
-        resources :devlogs, only: [ :index ], controller: "project_devlogs"
-      end
-
-      get "docs", to: "docs#index", as: :docs
-      resources :devlogs, only: [ :index, :show ]
-      resources :store, only: [ :index, :show ] do
-        collection do
-          get :search
-        end
-      end
-      resources :users, only: [ :index, :show ] do
-        resources :projects, only: [ :index ], controller: "user_projects"
-      end
-
-      post "flavortime/session", to: "flavortime#create_session"
-      post "flavortime/heartbeat", to: "flavortime#heartbeat"
-      post "flavortime/close", to: "flavortime#close"
-      get "flavortime/active_users", to: "flavortime#active_users"
-
-      namespace :admin do
-        resources :shop_orders, only: [] do
-          collection do
-            get :stats
-            get :leaderboard
-            get :order
-            post :fulfill
-          end
-        end
-      end
-    end
   end
 
   namespace :seller do
@@ -205,10 +156,6 @@ Rails.application.routes.draw do
         post :mark_fulfilled
       end
     end
-  end
-
-  namespace :internal do
-    post "revoke", to: "revoke#create"
   end
 
   namespace :user, path: "" do

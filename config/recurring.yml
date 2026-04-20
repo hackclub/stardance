@@ -88,12 +88,6 @@ production:
   #   concurrency: 1
   #   description: "Sync git commits from project repos to timeline"
 
-  flush_extension_usage:
-    class: FlushExtensionUsageJob
-    schedule: every 2 minutes
-    concurrency: 1
-    description: "Flush extension usage from Redis buffer to database"
-
   recalculate_project_durations:
     class: RecalculateProjectDurationsJob
     schedule: every hour

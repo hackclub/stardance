@@ -212,16 +212,5 @@
       <% end %>
     </div>
 
-    <div class="api-key-section">
-      <label class="settings-form__label">API Key</label>
-
-      <%= turbo_frame_tag "api_key" do %>
-        <%= render "users/api_key", user: current_user %>
-      <% end %>
-
-      <small class="settings-form__hint" style="margin-left: 0;">Your API key for
-        accessing <%= link_to "Stardance API", api_v1_docs_path, target: "_blank", rel: "noopener", class: "api-docs-link" %>
-        . Keep it secret!</small>
-    </div>
   <% end %>
 </aside>

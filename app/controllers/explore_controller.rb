@@ -107,38 +107,4 @@ class ExploreController < ApplicationController
     end
   end
 
-  def extensions
-    min_weekly_users = 2
-    one_week_ago = 1.week.ago
-
-    project_ids_with_usage = ExtensionUsage
-      .where("recorded_at >= ?", one_week_ago)
-      .group(:project_id)
-      .having("COUNT(DISTINCT user_id) >= ?", min_weekly_users)
-      .order(Arel.sql("COUNT(DISTINCT user_id) DESC"))
-      .pluck(:project_id)
-
-    @weekly_user_counts = ExtensionUsage
-      .where(project_id: project_ids_with_usage)
-      .where("recorded_at >= ?", one_week_ago)
-      .group(:project_id)
-      .count("DISTINCT user_id")
-
-    projects = Project
-      .where(id: project_ids_with_usage)
-      .with_attached_banner
-
-    if params[:sort] == "following" && current_user
-      followed_ids = current_user.project_follows.select(:project_id)
-      projects = projects.where(id: followed_ids)
-      @projects_with_counts = projects.order(created_at: :desc)
-    elsif params[:sort] == "top"
-      @projects_with_counts = projects
-        .index_by(&:id)
-        .values_at(*project_ids_with_usage)
-        .compact
-    else
-      @projects_with_counts = projects.order(created_at: :desc)
-    end
-  end
 end

@@ -3,7 +3,6 @@
 # Table name: users
 #
 #  id                                      :bigint           not null, primary key
-#  api_key                                 :string
 #  banned                                  :boolean          default(FALSE), not null
 #  banned_at                               :datetime
 #  banned_reason                           :text
@@ -56,7 +55,6 @@
 # Indexes
 #
 #  index_users_on_airtable_record_id  (airtable_record_id) UNIQUE
-#  index_users_on_api_key             (api_key) UNIQUE
 #  index_users_on_email               (email)
 #  index_users_on_session_token       (session_token) UNIQUE
 #  index_users_on_slack_id            (slack_id) UNIQUE
@@ -399,12 +397,6 @@ class User < ApplicationRecord
   def check_and_award_achievements!
     ::Achievement.all.each do |achievement|
       award_achievement!(achievement.slug)
-    end
-  end
-
-  def generate_api_key!
-    PaperTrail.request(whodunnit: -> { id || "system" }) do
-      update!(api_key: "ft_sk_" + SecureRandom.hex(20))
     end
   end
 

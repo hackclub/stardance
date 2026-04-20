@@ -139,17 +139,6 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       visibility: :secret
     ),
     new(
-      slug: :extension_2_users,
-      name: "Free Sample!",
-      description: "Built an extension that 2+ people are using!",
-      icon: "fork_spoon_fill",
-      earned_check: ->(user) {
-        ExtensionUsage.max_weekly_users_for(user.project_ids) >= 2
-      },
-      progress: ->(user) { { current: ExtensionUsage.max_weekly_users_for(user.project_ids), target: 2 } },
-      cookie_reward: 10
-    ),
-    new(
       slug: :conventional_commit,
       name: "By the Book",
       description: "wrote a commit message following conventional commits",
