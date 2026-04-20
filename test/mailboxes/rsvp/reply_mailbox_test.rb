@@ -109,6 +109,28 @@ class Rsvp::ReplyMailboxTest < ActionMailbox::TestCase
     assert game.move_count >= 2
   end
 
+  test "quoted STOP in the previous email body does not end the game" do
+    rsvp = Rsvp.create!(email: "quoter@example.com")
+    Rsvp::Game.start_for(rsvp).update!(move_count: 4, board: "-OXX--O--")
+
+    receive_inbound_email_from_mail \
+      to: "rsvp@stardance.hackclub.com",
+      from: "quoter@example.com",
+      subject: "Re: tic tac toe",
+      body: <<~BODY
+        5
+
+        On Mon, Apr 20, 2026 at 5:50 AM Stardance <stardance@hackclub.com> wrote:
+        > Your move.
+        > Reply with a number 1-9 for your next cell. Reply STOP to end the game.
+      BODY
+
+    stop_jobs = ActionMailer::Base.deliveries + enqueued_jobs.select do |j|
+      j[:args]&.first == "Rsvp::Mailer" && j[:args]&.second == "tic_tac_toe_stop"
+    end
+    assert_empty stop_jobs
+  end
+
   test "STOP keyword sends the stop email and skips the game" do
     rsvp = Rsvp.create!(email: "quitter@example.com")
 
@@ -122,6 +144,32 @@ class Rsvp::ReplyMailboxTest < ActionMailbox::TestCase
 
     assert_not_nil rsvp.reload.reply_confirmed_at
     assert_nil Rsvp::Game.current_for(rsvp)
+  end
+
+  test "STOP mid-game destroys the in-progress game so the next reply starts fresh" do
+    rsvp = Rsvp.create!(email: "midstop@example.com")
+    Rsvp::Game.start_for(rsvp).update!(move_count: 3, board: "X-O-X----")
+
+    receive_inbound_email_from_mail \
+      to: "rsvp@stardance.hackclub.com",
+      from: "midstop@example.com",
+      subject: "Re: ttt",
+      body: "STOP"
+
+    assert_nil Rsvp::Game.current_for(rsvp)
+  end
+
+  test "digit reply on an already-occupied cell does not enqueue a board email" do
+    rsvp = Rsvp.create!(email: "occupied@example.com")
+    Rsvp::Game.start_for(rsvp).update!(move_count: 2, board: "X-O------")
+
+    assert_no_enqueued_emails do
+      receive_inbound_email_from_mail \
+        to: "rsvp@stardance.hackclub.com",
+        from: "occupied@example.com",
+        subject: "Re: ttt",
+        body: "1"
+    end
   end
 
   test "digit reply on a freshly-started game plays the move instead of resending start" do

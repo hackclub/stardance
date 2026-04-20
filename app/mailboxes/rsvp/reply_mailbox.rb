@@ -10,6 +10,7 @@ class Rsvp::ReplyMailbox < ApplicationMailbox
     persist_reply(rsvp)
 
     if stop_requested?
+      Rsvp::Game.current_for(rsvp)&.destroy
       Rsvp::Mailer.tic_tac_toe_stop(rsvp).deliver_later
     else
       advance_game(rsvp)
@@ -33,21 +34,28 @@ class Rsvp::ReplyMailbox < ApplicationMailbox
 
     if cell.nil? && game.move_count.zero?
       Rsvp::Mailer.tic_tac_toe_start(game).deliver_later
-    else
-      game.play_user_move(cell) if cell
-      mailer_action = game.in_progress? ? :tic_tac_toe_move : :tic_tac_toe_over
-      Rsvp::Mailer.public_send(mailer_action, game).deliver_later
+      return
     end
+
+    result = cell ? game.play_user_move(cell) : nil
+    return if result == :invalid
+
+    mailer_action = game.in_progress? ? :tic_tac_toe_move : :tic_tac_toe_over
+    Rsvp::Mailer.public_send(mailer_action, game).deliver_later
   end
 
   def stop_requested?
-    extract_text_body.to_s.match?(STOP_REGEX)
+    unquoted_body.match?(STOP_REGEX)
   end
 
   def parse_cell(body)
     first_line = (body || "").lines.find { |l| !quoted?(l) && l.strip.match?(/\d/) }
     digit = first_line&.scan(/[1-9]/)&.first
     digit && (digit.to_i - 1)
+  end
+
+  def unquoted_body
+    (extract_text_body || "").lines.reject { |l| quoted?(l) }.join
   end
 
   def quoted?(line)
