@@ -146,3 +146,5 @@ gem "rbtrace", require: String(ENV.fetch("FEATURE_ENABLE_MEMORY_DUMPS", false)) 
 gem "ferret", github: "hackclub/ferret-gem"
 
 gem "neighbor"
+
+gem "email_reply_parser"

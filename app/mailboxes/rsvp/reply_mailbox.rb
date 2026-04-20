@@ -22,7 +22,7 @@ class Rsvp::ReplyMailbox < ApplicationMailbox
   def persist_reply(rsvp)
     rsvp.replies.find_or_create_by!(message_id: mail.message_id) do |reply|
       reply.subject     = mail.subject
-      reply.body_text   = extract_text_body
+      reply.body_text   = plain_body
       reply.body_html   = mail.html_part&.body&.decoded
       reply.received_at = mail.date || Time.current
     end
@@ -30,7 +30,7 @@ class Rsvp::ReplyMailbox < ApplicationMailbox
 
   def advance_game(rsvp)
     game = Rsvp::Game.current_for(rsvp) || Rsvp::Game.start_for(rsvp)
-    cell = parse_cell(extract_text_body)
+    cell = parse_cell
 
     if cell.nil? && game.move_count.zero?
       Rsvp::Mailer.tic_tac_toe_start(game).deliver_later
@@ -45,25 +45,33 @@ class Rsvp::ReplyMailbox < ApplicationMailbox
   end
 
   def stop_requested?
-    unquoted_body.match?(STOP_REGEX)
+    visible_reply.match?(STOP_REGEX)
   end
 
-  def parse_cell(_body)
-    digit = unquoted_body.scan(/[1-9]/).first
+  def parse_cell
+    digit = visible_reply.scan(/[1-9]/).first
     digit && (digit.to_i - 1)
   end
 
-  # strip attribution header
-  def unquoted_body
-    body = (extract_text_body || "").dup
-    body = body.split(/^On .+? wrote:/m, 2).first || body
-    body.lines.reject { |l| l.start_with?(">") }.join
+  def visible_reply
+    EmailReplyParser.parse_reply(plain_body.to_s).to_s.strip
   end
 
-  def extract_text_body
+  def plain_body
     return mail.text_part.body.decoded if mail.text_part
-    return nil if mail.multipart?
+    return sanitize_html(mail.html_part.body.decoded) if mail.html_part
+    return sanitize_html(mail.body.decoded) if mail.content_type.to_s.include?("text/html")
 
     mail.body.decoded
+  end
+
+  def sanitize_html(html)
+    doc = Nokogiri::HTML.fragment(html.to_s)
+    doc.css("blockquote, .gmail_quote, .gmail_attr").each(&:remove)
+    doc.css("br").each { |n| n.replace(Nokogiri::XML::Text.new("\n", doc.document)) }
+    doc.css("div, p, tr, li, h1, h2, h3, h4, h5, h6").each do |node|
+      node.add_next_sibling(Nokogiri::XML::Text.new("\n", doc.document))
+    end
+    doc.text
   end
 end
