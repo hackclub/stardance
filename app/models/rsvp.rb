@@ -31,6 +31,7 @@ class Rsvp < ApplicationRecord
                     format: { with: URI::MailTo::EMAIL_REGEXP }
   before_validation :downcase_email
   after_commit :deliver_signup_confirmation, on: :create
+  after_commit :enqueue_geocode_job, on: :create
 
   def deliver_signup_confirmation
     return if signup_confirmation_sent_at?
@@ -57,4 +58,6 @@ class Rsvp < ApplicationRecord
   def downcase_email
     self.email = email.downcase if email.present?
   end
+
+  def enqueue_geocode_job = RsvpGeocodeJob.perform_later(id)
 end

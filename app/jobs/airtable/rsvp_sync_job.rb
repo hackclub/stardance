@@ -20,7 +20,11 @@ class Airtable::RsvpSyncJob < Airtable::BaseSyncJob
       "reply_confirmed_at" => rsvp.reply_confirmed_at,
       "replies_count" => rsvp.replies.size,
       "synced_at" => Time.now,
-      "star_id" => rsvp.id.to_s
+      "star_id" => rsvp.id.to_s,
+      "geocoded_lat" => rsvp.geocoded_lat,
+      "geocoded_lon" => rsvp.geocoded_lon,
+      "geocoded_country" => rsvp.geocoded_country,
+      "geocoded_subdivision" => rsvp.geocoded_subdivision
     }
   end
 end
