@@ -78,16 +78,31 @@
       right: -9%;
       bottom: 29.4%;
       transform: rotate(-59deg);
+
+      @media (max-width: 600px) {
+  right: -25.9%;
+  bottom: 15.7%;
+      }
     }
     &--airpods {
       left: 15.4%;
       bottom: -6.9%;
       transform: rotate(-0.04deg);
+
+      @media (max-width: 600px) {
+  bottom: -12.5%;
+  left: -7%;
+      }
     }
     &--polaroid {
       left: 28.5%;
       top: -14%;
       transform: rotate(0.44deg);
+
+      @media (max-width: 600px) {
+  top: -28.6%;
+  left: 3.4%;
+      }
     }
     &--flipper {
       left: 23.7%;
@@ -97,6 +112,13 @@
       width: 18%;
       z-index: 2;
       right: -4.2%;
+
+      @media (max-width: 600px) {
+  top: -27.8%;
+  right: 8.8%;
+  bottom: 139.1%;
+  left: 10.7%;
+      }
     }
     &--blahaj {
       left: 8.1%;
@@ -108,11 +130,22 @@
       right: 42.3%;
       bottom: -11.3%;
       transform: rotate(2.56deg);
+
+      @media (max-width: 600px) {
+  right: -2.4%;
+  bottom: -14.3%;
+  transform: rotate(-13.81deg);
+      }
     }
     &--playdate {
       left: 18.1%;
       top: -8.1%;
       transform: rotate(0.93deg);
+
+      @media (max-width: 600px) {
+  top: -15.8%;
+  left: -6.6%;
+      }
     }
   }
 
@@ -294,6 +327,52 @@
       left: 18.2%;
       rotate: 5deg;
       width: 65%;
+    }
+
+    &__item--playdate {
+      top: 20.4%;
+      left: 1.7%;
+      transform: rotate(-3.41deg);
+    }
+
+    &__item--polaroid {
+  top: 24.6%;
+  left: 45.9%;
+    }
+
+    &__item--flipper {
+  top: 60.3%;
+  left: 67.5%;
+  width: 36%;
+    }
+
+    &__item--blahaj {
+  top: 61.7%;
+  left: 32%;
+  width: 56%;
+    }
+
+    &__item-star--blahaj {
+  top: 59.9%;
+  left: 60.6%;
+    }
+
+    &__item--mouse {
+  top: 67.9%;
+  left: 2.5%;
+  width: 32%;
+  transform: rotate(21.89deg);
+    }
+
+    &__item--airpods {
+  top: 41.9%;
+  left: 28.4%;
+    }
+
+    &__item--raspi {
+  top: 36.7%;
+  left: -4.5%;
+  width: 30%;
     }
   }
 }

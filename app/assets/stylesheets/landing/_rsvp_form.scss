@@ -84,4 +84,8 @@
       background: #e0d8a8;
     }
   }
+
+  @media (max-width: 600px) {
+  padding-right: 1rem;
+  }
 }

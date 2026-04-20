@@ -1,4 +1,5 @@
 .heres-how {
+  position: relative;
   background: transparent;
   margin-top: 0;
   padding: var(--space-m) var(--space-xl) var(--space-xxxxl);
@@ -16,10 +17,6 @@
     height: auto;
     pointer-events: none;
     z-index: 0;
-
-    @media (max-width: 900px) {
-      top: -40%;
-    }
   }
 
   &__nebula {
@@ -180,6 +177,11 @@
     &--left {
       left: -17px;
       top: 55%;
+
+      @media (max-width: 600px) {
+  top: 31.1%;
+  left: -17.6px;
+      }
     }
     &--right {
       right: -17px;
@@ -268,5 +270,4 @@
       display: none;
     }
   }
-  position: relative;
 }
