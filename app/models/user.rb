@@ -65,7 +65,6 @@
 #  index_users_on_slack_id            (slack_id) UNIQUE
 #
 class User < ApplicationRecord
-  has_one :user_profile, dependent: :destroy
   has_paper_trail ignore: [ :projects_count, :votes_count, :updated_at, :shop_region ], on: [ :update, :destroy ]
 
   DISMISSIBLE_THINGS = %w[flagship_ad shop_suggestion_box willsbuilds_banner ai_coding_time_ignored_card].freeze

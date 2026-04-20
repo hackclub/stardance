@@ -186,8 +186,4 @@ module ApplicationHelper
     end
   end
 
-  def sanitize_css(css)
-    return "" if css.blank?
-    Sanitize::CSS.stylesheet(css, Sanitize::Config::RELAXED)
-  end
 end

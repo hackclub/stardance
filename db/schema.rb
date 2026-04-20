@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_094048) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_095440) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -827,15 +827,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_094048) do
     t.index ["user_id"], name: "index_user_identities_on_user_id"
   end
 
-  create_table "user_profiles", force: :cascade do |t|
-    t.text "bio"
-    t.datetime "created_at", null: false
-    t.text "custom_css"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["user_id"], name: "index_user_profiles_on_user_id", unique: true
-  end
-
   create_table "user_vote_verdicts", force: :cascade do |t|
     t.datetime "assessed_at"
     t.datetime "created_at", null: false
@@ -1014,7 +1005,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_094048) do
   add_foreign_key "user_hackatime_projects", "projects"
   add_foreign_key "user_hackatime_projects", "users"
   add_foreign_key "user_identities", "users"
-  add_foreign_key "user_profiles", "users"
   add_foreign_key "user_vote_verdicts", "users"
   add_foreign_key "votes", "post_ship_events", column: "ship_event_id"
   add_foreign_key "votes", "projects"
