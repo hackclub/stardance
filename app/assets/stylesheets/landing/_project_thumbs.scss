@@ -4,7 +4,9 @@
   display: flex;
   justify-content: space-evenly;
   align-items: flex-start;
+  gap: var(--space-m);
   width: 100%;
+  overflow-x: clip;
   min-height: 36rem;
   margin-top: -80px;
   z-index: 5;
