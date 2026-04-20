@@ -11,7 +11,6 @@
 #  hackatime_pulled_at             :datetime
 #  lapse_video_processing          :boolean          default(FALSE), not null
 #  likes_count                     :integer          default(0), not null
-#  scrapbook_url                   :string
 #  synced_at                       :datetime
 #  tutorial                        :boolean          default(FALSE), not null
 #  created_at                      :datetime         not null
@@ -83,12 +82,7 @@ class Post::Devlog < ApplicationRecord
             },
             allow_nil: true,
             on: :create
-  validates :body, presence: true, length: { maximum: BODY_MAX_LENGTH }, unless: -> { scrapbook_url.present? }
-  validates :scrapbook_url,
-            uniqueness: { message: "has already been used for another devlog" },
-            allow_blank: true,
-            unless: -> { Rails.env.development? }
-  validate :validate_scrapbook_url, on: :create
+  validates :body, presence: true, length: { maximum: BODY_MAX_LENGTH }
 
   after_create_commit :handle_post_creation
   after_update_commit :update_project_duration_if_changed
@@ -149,22 +143,13 @@ class Post::Devlog < ApplicationRecord
   private
 
   def at_least_one_attachment
-    return if scrapbook_url.present?
     return if uploading_attachments # allow update as long as they're planning to include an attachment
     return if lapse_video_processing?
 
     errors.add(:attachments, "must include at least one image or video") unless attachments.attached?
   end
 
-  def validate_scrapbook_url
-    return if scrapbook_url.blank?
-
-    error_key = ScrapbookService.validate_url(scrapbook_url)
-    errors.add(:scrapbook_url, ScrapbookService::VALIDATION_ERRORS[error_key]) if error_key
-  end
-
   def handle_post_creation
-    ScrapbookPopulateDevlogJob.perform_later(id) if scrapbook_url.present?
     PostCreationToSlackJob.perform_later(self)
   end
 

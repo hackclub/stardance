@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_095440) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_100123) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -348,7 +348,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_095440) do
     t.datetime "hackatime_pulled_at"
     t.boolean "lapse_video_processing", default: false, null: false
     t.integer "likes_count", default: 0, null: false
-    t.string "scrapbook_url"
     t.datetime "synced_at"
     t.boolean "tutorial", default: false, null: false
     t.datetime "updated_at", null: false

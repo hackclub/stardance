@@ -217,7 +217,6 @@ class DuplicatedDevlogsFinder
     {
       has_duplicates: found_duplicates,
       by_body: 0,
-      by_scrapbook_url: 0,
       by_attachments: 0,
       by_body_and_attachments: @duplicates.size
     }

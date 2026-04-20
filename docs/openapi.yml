@@ -96,8 +96,6 @@ components:
           type: integer
         likes_count:
           type: integer
-        scrapbook_url:
-          type: string
         created_at:
           type: string
           format: date-time

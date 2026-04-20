@@ -130,14 +130,6 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       visibility: :secret
     ),
     new(
-      slug: :scrapbook_devlog,
-      name: "Scrapbook usage?!",
-      description: "Used scrapbook in a devlog",
-      icon: "slack",
-      earned_check: ->(user) { Post::Devlog.joins(:post).where(posts: { project_id: user.project_ids }).where.not(scrapbook_url: nil).exists? },
-      visibility: :secret
-    ),
-    new(
       slug: :cooking,
       name: "Cooking",
       description: "Cooked so hard you ended up making a fire project that made our staff very happy!",

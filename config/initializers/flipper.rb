@@ -23,7 +23,6 @@ Rails.application.config.after_initialize do
     Flipper.add(:shop_suggestion_box) unless Flipper.exist?(:shop_suggestion_box)
     Flipper.add(:voting) unless Flipper.exist?(:voting)
     Flipper.add(:admin_dark) unless Flipper.exist?(:admin_dark)
-    Flipper.add(:scrapbook_devlogs) unless Flipper.exist?(:scrapbook_devlogs)
     Flipper.add(:shop_backlogged) unless Flipper.exist?(:shop_backlogged)
     Flipper.add(:kitchen_comic) unless Flipper.exist?(:kitchen_comic)
     Flipper.add(:admin_dark_brown_buttons) unless Flipper.exist?(:admin_dark_brown_buttons)

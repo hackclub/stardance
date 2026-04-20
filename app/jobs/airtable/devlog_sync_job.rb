@@ -10,7 +10,6 @@ class Airtable::DevlogSyncJob < Airtable::BaseSyncJob
       "duration_seconds" => devlog.duration_seconds,
       "likes_count" => devlog.likes_count,
       "comments_count" => devlog.comments_count,
-      "scrapbook_url" => devlog.scrapbook_url,
       "project_id" => post&.project_id&.to_s,
       "user_id" => post&.user_id&.to_s,
       "created_at" => devlog.created_at,

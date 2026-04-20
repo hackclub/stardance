@@ -143,12 +143,6 @@
         <div class="post__body"><%= helpers.md postable.body %></div>
       <% end %>
 
-      <% if scrapbook_url.present? %>
-        <%= link_to scrapbook_url, target: "_blank", rel: "noopener", class: "post__scrapbook-link", title: "View on Slack" do %>
-          <%= helpers.inline_svg_tag "icons/slack.svg", class: "post__scrapbook-icon" %>
-        <% end %>
-      <% end %>
-
       <% if devlog? && postable.lapse_video_processing? %>
         <div class="post__attachments">
           <div class="post__processing-placeholder">

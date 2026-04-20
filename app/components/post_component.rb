@@ -202,11 +202,6 @@ class PostComponent < ViewComponent::Base
     end
   end
 
-  def scrapbook_url
-    return nil unless postable.respond_to?(:scrapbook_url)
-    postable.scrapbook_url
-  end
-
   def variant_class
     "post--#{variant}"
   end

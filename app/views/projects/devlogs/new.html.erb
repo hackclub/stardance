@@ -29,20 +29,7 @@
               ) %>
         </div>
 
-        <% if Flipper.enabled?(:scrapbook_devlogs, current_user) %>
-           <div class="projects-new__field">
-             <%= render InputComponent.new(
-                   label: "Scrapbook URL (optional)",
-                   placeholder: "https://hackclub.slack.com/...",
-                   form: f,
-                   attribute: :scrapbook_url,
-                   color: :blue,
-                   subtitle: "⚠️ If provided, this will replace the devlog text and attachments with the Slack message content."
-                 ) %>
-           </div>
-         <% end %>
-
-         <% if @lapse_timelapses.present? %>
+        <% if @lapse_timelapses.present? %>
            <div class="projects-new__media-row projects-new__media-row--equal-height" data-controller="devlog-attachment-selector">
              <div class="projects-new__field">
                <%= render MediaShellComponent.new(color: :green, subtitle: "Supports images, video, and GIF. Max 50 MB.") do |shell|

@@ -194,7 +194,7 @@ class Projects::DevlogsController < ApplicationController
   end
 
   def devlog_params
-    params.require(:post_devlog).permit(:body, :scrapbook_url, :lapse_timelapse_id, attachments: [])
+    params.require(:post_devlog).permit(:body, :lapse_timelapse_id, attachments: [])
   end
 
   def update_devlog_params
