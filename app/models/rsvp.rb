@@ -6,6 +6,10 @@
 #  click_confirmed_at          :datetime
 #  confirmation_token          :string
 #  email                       :string           not null
+#  geocoded_country            :string
+#  geocoded_lat                :float
+#  geocoded_lon                :float
+#  geocoded_subdivision        :string
 #  ip_address                  :string
 #  ref                         :string
 #  reply_confirmed_at          :datetime
