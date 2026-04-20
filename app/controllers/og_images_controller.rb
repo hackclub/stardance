@@ -7,7 +7,6 @@ class OgImagesController < ApplicationController
     "explore" => -> { OgImage::Explore.new },
     "gallery" => -> { OgImage::Gallery.new },
     "extensions" => -> { OgImage::Extensions.new },
-    "sidequests" => -> { OgImage::Sidequests.new },
     "shop" => -> { OgImage::Shop.new }
   }.freeze
 

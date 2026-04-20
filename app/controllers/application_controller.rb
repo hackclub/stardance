@@ -8,7 +8,6 @@ class ApplicationController < ActionController::Base
   include Achievementable
 
   before_action :store_referral_code
-  before_action :persist_challenger_source
   before_action :enforce_ban
   before_action :refresh_identity_on_portal_return
   before_action :initialize_cache_counters
@@ -83,38 +82,6 @@ class ApplicationController < ActionController::Base
     }
   end
 
-  def persist_challenger_source
-    return unless challenger_source_request?
-
-    cookies[:landing_src] = {
-      value: "challenger",
-      expires: 20.years.from_now,
-      same_site: :lax,
-      secure: Rails.env.production?,
-      httponly: true
-    }
-
-    # Preserve explicit referral links; only default to challenger when unset.
-    return if cookies[:referral_code].present?
-
-    cookies[:referral_code] = {
-      value: "challenger",
-      expires: 20.years.from_now,
-      same_site: :lax,
-      secure: Rails.env.production?,
-      httponly: true
-    }
-  end
-
-  def challenger_source_request?
-    params[:src] == "challenger" || params[:ref] == "challenger" || challenger_host? || challenger_referrer?
-  end
-
-  def challenger_source?
-    params[:src] == "challenger" || params[:ref] == "challenger" || challenger_host? || cookies[:landing_src] == "challenger" || cookies[:referral_code] == "challenger"
-  end
-  helper_method :challenger_source?
-
   def render_not_found
     render file: Rails.root.join("public/404.html"), status: :not_found, layout: false
   end
@@ -139,18 +106,6 @@ class ApplicationController < ActionController::Base
     nil
   rescue URI::InvalidURIError
     nil
-  end
-
-  def challenger_referrer?
-    return false if request.referrer.blank?
-
-    URI.parse(request.referrer).host == "challenger.hackclub.com"
-  rescue URI::InvalidURIError
-    false
-  end
-
-  def challenger_host?
-    request.host == "challenger.hackclub.com"
   end
 
   def handle_invalid_auth_token

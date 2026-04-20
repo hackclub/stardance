@@ -13,9 +13,6 @@ application.register("address-select", AddressSelectController);
 import CardSoundController from "./card_sound_controller";
 application.register("card-sound", CardSoundController);
 
-import ChallengerStarsController from "./challenger_stars_controller";
-application.register("challenger-stars", ChallengerStarsController);
-
 import CookieClickerController from "./cookie_clicker_controller";
 application.register("cookie-clicker", CookieClickerController);
 
@@ -138,12 +135,6 @@ application.register("shop-wishlist", ShopWishlistController);
 
 import SidebarPinController from "./sidebar_pin_controller";
 application.register("sidebar-pin", SidebarPinController);
-
-import SidequestExpandController from "./sidequest_expand_controller";
-application.register("sidequest-expand", SidequestExpandController);
-
-import SidequestSelectorController from "./sidequest_selector_controller";
-application.register("sidequest-selector", SidequestSelectorController);
 
 import SnowController from "./snow_controller";
 application.register("snow", SnowController);

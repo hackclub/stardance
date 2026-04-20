@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_103039) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_110833) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -729,33 +729,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_103039) do
     t.index ["payout_given_by_id"], name: "index_show_and_tell_payout_records_on_payout_given_by_id"
   end
 
-  create_table "sidequest_entries", force: :cascade do |t|
-    t.string "aasm_state", default: "pending", null: false
-    t.datetime "created_at", null: false
-    t.boolean "is_rejection_fee_charged", default: false, null: false
-    t.bigint "project_id", null: false
-    t.text "rejection_message"
-    t.datetime "reviewed_at"
-    t.bigint "reviewed_by_id"
-    t.bigint "sidequest_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["aasm_state"], name: "index_sidequest_entries_on_aasm_state"
-    t.index ["project_id"], name: "index_sidequest_entries_on_project_id"
-    t.index ["reviewed_by_id"], name: "index_sidequest_entries_on_reviewed_by_id"
-    t.index ["sidequest_id"], name: "index_sidequest_entries_on_sidequest_id"
-  end
-
-  create_table "sidequests", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "description"
-    t.datetime "expires_at"
-    t.string "external_page_link"
-    t.string "slug", null: false
-    t.string "title", null: false
-    t.datetime "updated_at", null: false
-    t.index ["slug"], name: "index_sidequests_on_slug", unique: true
-  end
-
   create_table "support_vibes", force: :cascade do |t|
     t.jsonb "concern_message_links"
     t.jsonb "concern_messages"
@@ -974,9 +947,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_103039) do
   add_foreign_key "show_and_tell_attendances", "users"
   add_foreign_key "show_and_tell_attendances", "users", column: "payout_given_by_id"
   add_foreign_key "show_and_tell_payout_records", "users", column: "payout_given_by_id"
-  add_foreign_key "sidequest_entries", "projects"
-  add_foreign_key "sidequest_entries", "sidequests"
-  add_foreign_key "sidequest_entries", "users", column: "reviewed_by_id"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_hackatime_projects", "projects"
   add_foreign_key "user_hackatime_projects", "users"

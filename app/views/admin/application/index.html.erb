@@ -28,17 +28,6 @@
       <% end %>
     <% end %>
   <% end %>
-  <% if policy(:admin).process_sidequest_entry? %>
-  <% pending_sidequests = SidequestEntry.pending.joins(project: :ship_events).distinct.count %>
-  <%= link_to "/admin/sidequest_entries", class: button_class do %>
-    Sidequest Entries
-    <% if pending_sidequests > 0 %>
-      <span style="background-color: #8b5cf6; color: white; border-radius: 9999px; padding: 0px 6px; font-size: 0.9em; min-width: 20px; text-align: center;">
-        <%= pending_sidequests %>
-      </span>
-    <% end %>
-  <% end %>
-  <% end %>
   <% if policy(:admin).access_shop_orders? %>
     <% pending_count = ShopOrder.where(aasm_state: 'pending').size %>
     <% on_hold_count = ShopOrder.where(aasm_state: 'on_hold').size %>

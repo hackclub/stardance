@@ -27,17 +27,11 @@
         <th>Title</th>
         <th>Description</th>
         <th>Status</th>
-        <th>Sidequest</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% @projects.each do |p| %>
-        <% sidequest_status = if p.sidequest_entries.empty?
-          "Not submitted (the user would have needed to click a sidequest when shipping)"
-        else
-          p.sidequest_entries.sort_by {|entry| entry.sidequest.title}.map {|entry| "#{entry.sidequest.title} (#{entry.aasm_state.titleize})"}.join(", ")
-        end %>
         <tr>
           <td><%= p.id %></td>
           <td><%= p.title %></td>
@@ -49,7 +43,6 @@
               <span class="badge badge-success">Active</span>
             <% end %>
           </td>
-          <td><%= sidequest_status %></td>
           <td><%= link_to "View", helper_project_path(p), class: "btn-primary slim" %></td>
         </tr>
       <% end %>

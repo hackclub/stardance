@@ -4,7 +4,7 @@ class AdminPolicy < ApplicationPolicy
   end
 
   def index?
-    user.admin? || user.fraud_dept? || user.sidequest_reviewer? || user.shop_manager?
+    user.admin? || user.fraud_dept? || user.shop_manager?
   end
 
   def access_blazer?
@@ -53,10 +53,6 @@ class AdminPolicy < ApplicationPolicy
 
   def access_fulfillment_view?
     user.admin? || user.fulfillment_person?
-  end
-
-  def process_sidequest_entry?
-    user.admin? || user.sidequest_reviewer?
   end
 
   def assign_shop_order?

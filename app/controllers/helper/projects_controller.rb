@@ -19,13 +19,12 @@ module Helper
         p = p.where("title ILIKE ? OR description ILIKE ?", q, q)
       end
 
-      p = p.includes(sidequest_entries: :sidequest)
       @pagy, @projects = pagy(:offset, p.order(:id))
     end
 
     def show
       authorize :helper, :view_projects?
-      @project = Project.unscoped.includes(sidequest_entries: :sidequest).find(params[:id])
+      @project = Project.unscoped.find(params[:id])
       @ship_events = @project.ship_events.includes(:votes).order(created_at: :desc)
     end
 

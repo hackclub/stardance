@@ -86,7 +86,6 @@
 #
 class ShopItem < ApplicationRecord
   has_paper_trail
-  self.ignored_columns += %w[requires_sidequest_entry sidequest_id sidequest_approval_required]
 
   include Shop::Regionalizable
 

@@ -25,12 +25,6 @@
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
-  <url>
-    <loc><%= sidequests_url %></loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
   <% @projects.find_each do |project| %>
   <url>
     <loc><%= project_url(project) %></loc>
@@ -46,15 +40,6 @@
     <lastmod><%= user.updated_at.strftime("%Y-%m-%d") %></lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
-  </url>
-  <% end %>
-
-  <% @sidequests.each do |sidequest| %>
-  <url>
-    <loc><%= sidequest_url(sidequest) %></loc>
-    <lastmod><%= sidequest.updated_at.strftime("%Y-%m-%d") %></lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
   </url>
   <% end %>
 </urlset>

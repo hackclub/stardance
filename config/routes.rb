@@ -13,7 +13,6 @@ class AdminConstraint
     # Allow admins, fraud dept, and fulfillment persons (who have limited access)
     policy.access_admin_endpoints? ||
       policy.access_fulfillment_view? ||
-      policy.process_sidequest_entry? ||
       (request.path == "/admin/flavortime_dashboard" && policy.access_flavortime_dashboard?) ||
       (request.path == "/admin/time_loss" && policy.access_time_loss_dashboard?)
   end
@@ -89,12 +88,6 @@ Rails.application.routes.draw do
   get "explore", to: "explore#index", as: :explore_index
   get "explore/gallery", to: "explore#gallery", as: :explore_gallery
   get "explore/following", to: "explore#following", as: :explore_following
-  # Sidequests (formerly Nibbles)
-  get "nibbles", to: redirect("/sidequests")
-  resources :sidequests, only: [ :index, :show ]
-  get "sidequests/:id/dash", to: "sidequests/lockin#dash", constraints: { id: "lockin" }, as: :dash_sidequest
-
-
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
@@ -259,13 +252,6 @@ Rails.application.routes.draw do
       member do
         post :dismiss
         post :disable_for_user
-      end
-    end
-    resources :sidequest_entries, only: [ :index, :show ] do
-      member do
-        post :approve
-        post :reject
-        post :undo
       end
     end
     resources :special_activities, only: [ :index, :create ] do

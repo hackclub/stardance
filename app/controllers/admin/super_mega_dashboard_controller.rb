@@ -25,7 +25,6 @@ module Admin
       super_mega_support_vibes
       super_mega_support_graph
       super_mega_voting
-      super_mega_sidequests
       super_mega_ysws_review_v2
       super_mega_ship_certs_raw
       sw_vibes_data
@@ -48,8 +47,7 @@ module Admin
       "ysws_review"        => { loaders: %i[load_ysws_review_stats],      partial: "admin/super_mega_dashboard/sections/ysws_review" },
       "voting"             => { loaders: %i[load_voting_stats],           partial: "admin/super_mega_dashboard/sections/voting" },
       "community"          => { loaders: %i[load_community_engagement_stats], partial: "admin/super_mega_dashboard/sections/community" },
-      "pyramid_flavortime" => { loaders: %i[load_flavortime_summary load_pyramid_scheme_stats], partial: "admin/super_mega_dashboard/sections/pyramid_flavortime" },
-      "sidequests"         => { loaders: %i[load_sidequest_stats],        partial: "admin/super_mega_dashboard/sections/sidequests" }
+      "pyramid_flavortime" => { loaders: %i[load_flavortime_summary load_pyramid_scheme_stats], partial: "admin/super_mega_dashboard/sections/pyramid_flavortime" }
     }.freeze
 
     def index

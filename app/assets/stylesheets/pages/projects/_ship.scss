@@ -222,31 +222,6 @@
     font-weight: 500;
   }
 
-  &__sidequest-info {
-    margin-top: var(--space-m);
-    padding: var(--space-m);
-    background: var(--color-blue-200);
-    border: 1px solid var(--color-blue-400);
-    border-radius: var(--border-radius-sm, 4px);
-  }
-
-  &__sidequest-message {
-    margin: 0;
-    color: var(--color-blue-700);
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  &__sidequest-link {
-    color: var(--color-blue-700);
-    text-decoration: underline;
-    font-weight: 600;
-
-    &:hover {
-      filter: brightness(0.9);
-    }
-  }
-
   &__error {
     margin: 0;
     color: var(--color-red-500);

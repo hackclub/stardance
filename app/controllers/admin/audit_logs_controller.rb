@@ -86,7 +86,6 @@ module Admin
       "Like" => "Like",
       "Rsvp" => "Rsvp",
       "FunnelEvent" => "FunnelEvent",
-      "SidequestEntry" => "SidequestEntry",
       "FulfillmentPayoutRun" => "FulfillmentPayoutRun"
     }.freeze
 

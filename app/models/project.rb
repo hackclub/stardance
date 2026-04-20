@@ -40,12 +40,7 @@ class Project < ApplicationRecord
 
   has_ferret_search :title, :description
 
-  SPACE_THEMED_PREFIX = "Space Themed:".freeze
-
   has_paper_trail
-
-  has_many :sidequest_entries, dependent: :destroy
-  has_many :sidequests, through: :sidequest_entries
 
   after_create :notify_slack_channel
 
@@ -180,16 +175,8 @@ class Project < ApplicationRecord
     deleted_at.present?
   end
 
-  def space_themed?
-    description.to_s.lstrip.start_with?(SPACE_THEMED_PREFIX)
-  end
-
-  def description_without_space_theme_prefix
-    description.to_s.sub(/\A\s*#{Regexp.escape(SPACE_THEMED_PREFIX)}\s*/, "")
-  end
-
   def display_description
-    description_without_space_theme_prefix
+    description.to_s
   end
 
   def hackatime_keys

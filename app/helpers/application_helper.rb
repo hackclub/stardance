@@ -123,46 +123,6 @@ module ApplicationHelper
     "#{counts[:signed_in]} signed in, #{counts[:anonymous]} visitors"
   end
 
-  def challenger_mission_state(user = current_user)
-    return :not_started unless user
-
-    space_projects = user.projects.where("LTRIM(projects.description) LIKE ?", "#{Project::SPACE_THEMED_PREFIX}%")
-    return :accomplished if space_projects.joins(:ship_events).where(post_ship_events: { certification_status: "approved" }).exists?
-    return :in_progress if space_projects.exists?
-
-    :not_started
-  end
-
-  def challenger_mission_project(user = current_user)
-    return nil unless user
-
-    user.projects
-        .where("LTRIM(projects.description) LIKE ?", "#{Project::SPACE_THEMED_PREFIX}%")
-        .order(updated_at: :desc)
-        .first
-  end
-
-  def challenger_mission_cta_text(user = current_user)
-    case challenger_mission_state(user)
-    when :accomplished
-      "Mission Accomplished"
-    when :in_progress
-      "Mission In Progress"
-    else
-      "Accept Mission"
-    end
-  end
-
-  def challenger_mission_cta_href(user = current_user, fallback: nil)
-    mission_project = challenger_mission_project(user)
-
-    if challenger_mission_state(user) == :in_progress && mission_project.present?
-      project_path(mission_project)
-    else
-      fallback || new_project_path(mission: "challenger")
-    end
-  end
-
   private
 
   def find_achievement_asset(icon_name)

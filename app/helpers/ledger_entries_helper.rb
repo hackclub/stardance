@@ -13,8 +13,6 @@ module LedgerEntriesHelper
       end
     when ShopOrder
       link_to entry.reason, shop_my_orders_path, data: { turbo_frame: "_top" }
-    when SidequestEntry
-      link_to entry.reason, sidequest_path(entry.ledgerable.sidequest), data: { turbo_frame: "_top" }
     else
       entry.reason
     end

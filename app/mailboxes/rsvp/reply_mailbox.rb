@@ -53,9 +53,7 @@ class Rsvp::ReplyMailbox < ApplicationMailbox
     digit && (digit.to_i - 1)
   end
 
-  # The user's own reply, stripped of the Gmail-style "On ... wrote:"
-  # attribution header (which may wrap across lines when the sender is long)
-  # and any `>`-prefixed quoted lines that follow.
+  # strip attribution header
   def unquoted_body
     body = (extract_text_body || "").dup
     body = body.split(/^On .+? wrote:/m, 2).first || body

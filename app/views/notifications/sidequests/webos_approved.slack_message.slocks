@@ -1,5 +1,0 @@
-header "🎉 webOS Sidequest Complete!"
-
-section "Your project *#{entry.project.title}* has been approved for the webOS sidequest!", markdown: true
-
-section "You've unlocked the *Sidequest: webOS* achievement and can now purchase webOS prizes in the shop.", markdown: true

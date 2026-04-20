@@ -16,14 +16,6 @@
       <div><b>Description:</b> <%= @project.description.presence || "None" %></div>
       <div><b>Has Banner:</b> <%= @project.banner.present? ? "Yes" : "No" %></div>
       <div><b>Ship Status:</b> <%= @project.ship_status.titleize %></div>
-      <% if @project.sidequest_entries.any? %>
-        <div>
-          <b>Sidequests:</b>
-          <%= @project.sidequest_entries.map { |entry| "#{entry.sidequest.title} (#{entry.aasm_state.titleize})" }.join(", ") %>
-        </div>
-      <% else %>
-        <div><b>Sidequests:</b> Not submitted</div>
-      <% end %>
       <div><b>Devlog Count:</b> <%= @project.devlogs.count %></div>
       <div><b>Time Spent: </b> <%= distance_of_time_in_words(@project.duration_seconds) %></div>
       <% if @project.ai_declaration.present? %>

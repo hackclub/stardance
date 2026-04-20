@@ -1,5 +1,0 @@
-header "🎉 Chrome Extension Sidequest Complete!"
-
-section "Your project *#{entry.project.title}* has been approved for the Extensions sidequest!", markdown: true
-
-section "You've unlocked the *Sidequest: Extensions* achievement and can now purchase the Chrome Developer License in the shop.", markdown: true

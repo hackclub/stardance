@@ -161,20 +161,6 @@
     </div>
   <% end %>
 
-  <% if challenger_source? %>
-    <div class="kitchen-verification-notice kitchen-verification-notice--compact kitchen-verification-notice--wide">
-      <%= render StateCardComponent.new(
-        title: "Challenger Center Space Challenge",
-        description: "Ship a space-related project by April 30th! Submit it to this sidequest to qualify for space-themed prizes in the shop.",
-        variant: :space,
-        badge_text: "Mission Deadline: April 30th",
-        icon: "rocket",
-        cta_text: challenger_mission_cta_text,
-        cta_href: challenger_mission_cta_href(fallback: sidequests_path(anchor: "challenger-center"))
-      ) %>
-    </div>
-  <% end %>
-
   <% if current_user&.banned? %>
     <div class="banned-banner">
       <div class="banned-banner__content">
