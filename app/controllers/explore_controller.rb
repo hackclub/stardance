@@ -4,7 +4,6 @@ class ExploreController < ApplicationController
                 .where(post_devlogs: { tutorial: false })
                 .where.not(user_id: current_user&.id)
                 .joins(:user)
-                .where(users: { shadow_banned: false })
                 .includes(:user, :project)
                 .preload(:postable)
 
@@ -43,7 +42,6 @@ class ExploreController < ApplicationController
     scope = Project.with_banner_priority
                    .where(tutorial: false)
                    .excluding_member(current_user)
-                   .excluding_shadow_banned
 
     scope = scope.fire if params[:sort] == "well-cooked"
 

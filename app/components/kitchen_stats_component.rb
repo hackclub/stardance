@@ -79,10 +79,6 @@ class KitchenStatsComponent < ApplicationComponent
 
     scope = User.where(leaderboard_optin: true)
 
-    unless @user.shadow_banned?
-      scope = scope.where(shadow_banned: false)
-    end
-
     scope.where("(SELECT COALESCE(SUM(amount), 0) FROM ledger_entries WHERE user_id = users.id) > ?", @user.balance)
          .count + 1
   end

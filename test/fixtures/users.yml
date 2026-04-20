@@ -37,9 +37,6 @@
 #  send_notifications_for_new_followers    :boolean          default(TRUE), not null
 #  send_votes_to_slack                     :boolean          default(FALSE), not null
 #  session_token                           :string
-#  shadow_banned                           :boolean          default(FALSE), not null
-#  shadow_banned_at                        :datetime
-#  shadow_banned_reason                    :text
 #  shop_region                             :enum
 #  slack_balance_notifications             :boolean          default(FALSE), not null
 #  slack_messages_updated_at               :datetime

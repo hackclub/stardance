@@ -17,8 +17,6 @@ class ShipEventPayoutCalculator
     project = @ship_event.post&.project
     return unless project
 
-    is_shadow_banned = project.shadow_banned?
-
     unless payout_eligible?
       if payout_user.vote_balance < 0
         notify_vote_deficit(payout_user, payout_user.vote_balance.abs)
@@ -32,14 +30,10 @@ class ShipEventPayoutCalculator
       hours_used = base_hours
       return if hours_used <= 0
 
-      if is_shadow_banned
-        hourly_rate = lowest_dollar_per_hour
-      else
-        percentile = @ship_event.overall_percentile
-        return if percentile.nil?
+      percentile = @ship_event.overall_percentile
+      return if percentile.nil?
 
-        hourly_rate = dollars_per_hour_for_percentile(percentile)
-      end
+      hourly_rate = dollars_per_hour_for_percentile(percentile)
 
       return if hourly_rate <= 0
 
@@ -85,7 +79,7 @@ class ShipEventPayoutCalculator
       end
 
       notify_payout_issued(payout_user, cookies: cookies, hours: payout_hours, multiplier: mult, blessing: blessing)
-      broadcast_payout(payout_user, cookies, payout_hours, mult, is_shadow_banned)
+      broadcast_payout(payout_user, cookies, payout_hours, mult)
     end
   end
 
@@ -93,7 +87,7 @@ class ShipEventPayoutCalculator
 
   BROADCAST_CHANNEL_ID = "C0AFB0JU00P"
 
-  def broadcast_payout(user, cookies, hours, multiplier, shadow_banned)
+  def broadcast_payout(user, cookies, hours, multiplier)
     project = @ship_event.post&.project
     SendSlackDmJob.perform_later(
       BROADCAST_CHANNEL_ID,
@@ -105,8 +99,7 @@ class ShipEventPayoutCalculator
         recipient_name: user.display_name,
         cookies: cookies,
         hours: hours&.round(2),
-        multiplier: multiplier&.round(2),
-        shadow_banned: shadow_banned
+        multiplier: multiplier&.round(2)
       }
     )
   end
@@ -175,32 +168,22 @@ class ShipEventPayoutCalculator
     return unless user.slack_id.present?
 
     project = @ship_event.post&.project
-    if project&.shadow_banned?
-      reason = project.shadow_banned_reason
-      parts = []
-      parts << "Hey! After review, your project won't be going into voting this time."
-      parts << "Reason: #{reason}" if reason.present?
-      parts << "We've issued a minimum payout for your work on this ship."
-      parts << "If you have questions, reach out in #flavortown-help. Keep building — you can ship again anytime!"
-      SendSlackDmJob.perform_later(user.slack_id, parts.join("\n\n"))
-    else
-      ship_date = @ship_event.post&.created_at&.strftime("%b %-d, %Y")
-      project_title = project&.title || "Ship ##{@ship_event.id}"
+    ship_date = @ship_event.post&.created_at&.strftime("%b %-d, %Y")
+    project_title = project&.title || "Ship ##{@ship_event.id}"
 
-      SendSlackDmJob.perform_later(
-        user.slack_id,
-        nil,
-        blocks_path: "notifications/payouts/ship_event_issued",
-        locals: {
-          project_title: project_title,
-          ship_date: ship_date,
-          hours: hours&.round(2),
-          cookies: cookies&.to_i,
-          multiplier: multiplier&.round(2),
-          blessing: blessing
-        }
-      )
-    end
+    SendSlackDmJob.perform_later(
+      user.slack_id,
+      nil,
+      blocks_path: "notifications/payouts/ship_event_issued",
+      locals: {
+        project_title: project_title,
+        ship_date: ship_date,
+        hours: hours&.round(2),
+        cookies: cookies&.to_i,
+        multiplier: multiplier&.round(2),
+        blessing: blessing
+      }
+    )
   end
 
   def notify_vote_deficit(user, votes_needed)

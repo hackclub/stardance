@@ -91,10 +91,6 @@ class AdminPolicy < ApplicationPolicy
     user.admin? || user.fraud_dept?
   end
 
-  def shadow_ban_projects?
-    user.admin? || user.fraud_dept?
-  end
-
   def access_super_mega_dashboard?
     user.admin?
   end

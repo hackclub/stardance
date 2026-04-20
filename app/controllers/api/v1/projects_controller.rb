@@ -5,7 +5,7 @@ class Api::V1::ProjectsController < Api::BaseController
     limit = params.fetch(:limit, 100).to_i
     return render json: { error: "Limit must be between 1 and 100" }, status: :bad_request if limit < 1 || limit > 100
 
-    projects = Project.where(deleted_at: nil).excluding_shadow_banned.includes(:devlogs)
+    projects = Project.where(deleted_at: nil).includes(:devlogs)
 
     if params[:query].present?
       q = "%#{ActiveRecord::Base.sanitize_sql_like(params[:query])}%"
@@ -21,7 +21,7 @@ class Api::V1::ProjectsController < Api::BaseController
   def random
     count = (params[:count] || 1).to_i.clamp(1, 50)
 
-    projects = Project.where(deleted_at: nil).excluding_shadow_banned.includes(:devlogs)
+    projects = Project.where(deleted_at: nil).includes(:devlogs)
     projects = projects.where(ship_status: :approved) if ActiveModel::Type::Boolean.new.cast(params[:approved])
     projects = projects.where.not(shipped_at: nil) if ActiveModel::Type::Boolean.new.cast(params[:shipped])
     projects = projects.where.associated(:banner_attachment) if ActiveModel::Type::Boolean.new.cast(params[:has_banner])
@@ -38,7 +38,7 @@ class Api::V1::ProjectsController < Api::BaseController
     return render json: { error: "Limit must be between 1 and 50" }, status: :bad_request if limit < 1 || limit > 50
 
     @results = Project.ferret_search(params[:q], limit: limit)
-    @results = @results.select { |p| p.deleted_at.nil? && !p.shadow_banned? }
+    @results = @results.select { |p| p.deleted_at.nil? }
   end
 
   def show

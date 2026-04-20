@@ -2,37 +2,33 @@
 #
 # Table name: projects
 #
-#  id                   :bigint           not null, primary key
-#  ai_declaration       :text
-#  deleted_at           :datetime
-#  demo_url             :text
-#  description          :text
-#  devlogs_count        :integer          default(0), not null
-#  duration_seconds     :integer          default(0), not null
-#  marked_fire_at       :datetime
-#  memberships_count    :integer          default(0), not null
-#  project_categories   :string           default([]), is an Array
-#  project_type         :string
-#  readme_url           :text
-#  repo_url             :text
-#  shadow_banned        :boolean          default(FALSE), not null
-#  shadow_banned_at     :datetime
-#  shadow_banned_reason :text
-#  ship_status          :string           default("draft")
-#  shipped_at           :datetime
-#  synced_at            :datetime
-#  title                :string           not null
-#  tutorial             :boolean          default(FALSE), not null
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#  fire_letter_id       :string
-#  marked_fire_by_id    :bigint
+#  id                 :bigint           not null, primary key
+#  ai_declaration     :text
+#  deleted_at         :datetime
+#  demo_url           :text
+#  description        :text
+#  devlogs_count      :integer          default(0), not null
+#  duration_seconds   :integer          default(0), not null
+#  marked_fire_at     :datetime
+#  memberships_count  :integer          default(0), not null
+#  project_categories :string           default([]), is an Array
+#  project_type       :string
+#  readme_url         :text
+#  repo_url           :text
+#  ship_status        :string           default("draft")
+#  shipped_at         :datetime
+#  synced_at          :datetime
+#  title              :string           not null
+#  tutorial           :boolean          default(FALSE), not null
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
+#  fire_letter_id     :string
+#  marked_fire_by_id  :bigint
 #
 # Indexes
 #
 #  index_projects_on_deleted_at         (deleted_at)
 #  index_projects_on_marked_fire_by_id  (marked_fire_by_id)
-#  index_projects_on_shadow_banned      (shadow_banned)
 #
 # Foreign Keys
 #
@@ -71,23 +67,6 @@ class Project < ApplicationRecord
       .includes(banner_attachment: :blob)
       .order(ActiveStorage::Attachment.arel_table[:id].eq(nil).asc)
   }
-  scope :excluding_shadow_banned, -> { where(shadow_banned: false) }
-  scope :visible_to, ->(viewer) {
-    if viewer&.shadow_banned?
-      # Shadow-banned users see all projects (so they don't know they're banned)
-      all
-    elsif viewer
-      # Regular users see non-shadow-banned projects + their own projects
-      left_joins(memberships: :user)
-        .where(shadow_banned: false)
-        .where(memberships: { users: { shadow_banned: false } })
-        .or(left_joins(memberships: :user).where(memberships: { user_id: viewer.id }))
-        .distinct
-    else
-      excluding_shadow_banned
-    end
-  }
-
   belongs_to :marked_fire_by, class_name: "User", optional: true
 
   has_many :memberships, class_name: "Project::Membership", dependent: :destroy
@@ -259,13 +238,6 @@ class Project < ApplicationRecord
   def shipping_requirements
     [
       {
-        key: :not_shadow_banned,
-        label: "Your project must not be flagged by moderation",
-        fail_label: "Your project has been flagged by moderation and cannot be shipped!",
-        tooltip: "Your project has been reviewed by moderation and is ineligible to ship. Contact support if you think this is a mistake.",
-        passed: !shadow_banned?
-      },
-      {
         key: :demo_url,
         label: "Add a demo link so anyone can try your project",
         tooltip: "A live URL where anyone can try your project, e.g. a deployed web app or a video demo.",
@@ -395,14 +367,6 @@ class Project < ApplicationRecord
 
   def unmark_fire!
     update!(marked_fire_at: nil, marked_fire_by: nil)
-  end
-
-  def shadow_ban!(reason: nil)
-    update!(shadow_banned: true, shadow_banned_at: Time.current, shadow_banned_reason: reason)
-  end
-
-  def unshadow_ban!
-    update!(shadow_banned: false, shadow_banned_at: nil, shadow_banned_reason: nil)
   end
 
   def readme_is_raw_github_url?

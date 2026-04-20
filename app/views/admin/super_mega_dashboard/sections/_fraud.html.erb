@@ -212,13 +212,12 @@
                   var raw = <%= raw @fraud_ban_trend_data.to_json %>;
                   var sortedDates = Object.keys(raw).sort();
                   var tableData = sortedDates.map(function(d) {
-                    return { date: new Date(d), bans: raw[d].bans, unbans: raw[d].unbans, shadow_bans: raw[d].shadow_bans || 0 };
+                    return { date: new Date(d), bans: raw[d].bans, unbans: raw[d].unbans };
                   });
 
                   var seriesConfig = [
                     { key: 'bans', label: 'Bans', color: '#ef4444' },
-                    { key: 'unbans', label: 'Unbans', color: '#10b981' },
-                    { key: 'shadow_bans', label: 'Shadow Bans', color: '#8b5cf6' }
+                    { key: 'unbans', label: 'Unbans', color: '#10b981' }
                   ];
 
                   var container = document.getElementById('banTrendContainer');
@@ -564,10 +563,6 @@
                 <div class="fraud-stats-grid__row">
                   <span class="fraud-stats-grid__label">Banned</span>
                   <span class="fraud-stats-grid__value fraud-stats-grid__value--red"><%= @fraud_bans[:banned] %><span class="fraud-stats-grid__pct">(<%= @fraud_bans[:banned_pct] %>%)</span></span>
-                </div>
-                <div class="fraud-stats-grid__row">
-                  <span class="fraud-stats-grid__label">Shadow Banned (Projects)</span>
-                  <span class="fraud-stats-grid__value fraud-stats-grid__value--purple"><%= @fraud_bans[:shadow_banned_users] %><span class="fraud-stats-grid__pct">(<%= @fraud_bans[:shadow_banned_pct] %>%)</span></span>
                 </div>
                 <div class="fraud-stats-grid__row">
                   <span class="fraud-stats-grid__label">Unbanned</span>

@@ -262,8 +262,6 @@ Rails.application.routes.draw do
          post :ban
          post :unban
          post :cancel_all_hcb_grants
-         post :shadow_ban
-         post :unshadow_ban
          post :impersonate
          post :refresh_verification
          post :toggle_voting_lock
@@ -279,8 +277,6 @@ Rails.application.routes.draw do
       member do
         post :restore
         post :delete
-        post :shadow_ban
-        post :unshadow_ban
         post :update_ship_status
         post :force_state
         get  :votes

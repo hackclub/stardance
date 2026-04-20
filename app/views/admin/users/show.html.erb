@@ -13,18 +13,6 @@
   </div>
 <% end %>
 
-<% if @user.shadow_banned? %>
-  <div class="alert alert--danger" style="margin-bottom: 1rem;">
-    <strong>👻 This user is shadow banned</strong>
-    <% if @user.shadow_banned_reason.present? %>
-      <br>Reason: <%= @user.shadow_banned_reason %>
-    <% end %>
-    <% if @user.shadow_banned_at.present? %>
-      <br>Shadow banned at: <%= @user.shadow_banned_at.strftime("%Y-%m-%d %H:%M") %>
-    <% end %>
-  </div>
-<% end %>
-
 <div class="flex">
   <div class="card">
     <h2>Basic info</h2>
@@ -276,27 +264,6 @@
       <% end %>
 
       <% if policy(:admin).ban_users? %>
-        <% if @user.shadow_banned? %>
-          <%= button_to "👁️ Remove Shadow Ban", unshadow_ban_admin_user_path(@user), method: :post, class: "btn-primary slim", form: { onsubmit: "return confirm(#{("Are you sure you want to remove the shadow ban from #{@user.display_name}?").to_json})" } %>
-        <% else %>
-          <button type="button" onclick="document.getElementById('shadow-ban-modal').showModal()" class="btn-secondary slim">
-            👻 Shadow Ban
-          </button>
-          <%= render layout: "shared/modal", locals: { id: "shadow-ban-modal", title: "Shadow Ban User", description: "This will hide #{@user.display_name}'s projects from voting, explore, and API without notifying them." } do %>
-            <form action="<%= shadow_ban_admin_user_path(@user) %>" method="post">
-              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-              <div class="modal__field">
-                <%= label_tag :reason, "Shadow Ban Reason (optional)" %>
-                <%= text_area_tag :reason, "", placeholder: "Enter reason for shadow ban..." %>
-              </div>
-              <div class="modal__actions">
-                <button type="submit" class="btn-secondary slim">Confirm Shadow Ban</button>
-                <button type="button" onclick="document.getElementById('shadow-ban-modal').close()" class="btn-secondary slim">Cancel</button>
-              </div>
-            </form>
-          <% end %>
-        <% end %>
-
         <% if @user.banned? %>
           <%= button_to "🔓 Unban User", unban_admin_user_path(@user), method: :post, class: "btn-primary slim", form: { onsubmit: "return confirm(#{("Are you sure you want to unban #{@user.display_name}?").to_json})" } %>
         <% else %>

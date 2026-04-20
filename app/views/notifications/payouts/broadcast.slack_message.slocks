@@ -1,1 +1,1 @@
-section ":ft-cookie: *Payout issued* · <@U05F4B48GBF>\n<#{project_url}|#{project_title}> by #{recipient_name} · #{cookies} cookies · #{hours}h × #{multiplier} cookies/hr#{shadow_banned ? ' :no_entry_sign: shadow banned' : ''}", markdown: true
+section ":ft-cookie: *Payout issued* · <@U05F4B48GBF>\n<#{project_url}|#{project_title}> by #{recipient_name} · #{cookies} cookies · #{hours}h × #{multiplier} cookies/hr", markdown: true

@@ -2,37 +2,33 @@
 #
 # Table name: projects
 #
-#  id                   :bigint           not null, primary key
-#  ai_declaration       :text
-#  deleted_at           :datetime
-#  demo_url             :text
-#  description          :text
-#  devlogs_count        :integer          default(0), not null
-#  duration_seconds     :integer          default(0), not null
-#  marked_fire_at       :datetime
-#  memberships_count    :integer          default(0), not null
-#  project_categories   :string           default([]), is an Array
-#  project_type         :string
-#  readme_url           :text
-#  repo_url             :text
-#  shadow_banned        :boolean          default(FALSE), not null
-#  shadow_banned_at     :datetime
-#  shadow_banned_reason :text
-#  ship_status          :string           default("draft")
-#  shipped_at           :datetime
-#  synced_at            :datetime
-#  title                :string           not null
-#  tutorial             :boolean          default(FALSE), not null
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#  fire_letter_id       :string
-#  marked_fire_by_id    :bigint
+#  id                 :bigint           not null, primary key
+#  ai_declaration     :text
+#  deleted_at         :datetime
+#  demo_url           :text
+#  description        :text
+#  devlogs_count      :integer          default(0), not null
+#  duration_seconds   :integer          default(0), not null
+#  marked_fire_at     :datetime
+#  memberships_count  :integer          default(0), not null
+#  project_categories :string           default([]), is an Array
+#  project_type       :string
+#  readme_url         :text
+#  repo_url           :text
+#  ship_status        :string           default("draft")
+#  shipped_at         :datetime
+#  synced_at          :datetime
+#  title              :string           not null
+#  tutorial           :boolean          default(FALSE), not null
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
+#  fire_letter_id     :string
+#  marked_fire_by_id  :bigint
 #
 # Indexes
 #
 #  index_projects_on_deleted_at         (deleted_at)
 #  index_projects_on_marked_fire_by_id  (marked_fire_by_id)
-#  index_projects_on_shadow_banned      (shadow_banned)
 #
 # Foreign Keys
 #

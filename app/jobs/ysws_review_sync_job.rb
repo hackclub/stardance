@@ -194,13 +194,9 @@ class YswsReviewSyncJob < ApplicationJob
 
     hours_spent = adjusted_hours || (total_approved_minutes / 60.0)
     user_pii = extract_user_pii(user)
-    if user.shadow_banned? || user.banned?
+    if user.banned?
       @rejected_project = true
-      if user.shadow_banned?
-        report_status = "shadow_banned"
-      else
-        report_status = "banned"
-      end
+      report_status = "banned"
     else
       report_status = ""
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_100123) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_20_100616) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -490,9 +490,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_100123) do
     t.string "project_type"
     t.text "readme_url"
     t.text "repo_url"
-    t.boolean "shadow_banned", default: false, null: false
-    t.datetime "shadow_banned_at"
-    t.text "shadow_banned_reason"
     t.string "ship_status", default: "draft"
     t.datetime "shipped_at"
     t.datetime "synced_at"
@@ -501,7 +498,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_100123) do
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_projects_on_deleted_at"
     t.index ["marked_fire_by_id"], name: "index_projects_on_marked_fire_by_id"
-    t.index ["shadow_banned"], name: "index_projects_on_shadow_banned"
   end
 
   create_table "report_review_tokens", force: :cascade do |t|
@@ -871,9 +867,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_100123) do
     t.boolean "send_notifications_for_new_followers", default: true, null: false
     t.boolean "send_votes_to_slack", default: false, null: false
     t.string "session_token"
-    t.boolean "shadow_banned", default: false, null: false
-    t.datetime "shadow_banned_at"
-    t.text "shadow_banned_reason"
     t.enum "shop_region", enum_type: "shop_region_type"
     t.boolean "slack_balance_notifications", default: false, null: false
     t.string "slack_id"

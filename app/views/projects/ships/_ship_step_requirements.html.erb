@@ -5,13 +5,6 @@
       Make sure your project meets these requirements to qualify for a payout.
     </p>
 
-    <% if @project.shadow_banned? %>
-      <p class="projects-ship__requirements-error">
-        Your project has been flagged by moderation and cannot be shipped.
-        If you wish to appeal this decision, contact Fraud Squad on Slack.
-      </p>
-    <% end %>
-
     <div class="projects-ship__validations">
       <% @project.visual_shipping_requirements.each do |validation| %>
         <div class="projects-ship__validation <%= 'projects-ship__validation--passed' if validation[:passed] %>">

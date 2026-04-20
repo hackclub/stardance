@@ -59,24 +59,12 @@
         <span class="fraud-stat__value"><%= b[:banned] %></span>
         <span class="fraud-stat__label">Total Banned</span>
       </div>
-      <div class="fraud-stat fraud-stat--purple">
-        <span class="fraud-stat__value"><%= b[:shadow_banned_users] %></span>
-        <span class="fraud-stat__label">Shadow Banned Users</span>
-      </div>
-      <div class="fraud-stat fraud-stat--purple">
-        <span class="fraud-stat__value"><%= b[:shadow_banned_projects] %></span>
-        <span class="fraud-stat__label">Shadow Banned Projects</span>
-      </div>
     </div>
     <h3>Today's Activity</h3>
     <table class="fraud-table">
       <tbody>
         <tr><td>Bans</td><td class="fraud-danger"><strong><%= b[:bans_today] %></strong></td></tr>
         <tr><td>Unbans</td><td class="fraud-success"><strong><%= b[:unbans_today] %></strong></td></tr>
-        <tr><td>User Shadow Bans</td><td><strong><%= b[:shadow_bans_today] %></strong></td></tr>
-        <tr><td>User Unshadow Bans</td><td><strong><%= b[:unshadow_bans_today] %></strong></td></tr>
-        <tr><td>Project Shadow Bans</td><td><strong><%= b[:project_shadow_today] %></strong></td></tr>
-        <tr><td>Project Unshadow Bans</td><td><strong><%= b[:project_unshadow_today] %></strong></td></tr>
       </tbody>
     </table>
   </div>

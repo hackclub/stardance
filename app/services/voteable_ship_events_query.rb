@@ -9,10 +9,8 @@ class VoteableShipEventsQuery
 
   def call
     Post::ShipEvent
-      .joins(:project, :project_members)
+      .joins(:project)
       .where(certification_status: "approved")
-      .where(projects: { shadow_banned: false })
-      .where(project_members: { shadow_banned: false })
       .where.not(id: @user.votes.select(:ship_event_id))
       .where.not(projects: { id: @user.projects.select(:id) })
       .where.not(projects: { id: @user.project_skips.select(:project_id) })

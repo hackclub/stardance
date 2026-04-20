@@ -7,7 +7,7 @@ class ShipEventPayoutCalculatorJob < ApplicationJob
       .joins(post: :project)
       .where(certification_status: "approved", payout: nil)
       .find_each do |ship_event|
-        next unless ship_event.votes.payout_countable.count >= Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT || ship_event.project.shadow_banned?
+        next unless ship_event.votes.payout_countable.count >= Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
 
         ShipEventPayoutCalculator.apply!(ship_event)
       end

@@ -8,18 +8,6 @@
   </div>
 <% end %>
 
-<% if @project.shadow_banned? %>
-  <div class="alert" style="margin-bottom: 1rem; padding: 1rem; background: #f59e0b; color: #000; border-radius: 8px;">
-    <strong>👻 This project is shadow banned</strong>
-    <span style="margin-left: 0.5rem;">Since: <%= @project.shadow_banned_at&.strftime("%Y-%m-%d %H:%M") %></span>
-    <% if @project.shadow_banned_reason.present? %>
-      <div style="margin-top: 0.5rem; font-size: 0.875rem;">
-        <strong>Reason:</strong> <%= @project.shadow_banned_reason %>
-      </div>
-    <% end %>
-  </div>
-<% end %>
-
 <div class="flex" style="gap: 1rem; flex-wrap: wrap;">
   <div class="card">
     <h2>Details</h2>
@@ -103,58 +91,6 @@
       data: { confirm: "Are you sure you want to delete this project?" } %>
   <% end %>
 
-  <% if policy(:admin).shadow_ban_projects? %>
-    <% if @project.shadow_banned? %>
-      <%= button_to "👁️ Remove Shadow Ban", unshadow_ban_admin_project_path(@project),
-        method: :post,
-        class: "btn-primary",
-        data: { confirm: "Remove shadow ban from this project?" } %>
-    <% else %>
-      <button type="button" onclick="document.getElementById('shadow-ban-project-modal').showModal()" class="btn-secondary">
-        👻 Shadow Ban
-      </button>
-      <%= render layout: "shared/modal", locals: { id: "shadow-ban-project-modal", title: "Shadow Ban Project", description: "This project will be hidden from other users but visible to its members. A notification will be sent via Slack DM to all project members." } do %>
-        <form action="<%= shadow_ban_admin_project_path(@project) %>" method="post">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-
-          <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
-            <p style="margin: 0 0 8px 0; font-weight: bold; color: #856404;">⚠️ DM will be sent to all project members:</p>
-            <div style="background: white; border-radius: 4px; padding: 10px; font-size: 12px; line-height: 1.6; color: #333; font-family: monospace;">
-              <p style="margin: 0 0 8px 0;">Hey! After review, your project "<%= @project.title %>" has been flagged by moderation.</p>
-              <p style="margin: 0 0 8px 0;">Reason: <span id="shadow-ban-reason-preview"></span></p>
-              <p style="margin: 0 0 8px 0;">Your project will not be able to ship again until this flag is removed.</p>
-              <p style="margin: 0 0 8px 0;">We've issued a minimum payout for your work on this ship.</p>
-              <p style="margin: 0;">If you'd like to appeal this decision, please DM @Fraud Squad with any additional context.</p>
-            </div>
-          </div>
-
-          <div class="modal__field">
-            <%= label_tag :reason, "Shadow Ban Reason (optional)" %>
-            <%= text_area_tag :reason, "", placeholder: "Enter reason for shadow ban...", id: "shadow-ban-reason-input" %>
-          </div>
-          <div class="modal__actions">
-            <button type="submit" class="btn-secondary">Confirm Shadow Ban</button>
-            <button type="button" onclick="document.getElementById('shadow-ban-project-modal').close()" class="btn-secondary">Cancel</button>
-          </div>
-        </form>
-
-        <script>
-          const reasonInput = document.getElementById('shadow-ban-reason-input');
-          const reasonPreview = document.getElementById('shadow-ban-reason-preview');
-
-          reasonInput.addEventListener('input', function() {
-            reasonPreview.textContent = this.value || '[reason you provide]';
-          });
-
-          reasonInput.addEventListener('focus', function() {
-            if (!this.value) {
-              reasonPreview.textContent = '[reason you provide]';
-            }
-          });
-        </script>
-      <% end %>
-    <% end %>
-  <% end %>
 </div>
 
 <%= render layout: "shared/modal", locals: { id: "change-ship-status-modal", title: "Change Ship Status", description: "Override the ship status for this project. This bypasses AASM transitions and is logged to PaperTrail." } do %>

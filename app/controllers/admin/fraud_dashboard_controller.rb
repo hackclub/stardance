@@ -30,28 +30,19 @@ module Admin
       # Single query for ban stats
       ban_stats_sql = <<~SQL
         SELECT
-          COUNT(*) FILTER (WHERE banned = true) AS banned_count,
-          COUNT(*) FILTER (WHERE shadow_banned = true) AS shadow_banned_count
+          COUNT(*) FILTER (WHERE banned = true) AS banned_count
         FROM users
-        WHERE banned = true OR shadow_banned = true
+        WHERE banned = true
       SQL
       bs = ActiveRecord::Base.connection.select_one(ban_stats_sql)
-
-      shadow_project_count = Project.where(shadow_banned: true).count
 
       # Single query for all version-based ban changes today
       ban_changes = batch_changes_count(today)
 
       @bans = {
         banned: bs["banned_count"].to_i,
-        shadow_banned_users: bs["shadow_banned_count"].to_i,
-        shadow_banned_projects: shadow_project_count,
         bans_today: ban_changes.dig("User", "banned", "true") || 0,
-        unbans_today: ban_changes.dig("User", "banned", "false") || 0,
-        shadow_bans_today: ban_changes.dig("User", "shadow_banned", "true") || 0,
-        unshadow_bans_today: ban_changes.dig("User", "shadow_banned", "false") || 0,
-        project_shadow_today: ban_changes.dig("Project", "shadow_banned", "true") || 0,
-        project_unshadow_today: ban_changes.dig("Project", "shadow_banned", "false") || 0
+        unbans_today: ban_changes.dig("User", "banned", "false") || 0
       }
 
       # Single query for order stats
@@ -132,19 +123,13 @@ module Admin
     def batch_changes_count(today)
       sql = PaperTrail::Version.sanitize_sql_array([
         "SELECT item_type,
-                CASE
-                  WHEN jsonb_exists(object_changes, 'banned') THEN 'banned'
-                  WHEN jsonb_exists(object_changes, 'shadow_banned') THEN 'shadow_banned'
-                END AS field,
-                CASE
-                  WHEN jsonb_exists(object_changes, 'banned') THEN object_changes -> 'banned' ->> 1
-                  WHEN jsonb_exists(object_changes, 'shadow_banned') THEN object_changes -> 'shadow_banned' ->> 1
-                END AS new_value,
+                'banned' AS field,
+                object_changes -> 'banned' ->> 1 AS new_value,
                 COUNT(*) AS cnt
          FROM versions
          WHERE item_type IN ('User', 'Project')
            AND created_at >= ? AND created_at <= ?
-           AND (jsonb_exists(object_changes, 'banned') OR jsonb_exists(object_changes, 'shadow_banned'))
+           AND jsonb_exists(object_changes, 'banned')
          GROUP BY item_type, field, new_value",
         today.begin, today.end
       ])

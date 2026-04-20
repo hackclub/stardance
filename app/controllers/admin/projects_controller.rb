@@ -59,67 +59,6 @@ class Admin::ProjectsController < Admin::ApplicationController
     end
   end
 
-  def shadow_ban
-    authorize :admin, :shadow_ban_projects?
-    @project = Project.unscoped.find(params[:id])
-
-    reason = params[:reason].presence
-    issued_min_payout = false
-
-    ActiveRecord::Base.transaction do
-      # Issue minimum payout if no payout exists for latest ship
-      ship = @project.ship_events.order(:created_at).last
-      if ship.present? && ship.payout.blank?
-        hours = ship.hours
-        game_constants = Rails.configuration.game_constants
-        hourly_rate = game_constants.lowest_dollar_per_hour.to_f
-        tickets_per_dollar = game_constants.tickets_per_dollar.to_f
-
-        # Calculate cookies (same logic as ShipEventPayoutCalculator)
-        cookies = (hours * hourly_rate * tickets_per_dollar).round
-        mult = (hourly_rate * tickets_per_dollar).round(6)
-
-        payout_user = @project.memberships.owner.first&.user
-        if cookies > 0 && payout_user
-          # Update ship event fields to mark it as paid
-          ship.update!(payout: cookies, multiplier: mult, hours: hours)
-
-          # Create ledger entry
-          payout_user.ledger_entries.create!(
-            amount: cookies,
-            reason: "Ship event payout: #{@project.title}",
-            created_by: "ship_event_payout",
-            ledgerable: ship
-          )
-          issued_min_payout = true
-        end
-      end
-
-      @project.shadow_ban!(reason: reason)
-    end
-    # Resolve all pending reports on the project
-    @project.reports.pending.update_all(
-      status: Project::Report.statuses[:reviewed],
-      updated_at: Time.current
-    )
-
-    # Send DM notification
-    @project.memberships.each do |member|
-      next unless member.user&.slack_id.present?
-
-      parts = []
-      parts << "Hey! After review, your project \"#{@project.title}\" has been flagged by moderation."
-      parts << "Reason: #{reason}" if reason.present?
-      parts << "Your project will not be able to ship again until this flag is removed."
-      parts << "We've issued a minimum payout for your work on this ship." if issued_min_payout
-      parts << "If you'd like to appeal this decision, please DM @Fraud Squad with any additional context."
-      SendSlackDmJob.perform_later(member.user.slack_id, parts.join("\n\n"))
-    end
-    log_to_user_audit(@project, "shadow_banned", reason)
-
-    redirect_to admin_project_path(@project), notice: "Project has been shadow banned#{issued_min_payout ? ' and minimum payout issued' : ''}."
-  end
-
   def update_ship_status
     authorize :admin, :manage_projects?
     @project = Project.unscoped.find(params[:id])
@@ -177,43 +116,5 @@ class Admin::ProjectsController < Admin::ApplicationController
     )
 
     redirect_to admin_project_path(@project), notice: "State forced from #{old_state} to #{new_state}."
-  end
-
-  def unshadow_ban
-    authorize :admin, :shadow_ban_projects?
-    @project = Project.unscoped.find(params[:id])
-
-    @project.unshadow_ban!
-
-    log_to_user_audit(@project, "unshadow_banned", nil)
-
-    redirect_to admin_project_path(@project), notice: "Project shadow ban has been removed."
-  end
-
-  private
-
-  def log_to_user_audit(project, action, reason)
-    PaperTrail::Version.create!(
-      item_type: "Project",
-      item_id: project.id,
-      event: action,
-      whodunnit: current_user.id.to_s,
-      object_changes: {
-        action: [ nil, action ],
-        reason: [ nil, reason ]
-      }
-    )
-
-    project.users.each do |user|
-      PaperTrail::Version.create!(
-        item_type: "User",
-        item_id: user.id,
-        event: "update",
-        whodunnit: current_user.id.to_s,
-        object_changes: {
-          project_shadow_ban: [ action, { project_id: project.id, project_title: project.title, reason: reason } ]
-        }
-      )
-    end
   end
 end

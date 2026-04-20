@@ -93,12 +93,6 @@
           <span class="report-detail-label">Members</span>
           <span><%= @report.project.users.map(&:display_name).join(", ") %></span>
         </div>
-        <% if @report.project.shadow_banned? %>
-          <div class="report-detail-row">
-            <span class="report-detail-label">⚠️ Status</span>
-            <span class="badge badge-reason-fraud">Shadow Banned</span>
-          </div>
-        <% end %>
       </div>
 
       <% if @report.project.description.present? %>

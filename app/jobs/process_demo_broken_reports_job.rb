@@ -17,7 +17,7 @@ class ProcessDemoBrokenReportsJob < ApplicationJob
       reports = project.reports
 
       # 1. Auto-resolve reports for missing / banned users
-      if user.nil? || user.banned? || user.shadow_banned?
+      if user.nil? || user.banned?
         resolve_reports!(reports.pending)
         next
       end
