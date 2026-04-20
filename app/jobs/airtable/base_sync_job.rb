@@ -1,6 +1,6 @@
 class Airtable::BaseSyncJob < ApplicationJob
   queue_as :literally_whenever
-  notify_maintainers_on_exhaustion Norairrecord::Error, maintainers_slack_ids: [ "U07L45W79E1" ], wait: :polynomially_longer, attempts: 3
+  notify_maintainers_on_exhaustion Norairrecord::Error, maintainers_slack_ids: [ "U05F4B48GBF" ], wait: :polynomially_longer, attempts: 3
 
   def self.perform_later(*args)
     return if SolidQueue::Job.where(class_name: name, finished_at: nil).exists?
