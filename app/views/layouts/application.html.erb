@@ -13,7 +13,7 @@
     <meta property="og:site_name" content="Stardance - Hack Club">
 
     <% og_title = content_for?(:og_title) ? yield(:og_title) : (content_for?(:title) ? "#{yield(:title)} - Stardance" : "Stardance - Hack Club") %>
-    <% og_description = content_for?(:og_description) ? yield(:og_description) : "Build projects, earn Stardust, get prizes. A Hack Club program for teen coders." %>
+    <% og_description = content_for?(:og_description) ? yield(:og_description) : "The largest STEM event of the summer: make anything you want and earn free prizes." %>
     <% og_image = content_for?(:og_image) ? yield(:og_image) : image_url("landing/space/moon-opp.png") %>
     <% og_url = content_for?(:og_url) ? yield(:og_url) : request.original_url %>
     <% twitter_card = content_for?(:twitter_card) ? yield(:twitter_card) : "summary" %>

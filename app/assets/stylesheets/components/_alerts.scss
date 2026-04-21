@@ -1,7 +1,10 @@
 .alert {
-  padding: var(--space-s);
+  --alert-bg: var(--color-green-400);
+  --alert-fg: var(--color-bg);
+
+  padding: var(--space-s) var(--space-l);
   margin: var(--space-m);
-  border-radius: calc(1.2 * var(--border-radius));
+  border-radius: 5px 0 5px 0;
   display: flex;
   align-items: center;
   gap: var(--space-m);
@@ -11,34 +14,65 @@
   transition:
     opacity 180ms ease,
     transform 180ms ease;
-  background-color: var(--color-green-400);
+  background-color: var(--alert-bg);
   background-image: url("mask/title.avif");
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  color: var(--color-bg);
-  font-size: var(--font-size-xl);
+  background-blend-mode: multiply;
+  color: var(--alert-fg);
+  font-size: var(--font-size-l);
   position: relative;
 
   &.alert-success {
-    background-color: var(--color-green-400);
+    --alert-bg: var(--color-green-400);
   }
 
   &.alert-error {
-    background-color: var(--color-red-400);
+    --alert-bg: var(--color-red-400);
   }
 
   &.alert-info {
-    background-color: var(--color-blue-400);
+    --alert-bg: var(--color-blue-400);
+  }
+
+  &.alert-warning {
+    --alert-bg: var(--color-yellow-400);
+  }
+
+  .alert__star {
+    position: absolute;
+    pointer-events: none;
+    width: auto;
+    image-rendering: pixelated;
+
+    &--left {
+      top: -1.55rem;
+      height: 3.75rem;
+      right: -1.65rem;
+    }
+
+    &--right {
+      top: 0.9rem;
+      right: -0.5rem;
+      height: 5.5rem;
+      left: -1.5rem;
+    }
   }
 
   .alert__icon {
     display: inline-flex;
     flex: 0 0 auto;
-    color: var(--color-bg);
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--alert-fg);
+    color: var(--alert-bg);
     svg {
-      width: 1.1rem;
-      height: 1.1rem;
+      width: 1.15rem;
+      height: 1.15rem;
       fill: currentColor;
       display: block;
     }
@@ -46,17 +80,19 @@
 
   .alert__content {
     flex: 1 1 auto;
+    text-align: center;
   }
 
   .alert__close {
     appearance: none;
     background: transparent;
     border: 0;
-    color: var(--color-bg);
+    color: var(--alert-fg);
     cursor: pointer;
     padding: var(--space-xxs);
     border-radius: var(--border-radius);
     line-height: 0;
+    flex: 0 0 auto;
     transition:
       background-color 120ms ease,
       color 120ms ease;
@@ -70,7 +106,7 @@
     &:hover,
     &:focus-visible {
       background-color: rgba(255, 255, 255, 0.15);
-      color: var(--color-bg);
+      color: var(--alert-fg);
       outline: none;
     }
   }

@@ -57,7 +57,7 @@
     position: absolute;
     font-family: "Exo 2", sans-serif;
     font-style: italic;
-    font-size: clamp(10px, 1.15vw, 18px);
+    font-size: clamp(13px, 1.15vw, 18px);
     color: #eee7bb;
     white-space: nowrap;
     pointer-events: none;
@@ -317,7 +317,7 @@
     }
 
     &__label {
-      font-size: 13px;
+      font-size: 14px;
     }
   }
 

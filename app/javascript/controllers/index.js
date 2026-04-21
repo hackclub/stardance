@@ -19,6 +19,9 @@ application.register("cookie-clicker", CookieClickerController);
 import CopyDebugController from "./copy_debug_controller";
 application.register("copy-debug", CopyDebugController);
 
+import RevealOnScrollController from "./reveal_on_scroll_controller";
+application.register("reveal-on-scroll", RevealOnScrollController);
+
 import CustomsWarningController from "./customs_warning_controller";
 application.register("customs-warning", CustomsWarningController);
 
@@ -57,6 +60,9 @@ application.register("hcb-chart", HcbChartController);
 
 import HelloController from "./hello_controller";
 application.register("hello", HelloController);
+
+import HeroWarpController from "./hero_warp_controller";
+application.register("hero-warp", HeroWarpController);
 
 import JsonHighlightController from "./json_highlight_controller";
 application.register("json-highlight", JsonHighlightController);

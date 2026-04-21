@@ -9,6 +9,10 @@
   padding: 0;
   margin-bottom: 5rem;
 
+  @media (max-width: 600px) {
+    margin-bottom: 0;
+  }
+
   .rsvp-container {
     position: relative;
     z-index: 1;
@@ -64,7 +68,7 @@
   font-family: "Exo 2", sans-serif;
   font-size: clamp(22px, 2.4vw, 52px);
   font-weight: 700;
-  color: white;
+  color: #E2E2E2;
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
   margin: 0 0 0.2em;
 
@@ -101,7 +105,10 @@
     font-family: "Playfair Display", serif;
     font-style: italic;
     font-weight: 700;
-    display: inline;
+    display: inline-block;
+    transform-origin: center bottom;
+    animation: hero-italic-drift 9s ease-in-out 2800ms infinite;
+    will-change: transform;
   }
 
   @media (max-width: 600px) {
@@ -116,13 +123,14 @@
       min-width: 0;
       overflow-wrap: anywhere;
     }
+    margin-bottom: 0;
   }
 }
 
 .hero__subhead {
   font-family: "Exo 2", sans-serif;
   font-size: clamp(15px, 1.4vw, 28px);
-  color: white;
+  color: #E2E2E2;
   text-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   margin: 0 0 3.25em;
   line-height: 1.4;
@@ -154,6 +162,25 @@
   text-align: left;
 }
 
+.hero__dev-login {
+  margin-top: 0.6em;
+}
+
+.hero__dev-login-btn {
+  font-family: "Exo 2", sans-serif;
+  font-size: 14px;
+  color: #E2E2E2;
+  background: transparent;
+  border: 1px dashed rgba(226, 226, 226, 0.5);
+  padding: 0.35em 0.75em;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(226, 226, 226, 0.1);
+  }
+}
+
 // Wrapper that lets the left-gradient span header + hero.
 .hero-header-wrapper {
   position: relative;
@@ -177,6 +204,7 @@
 
 // NASA hero photo — right side of hero.
 .hero__nasa-photo {
+  --nasa-opacity: 1;
   position: absolute;
   right: 0;
   top: 22%;
@@ -188,6 +216,7 @@
   mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
   will-change: transform;
+  opacity: var(--nasa-opacity);
 
   &-img {
     display: block;
@@ -197,13 +226,13 @@
   }
 
   @media (max-width: 900px) {
+    --nasa-opacity: 0.6;
     width: 55%;
-    opacity: 0.6;
   }
 
   @media (max-width: 600px) {
+    --nasa-opacity: 0.4;
     width: 70%;
-    opacity: 0.4;
   }
 }
 
@@ -254,3 +283,21 @@
     left: 84.6%;
   }
 }
+
+// Very slight ambient sway on the italic "makers" word. Amplitude is kept
+// tiny on purpose — it should register as "alive" in peripheral vision
+// without ever feeling animated.
+@keyframes hero-italic-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  35%      { transform: translateY(-1.2px) rotate(-0.35deg) scale(1.01); }
+  70%      { transform: translateY(0.6px) rotate(0.3deg) scale(0.995); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__headline--italic,
+  span.hero__headline--italic {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+

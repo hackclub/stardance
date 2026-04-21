@@ -82,9 +82,7 @@
 
   &__card {
     position: relative;
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: #120b26;
     border: 2px solid #ffffff;
     border-radius: 8px;
     padding: var(--space-xl) var(--space-xxl);
@@ -262,7 +260,13 @@
       height: auto;
       min-height: 180px;
 
-      &--peek {
+      // Hide the left peek; keep the right peek (card--3) as a compact
+      // bookend so the star motif and cascading intent survive on mobile.
+      &--peek.heres-how__card--0 {
+        display: none;
+      }
+
+      &--peek.heres-how__card--3 {
         display: none;
       }
     }

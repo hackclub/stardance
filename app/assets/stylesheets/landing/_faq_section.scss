@@ -72,5 +72,16 @@
     color: rgba(255, 255, 255, 0.75);
     line-height: 1.6;
     text-align: left;
+
+    a {
+      color: #eee7bb;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      transition: color 120ms ease;
+
+      &:hover {
+        color: #fff;
+      }
+    }
   }
 }

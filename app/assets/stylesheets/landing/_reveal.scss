@@ -1,0 +1,28 @@
+// Gentle rise+fade when a section element enters the viewport. The
+// reveal-on-scroll controller tags elements with `.reveal` at connect time
+// and flips them to `.is-revealed` on intersection.
+//
+// Intentionally short and small-amplitude — it should feel like the page
+// is settling, not performing.
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 680ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 680ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.is-revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

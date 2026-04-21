@@ -5,7 +5,9 @@
   <div class="rsvp-container">
     <p class="hero__eyebrow">By <%= link_to "Hack Club", "https://hackclub.com", target: "_blank", rel: "noopener" %>. For teens (13–18).</p>
     <h1 class="hero__headline"><span>Calling all coders,</span><span>builders, and <span class="hero__headline--italic">makers</span></span></h1>
-    <p class="hero__subhead">The largest STEM challenge of the summer: make anything you want and win free prizes.</p>
+    <p class="hero__subhead">The largest STEM event of the summer: make anything you want and earn free prizes.
+<br /><br />
+Stardance Challenge begins on <strong>June 1</strong>.</p>
 
     <div class="rsvp-form">
       <%= form_with url: rsvps_path, scope: :rsvp, method: :post, local: true do |form| %>
@@ -13,7 +15,7 @@
           <%= image_tag image_url("landing/hero/doodle-arrow.png"), class: "hero__doodle-arrow", alt: "" %>
           <div class="input-red">
             <div>
-              <%= form.email_field :email, placeholder: "Enter your email...", autocomplete: "off", required: true %>
+              <%= form.email_field :email, placeholder: "Enter your email...", autocomplete: "email", required: true %>
             </div>
           </div>
 
@@ -22,11 +24,15 @@
           <% end %>
         </div>
       <% end %>
-      <p class="hero__caption">For all teens aged 13–18.</p>
+      <p class="hero__caption">For all teens aged 13–18, anywhere in the world.</p>
+      <% if Rails.env.development? && current_user.blank? %>
+        <%= button_to "dev login", dev_login_auto_path, method: :get, form_class: "hero__dev-login", class: "hero__dev-login-btn" %>
+      <% end %>
     </div>
   </div>
 
   <div class="hero__nasa-photo" data-parallax-target="layer" data-speed="0.2">
     <%= image_tag image_url("landing/hero/nasa-hero.png"), loading: "eager", fetchpriority: "high", alt: "NASA Orion spacecraft", class: "hero__nasa-photo-img" %>
   </div>
+
 </div>

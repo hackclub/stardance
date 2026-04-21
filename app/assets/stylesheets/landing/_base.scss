@@ -1,10 +1,12 @@
-// Page-wide solid background — higher specificity to override body bg.
-html,
-html body {
+// Page-wide solid background lives on <html>. Body is intentionally
+// transparent so the fixed ambient starfield canvas (z-index: -1) paints
+// on top of the page bg rather than behind an opaque body box.
+html {
   background: #08061e !important;
 }
 
 html body {
+  background: transparent !important;
   min-height: 100vh;
 }
 

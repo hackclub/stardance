@@ -183,9 +183,22 @@
     &__scene {
       position: relative;
     }
-    &__creature,
+    &__creature--left {
+      width: 56px;
+      left: -18px;
+      bottom: auto;
+      top: 4px;
+      opacity: 0.4;
+    }
+    &__creature--right {
+      width: 72px;
+      left: auto;
+      right: 8px;
+      bottom: 30%;
+      opacity: 0.18;
+    }
     &__rocket {
-      display: none;
+      width: clamp(180px, 52vw, 280px);
     }
   }
 }

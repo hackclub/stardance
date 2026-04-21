@@ -34,6 +34,7 @@
         else [ "icons/info.svg", "info"]
       end %>
       <div class="alert alert-<%= variant %>" role="alert" aria-live="assertive" data-controller="flash" data-flash-timeout-value="5000">
+        <%= image_tag "landing/toast-star-left.png", class: "alert__star alert__star--left", alt: "", aria: { hidden: "true" } %>
         <span class="alert__icon" aria-hidden="true">
           <%= inline_svg_tag icon, aria: { hidden: true }, focusable: "false" %>
         </span>
@@ -41,6 +42,7 @@
         <button type="button" class="alert__close" aria-label="Close" title="Close" data-action="click->flash#close">
           <%= inline_svg_tag "icons/close.svg", aria: { hidden: true }, focusable: "false" %>
         </button>
+        <%= image_tag "landing/toast-star-right.png", class: "alert__star alert__star--right", alt: "", aria: { hidden: "true" } %>
       </div>
     <% end %>
   </div>

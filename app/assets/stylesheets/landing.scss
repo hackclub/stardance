@@ -4,6 +4,8 @@
 @use "landing/fonts";
 @use "landing/base";
 @use "landing/rsvp_form";
+@use "landing/reveal";
+@use "landing/warp";
 
 // Sections — ordered top-to-bottom as rendered in index.html.erb.
 @use "landing/header";

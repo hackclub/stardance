@@ -1,4 +1,4 @@
-// "What is this?" section — layered bordered card.
+// "What is this?" section — single bordered card with an offset shadow.
 .what-is-this {
   position: relative;
   display: flex;
@@ -38,44 +38,13 @@
     width: 100%;
   }
 
-  // Layered borders — outermost to innermost.
-  &__border {
-    position: absolute;
-    inset: 0;
-    border: 2px solid #eee7bb;
-    backdrop-filter: blur(12px);
-    background: #08061e;
-
-    &--1 {
-      border-radius: 28px;
-      opacity: 0.1;
-      margin: 0;
-    }
-    &--2 {
-      border-radius: 22px;
-      opacity: 0.2;
-      margin: 10px;
-    }
-    &--3 {
-      border-radius: 16px;
-      opacity: 0.4;
-      margin: 19px;
-    }
-    &--4 {
-      border-radius: 12px;
-      opacity: 0.7;
-      margin: 28px;
-    }
-  }
-
   &__inner {
     position: relative;
     z-index: 1;
-    border: 2px solid #eee7bb;
+    border: 3px solid #eee7bb;
     border-radius: 8px;
-    backdrop-filter: blur(12px);
     background: #08061e;
-    margin: 37px;
+    box-shadow: 8px 10px 0 rgba(238, 231, 187, 0.12);
     padding: clamp(2rem, 4vw, 3.5rem) clamp(2rem, 5vw, 4rem);
     text-align: center;
   }
@@ -96,12 +65,21 @@
     font-size: clamp(15px, 1.4vw, 18px);
     line-height: 1.6;
     max-width: 656px;
+    margin: 0 auto;
 
     p {
       margin: var(--space-m) 0;
       &:last-child {
         margin-bottom: 0;
       }
+    }
+  }
+
+  @media (max-width: 600px) {
+    // Tighten the offset shadow on small screens so it doesn't push the
+    // card off the right edge.
+    &__inner {
+      box-shadow: 5px 6px 0 rgba(238, 231, 187, 0.12);
     }
   }
 }

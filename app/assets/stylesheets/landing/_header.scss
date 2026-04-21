@@ -21,11 +21,6 @@
     display: flex;
     align-items: center;
     gap: clamp(1.25rem, 1.55vw, 2.25rem);
-    background: rgba(8, 6, 30, 0.35);
-    padding: clamp(0.5rem, 0.6vw, 0.85rem) clamp(1.25rem, 1.4vw, 2rem);
-    border-radius: 100px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
   }
 
   &__partnership-text {
@@ -78,11 +73,6 @@
       width: 100%;
       flex-wrap: wrap;
       justify-content: flex-start;
-      background: none;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      padding: 0;
-      border-radius: 0;
       gap: 1rem;
       row-gap: 0.75rem;
     }

@@ -1,0 +1,133 @@
+// Ambient starfield + gated reveal for the landing page.
+//
+// Flow:
+//   1. Inline head-script adds `html.warping` before first paint. That
+//      zeroes opacity on landing-header, hero content, and project row.
+//   2. The hero-warp Stimulus controller attaches, immediately swaps the
+//      class to `html.warped`, and starts an ambient GLSL starfield
+//      behind everything (z-index: -1, always on, no entrance moment).
+//   3. Under `.warped`, content reveals with a quick confident cascade
+//      (~1.2s end-to-end).
+//
+// Fallbacks:
+//   - No JS               → `.warping` never applied, page renders normally.
+//   - No WebGL2 / reduced → controller still flips to `.warped`; canvas
+//                           skipped, reveal proceeds (shortened under
+//                           prefers-reduced-motion).
+//
+// Parallax-driven layers (earth, moon, nasa-photo) animate opacity + filter
+// only. The parallax controller writes inline transforms and would stomp
+// any transform-based reveal.
+
+// -- GATE: before reveal, freeze paint on above-the-fold -----------------
+
+html.warping {
+  .landing-header,
+  .project-thumbs,
+  .hero__eyebrow,
+  .hero__headline > span,
+  .hero__subhead,
+  .hero__caption,
+  .rsvp-form,
+  .hero__doodle-arrow,
+  .hero__earth,
+  .hero__moon,
+  .hero__nasa-photo {
+    opacity: 0;
+  }
+}
+
+// -- REVEAL: quick confident cascade, ~1.2s end-to-end -------------------
+
+html.warped {
+  .landing-header {
+    animation: warp-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 40ms both;
+  }
+
+  .hero__nasa-photo {
+    animation: warp-focus 640ms cubic-bezier(0.2, 0.7, 0.2, 1) 80ms both;
+  }
+
+  .hero__earth {
+    animation: warp-focus 640ms cubic-bezier(0.2, 0.7, 0.2, 1) 160ms both;
+  }
+
+  .hero__moon {
+    animation: warp-focus 640ms cubic-bezier(0.2, 0.7, 0.2, 1) 240ms both;
+  }
+
+  .hero__eyebrow {
+    animation: warp-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms both;
+  }
+
+  .hero__headline > span:nth-child(1) {
+    animation: warp-rise 540ms cubic-bezier(0.2, 0.7, 0.2, 1) 220ms both;
+  }
+
+  .hero__headline > span:nth-child(2) {
+    animation: warp-rise 540ms cubic-bezier(0.2, 0.7, 0.2, 1) 320ms both;
+  }
+
+  .hero__subhead {
+    animation: warp-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 450ms both;
+  }
+
+  .rsvp-form {
+    animation: warp-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) 580ms both;
+  }
+
+  .hero__doodle-arrow {
+    animation: warp-doodle-pop 540ms cubic-bezier(0.2, 0.7, 0.2, 1) 720ms both;
+  }
+
+  .hero__caption {
+    animation: warp-rise 460ms cubic-bezier(0.2, 0.7, 0.2, 1) 820ms both;
+  }
+
+  .project-thumbs {
+    animation: warp-rise 640ms cubic-bezier(0.2, 0.7, 0.2, 1) 350ms both;
+  }
+}
+
+@keyframes warp-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes warp-focus {
+  from { opacity: 0; filter: blur(10px); }
+  to   { opacity: var(--nasa-opacity, 1); filter: blur(0); }
+}
+
+@keyframes warp-doodle-pop {
+  0%   { opacity: 0; transform: scale(0.6) rotate(-18deg); }
+  65%  { opacity: 1; transform: scale(1.08) rotate(5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+// -- REDUCED MOTION: calm simultaneous fade, no motion -------------------
+
+@media (prefers-reduced-motion: reduce) {
+  html.warped {
+    .landing-header,
+    .project-thumbs,
+    .hero__eyebrow,
+    .hero__headline > span,
+    .hero__subhead,
+    .hero__caption,
+    .rsvp-form,
+    .hero__doodle-arrow,
+    .hero__earth,
+    .hero__moon,
+    .hero__nasa-photo {
+      animation: warp-reduced-fade 400ms ease-out 80ms both !important;
+      transform: none !important;
+      filter: none !important;
+    }
+  }
+}
+
+@keyframes warp-reduced-fade {
+  from { opacity: 0; }
+  to   { opacity: var(--nasa-opacity, 1); }
+}

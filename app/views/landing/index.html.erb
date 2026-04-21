@@ -6,26 +6,35 @@
   <%= stylesheet_link_tag "landing", "data-turbo-track": "reload" %>
 <% end %>
 
-<div class="hero-header-wrapper">
-  <div class="hero__left-gradient" aria-hidden="true"></div>
-  <%= render "landing/sections/header" %>
-  <%= render "landing/sections/hero" %>
+<%# Gates first-paint opacity so the header, hero, and project row stay
+    invisible until the WebGL warp completes. Falls back gracefully when
+    JS is disabled (class never added = elements visible). %>
+<% content_for :head do %>
+  <script>document.documentElement.classList.add('warping');</script>
+<% end %>
+
+<div data-controller="reveal-on-scroll">
+  <div class="hero-header-wrapper" data-controller="hero-warp">
+    <div class="hero__left-gradient" aria-hidden="true"></div>
+    <%= render "landing/sections/header" %>
+    <%= render "landing/sections/hero" %>
+  </div>
+
+  <%= render "landing/sections/project_thumbnails" %>
+
+  <%= render "landing/sections/how_this_works" %>
+
+  <%= render "landing/sections/prizes" %>
+
+  <%= render "landing/sections/what_is_this" %>
+
+  <%= render "landing/sections/done_before" %>
+
+  <%#= render "landing/sections/participants" %>
+
+  <%= render "landing/sections/faq" %>
+
+  <%= render "landing/sections/cta" %>
+
+  <%= render "landing/sections/footer" %>
 </div>
-
-<%= render "landing/sections/project_thumbnails" %>
-
-<%= render "landing/sections/how_this_works" %>
-
-<%= render "landing/sections/prizes" %>
-
-<%= render "landing/sections/what_is_this" %>
-
-<%= render "landing/sections/done_before" %>
-
-<%#= render "landing/sections/participants" %>
-
-<%= render "landing/sections/faq" %>
-
-<%= render "landing/sections/cta" %>
-
-<%= render "landing/sections/footer" %>
