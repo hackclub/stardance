@@ -1,0 +1,132 @@
+<% content_for :title, "Educator Toolkit" %>
+<% content_for :og_description, "Resources for teachers to share the Stardance STEM Challenge with their classrooms — free posters, logo, sample copy, and a 2-minute classroom video." %>
+<% content_for :twitter_card, "summary_large_image" %>
+
+<%= content_for :stylesheets do %>
+  <%= stylesheet_link_tag "landing", "data-turbo-track": "reload" %>
+<% end %>
+
+<% poster_request_url = "#" # Airtable form for free classroom posters %>
+<% video_watch_url    = "#" # 2-minute Stardance overview video %>
+<% patch_request_url  = "#" # Artemis II sewn mission patch request form %>
+
+<% sample_copy = <<~COPY
+  This summer, students ages 13–18 are invited to participate in the Stardance STEM Challenge in partnership with NASA.
+
+  Here's how it works:
+    • Students sign up at stardance.hackclub.com
+    • They pick a coding, electronics, space, or AI project to work on this summer (beginners encouraged)
+    • Each hour they work, they earn tickets to spend in the project supplies shop — where they can get free 3D printers, Raspberry Pi's, trips to NASA, and more
+
+  Show the 2-minute video in your class and get an Artemis II sewn mission patch mailed to you: #{patch_request_url}
+
+COPY
+%>
+
+<div class="educator-toolkit">
+  <%= render "landing/sections/header" %>
+
+  <section class="educator-toolkit__hero">
+    <h1 class="educator-toolkit__title">
+      Educator <span class="educator-toolkit__title--italic">Toolkit</span>
+    </h1>
+  </section>
+
+  <section class="educator-toolkit__about">
+    <h2 class="educator-toolkit__section-title">What is Stardance?</h2>
+    <div class="educator-toolkit__body">
+      <p>
+        <strong>Stardance</strong> is a <strong>free summer STEM challenge</strong> for teens ages 13–18, run by
+        <a href="https://hackclub.com" target="_blank" rel="noopener">Hack Club</a> in partnership with NASA. Students
+        pick any coding, electronics, space, or AI project they want to build over the summer — beginners are
+        encouraged.
+      </p>
+    </div>
+  </section>
+
+  <section class="educator-toolkit__resources">
+    <h2 class="educator-toolkit__section-title educator-toolkit__section-title--center">Resources</h2>
+    <div class="educator-toolkit__grid">
+      <a class="educator-toolkit__resource"
+         href="<%= image_path("landing/header/stardance-logo.png") %>"
+         download="stardance-logo.png">
+        <%= image_tag image_url("landing/header/stardance-logo.png"), alt: "Stardance logo", class: "educator-toolkit__resource-thumb", loading: "lazy" %>
+        <span class="educator-toolkit__resource-title">Download the logo</span>
+        <span class="educator-toolkit__resource-meta">PNG · Use in newsletters &amp; slides</span>
+      </a>
+
+      <a class="educator-toolkit__resource"
+         href="<%= poster_request_url %>"
+         target="_blank"
+         rel="noopener">
+        <span class="educator-toolkit__resource-emoji" aria-hidden="true">📬</span>
+        <span class="educator-toolkit__resource-title">Request free posters</span>
+        <span class="educator-toolkit__resource-meta">We'll mail them to your classroom</span>
+      </a>
+
+      <a class="educator-toolkit__resource"
+         href="<%= video_watch_url %>"
+         target="_blank"
+         rel="noopener">
+        <span class="educator-toolkit__resource-emoji" aria-hidden="true">🎬</span>
+        <span class="educator-toolkit__resource-title">Watch the 2-minute video</span>
+        <span class="educator-toolkit__resource-meta">Perfect for a classroom intro</span>
+      </a>
+
+      <a class="educator-toolkit__resource"
+         href="<%= patch_request_url %>"
+         target="_blank"
+         rel="noopener">
+        <span class="educator-toolkit__resource-emoji" aria-hidden="true">🧵</span>
+        <span class="educator-toolkit__resource-title">Get an Artemis II mission patch</span>
+        <span class="educator-toolkit__resource-meta">Show the video to your class and we'll mail one</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="educator-toolkit__copy" data-educator-copy>
+    <div class="educator-toolkit__copy-header">
+      <h2 class="educator-toolkit__section-title">Ready-to-use copy</h2>
+      <button type="button"
+              class="educator-toolkit__copy-btn"
+              data-educator-copy-button>
+        Copy to clipboard
+      </button>
+    </div>
+    <p class="educator-toolkit__copy-hint">
+      Drop this straight into your newsletter, LMS, or classroom announcement.
+    </p>
+    <pre class="educator-toolkit__copy-block" data-educator-copy-source><%= sample_copy %></pre>
+  </section>
+
+  <%= render "landing/sections/footer" %>
+</div>
+
+<script>
+  (function () {
+    var root = document.querySelector("[data-educator-copy]");
+    if (!root) return;
+    var button = root.querySelector("[data-educator-copy-button]");
+    var source = root.querySelector("[data-educator-copy-source]");
+    if (!button || !source) return;
+    button.addEventListener("click", function () {
+      var text = source.textContent;
+      var done = function () {
+        var original = button.textContent;
+        button.textContent = "Copied!";
+        button.classList.add("is-copied");
+        setTimeout(function () {
+          button.textContent = original;
+          button.classList.remove("is-copied");
+        }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () {
+          button.textContent = "Press Ctrl/Cmd+C";
+        });
+      } else {
+        button.textContent = "Press Ctrl/Cmd+C";
+      }
+    });
+  })();
+</script>

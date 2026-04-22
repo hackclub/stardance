@@ -350,5 +350,7 @@ Rails.application.routes.draw do
     end
   end
 
+  get "edu", to: "landing#edu", as: :edu
+
   get "/:ref", to: "landing#index", constraints: { ref: /[a-z0-9][a-z0-9_-]{0,63}/ }
 end

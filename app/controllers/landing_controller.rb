@@ -10,4 +10,8 @@ class LandingController < ApplicationController
       end
     end
   end
+
+  def edu
+    @hide_sidebar = true
+  end
 end
