@@ -737,7 +737,7 @@ GEM
       activemodel (>= 3.0.0)
       public_suffix
     version_gem (1.1.9)
-    view_component (4.7.0)
+    view_component (4.8.0)
       actionview (>= 7.1.0)
       activesupport (>= 7.1.0)
       concurrent-ruby (~> 1)
