@@ -101,7 +101,7 @@ export default class extends Controller {
         this.animating = false;
         this.drain();
       },
-      { once: true }
+      { once: true },
     );
   }
 

@@ -29,7 +29,10 @@ const scheduler = {
       const pause = isAnchor ? this.config.anchorPause : 0;
       this.timer = setTimeout(tick, this.config.interval + pause);
     };
-    this.timer = setTimeout(tick, this.config.firstDelay ?? this.config.interval);
+    this.timer = setTimeout(
+      tick,
+      this.config.firstDelay ?? this.config.interval,
+    );
   },
 
   stop() {
@@ -82,7 +85,7 @@ export default class extends Controller {
         anchorEvery: this.anchorEveryValue,
         anchorPause: this.anchorPauseValue,
         firstDelay: this.firstDelayValue,
-      }
+      },
     );
   }
 
@@ -94,7 +97,10 @@ export default class extends Controller {
 
   onTick(_tickCount, isAnchor) {
     if (this.tickTimer) clearTimeout(this.tickTimer);
-    this.tickTimer = setTimeout(() => this.startDelete(isAnchor), this.delayValue);
+    this.tickTimer = setTimeout(
+      () => this.startDelete(isAnchor),
+      this.delayValue,
+    );
   }
 
   startDelete(isAnchor) {
@@ -131,7 +137,11 @@ export default class extends Controller {
   // long words would wrap the headline; otherwise use the full list.
   activePool() {
     const isMobile = this.mobileQuery?.matches;
-    if (isMobile && this.hasMobileWordsValue && this.mobileWordsValue.length > 0) {
+    if (
+      isMobile &&
+      this.hasMobileWordsValue &&
+      this.mobileWordsValue.length > 0
+    ) {
       return this.mobileWordsValue;
     }
     return this.wordsValue;

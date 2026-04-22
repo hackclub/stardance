@@ -49,8 +49,12 @@
     p {
       margin: var(--space-m) 0;
 
-      &:first-child { margin-top: 0; }
-      &:last-child { margin-bottom: 0; }
+      &:first-child {
+        margin-top: 0;
+      }
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
 
     a {
@@ -106,7 +110,10 @@
     background: rgba(255, 255, 255, 0.04);
     color: white;
     text-decoration: none;
-    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease,
+      box-shadow 0.15s ease;
 
     &--featured {
       display: flex;
@@ -185,7 +192,9 @@
     gap: var(--space-m);
     margin-bottom: var(--space-xs);
 
-    .educator-toolkit__section-title { margin: 0; }
+    .educator-toolkit__section-title {
+      margin: 0;
+    }
   }
 
   &__copy-btn {
@@ -215,7 +224,8 @@
   }
 
   &__copy-block {
-    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family:
+      "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: var(--font-size-s);
     line-height: 1.55;
     color: #f4efd4;
@@ -228,5 +238,4 @@
     overflow-x: auto;
     margin: 0;
   }
-
 }

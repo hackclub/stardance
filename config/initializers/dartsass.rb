@@ -8,5 +8,5 @@ Rails.application.config.dartsass.builds = {
 # output all rules sit on one line, which makes DevTools misattribute live
 # edits to nearby selectors or the wrong media query.
 if Rails.env.development?
-  Rails.application.config.dartsass.build_options = ["--style=expanded", "--embed-sources"]
+  Rails.application.config.dartsass.build_options = [ "--style=expanded", "--embed-sources" ]
 end

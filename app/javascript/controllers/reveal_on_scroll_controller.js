@@ -48,7 +48,7 @@ export default class extends Controller {
           }
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
     );
 
     for (const el of targets) this.io.observe(el);
