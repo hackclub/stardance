@@ -72,5 +72,8 @@ class Rsvp < ApplicationRecord
       target: "rsvp_counter",
       partial: "landing/sections/rsvp_counter"
     )
+  rescue StandardError => e
+    Rails.logger.warn("[Rsvp#broadcast_counter_update] #{e.class}: #{e.message}")
+    Sentry.capture_exception(e) if defined?(Sentry)
   end
 end

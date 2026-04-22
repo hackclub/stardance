@@ -50,7 +50,7 @@ export default class extends Controller {
     anchorEvery: { type: Number, default: 5 },
     anchorPause: { type: Number, default: 2200 },
     interval: { type: Number, default: 3400 },
-    firstDelay: { type: Number, default: 2600 },
+    firstDelay: { type: Number, default: 1400 },
     typeSpeed: { type: Number, default: 65 },
     deleteSpeed: { type: Number, default: 28 },
     delay: { type: Number, default: 0 },
@@ -66,6 +66,12 @@ export default class extends Controller {
     this.lastWord = this.currentText.trim();
     this.element.style.display = "inline-block";
     this.element.classList.add("word-cycle");
+    // If the baked-in initial text is already the anchor (the "punchline"
+    // form), start in the held state so it reads as a complete phrase —
+    // no cursor, warm tint — until the first tick kicks off the cycle.
+    if (this.hasAnchorValue && this.lastWord === this.anchorValue) {
+      this.element.classList.add("word-cycle--held");
+    }
 
     this.mobileQuery = window.matchMedia?.(MOBILE_QUERY);
 
