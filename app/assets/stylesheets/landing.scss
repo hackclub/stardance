@@ -13,6 +13,10 @@
 @use "landing/project_thumbs";
 @use "landing/heres_how";
 @use "landing/prizes";
+@use "landing/project_outcome";
+@use "landing/weekend";
+// NB: both project_outcome and weekend render AFTER how_this_works in the
+// view; the @use order here is about SCSS scope, not DOM order.
 @use "landing/what_is_this";
 @use "landing/done_before";
 @use "landing/participants";

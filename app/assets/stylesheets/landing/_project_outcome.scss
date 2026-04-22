@@ -1,0 +1,268 @@
+// "This project could get..." — shows a sample project (phthallo.site) and
+// the two prizes it would earn (camera + mouse), connected by an arrow + plus.
+// Figma layout is 1280px-wide: title at left 169px, 3 cards 260px tall,
+// card widths 264px / 223px / 223px, arrow between cards 1-2, "+" between 2-3,
+// Stardust meter bar beneath each card.
+.project-outcome {
+  position: relative;
+  padding: var(--space-xxxl) var(--space-m);
+  color: white;
+  font-family: "Exo 2", sans-serif;
+  max-width: 1280px;
+  margin: 0 auto;
+
+  &__title {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(28px, 3.1vw, 40px);
+    color: white;
+    margin: 0 auto var(--space-l);
+    text-align: left;
+    max-width: 946px;
+    width: 100%;
+  }
+
+  // Row of cards with connectors. Figma-derived column widths (px within
+  // 1280px canvas): card 264 | gap-for-arrow 163 | card 223 | gap-for-plus 73 |
+  // card 223 = 946 total. Using fr ratios preserves these proportions at any
+  // viewport width. Each col contains card + meter stacked so meters align
+  // automatically.
+  &__stage {
+    display: grid;
+    grid-template-columns: 264fr 163fr 223fr 73fr 223fr;
+    align-items: start;
+    width: 100%;
+    max-width: 946px;
+    margin: 0 auto;
+  }
+
+  &__col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-m);
+    min-width: 0;
+  }
+
+  // Figma cards are flat rectangles — no border-radius.
+  &__card {
+    position: relative;
+    border: 3px solid #7886ae;
+    background: #08061e;
+    height: clamp(200px, 22vw, 260px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  &__card--project {
+    isolation: isolate;
+  }
+
+  // Figma positions the phthallo screenshot at 206% width / 137.6% height
+  // with a -53% left offset — effectively a heavy zoom showing the middle
+  // of the screenshot (terminal header + intro + bus illustration), not the
+  // left edge. object-fit: cover alone doesn't match this crop.
+  &__card-bg {
+    position: absolute;
+    top: 0;
+    left: -53%;
+    width: 206%;
+    height: 137.6%;
+    max-width: none;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  // Gradient fade matches Figma: starts 80px from card top (30.8% of 260px
+  // card height) and goes to fully opaque at bottom.
+  &__card-fade {
+    position: absolute;
+    inset: 31% 0 0 0;
+    background: linear-gradient(to bottom, rgba(8, 6, 29, 0) 0%, #08061d 85%);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  &__card-meta {
+    position: relative;
+    z-index: 2;
+    margin-top: auto;
+    padding: 0 0.75rem 0.75rem;
+    font-size: clamp(13px, 1.3vw, 16.8px);
+    line-height: 1.2;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+  }
+
+  &__card-name {
+    font-weight: 700;
+    text-decoration: underline;
+    margin: 0;
+  }
+
+  &__card-hours,
+  &__card-desc {
+    margin: 0;
+    font-weight: 400;
+  }
+
+  // Prize cards: image centered via flex, label anchored at bottom.
+  // Rotations applied directly to the image with transform-origin center.
+  &__card--prize {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 1rem 3rem;
+  }
+
+  &__card-prize-img {
+    display: block;
+    max-width: 75%;
+    max-height: 68%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.25));
+    pointer-events: none;
+    transform-origin: center;
+  }
+
+  // camera.png ships from Figma export already tilted ~-50° CCW.
+  // Net rotation needs to land at Figma's intended +57° CW; applying ~+107°
+  // in CSS compensates. Side effect: the "4K" / "48.0" labels rotate with
+  // the camera body (which is Figma's intent too).
+  &__card-prize-img--camera {
+    transform: rotate(107deg);
+    max-width: 90%;
+    max-height: 90%;
+  }
+
+  &__card-prize-img--mouse {
+    transform: rotate(4.51deg);
+    max-width: 95%;
+    max-height: 75%;
+  }
+
+  &__card-prize-label {
+    position: absolute;
+    bottom: 1rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+    margin: 0;
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: clamp(13px, 1.3vw, 16.8px);
+    color: white;
+    z-index: 2;
+  }
+
+  // Connectors centered within their grid columns, vertically aligned with
+  // card mid-height (columns also contain no meter, so we need explicit top
+  // margin to match card vertical center).
+  &__arrow {
+    justify-self: center;
+    align-self: start;
+    margin-top: clamp(90px, 10vw, 120px);
+    width: clamp(50px, 8vw, 112px);
+    max-width: 100%;
+    height: auto;
+  }
+
+  &__arrow--mobile {
+    display: none;
+  }
+
+  &__plus {
+    justify-self: center;
+    align-self: start;
+    margin-top: clamp(65px, 7.5vw, 95px);
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: clamp(32px, 4vw, 56px);
+    color: white;
+    line-height: 1;
+  }
+
+  &__meter {
+    position: relative;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(140px, 16vw, 190px);
+    height: clamp(38px, 4vw, 48px);
+    padding: 0 0.75rem;
+    border: 1.5px solid #7886ae;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+  }
+
+  // Sparkle hangs across the top edge of the meter (same pattern as
+  // done-before cards). SVG is naturally 31×69; rotated -90deg so the star
+  // reads horizontally, centered across the meter's top.
+  &__meter-star {
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    width: 25px;
+    height: auto;
+    transform: translateX(-50%) rotate(-90deg);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  &__meter-text {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 400;
+    font-size: clamp(13px, 1.3vw, 16.8px);
+    color: white;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 900px) {
+    padding: var(--space-xl) var(--space-m);
+
+    &__title {
+      text-align: center;
+    }
+
+    &__stage {
+      grid-template-columns: 1fr;
+      gap: var(--space-m);
+    }
+
+    &__col {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    &__card {
+      height: clamp(180px, 50vw, 240px);
+    }
+
+    &__arrow--desktop {
+      display: none;
+    }
+
+    &__arrow--mobile {
+      display: block;
+      justify-self: center;
+      margin-top: 0;
+      width: 18px;
+      height: auto;
+    }
+
+    &__plus {
+      margin-top: 0;
+      align-self: center;
+    }
+  }
+  margin-bottom: 5rem;
+}

@@ -1,0 +1,48 @@
+<section class="project-outcome">
+  <h2 class="project-outcome__title">This project could get&hellip;</h2>
+
+  <div class="project-outcome__stage">
+    <div class="project-outcome__col project-outcome__col--project">
+      <article class="project-outcome__card project-outcome__card--project">
+        <%= image_tag image_url("landing/project-outcome/phthallo-site.png"), class: "project-outcome__card-bg", alt: "phthallo.site portfolio screenshot", loading: "lazy" %>
+        <div class="project-outcome__card-fade" aria-hidden="true"></div>
+        <div class="project-outcome__card-meta">
+          <p class="project-outcome__card-name">Phthallo&rsquo;s site</p>
+          <p class="project-outcome__card-hours">27 hours spent</p>
+          <p class="project-outcome__card-desc">Personal site/portfolio/blog, built with Astro and Tailwind, hosted on Nest.</p>
+        </div>
+      </article>
+      <div class="project-outcome__meter">
+        <%= image_tag image_url("landing/done-before/star-deco-card.svg"), class: "project-outcome__meter-star", alt: "", aria: { hidden: true }, loading: "lazy" %>
+        <span class="project-outcome__meter-text">2826 Stardust</span>
+      </div>
+    </div>
+
+    <%= image_tag image_url("landing/project-outcome/arrow.svg"), class: "project-outcome__arrow project-outcome__arrow--desktop", alt: "", aria: { hidden: true }, loading: "lazy" %>
+    <%= image_tag image_url("landing/project-outcome/arrow-mobile.svg"), class: "project-outcome__arrow project-outcome__arrow--mobile", alt: "", aria: { hidden: true }, loading: "lazy" %>
+
+    <div class="project-outcome__col">
+      <article class="project-outcome__card project-outcome__card--prize">
+        <%= image_tag image_url("landing/project-outcome/camera.png"), class: "project-outcome__card-prize-img project-outcome__card-prize-img--camera", alt: "Fujifilm digital camera", loading: "lazy" %>
+        <p class="project-outcome__card-prize-label">Digital camera</p>
+      </article>
+      <div class="project-outcome__meter project-outcome__meter--unknown">
+        <%= image_tag image_url("landing/done-before/star-deco-card.svg"), class: "project-outcome__meter-star", alt: "", aria: { hidden: true }, loading: "lazy" %>
+        <span class="project-outcome__meter-text">XXXX Stardust</span>
+      </div>
+    </div>
+
+    <span class="project-outcome__plus" aria-hidden="true">+</span>
+
+    <div class="project-outcome__col">
+      <article class="project-outcome__card project-outcome__card--prize">
+        <%= image_tag image_url("landing/project-outcome/mouse.png"), class: "project-outcome__card-prize-img project-outcome__card-prize-img--mouse", alt: "MX Master 3S mouse", loading: "lazy" %>
+        <p class="project-outcome__card-prize-label">MX Master 3S mouse</p>
+      </article>
+      <div class="project-outcome__meter project-outcome__meter--unknown">
+        <%= image_tag image_url("landing/done-before/star-deco-card.svg"), class: "project-outcome__meter-star", alt: "", aria: { hidden: true }, loading: "lazy" %>
+        <span class="project-outcome__meter-text">XXXX Stardust</span>
+      </div>
+    </div>
+  </div>
+</section>

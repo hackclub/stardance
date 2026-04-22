@@ -1,0 +1,53 @@
+<section class="weekend">
+  <%= image_tag image_url("landing/weekend/top-divider.svg"), class: "weekend__divider", alt: "", aria: { hidden: true }, loading: "lazy" %>
+
+  <h2 class="weekend__title">
+    Earn these in a <span class="weekend__title-accent">weekend</span>.
+  </h2>
+
+  <p class="weekend__subtitle">By the end of this weekend, you can get something real. Here&rsquo;s what a few hours can get you.</p>
+
+  <ul class="weekend__items">
+    <li class="weekend__item weekend__item--cat-printer">
+      <div class="weekend__item-img-wrap">
+        <%= image_tag image_url("landing/weekend/cat-printer.png"), class: "weekend__item-img", alt: "Cat thermal printer", loading: "lazy" %>
+      </div>
+      <span class="weekend__item-label">~5h &middot; cat thermal printer</span>
+    </li>
+    <li class="weekend__item weekend__item--bubble-tea">
+      <div class="weekend__item-img-wrap">
+        <%= image_tag image_url("landing/weekend/bubble-tea.png"), class: "weekend__item-img", alt: "Bubble tea", loading: "lazy" %>
+      </div>
+      <span class="weekend__item-label">~3h &middot; bubble tea grant</span>
+    </li>
+    <li class="weekend__item weekend__item--blahaj">
+      <div class="weekend__item-img-wrap">
+        <%= image_tag image_url("landing/weekend/blahaj.png"), class: "weekend__item-img", alt: "IKEA Blåhaj shark plush", loading: "lazy" %>
+      </div>
+      <span class="weekend__item-label">~13h &middot; ikea blahaj plush</span>
+    </li>
+  </ul>
+
+  <div class="weekend__coding">
+    <p class="weekend__coding-title">New to coding?</p>
+    <p class="weekend__coding-body">We&rsquo;re putting together guides for complete beginners. Sign up to be the first to know when we launch.</p>
+
+    <div class="rsvp-form weekend__rsvp">
+      <%= form_with url: rsvps_path, scope: :rsvp, method: :post, local: true do |form| %>
+        <div class="rsvp-form__row">
+          <div class="input-red">
+            <div>
+              <%= form.email_field :email, placeholder: "email@email.email", autocomplete: "email", required: true %>
+            </div>
+          </div>
+
+          <%= form.button type: "submit", class: "btn btn--red btn--striped" do %>
+            <div>RSVP &rarr;</div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <p class="weekend__small-print">For all teens aged 13&ndash;18, anywhere in the world. Starts June 1.</p>
+  </div>
+</section>

@@ -1,0 +1,196 @@
+// "Earn these in a weekend" — short-timeline prize lineup plus beginner CTA.
+// Figma canvas 1280px wide; section spans y=3163..3925 (762px tall).
+// Items sit in a row: cat printer (left, ~-13deg), bubble tea (center, ~+14deg),
+// blahaj (right, flipped + large rotation). Labels "~Xh · item" below each.
+.weekend {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  font-family: "Exo 2", sans-serif;
+
+  // Top divider is a thin horizontal line with 2 decorative stars, full-bleed.
+  &__divider {
+    display: block;
+    width: 100vw;
+    max-width: 100%;
+    height: auto;
+    margin-bottom: var(--space-xl);
+  }
+
+  &__title {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: clamp(36px, 4.4vw, 56px);
+    text-align: center;
+    margin: 0;
+    color: white;
+    line-height: 1.1;
+  }
+
+  &__title-accent {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-weight: 700;
+    color: white;
+  }
+
+  &__subtitle {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 400;
+    font-size: clamp(16px, 1.8vw, 22px);
+    color: white;
+    margin: var(--space-s) 0 3rem;
+    text-align: center;
+    max-width: 525px;
+    line-height: var(--line-height-body);
+  }
+
+  // Equal 3-column grid so the middle item sits exactly at container center
+  // and the two flankers are symmetric. Items are centered within their
+  // columns, so their different widths don't shift the layout off-center.
+  &__items {
+    list-style: none;
+    margin: 0 0 var(--space-xxxxl);
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
+    align-items: end;
+    gap: 0;
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-m);
+    min-width: 0;
+  }
+
+  // Wrap the image so the rotation doesn't affect layout box size. Wraps
+  // are per-item sized (Figma-derived widths: cat printer 203, bubble tea
+  // 193, blahaj 355) so the shark reads noticeably larger than the others.
+  &__item-img-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__item--cat-printer &__item-img-wrap {
+    max-width: 220px;
+  }
+
+  &__item--bubble-tea &__item-img-wrap {
+    max-width: 210px;
+  }
+
+  &__item--blahaj &__item-img-wrap {
+    max-width: 330px;
+    aspect-ratio: auto;
+  }
+
+  &__item-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+  }
+
+  &__item--cat-printer &__item-img {
+    transform: rotate(-13.48deg);
+    width: 72%;
+  }
+
+  &__item--bubble-tea &__item-img {
+    transform: rotate(14.1deg);
+    width: 55%;
+  }
+
+  &__item--blahaj &__item-img {
+    // Figma uses scaleY(-1) rotate(-168.81deg); visually the shark ends up
+    // facing right with a playful upward tilt.
+    transform: scaleY(-1) rotate(-198deg);
+    width: 88%;
+  }
+
+  &__item-label {
+    font-family: "Exo 2", sans-serif;
+    font-style: italic;
+    font-size: clamp(14px, 1.15vw, 18px);
+    color: #eee7bb;
+    text-align: center;
+  }
+
+  &__coding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-s);
+    width: 100%;
+    max-width: 635px;
+  }
+
+  &__coding-title {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: clamp(18px, 1.8vw, 22px);
+    color: white;
+    margin: 0;
+    text-align: center;
+  }
+
+  &__coding-body {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 400;
+    font-size: clamp(16px, 1.8vw, 22px);
+    color: white;
+    margin: 0 0 var(--space-m);
+    text-align: center;
+    line-height: var(--line-height-body);
+  }
+
+  &__rsvp {
+    width: min(420px, 100%);
+
+    .rsvp-form__row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      width: 100%;
+    }
+  }
+
+  &__small-print {
+    font-family: "Exo 2", sans-serif;
+    font-style: italic;
+    font-size: clamp(14px, 1.1vw, 18px);
+    color: #eee7bb;
+    margin: var(--space-s) 0 0;
+    text-align: center;
+  }
+
+  @media (max-width: 900px) {
+    &__items {
+      grid-template-columns: 1fr;
+      gap: var(--space-xl);
+    }
+
+    &__item {
+      width: 100%;
+      max-width: 280px;
+    }
+
+    &__item--cat-printer &__item-img-wrap,
+    &__item--bubble-tea &__item-img-wrap,
+    &__item--blahaj &__item-img-wrap {
+      max-width: 260px;
+    }
+  }
+}

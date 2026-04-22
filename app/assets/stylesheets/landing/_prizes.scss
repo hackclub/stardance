@@ -1,21 +1,38 @@
 // Prizes section — scattered collage of product images.
-// Positions: Figma pixel coords ÷ 1280 (web viewport width).
-// Vertical: normalised to prize-bar height (613px Figma → ~480px web).
+// Positions derived from Figma design (1280 × 672 bounding box around items).
 .prizes {
   position: relative;
   width: 100%;
-  aspect-ratio: 1280 / 450;
+  aspect-ratio: 1280 / 672;
   overflow: visible;
   overflow-x: clip;
   margin-top: var(--space-m);
   margin-bottom: 6rem;
 
+  &__streak {
+    position: absolute;
+    top: -49.2%;
+    left: -8.2%;
+    width: 130%;
+    height: auto;
+    opacity: 0.1;
+    transform: rotate(-21.5deg);
+    pointer-events: none;
+    z-index: 0;
+
+    @media (max-width: 900px) {
+      top: -10%;
+      left: -129%;
+      width: 500%;
+    }
+  }
+
   &__text {
     position: absolute;
-    right: 15%;
-    top: 15%;
+    right: 14%;
+    top: 17%;
     text-align: right;
-    z-index: 2;
+    z-index: 10;
   }
 
   &__title {
@@ -53,6 +70,11 @@
     height: auto;
   }
 
+  &__item-star {
+    position: absolute;
+    pointer-events: none;
+  }
+
   &__label {
     position: absolute;
     font-family: "Exo 2", sans-serif;
@@ -61,195 +83,122 @@
     color: #eee7bb;
     white-space: nowrap;
     pointer-events: none;
-
-    // Per-label positioning relative to parent item, compensating for rotation.
-    &--bambu {
-      right: 7.2%;
-      bottom: -4.1%;
-      transform: rotate(-6.43deg);
-      left: 25.8%;
-    }
-    &--8bitdo {
-      left: 6.5%;
-      top: 7.8%;
-      transform: rotate(-14.47deg);
-    }
-    &--raspi {
-      right: -9%;
-      bottom: 29.4%;
-      transform: rotate(-59deg);
-
-      @media (max-width: 600px) {
-  right: -25.9%;
-  bottom: 15.7%;
-      }
-    }
-    &--airpods {
-      left: 15.4%;
-      bottom: -6.9%;
-      transform: rotate(-0.04deg);
-
-      @media (max-width: 600px) {
-  bottom: -12.5%;
-  left: -7%;
-      }
-    }
-    &--polaroid {
-      left: 28.5%;
-      top: -14%;
-      transform: rotate(0.44deg);
-
-      @media (max-width: 600px) {
-  top: -28.6%;
-  left: 3.4%;
-      }
-    }
-    &--flipper {
-      left: 23.7%;
-      bottom: 126.5%;
-      transform: rotate(0.29deg);
-      top: -15.2%;
-      width: 18%;
-      z-index: 2;
-      right: -4.2%;
-
-      @media (max-width: 600px) {
-  top: -27.8%;
-  right: 8.8%;
-  bottom: 139.1%;
-  left: 10.7%;
-      }
-    }
-    &--blahaj {
-      left: 8.1%;
-      bottom: 1.3%;
-      rotate: 5deg;
-      z-index: 5;
-    }
-    &--mouse {
-      right: 42.3%;
-      bottom: -11.3%;
-      transform: rotate(2.56deg);
-
-      @media (max-width: 600px) {
-  right: -2.4%;
-  bottom: -14.3%;
-  transform: rotate(-13.81deg);
-      }
-    }
-    &--playdate {
-      left: 18.1%;
-      top: -8.1%;
-      transform: rotate(0.93deg);
-
-      @media (max-width: 600px) {
-  top: -15.8%;
-  left: -6.6%;
-      }
-    }
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
   }
 
-  &__item-star {
-    position: absolute;
-    width: 60px;
-    height: auto;
-    pointer-events: none;
-  }
-
-  // ---- Per-item positioning (Figma px ÷ 1280) ----
+  // ---- Per-item positioning (from Figma, bar = 1280 × 672) ----
 
   &__item--bambu {
-    left: -1.9%;
-    top: -11.3%;
+    left: 0.3%;
+    top: 9.6%;
     width: 20.5%;
     transform: rotate(10.8deg);
     z-index: 5;
   }
   &__item-star--bambu {
-    top: 12.7%;
-    right: 8.1%;
-    width: 95px;
-    transform: rotate(0.52deg);
-    z-index: 2;
+    top: 6.4%;
+    left: 54.7%;
+    width: 46%;
+    transform: rotate(0.22deg);
+    z-index: 6;
   }
 
-  &__item--8bitdo {
-    left: 14.7%;
-    top: 30.6%;
-    width: 30%;
+  &__item--switch {
+    left: 24.1%;
+    top: 28.2%;
+    width: 29%;
+    transform: rotate(0.46deg);
+    z-index: 3;
   }
 
-  &__item--raspi {
-    left: 12.4%;
-    top: 55.5%;
-    width: 17.5%;
-    transform: rotate(30.32deg);
+  &__item--camera {
+    left: 40.9%;
+    top: 44.8%;
+    width: 15%;
+    transform: rotate(79.69deg);
+    z-index: 6;
   }
 
   &__item--airpods {
-    left: 29.8%;
-    top: 52%;
-    width: 13%;
-    transform: rotate(2.4deg);
+    left: 17.7%;
+    top: 39.9%;
+    width: 13.1%;
+    transform: rotate(-10.27deg);
     z-index: 7;
-  }
-
-  &__item--polaroid {
-    left: 41.4%;
-    top: 50.1%;
-    width: 16%;
-    transform: rotate(-4.16deg);
-    z-index: 6;
-  }
-
-  &__item--flipper {
-    left: 54.5%;
-    top: 56.1%;
-    width: 19%;
-    transform: rotate(-14.49deg);
-    z-index: 6;
-  }
-  &__item-star--flipper {
-    top: -26.6%;
-    right: -5.9%;
-    transform: rotate(51.88deg);
-    width: 100px;
-  }
-
-  &__item--blahaj {
-    left: 43.1%;
-    top: 59.7%;
-    width: 25.2%;
-    transform: rotate(3.64deg);
-    z-index: 7;
-  }
-  &__item-star--blahaj {
-    top: 63.8%;
-    left: 66.2%;
-    transform: rotate(-202.18deg);
-    width: 50px;
-    scale: 1.5;
   }
 
   &__item--mouse {
-    left: 68%;
-    top: 56%;
-    width: 18.2%;
-    transform: rotate(-7.98deg);
-    z-index: 7;
+    left: 52.2%;
+    top: 60.8%;
+    width: 19.6%;
+    transform: rotate(4.59deg);
+    z-index: 6;
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));
   }
 
-  &__item--playdate {
-    left: 83.1%;
-    top: 52%;
-    width: 21%;
-    transform: rotate(8.11deg);
+  &__item--kindle {
+    left: 65.7%;
+    top: 37.5%;
+    width: 19%;
+    transform: rotate(-4.26deg);
+    z-index: 4;
+  }
+
+  &__item--ipad {
+    left: 80.8%;
+    top: 37.9%;
+    width: 24%;
     z-index: 2;
+  }
+
+  // ---- Labels (centered at bar-relative percentages) ----
+
+  // Label positions are relative to their parent item (so they translate +
+  // rotate with the item), pre-computed from Figma bar-coords.
+  &__label--bambu {
+    left: 60%;
+    top: 99.7%;
+    --label-rot: -1.45deg;
+    rotate: -5deg;
+  }
+  &__label--switch {
+    left: 54.2%;
+    top: 10.8%;
+    --label-rot: 7.38deg;
+    rotate: 8deg;
+  }
+  &__label--camera {
+    left: 72.9%;
+    top: 40.2%;
+    --label-rot: -70.68deg;
+    rotate: -71deg;
+  }
+  &__label--airpods {
+    left: 52.9%;
+    top: 102.1%;
+    --label-rot: -0.04deg;
+  }
+  &__label--mouse {
+    left: 49%;
+    top: 103%;
+    --label-rot: 2.56deg;
+  }
+  &__label--kindle {
+    left: 48.6%;
+    top: 102.1%;
+    --label-rot: -0.03deg;
+  }
+  &__label--ipad {
+    left: 64.2%;
+    top: 5.4%;
+    --label-rot: 15.22deg;
+    rotate: 14deg;
   }
 
   @media (max-width: 900px) {
     aspect-ratio: auto;
-    min-height: 500px;
+    min-height: 520px;
 
     &__text {
       position: relative;
@@ -267,53 +216,43 @@
 
     &__bar {
       position: relative;
-      min-height: 440px;
+      min-height: 480px;
     }
 
     &__item--bambu {
-      left: 50.2%;
-      top: -9.2%;
-      width: 47%;
-    }
-    &__item--8bitdo {
-      left: 34%;
-      top: 8%;
+      left: -4%;
+      top: 0%;
       width: 44%;
     }
-    &__item--raspi {
-      left: 5%;
-      top: 46%;
-      width: 28%;
+    &__item--switch {
+      left: 38%;
+      top: 6%;
+      width: 58%;
+    }
+    &__item--camera {
+      left: 52%;
+      top: 40%;
+      width: 42%;
     }
     &__item--airpods {
-      left: 36%;
-      top: 46%;
-      width: 22%;
-    }
-    &__item--polaroid {
-      left: 62%;
-      top: 42%;
-      width: 28%;
-    }
-    &__item--flipper {
-      left: 70%;
-      top: 68%;
-      width: 24%;
-    }
-    &__item--blahaj {
-      left: 26%;
-      top: 72%;
-      width: 36%;
+      left: 6%;
+      top: 40%;
+      width: 26%;
     }
     &__item--mouse {
-      left: 6%;
-      top: 78%;
-      width: 22%;
+      left: -2%;
+      top: 70%;
+      width: 36%;
     }
-    &__item--playdate {
-      left: 56%;
-      top: 2%;
-      width: 30%;
+    &__item--kindle {
+      left: 30%;
+      top: 64%;
+      width: 36%;
+    }
+    &__item--ipad {
+      left: 62%;
+      top: 66%;
+      width: 38%;
     }
 
     &__label {
@@ -322,57 +261,33 @@
   }
 
   @media (max-width: 600px) {
-    &__item--8bitdo {
-      top: -2.5%;
-      left: 18.2%;
-      rotate: 5deg;
-      width: 65%;
+    &__item--airpods {
+      top: 13.7%;
+      left: 31.6%;
+      transform: rotate(-12.15deg);
+      width: 30%;
     }
 
-    &__item--playdate {
-      top: 20.4%;
-      left: 1.7%;
-      transform: rotate(-3.41deg);
-    }
-
-    &__item--polaroid {
-  top: 24.6%;
-  left: 45.9%;
-    }
-
-    &__item--flipper {
-  top: 60.3%;
-  left: 67.5%;
-  width: 36%;
-    }
-
-    &__item--blahaj {
-  top: 61.7%;
-  left: 32%;
-  width: 56%;
-    }
-
-    &__item-star--blahaj {
-  top: 59.9%;
-  left: 60.6%;
+    &__item--camera {
+  top: 16.5%;
+  left: 67%;
     }
 
     &__item--mouse {
-  top: 67.9%;
-  left: 2.5%;
-  width: 32%;
-  transform: rotate(21.89deg);
+  top: 56.5%;
+  left: 1.6%;
     }
 
-    &__item--airpods {
-  top: 41.9%;
-  left: 28.4%;
+    &__item--kindle {
+  top: 49.7%;
+  left: 35.8%;
+  transform: rotate(15.4deg);
     }
 
-    &__item--raspi {
-  top: 36.7%;
-  left: -4.5%;
-  width: 30%;
+    &__item--ipad {
+  top: 59.3%;
+  left: 63%;
+  rotate: -10deg;
     }
   }
 }
