@@ -3,16 +3,19 @@
   <%= image_tag image_url("landing/hero/moon.png"), class: "hero__moon", alt: "", data: { parallax_target: "layer", speed: "0.35" } %>
 
   <div class="rsvp-container">
-    <p class="hero__eyebrow">By <%= link_to "Hack Club", "https://hackclub.com", target: "_blank", rel: "noopener" %>. For teens (13–18).</p>
-    <h1 class="hero__headline"><span>Calling all coders,</span><span>builders, and <span class="hero__headline--italic">makers</span></span></h1>
+    <p class="hero__eyebrow">By <%= link_to "Hack Club", "https://hackclub.com", target: "_blank", rel: "noopener" %>, For Teens (13–18)</p>
+    <h1 class="hero__headline">
+      <span>Build <span class="hero__headline--italic" data-controller="word-cycle" data-word-cycle-words-value='["a website.","a video game.","an app.","a robot.","a discord bot.","a chrome extension.","a custom keyboard.","an AI model.","a mobile app.","a synth.","a game engine.","hardware."]' data-word-cycle-mobile-words-value='["a website.","a game.","an app.","a robot.","a bot.","an extension.","a keyboard.","an AI.","a synth.","an engine.","hardware."]' data-word-cycle-anchor-value="anything.">a website.</span></span>
+      <span>Get <span class="hero__headline--italic" data-controller="word-cycle" data-word-cycle-words-value='["a raspberry pi.","a flipper zero.","a 3d printer.","a playdate.","a framework laptop.","an iPad.","a macbook.","an iPhone.","an Xbox.","a Quest 3.","a canon camera.","a polaroid.","a pebble.","a blåhaj.","nothing headphones."]' data-word-cycle-mobile-words-value='["a pi.","a flipper.","a printer.","a playdate.","a laptop.","an iPad.","a macbook.","an iPhone.","an Xbox.","a Quest 3.","a camera.","a polaroid.","a pebble.","a blåhaj.","headphones."]' data-word-cycle-anchor-value="prizes." data-word-cycle-delay-value="750">a raspberry pi.</span></span>
+    </h1>
     <p class="hero__subhead">The largest STEM event of the summer: make anything you want and earn free prizes.
 <br /><br />
-Stardance Challenge begins on <strong>June 1</strong>.</p>
+Stardance Challenge begins on <strong>June 1</strong>, for all teens aged 13–18, anywhere in the world.</p>
 
     <div class="rsvp-form">
       <%= form_with url: rsvps_path, scope: :rsvp, method: :post, local: true do |form| %>
         <div class="rsvp-form__row">
-          <%= image_tag image_url("landing/hero/doodle-arrow.png"), class: "hero__doodle-arrow", alt: "" %>
+          <%= image_tag image_url("landing/hero/star-character.png"), class: "hero__doodle-arrow", alt: "" %>
           <div class="input-red">
             <div>
               <%= form.email_field :email, placeholder: "Enter your email...", autocomplete: "email", required: true %>
@@ -24,7 +27,8 @@ Stardance Challenge begins on <strong>June 1</strong>.</p>
           <% end %>
         </div>
       <% end %>
-      <p class="hero__caption">For all teens aged 13–18, anywhere in the world.</p>
+      <%= turbo_stream_from "rsvp_counter" %>
+      <p class="hero__caption" data-controller="rsvp-counter" aria-live="polite">Join <%= render "landing/sections/rsvp_counter" %> others waiting for launch.</p>
       <% if Rails.env.development? && current_user.blank? %>
         <%= button_to "dev login", dev_login_auto_path, method: :get, form_class: "hero__dev-login", class: "hero__dev-login-btn" %>
       <% end %>

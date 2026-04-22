@@ -124,6 +124,9 @@ application.register("readme-image", ReadmeImageController);
 import RocketArcController from "./rocket_arc_controller";
 application.register("rocket-arc", RocketArcController);
 
+import RsvpCounterController from "./rsvp_counter_controller";
+application.register("rsvp-counter", RsvpCounterController);
+
 import ResponsiveImageMapController from "./responsive_image_map_controller";
 application.register("responsive-image-map", ResponsiveImageMapController);
 
@@ -180,6 +183,9 @@ application.register("welcome-overlay", WelcomeOverlayController);
 
 import WordCountController from "./word_count_controller";
 application.register("word-count", WordCountController);
+
+import WordCycleController from "./word_cycle_controller";
+application.register("word-cycle", WordCycleController);
 
 import XpWindowController from "./xp_window_controller";
 application.register("xp-window", XpWindowController);
