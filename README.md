@@ -1,6 +1,6 @@
 # stardance
 
-what's cooking in the hack club kitchen :fire:
+what's launching on the hack club spaceport :fire:
 
 check out [CONTRIBUTING.md](./CONTRIBUTING.md) for a more detailed guide on how to get up and running with this repo!
 
