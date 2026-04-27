@@ -450,7 +450,7 @@ GEM
       webfinger (~> 2.0)
     optimist (3.2.1)
     ostruct (0.6.3)
-    pagy (43.5.1)
+    pagy (43.5.3)
       json
       uri
       yaml
