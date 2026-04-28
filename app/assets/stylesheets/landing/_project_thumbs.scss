@@ -1,11 +1,24 @@
 // Project thumbnails bar — diagonal staircase of past project screenshots.
 .project-thumbs-section {
   position: relative;
+
+  &__title {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(28px, 3.1vw, 40px);
+    padding-bottom: 2rem;
+    color: white;
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    line-height: 1.1;
+  }
 }
 
 .project-thumbs {
   position: relative;
-  top: -40px;
+  margin-top: 80px;
+  top: -60px;
   display: flex;
   justify-content: space-evenly;
   align-items: flex-start;
@@ -22,9 +35,8 @@
     width: 19rem;
     flex-shrink: 1;
     min-width: 0;
-    transition:
-      transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1),
-      filter 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition: transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
     text-decoration: none;
     will-change: transform;
 
@@ -45,6 +57,7 @@
         .project-thumbs__img {
           transform: scale(1.04);
         }
+
         .project-thumbs__desc {
           opacity: 1;
           transform: translateY(0);
@@ -113,7 +126,7 @@
     border-radius: 0 0 8px 8px;
     text-align: center;
     z-index: 4;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 
     @media (max-width: 900px) {
       transform: translateY(20px);

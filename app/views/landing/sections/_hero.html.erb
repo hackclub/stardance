@@ -5,16 +5,16 @@
   <div class="rsvp-container">
     <p class="hero__eyebrow">By <%= link_to "Hack Club", "https://hackclub.com", target: "_blank", rel: "noopener" %>, For Teens (13–18)</p>
     <h1 class="hero__headline">
-      <span>Build <span class="hero__headline--italic" data-controller="word-cycle" data-word-cycle-words-value='["a website.","a video game.","an app.","a robot.","a discord bot.","a chrome extension.","a custom keyboard.","an AI model.","a mobile app.","a synth.","a game engine.","hardware."]' data-word-cycle-mobile-words-value='["a website.","a game.","an app.","a robot.","a bot.","an extension.","a keyboard.","an AI.","hardware."]' data-word-cycle-anchor-value="anything.">anything.</span></span>
-      <span>Get <span class="hero__headline--italic" data-controller="word-cycle" data-word-cycle-words-value='["a 3d printer.","PCB manufacturing.","a raspberry pi.","an arduino.","a soldering iron.","a framework laptop.","a flipper zero.","electronics parts."]' data-word-cycle-mobile-words-value='["a 3d printer.","PCBs made.","a raspberry pi.","an arduino.","a soldering iron.","a framework laptop.","a flipper zero.","electronics."]' data-word-cycle-anchor-value="prizes." data-word-cycle-delay-value="300">prizes.</span></span>
+      <span>Build <span class="hero__headline--italic" data-controller="word-cycle" data-word-cycle-words-value='["a website.","a video game,","an app,","a robot,","a discord bot,","a chrome extension,","a custom keyboard,","an AI model,","a mobile app,","a synth,","a game engine,","hardware,"]' data-word-cycle-mobile-words-value='["a website,","a game,","an app,","a robot,","a bot,","an extension,","a keyboard,","an AI,","hardware,"]' data-word-cycle-anchor-value="anything,">anything,</span></span>
+      <span>get <span class="hero__headline--italic" data-controller="word-cycle" data-word-cycle-words-value='["a 3d printer.","PCB manufacturing.","a raspberry pi.","an arduino.","a soldering iron.","a framework laptop.","a flipper zero.","electronics parts."]' data-word-cycle-mobile-words-value='["a 3d printer.","PCBs made.","a raspberry pi.","an arduino.","a soldering iron.","a framework laptop.","a flipper zero.","electronics."]' data-word-cycle-anchor-value="prizes." data-word-cycle-delay-value="300">prizes.</span></span>
     </h1>
     <p class="hero__subhead">The largest STEM event of the summer: make anything you want and earn free prizes.
-<br><br>
-Stardance Challenge begins on <strong>June 1</strong>, for all teens aged 13–18, anywhere in the world.</p>
+      <br><br>
+      Stardance Challenge begins on <strong>June 1</strong> for teens aged 13–18 anywhere in the world. Open to beginners!</p>
 
     <%= render "landing/sections/rsvp_form",
-          placeholder: "Enter your email...",
-          leading: image_tag(image_url("landing/hero/star-character.png"), class: "hero__doodle-arrow", alt: "") do %>
+               placeholder: "Enter your email...",
+               leading: image_tag(image_url("landing/hero/star-character.png"), class: "hero__doodle-arrow", alt: "") do %>
       <%= turbo_stream_from "rsvp_counter" %>
       <p class="hero__caption" data-controller="rsvp-counter" aria-live="polite">Join <%= render "landing/sections/rsvp_counter" %> others waiting for launch.</p>
       <% if Rails.env.development? && current_user.blank? %>
