@@ -64,7 +64,7 @@
       <% if current_user %>
         <%= render ButtonComponent.new(
           text: "View My Orders",
-          href: "/shop/my_orders",
+          href: shop_orders_path,
           color: :brown,
           variant: :borderless
         ) %>
@@ -78,12 +78,12 @@
       ) %>
     </div>
     <% if @featured_item && current_user %>
-      <%= render partial: "shop/banner", locals: { featured_item: @featured_item, user_region: @user_region } %>
+      <%= render partial: "shop/items/banner", locals: { featured_item: @featured_item, user_region: @user_region } %>
     <% end %>
-    <%= render partial: "shop/recently_added", locals: { recently_added_items: @recently_added_items, user_region: @user_region, user_balance: @user_balance, logged_in: current_user.present? } %>
+    <%= render partial: "shop/items/recently_added", locals: { recently_added_items: @recently_added_items, user_region: @user_region, user_balance: @user_balance, logged_in: current_user.present? } %>
     <div class="shop__nav">
       <div class="shop__searchbar">
-        <%= form_with url: shop_path, method: :get, local: true do |f| %>
+        <%= form_with url: shop_items_path, method: :get, local: true do |f| %>
           <%= render InputComponent.new(
             label: nil,
             icon: "icons/search.svg",

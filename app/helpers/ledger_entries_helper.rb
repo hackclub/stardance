@@ -12,7 +12,7 @@ module LedgerEntriesHelper
         entry.reason
       end
     when ShopOrder
-      link_to entry.reason, shop_my_orders_path, data: { turbo_frame: "_top" }
+      link_to entry.reason, shop_orders_path, data: { turbo_frame: "_top" }
     else
       entry.reason
     end

@@ -30,5 +30,5 @@
 <% end %>
 
 <%= turbo_stream.replace "shop_banner" do %>
-  <%= render partial: "shop/banner", locals: { featured_item: @featured_item, user_region: @user_region } %>
+  <%= render partial: "shop/items/banner", locals: { featured_item: @featured_item, user_region: @user_region } %>
 <% end %>

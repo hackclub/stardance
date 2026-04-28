@@ -48,7 +48,7 @@ export default class extends Controller {
     return `
       <div class="shop-goals__item" data-item-id="${item.id}">
         <button class="shop-goals__remove" data-action="click->shop-goals#remove" data-item-id="${item.id}" aria-label="Remove from goals">×</button>
-        <a href="/shop/order?shop_item_id=${item.id}" class="shop-goals__link">
+        <a href="/shop/items/${item.id}" class="shop-goals__link">
           <img src="${item.image}" alt="${item.name}" class="shop-goals__image" />
           <div class="shop-goals__info">
             <span class="shop-goals__name">${item.name}</span>

@@ -4,7 +4,7 @@
     <div class="shop-order__back">
         <%= render ButtonComponent.new(
             text: "← Back to the Shop",
-            href: "/shop",
+            href: shop_items_path,
             color: :brown,
             variant: :borderless
         ) %>
@@ -76,7 +76,7 @@
         </div>
         <div class="shop-order__details" data-controller="order-form" data-order-form-has-addresses-value="<%= current_user.addresses.any? %>" data-order-form-base-ticket-cost-value="<%= @sale_price || @shop_item.ticket_cost || 0 %>" data-order-form-user-balance-value="<%= current_user.balance || 0 %>" data-order-form-addresses-value="<%= current_user.addresses.to_json %>" data-order-form-blocked-countries-value="<%= @shop_item.blocked_countries.to_json %>" data-action="address-select:change@document->order-form#addressChanged">
             <h2>Complete your order:</h2>
-            <%= form_with url: shop_order_path(shop_item_id: @shop_item.id), method: :post, local: true, id: "order-form" do |form| %>
+            <%= form_with url: shop_orders_path(shop_item_id: @shop_item.id), method: :post, local: true, id: "order-form" do |form| %>
                 <% if not @shop_item.one_per_person_ever %>
                     <div class="shop-order__quantity">
                         <%= render InputComponent.new(

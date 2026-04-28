@@ -54,7 +54,7 @@ class ShopItemCardComponent < ViewComponent::Base
   end
 
   def order_url
-    logged_in ? "/shop/order?shop_item_id=#{item_id}" : "/"
+    logged_in ? "/shop/items/#{item_id}" : "/"
   end
 
   def display_price
