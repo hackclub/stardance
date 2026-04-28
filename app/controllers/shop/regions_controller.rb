@@ -19,5 +19,4 @@ class Shop::RegionsController < Shop::BaseController
       format.html { head :ok }
     end
   end
-
 end
