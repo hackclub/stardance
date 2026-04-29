@@ -73,25 +73,25 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       progress: ->(user) { { current: user.shop_orders.real.worth_counting.count, target: 10 } }
     ),
     new(
-      slug: :flavortown_helper,
+      slug: :stardance_helper,
       name: "Helping Hand",
-      description: "shared your wisdom in #flavortown-help, or seeked thy wisdom",
+      description: "shared your wisdom in #stardance-help, or seeked thy wisdom",
       icon: "help",
-      earned_check: ->(user) { SlackChannelService.user_has_posted_in?(user, :flavortown_help) }
+      earned_check: ->(user) { SlackChannelService.user_has_posted_in?(user, :stardance_help) }
     ),
     new(
-      slug: :flavortown_chatter,
+      slug: :stardance_chatter,
       name: "Kitchen slacker",
-      description: "joined the conversation in #flavortown",
+      description: "joined the conversation in #stardance",
       icon: "slack",
-      earned_check: ->(user) { SlackChannelService.user_has_posted_in?(user, :flavortown) }
+      earned_check: ->(user) { SlackChannelService.user_has_posted_in?(user, :stardance) }
     ),
     new(
-      slug: :flavortown_introduced,
+      slug: :stardance_introduced,
       name: "Hello, Kitchen!",
-      description: "introduced yourself in #flavortown-introduction",
+      description: "introduced yourself in #stardance-introduction",
       icon: "user",
-      earned_check: ->(user) { SlackChannelService.user_has_posted_in?(user, :flavortown_introduction) },
+      earned_check: ->(user) { SlackChannelService.user_has_posted_in?(user, :stardance_introduction) },
       cookie_reward: 2
     ),
     new(

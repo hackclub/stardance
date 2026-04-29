@@ -1,10 +1,10 @@
 header "Demo Broken Report"
 
-section "*<https://flavortown.hackclub.com/projects/#{report.project.id}|#{report.project.title}>* was reported as demo broken", markdown: true
+section "*<https://stardance.hackclub.com/projects/#{report.project.id}|#{report.project.title}>* was reported as demo broken", markdown: true
 
 section "Report Details:",
   fields: [
-    mrkdwn_text("*Reporter:* <https://flavortown.hackclub.com/users/#{report.reporter.id}|#{report.reporter.display_name}>"),
+    mrkdwn_text("*Reporter:* <https://stardance.hackclub.com/users/#{report.reporter.id}|#{report.reporter.display_name}>"),
     mrkdwn_text("*Project Owner:* #{report.project.memberships.owner.first&.user&.display_name || 'Unknown'}")
   ]
 
@@ -15,7 +15,7 @@ section "*Details:*\n#{report.details}", markdown: true
 divider
 
 actions [
-  button("Review Report", "review_report", url: "https://flavortown.hackclub.com/report-reviews/review/#{review_token_string}"),
-  button("Dismiss Report", "dismiss_report", url: "https://flavortown.hackclub.com/report-reviews/dismiss/#{dismiss_token_string}"),
-  button("View in Dashboard", "view_report", url: "https://flavortown.hackclub.com/admin/reports/#{report.id}")
+  button("Review Report", "review_report", url: "https://stardance.hackclub.com/report-reviews/review/#{review_token_string}"),
+  button("Dismiss Report", "dismiss_report", url: "https://stardance.hackclub.com/report-reviews/dismiss/#{dismiss_token_string}"),
+  button("View in Dashboard", "view_report", url: "https://stardance.hackclub.com/admin/reports/#{report.id}")
 ]

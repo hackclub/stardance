@@ -58,7 +58,7 @@ class YswsReview::CheckDuplicatesJob < ApplicationJob
     filter = "AND(" \
              "FIND('#{normalized_code_url}', " \
              "SUBSTITUTE(SUBSTITUTE(SUBSTITUTE({Code URL}, 'https://', ''), 'http://', ''), '.git', ''))," \
-             " NOT({YSWS} = 'Flavortown')" \
+             " NOT({YSWS} = 'Stardance')" \
              ")"
 
     unified_db_table.all(

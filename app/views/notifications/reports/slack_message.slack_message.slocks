@@ -1,10 +1,10 @@
 header "New Project Report"
 
-section "*<https://flavortown.hackclub.com/projects/#{report.project.id}|#{report.project.title}>* was reported", markdown: true
+section "*<https://stardance.hackclub.com/projects/#{report.project.id}|#{report.project.title}>* was reported", markdown: true
 
 section "Report Details:",
   fields: [
-    mrkdwn_text("*Reporter:* <https://flavortown.hackclub.com/users/#{report.reporter.id}|#{report.reporter.display_name}>"),
+    mrkdwn_text("*Reporter:* <https://stardance.hackclub.com/users/#{report.reporter.id}|#{report.reporter.display_name}>"),
     mrkdwn_text("*Reason:* #{report.reason.humanize}"),
     mrkdwn_text("*Project Owner:* #{report.project.memberships.owner.first&.user&.display_name || 'Unknown'}")
   ]
@@ -16,7 +16,7 @@ section "*Details:*\n#{report.details}", markdown: true
 divider
 
 actions [
-  button("Review Report", "view_report", url: "https://flavortown.hackclub.com/admin/reports/#{report.id}"),
-  button("View Reporter", "u_view_report", url: "https://flavortown.hackclub.com/users/#{report.reporter.id}"),
-  button("View Project", "p_view_report", url: "https://flavortown.hackclub.com/projects/#{report.project.id}")
+  button("Review Report", "view_report", url: "https://stardance.hackclub.com/admin/reports/#{report.id}"),
+  button("View Reporter", "u_view_report", url: "https://stardance.hackclub.com/users/#{report.reporter.id}"),
+  button("View Project", "p_view_report", url: "https://stardance.hackclub.com/projects/#{report.project.id}")
 ]

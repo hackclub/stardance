@@ -117,7 +117,7 @@ module OgImage
     end
 
     def logo_path
-      Rails.root.join("app", "assets", "images", "flavortown_logo.png").to_s
+      Rails.root.join("app", "assets", "images", "stardance_logo.png").to_s
     end
 
     def draw_hack_club_flag

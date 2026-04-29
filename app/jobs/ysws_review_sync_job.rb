@@ -23,11 +23,11 @@ flowchart TD
     CheckReports -->|No| CheckCodeUrl{"`code_url.present?`"}
 
     CheckCodeUrl -->|No| GoToSlackCheck
-    CheckCodeUrl -->|Yes| CheckFlavortown{"`Project in unified DB
-    with YSWS = 'Flavortown'?`"}
+    CheckCodeUrl -->|Yes| CheckStardance{"`Project in unified DB
+    with YSWS = 'Stardance'?`"}
 
     subgraph UnifiedDB["Unified Database Checks"]
-        CheckFlavortown -->|Yes, found record| GetExistingHours["existing_hours = record hours
+        CheckStardance -->|Yes, found record| GetExistingHours["existing_hours = record hours
         new_hours = approved_mins / 60"]
         GetExistingHours --> CompareHoursFT{"`new_hours >
         existing_hours + 0.5?`"}
@@ -39,8 +39,8 @@ flowchart TD
         CompareHoursFT -->|No| SkipExistsFT(["`⛔ SKIP
         Hours not greater`"])
 
-        CheckFlavortown -->|No| CheckUnifiedOther{"`Project in unified DB
-        (non-Flavortown)?`"}
+        CheckStardance -->|No| CheckUnifiedOther{"`Project in unified DB
+        (non-Stardance)?`"}
         CheckUnifiedOther -->|Yes| GetUnifiedHours["unified_db_hours = existing hours
         new_hours = approved_mins / 60"]
         GetUnifiedHours --> CompareHoursUnified{"`new_hours >
@@ -83,7 +83,7 @@ flowchart TD
 
     class SkipLowMinutes,SkipReports,SkipExistsFT,SkipExistsUnified,SkipNoSlack,SkipNoUser,SkipNoOrders skip
     class End,ReturnAfterUpdate success
-    class CheckMinutes,CheckReports,CheckCodeUrl,CheckFlavortown,CompareHoursFT,CheckUnifiedOther,CompareHoursUnified,CheckSlackId,CheckUser,CheckOrders decision
+    class CheckMinutes,CheckReports,CheckCodeUrl,CheckStardance,CompareHoursFT,CheckUnifiedOther,CompareHoursUnified,CheckSlackId,CheckUser,CheckOrders decision
     class Start,Init,FetchReview,GetDevlogs,CalcMinutes,ExtractShipCert,GetExistingHours,UpdateRecord,GetUnifiedHours,SetAdjusted,GoToSlackCheck,FindUser,QueryOrders,ExtractPII,CreateRecord process
 =end
 
@@ -149,18 +149,18 @@ class YswsReviewSyncJob < ApplicationJob
 
     # Check if project already exists in unified database             111 not implemented 110 implemented 101 implemented 100 implemented
     if code_url.present?
-      existing_flavortown_record = find_project_in_unified_db_with_flavortown(code_url)
+      existing_stardance_record = find_project_in_unified_db_with_stardance(code_url)
 
-      if existing_flavortown_record
-        existing_hours = existing_flavortown_record["Override Hours Spent"].to_f
+      if existing_stardance_record
+        existing_hours = existing_stardance_record["Override Hours Spent"].to_f
         new_hours = (total_approved_minutes / 60.0).round(2)
 
         if new_hours > (existing_hours + 0.5)
-          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database under Flavortown with #{existing_hours}h, new review has #{new_hours}h (greater)"
-          update_existing_record_unified_db(current_review, existing_flavortown_record, existing_hours, new_hours)  # will update the record in the unified db.
+          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database under Stardance with #{existing_hours}h, new review has #{new_hours}h (greater)"
+          update_existing_record_unified_db(current_review, existing_stardance_record, existing_hours, new_hours)  # will update the record in the unified db.
           # Continue to upsert to Airtable with in_unified_db flag
         else
-          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database under Flavortown with #{existing_hours}h, new review has #{new_hours}h (less or equal) - will still upsert to Airtable"
+          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database under Stardance with #{existing_hours}h, new review has #{new_hours}h (less or equal) - will still upsert to Airtable"
           # Continue to upsert to Airtable with in_unified_db flag
         end
       elsif project_exists_in_unified_db?(code_url)
@@ -169,9 +169,9 @@ class YswsReviewSyncJob < ApplicationJob
 
         if new_hours > (unified_db_hours.to_f + 0.5)
           adjusted_hours = (new_hours - unified_db_hours.to_f).round(2)
-          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database (non-Flavortown) with #{unified_db_hours}h, new review has #{new_hours}h - using adjusted hours: #{adjusted_hours}h"
+          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database (non-Stardance) with #{unified_db_hours}h, new review has #{new_hours}h - using adjusted hours: #{adjusted_hours}h"
         else
-          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database (non-Flavortown) with #{unified_db_hours}h, new review has #{new_hours}h (less or equal) - will still upsert to Airtable"
+          # Rails.logger.info "[YswsReviewSyncJob] Review #{review_id}: project exists in unified database (non-Stardance) with #{unified_db_hours}h, new review has #{new_hours}h (less or equal) - will still upsert to Airtable"
           # Continue to upsert to Airtable with in_unified_db flag
         end
       end
@@ -226,10 +226,10 @@ class YswsReviewSyncJob < ApplicationJob
       UPDATE_JUSTIFICATION
   end
 
-  def update_existing_record_unified_db(current_review, existing_flavortown_record, existing_hours, new_hours)
-    existing_flavortown_record["Override Hours Spent"] = new_hours
-    existing_flavortown_record["Override Hours Spent Justification"] = existing_flavortown_record["Override Hours Spent Justification"].to_s + update_justification(current_review, existing_hours, new_hours)
-    existing_flavortown_record.save
+  def update_existing_record_unified_db(current_review, existing_stardance_record, existing_hours, new_hours)
+    existing_stardance_record["Override Hours Spent"] = new_hours
+    existing_stardance_record["Override Hours Spent Justification"] = existing_stardance_record["Override Hours Spent Justification"].to_s + update_justification(current_review, existing_hours, new_hours)
+    existing_stardance_record.save
   end
 
   def create_airtable_record(review, report_status, user_pii, approved_orders, adjusted_hours: nil)
@@ -330,7 +330,7 @@ class YswsReviewSyncJob < ApplicationJob
     <<~JUSTIFICATION
       The user logged #{original_time_formatted} on hackatime. #{total_original_minutes == total_approved_minutes ? "" : "(This was adjusted to #{approved_time_formatted} after review.)"}
 
-      The flavortown project can be found at https://flavortown.hackclub.com/projects/#{project_id}
+      The stardance project can be found at https://stardance.hackclub.com/projects/#{project_id}
 
       In this time they wrote #{devlogs.count} devlogs.
 
@@ -522,22 +522,22 @@ class YswsReviewSyncJob < ApplicationJob
   def project_exists_in_unified_db?(code_url)
     formatted_url = get_formatted_code_url(code_url)
     unified_db_table.all(
-      filter: "AND(FIND('#{formatted_url}', {Code URL}) > 0, NOT({YSWS} = 'Flavortown'))"
+      filter: "AND(FIND('#{formatted_url}', {Code URL}) > 0, NOT({YSWS} = 'Stardance'))"
     ).any?
   end
 
   def unified_db_hours_for_project(code_url)
     formatted_url = get_formatted_code_url(code_url)
     record = unified_db_table.all(
-      filter: "AND(FIND('#{formatted_url}', {Code URL}) > 0, NOT({YSWS} = 'Flavortown'))"
+      filter: "AND(FIND('#{formatted_url}', {Code URL}) > 0, NOT({YSWS} = 'Stardance'))"
     ).first
     record&.[]("Hours Spent")&.to_f
   end
 
-  def find_project_in_unified_db_with_flavortown(code_url)
+  def find_project_in_unified_db_with_stardance(code_url)
     formatted_url = get_formatted_code_url(code_url)
     unified_db_table.all(
-      filter: "AND(FIND('#{formatted_url}', {Code URL}) > 0, {YSWS} = 'Flavortown')"
+      filter: "AND(FIND('#{formatted_url}', {Code URL}) > 0, {YSWS} = 'Stardance')"
     ).first
   end
 

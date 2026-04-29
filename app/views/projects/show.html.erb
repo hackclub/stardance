@@ -21,7 +21,7 @@
     <% if @show_ai_coding_time_ignored_card %>
       <div id="ai-coding-time-ignored-card" class="projects-show__info-card">
         <h2>Note: AI coding time is being ignored</h2>
-        <h3>Time spent coding entirely using AI agents like GitHub Copilot is being automatically filtered out of total project time. If you were using AI agents excessively and see discrepancies in your coding time, this is likely why. Please ask the support team in <a href="https://hackclub.slack.com/app_redirect?channel=C09MATKQM8C" rel="noopener" target="_blank">#flavortown-help</a> if you have any questions!</h3>
+        <h3>Time spent coding entirely using AI agents like GitHub Copilot is being automatically filtered out of total project time. If you were using AI agents excessively and see discrepancies in your coding time, this is likely why. Please ask the support team in <a href="https://hackclub.slack.com/app_redirect?channel=C09MATKQM8C" rel="noopener" target="_blank">#stardance-help</a> if you have any questions!</h3>
         <button id="dismiss-ai-coding-time-ignored" class="projects-show__info-card-dismiss-button" aria-label="Dismiss" data-dismiss-url="<%= dismiss_thing_path %>" onclick="fetch(this.dataset.dismissUrl, {method: 'POST', headers: {'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/x-www-form-urlencoded'}, body: 'thing_name=ai_coding_time_ignored_card'}); this.closest('.projects-show__info-card').remove();">X</button>
       </div>
     <% end %>
@@ -32,7 +32,7 @@
           <%= link_to admin_project_path(@project), style: "background: #ff9500; color: white; border: 1px solid #cc7700; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 0.25rem;" do %>
             🔨 Admin
           <% end %>
-          <%= render "shared/admin_copy_debug", record: @project, record_type: "Project", url: project_url(@project, host: "flavortown.hackclub.com", protocol: "https") %>
+          <%= render "shared/admin_copy_debug", record: @project, record_type: "Project", url: project_url(@project, host: "stardance.hackclub.com", protocol: "https") %>
         <% end %>
         <% if @project.users.include?(current_user) %>
           <%= render ButtonComponent.new(

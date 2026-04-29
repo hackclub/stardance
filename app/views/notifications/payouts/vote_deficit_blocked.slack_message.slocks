@@ -14,5 +14,5 @@ section "Remember: every time you ship a project, your vote balance decreases by
 divider
 
 context [
-  mrkdwn_text("Start voting: <https://flavortown.hackclub.com/votes/new|Vote on projects>")
+  mrkdwn_text("Start voting: <https://stardance.hackclub.com/votes/new|Vote on projects>")
 ]

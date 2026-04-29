@@ -46,7 +46,7 @@ class User
           verb: :post),
       new(slug: :setup_slack,
           name: "Join Slack",
-          description: "Post in #flavortown-introduction after becoming a full member!",
+          description: "Post in #stardance-introduction after becoming a full member!",
           icon: "slack",
           link: ->(_) { "https://hackclub.slack.com/app_redirect?channel=USLACKBOT" }),
       new(slug: :free_stickers,

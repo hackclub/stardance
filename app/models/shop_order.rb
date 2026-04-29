@@ -249,7 +249,7 @@ class ShopOrder < ApplicationRecord
   def topup_url
     return nil unless grant?
 
-    "https://ui3.hcb.hackclub.com/donations/start/flavortown?email=#{user.email}&message=#{}"
+    "https://ui3.hcb.hackclub.com/donations/start/stardance?email=#{user.email}&message=#{}"
   end
 
   HIGH_VALUE_THRESHOLD = 2000
@@ -519,7 +519,7 @@ class ShopOrder < ApplicationRecord
       user.slack_id,
       nil,
       blocks_path: "notifications/shop_orders/assigned",
-      locals: { order: self, admin_url: Rails.application.routes.url_helpers.admin_shop_order_url(self, host: "flavortown.hackclub.com", protocol: "https") }
+      locals: { order: self, admin_url: Rails.application.routes.url_helpers.admin_shop_order_url(self, host: "stardance.hackclub.com", protocol: "https") }
     )
   end
 end

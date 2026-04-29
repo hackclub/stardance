@@ -11,20 +11,20 @@ class UpdateSlackMessageCountsJob < ApplicationJob
 
     # Fetch message counts for all users in each channel
     # Do this BEFORE resetting to detect API failures
-    flavortown_counts = SlackMessageCounterService.fetch_all_message_counts(:flavortown, days_back: 2)
-    # support_counts = SlackMessageCounterService.fetch_all_message_counts(:flavortown_support, days_back: 1)
+    stardance_counts = SlackMessageCounterService.fetch_all_message_counts(:stardance, days_back: 2)
+    # support_counts = SlackMessageCounterService.fetch_all_message_counts(:stardance_support, days_back: 1)
 
     # Abort if either fetch failed (returned nil)
-    if flavortown_counts.nil? # || support_counts.nil?
+    if stardance_counts.nil? # || support_counts.nil?
       Rails.logger.error(
         "UpdateSlackMessageCountsJob: Aborting due to API failure. " \
-        "Stardance: #{flavortown_counts.nil? ? 'FAILED' : 'OK'}" # \
+        "Stardance: #{stardance_counts.nil? ? 'FAILED' : 'OK'}" # \
         # "Support: #{support_counts.nil? ? 'FAILED' : 'OK'}"
       )
       raise "Slack API failure prevented message count update to avoid data loss"
     end
 
-    Rails.logger.info("UpdateSlackMessageCountsJob: Stardance counts: #{flavortown_counts.inspect}")
+    Rails.logger.info("UpdateSlackMessageCountsJob: Stardance counts: #{stardance_counts.inspect}")
     # Rails.logger.info("UpdateSlackMessageCountsJob: Support counts: #{support_counts.inspect}")
 
     # Wrap all database updates in a transaction for atomicity
@@ -32,13 +32,13 @@ class UpdateSlackMessageCountsJob < ApplicationJob
     User.transaction do
       # Reset all counts to 0 (only after successful fetch)
       User.where.not(slack_id: nil).update_all(
-        flavortown_message_count_14d: 0
-        # flavortown_support_message_count_14d: 0
+        message_count_14d: 0
+        # support_message_count_14d: 0
       )
 
       # Update users with their message counts
-      update_users_from_counts(flavortown_counts, :flavortown_message_count_14d)
-      # update_users_from_counts(support_counts, :flavortown_support_message_count_14d)
+      update_users_from_counts(stardance_counts, :message_count_14d)
+      # update_users_from_counts(support_counts, :support_message_count_14d)
 
       # Update the timestamp for all users that were processed
       User.where.not(slack_id: nil).update_all(slack_messages_updated_at: Time.current)
@@ -46,7 +46,7 @@ class UpdateSlackMessageCountsJob < ApplicationJob
 
     Rails.logger.info(
       "Completed Slack message count updates: " \
-      "#{flavortown_counts.size} users in stardance" # \
+      "#{stardance_counts.size} users in stardance" # \
       # "#{support_counts.size} users in support"
     )
   rescue StandardError => e

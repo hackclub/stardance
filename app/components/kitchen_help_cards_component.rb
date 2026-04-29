@@ -28,18 +28,18 @@ class KitchenHelpCardsComponent < ApplicationComponent
           end
           div(class: "state-card__title") { "Help channel on Slack" }
           div(class: "state-card__description") do
-            "Still stuck after reading the FAQ? Ask our community in the #flavortown-help channel."
+            "Still stuck after reading the FAQ? Ask our community in the #stardance-help channel."
           end
           div(class: "state-card__cta") do
             a(href: "https://hackclub.slack.com/app_redirect?channel=C09MATKQM8C", class: "btn btn--borderless btn--bg_yellow", target: "_blank") do
-              span { "Go to #flavortown-help" }
+              span { "Go to #stardance-help" }
             end
           end
         end
       end
       p(class: "kitchen-help__paragraph") do
         plain "If you're unable to use Slack, you can also send an e-mail to "
-        a(href: "mailto:flavortown@hackclub.com") { "flavortown@hackclub.com" }
+        a(href: "mailto:stardance@hackclub.com") { "stardance@hackclub.com" }
         plain "."
       end
     end

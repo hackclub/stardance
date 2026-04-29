@@ -103,7 +103,7 @@ module Admin
 
       reviewer = User.find_by(id: 27)
       if reviewer&.slack_id.present?
-        msg = "📋 *#{current_user.display_name}* requested approval for draft shop item \"#{@shop_item.name}\" — <#{Rails.application.routes.url_helpers.admin_shop_item_url(@shop_item, host: Rails.application.config.action_mailer.default_url_options&.dig(:host) || "flavortown.hackclub.com")}|Review it>"
+        msg = "📋 *#{current_user.display_name}* requested approval for draft shop item \"#{@shop_item.name}\" — <#{Rails.application.routes.url_helpers.admin_shop_item_url(@shop_item, host: Rails.application.config.action_mailer.default_url_options&.dig(:host) || "stardance.hackclub.com")}|Review it>"
         SendSlackDmJob.perform_later(reviewer.slack_id, msg)
       end
 

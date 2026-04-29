@@ -42,7 +42,7 @@ class OneTime::FixNullShipEvents < ApplicationJob
   private
 
   def project_url(project)
-    "https://flavortown.hackclub.com/projects/#{project.id}"
+    "https://stardance.hackclub.com/projects/#{project.id}"
   end
 
   def notify_admin(message)

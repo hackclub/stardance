@@ -181,7 +181,7 @@ module Admin
 
       def load_hcb_expenses
         data = Rails.cache.fetch("super_mega_hcb_stats", expires_in: 1.hour) do
-          response = Faraday.get("https://hcb.hackclub.com/api/v3/organizations/flavortown")
+          response = Faraday.get("https://hcb.hackclub.com/api/v3/organizations/stardance")
 
           if response.success?
             body = JSON.parse(response.body)
@@ -211,7 +211,7 @@ module Admin
           current_page = 1
 
           loop do
-            response = Faraday.get("https://hcb.hackclub.com/api/v3/organizations/flavortown/transactions", { page: current_page, per_page: 50 })
+            response = Faraday.get("https://hcb.hackclub.com/api/v3/organizations/stardance/transactions", { page: current_page, per_page: 50 })
             break unless response.success?
 
             data = JSON.parse(response.body)
@@ -323,7 +323,7 @@ module Admin
         api_key = ENV["UNIFIED_DB_INTEGRATION_AIRTABLE_KEY"]
 
         table = Norairrecord.table(api_key, "app3A5kJwYqxMLOgh", "YSWS Programs")
-        record = table.all(filter: "{Name} = 'Flavortown'").first
+        record = table.all(filter: "{Name} = 'Stardance'").first
 
         weighted_total = record&.fields&.dig("Weighted–Total")
 
@@ -339,7 +339,7 @@ module Admin
         current_page = 1
 
         loop do
-          response = Faraday.get("https://hcb.hackclub.com/api/v3/organizations/flavortown/transactions", { page: current_page })
+          response = Faraday.get("https://hcb.hackclub.com/api/v3/organizations/stardance/transactions", { page: current_page })
           break unless response.success?
 
           data = JSON.parse(response.body)

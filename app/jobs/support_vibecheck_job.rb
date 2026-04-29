@@ -129,7 +129,7 @@ class SupportVibecheckJob < ApplicationJob
   private
 
   def nephthys_conn
-    @nephthys_conn ||= Faraday.new("https://flavortown.nephthys.hackclub.com") do |f|
+    @nephthys_conn ||= Faraday.new("https://stardance.nephthys.hackclub.com") do |f|
       f.request :retry, max: 2, interval: 0.2, interval_randomness: 0.1, backoff_factor: 2
       f.options.open_timeout = 3
       f.options.timeout = 7

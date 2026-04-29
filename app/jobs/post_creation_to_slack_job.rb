@@ -40,7 +40,7 @@ class PostCreationToSlackJob < ApplicationJob
           blocks_path: "notifications/creations/followed_devlog_created",
           locals: {
             project_title: sanitize_mentions(project.title),
-            project_url: project_url(project, host: "flavortown.hackclub.com", protocol: "https"),
+            project_url: project_url(project, host: "stardance.hackclub.com", protocol: "https"),
             author_name: sanitize_mentions(author.display_name) || "Someone",
             devlog_body: sanitize_mentions(devlog.body.to_s.truncate(200))
           }
@@ -54,7 +54,7 @@ class PostCreationToSlackJob < ApplicationJob
       blocks_path: "notifications/creations/devlog_created",
       locals: {
         project_title: sanitize_mentions(project.title),
-        project_url: project_url(project, host: "flavortown.hackclub.com", protocol: "https"),
+        project_url: project_url(project, host: "stardance.hackclub.com", protocol: "https"),
         author_name: sanitize_mentions(author.display_name) || "Someone",
         devlog_body: sanitize_mentions(devlog.body.to_s.truncate(200))
       }
@@ -74,7 +74,7 @@ class PostCreationToSlackJob < ApplicationJob
       locals: {
         project_title: sanitize_mentions(project.title),
         project_description: sanitize_mentions(project.description.to_s.truncate(200)),
-        project_url: project_url(project, host: "flavortown.hackclub.com", protocol: "https"),
+        project_url: project_url(project, host: "stardance.hackclub.com", protocol: "https"),
         owner_name: sanitize_mentions(owner.display_name) || "Someone"
       }
     )
@@ -123,7 +123,7 @@ class PostCreationToSlackJob < ApplicationJob
       return nil unless post&.project
 
       [
-        project_url(post.project, host: "flavortown.hackclub.com", protocol: "https"),
+        project_url(post.project, host: "stardance.hackclub.com", protocol: "https"),
         post.project.title,
         post.project.users
       ]
@@ -132,7 +132,7 @@ class PostCreationToSlackJob < ApplicationJob
       return nil unless post&.project
 
       [
-        project_url(post.project, host: "flavortown.hackclub.com", protocol: "https"),
+        project_url(post.project, host: "stardance.hackclub.com", protocol: "https"),
         post.project.title,
         post.project.users
       ]

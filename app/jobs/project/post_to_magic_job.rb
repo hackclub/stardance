@@ -16,7 +16,7 @@ class Project::PostToMagicJob < ApplicationJob
       locals: {
         project_title: project.title,
         project_description: project.description.to_s,
-        project_url: project_url(project, host: "flavortown.hackclub.com", protocol: "https"),
+        project_url: project_url(project, host: "stardance.hackclub.com", protocol: "https"),
         owner_name: owner.display_name
       }
     )

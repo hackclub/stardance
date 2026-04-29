@@ -14,7 +14,7 @@ class BroadcastVoteToChannelJob < ApplicationJob
         voter_name: user.display_name,
         voter_slack_id: user.slack_id,
         project_title: vote.project.title,
-        project_url: "https://flavortown.hackclub.com/projects/#{vote.project.id}",
+        project_url: "https://stardance.hackclub.com/projects/#{vote.project.id}",
         originality_score: vote.originality_score,
         technical_score: vote.technical_score,
         usability_score: vote.usability_score,
@@ -24,7 +24,7 @@ class BroadcastVoteToChannelJob < ApplicationJob
         repo_url_clicked: vote.repo_url_clicked,
         reason: vote.reason&.truncate(200),
         suspicious: vote.suspicious?,
-        dashboard_url: "https://flavortown.hackclub.com/admin/vote_spam_dashboard/users/#{user.id}?window_days=365"
+        dashboard_url: "https://stardance.hackclub.com/admin/vote_spam_dashboard/users/#{user.id}?window_days=365"
       }
     )
   end

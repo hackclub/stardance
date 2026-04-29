@@ -13,5 +13,5 @@ section "Details:",
 divider
 
 context [
-  mrkdwn_text("<https://flavortown.hackclub.com/admin/shop_orders/#{order.id}|View in Admin>")
+  mrkdwn_text("<https://stardance.hackclub.com/admin/shop_orders/#{order.id}|View in Admin>")
 ]

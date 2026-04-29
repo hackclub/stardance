@@ -15,8 +15,8 @@
 #  email                                   :string
 #  enriched_ref                            :string
 #  first_name                              :string
-#  flavortown_message_count_14d            :integer
-#  flavortown_support_message_count_14d    :integer
+#  message_count_14d                       :integer
+#  support_message_count_14d               :integer
 #  granted_roles                           :string           default([]), not null, is an Array
 #  has_gotten_free_stickers                :boolean          default(FALSE)
 #  has_pending_achievements                :boolean          default(FALSE), not null

@@ -213,7 +213,7 @@ module Admin
             f.options.open_timeout = 5
           end
 
-          response = conn.get("https://joe.fraud.hackclub.com/api/v1/cases/dashboard?range=30d&ysws=Flavortown") do |req|
+          response = conn.get("https://joe.fraud.hackclub.com/api/v1/cases/dashboard?range=30d&ysws=Stardance") do |req|
             req.headers["Cookie"] = api_key
           end
 

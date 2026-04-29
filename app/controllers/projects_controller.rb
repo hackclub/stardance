@@ -306,7 +306,7 @@ class ProjectsController < ApplicationController
             blocks_path: "notifications/new_follower",
             locals: {
               project_title: @project.title,
-              project_url: project_url(@project, host: "flavortown.hackclub.com", protocol: "https"),
+              project_url: project_url(@project, host: "stardance.hackclub.com", protocol: "https"),
               follower_id: current_user.slack_id
             }
           )
@@ -436,7 +436,7 @@ class ProjectsController < ApplicationController
 
     conn = Faraday.new(
       url: uri.to_s,
-      headers: { "User-Agent" => "Stardance project validator (https://flavortown.hackclub.com/)" }
+      headers: { "User-Agent" => "Stardance project validator (https://stardance.hackclub.com/)" }
     ) do |faraday|
       faraday.response :follow_redirects, max_redirects: 3
       faraday.adapter Faraday.default_adapter

@@ -7,5 +7,5 @@ section "*What you can do:*\n• Write detailed responses, specific to the proje
 section "This is reassessed automatically every 12 hours. Once your voting quality improves, you'll be restored automatically.", markdown: true
 
 context [
-  mrkdwn_text("Questions? Reach out in #flavortown-help.")
+  mrkdwn_text("Questions? Reach out in #stardance-help.")
 ]

@@ -47,11 +47,11 @@ module Admin
         api_key = ENV["UNIFIED_DB_INTEGRATION_AIRTABLE_KEY"]
 
         programs_table = Norairrecord.table(api_key, "app3A5kJwYqxMLOgh", "YSWS Programs")
-        program_record = programs_table.all(filter: "{Name} = 'Flavortown'").first
+        program_record = programs_table.all(filter: "{Name} = 'Stardance'").first
         nps_score = program_record&.fields&.dig("NPS Score")
         response_count = program_record&.fields&.dig("NPS–Response Count")
 
-        records = Norairrecord.table(api_key, "app3A5kJwYqxMLOgh", "NPS").all(filter: "{YSWS} = 'Flavortown'")
+        records = Norairrecord.table(api_key, "app3A5kJwYqxMLOgh", "NPS").all(filter: "{YSWS} = 'Stardance'")
         counts = count_nps_categories(records)
 
         {
@@ -68,7 +68,7 @@ module Admin
         openrouter_api_key = ENV["OPENROUTER_API_KEY"]
 
         records = Norairrecord.table(airtable_api_key, "app3A5kJwYqxMLOgh", "NPS").all(
-          filter: "{YSWS} = 'Flavortown'",
+          filter: "{YSWS} = 'Stardance'",
           max_records: limit
         )
         responses = extract_nps_free_text_responses(records)

@@ -95,7 +95,7 @@ class ShipEventPayoutCalculator
       blocks_path: "notifications/payouts/broadcast",
       locals: {
         project_title: project&.title || "Unknown",
-        project_url: "https://flavortown.hackclub.com/projects/#{project&.id}",
+        project_url: "https://stardance.hackclub.com/projects/#{project&.id}",
         recipient_name: user.display_name,
         cookies: cookies,
         hours: hours&.round(2),

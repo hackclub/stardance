@@ -2,9 +2,9 @@
 
 class SlackChannelService
   CHANNEL_IDS = {
-    flavortown_help: "C09MATKQM8C",
-    flavortown: "C09MPB8NE8H",
-    flavortown_introduction: "C0A4R38SFJ9"
+    stardance_help: "C09MATKQM8C",
+    stardance: "C09MPB8NE8H",
+    stardance_introduction: "C0A4R38SFJ9"
   }.freeze
 
   CACHE_TTL = 5.minutes

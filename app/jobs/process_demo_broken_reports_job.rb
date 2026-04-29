@@ -107,6 +107,6 @@ class ProcessDemoBrokenReportsJob < ApplicationJob
 
   def default_host
     Rails.application.config.action_mailer.default_url_options&.dig(:host) ||
-      "flavortown.hackclub.com"
+      "stardance.hackclub.com"
   end
 end

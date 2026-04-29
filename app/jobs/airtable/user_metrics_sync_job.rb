@@ -15,8 +15,8 @@ class Airtable::UserMetricsSyncJob < Airtable::BaseSyncJob
   def field_mapping(user)
     {
       "email" => user.email, # Primary key for matching existing records
-      "Loops - flavortown_message_count_14d" => user.flavortown_message_count_14d,
-      "Loops - flavortown_support_message_count_14d" => user.flavortown_support_message_count_14d,
+      "Loops - message_count_14d" => user.message_count_14d,
+      "Loops - support_message_count_14d" => user.support_message_count_14d,
       "Loops - projects_count" => user.projects_count,
       "Loops - projects_shipped_count" => user.projects_shipped_count,
       "projects_and_slack_metrics_synced_at" => Time.now

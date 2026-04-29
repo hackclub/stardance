@@ -59,7 +59,7 @@ class ProjectReadmeFetcher
 
   def self.default_headers
     {
-      "User-Agent" => "Stardance README fetcher (https://flavortown.hackclub.com/)",
+      "User-Agent" => "Stardance README fetcher (https://stardance.hackclub.com/)",
       "Accept" => "text/plain, text/markdown, */*"
     }
   end

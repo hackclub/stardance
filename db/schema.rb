@@ -810,8 +810,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_120000) do
     t.string "email"
     t.string "enriched_ref"
     t.string "first_name"
-    t.integer "flavortown_message_count_14d"
-    t.integer "flavortown_support_message_count_14d"
+    t.integer "message_count_14d"
+    t.integer "support_message_count_14d"
     t.string "granted_roles", default: [], null: false, array: true
     t.boolean "has_gotten_free_stickers", default: false
     t.boolean "has_pending_achievements", default: false, null: false

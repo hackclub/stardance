@@ -10,7 +10,7 @@ module Admin
       def load_support_stats
         @support = Rails.cache.fetch("super_mega_support", expires_in: 5.minutes) do
           begin
-            response = Faraday.get("https://flavortown.nephthys.hackclub.com/api/stats_v2")
+            response = Faraday.get("https://stardance.nephthys.hackclub.com/api/stats_v2")
             data = JSON.parse(response.body)
 
             hang_24h = data.dig("past_24h", "mean_hang_time_minutes_all")
@@ -44,7 +44,7 @@ module Admin
           begin
             start_date = 30.days.ago.to_date
             end_date = Date.current
-            response = Faraday.get("https://flavortown-support-stats.slevel.xyz/api/v1/super-mega-stats?start=#{start_date}&end=#{end_date}")
+            response = Faraday.get("https://stardance-support-stats.slevel.xyz/api/v1/super-mega-stats?start=#{start_date}&end=#{end_date}")
             data = JSON.parse(response.body)
 
             unresolved = data.dig("unresolved_tickets") || {}
