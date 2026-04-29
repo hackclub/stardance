@@ -186,6 +186,3 @@ application.register("word-count", WordCountController);
 
 import WordCycleController from "./word_cycle_controller";
 application.register("word-cycle", WordCycleController);
-
-import XpWindowController from "./xp_window_controller";
-application.register("xp-window", XpWindowController);
