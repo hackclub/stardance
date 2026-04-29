@@ -53,7 +53,7 @@ class User
           name: "Get your stickers!",
           description: "Get your stickers!",
           icon: "sticker",
-          link: ->(_) { shop_path },
+          link: ->(_) { shop_items_path },
           deps: [
             Dep[:setup_hackatime, "You need to setup Hackatime first!"]
           ]),

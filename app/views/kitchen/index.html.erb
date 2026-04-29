@@ -209,7 +209,7 @@
   <% end %>
   <% if Date.current < Date.new(2026, 3, 9) && current_user&.ref == "willsbuilds" && !current_user&.has_dismissed?("willsbuilds_banner") %>
     <div class="willsbuilds-banner">
-      <%= link_to "/shop/order?shop_item_id=101", class: "willsbuilds-banner__link" do %>
+      <%= link_to shop_item_path(101), class: "willsbuilds-banner__link" do %>
         <%= image_tag "willsbuilds.jpg", alt: "Willsbuilds", class: "willsbuilds-banner__image" %>
         <span class="willsbuilds-banner__text">
           <span class="willsbuilds-banner__title">WillsBuilds' Items</span>
@@ -233,7 +233,7 @@
     <h3 class="modal__title" style="border-radius: calc(var(--border-radius)*.6);">Hack Club x Open Sauce</h3>
     <h4>
       <p>Hack Club has partnered with Open Sauce to bring you free tickets and travel scholarships to Open Sauce 2026! Get them from the shop. Bonus: You can now also buy William Osman's <a href="https://www.youtube.com/watch?v=1qzcum2P1Ko" target="_blank" rel="noopener noreferrer">pirated coke</a>!</p>
-      <%= link_to "Go to the shop", "/shop", class: "modal__button" %>
+      <%= link_to "Go to the shop", shop_items_path, class: "modal__button" %>
       <%= image_tag "landing-page-opensauce.avif", alt: "Modal Image", class: "modal__image" %>
     </h4>
   </dialog>

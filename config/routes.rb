@@ -65,13 +65,16 @@ Rails.application.routes.draw do
   get "tic_tac", to: "rsvps#tic_tac", as: :tic_tac, defaults: { format: :text }
 
   # Shop
-  get "shop", to: "shop#index"
-  get "shop/my_orders", to: "shop#my_orders"
-  delete "shop/cancel_order/:order_id", to: "shop#cancel_order", as: :cancel_shop_order
-  get "shop/order", to: "shop#order"
-  post "shop/order", to: "shop#create_order"
-  patch "shop/update_region", to: "shop#update_region"
-  resources :shop_suggestions, only: [ :create ]
+  namespace :shop do
+    resources :items, only: [ :index, :show ]
+    resources :orders, only: [ :index, :create ] do
+      member do
+        delete :cancel
+      end
+    end
+    resource :region, only: [ :update ]
+    resources :suggestions, only: [ :create ]
+  end
 
   # Report Reviews
   get "report-reviews/review/:token", to: "report_reviews#review", as: :review_report_token

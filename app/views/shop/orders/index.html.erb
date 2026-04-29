@@ -15,7 +15,7 @@
 <div class="my-orders">
   <div class="my-orders__header">
     <h1 class="my-orders__title">My Orders</h1>
-    <%= render ButtonComponent.new(text: "Back to the Shop", href: "/shop/", color: :brown, variant: :borderless) %>
+    <%= render ButtonComponent.new(text: "Back to the Shop", href: shop_items_path, color: :brown, variant: :borderless) %>
   </div>
 
   <% if @orders.empty? %>
@@ -49,7 +49,7 @@
               <div class="my-orders__order-number-section">
                   <span class="my-orders__header-label">Order # <%= order.id %></span>
                   <% if order.pending? || order.aasm_state == "awaiting_periodical_fulfillment" %>
-                    <%= button_to "Cancel Order", cancel_shop_order_path(order_id: order.id), method: :delete, class: "my-orders__cancel-link", form: { onsubmit: "return confirm('Are you sure you want to cancel this order?')"   } %>
+                    <%= button_to "Cancel Order", cancel_shop_order_path(order), method: :delete, class: "my-orders__cancel-link", form: { onsubmit: "return confirm('Are you sure you want to cancel this order?')"   } %>
                   <% end %>
                 </div>
             </div>

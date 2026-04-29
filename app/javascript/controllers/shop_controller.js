@@ -181,7 +181,7 @@ export default class extends Controller {
     const formData = new FormData();
     formData.append("region", region);
 
-    fetch("/shop/update_region", {
+    fetch("/shop/region", {
       method: "PATCH",
       headers: {
         "X-CSRF-Token": csrfToken,
