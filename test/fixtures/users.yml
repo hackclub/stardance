@@ -15,8 +15,6 @@
 #  email                                   :string
 #  enriched_ref                            :string
 #  first_name                              :string
-#  message_count_14d                       :integer
-#  support_message_count_14d               :integer
 #  granted_roles                           :string           default([]), not null, is an Array
 #  has_gotten_free_stickers                :boolean          default(FALSE)
 #  has_pending_achievements                :boolean          default(FALSE), not null
@@ -25,6 +23,7 @@
 #  last_name                               :string
 #  leaderboard_optin                       :boolean          default(FALSE), not null
 #  manual_ysws_override                    :boolean
+#  message_count_14d                       :integer
 #  metrics_synced_at                       :datetime
 #  projects_count                          :integer
 #  projects_shipped_count                  :integer
@@ -40,6 +39,7 @@
 #  slack_balance_notifications             :boolean          default(FALSE), not null
 #  slack_messages_updated_at               :datetime
 #  special_effects_enabled                 :boolean          default(TRUE), not null
+#  support_message_count_14d               :integer
 #  synced_at                               :datetime
 #  things_dismissed                        :string           default([]), not null, is an Array
 #  tutorial_steps_completed                :string           default([]), is an Array

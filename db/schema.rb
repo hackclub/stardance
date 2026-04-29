@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_29_032609) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -810,8 +810,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_120000) do
     t.string "email"
     t.string "enriched_ref"
     t.string "first_name"
-    t.integer "message_count_14d"
-    t.integer "support_message_count_14d"
     t.string "granted_roles", default: [], null: false, array: true
     t.boolean "has_gotten_free_stickers", default: false
     t.boolean "has_pending_achievements", default: false, null: false
@@ -820,6 +818,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_120000) do
     t.string "last_name"
     t.boolean "leaderboard_optin", default: false, null: false
     t.boolean "manual_ysws_override"
+    t.integer "message_count_14d"
     t.datetime "metrics_synced_at"
     t.integer "projects_count"
     t.integer "projects_shipped_count"
@@ -836,6 +835,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_120000) do
     t.string "slack_id"
     t.datetime "slack_messages_updated_at"
     t.boolean "special_effects_enabled", default: true, null: false
+    t.integer "support_message_count_14d"
     t.datetime "synced_at"
     t.string "things_dismissed", default: [], null: false, array: true
     t.string "tutorial_steps_completed", default: [], array: true
