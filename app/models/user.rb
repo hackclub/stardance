@@ -364,10 +364,6 @@ class User < ApplicationRecord
     SendSlackDmJob.perform_later(slack_id, message)
   end
 
-  def has_commented?
-    comments.exists?
-  end
-
   def earned_achievement_slugs
     @earned_achievement_slugs ||= achievements.pluck(:achievement_slug).to_set
   end
