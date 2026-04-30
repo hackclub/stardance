@@ -145,9 +145,6 @@ application.register("shop-wishlist", ShopWishlistController);
 import SidebarPinController from "./sidebar_pin_controller";
 application.register("sidebar-pin", SidebarPinController);
 
-import SnowController from "./snow_controller";
-application.register("snow", SnowController);
-
 import StartDevlogController from "./start_devlog_controller";
 application.register("start-devlog", StartDevlogController);
 

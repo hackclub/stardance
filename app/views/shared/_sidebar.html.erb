@@ -65,7 +65,6 @@
       <div class="sidebar__user-avatar">
         <%= image_tag "chef-hat.webp", alt: "Hat", class: "sidebar__user-avatar-hat", aria: { hidden: true } %>
         <%= image_tag "chef-hat-bg.webp", alt: "Hat", class: "sidebar__user-avatar-hat-bg", aria: { hidden: true } %>
-        <%= image_tag "santa-hat.webp", alt: "Santa Hat", class: "sidebar__user-avatar-santa-hat", aria: { hidden: true } %>
         <% if current_user.slack_id.present? %>
           <%= image_tag current_user.avatar, alt: current_user.display_name, class: "sidebar__user-avatar-placeholder", style: "object-fit: cover;" %>
         <% else %>
