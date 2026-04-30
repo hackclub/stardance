@@ -7,14 +7,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 clamp(55px, 4vw, 96px) 0 var(--space-xxl);
+  padding: 0 2.2rem 0 var(--space-xxl);
   height: clamp(100px, 7vw, 150px);
 
   &__logo {
     width: clamp(260px, 18vw, 420px);
     height: auto;
     aspect-ratio: 935 / 512;
-    margin-top: clamp(10px, 3vw, 50px);
+    margin-top: 5rem;
   }
 
   &__partners {

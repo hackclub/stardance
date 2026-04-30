@@ -6,7 +6,7 @@ export default class extends Controller {
   static targets = ["item"];
 
   // Final margin-top offsets (px) for items 1-5
-  static OFFSETS = [0, 33, 66, 99, 132];
+  static OFFSETS = [-28, 34, -14, 42, -8];
 
   connect() {
     this._onScroll = this._update.bind(this);

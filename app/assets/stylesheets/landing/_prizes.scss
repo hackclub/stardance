@@ -169,14 +169,14 @@
     rotate: 8deg;
   }
   &__label--camera {
-    left: 72.9%;
+    left: 73.9%;
     top: 40.2%;
     --label-rot: -70.68deg;
     rotate: -71deg;
   }
   &__label--airpods {
     left: 52.9%;
-    top: 102.1%;
+    top: 103.1%;
     --label-rot: -0.04deg;
   }
   &__label--mouse {
@@ -253,6 +253,17 @@
       left: 62%;
       top: 66%;
       width: 38%;
+    }
+
+    // Those were set manually because they were clipping under other items
+    &__label--camera {
+      left: -8.1%;
+      top: 43.2%;
+    }
+
+    &__label--ipad {
+      left: 32.9%;
+      top: 98.2%;
     }
 
     &__label {
