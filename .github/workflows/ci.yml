@@ -91,19 +91,9 @@ jobs:
         ports:
           - 5432:5432
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
-      postgres_embed:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: stardance_test_embed
-        ports:
-          - 5433:5432
-        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
     env:
       RAILS_ENV: test
       DATABASE_URL: postgresql://postgres:password@localhost:5432/stardance_test
-      EMBEDDINGS_DATABASE_URL: postgresql://postgres:password@localhost:5433/stardance_test_embed
     steps:
       - uses: actions/checkout@v6
 

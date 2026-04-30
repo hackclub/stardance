@@ -13,8 +13,7 @@ class AdminConstraint
     # Allow admins, fraud dept, and fulfillment persons (who have limited access)
     policy.access_admin_endpoints? ||
       policy.access_fulfillment_view? ||
-      (request.path == "/admin/flavortime_dashboard" && policy.access_flavortime_dashboard?) ||
-      (request.path == "/admin/time_loss" && policy.access_time_loss_dashboard?)
+      (request.path == "/admin/flavortime_dashboard" && policy.access_flavortime_dashboard?)
   end
 
   def self.admin_user_for(request)
@@ -49,15 +48,6 @@ Rails.application.routes.draw do
   # Landing
   root "landing#index"
   # get "marketing", to: "landing#marketing"
-
-  # Start Flow
-  # get  "/start",               to: "start#index"
-  # post "/start/display_name",  to: "start#update_display_name"
-  # # post "/start/experience",    to: "start#update_experience"
-  # post "/start/project",       to: "start#update_project"
-  # post "/start/prefill_project", to: "start#prefill_project"
-  # post "/start/devlog",        to: "start#update_devlog"
-  # post "/start/begin_sign_in", to: "start#begin_sign_in"
 
   # RSVPs
   resources :rsvps, only: [ :create ]
@@ -107,9 +97,6 @@ Rails.application.routes.draw do
   # Action Mailbox for incoming HCB and tracking emails
   mount ActionMailbox::Engine => "/rails/action_mailbox"
   mount ActiveInsights::Engine => "/insights"
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # hackatime should not create a new session; it's used for linking
   get "auth/hackatime/callback", to: "identities#hackatime"
@@ -279,7 +266,6 @@ Rails.application.routes.draw do
         post :dismiss
       end
     end
-    resources :time_loss, only: [ :index ], controller: "time_loss"
     get "payouts_dashboard", to: "payouts_dashboard#index"
     get "fraud_dashboard", to: "fraud_dashboard#index"
     get "voting_dashboard", to: "voting_dashboard#index"

@@ -1,39 +1,46 @@
 <div class="project-thumbs-section">
+  <h2 class="project-thumbs-section__title">Projects built by Hack Clubbers</h2>
+
   <div class="project-thumbs" aria-label="Past projects by teens" data-controller="project-thumbs-scroll">
-    <div class="project-thumbs__item project-thumbs__item--1" data-project-thumbs-scroll-target="item">
+    <%= link_to "https://shaaarkai.itch.io/specter", class: "project-thumbs__item project-thumbs__item--1", data: { project_thumbs_scroll_target: "item" }, target: "_blank", rel: "noopener noreferrer" do %>
       <div class="project-thumbs__tab">By Yessa, 18</div>
       <div class="project-thumbs__img-wrap">
         <%= image_tag image_url("landing/projects/yessa.png"), class: "project-thumbs__img", alt: "Project by Yessa", loading: "lazy" %>
       </div>
-    </div>
+      <div class="project-thumbs__desc" aria-hidden="true">A knight bravely attempts to escape a haunted cave while pursued by his own ghost.</div>
+    <% end %>
 
-    <div class="project-thumbs__item project-thumbs__item--2" data-project-thumbs-scroll-target="item">
+    <%= link_to "https://github.com/Dieu-de-l-elec/AngstromIO-devboard", class: "project-thumbs__item project-thumbs__item--2", data: { project_thumbs_scroll_target: "item" }, target: "_blank", rel: "noopener noreferrer" do %>
       <div class="project-thumbs__tab">By Cl&eacute;ment, 17</div>
       <div class="project-thumbs__img-wrap">
         <%= image_tag image_url("landing/projects/clement.png"), class: "project-thumbs__img", alt: "Project by Clément", loading: "lazy" %>
       </div>
-    </div>
+      <div class="project-thumbs__desc" aria-hidden="true">A pocket‑sized, custom Attiny1616 devboard, with two GPIOs and I2C, a dual‑CH340 UPDI programmer!</div>
+    <% end %>
 
-    <div class="project-thumbs__item project-thumbs__item--3" data-project-thumbs-scroll-target="item">
+    <%= link_to "https://github.com/geg-tech/brew-keeb", class: "project-thumbs__item project-thumbs__item--3", data: { project_thumbs_scroll_target: "item" }, target: "_blank", rel: "noopener noreferrer" do %>
       <div class="project-thumbs__tab">By Alexander, 16</div>
       <div class="project-thumbs__img-wrap">
         <%= image_tag image_url("landing/projects/alexander.png"), class: "project-thumbs__img", alt: "Project by Alexander", loading: "lazy" %>
       </div>
-    </div>
+      <div class="project-thumbs__desc" aria-hidden="true">A fully documented, custom keyboard with built-in RGB, OLED and a USB hub made for Blueprint!</div>
+    <% end %>
 
-    <div class="project-thumbs__item project-thumbs__item--4" data-project-thumbs-scroll-target="item">
+    <%= link_to "https://deltea.itch.io/starbird", class: "project-thumbs__item project-thumbs__item--4", data: { project_thumbs_scroll_target: "item" }, target: "_blank", rel: "noopener noreferrer" do %>
       <div class="project-thumbs__tab">By Deltea, 16</div>
       <div class="project-thumbs__img-wrap">
         <%= image_tag image_url("landing/projects/deltea.png"), class: "project-thumbs__img", alt: "Project by Deltea", loading: "lazy" %>
       </div>
-    </div>
+      <div class="project-thumbs__desc" aria-hidden="true">A platformer game about a bird collecting stars, made for Milkyway!</div>
+    <% end %>
 
-    <div class="project-thumbs__item project-thumbs__item--5" data-project-thumbs-scroll-target="item">
-      <div class="project-thumbs__tab">By Mari, 17</div>
+    <%= link_to "https://github.com/SteveMan67/platformed", class: "project-thumbs__item project-thumbs__item--5", data: { project_thumbs_scroll_target: "item" }, target: "_blank", rel: "noopener noreferrer" do %>
+      <div class="project-thumbs__tab">By Steve, 16</div>
       <div class="project-thumbs__img-wrap">
-        <%= image_tag image_url("landing/projects/mari.png"), class: "project-thumbs__img", alt: "Project by Mari", loading: "lazy" %>
+        <%= image_tag image_url("landing/projects/steve.png"), class: "project-thumbs__img", alt: "Project by Steve", loading: "lazy" %>
       </div>
-    </div>
+      <div class="project-thumbs__desc" aria-hidden="true">A platformer with a fully functioning level editor, online level sharing, and trigger system, built from the ground up in Javascript for Flavortown.</div>
+    <% end %>
   </div>
 
   <%= image_tag image_url("landing/weekend/top-divider.svg"), class: "project-thumbs__divider", alt: "", aria: { hidden: true }, loading: "lazy" %>

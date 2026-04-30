@@ -1,8 +1,0 @@
-<% has_role = user.public_send("#{role_name}?") %>
-<%= button_to (has_role ? "#{role_icon} Demote from #{role_name.titleize}" : "#{role_icon} Promote to #{role_name.titleize}"),
-              (has_role ? demote_role_admin_user_path(user) : promote_role_admin_user_path(user)),
-              method: :post,
-              params: { role_name: role_name },
-              class: "btn-primary slim",
-              disabled: disabled,
-              form: { onsubmit: "return confirm(#{("Are you sure you want to #{has_role ? "demote" : "promote"} #{user.display_name} #{has_role ? "from" : "to"} #{role_name.titleize}?").to_json})" } %>

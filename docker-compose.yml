@@ -15,7 +15,6 @@ services:
       - FERRET=${FERRET:-}
     depends_on:
       - db
-      - dbe
 
   db:
     image: pgvector/pgvector:pg16
@@ -28,19 +27,7 @@ services:
     ports:
       - "5432:5432"
 
-  dbe:
-    image: pgvector/pgvector:pg16
-    volumes:
-      - stardance_postgres_data_e:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=stardance_development_embed
-    ports:
-      - "5433:5432"
-
 volumes:
   stardance_postgres_data:
-  stardance_postgres_data_e:
   bundle_cache:
   node_modules_cache:

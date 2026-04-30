@@ -35,8 +35,6 @@ module Admin
         end
       elsif flavortime_dashboard_request? && policy(:admin).access_flavortime_dashboard?
         true
-      elsif time_loss_dashboard_request? && policy(:admin).access_time_loss_dashboard?
-        true
       elsif shop_manager_request? && current_user.shop_manager?
         true
       else
@@ -68,10 +66,6 @@ module Admin
 
     def flavortime_dashboard_request?
       controller_name == "flavortime_dashboard"
-    end
-
-    def time_loss_dashboard_request?
-      controller_name == "time_loss"
     end
 
     def shop_manager_request?

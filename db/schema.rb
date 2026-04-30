@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_29_032609) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_30_165739) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -260,23 +260,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_29_032609) do
     t.index ["event_name", "created_at"], name: "index_funnel_events_on_event_name_and_created_at"
     t.index ["event_name"], name: "index_funnel_events_on_event_name"
     t.index ["user_id"], name: "index_funnel_events_on_user_id"
-  end
-
-  create_table "hackatime_time_loss_audits", force: :cascade do |t|
-    t.datetime "audited_at", null: false
-    t.datetime "created_at", null: false
-    t.integer "devlog_total_seconds", default: 0, null: false
-    t.integer "difference_seconds", default: 0, null: false
-    t.text "hackatime_keys", default: "", null: false
-    t.integer "per_project_sum_seconds", default: 0, null: false
-    t.bigint "project_id", null: false
-    t.integer "ungrouped_total_seconds", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["audited_at"], name: "index_hackatime_time_loss_audits_on_audited_at"
-    t.index ["difference_seconds"], name: "index_hackatime_time_loss_audits_on_difference_seconds"
-    t.index ["project_id"], name: "index_hackatime_time_loss_audits_on_project_id"
-    t.index ["user_id"], name: "index_hackatime_time_loss_audits_on_user_id"
   end
 
   create_table "hcb_credentials", force: :cascade do |t|
@@ -912,8 +895,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_29_032609) do
   add_foreign_key "fulfillment_payout_lines", "fulfillment_payout_runs"
   add_foreign_key "fulfillment_payout_lines", "users"
   add_foreign_key "fulfillment_payout_runs", "users", column: "approved_by_user_id"
-  add_foreign_key "hackatime_time_loss_audits", "projects"
-  add_foreign_key "hackatime_time_loss_audits", "users"
   add_foreign_key "ledger_entries", "users"
   add_foreign_key "likes", "users"
   add_foreign_key "messages", "users"

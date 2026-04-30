@@ -115,6 +115,7 @@
     max-width: 100%;
     min-width: 0;
     font-size: clamp(36px, 11vw, 44px);
+    margin-bottom: 1rem;
 
     span {
       white-space: normal !important;
@@ -122,7 +123,6 @@
       min-width: 0;
       overflow-wrap: anywhere;
     }
-    margin-bottom: 0;
   }
 }
 
