@@ -2,8 +2,8 @@
 
 class SlackMessageCounterService
   CHANNEL_IDS = {
-    stardance: "C09MPB8NE8H",
-    stardance_support: "C09MATKQM8C" # stardance-help channel (support)
+    stardance: "C0APH2MMHH7",
+    stardance_support: "C09MATKQM8C" # to-do: update with new channel ID
   }.freeze
 
   class << self

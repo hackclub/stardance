@@ -2,9 +2,9 @@
 
 class SlackChannelService
   CHANNEL_IDS = {
-    stardance_help: "C09MATKQM8C",
-    stardance: "C09MPB8NE8H",
-    stardance_introduction: "C0A4R38SFJ9"
+    stardance_help: "C09MATKQM8C", # to-do: update with new channel ID
+    stardance: "C0APH2MMHH7",
+    stardance_introduction: "C0A4R38SFJ9" # to-do: update with new channel ID
   }.freeze
 
   CACHE_TTL = 5.minutes
