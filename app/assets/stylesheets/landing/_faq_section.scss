@@ -73,6 +73,12 @@
     line-height: 1.6;
     text-align: left;
 
+    &::before {
+      content: "";
+      display: block;
+      height: var(--space-s);
+    }
+
     a {
       color: #eee7bb;
       text-decoration: underline;
