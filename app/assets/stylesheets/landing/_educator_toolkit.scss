@@ -29,6 +29,28 @@
     }
   }
 
+  &__subtitle {
+    font-family: var(--font-family-text);
+    font-size: clamp(var(--font-size-m), 1.4vw, var(--font-size-xl));
+    line-height: var(--line-height-body);
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 54ch;
+    margin: 0 auto;
+  }
+
+  &__teen-cta {
+    font-family: var(--font-family-text);
+    font-size: clamp(13px, 1.1vw, 15px);
+    color: rgba(255, 255, 255, 0.45);
+    margin: var(--space-s) auto 0;
+
+    a {
+      color: var(--color-yellow-200);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
   &__resources {
     max-width: var(--edu-container);
     margin: 0 auto;
@@ -39,7 +61,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     gap: var(--space-m);
-    margin-top: var(--space-l);
 
     @media (max-width: 820px) {
       grid-template-columns: 1fr;
@@ -53,7 +74,7 @@
   }
 
   &__resource {
-    border: 2px solid #eee7bb;
+    border: 2px solid var(--color-yellow-200);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.04);
     color: white;
@@ -108,7 +129,7 @@
   &__resource-title {
     font-family: var(--font-family-text);
     font-weight: 700;
-    font-size: clamp(16px, 1.4vw, 18px);
+    font-size: clamp(var(--font-size-m), 1.4vw, var(--font-size-l));
     line-height: var(--line-height-headers);
     margin: 0;
     text-wrap: balance;
@@ -126,7 +147,7 @@
     margin: 0;
 
     .educator-toolkit__resource--featured & {
-      font-size: clamp(14px, 1.2vw, 16px);
+      font-size: clamp(var(--font-size-s), 1.2vw, var(--font-size-m));
       max-width: 44ch;
     }
   }
@@ -150,7 +171,7 @@
   &__about {
     max-width: var(--edu-container);
     margin: 0 auto;
-    padding: var(--edu-section-y) var(--edu-section-x) calc(var(--edu-section-y) * 2);
+    padding: var(--edu-section-y) var(--edu-section-x);
   }
 
   &__about-grid {
@@ -179,13 +200,13 @@
     font-size: clamp(15px, 1.3vw, 17px);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #eee7bb;
+    color: var(--color-yellow-200);
     margin: 0;
   }
 
   &__about-card-body {
     font-family: var(--font-family-text);
-    font-size: clamp(14px, 1.15vw, 16px);
+    font-size: clamp(var(--font-size-s), 1.15vw, var(--font-size-m));
     line-height: 1.65;
     color: rgba(255, 255, 255, 0.75);
     margin: 0;
@@ -197,7 +218,7 @@
     font-size: var(--font-size-s);
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #eee7bb;
+    color: var(--color-yellow-200);
     white-space: nowrap;
   }
 
