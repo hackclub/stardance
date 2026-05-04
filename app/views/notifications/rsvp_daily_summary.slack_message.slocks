@@ -1,0 +1,38 @@
+header "Daily RSVP Summary"
+
+section "*Total RSVPs:* #{total}  •  *New (last 24h):* #{new_count}", markdown: true
+
+divider
+
+section "Confirmed (all-time)",
+  fields: [
+    mrkdwn_text("*Click-confirmed:*\n#{click_conf}"),
+    mrkdwn_text("*Reply-confirmed:*\n#{reply_conf}")
+  ]
+
+section "Engagement (last 24h)",
+  fields: [
+    mrkdwn_text("*Email replies:*\n#{new_replies}"),
+    mrkdwn_text("*TTT games started:*\n#{new_games}")
+  ]
+
+divider
+
+if ref_breakdown.any?
+  lines = ref_breakdown.map { |ref, count|
+    label = ref.presence || "_(no ref)_"
+    "• #{label}: *#{count}*"
+  }.join("\n")
+  section "*New RSVPs by ref (last 24h)*\n#{lines}", markdown: true
+end
+
+if new_ref_names.any?
+  lines = new_ref_names.map { |r| "• `#{r}`" }.join("\n")
+  section "*Brand-new refs (first hit ever)*\n#{lines}", markdown: true
+end
+
+divider
+
+context [
+  mrkdwn_text("Since #{since.strftime('%b %-d at %-I:%M %p %Z')}")
+]
