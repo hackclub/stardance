@@ -4,9 +4,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-xl) 0 var(--space-l);
+  padding: var(--space-xl) var(--space-xl) var(--space-l);
   color: var(--color-body-text);
   font-family: "Exo 2", sans-serif;
+  overflow-x: clip;
 
   // Top/bottom dividers: full-bleed horizontal line with two decorative
   // sparkles. Line stretches; sparkles keep their intrinsic aspect ratio.
@@ -14,8 +15,12 @@
     position: relative;
     display: block;
     width: 100vw;
-    max-width: 100%;
+    max-width: none;
     height: 32px;
+    // Section has horizontal padding for content; borders escape it to
+    // stay full-bleed.
+    margin-left: calc(-1 * var(--space-xl));
+    margin-right: calc(-1 * var(--space-xl));
 
     &--top {
       margin-top: var(--space-s);
