@@ -100,18 +100,10 @@
     flex-direction: column;
     gap: 8px;
     font-size: var(--font-body);
-    font-weight: 700;
+    font-weight: 400;
     text-align: left;
     margin-top: 1.75rem;
-    letter-spacing: 0.07em;
-
-    a {
-      color: white;
-      text-decoration: none;
-      &:hover {
-        text-decoration: underline;
-      }
-    }
+    letter-spacing: 0;
   }
 
   &__text {
@@ -127,6 +119,13 @@
         margin-bottom: 0;
       }
     }
+  }
+
+  &__links a,
+  &__text a {
+    color: white;
+    text-decoration: underline;
+    text-decoration-color: currentColor;
   }
 
   &__creature {
