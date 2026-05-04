@@ -5,7 +5,10 @@
 // Stardust meter bar beneath each card.
 .project-outcome {
   position: relative;
-  padding: var(--space-xxxl) var(--space-m);
+  // Top padding scales with viewport so the prize bar (which is sized by
+  // aspect-ratio and grows with width) can't overlap this section at
+  // in-between widths.
+  padding: clamp(var(--space-xxxl), 8vw, 10rem) var(--space-m) var(--space-xxxl);
   color: var(--color-body-text);
   font-family: "Exo 2", sans-serif;
   max-width: 1280px;
@@ -248,17 +251,29 @@
   @media (max-width: 900px) {
     padding: var(--space-xl) var(--space-m);
 
-    &__title {
+    &__title,
+    &__subtitle {
       text-align: center;
     }
 
+    // Layout on mobile:
+    //   row 1: project column (full width)
+    //   row 2: down-arrow (full width, centered)
+    //   row 3: camera col | + | mouse col
     &__stage {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr auto 1fr;
       gap: var(--space-m);
+      align-items: center;
     }
 
     &__col {
       width: 100%;
+      max-width: none;
+      margin: 0;
+    }
+
+    &__col--project {
+      grid-column: 1 / -1;
       max-width: 360px;
       margin: 0 auto;
     }
@@ -267,12 +282,19 @@
       height: clamp(180px, 50vw, 240px);
     }
 
+    // Prize cards live in a 3-up row with the plus between them, so they
+    // need to shrink to fit.
+    &__col:not(&__col--project) &__card {
+      height: clamp(120px, 28vw, 180px);
+    }
+
     &__arrow--desktop {
       display: none;
     }
 
     &__arrow--mobile {
       display: block;
+      grid-column: 1 / -1;
       justify-self: center;
       margin-top: 0;
       width: 18px;
@@ -282,6 +304,7 @@
     &__plus {
       margin-top: 0;
       align-self: center;
+      justify-self: center;
     }
   }
   margin-bottom: 5rem;

@@ -180,9 +180,9 @@
     rotate: 14deg;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 600px) {
     aspect-ratio: auto;
-    min-height: 520px;
+    min-height: 640px;
 
     &__text {
       position: relative;
@@ -200,65 +200,6 @@
 
     &__bar {
       position: relative;
-      min-height: 480px;
-    }
-
-    &__item--bambu {
-      left: -4%;
-      top: 0%;
-      width: 44%;
-    }
-    &__item--switch {
-      left: 38%;
-      top: 6%;
-      width: 58%;
-    }
-    &__item--camera {
-      left: 52%;
-      top: 40%;
-      width: 42%;
-    }
-    &__item--airpods {
-      left: 6%;
-      top: 40%;
-      width: 26%;
-    }
-    &__item--mouse {
-      left: -2%;
-      top: 70%;
-      width: 36%;
-    }
-    &__item--kindle {
-      left: 30%;
-      top: 64%;
-      width: 36%;
-    }
-    &__item--ipad {
-      left: 62%;
-      top: 66%;
-      width: 38%;
-    }
-
-    // Those were set manually because they were clipping under other items
-    &__label--camera {
-      left: -8.1%;
-      top: 43.2%;
-    }
-
-    &__label--ipad {
-      left: 32.9%;
-      top: 98.2%;
-    }
-
-    &__label {
-      font-size: var(--font-subtitle);
-    }
-  }
-
-  @media (max-width: 600px) {
-    min-height: 640px;
-
-    &__bar {
       min-height: 540px;
     }
 
@@ -310,7 +251,10 @@
       rotate: -10deg;
     }
 
-    // Shift labels that were specifically overridden at 900px back into bounds
+    &__label {
+      font-size: var(--font-subtitle);
+    }
+
     &__label--camera {
       left: 66.1%;
       top: 51.4%;

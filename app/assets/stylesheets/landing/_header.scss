@@ -13,7 +13,6 @@
   &__logo {
     width: clamp(220px, 14vw, 420px);
     height: auto;
-    aspect-ratio: 1649 / 629;
     margin-top: 1rem;
   }
 
@@ -55,7 +54,7 @@
     filter: brightness(0) invert(1);
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 900px) {
     position: relative;
     flex-wrap: wrap;
     height: auto;

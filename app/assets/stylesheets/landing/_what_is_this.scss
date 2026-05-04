@@ -150,4 +150,30 @@
       text-decoration: underline;
     }
   }
+
+  // On narrow viewports keep all 5 nested borders, but let the stack overflow
+  // the viewport so only the inner ~3 frames are on-screen and the inner
+  // panel can claim more horizontal space for its body copy. Each border
+  // adds 12px on each side (10px padding + 2px border); pushing the stack
+  // 48px wider on each side hides --1 and --2 past the section's
+  // overflow-x: clip.
+  @media (max-width: 600px) {
+    &__card-stack {
+      // Each nested border eats 24px of width (10px padding + 2px border on
+      // each side, border-box). 60px overflow centers the stack so __inner
+      // and --4 land inside the viewport while --1, --2, --3 spill past.
+      width: calc(100% + 60px);
+      max-width: none;
+    }
+
+    &__inner {
+      padding: clamp(1.25rem, 5vw, 2rem) clamp(1rem, 4vw, 1.5rem);
+    }
+
+    // Footnote lives inside the wider card-stack but should still respect
+    // the viewport edges; cap its width to viewport minus side padding.
+    &__footnote {
+      max-width: calc(100vw - 2 * var(--space-l));
+    }
+  }
 }

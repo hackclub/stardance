@@ -51,6 +51,10 @@
     color: white;
     margin: 0;
     text-align: right;
+
+    @media (max-width: 900px) {
+      text-align: center;
+    }
   }
 
   &__step-lead {
@@ -61,6 +65,11 @@
     max-width: 540px;
     text-align: right;
     line-height: var(--line-height-body);
+
+    @media (max-width: 900px) {
+      margin: 0 auto;
+      text-align: center;
+    }
   }
 
   // "New to coding?" mini-block: sits below the gallery, left-aligned and small.
@@ -71,7 +80,7 @@
     z-index: 5;
     max-width: 492px;
     width: 80%;
-    margin: -6rem 20% 0px;
+    margin: -8rem 20% 0px;
     color: var(--color-body-text);
     font-family: "Exo 2", sans-serif;
     box-sizing: content-box;
@@ -108,7 +117,7 @@
 
 .project-thumbs {
   position: relative;
-  margin: var(--space-xl) auto 0;
+  margin: 80px auto 0;
   top: -60px;
   display: flex;
   justify-content: space-between;
@@ -225,22 +234,36 @@
     }
   }
 
+  // Track is a layout passthrough on desktop (display: contents), so the
+  // staircase layout sees items as direct children. On mobile it flips to
+  // flex and runs the auto-scroll animation. The animation lives on the
+  // track instead of .project-thumbs because .project-thumbs already owns
+  // the warp-rise reveal animation.
+  &__track {
+    display: contents;
+  }
+
+  // Desktop: hide the second pass of cloned items used for the mobile loop.
+  &__item--clone {
+    display: none;
+  }
+
   @media (max-width: 900px) {
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    align-items: flex-start;
-    min-height: 0;
-    padding: var(--space-m) var(--space-l) var(--space-xl);
-    gap: var(--space-m);
     overflow-x: auto;
-    overflow-y: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: var(--space-l);
+    overflow-y: clip;
+    padding: var(--space-m) 0 var(--space-xl);
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    &__track {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      gap: var(--space-m);
+      width: max-content;
     }
 
     &__item {
@@ -248,17 +271,30 @@
       margin-top: 0 !important;
       width: 15rem;
       flex-shrink: 0;
-      scroll-snap-align: start;
+      // Description fades in/out as the card moves through the viewport;
+      // controller toggles --in-view between 0 and 1.
+      --in-view: 0;
+    }
+
+    &__item--clone {
+      display: flex;
+    }
+
+    &__desc {
+      opacity: var(--in-view);
+      transform: translateY(0);
+      pointer-events: none;
+      transition: opacity 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
     }
 
     &__img-wrap,
     &__img {
       height: 10rem;
     }
-    overflow: auto clip;
   }
 
   @media (max-width: 600px) {
     padding-bottom: 0;
   }
 }
+

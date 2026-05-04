@@ -9,7 +9,8 @@
   align-items: center;
   color: var(--color-body-text);
   font-family: "Exo 2", sans-serif;
-  padding-bottom: calc(var(--space-xxxxl) * 2);
+  padding: 0 var(--space-xl) calc(var(--space-xxxxl) * 2);
+  overflow-x: clip;
 
   // Top divider: full-bleed horizontal line with two decorative sparkles.
   // Line stretches; sparkles keep their intrinsic aspect ratio.
@@ -17,10 +18,14 @@
     position: relative;
     display: block;
     width: 100vw;
-    max-width: 100%;
+    max-width: none;
     height: 32px;
     margin-top: var(--space-s);
     margin-bottom: calc(var(--space-xxxxl) * 2);
+    // Section has horizontal padding for content; the divider escapes it
+    // to stay full-bleed.
+    margin-left: calc(-1 * var(--space-xl));
+    margin-right: calc(-1 * var(--space-xl));
   }
 
   &__divider-line {
@@ -153,6 +158,13 @@
   }
 
   @media (max-width: 900px) {
+    padding-bottom: var(--space-xxxxl);
+
+    &__divider {
+      margin-top: 0;
+      margin-bottom: var(--space-xl);
+    }
+
     &__items {
       grid-template-columns: 1fr;
       gap: var(--space-xl);
@@ -166,7 +178,7 @@
     &__item--cat-printer &__item-img-wrap,
     &__item--bubble-tea &__item-img-wrap,
     &__item--blahaj &__item-img-wrap {
-      max-width: 260px;
+      max-width: 160px;
     }
   }
 }

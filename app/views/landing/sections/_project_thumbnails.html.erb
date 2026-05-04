@@ -10,46 +10,29 @@
     <p class="project-thumbs-section__step-lead">Build any website, game, app, hardware of your liking. No experience required.</p>
   </div>
 
-  <div class="project-thumbs" aria-label="Past projects by teens">
-    <%= link_to "https://shaaarkai.itch.io/specter", class: "project-thumbs__item project-thumbs__item--1", target: "_blank", rel: "noopener noreferrer" do %>
-      <div class="project-thumbs__tab">By Yessa, 18</div>
-      <div class="project-thumbs__img-wrap">
-        <%= image_tag image_url("landing/projects/yessa.png"), class: "project-thumbs__img", alt: "Project by Yessa", loading: "lazy" %>
-      </div>
-      <div class="project-thumbs__desc" aria-hidden="true">A knight bravely attempts to escape a haunted cave while pursued by his own ghost.</div>
+  <div class="project-thumbs" aria-label="Past projects by teens" data-controller="project-thumbs-loop">
+   <div class="project-thumbs__track" data-project-thumbs-loop-target="track">
+    <% items = [
+      { url: "https://shaaarkai.itch.io/specter", mod: 1, by: "By Yessa, 18", img: "landing/projects/yessa.png", alt: "Project by Yessa", desc: "A knight bravely attempts to escape a haunted cave while pursued by his own ghost." },
+      { url: "https://github.com/Dieu-de-l-elec/AngstromIO-devboard", mod: 2, by: "By Cl&eacute;ment, 17".html_safe, img: "landing/projects/clement.png", alt: "Project by Clément", desc: "A pocket‑sized, custom Attiny1616 devboard, with two GPIOs and I2C, a dual‑CH340 UPDI programmer!" },
+      { url: "https://github.com/geg-tech/brew-keeb", mod: 3, by: "By Alexander, 16", img: "landing/projects/alexander.png", alt: "Project by Alexander", desc: "A fully documented, custom keyboard with built-in RGB, OLED and a USB hub made for Blueprint!" },
+      { url: "https://deltea.itch.io/starbird", mod: 4, by: "By Deltea, 16", img: "landing/projects/deltea.png", alt: "Project by Deltea", desc: "A platformer game about a bird collecting stars, made for Milkyway!" },
+      { url: "https://github.com/SteveMan67/platformed", mod: 5, by: "By Steve, 16", img: "landing/projects/steve.png", alt: "Project by Steve", desc: "A platformer with a fully functioning level editor, online level sharing, and trigger system, built from the ground up in Javascript for Flavortown." }
+    ] %>
+    <%# Items are rendered twice on mobile so the auto-scroll loop is seamless;
+        on desktop the second copy is hidden via CSS (display: none). %>
+    <% (1..2).each do |pass| %>
+      <% items.each do |item| %>
+        <%= link_to item[:url], class: "project-thumbs__item project-thumbs__item--#{item[:mod]}#{' project-thumbs__item--clone' if pass == 2}", target: "_blank", rel: "noopener noreferrer", "aria-hidden": (pass == 2 ? "true" : nil), tabindex: (pass == 2 ? -1 : nil) do %>
+          <div class="project-thumbs__tab"><%= item[:by] %></div>
+          <div class="project-thumbs__img-wrap">
+            <%= image_tag image_url(item[:img]), class: "project-thumbs__img", alt: item[:alt], loading: "lazy" %>
+          </div>
+          <div class="project-thumbs__desc" aria-hidden="true"><%= item[:desc] %></div>
+        <% end %>
+      <% end %>
     <% end %>
-
-    <%= link_to "https://github.com/Dieu-de-l-elec/AngstromIO-devboard", class: "project-thumbs__item project-thumbs__item--2", target: "_blank", rel: "noopener noreferrer" do %>
-      <div class="project-thumbs__tab">By Cl&eacute;ment, 17</div>
-      <div class="project-thumbs__img-wrap">
-        <%= image_tag image_url("landing/projects/clement.png"), class: "project-thumbs__img", alt: "Project by Clément", loading: "lazy" %>
-      </div>
-      <div class="project-thumbs__desc" aria-hidden="true">A pocket‑sized, custom Attiny1616 devboard, with two GPIOs and I2C, a dual‑CH340 UPDI programmer!</div>
-    <% end %>
-
-    <%= link_to "https://github.com/geg-tech/brew-keeb", class: "project-thumbs__item project-thumbs__item--3", target: "_blank", rel: "noopener noreferrer" do %>
-      <div class="project-thumbs__tab">By Alexander, 16</div>
-      <div class="project-thumbs__img-wrap">
-        <%= image_tag image_url("landing/projects/alexander.png"), class: "project-thumbs__img", alt: "Project by Alexander", loading: "lazy" %>
-      </div>
-      <div class="project-thumbs__desc" aria-hidden="true">A fully documented, custom keyboard with built-in RGB, OLED and a USB hub made for Blueprint!</div>
-    <% end %>
-
-    <%= link_to "https://deltea.itch.io/starbird", class: "project-thumbs__item project-thumbs__item--4", target: "_blank", rel: "noopener noreferrer" do %>
-      <div class="project-thumbs__tab">By Deltea, 16</div>
-      <div class="project-thumbs__img-wrap">
-        <%= image_tag image_url("landing/projects/deltea.png"), class: "project-thumbs__img", alt: "Project by Deltea", loading: "lazy" %>
-      </div>
-      <div class="project-thumbs__desc" aria-hidden="true">A platformer game about a bird collecting stars, made for Milkyway!</div>
-    <% end %>
-
-    <%= link_to "https://github.com/SteveMan67/platformed", class: "project-thumbs__item project-thumbs__item--5", target: "_blank", rel: "noopener noreferrer" do %>
-      <div class="project-thumbs__tab">By Steve, 16</div>
-      <div class="project-thumbs__img-wrap">
-        <%= image_tag image_url("landing/projects/steve.png"), class: "project-thumbs__img", alt: "Project by Steve", loading: "lazy" %>
-      </div>
-      <div class="project-thumbs__desc" aria-hidden="true">A platformer with a fully functioning level editor, online level sharing, and trigger system, built from the ground up in Javascript for Flavortown.</div>
-    <% end %>
+   </div>
   </div>
 
   <div class="project-thumbs-section__new-to-coding">
