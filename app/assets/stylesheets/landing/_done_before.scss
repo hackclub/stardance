@@ -73,6 +73,12 @@
     color: white;
     text-align: center;
     margin: 0;
+
+    &--italic {
+      font-family: "Playfair Display", serif;
+      font-style: italic;
+      font-weight: 700;
+    }
   }
 
   &__subtitle {
