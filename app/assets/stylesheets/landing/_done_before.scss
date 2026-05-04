@@ -8,17 +8,44 @@
   color: white;
   font-family: "Exo 2", sans-serif;
 
+  // Top/bottom dividers: full-bleed horizontal line with two decorative
+  // sparkles. Line stretches; sparkles keep their intrinsic aspect ratio.
   &__border {
-    width: 100%;
-    height: auto;
+    position: relative;
     display: block;
+    width: 100vw;
+    max-width: 100%;
+    height: 32px;
 
     &--top {
+      margin-top: var(--space-s);
       margin-bottom: var(--space-xxxxl);
     }
     &--bottom {
       margin-top: var(--space-xxxxl);
+      margin-bottom: var(--space-s);
     }
+  }
+
+  &__border-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: white;
+    transform: translateY(-50%);
+  }
+
+  &__border-sparkle {
+    position: absolute;
+    top: 50%;
+    height: 100%;
+    width: auto;
+    transform: translate(-50%, -50%);
+
+    &--left { left: 16.86%; }
+    &--right { left: 83.58%; }
   }
 
   &__star-artwork {

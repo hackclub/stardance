@@ -11,14 +11,39 @@
   overflow-y: visible;
   margin-bottom: 10rem;
 
+  // Full-bleed horizontal line with two decorative sparkles. Line stretches;
+  // sparkles keep their intrinsic aspect ratio. Sits behind the title-mask
+  // gradient so the title appears to "cut" the line.
   &__divider {
     position: absolute;
     top: 1.5rem;
     left: 50%;
     width: 102.4%; // figma: 1310 / 1280
+    height: 32px;
     transform: translateX(-50%);
     pointer-events: none;
     z-index: 0;
+  }
+
+  &__divider-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: white;
+    transform: translateY(-50%);
+  }
+
+  &__divider-sparkle {
+    position: absolute;
+    top: 50%;
+    height: 100%;
+    width: auto;
+    transform: translate(-50%, -50%);
+
+    &--left { left: 16.86%; }
+    &--right { left: 83.58%; }
   }
 
   &__nebula {
