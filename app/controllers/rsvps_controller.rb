@@ -26,7 +26,7 @@ class RsvpsController < ApplicationController
       -----------
        7 | 8 | 9
 
-      to play: reply to any stardance email with a single number 1-9.
+      to play: reply to the rsvp stardance email with a single number 1-9.
       that cell becomes your X. the bot picks an empty cell as O and
       replies back with the new board.
 
