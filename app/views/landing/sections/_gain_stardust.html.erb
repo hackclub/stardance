@@ -1,10 +1,10 @@
 <section class="gain-stardust">
   <%= image_tag image_url("landing/how-this-works/colorful-streak.png"), class: "gain-stardust__streak", alt: "", aria: { hidden: true }, loading: "lazy" %>
 
-  <div class="gain-stardust__curve" aria-hidden="true">
+  <div class="gain-stardust__curve" aria-hidden="true" data-controller="curve-draw" data-curve-draw-start-after-value=".project-thumbs-section">
     <svg class="gain-stardust__curve-svg" preserveAspectRatio="none" viewBox="0 0 373 648" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g transform="rotate(180 186.5 324) translate(0 648) scale(1 -1)">
-        <path d="M373 1C331.46 1.00026 216.087 23.3718 131.002 103.388C45.9172 183.405 -15.5311 286.056 4.96885 438.957C21.1537 559.674 94.5021 647 131.002 647" stroke="white" stroke-width="2"/>
+        <path data-curve-draw-target="path" d="M373 1C331.46 1.00026 216.087 23.3718 131.002 103.388C45.9172 183.405 -15.5311 286.056 4.96885 438.957C21.1537 559.674 94.5021 647 131.002 647" stroke="white" stroke-width="2"/>
       </g>
     </svg>
   </div>

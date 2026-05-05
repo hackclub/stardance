@@ -16,6 +16,9 @@ application.register("card-sound", CardSoundController)
 import CookieClickerController from "./cookie_clicker_controller"
 application.register("cookie-clicker", CookieClickerController)
 
+import CurveDrawController from "./curve_draw_controller"
+application.register("curve-draw", CurveDrawController)
+
 import CopyDebugController from "./copy_debug_controller"
 application.register("copy-debug", CopyDebugController)
 
