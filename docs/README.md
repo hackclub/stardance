@@ -1,4 +1,6 @@
-## Docs???
+## Documentation
 
-there isnt real docs here but there is an example of the creds file and slack bot!
-hope that helps
+This directory contains some random reference files for project setup and configuration.
+
+- `example_dev_creds.yml` - example credentials file for local development
+- `example_prod_creds.yml` - example credentials file for production
