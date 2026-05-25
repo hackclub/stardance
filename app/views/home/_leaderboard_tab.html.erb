@@ -1,0 +1,26 @@
+<div class="leaderboard-section">
+  <h2 class="leaderboard-section__title">Leaderboard</h2>
+  <p class="leaderboard-section__subtitle"><%= @pagy.count %> users opted in to the leaderboard :D, you can opt in through settings</p>
+
+  <div class="users">
+    <% @users.each_with_index do |user, index| %>
+      <div class="user">
+        <div class="content">
+          <h2>#<%= @pagy.offset + index + 1 %></h2>
+
+          <%= image_tag user.avatar %>
+          <h2>
+            <%= link_to user.display_name, user_path(user) %>
+          </h2>
+
+          <p><%= user.cached_balance %> <%= stardust_icon %></p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @pagy.pages > 1 %>
+    <div class="pagination"><%== @pagy.series_nav %></div>
+  <% end %>
+</div>
+
