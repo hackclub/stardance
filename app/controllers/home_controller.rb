@@ -7,9 +7,25 @@ class HomeController < ApplicationController
 
     session[:welcomed] = true if @welcoming
 
-    load_feed
-    load_composer
-    load_recommended_projects
+    @tab = params[:tab].presence || "explore"
+
+    case @tab
+    when "faq"
+      load_faqs
+    when "achievements"
+      load_achievements
+    when "leaderboard"
+      load_leaderboard
+    else
+      load_feed
+      load_composer
+      load_recommended_projects
+
+      # when "explore"
+      # load_feed
+      # load_composer
+      # load_recommended_projects
+    end
   end
 
   private
@@ -57,9 +73,47 @@ class HomeController < ApplicationController
   end
 
   def load_recommended_projects
+    # def selected_composer_project
     @recommended_projects = Project.excluding_member(current_user)
                                    .where(deleted_at: nil)
                                    .with_banner_priority
                                    .limit(6)
+  end
+
+  # Load all FAQs for display in FAQ tab
+  def load_faqs
+    @faqs = Faq.all
+  end
+
+  def load_achievements
+    Achievement.all.each { |a| grant_achievement!(a.slug) if a.earned_by?(current_user) }
+
+    user_achievements_by_slug = current_user.achievements.index_by(&:achievement_slug)
+
+    @achievements = Achievement.all.map do |achievement|
+      user_achievement = user_achievements_by_slug[achievement.slug.to_s]
+      {
+        achievement: achievement,
+        earned: user_achievement.present?,
+        earned_at: user_achievement&.earned_at,
+        progress: achievement.progress_for(current_user)
+      }
+    end
+
+    countable = Achievement.countable_for_user(current_user)
+    earned_countable = countable.count { |a| user_achievements_by_slug[a.slug.to_s].present? }
+    @achievement_stats = {
+      earned: earned_countable,
+      total: countable.count
+    }
+  end
+
+  def load_leaderboard
+    scope = User.discoverable
+                .joins(:preference)
+                .where(user_preferences: { leaderboard_optin: true }, banned: false)
+
+    sorted_users = scope.sort_by { |u| -u.cached_balance }
+    @pagy, @users = pagy(:offset, sorted_users, limit: 10)
   end
 end

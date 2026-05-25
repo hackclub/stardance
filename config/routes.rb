@@ -512,9 +512,10 @@ Rails.application.routes.draw do
 
   # Home
   get "home", to: "home#index"
-
-  # Leaderboard
-  get "leaderboard", to: "leaderboard#index"
+  get "home/explore", to: "home#index", defaults: { tab: "explore" }, as: :home_explore
+  get "home/faq", to: "home#index", defaults: { tab: "faq" }, as: :home_faq
+  get "home/achievements", to: "home#index", defaults: { tab: "achievements" }, as: :home_achievements
+  get "home/leaderboard", to: "home#index", defaults: { tab: "leaderboard" }, as: :home_leaderboard
 
   # Events — listing of missions and (eventually) other themed events.
   resources :events, only: [ :index ]
@@ -712,6 +713,8 @@ Rails.application.routes.draw do
         post :trigger
       end
     end
+
+    resources :faqs
 
     resources :missions, param: :slug do
       resources :steps,        only: [ :create, :update, :destroy ], controller: "mission_steps"
