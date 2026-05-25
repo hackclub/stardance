@@ -73,7 +73,6 @@ class HomeController < ApplicationController
   end
 
   def load_recommended_projects
-    # def selected_composer_project
     @recommended_projects = Project.excluding_member(current_user)
                                    .where(deleted_at: nil)
                                    .with_banner_priority

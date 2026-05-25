@@ -1,0 +1,29 @@
+<div class="faq-section">
+  <h2 class="faq-section__title">Frequently Asked Questions</h2>
+
+  <div class="faq-list" data-controller="faq-accordion">
+    <% if @faqs.any? %>
+      <% @faqs.each do |faq| %>
+        <button
+          class="faq-item"
+          data-action="click->faq-accordion#toggle">
+          <div class="faq-item__header">
+            <h3 class="faq-item__question"><%= faq.question %></h3>
+            <span class="faq-item__arrow" data-faq-accordion-target="arrow">→</span>
+          </div>
+          <div class="faq-item__answer" data-faq-accordion-target="answer" style="max-height: 0px; overflow: hidden;">
+            <div class="faq-item__answer-content">
+              <%= simple_format(faq.answer) %>
+            </div>
+          </div>
+        </button>
+      <% end %>
+    <% else %>
+      <p class="faq-list__empty">No FAQs available yet.</p>
+    <% end %>
+
+    If you have more questions, ask in <a href="https://hackclub.enterprise.slack.com/archives/C0APH2MMHH7">#stardance-support</a>!
+  </div>
+</div>
+
+
