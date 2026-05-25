@@ -20,11 +20,6 @@ class HomeController < ApplicationController
       load_feed
       load_composer
       load_recommended_projects
-
-      # when "explore"
-      # load_feed
-      # load_composer
-      # load_recommended_projects
     end
   end
 
@@ -81,7 +76,8 @@ class HomeController < ApplicationController
 
   # Load all FAQs for display in FAQ tab
   def load_faqs
-    @faqs = Faq.all
+    @faq_items = FaqItem.all
+    @new_item = FaqItem.new
   end
 
   def load_achievements

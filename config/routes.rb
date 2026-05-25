@@ -812,6 +812,10 @@ Rails.application.routes.draw do
   # Guides
   resources :guides, only: [ :index, :show ]
 
+  resources :faq_items, only: [:index, :create, :edit, :update, :destroy] do
+    collection { post :reorder }
+  end
+
   # Missions (public listing + show page).
   # Project-side / reviewer-queue / admin-managed missions surfaces ship in later PRs.
   resources :missions, only: [ :index, :show ], param: :slug do
