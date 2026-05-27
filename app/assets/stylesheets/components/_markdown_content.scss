@@ -104,4 +104,12 @@
     border-top: 1px solid var(--color-tan-400);
     margin: 1em 0;
   }
+
+  &--bare {
+    margin-top: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+  }
 }

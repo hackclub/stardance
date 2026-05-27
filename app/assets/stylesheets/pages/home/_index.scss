@@ -1154,9 +1154,13 @@
 
   &__question {
     color: var(--color-space-text);
-    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
-    font-style: italic;
-    font-weight: 700;
+    font-family: 'Exo 2', sans-serif;
+    font-size: var(--font-size-xxxl);
+    font-weight: 500;
+
+    //font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    //font-style: italic;
+    //font-weight: 700;
   }
 
   &__answer {
