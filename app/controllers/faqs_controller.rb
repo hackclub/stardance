@@ -20,7 +20,7 @@ class FaqsController < ApplicationController
     if @faq.update(faq_params)
       redirect_to home_path(tab: :faq), notice: "Question updated."
     else
-      render :edit, status: :unprocessable_entity
+      redirect_to home_path(tab: :faq), alert: @faq.errors.full_messages.to_sentence
     end
   end
 

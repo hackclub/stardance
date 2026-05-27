@@ -1104,12 +1104,11 @@
 .faq-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.5rem;
   margin-bottom: 3rem;
 }
 
 .faq-item {
-  border-bottom: 1px solid var(--color-space-border);
   padding: var(--space-s) 0;
 
   &__details {
@@ -1120,6 +1119,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
+    font-size: var(--font-size-xxl) !important;
     cursor: pointer;
     list-style: none;
     padding: var(--space-xs) 0;
@@ -1139,14 +1139,11 @@
   }
 
   &__question {
-    font-family: var(--font-family-text);
-    font-size: var(--font-size-l);
     font-weight: 600;
     color: var(--color-space-text);
   }
 
   &__answer {
-    font-family: var(--font-family-text);
     font-size: var(--font-size-m);
     color: var(--color-space-text-muted);
     line-height: 1.6;
@@ -1164,6 +1161,23 @@
     display: flex;
     gap: var(--space-xs);
     margin-top: var(--space-xs);
+  }
+
+  &__copy-link {
+    margin-left: auto;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--color-space-text-muted);
+    font-family: inherit;
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0 var(--space-xs);
+    opacity: 0.4;
+    transition: opacity 150ms ease;
+
+    &:hover { opacity: 1; }
   }
 }
 
@@ -1231,29 +1245,18 @@
   }
 
   &__label {
-    font-family: var(--font-family-text);
     font-size: var(--font-size-m);
     font-weight: 500;
     color: var(--color-space-text);
   }
 
   &__input {
-    //padding: 0.75rem;
-    //font-family: var(--font-family-text);
-    //font-size: var(--font-size-m);
-    //background: var(--color-space-bg);
-    //border: 1px solid var(--color-border-input);
-    //border-radius: 4px;
-    //color: var(--color-space-text);
-    //transition: all 0.2s ease;
-    //min-height: 4em;
     padding: var(--space-xs) var(--space-s);
     margin: 0 calc(-1 * var(--space-s));
     border-radius: var(--profile-radius);
     border: 1px dashed var(--color-space-border);
     background: var(--color-overlay-light-soft);
     color: var(--color-space-text);
-    //font-family: inherit;
     font-size: 1.1875rem;
     line-height: 1.3;
     white-space: pre-wrap;
@@ -1261,9 +1264,6 @@
     outline: none;
 
     &:focus {
-      //outline: none;
-      //border-color: var(--color-border-input-focus);
-      //background: var(--color-space-bg-2);
       border-color: var(--color-space-accent);
       border-style: solid;
     }
@@ -1278,33 +1278,6 @@
     display: flex;
     gap: var(--space-xs);
     margin-top: var(--space-s);
-  }
-}
-
-.faq-form-errors {
-  background: rgba(255, 141, 157, 0.15);
-  border: 1px solid var(--color-red-500);
-  border-radius: 4px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-
-  h4 {
-    font-family: var(--font-family-text);
-    font-weight: 600;
-    color: var(--color-red-300);
-    margin: 0 0 0.5rem 0;
-  }
-
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-
-    li {
-      color: var(--color-red-300);
-      font-size: var(--font-size-s);
-      padding: 0.25rem 0;
-    }
   }
 }
 
