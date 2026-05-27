@@ -15,6 +15,14 @@ module HomeHelper
     end
   end
 
+  def faq_copy_link_button(faq)
+    tag.button "#",
+      type: "button",
+      class: "faq-item__action-btn",
+      title: "Copy link to question",
+      onclick: "navigator.clipboard.writeText(location.origin+location.pathname+'#faq-#{faq.id}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='#',1500)})"
+  end
+
   def home_tab_link(label, path, current_tab, divider: true)
     is_active = current_tab == label
 

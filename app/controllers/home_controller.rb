@@ -76,7 +76,7 @@ class HomeController < ApplicationController
 
   # Load all FAQs for display in FAQ tab
   def load_faqs
-    @faqs = Faq.ordered
+    @faqs = Faq.ordered.to_a
     @new_faq = Faq.new
   end
 

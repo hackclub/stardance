@@ -27,6 +27,7 @@
                 <%= button_to "delete", faq_path(faq), method: :delete,
                       form: { data: { turbo_frame: "_top", turbo_confirm: "delete this question?" } },
                       class: "faq-item__action-btn faq-item__action-btn--danger" %>
+                <%= faq_copy_link_button(faq) %>
               </div>
             <% end %>
           <% end %>
@@ -61,3 +62,14 @@
 
   <% end %>
 </div>
+
+<script>
+  {
+    const el = document.getElementById(location.hash.slice(1));
+    const details = el?.querySelector("details");
+    if (details) {
+      details.open = true;
+      details.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+</script>
