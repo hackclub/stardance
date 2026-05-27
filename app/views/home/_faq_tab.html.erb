@@ -1,29 +1,59 @@
 <div class="faq-section">
   <h2 class="faq-section__title">Frequently Asked Questions</h2>
 
-  <div class="faq-list" data-controller="faq-accordion">
+  <div class="faq-list">
     <% if @faqs.any? %>
       <% @faqs.each do |faq| %>
-        <button
-          class="faq-item"
-          data-action="click->faq-accordion#toggle">
-          <div class="faq-item__header">
-            <h3 class="faq-item__question"><%= faq.question %></h3>
-            <span class="faq-item__arrow" data-faq-accordion-target="arrow">→</span>
-          </div>
-          <div class="faq-item__answer" data-faq-accordion-target="answer" style="max-height: 0px; overflow: hidden;">
-            <div class="faq-item__answer-content">
-              <%= simple_format(faq.answer) %>
-            </div>
-          </div>
-        </button>
+        <div class="faq-item" id="faq-<%= faq.id %>">
+          <%= turbo_frame_tag faq do %>
+            <details class="faq-item__details">
+              <summary class="faq-item__summary">
+                <span class="faq-item__question"><%= faq.question %></span>
+              </summary>
+              <div class="faq-item__answer">
+                <%= simple_format(faq.answer) %>
+              </div>
+            </details>
+
+            <% if current_user&.admin? || current_user&.helper? %>
+              <div class="faq-item__actions">
+                <%= link_to "edit", edit_faq_path(faq), class: "faq-item__action-btn" %>
+                <%= button_to "up", move_up_faq_path(faq), method: :patch,
+                      form: { data: { turbo_frame: "_top" } },
+                      class: "faq-item__action-btn" %>
+                <%= button_to "down", move_down_faq_path(faq), method: :patch,
+                      form: { data: { turbo_frame: "_top" } },
+                      class: "faq-item__action-btn" %>
+                <%= button_to "delete", faq_path(faq), method: :delete,
+                      form: { data: { turbo_frame: "_top", turbo_confirm: "delete this question?" } },
+                      class: "faq-item__action-btn faq-item__action-btn--danger" %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
       <% end %>
     <% else %>
-      <p class="faq-list__empty">No FAQs available yet.</p>
+      <p class="faq-section__empty">No FAQs available yet.</p>
     <% end %>
-
-    If you have more questions, ask in <a href="https://hackclub.enterprise.slack.com/archives/C0APH2MMHH7">#stardance-support</a>!
   </div>
+
+  <% if current_user&.admin? || current_user&.helper? %>
+    <div class="faq-form-section">
+      <%= form_with(model: @new_faq, class: "faq-form") do |form| %>
+        <div class="faq-form__field">
+          <%= form.label :question, "Question", class: "faq-form__label" %>
+          <%= form.text_field :question, placeholder: "Enter the question", class: "faq-form__input" %>
+        </div>
+
+        <div class="faq-form__field">
+          <%= form.label :answer, "Answer", class: "faq-form__label" %>
+          <%= form.text_area :answer, placeholder: "Enter the answer", rows: 5, class: "faq-form__input faq-form__input--textarea" %>
+        </div>
+
+        <div class="faq-form__actions">
+          <%= form.submit "add", class: "faq-item__action-btn faq-item__action-btn--primary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 </div>
-
-

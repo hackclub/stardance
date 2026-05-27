@@ -1,0 +1,31 @@
+<%= turbo_frame_tag @faq do %>
+  <div class="faq-edit-form">
+    <%= form_with(model: @faq, class: "faq-form", data: { turbo_frame: "_top" }) do |form| %>
+      <% if @faq.errors.any? %>
+        <div class="faq-form-errors">
+          <h4><%= pluralize(@faq.errors.count, "error") %> prohibited this item:</h4>
+          <ul>
+            <% @faq.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="faq-form__field">
+        <%= form.label :question, "Question", class: "faq-form__label" %>
+        <%= form.text_field :question, class: "faq-form__input" %>
+      </div>
+
+      <div class="faq-form__field">
+        <%= form.label :answer, "Answer", class: "faq-form__label" %>
+        <%= form.text_area :answer, rows: 5, class: "faq-form__input faq-form__input--textarea" %>
+      </div>
+
+      <div class="faq-form__actions">
+        <%= form.submit "Save Changes", class: "faq-item__action-btn faq-item__action-btn--primary" %>
+        <%= link_to "Cancel", home_path(tab: :faq), class: "faq-item__action-btn" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

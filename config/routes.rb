@@ -714,7 +714,6 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :faqs
 
     resources :missions, param: :slug do
       resources :steps,        only: [ :create, :update, :destroy ], controller: "mission_steps"
@@ -812,8 +811,12 @@ Rails.application.routes.draw do
   # Guides
   resources :guides, only: [ :index, :show ]
 
-  resources :faq_items, only: [:index, :create, :edit, :update, :destroy] do
+  resources :faqs, only: [ :create, :edit, :update, :destroy ] do
     collection { post :reorder }
+    member do
+      patch :move_up
+      patch :move_down
+    end
   end
 
   # Missions (public listing + show page).

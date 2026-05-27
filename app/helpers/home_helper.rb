@@ -41,6 +41,6 @@ module HomeHelper
       )
     end
 
-    safe_join([link, divider_svg])
+    safe_join([ link, divider_svg ])
   end
 end

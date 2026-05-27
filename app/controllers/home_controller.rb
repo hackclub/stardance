@@ -76,8 +76,8 @@ class HomeController < ApplicationController
 
   # Load all FAQs for display in FAQ tab
   def load_faqs
-    @faq_items = FaqItem.all
-    @new_item = FaqItem.new
+    @faqs = Faq.ordered
+    @new_faq = Faq.new
   end
 
   def load_achievements
