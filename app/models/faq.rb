@@ -15,13 +15,13 @@
 #
 class Faq < ApplicationRecord
   validates :question, :answer, presence: true
-  scope :ordered, -> { order(:position) }
+  scope :ordered, -> { order(:position, :id) }
 
   before_create :set_position
 
   private
 
   def set_position
-    self.position ||= (Faq.maximum(:position) || -1) + 1
+    self.position = (Faq.maximum(:position) || -1) + 1
   end
 end

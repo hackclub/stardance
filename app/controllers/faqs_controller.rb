@@ -32,28 +32,22 @@ class FaqsController < ApplicationController
 
   def move_up
     authorize @faq, :update?
-    sibling = Faq.ordered.where("position < ?", @faq.position).last
-    if sibling
-      faq_pos     = @faq.position
-      sibling_pos = sibling.position
-      Faq.transaction do
-        @faq.update_column(:position, sibling_pos)
-        sibling.update_column(:position, faq_pos)
-      end
+    faqs = Faq.ordered.to_a
+    idx  = faqs.index { |f| f.id == @faq.id }
+    if idx&.positive?
+      faqs.insert(idx - 1, faqs.delete_at(idx))
+      Faq.transaction { faqs.each_with_index { |f, i| f.update_column(:position, i) } }
     end
     redirect_to home_path(tab: :faq)
   end
 
   def move_down
     authorize @faq, :update?
-    sibling = Faq.ordered.where("position > ?", @faq.position).first
-    if sibling
-      faq_pos     = @faq.position
-      sibling_pos = sibling.position
-      Faq.transaction do
-        @faq.update_column(:position, sibling_pos)
-        sibling.update_column(:position, faq_pos)
-      end
+    faqs = Faq.ordered.to_a
+    idx  = faqs.index { |f| f.id == @faq.id }
+    if idx && idx < faqs.length - 1
+      faqs.insert(idx + 1, faqs.delete_at(idx))
+      Faq.transaction { faqs.each_with_index { |f, i| f.update_column(:position, i) } }
     end
     redirect_to home_path(tab: :faq)
   end
