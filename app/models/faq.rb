@@ -11,7 +11,7 @@
 #
 # Indexes
 #
-#  index_faqs_on_position   (position)
+#  index_faqs_on_position  (position)
 #
 class Faq < ApplicationRecord
   validates :question, :answer, presence: true
@@ -22,6 +22,8 @@ class Faq < ApplicationRecord
   private
 
   def set_position
-    self.position = (Faq.maximum(:position) || -1) + 1
+    self.position = self.class.transaction do
+      (Faq.lock.order(position: :desc).limit(1).pick(:position) || -1) + 1
+    end
   end
 end
