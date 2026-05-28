@@ -1,7 +1,9 @@
 <% content_for :title, "Welcome" %>
 <main class="onboarding-screen onboarding-screen--welcome"
       data-controller="onboarding-transition"
-      data-onboarding-transition-duration-value="700">
+      data-onboarding-transition-duration-value="600"
+      data-onboarding-transition-auto-advance-delay-value="7200"
+      data-onboarding-transition-auto-advance-href-value="<%= onboarding_birthday_path %>">
   <div class="onboarding-welcome__background" aria-hidden="true">
     <video class="onboarding-welcome__video" autoplay muted loop playsinline preload="auto">
       <source src="<%= asset_path("stardance-bg.webm") %>" type="video/webm">
@@ -21,19 +23,11 @@
 
   <div class="onboarding-welcome__content">
     <h1 class="onboarding-welcome__title">
-      <span class="onboarding-welcome__title-line">Welcome to the</span>
+      <span class="onboarding-welcome__title-line">Welcome to</span>
       <em class="onboarding-welcome__title-em">Stardance Challenge</em>
     </h1>
     <p class="onboarding-welcome__subhead">
       Make projects → Ship to earn stardust → Spend on prizes
     </p>
-    <%= render ActionButtonComponent.new(
-          text: "GET STARTED",
-          variant: :primary,
-          size: :large,
-          href: onboarding_birthday_path,
-          icon: "icons/right-arrow.svg",
-          data: { action: "click->onboarding-transition#leave" }
-        ) %>
   </div>
 </main>

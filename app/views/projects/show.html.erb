@@ -24,8 +24,6 @@
 
 <% if @show_project_tour %>
   <%= render "welcome_tour" %>
-<% elsif @show_first_hackatime_tour %>
-  <%= render "first_hackatime_tour" %>
 <% end %>
 
 <div class="app-layout">
@@ -452,8 +450,7 @@
         <header class="project-show__onboarding-header">
           <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
           <p class="project-show__onboarding-header-body">
-            Not sure what to do? Follow a guide to set up your project, or jump straight into it by
-            <%= link_to "editing your project info", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %>.
+            Your devlogs will appear here. But first, set up Hackatime to start working on your project.
           </p>
         </header>
 

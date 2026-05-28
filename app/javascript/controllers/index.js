@@ -157,6 +157,9 @@ application.register("upgrade-modal", UpgradeModalController);
 import UserRefModalController from "./user_ref_modal_controller";
 application.register("user-ref-modal", UserRefModalController);
 
+import UsernameAvailabilityController from "./username_availability_controller";
+application.register("username-availability", UsernameAvailabilityController);
+
 import VimeoPlayerController from "./vimeo_player_controller";
 application.register("vimeo-player", VimeoPlayerController);
 

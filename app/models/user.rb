@@ -40,11 +40,12 @@
 #
 # Indexes
 #
-#  index_users_on_email               (email)
-#  index_users_on_lower_email_unique  (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
-#  index_users_on_onboarded_at        (onboarded_at)
-#  index_users_on_session_token       (session_token) UNIQUE
-#  index_users_on_slack_id            (slack_id) UNIQUE
+#  index_users_on_email                      (email)
+#  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
+#  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
+#  index_users_on_onboarded_at               (onboarded_at)
+#  index_users_on_session_token              (session_token) UNIQUE
+#  index_users_on_slack_id                   (slack_id) UNIQUE
 #
 class User < ApplicationRecord
   has_paper_trail ignore: [ :votes_count, :updated_at, :shop_region ], on: [ :update, :destroy ]
@@ -142,6 +143,8 @@ class User < ApplicationRecord
   validates :verification_status, presence: true
   validates :slack_id, uniqueness: true, allow_nil: true
   validates :email, uniqueness: { case_sensitive: false }, allow_blank: true
+  validates :display_name, uniqueness: { case_sensitive: false }, allow_blank: true
+  validates :display_name, length: { maximum: 30 }, allow_blank: true
   validates :hcb_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
   include User::Notifications
@@ -166,7 +169,7 @@ class User < ApplicationRecord
   ].freeze
 
   def self.random_funny_display_name
-    "#{KERBAL_FIRST_NAMES.sample} Kerman"
+    "#{KERBAL_FIRST_NAMES.sample} Kerman #{rand(1000..9999)}"
   end
 
   private

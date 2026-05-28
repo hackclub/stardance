@@ -555,6 +555,7 @@ Rails.application.routes.draw do
     get  :interests_result,          to: "wizard#interests_result"
     get  :name,                      to: "wizard#name"
     post :name,                      to: "wizard#submit_name"
+    get  :check_name,                to: "wizard#check_name"
   end
 
   namespace :helper, constraints: HelperConstraint do

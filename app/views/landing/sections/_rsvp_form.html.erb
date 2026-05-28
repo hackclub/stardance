@@ -6,7 +6,7 @@
   signup_mode   = Flipper.enabled?(:new_onboarding)
   form_url      = signup_mode ? onboarding_start_path : rsvps_path
   form_scope    = signup_mode ? nil : :rsvp
-  submit_label  = signup_mode ? "Get started →" : "RSVP →"
+  submit_label  = signup_mode ? "Start! →" : "RSVP →"
 %>
 <div class="<%= ["rsvp-form", wrapper_class].compact.join(" ") %>">
   <%= form_with url: form_url, scope: form_scope, method: :post, local: true,

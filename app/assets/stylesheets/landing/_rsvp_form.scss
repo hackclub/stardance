@@ -57,6 +57,8 @@
     height: 54px;
     width: 137px;
     flex: 0 0 auto;
+    position: relative;
+    transition: filter 120ms ease;
 
     @media (max-width: 600px) {
       width: 110px;
@@ -74,10 +76,51 @@
       align-items: center;
       justify-content: center;
       padding: 0;
+      transition: background 120ms ease;
     }
 
     &:hover > div {
       background: #e0d8a8;
+    }
+
+    &:active > div {
+      background: #d4caa0;
+    }
+
+    &.is-submitting {
+      cursor: progress;
+      filter: brightness(0.78) saturate(0.7);
+
+      > div {
+        visibility: hidden;
+      }
+
+      &::after {
+        content: "Start.";
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1a1608;
+        font-family: "Exo 2", sans-serif;
+        font-weight: 700;
+        font-size: var(--font-body);
+        animation: rsvp-submit-dots 1100ms steps(1) infinite;
+        pointer-events: none;
+      }
+    }
+  }
+
+  @keyframes rsvp-submit-dots {
+    0% {
+      content: "Start.";
+    }
+    33% {
+      content: "Start..";
+    }
+    66% {
+      content: "Start...";
     }
   }
 

@@ -97,6 +97,7 @@ class Projects::SetupController < ApplicationController
     end
 
     session.delete(:setup_project_id)
+    redirect_to project_path(@setup_project, welcome: 1)
   end
 
   private
