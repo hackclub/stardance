@@ -35,6 +35,10 @@ class AdminPolicy < ApplicationPolicy
     user.admin?
   end
 
+  def view_shop_items?
+    user.admin? || user.fulfillment_person? || user.shop_manager?
+  end
+
   def manage_draft_shop_items?
     user.admin? || user.shop_manager?
   end

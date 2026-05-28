@@ -51,6 +51,7 @@
 @use "pages/shop/shop";
 @use "pages/shop/order";
 @use "pages/shop/my_orders";
+@use "pages/shop/admin_order_show";
 @use "pages/user/show" as users_show;
 @use "pages/errors/not_authorized";
 @use "pages/guides";

@@ -1,35 +1,64 @@
-<div>
-  <div><b>Name:</b> <div><%= address["first_name"] %> <%= address["last_name"] %></div> <button type="button" data-copy="<%= "#{address["first_name"]} #{address["last_name"]}" %>" aria-label="Copy name">📋</button></div>
-  <% if user_email.present? %>
-  <div><b>Email:</b> <div><%= user_email %></div> <button type="button" data-copy="<%= user_email %>" aria-label="Copy email">📋</button></div>
+<div class="aorder__address-block">
+  <div class="aorder__address-name">
+    <%= address["first_name"] %> <%= address["last_name"] %>
+  </div>
+
+  <div class="aorder__address-lines">
+    <%= address["line_1"] %><br>
+    <% if address["line_2"].present? %>
+      <%= address["line_2"] %><br>
+    <% end %>
+    <%= address["city"] %>, <%= address["state"] %> <%= address["postal_code"] %><br>
+    <%= address["country"] %>
+  </div>
+
+  <% if user_email.present? || address["phone_number"].present? %>
+    <div class="aorder__address-contacts">
+      <% if user_email.present? %>
+        <span>✉ <%= user_email %></span>
+      <% end %>
+      <% if address["phone_number"].present? %>
+        <span>📞 <span class="sensitive"><%= address["phone_number"] %></span></span>
+      <% end %>
+    </div>
   <% end %>
 
-  <div><b>Address Line 1:</b> <div><%= address["line_1"] %></div> <button type="button" data-copy="<%= address["line_1"] %>" aria-label="Copy address line 1">📋</button></div>
-  <% if address["line_2"].present? %>
-    <div><b>Address Line 2:</b> <div><%= address["line_2"] %></div> <button type="button" data-copy="<%= address["line_2"] %>" aria-label="Copy address line 2">📋</button></div>
-  <% end %>
-  <div><b>City:</b> <div><%= address["city"] %></div> <button type="button" data-copy="<%= address["city"] %>" aria-label="Copy city">📋</button></div>
-  <div><b>State/Province:</b> <div><%= address["state"] %></div> <button type="button" data-copy="<%= address["state"] %>" aria-label="Copy state">📋</button></div>
-  <div><b>Postal Code:</b> <div><%= address["postal_code"] %></div> <button type="button" data-copy="<%= address["postal_code"] %>" aria-label="Copy postal code">📋</button></div>
-  <div><b>Country:</b> <div><%= address["country"] %></div> <button type="button" data-copy="<%= address["country"] %>" aria-label="Copy country">📋</button></div>
-  <% if address["phone_number"].present? %>
-    <div><b>Phone:</b> <div><%= address["phone_number"] %></div> <button type="button" data-copy="<%= address["phone_number"] %>" aria-label="Copy phone">📋</button></div>
-  <% else %>
-    <div><b>Phone:</b> N/A</div>
-  <% end %>
-</div>
-<div>
-  <small>
+  <div class="aorder__address-actions">
+    <%
+      full_address = [
+        "#{address["first_name"]} #{address["last_name"]}",
+        address["line_1"],
+        address["line_2"].presence,
+        "#{address["city"]}, #{address["state"]} #{address["postal_code"]}",
+        address["country"]
+      ].compact.join("\n")
+    %>
+    <button type="button" class="aorder__btn aorder__btn--secondary aorder__copy-btn"
+            data-copy="<%= full_address %>"
+            aria-label="Copy full address">
+      📋 Copy address
+    </button>
+    <% if user_email.present? %>
+      <button type="button" class="aorder__btn aorder__btn--secondary aorder__copy-btn"
+              data-copy="<%= user_email %>"
+              aria-label="Copy email">
+        ✉ Copy email
+      </button>
+    <% end %>
+  </div>
+
+  <div class="aorder__address-security">
     🔒 Address access has been logged for security purposes.
-  </small>
+  </div>
 </div>
 
 <script>
-  document.querySelectorAll('.address-copy-btn').forEach(function(btn) {
+  document.querySelectorAll('.aorder__copy-btn').forEach(function(btn) {
+    var original = btn.innerHTML;
     btn.addEventListener('click', function() {
       navigator.clipboard.writeText(this.dataset.copy).then(function() {
-        btn.textContent = '✓';
-        setTimeout(function() { btn.textContent = '📋'; }, 1500);
+        btn.textContent = '✓ Copied';
+        setTimeout(function() { btn.innerHTML = original; }, 1500);
       });
     });
   });

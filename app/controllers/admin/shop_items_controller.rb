@@ -120,8 +120,10 @@ module Admin
         authorize :admin, :manage_draft_shop_items?
         if must_be_draft && (!@shop_item.draft? || @shop_item.created_by_user_id != current_user.id)
           redirect_to admin_manage_shop_path, alert: "You can only edit your own draft items."
-          return false  # signal to caller
+          return false
         end
+      elsif current_user.fulfillment_person? && !current_user.admin?
+        authorize :admin, :view_shop_items?
       else
         authorize :admin, :manage_shop?
       end

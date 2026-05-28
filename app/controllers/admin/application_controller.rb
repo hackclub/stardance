@@ -45,14 +45,11 @@ module Admin
     end
 
     def shop_orders_fulfillment?
-      return false unless controller_name == "shop_orders"
-
-      case action_name
-      when "index"
-        # Allow access to index so controller can redirect to fulfillment view if needed
-        true
-      when "show", "reveal_address", "mark_fulfilled", "update_internal_notes", "assign_user", "reject"
-        true
+      case controller_name
+      when "shop_orders"
+        action_name.in?(%w[index show reveal_address mark_fulfilled update_internal_notes assign_user reject reveal_phone])
+      when "shop_items"
+        action_name == "show"
       else
         false
       end
