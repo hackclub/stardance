@@ -554,7 +554,7 @@ class ShopOrder < ApplicationRecord
       user.slack_id,
       nil,
       blocks_path: "notifications/shop_orders/assigned",
-      locals: { order: self, admin_url: Rails.application.routes.url_helpers.admin_shop_order_url(self, host: "flavortown.hackclub.com", protocol: "https") }
+      locals: { order: self, admin_url: Rails.application.routes.url_helpers.admin_shop_order_url(self, host: "stardance.hackclub.com", protocol: "https") }
     )
   end
 end

@@ -27,7 +27,7 @@ module HCBService
 
     def slug
       hcb_credentials = HCBCredential.first
-      hcb_credentials&.slug.presence || "flavortown"
+      hcb_credentials&.slug.presence || "stardance"
     end
 
     # Generic wrapper that will attempt a token refresh on 401 once, then retry.
