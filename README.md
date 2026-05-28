@@ -22,7 +22,7 @@ me and the homies love docker, and it makes it stupid simple, so its highly reco
    ```bash
    docker compose run --service-ports web /bin/bash
    ```
-
+1
 4. now to really turn on the stove, run this (wait a few seconds for stuff to load) and point your browser to `http://localhost:3000`
 
    ```bash
