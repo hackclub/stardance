@@ -1,0 +1,120 @@
+<% content_for :title, @mission.name %>
+<% content_for :og_title, @mission.name %>
+<% content_for :og_description, truncate(@mission.description.to_s, length: 200) %>
+
+<div class="app-layout">
+  <div class="app-layout__main">
+    <article class="mission-guide"
+             data-controller="mission-guide-progress"
+             data-mission-guide-progress-section-count-value="<%= @guide_outline.length %>"
+             data-mission-guide-progress-mission-slug-value="<%= @mission.slug %>"
+             data-mission-guide-progress-mission-id-value="<%= @mission.id %>"
+             data-mission-guide-progress-project-id-value="<%= @active_project&.id %>"
+             data-mission-guide-progress-create-url-value="<%= @active_project ? project_mission_section_completions_path(@active_project) : "" %>"
+             data-mission-guide-progress-completed-step-ids-value="<%= @completed_step_ids.to_a.to_json %>">
+      <header class="mission-guide__header">
+        <p class="mission-guide__breadcrumb">
+          <%= link_to "← Mission home", mission_path(@mission.slug), class: "mission-guide__breadcrumb-link" %>
+        </p>
+        <h1 class="mission-guide__title"><%= @mission.name %></h1>
+      </header>
+
+      <div class="mission-guide__layout">
+        <% if @guide_outline.any? %>
+          <aside class="mission-guide__sidebar" aria-label="Guide progress">
+            <div class="mission-guide__sidebar-inner">
+              <% if @mission.has_multiple_guide_languages? %>
+                <div class="mission-guide__lang-toggle"
+                     data-controller="mission-guide-language"
+                     data-mission-guide-language-mission-slug-value="<%= @mission.slug %>"
+                     data-mission-guide-language-current-language-value="<%= @language %>"
+                     data-mission-guide-language-available-languages-value="<%= @available_languages.to_json %>"
+                     role="group"
+                     aria-label="Choose language">
+                  <% @available_languages.each do |lang| %>
+                    <button type="button"
+                            class="mission-guide__lang-toggle-option"
+                            data-mission-guide-language-target="option"
+                            data-language="<%= lang %>"
+                            data-action="click->mission-guide-language#select">
+                      <%= lang %>
+                    </button>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <p class="mission-guide__progress-label">
+                <span data-mission-guide-progress-target="completedCount">0</span> of <%= @guide_outline.length %>
+              </p>
+              <progress class="mission-guide__progress-bar"
+                        max="<%= @guide_outline.length %>"
+                        value="0"
+                        data-mission-guide-progress-target="progressBar"></progress>
+
+              <% unless @active_project %>
+                <p class="mission-guide__sync-hint">
+                  <% if current_user %>
+                    Attach a project to this mission to sync your progress across devices.
+                  <% else %>
+                    <%= link_to "Sign in", "/auth/slack", class: "mission-guide__sync-hint-link" %> and attach a project to sync your progress across devices.
+                  <% end %>
+                </p>
+              <% end %>
+
+              <ol class="mission-guide__outline">
+                <% @guide_outline.each do |section| %>
+                  <% step_id = section[:mission_step_id] %>
+                  <% is_completed = @completed_step_ids.include?(step_id) %>
+                  <li class="mission-guide__outline-item <%= 'is-completed' if is_completed %>"
+                      data-mission-guide-progress-target="outlineItem"
+                      data-section-index="<%= section[:index] %>"
+                      data-mission-step-id="<%= step_id %>">
+                    <a href="#<%= section[:id] %>" class="mission-guide__outline-link">
+                      <span class="mission-guide__outline-marker" aria-hidden="true"><%= is_completed ? "✓" : "○" %></span>
+                      <span class="mission-guide__outline-text"><%= section[:text] %></span>
+                    </a>
+                  </li>
+                <% end %>
+              </ol>
+            </div>
+          </aside>
+        <% end %>
+
+        <div class="mission-guide__main">
+          <% if @ordered_steps.any? %>
+            <% @ordered_steps.each_with_index do |step, idx| %>
+              <%# Fragment-cache the rendered section per (step, language) +
+                  the active language's body_updated_at, so an author edit to
+                  one step's body busts only that one fragment. Without this,
+                  every guide pageload pays N Redis round-trips through the
+                  MarkdownRenderer cache (one per step). %>
+              <% step_body_record = step.bodies.detect { |b| b.language.to_s.casecmp?(@language.to_s).zero? } %>
+              <% cache [ step, @language, step_body_record&.body_updated_at ] do %>
+                <section class="guide-section"
+                         id="step-<%= step.id %>"
+                         data-section-index="<%= idx %>"
+                         data-mission-step-id="<%= step.id %>">
+                  <h2><%= step.title %></h2>
+                  <% body = step_body_record&.body %>
+                  <% if body.present? %>
+                    <%= render MarkdownContentComponent.new(markdown: body, flavor: :guide) %>
+                  <% else %>
+                    <p class="mission-guide__step-empty">
+                      <% if @language.present? %>
+                        This step doesn't have a <%= @language %> walkthrough yet.
+                      <% else %>
+                        This step doesn't have a walkthrough yet.
+                      <% end %>
+                    </p>
+                  <% end %>
+                </section>
+              <% end %>
+            <% end %>
+          <% else %>
+            <p class="mission-guide__empty">The walkthrough for this mission is still being written — check back soon! In the meantime, head back to the <%= link_to "mission home", mission_path(@mission.slug) %> for what we have so far.</p>
+          <% end %>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>

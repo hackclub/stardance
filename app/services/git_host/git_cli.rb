@@ -9,6 +9,23 @@ module GitHost
       host || "git"
     end
 
+    def provider_display_name
+      name = provider_name
+      # Capitalize known platforms nicely
+      case name
+      when "gitlab.com"
+        "GitLab"
+      when "codeberg.org"
+        "Codeberg"
+      when "bitbucket.org"
+        "Bitbucket"
+      when /sr\.ht$/, /git\.sr\.ht$/
+        "SourceHut"
+      else
+        name.capitalize
+      end
+    end
+
     def fetch_commits(since: nil, per_page: nil)
       return [] unless repo_url.present?
 

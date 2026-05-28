@@ -1,0 +1,34 @@
+<%# Reviewers (mission memberships, role: reviewer) section wrapped in its
+    own Turbo Frame. Owner CRUD lives in the admin-only sections at the
+    bottom of edit.html.erb — only admins see and use that.
+    Locals: mission, memberships %>
+<%= turbo_frame_tag "admin-mission-edit-reviewers" do %>
+  <section class="admin-mission-edit__section">
+    <h2 class="admin-mission-edit__section-title">Reviewers</h2>
+    <p class="admin-mission-edit__hint">
+      Reviewers can certify submissions for this mission. Adding or removing
+      an owner is admin-only — admins do that in the section below.
+    </p>
+    <ul class="admin-mission-edit__memberships">
+      <% memberships.each do |m| %>
+        <li class="admin-mission-edit__membership">
+          <%= m.user.display_name %> — <em><%= m.role.titleize %></em>
+          <% if m.reviewer_role? %>
+            <%= button_to "Remove",
+                          admin_mission_membership_path(mission.slug, m),
+                          method: :delete,
+                          data: { turbo_confirm: "Remove this reviewer?" },
+                          class: "action-btn action-btn--small action-btn--destructive" %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+    <%= form_with url: admin_mission_memberships_path(mission.slug),
+          method: :post, class: "admin-mission-edit__form" do %>
+      <%= hidden_field_tag "mission_membership[role]", "reviewer" %>
+      <h3>Add reviewer</h3>
+      <label>User ID or Slack ID <%= text_field_tag "mission_membership[user_id]", nil, required: true, autocomplete: "off" %></label>
+      <%= submit_tag "Add reviewer", class: "action-btn action-btn--large action-btn--primary" %>
+    <% end %>
+  </section>
+<% end %>

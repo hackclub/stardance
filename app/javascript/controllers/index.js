@@ -13,6 +13,42 @@ application.register("address-select", AddressSelectController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import Certification__Ysws__DevlogReviewController from "./certification/ysws/devlog_review_controller";
+application.register(
+  "certification--ysws--devlog-review",
+  Certification__Ysws__DevlogReviewController,
+);
+
+import Certification__Ysws__DevlogTimeChartController from "./certification/ysws/devlog_time_chart_controller";
+application.register(
+  "certification--ysws--devlog-time-chart",
+  Certification__Ysws__DevlogTimeChartController,
+);
+
+import Certification__Ysws__FraudReportController from "./certification/ysws/fraud_report_controller";
+application.register(
+  "certification--ysws--fraud-report",
+  Certification__Ysws__FraudReportController,
+);
+
+import Certification__Ysws__GithubCalendarController from "./certification/ysws/github_calendar_controller";
+application.register(
+  "certification--ysws--github-calendar",
+  Certification__Ysws__GithubCalendarController,
+);
+
+import Certification__Ysws__MediaViewerController from "./certification/ysws/media_viewer_controller";
+application.register(
+  "certification--ysws--media-viewer",
+  Certification__Ysws__MediaViewerController,
+);
+
+import Certification__Ysws__ReviewSidebarController from "./certification/ysws/review_sidebar_controller";
+application.register(
+  "certification--ysws--review-sidebar",
+  Certification__Ysws__ReviewSidebarController,
+);
+
 import CommandPaletteController from "./command_palette_controller";
 application.register("command-palette", CommandPaletteController);
 
@@ -55,6 +91,9 @@ application.register("flash", FlashController);
 import FormSubmitOnceController from "./form_submit_once_controller";
 application.register("form-submit-once", FormSubmitOnceController);
 
+import GuidePreviewController from "./guide_preview_controller";
+application.register("guide-preview", GuidePreviewController);
+
 import HackatimeLinkController from "./hackatime_link_controller";
 application.register("hackatime-link", HackatimeLinkController);
 
@@ -72,6 +111,12 @@ application.register("locked-tab", LockedTabController);
 
 import MarkdownPreviewController from "./markdown_preview_controller";
 application.register("markdown-preview", MarkdownPreviewController);
+
+import MissionGuideLanguageController from "./mission_guide_language_controller";
+application.register("mission-guide-language", MissionGuideLanguageController);
+
+import MissionGuideProgressController from "./mission_guide_progress_controller";
+application.register("mission-guide-progress", MissionGuideProgressController);
 
 import ModalController from "./modal_controller";
 application.register("modal", ModalController);
@@ -127,6 +172,9 @@ application.register("rocket-arc", RocketArcController);
 import RsvpCounterController from "./rsvp_counter_controller";
 application.register("rsvp-counter", RsvpCounterController);
 
+import ScrollRestoreController from "./scroll_restore_controller";
+application.register("scroll-restore", ScrollRestoreController);
+
 import SearchableSelectController from "./searchable_select_controller";
 application.register("searchable-select", SearchableSelectController);
 
@@ -141,6 +189,9 @@ application.register("shop-wishlist", ShopWishlistController);
 
 import SidebarActiveController from "./sidebar_active_controller";
 application.register("sidebar-active", SidebarActiveController);
+
+import SortableController from "./sortable_controller";
+application.register("sortable", SortableController);
 
 import StarImageInputController from "./star_image_input_controller";
 application.register("star-image-input", StarImageInputController);

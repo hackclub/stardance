@@ -1,27 +1,27 @@
 # frozen_string_literal: true
 
 module Admin
-  class FulfillmentPayoutsController < ApplicationController
+  class FulfillmentPayoutsController < Admin::ApplicationController
     def index
-      authorize :admin, :access_fulfillment_payouts?
+      authorize FulfillmentPayoutRun
       @runs = FulfillmentPayoutRun.order(created_at: :desc).includes(:approved_by_user)
     end
 
     def show
-      authorize :admin, :access_fulfillment_payouts?
       @run = FulfillmentPayoutRun.includes(lines: :user).find(params[:id])
+      authorize @run
     end
 
     def approve
-      authorize :admin, :approve_fulfillment_payouts?
       @run = FulfillmentPayoutRun.find(params[:id])
+      authorize @run
 
       if @run.may_approve?
         @run.approved_by_user = current_user
         @run.approved_at = Time.current
         @run.approve!
 
-        PaperTrail::Version.create!(
+        ::PaperTrail::Version.create!(
           item_type: "FulfillmentPayoutRun",
           item_id: @run.id,
           event: "approved",
@@ -36,13 +36,13 @@ module Admin
     end
 
     def reject
-      authorize :admin, :approve_fulfillment_payouts?
       @run = FulfillmentPayoutRun.find(params[:id])
+      authorize @run
 
       if @run.may_reject?
         @run.reject!
 
-        PaperTrail::Version.create!(
+        ::PaperTrail::Version.create!(
           item_type: "FulfillmentPayoutRun",
           item_id: @run.id,
           event: "rejected",
@@ -57,7 +57,7 @@ module Admin
     end
 
     def trigger
-      authorize :admin, :approve_fulfillment_payouts?
+      authorize FulfillmentPayoutRun
 
       Shop::CalculateFulfillmentPayoutsJob.perform_later(manual: true)
 

@@ -3,12 +3,12 @@ module Admin
     before_action :set_report, only: [ :show, :review, :dismiss ]
 
     def index
-      authorize :admin, :access_reports?
+      authorize ::Project::Report
 
       @time_range = params[:time_range] || "7_days"
       @limit = params[:limit] || "10"
 
-      @reports = Project::Report.includes(:reporter, :project).order(created_at: :desc)
+      @reports = ::Project::Report.includes(:reporter, :project).order(created_at: :desc)
       unless params[:show_demo_broken]
           @reports = @reports.where.not(reason: "demo_broken")
       end
@@ -18,13 +18,13 @@ module Admin
       @reports = @reports.where(reporter_id: params[:reporter_id]) if params[:reporter_id].present?
 
       @counts = {
-        pending: Project::Report.pending.count,
-        reviewed: Project::Report.reviewed.count,
-        dismissed: Project::Report.dismissed.count
+        pending: ::Project::Report.pending.count,
+        reviewed: ::Project::Report.reviewed.count,
+        dismissed: ::Project::Report.dismissed.count
       }
 
       report_ids = @reports.map { |r| r.id.to_s }
-      latest_versions = PaperTrail::Version
+      latest_versions = ::PaperTrail::Version
         .where(item_type: "Project::Report", item_id: report_ids)
         .where("object_changes ? 'status'")
         .order(:item_id, created_at: :desc)
@@ -43,21 +43,21 @@ module Admin
     end
 
     def show
-      authorize :admin, :access_reports?
+      authorize @report
     end
 
     def review
-      authorize :admin, :access_reports?
+      authorize @report
       update_status(:reviewed, "Report marked as reviewed")
     end
 
     def dismiss
-      authorize :admin, :access_reports?
+      authorize @report
       update_status(:dismissed, "Report dismissed")
     end
 
     def process_demo_broken
-      authorize :admin, :access_reports?
+      authorize ::Project::Report
       ProcessDemoBrokenReportsJob.perform_later
       redirect_to admin_reports_path, notice: "Demo broken reports processing job has been queued"
     end
@@ -65,14 +65,14 @@ module Admin
     private
 
     def set_report
-      @report = Project::Report.find(params[:id])
+      @report = ::Project::Report.find(params[:id])
     end
 
     def update_status(new_status, notice_message)
       old_status = @report.status
 
       if @report.update(status: new_status)
-        PaperTrail::Version.create!(
+        ::PaperTrail::Version.create!(
           item_type: "Project::Report",
           item_id: @report.id,
           event: "update",

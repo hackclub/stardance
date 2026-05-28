@@ -72,6 +72,7 @@ Brand palette — use the `--color-brand-*` variables in code:
 - `#FFD598` — `--color-brand-peach`
 - `#FFF8D5` — `--color-brand-cream`
 - `#FFFCF4` — `--color-brand-off-white`
+- `#FFB07A` — `--color-brand-orange` — **reserved**: admin / manageable-by-viewer marker only (2px dashed border, see [docs/branding.md §1.5](docs/branding.md)). Don't use it for general accents.
 
 When trying to choose a color, please try to choose from one of the colors above by default. If not, you can fall back to similar pastel colors. Try to avoid colors that are too saturated / deep. See [docs/branding.md](docs/branding.md) for the four "set" container surfaces, highlight tones, and which accent applies where.
 

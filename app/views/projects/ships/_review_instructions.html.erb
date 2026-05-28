@@ -19,24 +19,35 @@
     <% end %>
   </div>
 
-  <% if Flipper.enabled?(:missions, current_user) %>
-    <% mission = @project.current_mission %>
-    <div class="ship__field">
-      <label class="ship__label">Mission</label>
-      <p class="ship__hint">Pick a mission to submit this project for to earn extra prizes and perks!</p>
-      <% if mission %>
-        <div class="ship__mission-attached">
-          <span class="ship__mission-name"><%= mission.name %></span>
-          <%= hidden_field_tag :mission_payout_path, "static_prize" %>
+  <% mission = @project.current_mission %>
+  <div class="ship__field">
+    <label class="ship__label">Mission</label>
+    <p class="ship__hint">Pick a mission to submit this project for to earn extra prizes and perks!</p>
+    <% if mission %>
+      <div class="ship__mission-attached">
+        <span class="ship__mission-name"><%= mission.name %></span>
+        <%= hidden_field_tag :mission_payout_path, "static_prize" %>
+      </div>
+
+      <% if mission.submission_guide.present? %>
+        <div class="ship__mission-submission-guide">
+          <h3 class="ship__mission-submission-guide-title">Submission guide for this mission</h3>
+          <div class="ship__mission-submission-guide-body">
+            <%= render MarkdownContentComponent.new(markdown: mission.submission_guide, flavor: :guide) %>
+          </div>
+          <label class="ship__mission-submission-guide-ack">
+            <%= check_box_tag :mission_submission_guide_acknowledged, "1", false, required: true %>
+            I've read the submission guide for <strong><%= mission.name %></strong>.
+          </label>
         </div>
-      <% else %>
-        <p class="ship__mission-none">
-          No mission attached.
-          <%= link_to "Browse missions", missions_path, class: "ship__mission-link" %>
-        </p>
       <% end %>
-    </div>
-  <% end %>
+    <% else %>
+      <p class="ship__mission-none">
+        No mission attached.
+        <%= link_to "Browse missions", missions_path, class: "ship__mission-link" %>
+      </p>
+    <% end %>
+  </div>
 
   <div class="ship__actions">
     <%= link_to "← Back", info_project_ships_path(@project), class: "ship__back-link" %>

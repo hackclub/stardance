@@ -77,8 +77,6 @@ module Sessions
         )
       end
 
-      SyncSlackDisplayNameJob.perform_later(user)
-
       Result.new(
         status: :ok,
         user: user,

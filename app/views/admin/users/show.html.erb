@@ -96,23 +96,23 @@
   <div>
     <h2>Actions</h2>
     <div>
-      <% if policy(:admin).manage_messages? %>
+      <% if policy(Message).create? %>
         <%= link_to "✉️ Send Message", admin_messages_path(slack_id: @user.slack_id) %>
       <% end %>
       <% if policy(@user).impersonate? && !impersonating? %>
         <%= button_to "Impersonate User",
-                      impersonate_admin_user_path(@user),
+                      admin_user_impersonation_path(@user),
                       method: :post,
                       data: {
                         confirm: "Are you sure you want to impersonate #{@user.display_name}? You will see the site as they do."
                       } %>
       <% end %>
       <%= button_to "🔄 Sync Hackatime Data",
-                    sync_hackatime_admin_user_path(@user),
+                    admin_user_hackatime_sync_path(@user),
                     method: :post,
                     title: "Sync Hackatime Data" %>
       <%= button_to "🔄 Refresh Verification",
-                    refresh_verification_admin_user_path(@user),
+                    admin_user_verification_path(@user),
                     method: :post,
                     title: "Refresh verification status from HCA",
                     data: { confirm: "Refresh verification status for #{@user.display_name}?" } %>
@@ -134,7 +134,7 @@
           <div>
             <% promotable_roles.each do |role| %>
               <%= button_to role[:name].titleize,
-                            promote_role_admin_user_path(@user),
+                            admin_user_roles_path(@user),
                             method: :post,
                             params: { role_name: role[:name] },
                             disabled: role[:disabled] %>
@@ -148,8 +148,8 @@
           <div>
             <% demotable_roles.each do |role| %>
               <%= button_to role[:name].titleize,
-                            demote_role_admin_user_path(@user),
-                            method: :post,
+                            admin_user_role_path(@user, role[:name]),
+                            method: :delete,
                             params: { role_name: role[:name] },
                             disabled: role[:disabled] %>
             <% end %>
@@ -177,7 +177,7 @@
           ✗ Reject Orders
         </button>
         <%= render layout: "shared/modal", locals: { id: "reject-modal-orders", title: "Reject All Orders", description: "This will reject all pending and awaiting fulfillment orders for #{@user.display_name}." } do %>
-          <form action="<%= mass_reject_orders_admin_user_path(@user) %>" method="post">
+          <form action="<%= admin_user_order_rejection_path(@user) %>" method="post">
             <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
             <div>
               <%= label_tag :reason, "Rejection Reason (optional)" %>
@@ -191,12 +191,12 @@
         <% end %>
       <% end %>
 
-      <% if policy(:admin).manage_users? %>
+      <% if policy(@user).adjust_balance? %>
         <button type="button" onclick="document.getElementById('adjust-balance-modal').showModal()">
           💰 Adjust Balance
         </button>
         <%= render layout: "shared/modal", locals: { id: "adjust-balance-modal", title: "Adjust Balance", description: "Current balance: #{@user.balance} tickets" } do %>
-          <form action="<%= adjust_balance_admin_user_path(@user) %>" method="post">
+          <form action="<%= admin_user_balance_adjustments_path(@user) %>" method="post">
             <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
             <div>
               <%= label_tag :amount, "Amount (use negative to decrease)" %>
@@ -212,7 +212,7 @@
             </div>
           </form>
         <% end %>
-        <%= link_to "View Votes", votes_admin_user_path(@user) %>
+        <%= link_to "View Votes", admin_user_votes_path(@user) %>
         <button type="button" id="set-vote-bal">
           Set Vote Balance (<%= @user.vote_balance %>)
         </button>
@@ -224,8 +224,9 @@
             if (isNaN(n)) { alert("not valid number"); return; }
             var f = document.createElement("form");
             f.method = "post";
-            f.action = <%== set_vote_balance_admin_user_path(@user).to_json %>;
+            f.action = <%== admin_user_vote_balance_path(@user).to_json %>;
             f.innerHTML = '<input type="hidden" name="authenticity_token" value="' + <%== form_authenticity_token.to_json %> + '">' +
+              '<input type="hidden" name="_method" value="patch">' +
               '<input type="hidden" name="vote_balance" value="' + n + '">';
             document.body.appendChild(f);
             f.submit();
@@ -240,7 +241,7 @@
         </button>
         <% if has_grants %>
           <%= render layout: "shared/modal", locals: { id: "cancel-grants-modal", title: "Cancel All HCB Grants", description: "This will cancel ALL HCB grants for #{@user.display_name}. This action cannot be undone!" } do %>
-            <form action="<%= cancel_all_hcb_grants_admin_user_path(@user) %>" method="post">
+            <form action="<%= admin_user_grant_cancellation_path(@user) %>" method="post">
               <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
               <p>⚠️ Warning: This will cancel <%= @user.shop_card_grants.where.not(hcb_grant_hashid: nil).count %> grant(s).</p>
               <div>
@@ -252,15 +253,15 @@
         <% end %>
       <% end %>
 
-      <% if policy(:admin).ban_users? %>
+      <% if policy(@user).ban? %>
         <% if @user.banned? %>
-          <%= button_to "🔓 Unban User", unban_admin_user_path(@user), method: :post, form: { onsubmit: "return confirm(#{("Are you sure you want to unban #{@user.display_name}?").to_json})" } %>
+          <%= button_to "🔓 Unban User", admin_user_ban_path(@user), method: :delete, form: { onsubmit: "return confirm(#{("Are you sure you want to unban #{@user.display_name}?").to_json})" } %>
         <% else %>
           <button type="button" onclick="document.getElementById('ban-user-modal').showModal()">
             🚫 Ban User
           </button>
           <%= render layout: "shared/modal", locals: { id: "ban-user-modal", title: "Ban User", description: "This will prevent #{@user.display_name} from accessing the site (except /home)." } do %>
-            <form action="<%= ban_admin_user_path(@user) %>" method="post">
+            <form action="<%= admin_user_ban_path(@user) %>" method="post">
               <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
               <div>
                 <%= label_tag :reason, "Ban Reason (optional)" %>
@@ -275,22 +276,14 @@
         <% end %>
 
         <% if @user.manual_ysws_override? %>
-          <%= button_to "Remove ysws override", set_ysws_eligible_override_admin_user_path(@user), method: :patch, params: { manual_ysws_override: "false" }, form: { onsubmit: "return confirm(#{("Are you sure you want to remove the YSWS eligibility override for #{@user.display_name}?").to_json})" } %>
+          <%= button_to "Remove ysws override", admin_user_ysws_override_path(@user), method: :patch, params: { manual_ysws_override: "false" }, form: { onsubmit: "return confirm(#{("Are you sure you want to remove the YSWS eligibility override for #{@user.display_name}?").to_json})" } %>
         <% else %>
           <% unless @user.ysws_eligible? %>
-            <%= button_to "Make ysws eligible", set_ysws_eligible_override_admin_user_path(@user), method: :patch, params: { manual_ysws_override: "true" }, form: { onsubmit: "return confirm(#{("Are you sure you want to manually override YSWS eligibility for #{@user.display_name}?").to_json})" } %>
+            <%= button_to "Make ysws eligible", admin_user_ysws_override_path(@user), method: :patch, params: { manual_ysws_override: "true" }, form: { onsubmit: "return confirm(#{("Are you sure you want to manually override YSWS eligibility for #{@user.display_name}?").to_json})" } %>
           <% end %>
         <% end %>
       <% end %>
 
-      <% if policy(:admin).ban_users? %>
-        <%= button_to toggle_voting_lock_admin_user_path(@user),
-              method: :post,
-              title: @user.voting_locked? ? "Unlock Voting" : "Lock Voting",
-              form: { onsubmit: "return confirm(#{("Are you sure you want to #{@user.voting_locked? ? "unlock" : "lock"} voting for #{@user.display_name}?").to_json})" } do %>
-          <%= @user.voting_locked? ? "Unlock Voting" : "Lock Voting" %>
-        <% end %>
-      <% end %>
     </div>
   </div>
   <div>
@@ -302,17 +295,27 @@
           { key: :"git_commit_2025-12-25", label: "Git Commit" },
           { key: :kitchen_comic, label: "Kitchen Comic" },
           { key: :voting, label: "Voting" },
-          { key: :grant_stardust, label: "Grant Stardust" }
+          { key: :grant_stardust, label: "Grant Stardust" },
+          { key: :voting_locked, label: "Voting Lock" }
         ]
       %>
       <% features.each do |f| %>
         <% enabled = Flipper.enabled?(f[:key], @user) %>
-        <%= button_to toggle_flipper_admin_user_path(@user),
-                      method: :post,
-                      params: { feature: f[:key].to_s },
-                      disabled: !current_user&.admin?,
-                      title: "#{enabled ? 'Disable' : 'Enable'} #{f[:label]}" do %>
-          <%= f[:label] %><%= enabled ? " ✓" : "" %>
+        <% if enabled %>
+          <%= button_to admin_user_feature_flag_path(@user, f[:key].to_s),
+                        method: :delete,
+                        disabled: !current_user&.admin?,
+                        title: "Disable #{f[:label]}" do %>
+            <%= f[:label] %> ✓
+          <% end %>
+        <% else %>
+          <%= button_to admin_user_feature_flags_path(@user),
+                        method: :post,
+                        params: { feature: f[:key].to_s },
+                        disabled: !current_user&.admin?,
+                        title: "Enable #{f[:label]}" do %>
+            <%= f[:label] %>
+          <% end %>
         <% end %>
       <% end %>
     </div>

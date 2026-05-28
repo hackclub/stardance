@@ -4,10 +4,10 @@ class Onboarding::WizardController < ApplicationController
   before_action :require_onboarding_guest!,  only: %i[welcome birthday submit_birthday
                                                       experience submit_experience experience_result
                                                       interests submit_interests interests_result
-                                                      name submit_name check_name]
+                                                      name submit_name]
   before_action :require_teen_attestation!,  only: %i[experience submit_experience experience_result
                                                       interests submit_interests interests_result
-                                                      name submit_name check_name]
+                                                      name submit_name]
 
   def start
     if current_user.present?
@@ -103,25 +103,7 @@ class Onboarding::WizardController < ApplicationController
     @display_name_default = default_name_from_email
   end
 
-  MAX_DISPLAY_NAME_LENGTH = 30
-
-  AVAILABLE_PRAISES = [
-    "That name looks good on you.",
-    "That's a good username.",
-    "Nice pick!",
-    "Solid choice.",
-    "Niiice.",
-    "Yeah, that works.",
-    "Stardust-worthy.",
-    "Looks great on you.",
-    "Got a ring to it."
-  ].freeze
-
-  def check_name
-    name = params[:display_name].to_s.strip
-    status = name_availability(name)
-    render json: { status: status[:status], message: status[:message] }
-  end
+  MAX_DISPLAY_NAME_LENGTH = User::MAX_DISPLAY_NAME_LENGTH
 
   def submit_name
     display_name = params[:display_name].to_s.strip
@@ -171,26 +153,10 @@ class Onboarding::WizardController < ApplicationController
     redirect_to onboarding_birthday_path
   end
 
-  def name_availability(name)
-    return { status: "empty",    message: nil } if name.blank?
-    return { status: "too_long", message: "Whoa — keep it under #{MAX_DISPLAY_NAME_LENGTH} characters." } if name.length > MAX_DISPLAY_NAME_LENGTH
-
-    taken = User.unscoped
-                .where("LOWER(display_name) = ?", name.downcase)
-                .where.not(id: current_user&.id)
-                .exists?
-    if taken
-      { status: "taken",     message: "Already taken — try another." }
-    else
-      { status: "available", message: AVAILABLE_PRAISES.sample }
-    end
-  end
-
   def default_name_from_email
     local = current_user.email.to_s.split("@").first.to_s
     return nil if local.blank?
 
-    normalized = local.tr("._-", " ")
-    normalized.split.map(&:capitalize).join(" ").presence
+    local.gsub(/[^a-zA-Z0-9_-]/, "_").first(MAX_DISPLAY_NAME_LENGTH).presence
   end
 end

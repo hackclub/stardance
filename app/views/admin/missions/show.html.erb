@@ -1,101 +1,100 @@
 <% content_for :title, "Admin · #{@mission.name}" %>
 
-<div>
-  <header>
-    <h1>
-      <%= @mission.name %>
-      <% if @mission.deleted_at? %>
-        <span>Deleted</span>
-      <% end %>
-    </h1>
-    <div>
-      <%= link_to "Edit", edit_admin_mission_path(@mission.slug) %>
-      <% if @mission.deleted_at? %>
-        <%= button_to "Restore", restore_admin_mission_path(@mission.slug), method: :post %>
-      <% else %>
-        <%= button_to "Soft-delete", admin_mission_path(@mission.slug), method: :delete, data: { turbo_confirm: "Soft-delete this mission?" } %>
-      <% end %>
-    </div>
-  </header>
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide">
+    <article class="admin-mission">
+      <p class="admin-mission__breadcrumb">
+        <%= link_to "← Missions", admin_missions_path, class: "admin-mission__breadcrumb-link" %>
+      </p>
 
-  <section>
-    <h2>Details</h2>
-    <dl>
-      <dt>Slug</dt>            <dd><code><%= @mission.slug %></code></dd>
-      <dt>Enabled</dt>         <dd><%= @mission.enabled? ? "yes" : "no" %></dd>
-      <dt>Window</dt>          <dd><%= @mission.start_at&.to_date %> → <%= @mission.end_at&.to_date %></dd>
-      <dt>Featured at</dt>     <dd><%= @mission.featured_at %></dd>
-      <dt>Achievement name</dt><dd><%= @mission.achievement_name.presence || "—" %></dd>
-      <dt>Achievement desc</dt><dd><%= @mission.achievement_description.presence || "—" %></dd>
-      <dt>Description</dt>     <dd><%= @mission.description.presence || "—" %></dd>
-    </dl>
-  </section>
+      <header class="admin-mission__page-header">
+        <h1 class="admin-mission__page-title">
+          <%= @mission.name %>
+          <% if @mission.deleted_at? %>
+            <span class="admin-mission__title-tag">Deleted</span>
+          <% end %>
+        </h1>
+        <div class="admin-mission__actions">
+          <%= link_to "Edit this mission →",
+                      edit_admin_mission_path(@mission.slug),
+                      class: "action-btn action-btn--small action-btn--primary" %>
+        </div>
+      </header>
 
-  <section>
-    <h2>Steps (<%= @mission.steps.count %>)</h2>
-    <ol>
-      <% @mission.steps.ordered.each do |step| %>
-        <li><%= step.title %></li>
-      <% end %>
-    </ol>
-  </section>
+      <section class="admin-mission__section">
+        <h2 class="admin-mission__section-title">Quick facts</h2>
+        <dl class="admin-mission__details">
+          <dt>Slug</dt>
+          <dd><code class="admin-mission__code"><%= @mission.slug %></code></dd>
 
-  <section>
-    <h2>Prizes (<%= @mission.prizes.count %>)</h2>
-    <ul>
-      <% @mission.prizes.ordered.includes(:shop_item).each do |prize| %>
-        <li><%= prize.shop_item.name %></li>
-      <% end %>
-    </ul>
-  </section>
+          <dt>Enabled</dt>
+          <dd>
+            <% if @mission.enabled? %>
+              <span class="admin-mission__bool admin-mission__bool--yes">Yes</span>
+            <% else %>
+              <span class="admin-mission__bool admin-mission__bool--no">No</span>
+            <% end %>
+          </dd>
 
-  <section>
-    <h2>Memberships (<%= @mission.memberships.count %>)</h2>
-    <ul>
-      <% @mission.memberships.includes(:user).each do |m| %>
-        <li><%= m.user.display_name %> — <%= m.role.titleize %></li>
-      <% end %>
-    </ul>
-  </section>
+          <% if @mission.deleted_at? %>
+            <dt>Deleted at</dt>
+            <dd><%= @mission.deleted_at.strftime("%b %-d, %Y %H:%M") %></dd>
+          <% end %>
 
-  <section>
-    <h2>Shop unlocks (<%= @mission.shop_unlocks.count %>)</h2>
-    <ul>
-      <% @mission.shop_unlocks.includes(:shop_item).each do |u| %>
-        <li><%= u.shop_item.name %></li>
-      <% end %>
-    </ul>
-  </section>
+          <dt>Created at</dt>
+          <dd><%= @mission.created_at.strftime("%b %-d, %Y %H:%M") %></dd>
 
-  <section>
-    <h2>Recent submissions</h2>
-    <ul>
-      <% @submissions.each do |s| %>
-        <li>
-          <%= link_to "##{s.id} (#{s.status})", mission_submission_path(s) %>
-          — <%= s.ship_event&.post&.user&.display_name %>
-          <%= time_ago_in_words(s.created_at) %> ago
-        </li>
-      <% end %>
-    </ul>
-  </section>
+          <dt>Updated at</dt>
+          <dd><%= @mission.updated_at.strftime("%b %-d, %Y %H:%M") %></dd>
+        </dl>
+        <p class="admin-mission__hint">
+          Mission content (description, guide, prizes, memberships, shop unlocks,
+          default project copy, etc.) lives on the
+          <%= link_to "edit page", edit_admin_mission_path(@mission.slug), class: "admin-mission__link" %>.
+        </p>
+      </section>
 
-  <section>
-    <h2>Audit log</h2>
-    <table>
-      <thead>
-        <tr><th>When</th><th>Whodunnit</th><th>Item</th><th>Event</th></tr>
-      </thead>
-      <tbody>
-        <% @versions.each do |v| %>
-          <tr>
-            <td><%= v.created_at.strftime("%Y-%m-%d %H:%M") %></td>
-            <td><%= v.whodunnit %></td>
-            <td><%= v.item_type %>##<%= v.item_id %></td>
-            <td><%= v.event %></td>
-          </tr>
+      <section class="admin-mission__section">
+        <h2 class="admin-mission__section-title">Recent submissions</h2>
+        <% if @submissions.any? %>
+          <ul class="admin-mission__list">
+            <% @submissions.each do |s| %>
+              <li>
+                <%= link_to "##{s.id} (#{s.status})", mission_submission_path(s), class: "admin-mission__link" %>
+                — <%= s.ship_event&.post&.user&.display_name %>
+                <span class="admin-mission__muted"><%= time_ago_in_words(s.created_at) %> ago</span>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="admin-mission__empty">No submissions yet.</p>
         <% end %>
-      </tbody>
-    </table>
-  </section>
+      </section>
+
+      <section class="admin-mission__section">
+        <h2 class="admin-mission__section-title">Audit log</h2>
+        <table class="admin-mission__audit-log">
+          <thead>
+            <tr><th>When</th><th>Whodunnit</th><th>Item</th><th>Event</th></tr>
+          </thead>
+          <tbody>
+            <% @versions.each do |v| %>
+              <tr>
+                <td class="admin-mission__muted"><%= v.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+                <td>
+                  <% if v.whodunnit.present? %>
+                    <%= @whodunnit_users[v.whodunnit]&.display_name || "user ##{v.whodunnit}" %>
+                  <% else %>
+                    <span class="admin-mission__muted">system</span>
+                  <% end %>
+                </td>
+                <td><code class="admin-mission__code"><%= v.item_type %>##<%= v.item_id %></code></td>
+                <td><%= v.event %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
+    </article>
+  </div>
 </div>

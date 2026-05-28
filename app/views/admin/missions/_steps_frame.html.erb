@@ -1,0 +1,182 @@
+<%# Steps + paste modal, wrapped in a Turbo Frame so step CRUD and language
+    tab clicks update the section in place. The controller still redirects
+    to the full edit page; Turbo extracts the matching frame from the
+    response so the rest of the page stays untouched.
+
+    Locals (passed by the parent edit.html.erb):
+      mission              : Mission
+      steps                : Array<Mission::Step>
+      current_language     : String
+      available_languages  : Array<String> %>
+<%# turbo_action: "advance" makes language-tab clicks update the browser
+    URL so the Python/JS tab is bookmarkable + refreshable. %>
+<%= turbo_frame_tag "admin-mission-edit-steps", data: { turbo_action: "advance" } do %>
+  <section class="admin-mission-edit__section admin-mission-edit__guide-section"
+           data-controller="modal">
+    <header class="admin-mission-edit__section-header">
+      <h2 class="admin-mission-edit__section-title">Guide</h2>
+      <button type="button"
+              class="action-btn action-btn--small action-btn--secondary"
+              data-action="click->modal#open">
+        Paste a full guide
+      </button>
+    </header>
+
+    <% if available_languages.any? %>
+      <nav class="admin-mission-edit__lang-tabs" aria-label="Guide language">
+        <% available_languages.each do |lang| %>
+          <%= link_to lang,
+                      edit_admin_mission_path(mission.slug, language: lang),
+                      class: [
+                        "admin-mission-edit__lang-tab",
+                        ("admin-mission-edit__lang-tab--active" if lang == current_language)
+                      ].compact.join(" ") %>
+        <% end %>
+        <button type="button"
+                class="admin-mission-edit__lang-tab admin-mission-edit__lang-tab--add"
+                data-action="click->modal#open"
+                title="Add a new language">+ language</button>
+      </nav>
+    <% end %>
+
+    <p class="admin-mission-edit__hint">
+      Editing a step rewrites the underlying markdown for the current
+      language — headings inside a step's body get demoted so the topmost
+      lands at H3. <strong>Paste a full guide</strong> replaces the whole
+      thing at once (and accepts a language name to create or update a
+      variant).
+    </p>
+
+    <ol class="admin-mission-edit__steps"
+        data-controller="sortable"
+        data-sortable-url-value="<%= admin_mission_step_ordering_path(mission.slug, language: current_language) %>">
+      <% steps.each do |step| %>
+        <li class="admin-mission-edit__step"
+            data-sortable-target="item"
+            data-id="<%= step.id %>"
+            data-controller="modal">
+          <span class="admin-mission-edit__step-handle"
+                data-sortable-handle
+                aria-label="Drag to reorder">
+            <svg viewBox="0 0 20 20" width="14" height="20" aria-hidden="true">
+              <circle cx="7" cy="4" r="1.6" fill="currentColor" />
+              <circle cx="13" cy="4" r="1.6" fill="currentColor" />
+              <circle cx="7" cy="10" r="1.6" fill="currentColor" />
+              <circle cx="13" cy="10" r="1.6" fill="currentColor" />
+              <circle cx="7" cy="16" r="1.6" fill="currentColor" />
+              <circle cx="13" cy="16" r="1.6" fill="currentColor" />
+            </svg>
+          </span>
+          <strong class="admin-mission-edit__step-title"><%= step.title %></strong>
+          <div class="admin-mission-edit__step-actions">
+            <button type="button"
+                    class="action-btn action-btn--small action-btn--secondary"
+                    data-action="click->modal#open">Edit</button>
+            <%= button_to "Delete",
+                          admin_mission_step_path(mission.slug, step, language: current_language),
+                          method: :delete,
+                          data: { turbo_confirm: "Remove this step?" },
+                          class: "action-btn action-btn--small action-btn--destructive" %>
+          </div>
+
+          <dialog class="admin-mission-edit__paste-dialog"
+                  data-modal-target="dialog"
+                  aria-labelledby="step-edit-title-<%= step.id %>">
+            <%= form_with url: admin_mission_step_path(mission.slug, step, language: current_language),
+                  method: :patch, class: "admin-mission-edit__paste-form" do %>
+              <header class="admin-mission-edit__paste-header">
+                <h3 id="step-edit-title-<%= step.id %>" class="admin-mission-edit__paste-title">Edit step</h3>
+                <button type="button"
+                        class="admin-mission-edit__paste-close"
+                        aria-label="Close"
+                        data-action="click->modal#close">×</button>
+              </header>
+              <label class="admin-mission-edit__paste-label">
+                Title (shared across all languages)
+                <%= text_field_tag "mission_step[title]", step.title,
+                      required: true, autocomplete: "off",
+                      class: "admin-mission-edit__paste-language" %>
+              </label>
+              <label class="admin-mission-edit__paste-label">
+                Body (<%= current_language %> only)
+                <%= text_area_tag "mission_step[body]", step.body_for(current_language), rows: 12,
+                      class: "admin-mission-edit__paste-textarea",
+                      placeholder: "Step body (markdown)…" %>
+              </label>
+              <div class="admin-mission-edit__paste-actions">
+                <button type="button"
+                        class="action-btn action-btn--small action-btn--secondary"
+                        data-action="click->modal#close">Cancel</button>
+                <%= submit_tag "Save step", class: "action-btn action-btn--small action-btn--primary" %>
+              </div>
+            <% end %>
+          </dialog>
+        </li>
+      <% end %>
+    </ol>
+
+    <%= form_with url: admin_mission_steps_path(mission.slug, language: current_language),
+          method: :post, class: "admin-mission-edit__form" do %>
+      <h3>Add step</h3>
+      <p class="admin-mission-edit__hint">
+        Title is shared across every language. Body lands in the
+        <strong><%= current_language %></strong> tab only — switch tabs to
+        fill in other-language bodies later.
+      </p>
+      <label>Title <%= text_field_tag "mission_step[title]", nil, required: true, autocomplete: "off" %></label>
+      <label>Body (markdown) <%= text_area_tag "mission_step[body]", nil, rows: 4 %></label>
+      <%= submit_tag "Add step", class: "action-btn action-btn--large action-btn--primary" %>
+    <% end %>
+
+    <dialog class="admin-mission-edit__paste-dialog"
+            data-modal-target="dialog"
+            aria-labelledby="paste-guide-dialog-title">
+      <%= form_with url: admin_mission_guide_paste_path(mission.slug),
+            method: :post, class: "admin-mission-edit__paste-form" do %>
+        <header class="admin-mission-edit__paste-header">
+          <h3 id="paste-guide-dialog-title" class="admin-mission-edit__paste-title">Paste a full guide</h3>
+          <button type="button"
+                  class="admin-mission-edit__paste-close"
+                  aria-label="Close"
+                  data-action="click->modal#close">×</button>
+        </header>
+        <p class="admin-mission-edit__hint">
+          Paste the full markdown below. Submitting <strong>overwrites</strong>
+          the guide for the named language and resyncs its steps to match.
+          Use an existing language to update it, or type a new name to spin
+          up a fresh language tab.
+        </p>
+        <label class="admin-mission-edit__paste-label">
+          Language
+          <%= text_field_tag :language, current_language,
+                class: "admin-mission-edit__paste-language",
+                placeholder: "JavaScript", autocomplete: "off" %>
+        </label>
+        <%= text_area_tag :body, "", rows: 16, autofocus: true,
+              class: "admin-mission-edit__paste-textarea",
+              placeholder: "## First section\n\n..." %>
+        <div class="admin-mission-edit__paste-actions">
+          <button type="button"
+                  class="action-btn action-btn--small action-btn--secondary"
+                  data-action="click->modal#close">Cancel</button>
+          <%= submit_tag "Replace guide", class: "action-btn action-btn--small action-btn--primary" %>
+        </div>
+      <% end %>
+    </dialog>
+
+    <%# Preview of the current language's rendered guide. Updates whenever
+        the frame re-renders (i.e. after any step CRUD), since the steps →
+        variant body sync runs server-side. %>
+    <% preview_body = current_language.present? && mission.guide_body_for(current_language) %>
+    <% if preview_body.present? %>
+      <details class="admin-mission-edit__guide-preview-wrap">
+        <summary class="admin-mission-edit__guide-preview-summary">
+          Preview the rendered <strong><%= current_language %></strong> guide
+        </summary>
+        <div class="admin-mission-edit__guide-preview">
+          <%= render MarkdownContentComponent.new(markdown: preview_body, flavor: :guide) %>
+        </div>
+      </details>
+    <% end %>
+  </section>
+<% end %>

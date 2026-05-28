@@ -3,9 +3,9 @@ require "csv"
 module Admin
   class AuditLogsController < Admin::ApplicationController
     def index
-      authorize :admin, :access_audit_logs?
+      authorize ::PaperTrail::Version
 
-      @versions = PaperTrail::Version.order(created_at: :desc)
+      @versions = ::PaperTrail::Version.order(created_at: :desc)
 
       # Hide system activities by default (where whodunnit is nil)
       @show_system = params[:show_system] == "1"
@@ -52,17 +52,17 @@ module Admin
       @pagy, @versions = pagy(:offset, @versions, limit: 50)
 
       # Get unique item types and users for filters
-      @item_types = PaperTrail::Version.distinct.pluck(:item_type).compact.sort
-      @events = PaperTrail::Version.distinct.pluck(:event).compact.sort
-      @users = User.where(id: PaperTrail::Version.distinct.pluck(:whodunnit).compact).order(:display_name)
+      @item_types = ::PaperTrail::Version.distinct.pluck(:item_type).compact.sort
+      @events = ::PaperTrail::Version.distinct.pluck(:event).compact.sort
+      @users = User.where(id: ::PaperTrail::Version.distinct.pluck(:whodunnit).compact).order(:display_name)
 
       # For item_id filter, show the affected record info
       @affected_record = find_affected_record if params[:item_id].present? && params[:item_type].present?
     end
 
     def show
-      authorize :admin, :access_audit_logs?
-      @version = PaperTrail::Version.find(params[:id])
+      @version = ::PaperTrail::Version.find(params[:id])
+      authorize @version
     end
 
     private

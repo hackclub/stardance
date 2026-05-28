@@ -26,6 +26,8 @@
 @use "components/like_button";
 @use "components/welcome_tour";
 @use "components/markdown_content";
+@use "components/guide_content";
+@use "components/guide_code";
 @use "components/currency_icon";
 @use "components/mission_panel";
 @use "components/status_pill";
@@ -63,6 +65,9 @@
 @use "pages/guides";
 @use "pages/missions/index" as missions_index;
 @use "pages/missions/show" as missions_show;
+@use "pages/missions/guide" as missions_guide;
 @use "pages/mission_submissions/index" as mission_submissions_index;
 @use "pages/mission_submissions/show" as mission_submissions_show;
-@use "pages/manage/missions_edit" as manage_missions_edit;
+@use "pages/admin/missions_edit" as admin_missions_edit;
+@use "pages/certification/ships/index" as certification_ships_index;
+@use "pages/certification/ships/show" as certification_ships_show;

@@ -1,6 +1,62 @@
 <% content_for :title, "Admin · New mission" %>
 
-<div>
-  <h1>New mission</h1>
-  <%= render "form", mission: @mission, form_url: admin_missions_path, form_method: :post %>
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide">
+    <article class="admin-mission">
+      <p class="admin-mission__breadcrumb">
+        <%= link_to "← Missions", admin_missions_path, class: "admin-mission__breadcrumb-link" %>
+      </p>
+
+      <header class="admin-mission__page-header">
+        <h1 class="admin-mission__page-title">New mission</h1>
+      </header>
+
+      <section class="admin-mission__section">
+        <p class="admin-mission__hint">
+          Creates a disabled, draft mission with just the basics. After it
+          exists, configure the guide, prizes, reviewers, default project
+          copy, etc. on the manage page — then flip <strong>Enabled</strong>
+          there when it's ready to ship.
+        </p>
+
+        <%= form_with model: @mission, url: admin_missions_path, method: :post, local: true, class: "admin-mission__form" do |f| %>
+          <% if @mission.errors.any? %>
+            <div class="admin-mission__errors">
+              <ul>
+                <% @mission.errors.full_messages.each do |msg| %>
+                  <li><%= msg %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <label class="admin-mission__field">
+            <span class="admin-mission__field-label">Slug</span>
+            <small class="admin-mission__field-hint">
+              Lowercase, hyphenated. Forms the public URL
+              <code class="admin-mission__code">/missions/your-slug</code>.
+            </small>
+            <%= f.text_field :slug, required: true, autocomplete: "off" %>
+          </label>
+
+          <label class="admin-mission__field">
+            <span class="admin-mission__field-label">Name</span>
+            <%= f.text_field :name, required: true %>
+          </label>
+
+          <label class="admin-mission__field">
+            <span class="admin-mission__field-label">Description (markdown)</span>
+            <small class="admin-mission__field-hint">
+              One- or two-line pitch shown on the missions index card.
+            </small>
+            <%= f.text_area :description, rows: 4, required: true %>
+          </label>
+
+          <div class="admin-mission__submit">
+            <%= f.submit "Create draft mission", class: "action-btn action-btn--large action-btn--primary" %>
+          </div>
+        <% end %>
+      </section>
+    </article>
+  </div>
 </div>

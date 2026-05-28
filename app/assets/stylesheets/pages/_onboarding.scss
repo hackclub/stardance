@@ -996,7 +996,8 @@ $slider-star: url("onboarding/star-radio-active.svg");
   }
 
   &[data-status="taken"],
-  &[data-status="too_long"] {
+  &[data-status="too_long"],
+  &[data-status="invalid"] {
     color: var(--color-brand-salmon);
 
     &::before {

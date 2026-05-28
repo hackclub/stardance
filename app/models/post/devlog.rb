@@ -24,6 +24,9 @@ class Post::Devlog < ApplicationRecord
   include SoftDeletable
   has_paper_trail ignore: [ :likes_count, :comments_count, :hackatime_pulled_at, :synced_at ]
 
+  # Ignore devlog_review_id column before removing it in migration
+  self.ignored_columns += [ "devlog_review_id" ]
+
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
 
@@ -32,6 +35,9 @@ class Post::Devlog < ApplicationRecord
 
   # Version history
   has_many :versions, class_name: "DevlogVersion", foreign_key: :devlog_id, dependent: :destroy
+
+  # Review association
+  has_one :devlog_review, class_name: "Certification::Devlog", foreign_key: :post_devlog_id, dependent: :destroy
 
   ACCEPTED_CONTENT_TYPES = %w[
     image/jpeg

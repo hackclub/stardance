@@ -467,24 +467,11 @@
             <% end %>
           <% end %>
 
-          <% if @project_onboarding_mission.present? %>
-            <%= link_to mission_path(@project_onboarding_mission.slug),
-                        class: "project-show__onboarding-card project-show__onboarding-card--mission",
-                        data: { turbo_frame: "_top" } do %>
-              <span class="project-show__onboarding-card-body">
-                <strong class="project-show__onboarding-card-body-title"><%= @project_onboarding_mission.name %></strong>
-                <span class="project-show__onboarding-card-body-text"><%= truncate(@project_onboarding_mission.description.to_s, length: 110) %></span>
-              </span>
-              <span class="project-show__onboarding-card-action">See tutorial →</span>
-            <% end %>
-          <% end %>
         </div>
       </section>
     <% end %>
 
-    <% if Flipper.enabled?(:missions, current_user) %>
-      <%= render "projects/mission_panel", project: @project %>
-    <% end %>
+    <%= render "projects/mission_panel", project: @project %>
 
     <% if @votes_for_payout.present? %>
       <section class="project-show__payout-votes" aria-label="Votes needed to unlock payout">

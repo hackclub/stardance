@@ -1,5 +1,20 @@
-<%# Locals: mission (Mission), badge (optional String) %>
-<%= link_to mission_path(mission.slug), class: "mission-card" do %>
+<%# Locals:
+      mission     (Mission)
+      badge       (optional String) — small pill in the meta row
+      manageable  (optional Boolean) — true when the current viewer is an
+                  admin or owner of this mission. On its own this just says
+                  "you can manage it"; combined with `!mission.enabled?` it
+                  flips on the orange "manager-only visibility" treatment
+                  (per docs/branding.md §1.5) — the dashed border and Draft
+                  pill only appear when this card is shown to the viewer
+                  *because* of their permissions (i.e. a normal user
+                  wouldn't see it). Enabled missions are public, so they
+                  stay un-marked even if the viewer can also manage them. %>
+<% manageable  = local_assigns.fetch(:manageable, false) %>
+<% manager_only = manageable && !mission.enabled? %>
+<%= link_to mission_path(mission.slug),
+            class: ["mission-card",
+                    ("mission-card--manageable" if manager_only)].compact.join(" ") do %>
   <div class="mission-card__icon" aria-hidden="true">
     <% if mission.icon.attached? %>
       <%= image_tag mission.icon, alt: "", class: "mission-card__icon-img" %>
@@ -20,19 +35,16 @@
           <%= mission.difficulty.titleize %>
         </li>
       <% end %>
-      <% step_count = mission.steps.size %>
-      <% if step_count > 0 %>
+      <% if mission.steps_count > 0 %>
         <li class="mission-card__meta-item">
-          <%= step_count %>-step guide
-        </li>
-      <% end %>
-      <% if mission.prizes.size > 0 %>
-        <li class="mission-card__meta-item mission-card__meta-item--prize">
-          🎁 prize available
+          <%= mission.steps_count %>-step guide
         </li>
       <% end %>
       <% if local_assigns[:badge].present? %>
         <li class="mission-card__meta-item mission-card__meta-item--badge"><%= badge %></li>
+      <% end %>
+      <% if manager_only %>
+        <li class="mission-card__meta-item mission-card__meta-item--draft" title="This draft is only visible to managers — flip Enabled in the manage page to publish.">Draft</li>
       <% end %>
     </ul>
   </div>

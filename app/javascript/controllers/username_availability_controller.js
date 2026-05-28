@@ -1,8 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
-// Live-validates the onboarding display name input against the server.
-// Debounces input, cancels in-flight requests, and writes a status string +
-// state class onto a sibling feedback element.
+const SAFE_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
 export default class extends Controller {
   static targets = ["input", "feedback", "submit", "counter"];
   static values = {
@@ -28,7 +27,7 @@ export default class extends Controller {
   onInput() {
     if (this.timer) clearTimeout(this.timer);
     this._updateCounter();
-    this._setState("checking", "Checking…");
+    this._setState("checking", "Checking\u2026");
     this.timer = setTimeout(() => this.check(), this.debounceValue);
   }
 
@@ -42,7 +41,20 @@ export default class extends Controller {
       return;
     }
 
-    this._setState("checking", "Checking…");
+    if (!SAFE_PATTERN.test(value)) {
+      this._setState(
+        "invalid",
+        "Only letters, numbers, hyphens, and underscores allowed.",
+      );
+      return;
+    }
+
+    if (value.length > this.maxValue) {
+      this._setState("too_long", `Keep it under ${this.maxValue} characters.`);
+      return;
+    }
+
+    this._setState("checking", "Checking\u2026");
 
     if (this.abortController) this.abortController.abort();
     this.abortController = new AbortController();
@@ -57,7 +69,6 @@ export default class extends Controller {
       });
       if (!res.ok) return;
       const data = await res.json();
-      // Ignore late responses for a value the user has already typed past.
       if (this.inputTarget.value.trim() !== value) return;
       this._setState(data.status, data.message || "");
     } catch (err) {

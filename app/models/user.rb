@@ -34,7 +34,6 @@
 #  verification_status          :string           default("needs_submission"), not null
 #  vote_balance                 :integer          default(0), not null
 #  votes_count                  :integer
-#  voting_locked                :boolean          default(FALSE), not null
 #  ysws_eligible                :boolean          default(FALSE), not null
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
@@ -145,8 +144,13 @@ class User < ApplicationRecord
   validates :verification_status, presence: true
   validates :slack_id, uniqueness: true, allow_nil: true
   validates :email, uniqueness: { case_sensitive: false }, allow_blank: true
-  validates :display_name, uniqueness: { case_sensitive: false }, allow_blank: true
-  validates :display_name, length: { maximum: 30 }, allow_blank: true
+  MAX_DISPLAY_NAME_LENGTH = 30
+  USERNAME_FORMAT = /\A[a-zA-Z0-9_-]+\z/
+
+  validates :display_name, presence: true
+  validates :display_name, uniqueness: { case_sensitive: false }
+  validates :display_name, length: { maximum: MAX_DISPLAY_NAME_LENGTH }
+  validates :display_name, format: { with: USERNAME_FORMAT, message: "can only contain letters, numbers, hyphens, and underscores" }
   validates :hcb_email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
   include User::Notifications
@@ -163,6 +167,7 @@ class User < ApplicationRecord
   include User::Social
   include User::Profile
   include User::Preferences
+  include User::UsernameBloomSync
 
   KERBAL_FIRST_NAMES = %w[
     Jebediah Bill Bob Valentina Lodwig Shepard Gus Wernher Gene
@@ -172,7 +177,17 @@ class User < ApplicationRecord
   ].freeze
 
   def self.random_funny_display_name
-    "#{KERBAL_FIRST_NAMES.sample} Kerman #{rand(1000..9999)}"
+    "#{KERBAL_FIRST_NAMES.sample}_Kerman_#{rand(1000..9999)}"
+  end
+
+  def active_project_for_mission(mission)
+    return nil if mission.nil?
+    projects
+      .joins(:mission_attachments)
+      .where(project_mission_attachments: { mission_id: mission.id, detached_at: nil })
+      .where(deleted_at: nil)
+      .order("project_mission_attachments.attached_at DESC")
+      .first
   end
 
   private

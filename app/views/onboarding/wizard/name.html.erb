@@ -11,14 +11,14 @@
                    class: "onboarding-name__form",
                    data: {
                      controller: "username-availability",
-                     username_availability_url_value: onboarding_check_name_path,
-                     username_availability_max_value: Onboarding::WizardController::MAX_DISPLAY_NAME_LENGTH
+                     username_availability_url_value: username_availability_path,
+                     username_availability_max_value: User::MAX_DISPLAY_NAME_LENGTH
                    } do |f| %>
-      <% max_len = Onboarding::WizardController::MAX_DISPLAY_NAME_LENGTH %>
+      <% max_len = User::MAX_DISPLAY_NAME_LENGTH %>
       <div class="onboarding-name__field">
         <%= f.text_field :display_name,
                          value: @display_name_default,
-                         placeholder: "Your name",
+                         placeholder: "Pick a username",
                          autocomplete: "off",
                          required: true,
                          class: "onboarding-name__input",

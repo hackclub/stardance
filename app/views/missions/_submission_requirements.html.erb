@@ -1,0 +1,28 @@
+<%# Renders the inside of the "Submission requirements" card: intro paragraph,
+    numbered criterion cards, then optional outro. Used by missions/show and by
+    the manage-page live preview so authors see exactly the partitioned layout
+    their submission_guide markdown will produce.
+
+    Locals:
+      mission : Mission (or any object responding to submission_guide_intro /
+                submission_criteria / submission_guide_outro) %>
+<% if mission.submission_guide_intro.present? %>
+  <div class="mission-home__card-intro">
+    <%= md(mission.submission_guide_intro) %>
+  </div>
+<% end %>
+<% if mission.submission_criteria.any? %>
+  <ol class="mission-home__criteria">
+    <% tones = %w[mint peach lilac] %>
+    <% mission.submission_criteria.each_with_index do |criterion, idx| %>
+      <% tone = tones[idx % tones.length] %>
+      <li class="mission-home__criterion mission-home__criterion--<%= tone %>">
+        <span class="mission-home__criterion-number" aria-hidden="true"><%= idx + 1 %></span>
+        <span class="mission-home__criterion-text"><%= md(criterion) %></span>
+      </li>
+    <% end %>
+  </ol>
+<% end %>
+<% if mission.submission_guide_outro.present? %>
+  <p class="mission-home__card-outro"><%= mission.submission_guide_outro %></p>
+<% end %>

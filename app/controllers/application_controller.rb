@@ -37,6 +37,7 @@ class ApplicationController < ActionController::Base
     end
   end
   helper_method :current_user
+  helper_method :admin_policy
 
   def impersonating?
     session[:impersonator_user_id].present? && session[:user_id].present?
@@ -137,6 +138,26 @@ class ApplicationController < ActionController::Base
     nil
   rescue URI::InvalidURIError
     nil
+  end
+
+  def pundit_namespace(record)
+    record
+  end
+
+  def authorize(record, ...)
+    super(pundit_namespace(record), ...)
+  end
+
+  def policy_scope(scope, ...)
+    super(pundit_namespace(scope), ...)
+  end
+
+  def policy(record)
+    super(pundit_namespace(record))
+  end
+
+  def admin_policy(record)
+    policy([ :admin, record ])
   end
 
   def handle_invalid_auth_token

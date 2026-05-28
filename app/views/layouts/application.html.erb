@@ -74,8 +74,8 @@
               <span class="top-banner__detail">(as <%= real_user.display_name %>)</span>
             </div>
             <%= button_to "Stop Impersonating",
-                          stop_impersonating_admin_users_path,
-                          method: :post,
+                          admin_impersonation_path,
+                          method: :delete,
                           class: "top-banner__action",
                           form: { style: "margin: 0;" } %>
           </div>

@@ -61,40 +61,32 @@
 #                onboarding_interests_result GET    /onboarding/interests_result(.:format)                                                            onboarding/wizard#interests_result
 #                            onboarding_name GET    /onboarding/name(.:format)                                                                        onboarding/wizard#name
 #                                            POST   /onboarding/name(.:format)                                                                        onboarding/wizard#submit_name
-#                                helper_root GET    /helper(.:format)                                                                                 helper/application#index
-#                        balance_helper_user GET    /helper/users/:id/balance(.:format)                                                               helper/users#balance
-#                               helper_users GET    /helper/users(.:format)                                                                           helper/users#index
-#                                helper_user GET    /helper/users/:id(.:format)                                                                       helper/users#show
-#                     restore_helper_project POST   /helper/projects/:id/restore(.:format)                                                            helper/projects#restore
-#                            helper_projects GET    /helper/projects(.:format)                                                                        helper/projects#index
-#                             helper_project GET    /helper/projects/:id(.:format)                                                                    helper/projects#show
-#                         helper_shop_orders GET    /helper/shop_orders(.:format)                                                                     helper/shop_orders#index
-#                          helper_shop_order GET    /helper/shop_orders/:id(.:format)                                                                 helper/shop_orders#show
-#                       helper_support_vibes GET    /helper/support_vibes(.:format)                                                                   helper/support_vibes#index
 #                                 admin_root GET    /admin(.:format)                                                                                  admin/application#index
 #                               admin_blazer        /admin/blazer                                                                                     Blazer::Engine
 #                                                   /admin/flipper                                                                                    Flipper::UI
 #                 admin_mission_control_jobs        /admin/jobs                                                                                       MissionControl::Jobs::Engine
-#                    promote_role_admin_user POST   /admin/users/:id/promote_role(.:format)                                                           admin/users#promote_role
-#                     demote_role_admin_user POST   /admin/users/:id/demote_role(.:format)                                                            admin/users#demote_role
-#                  toggle_flipper_admin_user POST   /admin/users/:id/toggle_flipper(.:format)                                                         admin/users#toggle_flipper
-#                  sync_hackatime_admin_user POST   /admin/users/:id/sync_hackatime(.:format)                                                         admin/users#sync_hackatime
-#              mass_reject_orders_admin_user POST   /admin/users/:id/mass_reject_orders(.:format)                                                     admin/users#mass_reject_orders
-#                  adjust_balance_admin_user POST   /admin/users/:id/adjust_balance(.:format)                                                         admin/users#adjust_balance
-#                             ban_admin_user POST   /admin/users/:id/ban(.:format)                                                                    admin/users#ban
-#                           unban_admin_user POST   /admin/users/:id/unban(.:format)                                                                  admin/users#unban
-#           cancel_all_hcb_grants_admin_user POST   /admin/users/:id/cancel_all_hcb_grants(.:format)                                                  admin/users#cancel_all_hcb_grants
-#                     impersonate_admin_user POST   /admin/users/:id/impersonate(.:format)                                                            admin/users#impersonate
-#            refresh_verification_admin_user POST   /admin/users/:id/refresh_verification(.:format)                                                   admin/users#refresh_verification
-#              toggle_voting_lock_admin_user POST   /admin/users/:id/toggle_voting_lock(.:format)                                                     admin/users#toggle_voting_lock
-#                           votes_admin_user GET    /admin/users/:id/votes(.:format)                                                                  admin/users#votes
-#                set_vote_balance_admin_user POST   /admin/users/:id/set_vote_balance(.:format)                                                       admin/users#set_vote_balance
-#      set_ysws_eligible_override_admin_user PATCH  /admin/users/:id/set_ysws_eligible_override(.:format)                                             admin/users#set_ysws_eligible_override
-#             stop_impersonating_admin_users POST   /admin/users/stop_impersonating(.:format)                                                         admin/users#stop_impersonating
+#                           admin_user_roles POST   /admin/users/:user_id/roles(.:format)                                                             admin/users/roles#create
+#                            admin_user_role DELETE /admin/users/:user_id/roles/:name(.:format)                                                       admin/users/roles#destroy
+#                             admin_user_ban DELETE /admin/users/:user_id/ban(.:format)                                                               admin/users/bans#destroy
+#                                            POST   /admin/users/:user_id/ban(.:format)                                                               admin/users/bans#create
+#                   admin_user_impersonation POST   /admin/users/:user_id/impersonation(.:format)                                                     admin/users/impersonations#create
+#                   admin_user_feature_flags POST   /admin/users/:user_id/feature_flags(.:format)                                                     admin/users/feature_flags#create
+#                    admin_user_feature_flag DELETE /admin/users/:user_id/feature_flags/:feature(.:format)                                            admin/users/feature_flags#destroy
+#                  admin_user_hackatime_sync POST   /admin/users/:user_id/hackatime_sync(.:format)                                                    admin/users/hackatime_syncs#create
+#                 admin_user_order_rejection POST   /admin/users/:user_id/order_rejection(.:format)                                                   admin/users/order_rejections#create
+#             admin_user_balance_adjustments POST   /admin/users/:user_id/balance_adjustments(.:format)                                               admin/users/balance_adjustments#create
+#              admin_user_grant_cancellation POST   /admin/users/:user_id/grant_cancellation(.:format)                                                admin/users/grant_cancellations#create
+#                    admin_user_verification POST   /admin/users/:user_id/verification(.:format)                                                      admin/users/verifications#create
+#                    admin_user_vote_balance PATCH  /admin/users/:user_id/vote_balance(.:format)                                                      admin/users/vote_balances#update
+#                                            PUT    /admin/users/:user_id/vote_balance(.:format)                                                      admin/users/vote_balances#update
+#                   admin_user_ysws_override PATCH  /admin/users/:user_id/ysws_override(.:format)                                                     admin/users/ysws_overrides#update
+#                                            PUT    /admin/users/:user_id/ysws_override(.:format)                                                     admin/users/ysws_overrides#update
+#                           admin_user_votes GET    /admin/users/:user_id/votes(.:format)                                                             admin/users/votes#index
 #                                admin_users GET    /admin/users(.:format)                                                                            admin/users#index
 #                                 admin_user GET    /admin/users/:id(.:format)                                                                        admin/users#show
 #                                            PATCH  /admin/users/:id(.:format)                                                                        admin/users#update
 #                                            PUT    /admin/users/:id(.:format)                                                                        admin/users#update
+#                        admin_impersonation DELETE /admin/impersonation(.:format)                                                                    admin/users/impersonations#destroy
 #                      restore_admin_project POST   /admin/projects/:id/restore(.:format)                                                             admin/projects#restore
 #                       delete_admin_project POST   /admin/projects/:id/delete(.:format)                                                              admin/projects#delete
 #           update_ship_status_admin_project POST   /admin/projects/:id/update_ship_status(.:format)                                                  admin/projects#update_ship_status
@@ -103,37 +95,39 @@
 #                             admin_projects GET    /admin/projects(.:format)                                                                         admin/projects#index
 #                              admin_project GET    /admin/projects/:id(.:format)                                                                     admin/projects#show
 #                           admin_user_perms GET    /admin/user-perms(.:format)                                                                       admin/users#user_perms
-#                          admin_manage_shop GET    /admin/manage-shop(.:format)                                                                      admin/shop#index
-#                 admin_clear_carousel_cache POST   /admin/shop/clear-carousel-cache(.:format)                                                        admin/shop#clear_carousel_cache
-#          preview_markdown_admin_shop_items POST   /admin/shop_items/preview_markdown(.:format)                                                      admin/shop_items#preview_markdown
-#           request_approval_admin_shop_item POST   /admin/shop_items/:id/request_approval(.:format)                                                  admin/shop_items#request_approval
-#                           admin_shop_items POST   /admin/shop_items(.:format)                                                                       admin/shop_items#create
-#                        new_admin_shop_item GET    /admin/shop_items/new(.:format)                                                                   admin/shop_items#new
-#                       edit_admin_shop_item GET    /admin/shop_items/:id/edit(.:format)                                                              admin/shop_items#edit
-#                            admin_shop_item GET    /admin/shop_items/:id(.:format)                                                                   admin/shop_items#show
-#                                            PATCH  /admin/shop_items/:id(.:format)                                                                   admin/shop_items#update
-#                                            PUT    /admin/shop_items/:id(.:format)                                                                   admin/shop_items#update
-#                                            DELETE /admin/shop_items/:id(.:format)                                                                   admin/shop_items#destroy
-#            reveal_address_admin_shop_order POST   /admin/shop_orders/:id/reveal_address(.:format)                                                   admin/shop_orders#reveal_address
-#              reveal_phone_admin_shop_order POST   /admin/shop_orders/:id/reveal_phone(.:format)                                                     admin/shop_orders#reveal_phone
-#                   approve_admin_shop_order POST   /admin/shop_orders/:id/approve(.:format)                                                          admin/shop_orders#approve
-#              review_order_admin_shop_order POST   /admin/shop_orders/:id/review_order(.:format)                                                     admin/shop_orders#review_order
-#                    reject_admin_shop_order POST   /admin/shop_orders/:id/reject(.:format)                                                           admin/shop_orders#reject
-#             place_on_hold_admin_shop_order POST   /admin/shop_orders/:id/place_on_hold(.:format)                                                    admin/shop_orders#place_on_hold
-#         release_from_hold_admin_shop_order POST   /admin/shop_orders/:id/release_from_hold(.:format)                                                admin/shop_orders#release_from_hold
-#            mark_fulfilled_admin_shop_order POST   /admin/shop_orders/:id/mark_fulfilled(.:format)                                                   admin/shop_orders#mark_fulfilled
-#     update_internal_notes_admin_shop_order POST   /admin/shop_orders/:id/update_internal_notes(.:format)                                            admin/shop_orders#update_internal_notes
-#               assign_user_admin_shop_order POST   /admin/shop_orders/:id/assign_user(.:format)                                                      admin/shop_orders#assign_user
-#          cancel_hcb_grant_admin_shop_order POST   /admin/shop_orders/:id/cancel_hcb_grant(.:format)                                                 admin/shop_orders#cancel_hcb_grant
-#      refresh_verification_admin_shop_order POST   /admin/shop_orders/:id/refresh_verification(.:format)                                             admin/shop_orders#refresh_verification
-#           send_to_theseus_admin_shop_order POST   /admin/shop_orders/:id/send_to_theseus(.:format)                                                  admin/shop_orders#send_to_theseus
-# approve_verification_call_admin_shop_order POST   /admin/shop_orders/:id/approve_verification_call(.:format)                                        admin/shop_orders#approve_verification_call
-#               force_state_admin_shop_order POST   /admin/shop_orders/:id/force_state(.:format)                                                      admin/shop_orders#force_state
-#                          admin_shop_orders GET    /admin/shop_orders(.:format)                                                                      admin/shop_orders#index
-#                           admin_shop_order GET    /admin/shop_orders/:id(.:format)                                                                  admin/shop_orders#show
-#              dismiss_admin_shop_suggestion POST   /admin/shop_suggestions/:id/dismiss(.:format)                                                     admin/shop_suggestions#dismiss
-#     disable_for_user_admin_shop_suggestion POST   /admin/shop_suggestions/:id/disable_for_user(.:format)                                            admin/shop_suggestions#disable_for_user
-#                     admin_shop_suggestions GET    /admin/shop_suggestions(.:format)                                                                 admin/shop_suggestions#index
+#                              admin_support GET    /admin/support(.:format)                                                                          admin/support/dashboards#show
+#                                admin_fraud GET    /admin/fraud(.:format)                                                                            admin/fraud/dashboards#show
+#                                 admin_shop GET    /admin/shop(.:format)                                                                             admin/shop/dashboard#show
+#                 admin_clear_carousel_cache POST   /admin/shop/clear-carousel-cache(.:format)                                                        admin/shop/dashboard#clear_carousel_cache
+#          preview_markdown_admin_shop_items POST   /admin/shop/items/preview_markdown(.:format)                                                      admin/shop/items#preview_markdown
+#           request_approval_admin_shop_item POST   /admin/shop/items/:id/request_approval(.:format)                                                  admin/shop/items#request_approval
+#                           admin_shop_items POST   /admin/shop/items(.:format)                                                                       admin/shop/items#create
+#                        new_admin_shop_item GET    /admin/shop/items/new(.:format)                                                                   admin/shop/items#new
+#                       edit_admin_shop_item GET    /admin/shop/items/:id/edit(.:format)                                                              admin/shop/items#edit
+#                            admin_shop_item GET    /admin/shop/items/:id(.:format)                                                                   admin/shop/items#show
+#                                            PATCH  /admin/shop/items/:id(.:format)                                                                   admin/shop/items#update
+#                                            PUT    /admin/shop/items/:id(.:format)                                                                   admin/shop/items#update
+#                                            DELETE /admin/shop/items/:id(.:format)                                                                   admin/shop/items#destroy
+#            reveal_address_admin_shop_order POST   /admin/shop/orders/:id/reveal_address(.:format)                                                   admin/shop/orders#reveal_address
+#              reveal_phone_admin_shop_order POST   /admin/shop/orders/:id/reveal_phone(.:format)                                                     admin/shop/orders#reveal_phone
+#                   approve_admin_shop_order POST   /admin/shop/orders/:id/approve(.:format)                                                          admin/shop/orders#approve
+#              review_order_admin_shop_order POST   /admin/shop/orders/:id/review_order(.:format)                                                     admin/shop/orders#review_order
+#                    reject_admin_shop_order POST   /admin/shop/orders/:id/reject(.:format)                                                           admin/shop/orders#reject
+#             place_on_hold_admin_shop_order POST   /admin/shop/orders/:id/place_on_hold(.:format)                                                    admin/shop/orders#place_on_hold
+#         release_from_hold_admin_shop_order POST   /admin/shop/orders/:id/release_from_hold(.:format)                                                admin/shop/orders#release_from_hold
+#            mark_fulfilled_admin_shop_order POST   /admin/shop/orders/:id/mark_fulfilled(.:format)                                                   admin/shop/orders#mark_fulfilled
+#     update_internal_notes_admin_shop_order POST   /admin/shop/orders/:id/update_internal_notes(.:format)                                            admin/shop/orders#update_internal_notes
+#               assign_user_admin_shop_order POST   /admin/shop/orders/:id/assign_user(.:format)                                                      admin/shop/orders#assign_user
+#          cancel_hcb_grant_admin_shop_order POST   /admin/shop/orders/:id/cancel_hcb_grant(.:format)                                                 admin/shop/orders#cancel_hcb_grant
+#      refresh_verification_admin_shop_order POST   /admin/shop/orders/:id/refresh_verification(.:format)                                             admin/shop/orders#refresh_verification
+#           send_to_theseus_admin_shop_order POST   /admin/shop/orders/:id/send_to_theseus(.:format)                                                  admin/shop/orders#send_to_theseus
+# approve_verification_call_admin_shop_order POST   /admin/shop/orders/:id/approve_verification_call(.:format)                                        admin/shop/orders#approve_verification_call
+#               force_state_admin_shop_order POST   /admin/shop/orders/:id/force_state(.:format)                                                      admin/shop/orders#force_state
+#                          admin_shop_orders GET    /admin/shop/orders(.:format)                                                                      admin/shop/orders#index
+#                           admin_shop_order GET    /admin/shop/orders/:id(.:format)                                                                  admin/shop/orders#show
+#              dismiss_admin_shop_suggestion POST   /admin/shop/suggestions/:id/dismiss(.:format)                                                     admin/shop/suggestions#dismiss
+#     disable_for_user_admin_shop_suggestion POST   /admin/shop/suggestions/:id/disable_for_user(.:format)                                            admin/shop/suggestions#disable_for_user
+#                     admin_shop_suggestions GET    /admin/shop/suggestions(.:format)                                                                 admin/shop/suggestions#index
 #                             admin_messages GET    /admin/messages(.:format)                                                                         admin/messages#index
 #                                            POST   /admin/messages(.:format)                                                                         admin/messages#create
 #                        admin_support_vibes GET    /admin/support_vibes(.:format)                                                                    admin/support_vibes#index
@@ -147,26 +141,13 @@
 #                       dismiss_admin_report POST   /admin/reports/:id/dismiss(.:format)                                                              admin/reports#dismiss
 #                              admin_reports GET    /admin/reports(.:format)                                                                          admin/reports#index
 #                               admin_report GET    /admin/reports/:id(.:format)                                                                      admin/reports#show
-#                    admin_ship_event_scores GET    /admin/ship_event_scores(.:format)                                                                admin/ship_event_scores#index
 #           approve_admin_fulfillment_payout POST   /admin/fulfillment_payouts/:id/approve(.:format)                                                  admin/fulfillment_payouts#approve
 #            reject_admin_fulfillment_payout POST   /admin/fulfillment_payouts/:id/reject(.:format)                                                   admin/fulfillment_payouts#reject
 #          trigger_admin_fulfillment_payouts POST   /admin/fulfillment_payouts/trigger(.:format)                                                      admin/fulfillment_payouts#trigger
 #                  admin_fulfillment_payouts GET    /admin/fulfillment_payouts(.:format)                                                              admin/fulfillment_payouts#index
 #                   admin_fulfillment_payout GET    /admin/fulfillment_payouts/:id(.:format)                                                          admin/fulfillment_payouts#show
-#                        admin_mission_steps POST   /admin/missions/:mission_slug/steps(.:format)                                                     admin/mission_steps#create
-#                         admin_mission_step PATCH  /admin/missions/:mission_slug/steps/:id(.:format)                                                 admin/mission_steps#update
-#                                            PUT    /admin/missions/:mission_slug/steps/:id(.:format)                                                 admin/mission_steps#update
-#                                            DELETE /admin/missions/:mission_slug/steps/:id(.:format)                                                 admin/mission_steps#destroy
-#                       admin_mission_prizes POST   /admin/missions/:mission_slug/prizes(.:format)                                                    admin/mission_prizes#create
-#                        admin_mission_prize PATCH  /admin/missions/:mission_slug/prizes/:id(.:format)                                                admin/mission_prizes#update
-#                                            PUT    /admin/missions/:mission_slug/prizes/:id(.:format)                                                admin/mission_prizes#update
-#                                            DELETE /admin/missions/:mission_slug/prizes/:id(.:format)                                                admin/mission_prizes#destroy
 #                  admin_mission_memberships POST   /admin/missions/:mission_slug/memberships(.:format)                                               admin/mission_memberships#create
-#                   admin_mission_membership PATCH  /admin/missions/:mission_slug/memberships/:id(.:format)                                           admin/mission_memberships#update
-#                                            PUT    /admin/missions/:mission_slug/memberships/:id(.:format)                                           admin/mission_memberships#update
-#                                            DELETE /admin/missions/:mission_slug/memberships/:id(.:format)                                           admin/mission_memberships#destroy
-#                 admin_mission_shop_unlocks POST   /admin/missions/:mission_slug/shop_unlocks(.:format)                                              admin/mission_shop_unlocks#create
-#                  admin_mission_shop_unlock DELETE /admin/missions/:mission_slug/shop_unlocks/:id(.:format)                                          admin/mission_shop_unlocks#destroy
+#                   admin_mission_membership DELETE /admin/missions/:mission_slug/memberships/:id(.:format)                                           admin/mission_memberships#destroy
 #                      restore_admin_mission POST   /admin/missions/:slug/restore(.:format)                                                           admin/missions#restore
 #                             admin_missions GET    /admin/missions(.:format)                                                                         admin/missions#index
 #                                            POST   /admin/missions(.:format)                                                                         admin/missions#create
@@ -176,6 +157,17 @@
 #                                            PATCH  /admin/missions/:slug(.:format)                                                                   admin/missions#update
 #                                            PUT    /admin/missions/:slug(.:format)                                                                   admin/missions#update
 #                                            DELETE /admin/missions/:slug(.:format)                                                                   admin/missions#destroy
+#             next_admin_certification_ships GET    /admin/certification/ship_cert/next(.:format)                                                     admin/certification/ships#next
+#             claim_admin_certification_ship POST   /admin/certification/ship_cert/:id/claim(.:format)                                                admin/certification/ships#claim
+#                  admin_certification_ships GET    /admin/certification/ship_cert(.:format)                                                          admin/certification/ships#index
+#                   admin_certification_ship GET    /admin/certification/ship_cert/:id(.:format)                                                      admin/certification/ships#show
+#                                            PATCH  /admin/certification/ship_cert/:id(.:format)                                                      admin/certification/ships#update
+#                                            PUT    /admin/certification/ship_cert/:id(.:format)                                                      admin/certification/ships#update
+#          admin_certification_devlog_review PATCH  /admin/certification/devlog_reviews/:id(.:format)                                                 admin/certification/devlog_reviews#update
+#                                            PUT    /admin/certification/devlog_reviews/:id(.:format)                                                 admin/certification/devlog_reviews#update
+#           admin_certification_ysws_reviews GET    /admin/certification/review(.:format)                                                             admin/certification/ysws#index
+#            admin_certification_ysws_review GET    /admin/certification/review/:id(.:format)                                                         admin/certification/ysws#show
+#      admin_certification_ysws_report_fraud POST   /admin/certification/review/:id/report_fraud(.:format)                                            admin/certification/ysws#report_fraud
 #                                      queue GET    /queue(.:format)                                                                                  queue#index
 #                             projects_setup GET    /projects/setup(.:format)                                                                         projects/setup#idea
 #                 projects_setup_submit_idea POST   /projects/setup/idea(.:format)                                                                    projects/setup#submit_idea
@@ -207,8 +199,6 @@
 #                                            POST   /projects/:project_id/mission(.:format)                                                           projects/missions#create
 #                              project_magic DELETE /projects/:project_id/magic(.:format)                                                             projects/magic#destroy
 #                                            POST   /projects/:project_id/magic(.:format)                                                             projects/magic#create
-#           project_mission_step_completions POST   /projects/:project_id/mission_step_completions(.:format)                                          projects/mission_step_completions#create
-#                    mission_step_completion DELETE /mission_step_completions/:mission_step_id(.:format)                                              projects/mission_step_completions#destroy
 #                             readme_project GET    /projects/:id/readme(.:format)                                                                    projects#readme
 #                             follow_project POST   /projects/:id/follow(.:format)                                                                    projects#follow
 #                           unfollow_project DELETE /projects/:id/unfollow(.:format)                                                                  projects#unfollow
@@ -404,46 +394,6 @@
 #      rails_performance_custom GET  /custom(.:format)       rails_performance/rails_performance#custom
 #   rails_performance_resources GET  /resources(.:format)    rails_performance/rails_performance#resources
 
-class AdminConstraint
-  def self.matches?(request)
-    # otherwise admins who impersonated non admins can't stop
-    if request.path == "/admin/users/stop_impersonating" && request.session[:impersonator_user_id].present?
-      user = User.find_by(id: request.session[:impersonator_user_id])
-    else
-      user = admin_user_for(request)
-    end
-
-    return false unless user
-
-    policy = AdminPolicy.new(user, :admin)
-    # Allow admins, fraud dept, and fulfillment persons (who have limited access)
-    policy.access_admin_endpoints? ||
-      policy.access_fulfillment_view?
-  end
-
-  def self.admin_user_for(request)
-    user = User.find_by(id: request.session[:user_id])
-    return user if user
-
-    if Rails.env.development? && ENV["DEV_ADMIN_USER_ID"].present?
-      User.find_by(id: ENV["DEV_ADMIN_USER_ID"])
-    end
-  end
-
-  def self.allow?(request, permission)
-    user = admin_user_for(request)
-    user && AdminPolicy.new(user, :admin).public_send(permission)
-  end
-end
-
-class HelperConstraint
-  def self.matches?(request)
-    u = User.find_by(id: request.session[:user_id])
-    u ||= User.find_by(id: ENV["DEV_ADMIN_USER_ID"]) if Rails.env.development?
-    u && HelperPolicy.new(u, :helper).access?
-  end
-end
-
 Rails.application.routes.draw do
   # Sitemap
   get "sitemap.xml", to: "sitemaps#index", as: :sitemap, defaults: { format: :xml }
@@ -557,26 +507,8 @@ Rails.application.routes.draw do
     get  :interests_result,          to: "wizard#interests_result"
     get  :name,                      to: "wizard#name"
     post :name,                      to: "wizard#submit_name"
-    get  :check_name,                to: "wizard#check_name"
   end
 
-  namespace :helper, constraints: HelperConstraint do
-    root to: "application#index"
-    resources :users, only: [ :index, :show ] do
-      member do
-        get :balance
-      end
-    end
-    resources :projects, only: [ :index, :show ] do
-      member do
-        post :restore
-      end
-    end
-    resources :shop_orders, only: [ :index, :show ]
-    resources :support_vibes, only: [ :index ]
-  end
-
-  # admin shallow routing
   namespace :admin, constraints: AdminConstraint do
     root to: "application#index"
 
@@ -592,29 +524,25 @@ Rails.application.routes.draw do
       AdminConstraint.allow?(request, :access_jobs?)
     }
 
-    resources :users, only: [ :index, :show, :update ], shallow: true do
-       member do
-         post :promote_role
-         post :demote_role
-         post :toggle_flipper
-         post :sync_hackatime
-         post :mass_reject_orders
-         post :adjust_balance
-         post :ban
-         post :unban
-         post :cancel_all_hcb_grants
-         post :impersonate
-         post :refresh_verification
-         post :toggle_voting_lock
-         get  :votes
-         post :set_vote_balance
-         patch :set_ysws_eligible_override
-       end
-       collection do
-         post :stop_impersonating
-       end
-     end
-    resources :projects, only: [ :index, :show ], shallow: true do
+    resources :users, only: [ :index, :show, :update ] do
+      scope module: :users do
+        resources :roles,               only: [ :create, :destroy ], param: :name
+        resource  :ban,                 only: [ :create, :destroy ]
+        resource  :impersonation,       only: [ :create ]
+        resources :feature_flags,       only: [ :create, :destroy ], param: :feature
+        resource  :hackatime_sync,      only: [ :create ]
+        resource  :order_rejection,     only: [ :create ]
+        resources :balance_adjustments, only: [ :create ]
+        resource  :grant_cancellation,  only: [ :create ]
+        resource  :verification,        only: [ :create ]
+        resource  :vote_balance,        only: [ :update ]
+        resource  :ysws_override,       only: [ :update ]
+        resources :votes,               only: [ :index ]
+      end
+    end
+
+    resource :impersonation, only: [ :destroy ], controller: "users/impersonations"
+    resources :projects, only: [ :index, :show ] do
       member do
         post :restore
         post :delete
@@ -624,39 +552,43 @@ Rails.application.routes.draw do
       end
     end
     get "user-perms", to: "users#user_perms"
-    get "manage-shop", to: "shop#index"
-    post "shop/clear-carousel-cache", to: "shop#clear_carousel_cache", as: :clear_carousel_cache
-    resources :shop_items, only: [ :new, :create, :show, :edit, :update, :destroy ] do
-      collection do
-        post :preview_markdown
+    resource :support, only: [ :show ], controller: "support/dashboards"
+    resource :fraud, only: [ :show ], controller: "fraud/dashboards"
+    resource :shop, only: [ :show ], controller: "shop/dashboard"
+    post "shop/clear-carousel-cache", to: "shop/dashboard#clear_carousel_cache", as: :clear_carousel_cache
+    namespace :shop do
+      resources :items, only: [ :new, :create, :show, :edit, :update, :destroy ] do
+        collection do
+          post :preview_markdown
+        end
+        member do
+          post :request_approval
+        end
       end
-      member do
-        post :request_approval
+      resources :orders, only: [ :index, :show ] do
+        member do
+          post :reveal_address
+          post :reveal_phone
+          post :approve
+          post :review_order
+          post :reject
+          post :place_on_hold
+          post :release_from_hold
+          post :mark_fulfilled
+          post :update_internal_notes
+          post :assign_user
+          post :cancel_hcb_grant
+          post :refresh_verification
+          post :send_to_theseus
+          post :approve_verification_call
+          post :force_state
+        end
       end
-    end
-    resources :shop_orders, only: [ :index, :show ] do
-      member do
-        post :reveal_address
-        post :reveal_phone
-        post :approve
-        post :review_order
-        post :reject
-        post :place_on_hold
-        post :release_from_hold
-        post :mark_fulfilled
-        post :update_internal_notes
-        post :assign_user
-        post :cancel_hcb_grant
-        post :refresh_verification
-        post :send_to_theseus
-        post :approve_verification_call
-        post :force_state
-      end
-    end
-    resources :shop_suggestions, only: [ :index ] do
-      member do
-        post :dismiss
-        post :disable_for_user
+      resources :suggestions, only: [ :index ] do
+        member do
+          post :dismiss
+          post :disable_for_user
+        end
       end
     end
     resources :messages, only: [ :index, :create ]
@@ -673,7 +605,6 @@ Rails.application.routes.draw do
         post :dismiss
       end
     end
-    get "ship_event_scores", to: "ship_event_scores#index"
     resources :fulfillment_payouts, only: [ :index, :show ] do
       member do
         post :approve
@@ -683,15 +614,48 @@ Rails.application.routes.draw do
         post :trigger
       end
     end
+  end
 
+  # Mission management under /admin/ — the URL prefix is `admin`, but
+  # AdminConstraint is intentionally NOT applied here so non-admin mission
+  # owners can edit their own missions via Pundit's `MissionPolicy#manage?`.
+  # Per-action authorization lives in Admin::MissionsController and the
+  # Admin::Missions::* sub-resource controllers (admin-only actions vs
+  # manage actions are gated separately inside those controllers).
+  namespace :admin do
     resources :missions, param: :slug do
-      resources :steps,        only: [ :create, :update, :destroy ], controller: "mission_steps"
-      resources :prizes,       only: [ :create, :update, :destroy ], controller: "mission_prizes"
-      resources :memberships,  only: [ :create, :update, :destroy ], controller: "mission_memberships"
-      resources :shop_unlocks, only: [ :create, :destroy ],          controller: "mission_shop_unlocks"
       member do
         post :restore
       end
+      # Nested sub-resources live in the Admin::Missions:: namespace,
+      # mirroring the Mission::Step / Mission::Prize / Mission::Membership /
+      # Mission::ShopUnlock model namespace. `controller:` is set explicitly
+      # because `scope module: :missions` doesn't reliably propagate inside
+      # a parent `resources do ... end` block.
+      resource  :guide_paste,    only: [ :create ],                  controller: "missions/guide_pastes"
+      resource  :guide_preview,  only: [ :create ],                  controller: "missions/guide_previews"
+      resources :memberships,    only: [ :create, :update, :destroy ], controller: "missions/memberships"
+      resources :steps,          only: [ :create, :update, :destroy ], controller: "missions/steps"
+      resource  :step_ordering,  only: [ :create ],                  controller: "missions/step_orderings"
+      resources :prizes,         only: [ :create, :update, :destroy ], controller: "missions/prizes"
+      resources :shop_unlocks,   only: [ :create, :destroy ],          controller: "missions/shop_unlocks"
+    end
+
+    namespace :certification do
+      resources :ships, path: "ship_cert", only: [ :index, :show, :update ] do
+        collection do
+          get :next
+        end
+        member do
+          post :claim
+        end
+      end
+
+      resources :devlog_reviews, only: [ :update ]
+
+      get "review", to: "ysws#index", as: "ysws_reviews"
+      get "review/:id", to: "ysws#show", as: "ysws_review"
+      post "review/:id/report_fraud", to: "ysws#report_fraud", as: "ysws_report_fraud"
     end
   end
 
@@ -741,7 +705,7 @@ Rails.application.routes.draw do
     end
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
-    resources :mission_step_completions,
+    resources :mission_section_completions,
               only: [ :create, :destroy ],
               module: :projects,
               param: :mission_step_id
@@ -771,6 +735,8 @@ Rails.application.routes.draw do
     end
   end
 
+  resource :username_availability, only: [ :show ], controller: "users/username_availabilities"
+
   # Autocomplete search endpoints (used by the bio editor and elsewhere).
   get "search/users",    to: "search#users",    as: :search_users
   get "search/projects", to: "search#projects", as: :search_projects
@@ -784,6 +750,9 @@ Rails.application.routes.draw do
   # Project-side / reviewer-queue / admin-managed missions surfaces ship in later PRs.
   resources :missions, only: [ :index, :show ], param: :slug do
     resource :og_image, only: [ :show ], module: :missions, defaults: { format: :png }
+    member do
+      get :guide
+    end
   end
 
   # Reviewer queue.
@@ -793,16 +762,6 @@ Rails.application.routes.draw do
       post :reject
       post :undo
       get  :redeem
-    end
-  end
-
-  # Owner-managed mission CRUD.
-  namespace :manage do
-    resources :missions, param: :slug, only: [ :show, :edit, :update ] do
-      resources :steps,        only: [ :create, :update, :destroy ], controller: "mission_steps"
-      resources :prizes,       only: [ :create, :update, :destroy ], controller: "mission_prizes"
-      resources :memberships,  only: [ :create, :update, :destroy ], controller: "mission_memberships"
-      resources :shop_unlocks, only: [ :create, :destroy ],          controller: "mission_shop_unlocks"
     end
   end
 

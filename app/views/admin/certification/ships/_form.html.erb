@@ -1,0 +1,39 @@
+<%= form_with model: ship, url: admin_certification_ship_path(ship), method: :patch, class: "review-form" do |f| %>
+  <% if ship.errors.any? %>
+    <div class="review-form__errors">
+      <ul>
+        <% ship.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <fieldset class="review-form__fieldset">
+    <legend>Verdict</legend>
+    <label class="review-form__option">
+      <%= f.radio_button :status, "approved", required: true %>
+      <span>Approve</span>
+    </label>
+    <label class="review-form__option">
+      <%= f.radio_button :status, "returned", required: true %>
+      <span>Reject</span>
+    </label>
+  </fieldset>
+
+  <div class="review-form__field">
+    <%= f.label :feedback, "Feedback for the user (visible to the project owner)" %>
+    <%= f.text_area :feedback, rows: 6, maxlength: 10_000 %>
+  </div>
+
+  <div class="review-form__field">
+    <%= f.label :internal_reason, "Internal notes (staff-only, never shown to the user)" %>
+    <%= f.text_area :internal_reason, rows: 3, maxlength: 10_000 %>
+  </div>
+
+  <div class="review-form__actions">
+    <%= f.submit "Submit verdict", class: "btn btn-primary" %>
+    <%= link_to "Skip and get next", next_admin_certification_ships_path(skip: ship.id), class: "btn btn-secondary" %>
+    <%= link_to "Back to queue", admin_certification_ships_path, class: "btn btn-tertiary" %>
+  </div>
+<% end %>

@@ -6,9 +6,6 @@
   <div class="app-layout__main">
     <header class="guides-index__header">
       <h1 class="guides-index__title">Events</h1>
-      <p class="guides-index__subtitle">
-        Themed tracks with optional guides and prizes — pick one, ship a project under it, get reviewed.
-      </p>
     </header>
 
     <% if @missions.any? %>
@@ -19,7 +16,9 @@
         </p>
         <ul class="missions-index__grid">
           <% @missions.each do |mission| %>
-            <li><%= render "missions/mission_card", mission: mission %></li>
+            <li><%= render "missions/mission_card",
+                            mission: mission,
+                            manageable: @manageable_mission_ids.include?(mission.id) %></li>
           <% end %>
         </ul>
       </section>

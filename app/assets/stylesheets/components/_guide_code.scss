@@ -1,0 +1,180 @@
+// Rouge syntax-highlight theme. Token class reference: https://rouge-ruby.github.io/docs/
+
+.guide-code {
+  background: var(--color-space-bg-2);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  padding: var(--space-m);
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-s);
+  line-height: 1.55;
+  color: var(--color-brand-cream);
+  margin: var(--space-m) 0;
+
+  code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  // Comments — muted.
+  .c,
+  .ch,
+  .cd,
+  .cm,
+  .cpf,
+  .c1,
+  .cs {
+    color: var(--color-space-text-muted);
+    font-style: italic;
+  }
+
+  // Preprocessor / shebang.
+  .cp {
+    color: var(--color-brand-peach);
+  }
+
+  // Keywords (def, class, if, return, …) and operators-as-words.
+  .k,
+  .kn,
+  .kp,
+  .kr,
+  .kv,
+  .kd {
+    color: var(--color-brand-lilac);
+  }
+
+  // Built-in constants / pseudo (true / false / nil / null).
+  .kc,
+  .kt {
+    color: var(--color-brand-blue);
+  }
+
+  // Strings of every flavor.
+  .s,
+  .sb,
+  .sc,
+  .dl,
+  .sd,
+  .s2,
+  .sh,
+  .sx,
+  .s1,
+  .ss {
+    color: var(--color-brand-mint);
+  }
+
+  // String affixes and regex.
+  .sa {
+    color: var(--color-brand-lilac);
+  }
+
+  .sr {
+    color: var(--color-brand-mint);
+  }
+
+  // Escape sequences inside strings.
+  .si,
+  .se {
+    color: var(--color-brand-peach);
+  }
+
+  // Numbers.
+  .m,
+  .mb,
+  .mf,
+  .mh,
+  .mi,
+  .il,
+  .mo,
+  .mx {
+    color: var(--color-brand-peach);
+  }
+
+  // Identifiers and names — default to body color.
+  .n,
+  .nv,
+  .vc,
+  .vg,
+  .vi,
+  .nb,
+  .bp {
+    color: var(--color-brand-cream);
+  }
+
+  // Function / method names.
+  .nf,
+  .fm {
+    color: var(--color-brand-yellow);
+  }
+
+  // Class / namespace / constant names (uppercase identifiers).
+  .nc,
+  .nn,
+  .no,
+  .ne {
+    color: var(--color-brand-yellow);
+  }
+
+  // Function arguments / attribute names.
+  .na,
+  .nx {
+    color: var(--color-brand-blue);
+  }
+
+  // HTML / XML tags and attribute names.
+  .nt {
+    color: var(--color-brand-salmon);
+  }
+
+  // Decorators (@something, @Override).
+  .nd {
+    color: var(--color-brand-lilac);
+  }
+
+  // Operators.
+  .o,
+  .ow {
+    color: var(--color-brand-cream);
+  }
+
+  // Punctuation.
+  .p {
+    color: var(--color-brand-cream);
+    opacity: 0.7;
+  }
+
+  // Errors — soft warn highlight, not jarring red.
+  .err {
+    color: var(--color-brand-salmon);
+    background: var(--color-brand-salmon-soft);
+    border-radius: 2px;
+  }
+
+  // Generic syntax (diff, headings) — fall back to body color.
+  .g,
+  .gd,
+  .gi,
+  .gu,
+  .go,
+  .gt,
+  .gp,
+  .gh,
+  .gs,
+  .ge,
+  .ges {
+    color: inherit;
+  }
+
+  .gd {
+    color: var(--color-brand-salmon);
+  }
+
+  .gi {
+    color: var(--color-brand-mint);
+  }
+}

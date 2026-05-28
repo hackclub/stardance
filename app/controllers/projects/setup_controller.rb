@@ -79,8 +79,33 @@ class Projects::SetupController < ApplicationController
       redirect_to projects_setup_missions_path, alert: "That mission isn't available." and return
     end
 
-    project.missions << mission unless project.missions.exists?(id: mission.id)
-    project.update!(title: mission.name) if project.title.blank? || project.title == DEFAULT_PROJECT_TITLE
+    existing = project.mission_attachments.find_by(mission_id: mission.id)
+
+    if existing&.detached_at.nil? && existing.present?
+      redirect_to(next_gate_after_details_path) and return
+    end
+
+    is_first_attach = existing.nil?
+
+    if existing
+      existing.update!(detached_at: nil, attached_at: Time.current)
+    else
+      project.mission_attachments.create!(mission: mission, attached_at: Time.current)
+    end
+
+    # Authored defaults apply only on first attach — never overwrite a
+    # builder's edits on re-attach.
+    if is_first_attach
+      attrs = {}
+      if project.title.blank? || project.title == DEFAULT_PROJECT_TITLE
+        attrs[:title] = mission.default_project_title.presence || mission.name
+      end
+      if project.description.blank? && mission.default_project_description.present?
+        attrs[:description] = mission.default_project_description
+      end
+      project.update!(attrs) if attrs.any?
+    end
+
     redirect_to next_gate_after_details_path
   end
 
@@ -155,6 +180,7 @@ class Projects::SetupController < ApplicationController
 
   def suggested_missions
     scope = Mission.available
+                   .where.not(id: missions_user_already_has_a_project_on)
                    .includes(:icon_attachment)
 
     difficulties = EXPERIENCE_TO_DIFFICULTIES[current_user.experience_level.to_s]
@@ -175,5 +201,14 @@ class Projects::SetupController < ApplicationController
     else
       scope.order(featured_at: :desc).limit(6).to_a
     end
+  end
+
+  def missions_user_already_has_a_project_on
+    current_user.projects
+                .where(deleted_at: nil)
+                .joins(:mission_attachments)
+                .where(project_mission_attachments: { detached_at: nil, deleted_at: nil })
+                .pluck("project_mission_attachments.mission_id")
+                .uniq
   end
 end

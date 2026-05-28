@@ -61,13 +61,24 @@
           <div class="profile__identity-text">
             <h1 class="profile__handle">@<%= @user.display_name %><% if own_profile %><%= render IdvBadgeComponent.new(user: @user, context: :profile) %><% end %></h1>
             <% if own_profile %>
-              <div class="profile__handle-edit">
+              <div class="profile__handle-edit"
+                   data-controller="username-availability"
+                   data-username-availability-url-value="<%= username_availability_path %>"
+                   data-username-availability-max-value="<%= User::MAX_DISPLAY_NAME_LENGTH %>">
                 <span class="profile__handle-edit-at" aria-hidden="true">@</span>
                 <%= f.text_field :display_name,
                                  class: "profile__handle-input",
-                                 maxlength: 60,
+                                 maxlength: 30,
                                  required: true,
-                                 aria: { label: "Display name" } %>
+                                 pattern: "[a-zA-Z0-9_\\-]+",
+                                 aria: { label: "Display name" },
+                                 data: {
+                                   username_availability_target: "input",
+                                   action: "input->username-availability#onInput"
+                                 } %>
+                <span class="profile__handle-availability"
+                      data-username-availability-target="feedback"
+                      aria-live="polite"></span>
               </div>
             <% end %>
             <p class="profile__joined">Joined <%= @user.created_at.to_date.strftime("%-d %b %Y").downcase %></p>
@@ -223,16 +234,6 @@
                     </li>
                   </ul>
                 </div>
-
-                <% authors = project.users.to_a %>
-                <% if authors.any? %>
-                  <p class="profile-project-card__authors">
-                    By
-                    <% authors.each_with_index do |author, idx| %>
-                      <%= "and " if idx > 0 && idx == authors.length - 1 %><span class="profile-project-card__author">@<%= author.display_name %></span><%= "," if idx < authors.length - 2 && authors.length > 2 %>
-                    <% end %>
-                  </p>
-                <% end %>
 
                 <% if project.description.present? %>
                   <p class="profile-project-card__description"><%= project.description %></p>

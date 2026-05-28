@@ -1,0 +1,31 @@
+<%# Prizes section wrapped in its own Turbo Frame.
+    Locals: mission, prizes %>
+<%= turbo_frame_tag "admin-mission-edit-prizes" do %>
+  <section class="admin-mission-edit__section">
+    <h2 class="admin-mission-edit__section-title">Prizes</h2>
+    <ul class="admin-mission-edit__prizes">
+      <% prizes.each do |prize| %>
+        <li class="admin-mission-edit__prize">
+          <%= prize.shop_item.name %>
+          <%= button_to "Remove",
+                        admin_mission_prize_path(mission.slug, prize),
+                        method: :delete,
+                        data: { turbo_confirm: "Remove this prize?" },
+                        class: "action-btn action-btn--small action-btn--destructive" %>
+        </li>
+      <% end %>
+    </ul>
+    <%= form_with url: admin_mission_prizes_path(mission.slug),
+          method: :post, class: "admin-mission-edit__form" do %>
+      <h3>Add prize</h3>
+      <label>Shop item
+        <%= select_tag "mission_prize[shop_item_id]",
+              options_from_collection_for_select(
+                ShopItem.where(mission_prize_only: true).order(:name), :id, :name
+              ),
+              prompt: "Select a mission-prize-only shop item" %>
+      </label>
+      <%= submit_tag "Add prize", class: "action-btn action-btn--large action-btn--primary" %>
+    <% end %>
+  </section>
+<% end %>

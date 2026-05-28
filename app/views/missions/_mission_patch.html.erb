@@ -1,0 +1,73 @@
+<%# Circular mission patch from D6:
+    radial yellow glow + dashed inner ring + curved "★ STARDANCE ★" along the
+    top arc + curved mission name along the bottom arc. Both arcs sit OUTSIDE
+    the dashed ring (in the gap between the ring and the outer border) and
+    are positioned so both text strips have the same gap to the outer edge.
+
+    Locals:
+      mission: Mission
+      size:    integer px diameter (default 132) %>
+<% size      ||= 132 %>
+<% half      = size.to_f / 2 %>
+<% font_size = [ (size * 0.063), 7 ].max.round(1) %>
+<%# Outer margin = gap between text and outer border. Inner gap = gap between
+    dashed ring and the inner edge of the text. %>
+<% outer_margin = [ (size * 0.030), 3 ].max.round(1) %>
+<% inner_gap    = [ (size * 0.023), 2 ].max.round(1) %>
+<%# Caps-height offset: top glyphs grow OUTWARD from baseline by ~caps_height
+    (not the full em-size — that overshoots). Mono fonts cap-height ≈ 0.72em.
+    Bottom glyphs grow INWARD from baseline → baseline IS the outer edge. %>
+<% cap_offset    = (font_size * 0.72).round(2) %>
+<% text_r_top    = half - outer_margin - cap_offset %>
+<% text_r_bottom = half - outer_margin %>
+<% ring_inset    = [ (half - text_r_top + inner_gap).round, 8 ].max %>
+<% icon_size     = (size * 0.58).round %>
+<% label_top     = "★ STARDANCE ★" %>
+<% label_bottom  = mission.name.to_s.upcase %>
+<% top_id        = "mission-patch-top-#{mission.id}-#{size}" %>
+<% bottom_id     = "mission-patch-bottom-#{mission.id}-#{size}" %>
+<%# CSS custom properties so per-instance sizing rides on tokens, not raw
+    width/height/inset declarations. The SCSS reads --mission-patch-size and
+    --mission-patch-ring-inset; falls back to defaults if unset. %>
+<div class="mission-patch" style="--mission-patch-size: <%= size %>px; --mission-patch-ring-inset: <%= ring_inset %>px;">
+  <div class="mission-patch__ring"></div>
+  <div class="mission-patch__icon">
+    <% if mission.icon.attached? %>
+      <%= image_tag mission.icon, alt: "", class: "mission-patch__icon-img",
+            width: icon_size, height: icon_size %>
+    <% else %>
+      <svg viewBox="0 0 24 24" width="<%= icon_size %>" height="<%= icon_size %>" aria-hidden="true">
+        <path d="M12 1.5 13.6 10.4 22.5 12 13.6 13.6 12 22.5 10.4 13.6 1.5 12 10.4 10.4Z" fill="#FFE564" />
+      </svg>
+    <% end %>
+  </div>
+  <svg class="mission-patch__curve-svg" viewBox="0 0 <%= size %> <%= size %>" aria-hidden="true">
+    <defs>
+      <%# Top arc: 9 → 3 through top (sweep=1). Text reads L→R, right-side-up. %>
+      <path id="<%= top_id %>"
+            d="M<%= half - text_r_top %>,<%= half %> a<%= text_r_top %>,<%= text_r_top %> 0 0,1 <%= text_r_top * 2 %>,0"
+            fill="none" />
+      <%# Bottom arc: 9 → 3 through bottom (sweep=0). Glyphs extend inward
+          (toward center) → right-side-up to a viewer reading the bottom. %>
+      <path id="<%= bottom_id %>"
+            d="M<%= half - text_r_bottom %>,<%= half %> a<%= text_r_bottom %>,<%= text_r_bottom %> 0 0,0 <%= text_r_bottom * 2 %>,0"
+            fill="none" />
+    </defs>
+    <text font-size="<%= font_size %>"
+          fill="#FFE564"
+          letter-spacing="<%= (font_size * 0.32).round(2) %>"
+          font-family="ui-monospace, SF Mono, Menlo, monospace">
+      <textPath href="#<%= top_id %>" startOffset="50%" text-anchor="middle">
+        <%= label_top %>
+      </textPath>
+    </text>
+    <text font-size="<%= font_size %>"
+          fill="#FFE564"
+          letter-spacing="<%= (font_size * 0.22).round(2) %>"
+          font-family="ui-monospace, SF Mono, Menlo, monospace">
+      <textPath href="#<%= bottom_id %>" startOffset="50%" text-anchor="middle">
+        <%= label_bottom %>
+      </textPath>
+    </text>
+  </svg>
+</div>
