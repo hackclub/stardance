@@ -468,6 +468,7 @@ Rails.application.routes.draw do
   get "shop/order", to: "shop#order"
   post "shop/order", to: "shop#create_order"
   patch "shop/update_region", to: "shop#update_region"
+  get "shop/category/:slug", to: "shop#category", as: :shop_category
   resources :shop_suggestions, only: [ :create ]
 
   # Report Reviews
@@ -529,6 +530,7 @@ Rails.application.routes.draw do
       post :streamer_mode, on: :member, action: :toggle_streamer_mode
     end
     resources :dismissals, only: [ :create ]
+    post "dev/pretend_idv", to: "dev_tools#pretend_idv", as: :pretend_idv_dev
   end
   get "my/achievements", to: "achievements#index", as: :my_achievements
 

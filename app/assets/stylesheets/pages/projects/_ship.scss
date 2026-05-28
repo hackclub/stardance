@@ -268,6 +268,52 @@
     cursor: help;
   }
 
+  &__required {
+    color: var(--color-brand-salmon);
+    font-weight: 700;
+    margin-left: 0.2em;
+  }
+
+  // Warning at the top of the form when there are ship blockers the user
+  // can't satisfy by editing the form (IDV, shop tutorial, devlog count,
+  // etc.). Paired with a disabled "Save and continue" button.
+  &__warning {
+    background: rgba(255, 141, 157, 0.12);
+    border: 1px solid var(--color-brand-salmon);
+    border-radius: 8px;
+    color: var(--color-space-text);
+    margin: 0 0 var(--space-l);
+    padding: var(--space-m);
+  }
+
+  &__warning-heading {
+    color: var(--color-brand-salmon);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    margin: 0 0 var(--space-xs);
+  }
+
+  &__warning-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    list-style: disc inside;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__warning-item {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    line-height: 1.45;
+  }
+
+  &__submit-note {
+    color: var(--color-brand-salmon);
+    font-size: var(--font-size-s);
+    margin: 0.5rem 0 0;
+  }
+
   &__field-row {
     display: flex;
     align-items: center;

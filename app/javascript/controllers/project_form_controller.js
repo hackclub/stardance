@@ -35,7 +35,7 @@ export default class extends Controller {
   connect() {
     this.submitting = false;
     this.userEditedReadme = false;
-    this.debouncedDetect = this.debounce(() => this.detectReadme(), 400);
+    this.debouncedDetect = this.debounce(() => this.detectReadme(), 120);
     this.boundRecheck = () => this.recheckRequirements();
 
     this.element.addEventListener("direct-upload:end", () => {
@@ -189,6 +189,13 @@ export default class extends Controller {
     this.detectReadme();
   }
 
+  // Paste is the common path for GitHub URLs — run the autodetect
+  // immediately rather than waiting for the input-debounce so the README
+  // field is filled before the user reaches for the submit button.
+  onRepoPaste() {
+    setTimeout(() => this.detectReadme(), 0);
+  }
+
   onReadmeInput(event) {
     if (!this.hasReadmeUrlTarget) return;
 
@@ -198,8 +205,30 @@ export default class extends Controller {
     this.validateUrl(event);
   }
 
-  onSubmit(event) {
+  async onSubmit(event) {
     const form = this.element.closest("form") || this.element;
+
+    if (this.submitting) {
+      event.preventDefault();
+      return;
+    }
+
+    // Repo filled but README empty? Give the autodetect one synchronous shot
+    // before native validation pops "Please fill out this field" on README.
+    // The user may have clicked submit before the debounced detect fired.
+    const repoFilled =
+      this.hasRepoUrlTarget && this.fieldFilled(this.repoUrlTarget);
+    const readmeEmpty =
+      this.hasReadmeUrlTarget && !this.fieldFilled(this.readmeUrlTarget);
+
+    if (repoFilled && readmeEmpty && !this._submitDetectAttempted) {
+      event.preventDefault();
+      this._submitDetectAttempted = true;
+      await this.detectReadme();
+      // Re-fire submit so the flow continues with the README populated.
+      form.requestSubmit?.();
+      return;
+    }
 
     if (!form.checkValidity()) {
       form.reportValidity();
@@ -207,11 +236,6 @@ export default class extends Controller {
       form
         .querySelectorAll("input:invalid, textarea:invalid, select:invalid")
         .forEach((field) => this.triggerShake(field));
-      return;
-    }
-
-    if (this.submitting) {
-      event.preventDefault();
       return;
     }
 

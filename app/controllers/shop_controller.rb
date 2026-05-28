@@ -331,15 +331,18 @@ class ShopController < ApplicationController
     shop_item.is_a?(ShopItem::FreeStickers) || shop_item.is_a?(ShopItem::TutorialNothing)
   end
 
-  # When a user clicks into the tutorial flow, walk them through verification
-  # and address collection step-by-step before showing the normal order page.
+  # When a user clicks into the tutorial flow, walk them through every
+  # prerequisite before showing the normal order page — project → IDV →
+  # address. Direct URL access to /shop/order?shop_item_id=X bypasses the
+  # shop hub's preview/tutorial gating, so we re-check server-side here.
   # Returns the template name to render, or nil to fall through.
   def required_tutorial_step(shop_item)
     return nil unless current_user
     return nil unless tutorial_item?(shop_item)
     return nil if current_user.shop_tutorial_completed?
 
-    return "shop/tutorial_verify" unless current_user.identity_verified?
+    return "shop/tutorial_project" unless current_user.projects.exists?
+    return "shop/tutorial_verify"  unless current_user.identity_verified?
     return "shop/tutorial_address" if current_user.addresses.empty?
 
     nil

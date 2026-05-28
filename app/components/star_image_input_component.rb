@@ -7,11 +7,12 @@ class StarImageInputComponent < ViewComponent::Base
   IDLE_SECONDARY = "or click to choose a file"
 
   attr_reader :variant, :name, :id, :accept, :primary_text, :secondary_text,
-              :direct_upload, :current_url, :current_alt
+              :direct_upload, :current_url, :current_alt, :required
 
   def initialize(variant: 1, name: nil, id: nil, accept: "image/*",
                  primary_text: IDLE_PRIMARY, secondary_text: IDLE_SECONDARY,
-                 direct_upload: false, current_url: nil, current_alt: "")
+                 direct_upload: false, current_url: nil, current_alt: "",
+                 required: false)
     v = variant.to_i
     raise ArgumentError, "variant must be one of #{VARIANTS.inspect}, got #{variant.inspect}" unless VARIANTS.include?(v)
 
@@ -24,6 +25,7 @@ class StarImageInputComponent < ViewComponent::Base
     @direct_upload = direct_upload
     @current_url = current_url
     @current_alt = current_alt
+    @required = required
   end
 
   def initial_state

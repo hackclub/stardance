@@ -1,0 +1,25 @@
+<% content_for :title, "Create a project first" %>
+
+<div class="shop-tutorial-step">
+  <div class="shop-tutorial-step__card">
+    <p class="shop-tutorial-step__eyebrow">First things first</p>
+    <h1 class="shop-tutorial-step__title">Create a project before you shop.</h1>
+
+    <div class="shop-tutorial-step__body">
+      <p>The shop unlocks once you've started your first Stardance project. Spend an hour or two building, post a devlog, and your Stardust starts adding up.</p>
+      <p>Come back here once your project is set up — we'll be waiting with the stickers.</p>
+    </div>
+
+    <%= render ActionButtonComponent.new(
+          text: "Create my first project",
+          href: new_project_path,
+          variant: :primary,
+          size: :large,
+          class: "shop-tutorial-step__cta"
+        ) %>
+
+    <p class="shop-tutorial-step__back">
+      <%= link_to "← Back to the shop", shop_path, class: "shop-tutorial-step__back-link" %>
+    </p>
+  </div>
+</div>

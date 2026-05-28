@@ -76,9 +76,17 @@ class Projects::ShipsController < ApplicationController
     # Steps 2 and 3 can only be reached once the project meets every shipping
     # requirement. If a user lands on those URLs early (typed-in URL, stale
     # bookmark, mid-flow regression after editing project info), bounce them
-    # back to the info step where they can fix things.
+    # back to the info step *with a reason* — silent redirects look like the
+    # form just didn't submit.
     def require_shippable
       return if @project.shippable?
+
+      blockers = @project.ship_blocking_errors
+      flash[:alert] = if blockers.any?
+                        "Can't continue yet — #{blockers.to_sentence(last_word_connector: ", and ")}."
+      else
+                        "Your project isn't ready to ship yet."
+      end
       redirect_to info_project_ships_path(@project)
     end
 

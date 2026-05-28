@@ -244,19 +244,23 @@ class ProjectsController < ApplicationController
         end
       end
     else
+      flash.now[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
+
       respond_to do |format|
         format.turbo_stream do
-          if params[:return_to].present?
-            flash[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
-            redirect_to url_from(params[:return_to])
-          else
-            flash.now[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
-            render turbo_stream: turbo_stream.update("flash-region", partial: "shared/flash"), status: :unprocessable_entity
-          end
+          render turbo_stream: turbo_stream.update("flash-region", partial: "shared/flash"), status: :unprocessable_entity
         end
         format.html do
-          flash[:alert] = "Failed to update project: #{@project.errors.full_messages.join(', ')}"
-          redirect_to url_from(params[:return_to]) || edit_project_path(@project)
+          # Re-render the originating form so the user's typed values (already
+          # assigned to @project in memory) survive. Redirecting on failure
+          # would drop them — Rails reloads @project from the DB on the next
+          # GET, which has the old values (or none, if it's a new project).
+          if ship_wizard_return_to?(params[:return_to])
+            render_ship_info_step
+          else
+            load_project_times
+            render :edit, status: :unprocessable_entity
+          end
         end
       end
     end
@@ -478,6 +482,21 @@ class ProjectsController < ApplicationController
     @project.errors.add(attribute, "Please make sure the URL is valid and reachable: #{e.message}")
   rescue StandardError => e
     @project.errors.add(attribute, "#{name} could not be verified (idk why, pls let a admin know if this is happening a lot and your sure that the URL is valid): #{e.message}")
+  end
+
+  def ship_wizard_return_to?(target)
+    return false if target.blank?
+
+    path = URI.parse(target.to_s).path rescue nil
+    path.present? && path.include?("/ships/")
+  end
+
+  def render_ship_info_step
+    @step = 1
+    @hide_sidebar = true
+    @body_class = "ship-page"
+    @project_times = current_user.try_sync_hackatime_data!&.dig(:projects) || {}
+    render "projects/ships/info", status: :unprocessable_entity
   end
 
   def link_hackatime_projects

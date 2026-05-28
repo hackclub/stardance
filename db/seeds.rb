@@ -254,7 +254,7 @@ end
 # Seed default shop items
 ShopItem::FreeStickers.find_or_create_by!(name: "Stickers!!") do |item|
   item.description = "we'll actually send you these!"
-  item.ticket_cost = 10
+  item.ticket_cost = 0
   item.enabled = true
   item.one_per_person_ever = true
   item.enabled_xx = true

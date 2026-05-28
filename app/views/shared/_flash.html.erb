@@ -33,7 +33,9 @@
         when "warning" then ["icons/warning.svg", "warning"]
         else [ "icons/info.svg", "info"]
       end %>
-      <div class="alert alert-<%= variant %>" role="alert" aria-live="assertive" data-controller="flash" data-flash-timeout-value="5000">
+      <%# Errors stick around until the user dismisses them; notices fade out. %>
+      <% timeout_ms = variant == "error" ? 0 : 5000 %>
+      <div class="alert alert-<%= variant %>" role="alert" aria-live="assertive" data-controller="flash" data-flash-timeout-value="<%= timeout_ms %>">
         <%= image_tag "landing/toast-star-left.png", class: "alert__star alert__star--left", alt: "", aria: { hidden: "true" } %>
         <span class="alert__icon" aria-hidden="true">
           <%= inline_svg_tag icon, aria: { hidden: true }, focusable: "false" %>

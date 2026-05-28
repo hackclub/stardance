@@ -324,9 +324,16 @@ class Project < ApplicationRecord
       {
         key: :vote_balance,
         label: "Maintain a non-negative vote balance",
-        fail_label: "Your vote balance is negative! Vote on other projects before shipping this one.",
-        tooltip: "Your vote balance has gone negative from downvotes. Earn it back by getting upvotes on your projects.",
-        passed: memberships.owner.first&.user&.vote_balance.to_i >= 0
+        fail_label: "Your vote balance is negative — rate other projects before shipping this one.",
+        tooltip: "Your vote balance goes down when you ship and back up when you rate other projects. Rate a few more to earn it back.",
+        passed: vote_balance_requirement_passed?
+      },
+      {
+        key: :idv,
+        label: "Verify your identity",
+        fail_label: "Verify your identity before shipping",
+        tooltip: "Stardance needs to verify your identity through Hack Club Auth before you can ship — it keeps the program safe and is how we know where to send prizes.",
+        passed: memberships.owner.first&.user&.identity_verified?
       },
       {
         key: :shop_tutorial,
@@ -348,12 +355,44 @@ class Project < ApplicationRecord
         fail_label: "This project doesn't have any time attached to it! (devlog some time, then try again)",
         tooltip: "Your devlogs must have actual tracked time attached. Make sure you're logging time via Hackatime.",
         passed: duration_seconds > 10
+      },
+      {
+        key: :ai_declaration,
+        label: "Declare your AI usage for this project (write 'None' if you didn't use any)",
+        tooltip: "Either describe how you used AI on this project, or write 'None' to say you didn't.",
+        passed: ai_declaration.present?
       }
-      # { key: :ai_declaration, label: "Declare your AI usage for this project (write 'None' if you didn't use any)", passed: ai_declaration.present? }
     ]
       .map.with_index
       .sort_by { |pair| [ pair[0][:passed] ? 1 : 0, pair[1] ] }
       .map { |it| it[0] }
+  end
+
+  # Vote balance only blocks if the owner has shipped at least one project
+  # before — voting itself is locked until first ship, so a pre-first-ship
+  # user shouldn't be told to "go vote on other projects" first.
+  def vote_balance_requirement_passed?
+    owner = memberships.owner.first&.user
+    return true if owner.nil?
+    return true unless owner.shipped_projects.exists?
+
+    owner.vote_balance.to_i >= 0
+  end
+
+  # Requirement keys that the user can satisfy from the ship info form. Used
+  # by the form to split "fix these by filling the form" (per-field asterisks
+  # + native HTML5 validation) from "fix these elsewhere first" (warning at
+  # the top of the form + disabled submit).
+  FORM_FILLABLE_REQUIREMENT_KEYS = %i[
+    demo_url demo_url_reachable
+    repo_url repo_url_format repo_cloneable
+    readme_url readme_url_reachable
+    description banner ai_declaration
+  ].freeze
+
+  def external_ship_blockers
+    shipping_requirements.reject { |r| r[:passed] }
+                         .reject { |r| FORM_FILLABLE_REQUIREMENT_KEYS.include?(r[:key]) }
   end
 
   def visual_shipping_requirements
