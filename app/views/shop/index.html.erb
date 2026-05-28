@@ -3,8 +3,14 @@
 <% content_for :og_description, "Spend your Stardust on stickers, hardware, and other prizes. Earn Stardust by building projects and voting!" %>
 <% content_for :og_image, og_image_url('shop', format: :png) %>
 
-<div class="shop" data-controller="shop" data-shop-user-region-value="<%= @user_region %>">
+<div class="shop shop--mode-<%= @shop_mode %>" data-controller="shop" data-shop-user-region-value="<%= @user_region %>" data-shop-mode-value="<%= @shop_mode %>">
   <h1 class="shop__title">Shop</h1>
+
+  <% if @shop_mode == :preview %>
+    <%= render "shop/preview_banner" %>
+  <% elsif @shop_mode == :tutorial && @tutorial_items.values.all?(&:present?) %>
+    <%= render "shop/tutorial_overlay", tutorial_items: @tutorial_items, user: current_user %>
+  <% end %>
 
   <div class="shop-goals" data-controller="shop-goals" data-shop-goals-balance-value="<%= @user_balance %>" data-shop-goals-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>">
     <div class="shop-goals__container" data-shop-goals-target="container" style="display: none;">
@@ -127,11 +133,17 @@
     </div>
     <%= turbo_frame_tag "shop_items" do %>
       <div class="shop__items">
+        <% tutorial_item_ids = @shop_mode == :tutorial ? @tutorial_items.values.compact.map(&:id) : [] %>
         <% @shop_items.each do |item| %>
           <% if item.image.present? && item.enabled_in_region?(@user_region) %>
             <% sale_price = item.price_for_region(@user_region) %>
             <% item_achievement_infos = item.required_achievement_objects %>
             <% item_achievement_locked = item.achievement_locked_for?(current_user) %>
+            <% item_interactive = case @shop_mode
+                                 when :preview  then false
+                                 when :tutorial then tutorial_item_ids.include?(item.id)
+                                 else                true
+                                 end %>
             <%= render ShopItemCardComponent.new(
               item_id: item.id,
               name: item.name,
@@ -144,6 +156,7 @@
               enabled_regions: item.enabled_region_codes,
               regional_price: sale_price,
               logged_in: current_user.present?,
+              interactive: item_interactive,
               remaining_stock: item.remaining_stock,
               limited: item.limited?,
               on_sale: item.on_sale?,

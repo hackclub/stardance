@@ -63,6 +63,30 @@ class Post < ApplicationRecord
                  optional: true
     end
 
+    # Restrict to posts whose author has finished identity verification.
+    # System posts (user_id IS NULL) are always allowed through — they aren't
+    # user-authored. The viewer-aware variant additionally lets a logged-in
+    # user see their own posts even before they verify, and short-circuits to
+    # `all` for admins (who can see everything).
+    scope :authored_by_verified, -> {
+      left_outer_joins(:user)
+        .where("posts.user_id IS NULL OR users.verification_status = 'verified'")
+    }
+
+    def self.visible_to(viewer)
+      return all if viewer&.admin?
+
+      scope = left_outer_joins(:user)
+      if viewer.present?
+        scope.where(
+          "posts.user_id IS NULL OR posts.user_id = ? OR users.verification_status = 'verified'",
+          viewer.id
+        )
+      else
+        scope.where("posts.user_id IS NULL OR users.verification_status = 'verified'")
+      end
+    end
+
     # For multiple types, use .with to create a CTE with UNION ALL:
     #   Post.with(
     #     available_posts: [

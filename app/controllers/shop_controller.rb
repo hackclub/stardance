@@ -9,6 +9,12 @@ class ShopController < ApplicationController
       { label: config[:name], value: code }
     end
 
+    @shop_mode = derive_shop_mode
+    if @shop_mode == :tutorial
+      @tutorial_items = load_tutorial_items
+      current_user.mark_shop_tutorial_started!
+    end
+
     load_shop_items
   end
 
@@ -54,13 +60,22 @@ class ShopController < ApplicationController
       return
     end
 
-    unless @shop_item.buyable_by_self?
+    # TutorialNothing is intentionally `buyable_by_self: false`-friendly in
+    # spirit (we don't want it surfacing as a normal item), but we need the
+    # buyable check to pass when the user is in the tutorial. Bypass it for
+    # the two tutorial items.
+    unless @shop_item.buyable_by_self? || tutorial_item?(@shop_item)
       redirect_to shop_path, alert: "This item cannot be ordered on its own."
       return
     end
 
     if @mission_submission.nil? && @shop_item.mission_locked_for?(current_user)
       redirect_to shop_path, alert: "This item is locked behind a mission you haven't completed yet."
+      return
+    end
+
+    if tutorial_step = required_tutorial_step(@shop_item)
+      render tutorial_step, layout: "application"
       return
     end
 
@@ -118,7 +133,7 @@ class ShopController < ApplicationController
       return
     end
 
-    unless @shop_item.buyable_by_self?
+    unless @shop_item.buyable_by_self? || tutorial_item?(@shop_item)
       redirect_to shop_path, alert: "This item cannot be ordered on its own."
       return
     end
@@ -158,7 +173,7 @@ class ShopController < ApplicationController
 
     selected_address = current_user.addresses.find { |a| a["id"] == params[:address_id] } || current_user.addresses.first
 
-    unless selected_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(ShopItem::FreeStickers)
+    unless selected_address&.dig("phone_number").present? || Rails.env.development? || tutorial_item?(@shop_item)
       return redirect_to shop_order_path(shop_item_id: @shop_item.id), alert: "You need to have a phone number on file to place an order! Please update your profile."
     end
 
@@ -220,11 +235,20 @@ class ShopController < ApplicationController
 
       return if @shop_item.is_a?(ShopItem::FreeStickers) && !fulfill_free_stickers!
 
+      if @shop_item.is_a?(ShopItem::TutorialNothing)
+        @shop_item.fulfill!(@order)
+        current_user.mark_shop_tutorial_completed!
+        redirect_to shop_my_orders_path, notice: "Walkthrough complete! You're ready to ship your first project."
+        return
+      end
+
       if @shop_item.is_a?(ShopItem::SillyItemType)
         @order.approve!
         redirect_to shop_my_orders_path, notice: "Order placed and fulfilled!"
         return
       end
+
+      current_user.mark_shop_tutorial_completed! if tutorial_item?(@shop_item)
 
       redirect_to shop_my_orders_path, notice: "Order placed successfully!"
     rescue ActiveRecord::RecordInvalid => e
@@ -234,6 +258,45 @@ class ShopController < ApplicationController
 
   private
 
+  # `:preview`  — anyone who hasn't earned shop access yet (guests, signed-in
+  #               users without a project). They can browse but not buy.
+  # `:tutorial` — signed-in user with HCA + ≥1 project who hasn't finished the
+  #               shop walkthrough yet. They can interact with the two
+  #               tutorial items only.
+  # `:normal`   — everyone else. Standard shop behavior.
+  def derive_shop_mode
+    return :preview if current_user.nil? || current_user.guest?
+    return :preview unless current_user.projects.exists?
+    return :tutorial if current_user.shop_tutorial_needed?
+
+    :normal
+  end
+
+  def load_tutorial_items
+    {
+      stickers: ShopItem::FreeStickers.where(enabled: true).first,
+      nothing:  ShopItem::TutorialNothing.where(enabled: true).first
+    }
+  end
+
+  def tutorial_item?(shop_item)
+    shop_item.is_a?(ShopItem::FreeStickers) || shop_item.is_a?(ShopItem::TutorialNothing)
+  end
+
+  # When a user clicks into the tutorial flow, walk them through verification
+  # and address collection step-by-step before showing the normal order page.
+  # Returns the template name to render, or nil to fall through.
+  def required_tutorial_step(shop_item)
+    return nil unless current_user
+    return nil unless tutorial_item?(shop_item)
+    return nil if current_user.shop_tutorial_completed?
+
+    return "shop/tutorial_verify" unless current_user.identity_verified?
+    return "shop/tutorial_address" if current_user.addresses.empty?
+
+    nil
+  end
+
   def load_shop_items
     excluded_free_stickers = current_user && has_ordered_free_stickers?
     shop_page_data = ShopItem.cached_shop_page_data
@@ -242,6 +305,13 @@ class ShopController < ApplicationController
     @featured_item = featured_free_stickers_item unless excluded_free_stickers
     @recently_added_items = shop_page_data[:recently_added]
     @user_balance = current_user&.cached_balance || 0
+
+    if @shop_mode == :tutorial && @tutorial_items[:nothing].present?
+      # TutorialNothing is `unlisted` (so it stays out of the regular shop grid
+      # after the tutorial finishes); during the walkthrough we splice it in so
+      # the user can interact with it alongside the stickers.
+      @shop_items = @shop_items + [ @tutorial_items[:nothing] ]
+    end
   end
 
   def has_ordered_free_stickers?

@@ -1,9 +1,9 @@
 class ShopItemCardComponent < ViewComponent::Base
   include MarkdownHelper
 
-  attr_reader :item_id, :name, :description, :hours, :price, :image_url, :item_type, :balance, :enabled_regions, :regional_price, :logged_in, :remaining_stock, :limited, :on_sale, :sale_percentage, :original_price, :created_at, :show_bow, :show_time_ago, :purchase_count, :is_new, :enabled_until, :locked_by_achievement, :required_achievement_names, :required_achievement_hints, :mission_locked, :unlocking_mission_names
+  attr_reader :item_id, :name, :description, :hours, :price, :image_url, :item_type, :balance, :enabled_regions, :regional_price, :logged_in, :interactive, :remaining_stock, :limited, :on_sale, :sale_percentage, :original_price, :created_at, :show_bow, :show_time_ago, :purchase_count, :is_new, :enabled_until, :locked_by_achievement, :required_achievement_names, :required_achievement_hints, :mission_locked, :unlocking_mission_names
 
-  def initialize(item_id:, name:, description:, hours:, price:, image_url:, item_type: nil, balance: nil, enabled_regions: [], regional_price: nil, logged_in: true, remaining_stock: nil, limited: false, on_sale: false, sale_percentage: nil, original_price: nil, created_at: nil, show_bow: false, show_time_ago: false, purchase_count: nil, is_new: false, enabled_until: nil, locked_by_achievement: false, required_achievement_names: [], required_achievement_hints: [], mission_locked: false, unlocking_mission_names: [])
+  def initialize(item_id:, name:, description:, hours:, price:, image_url:, item_type: nil, balance: nil, enabled_regions: [], regional_price: nil, logged_in: true, interactive: true, remaining_stock: nil, limited: false, on_sale: false, sale_percentage: nil, original_price: nil, created_at: nil, show_bow: false, show_time_ago: false, purchase_count: nil, is_new: false, enabled_until: nil, locked_by_achievement: false, required_achievement_names: [], required_achievement_hints: [], mission_locked: false, unlocking_mission_names: [])
     @item_id = item_id
     @name = name
     @description = description
@@ -15,6 +15,7 @@ class ShopItemCardComponent < ViewComponent::Base
     @enabled_regions = enabled_regions
     @regional_price = regional_price || price
     @logged_in = logged_in
+    @interactive = interactive
     @remaining_stock = remaining_stock
     @limited = limited
     @on_sale = on_sale

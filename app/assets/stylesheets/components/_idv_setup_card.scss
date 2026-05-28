@@ -1,0 +1,139 @@
+// Profile-level IDV CTA card and the small `!` badges that surface on the
+// user's own posts/profile when their identity isn't verified yet.
+//
+// Both live on set 1 surfaces (`#08061E`). The card pairs cream typography on
+// a lifted set-3 background so it feels like an alert, not part of the feed.
+// The badge uses salmon (`--color-brand-salmon`) since it's signalling the
+// user that something needs attention.
+
+.idv-setup-card {
+  background: var(--color-set-3-bg, #606684);
+  border: 2px solid var(--color-brand-highlight);
+  border-radius: 8px;
+  color: var(--color-brand-cream);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+
+  &__eyebrow {
+    color: var(--color-brand-yellow);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    color: var(--color-brand-cream);
+    font-family: "Playfair Display", serif;
+    font-size: var(--font-size-xl, 1.75rem);
+    font-style: italic;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  &__lede {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-m);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__cta {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+  }
+
+  &__footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+  }
+
+  &__footer-line {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    margin: 0;
+    opacity: 0.85;
+  }
+
+  &__footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: 0;
+  }
+
+  &__footer-link {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-highlight);
+    }
+  }
+}
+
+.idv-badge {
+  align-items: center;
+  background: var(--color-brand-salmon);
+  border-radius: 999px;
+  color: var(--color-space-bg);
+  display: inline-flex;
+  font-family: "Exo 2", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  height: 1.25rem;
+  justify-content: center;
+  line-height: 1;
+  margin-left: 0.4rem;
+  min-width: 1.25rem;
+  padding: 0 0.4rem;
+  text-decoration: none;
+  vertical-align: middle;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-brand-yellow);
+    color: var(--color-space-bg);
+    outline: none;
+    transform: translateY(-1px);
+  }
+
+  &__icon {
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+
+  &__sr {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+
+  &--profile {
+    font-size: 0.85rem;
+    height: 1.5rem;
+    min-width: 1.5rem;
+  }
+}

@@ -1,0 +1,195 @@
+// Shop preview banner (visible to users without a first project yet) and the
+// shop tutorial overlay (visible to users who have a first project + HCA but
+// haven't walked through the shop). Both sit at the top of /shop and use
+// surfaces from set 3 / set 4 to read as distinct from the regular grid.
+
+.shop-preview {
+  align-items: stretch;
+  background: var(--color-set-3-bg, #606684);
+  border: 2px solid var(--color-brand-highlight);
+  border-radius: 8px;
+  color: var(--color-brand-cream);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1 1 320px;
+  }
+
+  &__eyebrow {
+    color: var(--color-brand-yellow);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    color: var(--color-brand-cream);
+    font-family: "Playfair Display", serif;
+    font-size: var(--font-size-xl, 1.75rem);
+    font-style: italic;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__lede {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-m);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__cta {
+    align-items: center;
+    display: flex;
+  }
+
+  &__cta-form {
+    margin: 0;
+  }
+}
+
+.shop-tutorial {
+  background: var(--color-set-2-bg, #343651);
+  border: 2px solid var(--color-brand-highlight);
+  border-radius: 8px;
+  color: var(--color-brand-cream);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__eyebrow {
+    color: var(--color-brand-mint);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    color: var(--color-brand-cream);
+    font-family: "Playfair Display", serif;
+    font-size: var(--font-size-xl, 1.75rem);
+    font-style: italic;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__lede {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-m);
+    line-height: 1.5;
+    margin: 0;
+
+    &--alert {
+      color: var(--color-brand-salmon);
+    }
+  }
+
+  &__tiles {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  &__tile {
+    align-items: stretch;
+    background: var(--color-set-3-bg, #606684);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: inherit;
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    text-decoration: none;
+    transition:
+      border-color 120ms ease,
+      transform 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-brand-highlight);
+      outline: none;
+      transform: translateY(-2px);
+    }
+  }
+
+  &__tile-art {
+    align-items: center;
+    background: var(--color-set-1-bg, #08061e);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    flex: 0 0 96px;
+    height: 96px;
+    overflow: hidden;
+    width: 96px;
+
+    &--minimal {
+      color: var(--color-brand-highlight);
+      font-family: "Playfair Display", serif;
+      font-size: 3rem;
+      font-style: italic;
+    }
+  }
+
+  &__tile-img {
+    height: auto;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  &__tile-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    justify-content: center;
+  }
+
+  &__tile-title {
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-l, 1.25rem);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__tile-desc {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    margin: 0;
+  }
+
+  &__tile-cta {
+    color: var(--color-brand-highlight);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    margin-top: 0.35rem;
+  }
+}
+
+// Non-interactive shop item cards (preview mode + tutorial-locked items)
+// stay visible so users can browse but lose their click affordance.
+.shop-item-card--non-interactive {
+  filter: saturate(0.5);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}

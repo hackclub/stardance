@@ -1,4 +1,4 @@
-<div class="shop-item-card<%= ' shop-item-card--achievement-locked' if locked_by_achievement %><%= ' shop-item-card--mission-locked' if mission_locked %><%= ' shop-item-card--out-of-stock' if out_of_stock? %><%= ' shop-item-card--on-sale' if on_sale %><%= ' shop-item-card--with-bow' if show_bow %>"
+<div class="shop-item-card<%= ' shop-item-card--achievement-locked' if locked_by_achievement %><%= ' shop-item-card--mission-locked' if mission_locked %><%= ' shop-item-card--out-of-stock' if out_of_stock? %><%= ' shop-item-card--on-sale' if on_sale %><%= ' shop-item-card--with-bow' if show_bow %><%= ' shop-item-card--non-interactive' unless interactive %>"
      data-categories="<%= categories.join(',') %>"
      data-regions="<%= enabled_regions.join(',') %>"
      data-achievement-locked="<%= locked_by_achievement %>"
@@ -38,7 +38,7 @@
       <% end %>
     </div>
   <% end %>
-  <% if logged_in %>
+  <% if logged_in && interactive %>
     <button type="button"
             class="shop-item-card__star"
             data-shop-wishlist-target="starButton"

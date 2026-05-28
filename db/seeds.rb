@@ -257,9 +257,24 @@ ShopItem::FreeStickers.find_or_create_by!(name: "Stickers!!") do |item|
   item.ticket_cost = 10
   item.enabled = true
   item.one_per_person_ever = true
+  item.enabled_xx = true
   item.image.attach(
-    io: File.open(Rails.root.join("app/assets/images/free_sticker.png")),
-    filename: "free_sticker.png",
+    io: File.open(Rails.root.join("app/assets/images/free_sticker.avif")),
+    filename: "free_sticker.avif",
+    content_type: "image/avif"
+  )
+end
+
+ShopItem::TutorialNothing.find_or_create_by!(name: "Nothing") do |item|
+  item.description = "Skip the freebie — just learn how the shop works."
+  item.ticket_cost = 0
+  item.enabled = true
+  item.one_per_person_ever = true
+  item.unlisted = true
+  item.enabled_xx = true
+  item.image.attach(
+    io: File.open(Rails.root.join("app/assets/images/idea/question.png")),
+    filename: "tutorial_nothing.png",
     content_type: "image/png"
   )
 end

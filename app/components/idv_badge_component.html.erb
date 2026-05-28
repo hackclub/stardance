@@ -1,0 +1,8 @@
+<%= link_to link_path,
+            class: "idv-badge idv-badge--#{context}",
+            title: tooltip,
+            aria: { label: tooltip },
+            data: { turbo: true } do %>
+  <span class="idv-badge__icon" aria-hidden="true">!</span>
+  <span class="idv-badge__sr">Verify your identity to make this visible</span>
+<% end %>

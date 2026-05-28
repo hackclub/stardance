@@ -14,7 +14,7 @@
 
         <li class="sidebar__nav-item" data-onboarding-target="<%= item[:slug] %>">
           <% icon_block = capture do %>
-            <span class="sidebar__nav-icon-wrapper" aria-hidden="true">
+            <span class="sidebar__nav-icon-wrapper<%= ' sidebar__nav-icon-wrapper--notify' if item[:notify] %>" aria-hidden="true">
               <% case item[:icon] %>
               <% when :avatar %>
                 <% avatar_classes = [ "sidebar__nav-avatar", ("sidebar__nav-avatar--guest" if user.slack_id.blank?) ].compact.join(" ") %>
@@ -24,6 +24,9 @@
                 <%= image_tag "icons/#{item[:icon][:active]}.png", alt: "", class: "sidebar__nav-icon sidebar__nav-icon--active" %>
               <% else %>
                 <%= inline_svg_tag "icons/#{item[:icon]}.svg", class: "sidebar__nav-icon" %>
+              <% end %>
+              <% if item[:notify] %>
+                <span class="sidebar__nav-notify-dot" aria-hidden="true"></span>
               <% end %>
             </span>
           <% end %>

@@ -1,0 +1,45 @@
+// Shown to non-admin, non-self viewers who land on a user profile before that
+// user has finished identity verification. Quiet, terse, non-stigmatizing — we
+// don't want to spotlight that the user is unverified, just explain why the
+// profile is empty.
+.profile-placeholder {
+  align-items: center;
+  background: var(--color-set-2-bg, #343651);
+  border-radius: 8px;
+  color: var(--color-brand-cream);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 0 auto;
+  max-width: 480px;
+  padding: 2.5rem 1.5rem 2rem;
+  text-align: center;
+
+  &__avatar-wrap {
+    border-radius: 999px;
+    overflow: hidden;
+    width: 88px;
+    height: 88px;
+  }
+
+  &__avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__handle {
+    font-family: "Playfair Display", serif;
+    font-size: var(--font-size-xl, 1.75rem);
+    font-style: italic;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__lede {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-m);
+    line-height: 1.5;
+    margin: 0;
+  }
+}

@@ -60,4 +60,11 @@ class ApplicationPolicy
   def signed_in_any?
     user.present?
   end
+
+  # True once the user has finished IDV. Used on actions that produce content
+  # visible to other users — comments, etc. — to make sure unverified users
+  # can't interact with the platform until verification is done.
+  def verified?
+    user.present? && user.identity_verified?
+  end
 end

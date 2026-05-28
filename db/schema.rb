@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_170653) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_000638) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -921,6 +921,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_170653) do
     t.string "regions", default: [], array: true
     t.string "session_token"
     t.enum "shop_region", enum_type: "shop_region_type"
+    t.datetime "shop_tutorial_completed_at"
+    t.datetime "shop_tutorial_started_at"
     t.string "slack_id"
     t.datetime "synced_at"
     t.string "things_dismissed", default: [], null: false, array: true

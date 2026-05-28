@@ -14,6 +14,10 @@
 
 <div class="app-layout">
   <div class="app-layout__main">
+    <% if own_profile %>
+      <%= render IdvSetupCardComponent.new(user: @user) %>
+    <% end %>
+
     <%= turbo_frame_tag "profile_card" do %>
     <%= form_with model: @user, url: user_path(@user), method: :patch, multipart: true,
                   class: "profile",
@@ -55,7 +59,7 @@
           </div>
 
           <div class="profile__identity-text">
-            <h1 class="profile__handle">@<%= @user.display_name %></h1>
+            <h1 class="profile__handle">@<%= @user.display_name %><% if own_profile %><%= render IdvBadgeComponent.new(user: @user, context: :profile) %><% end %></h1>
             <% if own_profile %>
               <div class="profile__handle-edit">
                 <span class="profile__handle-edit-at" aria-hidden="true">@</span>

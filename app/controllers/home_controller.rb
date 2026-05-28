@@ -16,6 +16,7 @@ class HomeController < ApplicationController
 
   def load_feed
     devlogs = Post.of_devlogs(join: true)
+                  .visible_to(current_user)
                   .where(post_devlogs: { deleted_at: nil })
                   .includes(:user, :project)
                   .preload(postable: :attachments_attachments)
@@ -23,6 +24,7 @@ class HomeController < ApplicationController
                   .limit(20)
 
     ship_events = Post.of_ship_events(join: true)
+                      .visible_to(current_user)
                       .where.not(post_ship_events: { certification_status: "rejected" })
                       .includes(:user, :project, :postable)
                       .order(created_at: :desc)

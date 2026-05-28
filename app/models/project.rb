@@ -329,6 +329,13 @@ class Project < ApplicationRecord
         passed: memberships.owner.first&.user&.vote_balance.to_i >= 0
       },
       {
+        key: :shop_tutorial,
+        label: "Walk through the shop once so you know how it works",
+        fail_label: "Visit the shop and pick stickers (or nothing) to finish the walkthrough",
+        tooltip: "Before your first ship, go to the shop and pick either stickers or nothing. It teaches you how the order flow works so a real order down the line doesn't catch you off guard.",
+        passed: memberships.owner.first&.user&.shop_tutorial_completed?
+      },
+      {
         key: :project_isnt_rejected,
         label: "Your project must not have been rejected",
         fail_label: "Your project is rejected!",
