@@ -88,7 +88,7 @@
                   one step's body busts only that one fragment. Without this,
                   every guide pageload pays N Redis round-trips through the
                   MarkdownRenderer cache (one per step). %>
-              <% step_body_record = step.bodies.detect { |b| b.language.to_s.casecmp?(@language.to_s).zero? } %>
+              <% step_body_record = step.body_record_for(@language) %>
               <% cache [ step, @language, step_body_record&.body_updated_at ] do %>
                 <section class="guide-section"
                          id="step-<%= step.id %>"

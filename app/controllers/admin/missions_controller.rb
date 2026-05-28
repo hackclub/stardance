@@ -49,7 +49,7 @@ module Admin
       authorize @mission
       @submissions = @mission.submissions.order(created_at: :desc).limit(50)
 
-      mission_versions = PaperTrail::Version.where(item_type: "Mission", item_id: @mission.id.to_s)
+      mission_versions = ::PaperTrail::Version.where(item_type: "Mission", item_id: @mission.id.to_s)
       child_versions = child_audit_versions
       @versions = mission_versions.or(child_versions).order(created_at: :desc).limit(50)
 
@@ -58,15 +58,12 @@ module Admin
     end
 
     def edit
-      # /admin/missions/:slug/edit is shared with non-admin mission owners
-      # via MissionPolicy#manage? — use the plain (non-namespaced) policy so
-      # owners pass; the rest of the actions stay admin-only via Admin::MissionPolicy.
-      authorize @mission, :manage?, policy_class: MissionPolicy
+      authorize @mission
       load_edit_locals
     end
 
     def update
-      authorize @mission, :manage?, policy_class: MissionPolicy
+      authorize @mission
       if @mission.update(mission_params)
         redirect_to edit_admin_mission_path(@mission.slug), notice: "Mission updated."
       else
@@ -108,8 +105,7 @@ module Admin
       @memberships = @mission.memberships.includes(:user).order(:role, :id)
       @unlocks     = @mission.shop_unlocks.includes(:shop_item)
 
-      # Admin-only sections (slug / owner CRUD / danger zone) render on the
-      # same edit page. Preload the owner list when the viewer can see them.
+      # Admin-only sections (slug / owner CRUD / danger zone) on the merged edit page.
       if policy(@mission).manage_owners?
         @owners = @mission.memberships
                           .where(role: Mission::Membership.roles[:owner])
@@ -129,10 +125,10 @@ module Admin
         "Mission::ShopUnlock" => @mission.shop_unlocks.pluck(:id)
       }.filter_map do |item_type, ids|
         next if ids.empty?
-        PaperTrail::Version.where(item_type: item_type, item_id: ids.map(&:to_s))
+        ::PaperTrail::Version.where(item_type: item_type, item_id: ids.map(&:to_s))
       end
 
-      scopes.reduce(PaperTrail::Version.none) { |query, scope| query.or(scope) }
+      scopes.reduce(::PaperTrail::Version.none) { |query, scope| query.or(scope) }
     end
 
     def create_params

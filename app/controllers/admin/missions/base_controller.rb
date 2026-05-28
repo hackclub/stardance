@@ -17,10 +17,9 @@ module Admin
         @mission = Mission.find_by!(slug: slug)
       end
 
-      # Plain (non-namespaced) MissionPolicy so non-admin mission owners can
-      # reach these admin-URL'd sub-resource controllers.
+      # Admin::MissionPolicy#manage? allows non-admin mission owners through.
       def authorize_mission_management
-        authorize @mission, :manage?, policy_class: MissionPolicy
+        authorize @mission, :manage?
       end
     end
   end
