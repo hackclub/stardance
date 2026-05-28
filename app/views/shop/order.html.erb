@@ -92,6 +92,92 @@
                   untagged_accessories = @accessories.reject(&:has_tag?).sort_by(&:ticket_cost)
                 %>
 
+                <%
+                  grouped_modifiers = @modifiers.select(&:group_name).group_by(&:group_name)
+                  ungrouped_modifiers = @modifiers.reject(&:group_name)
+                %>
+
+                <% if grouped_modifiers.any? || ungrouped_modifiers.any? %>
+                    <div class="shop-order__modifiers">
+                        <% grouped_modifiers.each do |group, mods_in_group| %>
+                            <div class="shop-order__modifier-group-section">
+                                <h5><%= group.titleize %></h5>
+                                <div class="shop-order__modifier-options">
+                                    <% mods_in_group.each do |mod| %>
+                                        <label class="shop-order__modifier-option-label">
+                                            <input type="radio"
+                                                   name="modifier_group_<%= group.parameterize %>"
+                                                   value="<%= mod.id %>"
+                                                   class="shop-order__modifier-option-input"
+                                                   data-modifier-id="<%= mod.id %>"
+                                                   data-price="<%= mod.price_for_region(@user_region) %>"
+                                                   data-name="<%= mod.name %>"
+                                                   data-group="<%= group.parameterize %>"
+                                                   form="order-form">
+                                            <div class="shop-order__accessory-option-block<%= ' shop-order__accessory-option-block--with-image' if mod.image.attached? %>">
+                                                <% if mod.image.attached? %>
+                                                    <%= image_tag mod.image.variant(:carousel_sm), class: "shop-order__accessory-option-image", loading: "lazy" %>
+                                                    <div class="shop-order__accessory-option-details">
+                                                        <div class="shop-order__accessory-option-name"><%= mod.name %></div>
+                                                        <div class="shop-order__accessory-option-price">
+                                                            <% price = mod.price_for_region(@user_region) %>
+                                                            <% if price.zero? %>Free<% else %><%= stardust_icon %> <%= price.round %><% end %>
+                                                        </div>
+                                                    </div>
+                                                <% else %>
+                                                    <div class="shop-order__accessory-option-name"><%= mod.name %></div>
+                                                    <div class="shop-order__accessory-option-price">
+                                                        <% price = mod.price_for_region(@user_region) %>
+                                                        <% if price.zero? %>Free<% else %><%= stardust_icon %> <%= price.round %><% end %>
+                                                    </div>
+                                                <% end %>
+                                            </div>
+                                        </label>
+                                    <% end %>
+                                </div>
+                            </div>
+                        <% end %>
+
+                        <% if ungrouped_modifiers.any? %>
+                            <div class="shop-order__modifier-group-section">
+                                <h5>Options</h5>
+                                <div class="shop-order__modifier-options">
+                                    <% ungrouped_modifiers.each do |mod| %>
+                                        <label class="shop-order__modifier-option-label">
+                                            <input type="checkbox"
+                                                   name="modifier_ids[]"
+                                                   value="<%= mod.id %>"
+                                                   class="shop-order__modifier-option-input"
+                                                   data-modifier-id="<%= mod.id %>"
+                                                   data-price="<%= mod.price_for_region(@user_region) %>"
+                                                   data-name="<%= mod.name %>"
+                                                   form="order-form">
+                                            <div class="shop-order__accessory-option-block<%= ' shop-order__accessory-option-block--with-image' if mod.image.attached? %>">
+                                                <% if mod.image.attached? %>
+                                                    <%= image_tag mod.image.variant(:carousel_sm), class: "shop-order__accessory-option-image", loading: "lazy" %>
+                                                    <div class="shop-order__accessory-option-details">
+                                                        <div class="shop-order__accessory-option-name"><%= mod.name %></div>
+                                                        <div class="shop-order__accessory-option-price">
+                                                            <% price = mod.price_for_region(@user_region) %>
+                                                            <% if price.zero? %>Free<% else %><%= stardust_icon %> <%= price.round %><% end %>
+                                                        </div>
+                                                    </div>
+                                                <% else %>
+                                                    <div class="shop-order__accessory-option-name"><%= mod.name %></div>
+                                                    <div class="shop-order__accessory-option-price">
+                                                        <% price = mod.price_for_region(@user_region) %>
+                                                        <% if price.zero? %>Free<% else %><%= stardust_icon %> <%= price.round %><% end %>
+                                                    </div>
+                                                <% end %>
+                                            </div>
+                                        </label>
+                                    <% end %>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+                <% end %>
+
                 <% if tagged_accessories.any? || untagged_accessories.any? %>
                     <div class="shop-order__accessories">
 

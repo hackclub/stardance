@@ -255,6 +255,10 @@ class ShopItem < ApplicationRecord
   has_many :shop_item_attachments, foreign_key: :parent_item_id, dependent: :destroy
   has_many :accessories, through: :shop_item_attachments, source: :accessory_item
 
+  has_many :shop_item_modifiers, dependent: :destroy
+  accepts_nested_attributes_for :shop_item_modifiers, allow_destroy: true,
+    reject_if: proc { |attrs| attrs["name"].blank? }
+
   def agh_contents=(value)
     if value.is_a?(String) && value.present?
       begin
@@ -336,6 +340,14 @@ class ShopItem < ApplicationRecord
 
   def has_accessories?
     available_accessories.exists?
+  end
+
+  def available_modifiers_for_region(region_code)
+    shop_item_modifiers.globally_enabled.ordered.select { |m| m.enabled_in_region?(region_code) }
+  end
+
+  def has_modifiers?
+    shop_item_modifiers.globally_enabled.exists?
   end
 
   def meet_ship_require?(user)

@@ -1,0 +1,103 @@
+<div class="modifier-entry" data-modifier-id="<%= mf.object&.id %>">
+  <%= mf.hidden_field :id %>
+  <%= mf.hidden_field :_destroy, class: "modifier-destroy-field", value: "0" %>
+
+  <div class="modifier-entry__header">
+    <strong class="modifier-entry__title">
+      <%= mf.object&.persisted? ? mf.object.name : "New Modifier" %>
+    </strong>
+    <button type="button" class="btn-secondary modifier-entry__remove" onclick="removeModifier(this)" style="padding: 2px 8px; font-size: 0.75rem;">
+      Remove
+    </button>
+  </div>
+
+  <div class="shop-item-form__row">
+    <div class="shop-item-form__field">
+      <%= mf.label :name, class: "shop-item-form__label" %>
+      <%= mf.text_field :name, class: "form-control", placeholder: "e.g., Blue, 16GB RAM", required: true %>
+    </div>
+    <div class="shop-item-form__field">
+      <%= mf.label :group_name, "Group Name (optional)", class: "shop-item-form__label" %>
+      <%= mf.text_field :group_name, class: "form-control", placeholder: "e.g., Color, Storage" %>
+      <span class="shop-item-form__hint">Modifiers sharing a group name are mutually exclusive (radio buttons)</span>
+    </div>
+  </div>
+
+  <div class="shop-item-form__row">
+    <div class="shop-item-form__field">
+      <%= mf.label :ticket_cost, class: "shop-item-form__label" do %>
+        <%= stardust_icon %> Stardust Cost
+      <% end %>
+      <%= mf.number_field :ticket_cost, min: 0, step: 1, class: "form-control", value: (mf.object&.ticket_cost || 0) %>
+      <span class="shop-item-form__hint">0 = free modifier (e.g., colour choice)</span>
+    </div>
+    <div class="shop-item-form__field">
+      <%= mf.label :usd_cost, "USD Cost ($)", class: "shop-item-form__label" %>
+      <%= mf.number_field :usd_cost, step: 0.01, min: 0, class: "form-control", placeholder: "0.00" %>
+      <span class="shop-item-form__hint">Real-world cost reference</span>
+    </div>
+  </div>
+
+  <div class="shop-item-form__row">
+    <div class="shop-item-form__field">
+      <%= mf.label :position, "Position", class: "shop-item-form__label" %>
+      <%= mf.number_field :position, min: 0, step: 1, class: "form-control", value: (mf.object&.position || 0) %>
+    </div>
+    <div class="shop-item-form__field" style="display: flex; align-items: center; padding-top: 1.5rem;">
+      <label class="shop-item-form__checkbox">
+        <%= mf.check_box :enabled, checked: mf.object&.enabled.nil? ? true : mf.object.enabled %>
+        <span>Enabled</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="shop-item-form__field">
+    <%= mf.label :image, "Image (optional)", class: "shop-item-form__label" %>
+    <%= mf.file_field :image, class: "form-control" %>
+    <% if mf.object&.persisted? && mf.object.image.attached? %>
+      <div class="shop-item-form__current-image">
+        <span class="shop-item-form__hint">Current image:</span>
+        <%= image_tag mf.object.image.variant(:carousel_sm), class: "shop-item-form__image-preview" %>
+      </div>
+    <% end %>
+  </div>
+
+  <details style="margin-top: 0.75rem;">
+    <summary style="cursor: pointer; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">Regional Pricing</summary>
+    <div class="shop-item-form__table-wrap" style="margin-top: 0.5rem;">
+      <table class="table-data" style="font-size: 0.8rem;">
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Enabled</th>
+            <th>Δ USD Offset</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% Shop::Regionalizable::REGIONS.each do |code, config| %>
+            <%
+              flag = case code
+                     when "US" then "🇺🇸"
+                     when "EU" then "🇪🇺"
+                     when "UK" then "🇬🇧"
+                     when "CA" then "🇨🇦"
+                     when "AU" then "🇦🇺"
+                     when "IN" then "🇮🇳"
+                     when "XX" then "🌍"
+                     else "🏳️"
+                     end
+            %>
+            <tr>
+              <td><%= flag %> <strong><%= code %></strong></td>
+              <td><%= mf.check_box "enabled_#{code.downcase}" %></td>
+              <td>
+                <%= mf.number_field "usd_offset_#{code.downcase}", step: 0.01, class: "form-control form-control--sm", placeholder: "0.00",
+                    value: mf.object&.send("usd_offset_#{code.downcase}"), style: "width: 90px;" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </details>
+</div>

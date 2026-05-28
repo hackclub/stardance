@@ -224,7 +224,13 @@ module Admin
         requires_achievement: [],
         blocked_countries: [],
         unlocking_mission_ids: [],
-        parent_item_ids: []
+        parent_item_ids: [],
+        shop_item_modifiers_attributes: [
+          :id, :name, :group_name, :ticket_cost, :usd_cost, :enabled, :position,
+          :enabled_us, :enabled_eu, :enabled_uk, :enabled_ca, :enabled_au, :enabled_in, :enabled_xx,
+          :usd_offset_us, :usd_offset_eu, :usd_offset_uk, :usd_offset_ca, :usd_offset_au, :usd_offset_in, :usd_offset_xx,
+          :image, :_destroy
+        ]
       )
     end
 

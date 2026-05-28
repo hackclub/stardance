@@ -68,6 +68,7 @@ class ShopController < ApplicationController
     @sale_price = @shop_item.price_for_region(@user_region)
     @regional_base_price = @shop_item.base_price_for_region(@user_region)
     @accessories = @shop_item.available_accessories.includes(:image_attachment)
+    @modifiers = @shop_item.available_modifiers_for_region(@user_region)
 
     if @shop_item.requires_achievement?
       @required_achievements = @shop_item.requires_achievement.map { |slug| Achievement.find(slug) }
@@ -124,6 +125,16 @@ class ShopController < ApplicationController
     end
 
     quantity = params[:quantity].to_i
+    modifier_ids = Array(params[:modifier_ids]).map(&:to_i).reject(&:zero?)
+
+    # Collect modifier IDs from grouped radio buttons (modifier_group_* params)
+    params.each do |key, value|
+      if key.to_s.start_with?("modifier_group_") && value.present?
+        modifier_ids << value.to_i
+      end
+    end
+    modifier_ids = modifier_ids.uniq.reject(&:zero?)
+
     accessory_ids = Array(params[:accessory_ids]).map(&:to_i).reject(&:zero?)
 
     # Collect accessory IDs from tagged radio buttons (accessory_tag_* params)
@@ -146,13 +157,22 @@ class ShopController < ApplicationController
                      []
     end
 
+    # Validate modifiers belong to this item and are available in region
+    region = user_region
+    @modifiers = if modifier_ids.any?
+                   @shop_item.available_modifiers_for_region(region).select { |m| modifier_ids.include?(m.id) }
+    else
+                   []
+    end
+
     # Calculate total cost (applying sale discount via price_for_region)
     # Accessories are multiplied by quantity (e.g., 10 RPis with 8GB RAM = 10 accessories)
-    region = user_region
+    # Modifiers are per-order (not per-unit)
     item_price = @shop_item.price_for_region(region)
     item_total = item_price * quantity
     accessories_total = @accessories.sum { |a| a.price_for_region(region) } * quantity
-    total_cost = item_total + accessories_total
+    modifiers_total = @modifiers.sum { |m| m.price_for_region(region) }
+    total_cost = item_total + accessories_total + modifiers_total
 
     return redirect_to shop_order_path(shop_item_id: @shop_item.id), alert: "You need to have an address to make an order!" unless current_user.addresses.any?
 
@@ -186,7 +206,8 @@ class ShopController < ApplicationController
         @order = current_user.shop_orders.new(
           shop_item: @shop_item,
           quantity: @mission_submission ? 1 : quantity,
-          frozen_address: selected_address
+          frozen_address: selected_address,
+          frozen_modifiers_price: @mission_submission ? 0 : modifiers_total
         )
         @order.redeeming_mission_submission = @mission_submission if @mission_submission
         @order.aasm_state = "pending" if @order.respond_to?(:aasm_state=)
@@ -207,6 +228,14 @@ class ShopController < ApplicationController
             )
             accessory_order.aasm_state = "pending" if accessory_order.respond_to?(:aasm_state=)
             accessory_order.save!
+          end
+
+          @modifiers.each do |modifier|
+            ShopOrderModifierSelection.create!(
+              shop_order: @order,
+              shop_item_modifier: modifier,
+              frozen_modifier_price: modifier.price_for_region(region)
+            )
           end
         end
       end
