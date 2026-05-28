@@ -51,8 +51,40 @@ if Rails.env.development? || Rails.env.staging?
   Flipper.enable(:grant_stardust)
 end
 
+# Seed shop categories (browseable item types) and sources (origin/fulfilment
+# tags). Both lists live in the DB so admins can manage them without code
+# changes. The old hardcoded categories conflated item type with fulfilment,
+# which misled shoppers — categories now describe what an item is, sources
+# describe where it comes from.
+[
+  { slug: "grants",   title: "Grants Shop",   hub_title: "Grants",   position: 0 },
+  { slug: "hardware", title: "Hardware Shop", hub_title: "Hardware", position: 1 },
+  { slug: "digital",  title: "Digital Shop",  hub_title: "Digital",  position: 2 },
+  { slug: "merch",    title: "Merch Shop",    hub_title: "Merch",    position: 3 },
+  { slug: "games",    title: "Games Shop",    hub_title: "Games",    position: 4 }
+].each do |attrs|
+  ShopCategory.find_or_create_by!(slug: attrs[:slug]) do |c|
+    c.title = attrs[:title]
+    c.hub_title = attrs[:hub_title]
+    c.position = attrs[:position]
+  end
+end
+
+[
+  { slug: "hq",                    title: "HQ",                    position: 0 },
+  { slug: "locally_fulfilled",     title: "Locally Fulfilled",     position: 1 },
+  { slug: "made_by_hack_clubbers", title: "Made by Hack Clubbers", position: 2 },
+  { slug: "third_party_digital",   title: "Third-Party Digital",   position: 3 },
+  { slug: "hcb_grant",             title: "HCB Grant",             position: 4 }
+].each do |attrs|
+  ShopSource.find_or_create_by!(slug: attrs[:slug]) do |s|
+    s.title = attrs[:title]
+    s.position = attrs[:position]
+  end
+end
+
 # Seed default shop items
-ShopItem::FreeStickers.find_or_create_by!(name: "Stickers!!") do |item|
+stickers = ShopItem::FreeStickers.find_or_create_by!(name: "Stickers!!") do |item|
   item.description = "we'll actually send you these!"
   item.ticket_cost = 0
   item.enabled = true
@@ -65,7 +97,7 @@ ShopItem::FreeStickers.find_or_create_by!(name: "Stickers!!") do |item|
   )
 end
 
-ShopItem::TutorialNothing.find_or_create_by!(name: "Nothing") do |item|
+tutorial_nothing = ShopItem::TutorialNothing.find_or_create_by!(name: "Nothing") do |item|
   item.description = "Skip the freebie — just learn how the shop works."
   item.ticket_cost = 0
   item.enabled = true
@@ -77,4 +109,15 @@ ShopItem::TutorialNothing.find_or_create_by!(name: "Nothing") do |item|
     filename: "tutorial_nothing.png",
     content_type: "image/png"
   )
+end
+
+# Tag the tutorial items so the shop tutorial flow ("open Merch to pick
+# stickers or nothing") has something to show. Other items are categorised
+# per-item via the admin UI.
+merch_category = ShopCategory.find_by!(slug: "merch")
+hq_source = ShopSource.find_by!(slug: "hq")
+
+[ stickers, tutorial_nothing ].each do |item|
+  item.shop_categories << merch_category unless item.shop_categories.include?(merch_category)
+  item.shop_sources    << hq_source      unless item.shop_sources.include?(hq_source)
 end

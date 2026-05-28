@@ -25,6 +25,9 @@ export default class extends Controller {
     steps: Array,
     minWidth: { type: Number, default: 900 },
     lockScroll: { type: Boolean, default: true },
+    // When set, finishing the tour records a server-side dismissal so it
+    // doesn't show again (via POST /my/dismissals).
+    dismissThing: { type: String, default: "" },
   };
 
   connect() {
@@ -90,7 +93,20 @@ export default class extends Controller {
   finish() {
     this._clearAutoAdvance();
     this._clearWaitForTarget();
+    if (this.dismissThingValue) this._recordDismissal(this.dismissThingValue);
     this.element.remove();
+  }
+
+  _recordDismissal(thing) {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    fetch("/my/dismissals", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": token || "",
+      },
+      body: JSON.stringify({ thing_name: thing }),
+    }).catch(() => {});
   }
 
   _clearAutoAdvance() {
@@ -240,9 +256,9 @@ export default class extends Controller {
     this.counterTarget.textContent = `${visibleIndex + 1}/${visibleTotal}`;
 
     const isLast = visibleIndex === visibleTotal - 1;
-    this.nextTarget.textContent = isLast
-      ? "Finish! →"
-      : `Next (${visibleIndex + 1}/${visibleTotal}) →`;
+    this.nextTarget.textContent =
+      step.nextLabel ||
+      (isLast ? "Finish! →" : `Next (${visibleIndex + 1}/${visibleTotal}) →`);
     this.nextTarget.hidden = !!step.clickToAdvance;
     this.backTarget.hidden = this.stepValue === 0 || !!step.clickToAdvance;
 

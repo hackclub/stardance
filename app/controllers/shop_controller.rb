@@ -13,8 +13,8 @@ class ShopController < ApplicationController
     @category = Shop::Categorization.find(@slug)
     raise ActiveRecord::RecordNotFound unless @category
 
-    @category_title = @category[:title]
-    @category_hub_title = @category[:hub_title]
+    @category_title = @category.title
+    @category_hub_title = @category.hub_title
 
     prepare_shop_chrome
     load_shop_items
@@ -246,7 +246,7 @@ class ShopController < ApplicationController
 
       if @shop_item.is_a?(ShopItem::TutorialNothing)
         @shop_item.fulfill!(@order)
-        redirect_to shop_my_orders_path, notice: "Walkthrough complete! You're ready to ship your first project."
+        redirect_to shop_my_orders_path, notice: "Nice — that's your first order in! You're ready to ship your first project."
         return
       end
 
@@ -280,7 +280,7 @@ class ShopController < ApplicationController
       current_user&.mark_shop_tutorial_started!
     end
 
-    @categories = Shop::Categorization::DEFINITIONS
+    @categories = Shop::Categorization.all
   end
 
   # Picks a small randomised subset of the catalogue for the hub's "Discover"
@@ -290,7 +290,17 @@ class ShopController < ApplicationController
     return @random_items = [] if @shop_items.blank?
 
     pool = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
-    @random_items = pool.shuffle.first(6)
+
+    # In tutorial mode the stickers/nothing picks get their own leading row, so
+    # keep them out of the Discover grid below.
+    if @shop_mode == :tutorial && @tutorial_items
+      pick_ids = @tutorial_items.values.compact.map(&:id).to_set
+      pool = pool.reject { |item| pick_ids.include?(item.id) }
+    end
+
+    # Discover is a 2-row preview clipped in CSS; "See all" leads to the full
+    # listing. Cap the pool so we don't ship a giant hidden grid.
+    @random_items = pool.shuffle.first(12)
   end
 
   # Latest non-cancelled orders for the hub sidebar — keep it tiny.

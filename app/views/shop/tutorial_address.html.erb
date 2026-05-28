@@ -22,7 +22,7 @@
       <p class="shop-checkout__item-description"><%= @shop_item.description %></p>
 
       <% if @shop_item.is_a?(ShopItem::TutorialNothing) %>
-        <p class="shop-checkout__item-note">No shipment, no Stardust spent. Just a quick walkthrough of how the checkout works.</p>
+        <p class="shop-checkout__item-note">No shipment, no Stardust spent — this just shows you how checkout works.</p>
       <% else %>
         <div class="shop-checkout__item-meta">
           <span class="shop-checkout__item-meta-key">Price</span>

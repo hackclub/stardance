@@ -21,24 +21,16 @@
       </div>
     <% end %>
 
-    <% if @shop_mode == :tutorial && @tutorial_items.values.all?(&:present?) %>
-      <p class="shop-category__tutorial-prompt" role="status">
-        <span class="shop-category__tutorial-prompt-eyebrow">Quick walkthrough</span>
-        <span class="shop-category__tutorial-prompt-text">Pick <strong>stickers</strong> or <strong>nothing</strong> to learn how orders work.</span>
-      </p>
-    <% end %>
-
     <div class="shop-category__toolbar">
       <%= form_with url: shop_category_path(@slug), method: :get, local: true, class: "shop-category__search" do |f| %>
-        <%= render InputComponent.new(
-              label: nil,
-              icon: "icons/search.svg",
-              placeholder: "Search...",
-              form: f,
-              attribute: :q,
-              color: :yellow,
-              input_html: { value: params[:q], data: { action: "input->shop#search" } }
-            ) %>
+        <%= f.search_field :q,
+                           value: params[:q],
+                           class: "shop-category__search-input",
+                           placeholder: "Search...",
+                           "aria-label": "Search #{@category_title}",
+                           autocomplete: "off",
+                           data: { action: "input->shop#search" } %>
+        <%= inline_svg_tag "icons/search.svg", class: "shop-category__search-icon" %>
       <% end %>
 
       <div class="shop-category__filters">
@@ -84,47 +76,12 @@
         <% tutorial_item_ids = @shop_mode == :tutorial ? @tutorial_items.values.compact.map(&:id) : [] %>
         <% @shop_items.each do |item| %>
           <% if item.image.present? && item.enabled_in_region?(@user_region) %>
-            <% sale_price = item.price_for_region(@user_region) %>
-            <% item_achievement_infos = item.required_achievement_objects %>
-            <% item_achievement_locked = item.achievement_locked_for?(current_user) %>
-            <% is_tutorial_pick = tutorial_item_ids.include?(item.id) %>
-            <% item_interactive = case @shop_mode
-                                 when :preview  then false
-                                 when :tutorial then is_tutorial_pick
-                                 else                true
-                                 end %>
-            <% cta_mode = case @shop_mode
-                          when :preview  then :preview_locked
-                          when :tutorial then is_tutorial_pick ? :tutorial_buy : :tutorial_locked
-                          else                :order
-                          end %>
-            <%= render ShopItemCardComponent.new(
-              item_id: item.id,
-              name: item.name,
-              description: item.description,
-              hours: item.fixed_estimate(sale_price).to_i,
-              price: item.ticket_cost,
-              image_url: item.image.variant(:carousel_lg),
-              item_type: item.type,
-              balance: @user_balance,
-              enabled_regions: item.enabled_region_codes,
-              regional_price: sale_price,
-              logged_in: current_user.present?,
-              interactive: item_interactive,
-              tutorial_spotlight: is_tutorial_pick && @shop_mode == :tutorial,
-              cta_mode: cta_mode,
-              remaining_stock: item.remaining_stock,
-              limited: item.limited?,
-              on_sale: item.on_sale?,
-              sale_percentage: item.sale_percentage,
-              original_price: item.base_price_for_region(@user_region),
-              purchase_count: item.display_purchase_count,
-              is_new: item.new_item?,
-              enabled_until: item.enabled_until,
-              locked_by_achievement: item_achievement_locked,
-              required_achievement_names: item_achievement_infos.map(&:name),
-              required_achievement_hints: item_achievement_infos.map(&:description)
-            ) %>
+            <%= render "shop/item_card",
+                  item: item,
+                  mode: @shop_mode,
+                  region: @user_region,
+                  balance: @user_balance,
+                  tutorial_item_ids: tutorial_item_ids %>
           <% end %>
         <% end %>
         <% if @shop_items.empty? %>

@@ -339,9 +339,9 @@ class Project < ApplicationRecord
       },
       {
         key: :shop_tutorial,
-        label: "Walk through the shop once so you know how it works",
-        fail_label: "Visit the shop and pick stickers (or nothing) to finish the walkthrough",
-        tooltip: "Before your first ship, go to the shop and pick either stickers or nothing. It teaches you how the order flow works so a real order down the line doesn't catch you off guard.",
+        label: "Pick stickers or nothing in the shop once",
+        fail_label: "Visit the shop and pick stickers (or nothing) to get started",
+        tooltip: "Before your first ship, go to the shop and pick either stickers or nothing. It shows you how the order flow works so a real order down the line doesn't catch you off guard.",
         passed: memberships.owner.first&.user&.shop_tutorial_completed?
       },
       {

@@ -255,6 +255,11 @@ class ShopItem < ApplicationRecord
   has_many :shop_item_attachments, foreign_key: :parent_item_id, dependent: :destroy
   has_many :accessories, through: :shop_item_attachments, source: :accessory_item
 
+  has_many :shop_item_categories, dependent: :destroy
+  has_many :shop_categories, through: :shop_item_categories
+  has_many :shop_item_sources, dependent: :destroy
+  has_many :shop_sources, through: :shop_item_sources
+
   def agh_contents=(value)
     if value.is_a?(String) && value.present?
       begin

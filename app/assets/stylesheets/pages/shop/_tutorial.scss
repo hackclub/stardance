@@ -99,36 +99,3 @@
   user-select: none;
 }
 
-// Spotlight on the two tutorial picks — a glowing border + small badge so
-// they catch the eye inside the regular grid without needing a separate
-// banner above.
-.shop-item-card--spotlight {
-  box-shadow:
-    0 0 0 2px var(--color-brand-highlight),
-    0 12px 40px rgba(244, 235, 185, 0.25);
-  position: relative;
-  transform: translateY(-2px);
-  transition:
-    box-shadow 160ms ease,
-    transform 160ms ease;
-
-  &:hover {
-    transform: translateY(-4px);
-  }
-}
-
-.shop-item-card__spotlight-badge {
-  background: var(--color-brand-highlight);
-  border-radius: 999px;
-  color: var(--color-space-bg);
-  font-family: "Exo 2", sans-serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  left: 0.75rem;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.6rem;
-  position: absolute;
-  text-transform: uppercase;
-  top: 0.75rem;
-  z-index: 2;
-}

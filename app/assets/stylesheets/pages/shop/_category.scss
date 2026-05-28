@@ -58,27 +58,6 @@
     }
   }
 
-  &__tutorial-prompt {
-    align-items: baseline;
-    background: rgba(244, 235, 185, 0.08);
-    border-left: 3px solid var(--color-brand-highlight);
-    border-radius: 0 6px 6px 0;
-    color: var(--color-brand-off-white);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 0.85rem;
-    margin: 0 0 1.5rem;
-    padding: 0.65rem 1rem;
-  }
-
-  &__tutorial-prompt-eyebrow {
-    color: var(--color-brand-mint);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
   &__toolbar {
     align-items: center;
     display: flex;
@@ -87,10 +66,46 @@
     margin-bottom: 2rem;
   }
 
+  // Search bar matches the shop hub's: transparent, bordered, icon on the
+  // right, brand-highlight on focus.
   &__search {
-    flex: 0 1 425px;
+    flex: 1 1 360px;
     margin: 0;
     max-width: 425px;
+    position: relative;
+  }
+
+  &__search-input {
+    background: transparent;
+    border: 2px solid var(--color-space-text);
+    border-radius: 8px;
+    color: var(--color-space-text);
+    font-family: inherit;
+    font-size: 1.05rem;
+    height: 48px;
+    padding: 0 44px 0 16px;
+    width: 100%;
+
+    &::placeholder {
+      color: var(--color-space-text);
+      opacity: 0.7;
+    }
+
+    &:focus {
+      border-color: var(--color-brand-highlight);
+      outline: none;
+    }
+  }
+
+  &__search-icon {
+    color: var(--color-space-text);
+    height: 18px;
+    pointer-events: none;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
   }
 
   &__filters {
@@ -101,11 +116,21 @@
     margin-left: auto;
   }
 
+  // Three per row to match the hub's Discover grid (the category area is a
+  // hair too narrow for auto-fill to land on 3, so pin it explicitly).
   &__items {
     display: grid;
     gap: 1.5rem;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     margin-bottom: 2rem;
+
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
   }
 
   &__empty {

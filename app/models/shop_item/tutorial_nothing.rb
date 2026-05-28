@@ -71,6 +71,19 @@
 #  default_assigned_user_id          :bigint
 #  user_id                           :bigint
 #
+# Indexes
+#
+#  index_shop_items_on_created_by_user_id        (created_by_user_id)
+#  index_shop_items_on_default_assigned_user_id  (default_assigned_user_id)
+#  index_shop_items_on_mission_prize_only        (mission_prize_only)
+#  index_shop_items_on_user_id                   (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (created_by_user_id => users.id) ON DELETE => nullify
+#  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
+#  fk_rails_...  (user_id => users.id)
+#
 # The "nothing" choice in the shop tutorial. Price 0, fulfills instantly with
 # no real-world side effect. Used to teach a user how the shop works without
 # committing them to anything physical.

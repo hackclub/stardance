@@ -13,6 +13,8 @@
   color: var(--color-space-text);
   display: flex;
   flex-direction: column;
+  // Fill the grid/flex cell so every card in a row is the same height.
+  height: 100%;
   position: relative;
 
   &__image-wrap {
@@ -64,16 +66,18 @@
   &__star {
     background: var(--color-brand-cream);
     border: 0;
-    border-radius: 4px;
+    // Round badge nudged out past the top-right corner. Absolutely positioned,
+    // so it overlaps the corner without affecting any card spacing.
+    border-radius: 50%;
     color: var(--color-space-bg);
     cursor: pointer;
-    height: 34px;
-    padding: 4px;
+    height: 36px;
+    padding: 7px;
     position: absolute;
-    right: 12px;
-    top: 12px;
-    width: 34px;
-    z-index: 2;
+    right: -10px;
+    top: -10px;
+    width: 36px;
+    z-index: 3;
 
     svg {
       display: block;
@@ -101,7 +105,7 @@
     flex-direction: column;
     flex: 1 1 auto;
     gap: 0.6rem;
-    padding: 1.25rem 1.5rem 1.25rem;
+    padding: 1.25rem 1rem;
   }
 
   &__title {
@@ -227,7 +231,10 @@
   }
 
   &__order-cta {
-    margin-top: 0.5rem;
+    // Pin to the bottom so CTAs line up across a row of equal-height cards.
+    margin-top: auto;
+    // Shorter than the default large button.
+    padding-block: 8px;
     width: 100%;
 
     &--locked {
@@ -267,29 +274,6 @@
     opacity: 0.55;
     pointer-events: none;
     user-select: none;
-  }
-
-  &--spotlight {
-    box-shadow:
-      0 0 0 2px var(--color-brand-highlight),
-      0 12px 40px rgba(244, 235, 185, 0.25);
-    transform: translateY(-2px);
-  }
-
-  &__spotlight-badge {
-    background: var(--color-brand-highlight);
-    border-radius: 999px;
-    bottom: 12px;
-    color: var(--color-space-bg);
-    font-family: "Exo 2", sans-serif;
-    font-size: 0.7rem;
-    font-weight: 700;
-    left: 12px;
-    letter-spacing: 0.04em;
-    padding: 0.2rem 0.55rem;
-    position: absolute;
-    text-transform: uppercase;
-    z-index: 2;
   }
 
   &--out-of-stock {

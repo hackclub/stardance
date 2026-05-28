@@ -12,12 +12,7 @@
     <%= render "shop/preview_banner" %>
   <% end %>
 
-  <% if @shop_mode == :tutorial && @tutorial_items.values.all?(&:present?) %>
-    <p class="shop-hub__tutorial-prompt" role="status">
-      <span class="shop-hub__tutorial-prompt-eyebrow">Quick walkthrough</span>
-      <span class="shop-hub__tutorial-prompt-text">Open <strong>HQ</strong> below to pick stickers or nothing.</span>
-    </p>
-  <% end %>
+  <% tutorial_active = @shop_mode == :tutorial && @tutorial_items.values.all?(&:present?) %>
 
   <div class="shop-hub__layout">
     <header class="shop-hub__topbar">
@@ -52,13 +47,14 @@
     </header>
 
     <% if @shop_open %>
+      <% pick_ids = tutorial_active ? @tutorial_items.values.compact.map(&:id) : [] %>
       <section class="shop-hub__main">
         <ul class="shop-hub__category-grid" aria-label="Shop categories">
-          <% @categories.each do |slug, config| %>
-            <% category_items = config[:types] ? @shop_items.select { |i| config[:types].include?(i.type) } : @shop_items %>
+          <% @categories.each do |category| %>
+            <% category_items = Shop::Categorization.filter(@shop_items, category.slug) %>
             <% category_thumbs = category_items.select { |i| i.image.attached? }.first(3) %>
             <li class="shop-hub__category-tile">
-              <%= link_to shop_category_path(slug), class: "shop-hub__category-link", data: { turbo: true } do %>
+              <%= link_to shop_category_path(category.slug), class: "shop-hub__category-link", data: { turbo: true } do %>
                 <div class="shop-hub__category-art" aria-hidden="true">
                   <% if category_thumbs.any? %>
                     <% category_thumbs.each_with_index do |thumb, idx| %>
@@ -68,35 +64,11 @@
                     <span class="shop-hub__category-thumb-placeholder">✦</span>
                   <% end %>
                 </div>
-                <h2 class="shop-hub__category-name"><%= config[:hub_title] %></h2>
+                <h2 class="shop-hub__category-name"><%= category.hub_title %></h2>
               <% end %>
             </li>
           <% end %>
         </ul>
-
-        <% if @random_items&.any? %>
-          <section class="shop-hub__discover" aria-label="Discover items">
-            <h2 class="shop-hub__section-title">Discover</h2>
-            <ul class="shop-hub__discover-grid">
-              <% @random_items.each do |item| %>
-                <li class="shop-hub__discover-card">
-                  <%= link_to shop_order_path(shop_item_id: item.id), class: "shop-hub__discover-link", data: { turbo: true } do %>
-                    <div class="shop-hub__discover-thumb-wrap">
-                      <%= image_tag item.image.variant(:carousel_sm), alt: "", class: "shop-hub__discover-thumb" if item.image.attached? %>
-                    </div>
-                    <div class="shop-hub__discover-text">
-                      <p class="shop-hub__discover-name"><%= item.name %></p>
-                      <p class="shop-hub__discover-price">
-                        <%= stardust_icon %>
-                        <%= number_to_currency(item.price_for_region(@user_region), precision: 0).delete('$') %>
-                      </p>
-                    </div>
-                  <% end %>
-                </li>
-              <% end %>
-            </ul>
-          </section>
-        <% end %>
       </section>
 
       <aside class="shop-hub__sidebar" aria-label="Shop status">
@@ -147,6 +119,58 @@
           </div>
         </section>
       </aside>
+
+      <% if tutorial_active || @random_items&.any? %>
+        <section class="shop-hub__items" aria-label="Items">
+          <div class="shop-hub__items-header">
+            <h2 class="shop-hub__section-title">Discover</h2>
+            <%= link_to "See all →", shop_category_path("all"), class: "shop-hub__see-all", data: { turbo: true } %>
+          </div>
+
+          <% if tutorial_active %>
+            <div class="shop-hub__picks">
+              <ul class="shop-hub__picks-row" id="shop-picks">
+                <% [ @tutorial_items[:stickers], @tutorial_items[:nothing] ].compact.each do |item| %>
+                  <li class="shop-hub__items-card">
+                    <%= render "shop/item_card",
+                          item: item,
+                          mode: :tutorial,
+                          region: @user_region,
+                          balance: @user_balance,
+                          tutorial_item_ids: pick_ids,
+                          spotlight: false %>
+                  </li>
+                <% end %>
+                <li class="shop-hub__picks-cue">
+                  <%= image_tag "shop/buy_something.png", alt: "", class: "shop-hub__picks-cue-graphic", aria: { hidden: true } %>
+                  <span class="shop-hub__picks-cue-row">
+                    <%= inline_svg_tag "icons/tour-arrow.svg", class: "shop-hub__picks-cue-arrow", aria: { hidden: true }, focusable: false %>
+                    <span class="shop-hub__picks-cue-text">Pick one of these to try buying something!</span>
+                  </span>
+                </li>
+              </ul>
+            </div>
+            <% if current_user && !current_user.has_dismissed?("shop_picks_intro") %>
+              <%= render "shop/picks_intro_tour" %>
+            <% end %>
+          <% end %>
+
+          <% if @random_items&.any? %>
+            <ul class="shop-hub__items-grid">
+              <% @random_items.each do |item| %>
+                <li class="shop-hub__items-card">
+                  <%= render "shop/item_card",
+                        item: item,
+                        mode: @shop_mode,
+                        region: @user_region,
+                        balance: @user_balance,
+                        tutorial_item_ids: pick_ids %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </section>
+      <% end %>
     <% else %>
       <h2 class="shop-hub__closed">The shop is not opened yet!</h2>
     <% end %>
