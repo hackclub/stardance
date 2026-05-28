@@ -1,4 +1,5 @@
 import "@hotwired/turbo-rails";
+import "./channels/site_actions_channel";
 import { Turbo } from "@hotwired/turbo-rails";
 import "chartkick/chart.js";
 import { Chart, registerables } from "chart.js";

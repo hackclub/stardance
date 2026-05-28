@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_132028) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -723,6 +723,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_132028) do
     t.index ["parent_item_id"], name: "index_shop_item_attachments_on_parent_item_id"
   end
 
+  create_table "shop_item_site_action_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "shop_items", force: :cascade do |t|
     t.string "accessory_tag"
     t.jsonb "agh_contents"
@@ -1005,6 +1010,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_132028) do
     t.string "ref"
     t.string "regions", default: [], array: true
     t.string "session_token"
+    t.jsonb "shenanigans_state", default: {}
     t.enum "shop_region", enum_type: "shop_region_type"
     t.string "slack_id"
     t.datetime "synced_at"
@@ -1139,7 +1145,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_132028) do
   add_foreign_key "shop_item_attachments", "shop_items", column: "accessory_item_id", on_delete: :cascade
   add_foreign_key "shop_item_attachments", "shop_items", column: "parent_item_id", on_delete: :cascade
   add_foreign_key "shop_items", "users"
-  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify
+  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_reviews", "shop_orders"
   add_foreign_key "shop_order_reviews", "users"
