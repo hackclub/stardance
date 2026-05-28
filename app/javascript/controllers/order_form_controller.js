@@ -177,8 +177,12 @@ export default class extends Controller {
 
     this.modifierCheckboxes.forEach((checkbox) => {
       if (checkbox.checked) {
-        const name = checkbox.dataset.name ||
-          checkbox.closest("label").querySelector(".shop-order__accessory-option-name")?.textContent || "";
+        const name =
+          checkbox.dataset.name ||
+          checkbox
+            .closest("label")
+            .querySelector(".shop-order__accessory-option-name")?.textContent ||
+          "";
         const price = parseFloat(checkbox.dataset.price) || 0;
         modifiers.push({ name, price });
       }
@@ -186,8 +190,12 @@ export default class extends Controller {
 
     this.modifierRadios.forEach((radio) => {
       if (radio.checked) {
-        const name = radio.dataset.name ||
-          radio.closest("label").querySelector(".shop-order__accessory-option-name")?.textContent || "";
+        const name =
+          radio.dataset.name ||
+          radio
+            .closest("label")
+            .querySelector(".shop-order__accessory-option-name")?.textContent ||
+          "";
         const price = parseFloat(radio.dataset.price) || 0;
         modifiers.push({ name, price });
       }

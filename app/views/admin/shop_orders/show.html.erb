@@ -78,7 +78,7 @@
       <div class="aorder__force-state">
         <span class="aorder__force-label">Force state</span>
         <form method="post" action="<%= force_state_admin_shop_order_path(@order) %>"
-              onsubmit="var sel = this.querySelector('select'); return confirm('Force state from \"<%= s %>\" to \"' + sel.value + '\"?\n\nThis bypasses all AASM guards and writes directly to the database.')">
+              onsubmit="var sel = this.querySelector('select'); return confirm('Force state from ' + <%= s.to_json %> + ' to ' + sel.value + '?\n\nThis bypasses all AASM guards and writes directly to the database.')">
           <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
           <select name="target_state" class="aorder__input aorder__select">
             <% ShopOrder.aasm.states.map { |st| st.name.to_s }.sort.each do |state| %>

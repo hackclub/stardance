@@ -293,7 +293,7 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     margin-top: auto;
   }
 
@@ -302,9 +302,11 @@
     justify-content: space-between;
     align-items: center;
     padding: var(--space-s) 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
-    &:last-child { border-bottom: none; }
+    &:last-child {
+      border-bottom: none;
+    }
 
     @media (max-width: 480px) {
       flex-direction: column;
@@ -344,26 +346,30 @@
     position: relative;
 
     &:not(:last-child)::after {
-      content: '';
+      content: "";
       position: absolute;
       top: 13px;
       left: calc(50% + 15px);
       right: calc(-50% + 15px);
       height: 2px;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       z-index: 0;
     }
   }
 
-  &__progress-step--done::after   { background: var(--color-space-accent) !important; }
-  &__progress-step--active::after { background: rgba(255,229,100,0.2) !important; }
+  &__progress-step--done::after {
+    background: var(--color-space-accent) !important;
+  }
+  &__progress-step--active::after {
+    background: rgba(255, 229, 100, 0.2) !important;
+  }
 
   &__progress-dot {
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -381,26 +387,26 @@
 
     .my-orders__progress-step--active & {
       border-color: var(--color-brand-yellow);
-      background: rgba(255,229,100,0.1);
+      background: rgba(255, 229, 100, 0.1);
       color: var(--color-brand-yellow);
-      box-shadow: 0 0 0 3px rgba(255,229,100,0.08);
+      box-shadow: 0 0 0 3px rgba(255, 229, 100, 0.08);
     }
 
     .my-orders__progress-step--danger & {
       border-color: #f87171;
-      background: rgba(248,113,113,0.1);
+      background: rgba(248, 113, 113, 0.1);
       color: #f87171;
     }
 
     .my-orders__progress-step--success & {
       border-color: #4ade80;
-      background: rgba(74,222,128,0.1);
+      background: rgba(74, 222, 128, 0.1);
       color: #4ade80;
     }
 
     .my-orders__progress-step--muted & {
-      border-color: rgba(168,85,247,0.3);
-      background: rgba(168,85,247,0.07);
+      border-color: rgba(168, 85, 247, 0.3);
+      background: rgba(168, 85, 247, 0.07);
       color: #c084fc;
     }
   }
@@ -408,15 +414,28 @@
   &__progress-label {
     font-size: var(--font-size-xs);
     font-family: var(--font-family-text);
-    color: rgba(255,255,255,0.3);
+    color: rgba(255, 255, 255, 0.3);
     text-align: center;
     white-space: nowrap;
 
-    .my-orders__progress-step--done &    { color: var(--color-space-text-muted); }
-    .my-orders__progress-step--active &  { color: var(--color-brand-yellow); font-weight: 600; }
-    .my-orders__progress-step--danger &  { color: #f87171; font-weight: 600; }
-    .my-orders__progress-step--success & { color: #4ade80; font-weight: 600; }
-    .my-orders__progress-step--muted &   { color: #c084fc; }
+    .my-orders__progress-step--done & {
+      color: var(--color-space-text-muted);
+    }
+    .my-orders__progress-step--active & {
+      color: var(--color-brand-yellow);
+      font-weight: 600;
+    }
+    .my-orders__progress-step--danger & {
+      color: #f87171;
+      font-weight: 600;
+    }
+    .my-orders__progress-step--success & {
+      color: #4ade80;
+      font-weight: 600;
+    }
+    .my-orders__progress-step--muted & {
+      color: #c084fc;
+    }
   }
 
   &__footer {
