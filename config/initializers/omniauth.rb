@@ -17,7 +17,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
       Rails.application.credentials.dig(:idv, :client_secret),
       {
         name: :hack_club,
-        scope: "openid email name profile verification_status slack_id",
+        scope: "openid email name profile verification_status slack_id address phone",
         callback_path: "/oauth/callback",
         client_options: {
           site:         HCAService.host,
