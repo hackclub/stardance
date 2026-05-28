@@ -102,6 +102,15 @@ class ShopItem::FreeStickers < ShopItem
       return
     end
 
+    if Rails.env.development? || Rails.env.test?
+      # Theseus isn't reachable locally and credentialed dev envs don't ship
+      # actual stickers — pretend the queue accepted the letter so the shop
+      # walkthrough can complete end-to-end without external services.
+      Rails.logger.info("FreeStickers order #{shop_order.id}: dev-mode bypass, marking fulfilled without Theseus call")
+      shop_order.mark_fulfilled!("dev-bypass-#{shop_order.id}", nil, "System")
+      return
+    end
+
     response = TheseusService.create_letter_v1(
       QUEUE_ID,
       {

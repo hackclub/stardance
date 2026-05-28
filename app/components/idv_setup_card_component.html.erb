@@ -24,6 +24,14 @@
         ) %>
   <% end %>
 
+  <% if Rails.env.development? %>
+    <%= button_to "Pretend IDV is verified (dev)",
+                  my_pretend_idv_dev_path,
+                  method: :post,
+                  class: "action-btn action-btn--small action-btn--secondary idv-setup-card__dev-cta",
+                  form: { class: "idv-setup-card__dev-form" } %>
+  <% end %>
+
   <footer class="idv-setup-card__footer">
     <p class="idv-setup-card__footer-line">501(c)(3) nonprofit · We don't sell data or run ads</p>
     <p class="idv-setup-card__footer-links">

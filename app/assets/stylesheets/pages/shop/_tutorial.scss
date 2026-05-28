@@ -1,7 +1,6 @@
 // Shop preview banner (visible to users without a first project yet) and the
-// shop tutorial overlay (visible to users who have a first project + HCA but
-// haven't walked through the shop). Both sit at the top of /shop and use
-// surfaces from set 3 / set 4 to read as distinct from the regular grid.
+// inline tutorial integrations that live inside the shop grid itself once the
+// user is HCA-linked + has a project but hasn't completed the walkthrough.
 
 .shop-preview {
   align-items: stretch;
@@ -58,130 +57,36 @@
   }
 }
 
-.shop-tutorial {
-  background: var(--color-set-2-bg, #343651);
-  border: 2px solid var(--color-brand-highlight);
-  border-radius: 8px;
-  color: var(--color-brand-cream);
+// Inline prompt that sits right above the shop grid in tutorial mode —
+// quieter than a full banner, points down at the spotlighted tiles below.
+.shop__tutorial-prompt {
+  align-items: baseline;
+  background: rgba(244, 235, 185, 0.08);
+  border-left: 3px solid var(--color-brand-highlight);
+  border-radius: 0 6px 6px 0;
+  color: var(--color-brand-off-white);
   display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-  padding: 1.5rem;
+  flex-wrap: wrap;
+  font-size: var(--font-size-m);
+  gap: 0.5rem 0.85rem;
+  margin: 0 0 1rem;
+  padding: 0.65rem 1rem;
+}
 
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+.shop__tutorial-prompt-eyebrow {
+  color: var(--color-brand-mint);
+  font-size: var(--font-size-s);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 
-  &__eyebrow {
-    color: var(--color-brand-mint);
-    font-size: var(--font-size-s);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    margin: 0;
-    text-transform: uppercase;
-  }
+.shop__tutorial-prompt-text {
+  line-height: 1.4;
 
-  &__title {
+  strong {
     color: var(--color-brand-cream);
-    font-family: "Playfair Display", serif;
-    font-size: var(--font-size-xl, 1.75rem);
-    font-style: italic;
     font-weight: 700;
-    margin: 0;
-  }
-
-  &__lede {
-    color: var(--color-brand-off-white);
-    font-size: var(--font-size-m);
-    line-height: 1.5;
-    margin: 0;
-
-    &--alert {
-      color: var(--color-brand-salmon);
-    }
-  }
-
-  &__tiles {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  }
-
-  &__tile {
-    align-items: stretch;
-    background: var(--color-set-3-bg, #606684);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    color: inherit;
-    display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    text-decoration: none;
-    transition:
-      border-color 120ms ease,
-      transform 120ms ease;
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--color-brand-highlight);
-      outline: none;
-      transform: translateY(-2px);
-    }
-  }
-
-  &__tile-art {
-    align-items: center;
-    background: var(--color-set-1-bg, #08061e);
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    flex: 0 0 96px;
-    height: 96px;
-    overflow: hidden;
-    width: 96px;
-
-    &--minimal {
-      color: var(--color-brand-highlight);
-      font-family: "Playfair Display", serif;
-      font-size: 3rem;
-      font-style: italic;
-    }
-  }
-
-  &__tile-img {
-    height: auto;
-    max-width: 100%;
-    width: 100%;
-  }
-
-  &__tile-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    justify-content: center;
-  }
-
-  &__tile-title {
-    color: var(--color-brand-cream);
-    font-size: var(--font-size-l, 1.25rem);
-    font-weight: 700;
-    margin: 0;
-  }
-
-  &__tile-desc {
-    color: var(--color-brand-off-white);
-    font-size: var(--font-size-s);
-    margin: 0;
-  }
-
-  &__tile-cta {
-    color: var(--color-brand-highlight);
-    font-size: var(--font-size-s);
-    font-weight: 600;
-    margin-top: 0.35rem;
   }
 }
 
@@ -192,4 +97,38 @@
   opacity: 0.55;
   pointer-events: none;
   user-select: none;
+}
+
+// Spotlight on the two tutorial picks — a glowing border + small badge so
+// they catch the eye inside the regular grid without needing a separate
+// banner above.
+.shop-item-card--spotlight {
+  box-shadow:
+    0 0 0 2px var(--color-brand-highlight),
+    0 12px 40px rgba(244, 235, 185, 0.25);
+  position: relative;
+  transform: translateY(-2px);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+}
+
+.shop-item-card__spotlight-badge {
+  background: var(--color-brand-highlight);
+  border-radius: 999px;
+  color: var(--color-space-bg);
+  font-family: "Exo 2", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  left: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.6rem;
+  position: absolute;
+  text-transform: uppercase;
+  top: 0.75rem;
+  z-index: 2;
 }

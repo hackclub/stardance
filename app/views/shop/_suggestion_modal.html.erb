@@ -1,0 +1,39 @@
+<dialog id="shop-suggestion-modal" class="shop-suggestion-modal">
+  <button type="button" class="shop-suggestion-modal__close" onclick="document.getElementById('shop-suggestion-modal').close()" aria-label="Close">
+    X
+  </button>
+
+  <h2 class="shop-suggestion-modal__title">The Suggestion Box</h2>
+  <p class="shop-suggestion-modal__description">Have an idea for something we should add to the shop? Let us know!</p>
+
+  <%= form_with model: ShopSuggestion.new, url: shop_suggestions_path, local: true, class: "shop-suggestion-modal__form" do |f| %>
+    <div class="shop-suggestion-modal__field">
+      <%= f.label :item, "What can we add?" %>
+      <%= f.text_area :item,
+                      placeholder: "A super cool HeidixOrpheusxForever plushie!",
+                      rows: 1,
+                      required: true,
+                      minlength: 10,
+                      maxlength: 1000 %>
+    </div>
+
+    <div class="shop-suggestion-modal__field">
+      <%= f.label :explanation, "How would this help you as a hacker?" %>
+      <%= f.text_area :explanation,
+                      placeholder: "The entire world needs this...",
+                      rows: 4,
+                      required: true,
+                      minlength: 10,
+                      maxlength: 10000 %>
+    </div>
+
+    <div class="shop-suggestion-modal__field">
+      <%= f.label :link, "Link to the item (if applicable)" %>
+      <%= f.url_field :link,
+                      placeholder: "https://hackclub.com/iwantmoreplushies",
+                      maxlength: 2000 %>
+    </div>
+
+    <%= f.submit "Submit Suggestion", class: "action-btn action-btn--large action-btn--primary" %>
+  <% end %>
+</dialog>

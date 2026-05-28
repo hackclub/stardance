@@ -1,0 +1,135 @@
+// Per-category shop subpage — "Hardware Shop", "HQ Shop", etc.
+
+.shop-category {
+  color: var(--color-space-text);
+  margin: 0 auto;
+  max-width: 1400px;
+  padding: 1.25rem 2rem 4rem;
+
+  &__title-row {
+    align-items: center;
+    display: flex;
+    gap: 1.25rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  &__title {
+    color: var(--color-space-text);
+    font-family: "Exo 2", sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+  }
+
+  &__title-divider {
+    background:
+      radial-gradient(
+          circle,
+          var(--color-brand-highlight) 0 4px,
+          transparent 5px
+        )
+        right center / 14px 14px no-repeat,
+      linear-gradient(
+        to right,
+        transparent,
+        rgba(244, 235, 185, 0.55) 30%,
+        rgba(244, 235, 185, 0.55) 100%
+      );
+    flex: 1 1 240px;
+    height: 14px;
+    max-width: 320px;
+
+    &--right {
+      background:
+        radial-gradient(
+            circle,
+            var(--color-brand-highlight) 0 4px,
+            transparent 5px
+          )
+          left center / 14px 14px no-repeat,
+        linear-gradient(
+          to right,
+          rgba(244, 235, 185, 0.55) 0%,
+          rgba(244, 235, 185, 0.55) 70%,
+          transparent 100%
+        );
+    }
+  }
+
+  &__tutorial-prompt {
+    align-items: baseline;
+    background: rgba(244, 235, 185, 0.08);
+    border-left: 3px solid var(--color-brand-highlight);
+    border-radius: 0 6px 6px 0;
+    color: var(--color-brand-off-white);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.85rem;
+    margin: 0 0 1.5rem;
+    padding: 0.65rem 1rem;
+  }
+
+  &__tutorial-prompt-eyebrow {
+    color: var(--color-brand-mint);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  &__search {
+    flex: 0 1 425px;
+    margin: 0;
+    max-width: 425px;
+  }
+
+  &__filters {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-left: auto;
+  }
+
+  &__items {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    margin-bottom: 2rem;
+  }
+
+  &__empty {
+    color: var(--color-brand-off-white);
+    font-size: 1rem;
+    grid-column: 1 / -1;
+    margin: 2rem 0;
+    opacity: 0.7;
+    text-align: center;
+  }
+
+  &__back {
+    margin: 1.5rem 0 0;
+  }
+
+  &__back-link {
+    color: var(--color-brand-off-white);
+    font-size: 0.95rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-highlight);
+      text-decoration: underline;
+    }
+  }
+}

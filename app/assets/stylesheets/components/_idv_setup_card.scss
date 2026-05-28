@@ -54,6 +54,16 @@
     margin-top: 0.5rem;
   }
 
+  &__dev-cta {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+    opacity: 0.85;
+  }
+
+  &__dev-form {
+    margin: 0;
+  }
+
   &__footer {
     border-top: 1px solid rgba(255, 255, 255, 0.18);
     display: flex;
