@@ -18,20 +18,21 @@ class IdvBadgeComponent < ViewComponent::Base
     user.present? && !user.identity_verified?
   end
 
-  def tooltip
-    case context
-    when :profile
-      "Only you and Hack Club admins can see your profile until you verify your identity."
-    when :comment
-      "Only you and Hack Club admins can see this comment until you verify your identity."
-    when :post
-      "Only you and Hack Club admins can see this post until you verify your identity."
-    else
-      "Only you and Hack Club admins can see this devlog until you verify your identity."
-    end
+  # Pending = under review (warning/amber); needs_submission or ineligible
+  # (rejected/poor quality) = action needed (danger/red). Mirrors Flavortown's
+  # id_verification_ui_for variants.
+  def variant
+    user.verification_pending? ? "warning" : "danger"
   end
 
-  def link_path
-    helpers.user_path(user, anchor: "idv-setup")
+  def tooltip
+    noun = "your #{context}"
+    if user.verification_pending?
+      "Your identity is under review — #{noun} becomes public once it's approved."
+    elsif user.verification_ineligible?
+      "Your identity verification didn't go through — #{noun} stays private until it's sorted out."
+    else
+      "Only you and Hack Club admins can see #{noun} until you verify your identity."
+    end
   end
 end

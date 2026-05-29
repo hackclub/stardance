@@ -99,14 +99,19 @@
   }
 }
 
+// Round `!` warning shown to the owner on their own unverified profile,
+// devlogs, and the devlog composer. Opens the verify popup on click; a custom
+// tooltip explains the "private until verified" state on hover.
 .idv-badge {
+  appearance: none;
   align-items: center;
   background: var(--color-brand-salmon);
+  border: 0;
   border-radius: 999px;
   color: var(--color-space-bg);
+  cursor: pointer;
   display: inline-flex;
   font-family: "Exo 2", sans-serif;
-  font-size: 0.75rem;
   font-weight: 700;
   height: 1.25rem;
   justify-content: center;
@@ -126,24 +131,123 @@
   }
 
   &__icon {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    font-weight: 900;
     line-height: 1;
   }
 
-  &__sr {
-    border: 0;
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    width: 1px;
+  // Smaller than the default app tooltip — it labels a tiny badge.
+  &__tooltip {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: none;
   }
 
-  &--profile {
-    font-size: 0.85rem;
-    height: 1.5rem;
-    min-width: 1.5rem;
+  // Status variants (mirrors Flavortown's id_verification_ui_for). Base is the
+  // salmon "danger" look; pending swaps to an amber "under review" tone.
+  &--warning {
+    background: var(--color-brand-yellow);
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-peach, var(--color-brand-yellow));
+    }
+  }
+}
+
+// Verify-identity popup — same dialog shell + card treatment as the
+// "create new project" popup (see pages/projects/_new.scss).
+.idv-modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(560px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+
+  &::backdrop {
+    background: rgba(8, 6, 30, 0.75);
+    backdrop-filter: blur(4px);
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-m);
+    right: var(--space-m);
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-space-text);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+  }
+
+  &__card {
+    background: rgba(8, 6, 30, 0.6);
+    border: 2px solid #5e6687;
+    border-radius: 8px;
+    color: var(--color-space-text);
+    padding: var(--space-l) var(--space-l) var(--space-xl);
+  }
+
+  // The setup card sits inside the modal's own card: drop its standalone
+  // chrome, center everything, and use set-1 text colors with a Title-2 style
+  // heading (Exo 2, per the style guide / the create-project popup).
+  .idv-setup-card {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+
+    &__eyebrow {
+      color: var(--color-space-text-muted);
+    }
+
+    &__title {
+      color: var(--color-space-text);
+      font-family: var(--font-family-text);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-style: normal;
+      line-height: var(--line-height-headers);
+    }
+
+    &__body {
+      align-items: center;
+    }
+
+    &__lede {
+      color: var(--color-space-text);
+    }
+
+    &__cta,
+    &__dev-cta {
+      align-self: center;
+    }
+
+    &__footer {
+      align-items: center;
+      text-align: center;
+    }
+
+    &__footer-links {
+      justify-content: center;
+    }
   }
 }

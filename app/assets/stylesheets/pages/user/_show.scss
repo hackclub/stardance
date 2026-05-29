@@ -290,6 +290,41 @@ turbo-frame#profile_tabs {
   font-style: italic;
 }
 
+// Owner-only IDV status line under the bio, with the second clause as an
+// underlined trigger for the verify popup. Colour reflects the status:
+// danger (not verified / failed) vs warning (under review).
+.profile__idv-alert {
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  margin: 0.5rem 0 0;
+
+  &--danger {
+    color: var(--color-brand-salmon);
+  }
+
+  &--warning {
+    color: var(--color-brand-yellow);
+  }
+}
+
+.profile__idv-alert-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-yellow);
+    outline: none;
+  }
+}
+
 .bio-link {
   color: var(--color-space-text);
   text-decoration: underline;

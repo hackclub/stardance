@@ -1,8 +1,14 @@
-<%= link_to link_path,
-            class: "idv-badge idv-badge--#{context}",
-            title: tooltip,
-            aria: { label: tooltip },
-            data: { turbo: true } do %>
+<% tip_id = "idv-badge-#{SecureRandom.hex(4)}" %>
+<button id="<%= tip_id %>"
+        type="button"
+        class="idv-badge idv-badge--<%= context %> idv-badge--<%= variant %>"
+        aria-label="<%= tooltip %>"
+        onclick="document.getElementById('idv-verify-modal')?.showModal()">
   <span class="idv-badge__icon" aria-hidden="true">!</span>
-  <span class="idv-badge__sr">Verify your identity to make this visible</span>
-<% end %>
+</button>
+<span class="tooltip idv-badge__tooltip"
+      role="tooltip"
+      aria-hidden="true"
+      data-controller="tooltip"
+      data-tooltip-target-id-value="<%= tip_id %>"
+      data-tooltip-position-value="top"><%= tooltip %></span>

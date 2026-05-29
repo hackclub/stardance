@@ -9,7 +9,17 @@
      data-shop-wishlist-item-price-value="<%= display_price %>"
      data-shop-wishlist-item-image-value="<%= url_for(image_url) %>">
 
-  <%= link_to (interactive ? order_url : "#"), class: "shop-item-card__image-wrap", data: (interactive ? { turbo_frame: "_top" } : { turbo: false }), tabindex: (interactive ? nil : "-1") do %>
+  <%
+    if cta_mode == :tutorial_verify
+      image_href = "#"
+      image_opts = { class: "shop-item-card__image-wrap", onclick: "event.preventDefault(); #{OPEN_VERIFY_MODAL}" }
+    else
+      image_href = interactive ? order_url : "#"
+      image_opts = { class: "shop-item-card__image-wrap", data: (interactive ? { turbo_frame: "_top" } : { turbo: false }) }
+      image_opts[:tabindex] = "-1" unless interactive
+    end
+  %>
+  <%= link_to image_href, image_opts do %>
     <%= image_tag image_url, alt: "#{name} image", class: "shop-item-card__image", loading: "lazy" %>
     <%= lock_overlay_html %>
 
@@ -85,6 +95,12 @@
               class: "shop-item-card__order-cta",
               data: { turbo_frame: "_top" }
             ) %>
+      <% end %>
+    <% when :tutorial_verify %>
+      <% if logged_in %>
+        <button type="button"
+                class="action-btn action-btn--large action-btn--primary shop-item-card__order-cta"
+                onclick="document.getElementById('idv-verify-modal')?.showModal()">Buy now</button>
       <% end %>
     <% when :tutorial_locked %>
       <span class="action-btn action-btn--large action-btn--primary action-btn--disabled shop-item-card__order-cta shop-item-card__order-cta--locked" aria-disabled="true">Not enough Stardust</span>

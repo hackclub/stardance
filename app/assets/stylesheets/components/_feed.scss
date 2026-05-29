@@ -275,6 +275,13 @@
     gap: var(--space-xxs);
   }
 
+  // Unverified `!` warning sits just left of the Post button.
+  &__submit-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
   &__tool-btn {
     display: grid;
     place-items: center;

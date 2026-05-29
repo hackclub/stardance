@@ -14,10 +14,6 @@
 
 <div class="app-layout">
   <div class="app-layout__main">
-    <% if own_profile %>
-      <%= render IdvSetupCardComponent.new(user: @user) %>
-    <% end %>
-
     <%= turbo_frame_tag "profile_card" do %>
     <%= form_with model: @user, url: user_path(@user), method: :patch, multipart: true,
                   class: "profile",
@@ -122,6 +118,13 @@
                hidden></div>
           <p class="profile__bio-hint">Type <kbd>@</kbd> to mention a user, <kbd>$</kbd> to link a project.</p>
         </div>
+      <% end %>
+
+      <% if own_profile && (idv = idv_status_for(@user)) %>
+        <p class="profile__idv-alert profile__idv-alert--<%= idv[:variant] %>">
+          <%= idv[:line] %>
+          <button type="button" class="profile__idv-alert-link" onclick="document.getElementById('idv-verify-modal')?.showModal()"><%= idv[:cta] %></button>
+        </p>
       <% end %>
 
       <div class="profile__footer">

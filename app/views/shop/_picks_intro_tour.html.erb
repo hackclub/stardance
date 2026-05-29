@@ -5,14 +5,16 @@
   dismissal (shop_picks_intro) so it never shows again.
 %>
 <%
+  # The instruction + dismiss live in the inline cue beside the picks (see the
+  # shop hub), so this overlay only dims + spotlights the picks and centers
+  # them on screen. Its floating tooltip is hidden via CSS.
   steps = [
     {
       selector: "#shop-picks",
-      text: "Pick one of these to try buying something!",
       placement: "below",
-      nextLabel: "Ok, I'll do it!",
       padding: 16,
-      radius: 16
+      radius: 16,
+      scrollToCenter: true
     }
   ]
 %>
@@ -21,6 +23,7 @@
      data-controller="welcome-tour"
      data-welcome-tour-steps-value="<%= steps.to_json %>"
      data-welcome-tour-dismiss-thing-value="shop_picks_intro"
+     data-welcome-tour-lock-scroll-value="false"
      role="dialog"
      aria-modal="true"
      aria-label="Shop tip">

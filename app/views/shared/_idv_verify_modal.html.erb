@@ -1,0 +1,11 @@
+<%# Shared "verify your identity" popup, opened by the IDV alert badge from any
+    page (profile, feed, shop). Mounted once in the layout for unverified users.
+    Uses the same dialog/card treatment as the "create new project" popup. %>
+<% if current_user && !current_user.identity_verified? %>
+  <dialog id="idv-verify-modal" class="idv-modal" data-controller="modal" aria-label="Verify your identity">
+    <button type="button" class="idv-modal__close" aria-label="Close" onclick="this.closest('dialog').close()">&times;</button>
+    <div class="idv-modal__card">
+      <%= render IdvSetupCardComponent.new(user: current_user, dom_id: "idv-setup-modal") %>
+    </div>
+  </dialog>
+<% end %>

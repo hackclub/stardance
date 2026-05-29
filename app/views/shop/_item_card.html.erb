@@ -25,9 +25,13 @@
     stays a normal orderable card, so a card looks the same here as it does on
     a category page. %>
 <% item_interactive = mode != :preview %>
+<%# A tutorial pick's first gate is "verify your identity" when the viewer
+    isn't verified yet — surface the verify popup in place rather than routing
+    to a separate screen. Otherwise it's a normal "Buy now". %>
+<% pick_needs_verify = is_tutorial_pick && current_user && !current_user.identity_verified? %>
 <% cta_mode = case mode
               when :preview  then :preview_locked
-              when :tutorial then is_tutorial_pick ? :tutorial_buy : :order
+              when :tutorial then is_tutorial_pick ? (pick_needs_verify ? :tutorial_verify : :tutorial_buy) : :order
               else                :order
               end %>
 <%= render ShopItemCardComponent.new(

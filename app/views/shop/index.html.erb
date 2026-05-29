@@ -147,6 +147,11 @@
                     <%= inline_svg_tag "icons/tour-arrow.svg", class: "shop-hub__picks-cue-arrow", aria: { hidden: true }, focusable: false %>
                     <span class="shop-hub__picks-cue-text">Pick one of these to try buying something!</span>
                   </span>
+                  <% unless current_user&.has_dismissed?("shop_picks_intro") %>
+                    <button type="button"
+                            class="shop-hub__picks-cue-dismiss"
+                            onclick="document.dispatchEvent(new CustomEvent('welcome-tour:dismiss')); this.remove()">Ok, I'll do it!</button>
+                  <% end %>
                 </li>
               </ul>
             </div>

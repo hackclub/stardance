@@ -4,11 +4,12 @@
 # yet completed identity verification. Tone matches the link-account screen —
 # the goal is to reassure, explain why, and link to authoritative resources.
 class IdvSetupCardComponent < ViewComponent::Base
-  attr_reader :user, :return_to
+  attr_reader :user, :return_to, :dom_id
 
-  def initialize(user:, return_to: nil)
+  def initialize(user:, return_to: nil, dom_id: "idv-setup")
     @user = user
     @return_to = return_to
+    @dom_id = dom_id
   end
 
   def render?

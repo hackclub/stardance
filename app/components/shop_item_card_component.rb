@@ -1,7 +1,12 @@
 class ShopItemCardComponent < ViewComponent::Base
   include MarkdownHelper
 
-  CTA_MODES = %i[order tutorial_buy tutorial_locked preview_locked].freeze
+  CTA_MODES = %i[order tutorial_buy tutorial_verify tutorial_locked preview_locked].freeze
+
+  # JS to pop the shared verify modal (mounted in the layout for unverified
+  # users). Used when a tutorial pick's gate is "verify your identity" — we
+  # surface the popup in place instead of routing to a separate screen.
+  OPEN_VERIFY_MODAL = "document.getElementById('idv-verify-modal')?.showModal()".freeze
 
   attr_reader :item_id, :name, :description, :hours, :price, :image_url, :item_type, :balance, :enabled_regions, :regional_price, :logged_in, :interactive, :tutorial_spotlight, :cta_mode, :remaining_stock, :limited, :on_sale, :sale_percentage, :original_price, :created_at, :show_bow, :show_time_ago, :purchase_count, :is_new, :enabled_until, :locked_by_achievement, :required_achievement_names, :required_achievement_hints, :mission_locked, :unlocking_mission_names
 
