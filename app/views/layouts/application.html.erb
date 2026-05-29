@@ -89,6 +89,7 @@
     <div id="flash-region"><%= render "shared/flash" %></div>
     <%= render Onboarding::GuestBannerComponent.new %>
     <%= yield %>
+    <%= render "shared/idv_verify_modal" %>
     <% unless @hide_footer %>
       <footer class="dev-footer">
         <p>

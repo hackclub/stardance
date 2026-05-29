@@ -71,5 +71,15 @@ module Posts
     def likeable
       postable if devlog?
     end
+
+    # When the current user is the post's author and they haven't yet verified
+    # their identity, surface a small badge in the card header to remind them
+    # that this content is hidden from everyone except admins.
+    def show_idv_badge?
+      current_user.present? &&
+        author.present? &&
+        current_user.id == author.id &&
+        !current_user.identity_verified?
+    end
   end
 end

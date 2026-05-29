@@ -1,0 +1,17 @@
+<% content_for :title, "Verifying…" %>
+<% @body_class = "app-layout-page" %>
+
+<div class="app-layout">
+  <div class="app-layout__main">
+    <section class="profile-placeholder" aria-live="polite">
+      <div class="profile-placeholder__avatar-wrap">
+        <%= image_tag @user.avatar, alt: "", class: "profile-placeholder__avatar" %>
+      </div>
+
+      <h1 class="profile-placeholder__handle">@<%= @user.display_name.presence || "stardancer" %></h1>
+      <p class="profile-placeholder__lede">This stardancer is still verifying their identity. Check back soon — their profile and devlogs will show up once they're done.</p>
+    </section>
+  </div>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

@@ -55,7 +55,7 @@
           </div>
 
           <div class="profile__identity-text">
-            <h1 class="profile__handle">@<%= @user.display_name %></h1>
+            <h1 class="profile__handle">@<%= @user.display_name %><% if own_profile %><%= render IdvBadgeComponent.new(user: @user, context: :profile) %><% end %></h1>
             <% if own_profile %>
               <div class="profile__handle-edit"
                    data-controller="username-availability"
@@ -118,6 +118,13 @@
                hidden></div>
           <p class="profile__bio-hint">Type <kbd>@</kbd> to mention a user, <kbd>$</kbd> to link a project.</p>
         </div>
+      <% end %>
+
+      <% if own_profile && (idv = idv_status_for(@user)) %>
+        <p class="profile__idv-alert profile__idv-alert--<%= idv[:variant] %>">
+          <%= idv[:line] %>
+          <button type="button" class="profile__idv-alert-link" onclick="document.getElementById('idv-verify-modal')?.showModal()"><%= idv[:cta] %></button>
+        </p>
       <% end %>
 
       <div class="profile__footer">

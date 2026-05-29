@@ -5,6 +5,11 @@ class UsersController < ApplicationController
   ALLOWED_TABS = %w[feed devlogs replies projects].freeze
 
   def show
+    if profile_hidden_from_viewer?
+      render "users/unverified_placeholder", layout: "application"
+      return
+    end
+
     tab = params[:tab].presence_in(ALLOWED_TABS) || "feed"
     load_profile(tab)
   end
@@ -75,6 +80,7 @@ class UsersController < ApplicationController
   def profile_activity
     scope = Post.joins(:project)
                 .merge(Project.not_deleted)
+                .visible_to(current_user)
                 .where(user_id: @user.id)
                 .preload(:project, :user, postable: [ { attachments_attachments: :blob } ])
                 .order(created_at: :desc)
@@ -106,5 +112,14 @@ class UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:bio, :banner, :display_name)
+  end
+
+  # Non-admin, non-self viewers see a placeholder until the user verifies.
+  def profile_hidden_from_viewer?
+    return false if @user.identity_verified?
+    return false if current_user&.admin?
+    return false if current_user&.id == @user.id
+
+    true
   end
 end

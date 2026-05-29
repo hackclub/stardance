@@ -24,6 +24,10 @@
         <time class="feed-post-card__time" datetime="<%= post.created_at.iso8601 %>" title="<%= l(post.created_at, format: :long) %>">
           · <%= time_ago_in_words(post.created_at) %>
         </time>
+
+        <% if show_idv_badge? %>
+          <%= render IdvBadgeComponent.new(user: current_user, context: devlog? ? :devlog : :post) %>
+        <% end %>
       </p>
 
       <% if devlog? && postable.respond_to?(:duration_seconds) && postable.duration_seconds.present? %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1055,6 +1055,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
     t.datetime "synced_at"
     t.string "things_dismissed", default: [], null: false, array: true
     t.datetime "updated_at", null: false
+    t.datetime "verification_checked_at"
     t.string "verification_status", default: "needs_submission", null: false
     t.integer "vote_balance", default: 0, null: false
     t.integer "votes_count"

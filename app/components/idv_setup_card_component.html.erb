@@ -1,0 +1,52 @@
+<section class="idv-setup-card" id="<%= dom_id %>" data-controller="idv-setup">
+  <p class="idv-setup-card__eyebrow"><%= status_eyebrow %></p>
+  <h2 class="idv-setup-card__title"><%= title %></h2>
+
+  <div class="idv-setup-card__body">
+    <% if pending? %>
+      <p class="idv-setup-card__lede">Your verification is in the queue. As soon as it's approved, your profile and devlogs become visible to other builders. We'll email you when it's done.</p>
+    <% elsif ineligible? %>
+      <p class="idv-setup-card__lede">Your last verification attempt didn't go through. Open the Hack Club portal to see what happened or contact support if you're stuck.</p>
+    <% else %>
+      <p class="idv-setup-card__lede">Right now, only you (and Hack Club admins) can see your profile and devlogs. Verify your identity through Hack Club to make your work public — it takes a minute and you'll come right back here.</p>
+      <p class="idv-setup-card__lede">Stardance is run by Hack Club, a 501(c)(3) nonprofit. Verification is part of how we keep the program safe and meet the recordkeeping rules nonprofits have to follow.</p>
+    <% end %>
+  </div>
+
+  <% if pending? %>
+    <%= button_to "Check verification status",
+                  my_verification_refresh_path,
+                  method: :post,
+                  class: "action-btn action-btn--large action-btn--primary idv-setup-card__cta",
+                  form: { class: "idv-setup-card__cta-form" } %>
+  <% else %>
+    <%= render ActionButtonComponent.new(
+          text: ineligible? ? "Re-open Hack Club verification" : "Verify your identity",
+          href: verify_url,
+          variant: :primary,
+          size: :large,
+          class: "idv-setup-card__cta",
+          data: { turbo: false }
+        ) %>
+  <% end %>
+
+  <% if user.verification_checked_at.present? %>
+    <p class="idv-setup-card__checked">Last checked <%= helpers.time_ago_in_words(user.verification_checked_at) %> ago</p>
+  <% end %>
+
+  <% if Rails.env.development? %>
+    <%= button_to "Pretend IDV is verified (dev)",
+                  my_pretend_idv_dev_path,
+                  method: :post,
+                  class: "action-btn action-btn--small action-btn--secondary idv-setup-card__dev-cta",
+                  form: { class: "idv-setup-card__dev-form" } %>
+  <% end %>
+
+  <footer class="idv-setup-card__footer">
+    <p class="idv-setup-card__footer-line">501(c)(3) nonprofit · We don't sell data or run ads</p>
+    <p class="idv-setup-card__footer-links">
+      <%= link_to "Why we ask for your info →", guide_path("why_we_ask"), target: "_blank", rel: "noopener", class: "idv-setup-card__footer-link" %>
+      <%= link_to "Privacy policy →", "https://hackclub.com/privacy", target: "_blank", rel: "noopener", class: "idv-setup-card__footer-link" %>
+    </p>
+  </footer>
+</section>

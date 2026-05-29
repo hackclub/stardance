@@ -1,7 +1,7 @@
 .feed-home {
   display: flex;
   flex-direction: column;
-  gap: var(--space-m);
+  gap: 14px;
   width: 100%;
 }
 
@@ -93,14 +93,17 @@
 }
 
 .feed-composer {
-  padding: var(--space-m);
+  --feed-avatar-size: 39px;
+  --feed-content-offset: 50px;
+
+  padding: 14px;
 
   &__chips {
     display: flex;
     flex-wrap: nowrap;
     gap: var(--space-xs);
-    margin-left: 56px;
-    margin-bottom: var(--space-s);
+    margin-left: var(--feed-content-offset);
+    margin-bottom: 11px;
     overflow-x: auto;
     scrollbar-width: none;
 
@@ -117,8 +120,8 @@
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
-    min-height: 32px;
-    padding: 0 var(--space-s);
+    min-height: 29px;
+    padding: 0 11px;
     border: 2px solid var(--color-space-border);
     border-radius: 999px;
     color: var(--color-space-text-muted);
@@ -146,13 +149,13 @@
 
   &__main {
     display: flex;
-    gap: var(--space-m);
+    gap: 11px;
     align-items: flex-start;
   }
 
   &__avatar {
-    width: 44px;
-    height: 44px;
+    width: var(--feed-avatar-size);
+    height: var(--feed-avatar-size);
     border-radius: 50%;
     object-fit: cover;
     flex: 0 0 auto;
@@ -183,7 +186,7 @@
     background: transparent;
     color: var(--color-space-text);
     font: inherit;
-    font-size: var(--font-size-xxl);
+    font-size: 1.55rem;
     line-height: 1.2;
     outline: none;
 
@@ -218,10 +221,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-s);
+    gap: 11px;
     min-height: 0;
-    margin: var(--space-xs) 0 var(--space-xs) 56px;
-    padding: var(--space-l);
+    margin: var(--space-xs) 0 var(--space-xs) var(--feed-content-offset);
+    padding: 21px;
     border: 2px dashed var(--color-space-border);
     border-radius: var(--border-radius);
     color: var(--color-space-text-muted);
@@ -245,8 +248,8 @@
   }
 
   &__attach-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 
   &__file-input {
@@ -260,9 +263,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-m);
+    gap: 14px;
     padding-top: var(--space-xs);
-    margin-left: 56px;
+    margin-left: var(--feed-content-offset);
 
     @media (max-width: 640px) {
       margin-left: 0;
@@ -275,11 +278,18 @@
     gap: var(--space-xxs);
   }
 
+  // Unverified `!` warning sits just left of the Post button.
+  &__submit-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
   &__tool-btn {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: 0;
     border-radius: 50%;
@@ -298,8 +308,8 @@
   }
 
   &__tool-icon {
-    width: 25px;
-    height: 25px;
+    width: 22px;
+    height: 22px;
   }
 
   &__emoji-wrap {
@@ -325,7 +335,12 @@
 
   &__submit {
     border-radius: 999px;
-    min-width: 108px;
+    min-width: 95px;
+  }
+
+  &__submit.action-btn--small {
+    font-size: 14px;
+    padding: 3px 14px;
   }
 
   &__info {
@@ -339,7 +354,7 @@
   }
 
   &__info-text {
-    font-size: var(--font-size-s);
+    font-size: calc(var(--font-size-s) * 1.2);
     color: var(--color-space-text-muted);
 
     &--warn {
@@ -356,7 +371,7 @@
   &__grid {
     display: grid;
     gap: var(--space-xs);
-    padding-left: 56px;
+    padding-left: var(--feed-content-offset);
     border-radius: calc(var(--border-radius) * 0.65);
     overflow: hidden;
 
@@ -366,18 +381,18 @@
 
     &[data-count="1"] {
       grid-template-columns: 1fr;
-      height: 220px;
+      height: 194px;
     }
 
     &[data-count="2"] {
       grid-template-columns: 1fr 1fr;
-      height: 180px;
+      height: 158px;
     }
 
     &[data-count="3"] {
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
-      height: 220px;
+      height: 194px;
 
       > :first-child {
         grid-row: 1 / -1;
@@ -387,7 +402,7 @@
     &[data-count="4"] {
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
-      height: 220px;
+      height: 194px;
     }
 
     @media (max-width: 640px) {
@@ -437,20 +452,23 @@
 }
 
 .feed-post-card {
-  padding: var(--space-m);
+  --feed-avatar-size: 39px;
+  --feed-content-offset: 50px;
+
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-m);
+  gap: 14px;
 
   &__header {
     display: flex;
     align-items: flex-start;
-    gap: var(--space-m);
+    gap: 11px;
   }
 
   &__avatar {
-    width: 44px;
-    height: 44px;
+    width: var(--feed-avatar-size);
+    height: var(--feed-avatar-size);
     border-radius: 50%;
     object-fit: cover;
     display: grid;
@@ -467,7 +485,7 @@
   &__byline {
     margin: 0;
     color: var(--color-space-text-muted);
-    font-size: var(--font-size-l);
+    font-size: calc(var(--font-size-s) * 1.2);
     line-height: 1.25;
   }
 
@@ -496,12 +514,12 @@
 
   &__duration {
     margin: var(--space-xxs) 0 0;
-    font-size: var(--font-size-s);
+    font-size: calc(var(--font-size-s) * 1.2);
   }
 
   &__body {
-    padding-left: 56px;
-    font-size: var(--font-size-l);
+    padding-left: var(--feed-content-offset);
+    font-size: calc(var(--font-size-s) * 1.2);
     line-height: 1.4;
     overflow-wrap: anywhere;
 
@@ -519,7 +537,7 @@
   }
 
   &__media {
-    padding-left: 56px;
+    padding-left: var(--feed-content-offset);
 
     @media (max-width: 640px) {
       padding-left: 0;
@@ -563,8 +581,8 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
+    width: 29px;
+    height: 29px;
     border-radius: 50%;
     border: 0;
     display: grid;
@@ -600,11 +618,11 @@
   }
 
   &__actions {
-    padding-left: 56px;
+    padding-left: var(--feed-content-offset);
     display: grid;
-    grid-template-columns: repeat(3, minmax(72px, 1fr)) auto;
+    grid-template-columns: repeat(3, minmax(64px, 1fr)) auto;
     align-items: center;
-    gap: var(--space-m);
+    gap: 14px;
     color: var(--color-space-text-muted);
 
     @media (max-width: 640px) {
@@ -616,7 +634,7 @@
   &__action,
   &__more,
   .like-button__btn {
-    min-height: 36px;
+    min-height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -631,8 +649,8 @@
 
   &__action-icon,
   .like-button__icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     fill: currentColor;
     color: currentColor;
   }
@@ -666,7 +684,7 @@
   }
 
   .like-button__count {
-    font-size: var(--font-size-m);
+    font-size: calc(var(--font-size-s) * 1.2);
   }
 
   &__more {
@@ -678,7 +696,7 @@
 .feed-shelf {
   display: flex;
   flex-direction: column;
-  gap: var(--space-s);
+  gap: 11px;
   overflow: hidden;
 
   &__header {
@@ -690,7 +708,7 @@
   &__title {
     margin: 0;
     color: var(--color-yellow-200);
-    font-size: var(--font-size-xl);
+    font-size: calc(var(--font-size-m) * 1.2);
     line-height: 1;
     text-transform: uppercase;
     font-weight: 700;
@@ -710,8 +728,8 @@
   &__rail {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(236px, 1fr);
-    gap: var(--space-m);
+    grid-auto-columns: minmax(300px, 1fr);
+    gap: 14px;
     overflow-x: auto;
     padding-bottom: var(--space-xs);
     scroll-snap-type: x proximity;
@@ -758,18 +776,18 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
-    padding: var(--space-m);
+    padding: 14px;
   }
 
   &__title {
-    font-size: var(--font-size-xl);
+    font-size: calc(var(--font-size-m) * 1.2);
     font-weight: 700;
     line-height: 1.1;
   }
 
   &__description {
     color: var(--color-space-text-muted);
-    font-size: var(--font-size-m);
+    font-size: calc(var(--font-size-s) * 1.2);
     line-height: 1.25;
   }
 }

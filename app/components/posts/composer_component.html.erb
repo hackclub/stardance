@@ -95,15 +95,18 @@
           </div>
         </div>
 
-        <%= render ActionButtonComponent.new(
-              text: "Post",
-              size: :small,
-              type: :submit,
-              disable_with: "Posting...",
-              disabled: true,
-              class: "feed-composer__submit",
-              data: { composer_target: "submit" }
-            ) %>
+        <div class="feed-composer__submit-group">
+          <%= render IdvBadgeComponent.new(user: current_user, context: :devlog) %>
+          <%= render ActionButtonComponent.new(
+                text: "Post",
+                size: :small,
+                type: :submit,
+                disable_with: "Posting...",
+                disabled: true,
+                class: "feed-composer__submit",
+                data: { composer_target: "submit" }
+              ) %>
+        </div>
       </div>
     <% end %>
   </section>

@@ -32,6 +32,10 @@ module User::Verification
     status = payload["verification_status"].to_s
     return :invalid_status unless self.class.verification_statuses.key?(status)
 
+    # Record when we last pulled a status from HCA — drives the "last checked"
+    # line on the verify popup — regardless of whether anything changed.
+    update_columns(verification_checked_at: Time.current)
+
     fatal_rejection = payload["fatal_rejection"] == true
     return :ignored_ineligible if status == "ineligible" && !fatal_rejection
 

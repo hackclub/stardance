@@ -6,7 +6,7 @@
 }
 
 body {
-  --sidebar-width: 280px;
+  --sidebar-width: 246px;
   --sidebar-inset: 16px;
   --sidebar-reserved: calc(var(--sidebar-width) + var(--sidebar-inset));
 
@@ -27,12 +27,12 @@ body.signed-in {
   background-color: var(--color-space-bg);
   color: var(--color-space-text);
   margin-left: var(--sidebar-reserved);
-  margin-right: 100px;
+  margin-right: 88px;
 
   @media (max-width: 1500px) {
-    --sidebar-width: 220px;
+    --sidebar-width: 194px;
     --sidebar-inset: 12px;
-    margin-right: 32px;
+    margin-right: 29px;
   }
 
   @media (max-width: 960px) {
@@ -73,16 +73,16 @@ body.app-layout-page.signed-in {
 }
 
 .app-layout {
-  --layout-gap: 32px;
+  --layout-gap: 29px;
   --nav-reserved: calc(var(--sidebar-reserved) + var(--layout-gap));
-  --aside-reserved: 320px;
+  --aside-reserved: 282px;
 
   margin-left: var(--nav-reserved);
   margin-right: calc(var(--aside-reserved) + var(--layout-gap));
-  padding: var(--space-xl) 0 var(--space-xxl);
+  padding: 29px 0 var(--space-xl);
 
   @media (max-width: 1500px) {
-    --layout-gap: 24px;
+    --layout-gap: 22px;
   }
 
   @media (max-width: 1280px) {
@@ -100,12 +100,12 @@ body.app-layout-page.signed-in {
 }
 
 .app-layout__main {
-  max-width: 820px;
+  max-width: 722px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-m);
+  gap: 14px;
 }
 
 // Full-width variant — drops the reading-column cap; for rail-less pages.

@@ -8,6 +8,7 @@ class SearchController < ApplicationController
     q = params[:q].to_s.strip.delete_prefix("@")
 
     scope = User.discoverable.where.not(display_name: [ nil, "" ])
+    scope = scope.where(verification_status: "verified") unless current_user&.admin?
     scope = scope.where("LOWER(display_name) LIKE ?", "#{q.downcase}%") if q.present?
 
     results = scope

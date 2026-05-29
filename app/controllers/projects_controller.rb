@@ -67,6 +67,7 @@ class ProjectsController < ApplicationController
 
     load_posts = -> {
       @project.posts
+               .visible_to(current_user)
                .includes(postable: [ :attachments_attachments ])
                .order(created_at: :desc)
                .select { |post| post.postable.present? }

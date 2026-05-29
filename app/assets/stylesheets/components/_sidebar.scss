@@ -1,5 +1,5 @@
 .sidebar {
-  --sidebar-width: 280px;
+  --sidebar-width: 246px;
   --sidebar-inset: 16px;
   --sidebar-inset-y: var(--space-s); // tiny top + bottom edges
 
@@ -8,7 +8,7 @@
   bottom: var(--sidebar-inset-y);
   left: var(--sidebar-inset);
   width: var(--sidebar-width);
-  padding: var(--space-l) var(--space-m);
+  padding: 21px 14px;
   display: flex;
   flex-direction: column;
   z-index: 10;
@@ -116,7 +116,7 @@
   display: block;
   width: 100%;
   height: auto;
-  max-width: 220px;
+  max-width: 194px;
 }
 
 .sidebar__nav {
@@ -129,7 +129,7 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--space-m);
+  gap: 14px;
   padding: 0;
   margin: 0;
 }
@@ -142,7 +142,7 @@
   padding: var(--space-xxs) 0;
   color: var(--color-space-text);
   font-family: var(--font-family-text);
-  font-size: var(--font-size-xxxl);
+  font-size: 1.76rem;
   line-height: 1.2;
   text-decoration: none;
   width: 100%;
@@ -243,11 +243,11 @@ button.sidebar__nav-link {
 }
 
 .sidebar__nav-link--active {
-  font-size: calc(var(--font-size-xxxl) * 1.15);
+  font-size: 2.04rem;
 }
 
 .sidebar__nav-link--active .sidebar__nav-icon-wrapper {
-  --sidebar-icon-size: 3.5rem;
+  --sidebar-icon-size: 3.08rem;
 }
 
 .sidebar__nav-link--active .sidebar__nav-label {
@@ -264,7 +264,7 @@ button.sidebar__nav-link {
 }
 
 .sidebar__nav-icon-wrapper {
-  --sidebar-icon-size: 3rem;
+  --sidebar-icon-size: 2.64rem;
 
   position: relative;
   display: grid;
@@ -404,29 +404,33 @@ button.sidebar__nav-link {
 
 @media (max-width: 1500px) {
   .sidebar {
-    --sidebar-width: 220px;
+    --sidebar-width: 194px;
 
-    padding: var(--space-m) var(--space-s);
+    padding: 14px 11px;
   }
 
   .sidebar__logo-img {
-    max-width: 190px;
+    max-width: 167px;
   }
 
   .sidebar__nav-icon-wrapper {
-    --sidebar-icon-size: 2.4rem;
+    --sidebar-icon-size: 2.15rem;
   }
 
   .sidebar__nav-link--active .sidebar__nav-icon-wrapper {
-    --sidebar-icon-size: 2.8rem;
+    --sidebar-icon-size: 2.48rem;
   }
 
   .sidebar__nav-link {
-    font-size: var(--font-size-xxl);
+    font-size: 1.32rem;
+  }
+
+  .sidebar__nav-link--active {
+    font-size: 1.52rem;
   }
 
   .sidebar__nav-list {
-    gap: var(--space-s);
+    gap: 11px;
   }
 
   .sidebar__user-meta {
