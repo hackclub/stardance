@@ -2,30 +2,38 @@
 #
 # Table name: shop_item_modifiers
 #
-#  id             :bigint           not null, primary key
-#  enabled        :boolean          default(TRUE), not null
-#  enabled_au     :boolean
-#  enabled_ca     :boolean
-#  enabled_eu     :boolean
-#  enabled_in     :boolean
-#  enabled_uk     :boolean
-#  enabled_us     :boolean
-#  enabled_xx     :boolean
-#  group_name     :string
-#  name           :string           not null
-#  position       :integer          default(0), not null
-#  ticket_cost    :integer          default(0), not null
-#  usd_cost       :decimal(10, 2)
-#  usd_offset_au  :decimal(10, 2)
-#  usd_offset_ca  :decimal(10, 2)
-#  usd_offset_eu  :decimal(10, 2)
-#  usd_offset_in  :decimal(10, 2)
-#  usd_offset_uk  :decimal(10, 2)
-#  usd_offset_us  :decimal(10, 2)
-#  usd_offset_xx  :decimal(10, 2)
-#  created_at     :datetime         not null
-#  updated_at     :datetime         not null
-#  shop_item_id   :bigint           not null
+#  id            :bigint           not null, primary key
+#  enabled       :boolean          default(TRUE), not null
+#  enabled_au    :boolean
+#  enabled_ca    :boolean
+#  enabled_eu    :boolean
+#  enabled_in    :boolean
+#  enabled_uk    :boolean
+#  enabled_us    :boolean
+#  enabled_xx    :boolean
+#  group_name    :string
+#  name          :string           not null
+#  position      :integer          default(0), not null
+#  ticket_cost   :integer          default(0), not null
+#  usd_cost      :decimal(10, 2)
+#  usd_offset_au :decimal(10, 2)
+#  usd_offset_ca :decimal(10, 2)
+#  usd_offset_eu :decimal(10, 2)
+#  usd_offset_in :decimal(10, 2)
+#  usd_offset_uk :decimal(10, 2)
+#  usd_offset_us :decimal(10, 2)
+#  usd_offset_xx :decimal(10, 2)
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  shop_item_id  :bigint           not null
+#
+# Indexes
+#
+#  index_shop_item_modifiers_on_shop_item_id  (shop_item_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (shop_item_id => shop_items.id)
 #
 class ShopItemModifier < ApplicationRecord
   include Shop::Regionalizable

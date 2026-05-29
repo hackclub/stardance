@@ -2,26 +2,22 @@
 #
 # Table name: missions
 #
-#  id                           :bigint           not null, primary key
-#  achievement_description      :text
-#  achievement_name             :string
-#  default_project_description  :text
-#  default_project_title        :string
-#  deleted_at                   :datetime
-#  description                  :text             not null
-#  difficulty                   :string
-#  enabled                      :boolean          default(TRUE), not null
-#  end_at                       :datetime
-#  estimated_completion_minutes :integer
-#  featured_at                  :datetime
-#  name                         :string           not null
-#  prizes_count                 :integer          default(0), not null
-#  slug                         :string           not null
-#  start_at                     :datetime
-#  steps_count                  :integer          default(0), not null
-#  submission_guide             :text
-#  created_at                   :datetime         not null
-#  updated_at                   :datetime         not null
+#  id                      :bigint           not null, primary key
+#  achievement_description :text
+#  achievement_name        :string
+#  deleted_at              :datetime
+#  description             :text             not null
+#  difficulty              :string
+#  enabled                 :boolean          default(TRUE), not null
+#  end_at                  :datetime
+#  featured_at             :datetime
+#  name                    :string           not null
+#  prizes_count            :integer          default(0), not null
+#  slug                    :string           not null
+#  start_at                :datetime
+#  steps_count             :integer          default(0), not null
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
 #
 # Indexes
 #

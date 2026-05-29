@@ -78,8 +78,12 @@ export default class extends Controller {
     setTimeout(() => {
       document.addEventListener("click", this.boundOutsideClick);
       document.addEventListener("keydown", this.boundKey);
-      window.addEventListener("scroll", this.boundReposition, { passive: true });
-      window.addEventListener("resize", this.boundReposition, { passive: true });
+      window.addEventListener("scroll", this.boundReposition, {
+        passive: true,
+      });
+      window.addEventListener("resize", this.boundReposition, {
+        passive: true,
+      });
     }, 0);
   }
 

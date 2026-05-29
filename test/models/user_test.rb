@@ -32,6 +32,7 @@
 #  verification_status          :string           default("needs_submission"), not null
 #  vote_balance                 :integer          default(0), not null
 #  votes_count                  :integer
+#  voting_locked                :boolean          default(FALSE), not null
 #  ysws_eligible                :boolean          default(FALSE), not null
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
@@ -39,12 +40,11 @@
 #
 # Indexes
 #
-#  index_users_on_email                      (email)
-#  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
-#  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
-#  index_users_on_onboarded_at               (onboarded_at)
-#  index_users_on_session_token              (session_token) UNIQUE
-#  index_users_on_slack_id                   (slack_id) UNIQUE
+#  index_users_on_email               (email)
+#  index_users_on_lower_email_unique  (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
+#  index_users_on_onboarded_at        (onboarded_at)
+#  index_users_on_session_token       (session_token) UNIQUE
+#  index_users_on_slack_id            (slack_id) UNIQUE
 #
 require "test_helper"
 

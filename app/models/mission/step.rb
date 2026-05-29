@@ -3,6 +3,7 @@
 # Table name: mission_steps
 #
 #  id         :bigint           not null, primary key
+#  body       :text             not null
 #  deleted_at :datetime
 #  position   :integer          not null
 #  title      :string           not null

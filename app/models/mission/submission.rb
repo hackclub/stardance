@@ -2,20 +2,19 @@
 #
 # Table name: mission_submissions
 #
-#  id                               :bigint           not null, primary key
-#  deleted_at                       :datetime
-#  payout_path                      :string           not null
-#  rejection_message                :text
-#  reviewed_at                      :datetime
-#  status                           :string           not null
-#  submission_guide_acknowledged_at :datetime
-#  created_at                       :datetime         not null
-#  updated_at                       :datetime         not null
-#  chosen_prize_id                  :bigint
-#  mission_id                       :bigint           not null
-#  reviewed_by_id                   :bigint
-#  ship_event_id                    :bigint           not null
-#  shop_order_id                    :bigint
+#  id                :bigint           not null, primary key
+#  deleted_at        :datetime
+#  payout_path       :string           not null
+#  rejection_message :text
+#  reviewed_at       :datetime
+#  status            :string           not null
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  chosen_prize_id   :bigint
+#  mission_id        :bigint           not null
+#  reviewed_by_id    :bigint
+#  ship_event_id     :bigint           not null
+#  shop_order_id     :bigint
 #
 # Indexes
 #
