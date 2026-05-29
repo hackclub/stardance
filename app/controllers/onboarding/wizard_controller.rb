@@ -103,7 +103,7 @@ class Onboarding::WizardController < ApplicationController
     @display_name_default = default_name_from_email
   end
 
-  MAX_DISPLAY_NAME_LENGTH = 60
+  MAX_DISPLAY_NAME_LENGTH = User::MAX_DISPLAY_NAME_LENGTH
 
   def submit_name
     display_name = params[:display_name].to_s.strip
@@ -114,15 +114,32 @@ class Onboarding::WizardController < ApplicationController
       redirect_to onboarding_name_path, alert: "That's a really long name — please keep it under #{MAX_DISPLAY_NAME_LENGTH} characters." and return
     end
 
-    current_user.update!(display_name: display_name, onboarded_at: Time.current)
-    redirect_to home_path(welcome: 1)
+    if current_user.update(display_name: display_name, onboarded_at: Time.current)
+      redirect_to home_path(welcome: 1)
+    else
+      alert = if current_user.errors[:display_name].any? { |m| m =~ /taken/i }
+                "That name is already taken — try another."
+      else
+                current_user.errors.full_messages.to_sentence.presence || "Couldn't save that name — try another."
+      end
+      redirect_to onboarding_name_path, alert: alert
+    end
   end
 
   private
 
   def create_guest!(email)
-    User.create!(email: email, display_name: User.random_funny_display_name)
+    5.times do
+      user = User.new(email: email, display_name: User.random_funny_display_name)
+      return user if user.save
+      # Email collision means the user already exists — hand back the existing
+      # record. For any other error (most likely a display_name collision in
+      # the small Kerbal pool), retry with a fresh random name.
+      return User.find_by(email: email) || raise(ActiveRecord::RecordInvalid.new(user)) if user.errors[:email].any?
+    end
+    raise ActiveRecord::RecordInvalid.new(User.new(email: email))
   rescue ActiveRecord::RecordNotUnique
+    # Race against another request creating the same email — fall back to lookup.
     User.find_by(email: email) or raise
   end
 
@@ -140,7 +157,6 @@ class Onboarding::WizardController < ApplicationController
     local = current_user.email.to_s.split("@").first.to_s
     return nil if local.blank?
 
-    normalized = local.tr("._-", " ")
-    normalized.split.map(&:capitalize).join(" ").presence
+    local.gsub(/[^a-zA-Z0-9_-]/, "_").first(MAX_DISPLAY_NAME_LENGTH).presence
   end
 end

@@ -1,9 +1,4 @@
-// Mission panel — rendered on the project show page when a mission is
-// attached. Loose missions render the description; guided missions get a
-// step-tracker.
-
 .mission-panel {
-  margin: var(--space-l) 0;
   padding: var(--space-l);
   border-radius: 14px;
   border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
@@ -198,8 +193,67 @@
   cursor: pointer;
 }
 
-.mission-panel__loose-body {
-  margin-top: var(--space-s);
-  font-size: 0.95rem;
-  line-height: 1.55;
+.mission-panel__progress {
+  margin-top: var(--space-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.mission-panel__progress-label {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+  letter-spacing: 0.02em;
+
+  strong {
+    color: var(--color-brand-off-white);
+    font-feature-settings: "tnum";
+  }
+}
+
+.mission-panel__progress-pill {
+  display: inline-block;
+  margin-left: var(--space-xs);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(129, 255, 255, 0.14);
+  border: 1px solid rgba(129, 255, 255, 0.5);
+  color: var(--color-brand-mint);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mission-panel__progress-bar {
+  width: 100%;
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-overlay-light-soft);
+
+  &::-webkit-progress-bar {
+    background: var(--color-overlay-light-soft);
+    border-radius: 999px;
+  }
+
+  &::-webkit-progress-value {
+    background: var(--color-brand-mint);
+    border-radius: 999px;
+    transition: width 240ms ease;
+  }
+
+  &::-moz-progress-bar {
+    background: var(--color-brand-mint);
+    border-radius: 999px;
+  }
+}
+
+.mission-panel__actions {
+  display: flex;
+  gap: var(--space-s);
+  flex-wrap: wrap;
+  margin-top: var(--space-m);
 }

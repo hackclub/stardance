@@ -21,8 +21,25 @@
         Project: <%= link_to project.title, project_path(project) %> ·
         Builder: <%= builder&.display_name %> ·
         Payout path: <%= @submission.payout_path %>
+        <% if @submission.submission_guide_acknowledged_at.present? %>
+          · <span class="submission-show__ack">
+              ✓ Read submission guide
+              (<time datetime="<%= @submission.submission_guide_acknowledged_at.iso8601 %>"><%= @submission.submission_guide_acknowledged_at.strftime("%b %-d, %Y") %></time>)
+            </span>
+        <% end %>
       </p>
     </header>
+
+    <% if @submission.mission.submission_guide.present? %>
+      <section class="submission-show__rubric">
+        <details>
+          <summary><strong>Submission rubric for this mission</strong></summary>
+          <div class="submission-show__rubric-body">
+            <%= render MarkdownContentComponent.new(markdown: @submission.mission.submission_guide, flavor: :guide) %>
+          </div>
+        </details>
+      </section>
+    <% end %>
 
     <% if @submission.rejection_message.present? %>
       <section class="submission-show__rejection">

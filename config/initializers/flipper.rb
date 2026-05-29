@@ -27,6 +27,7 @@ Rails.application.config.after_initialize do
         shop_backlogged
         kitchen_comic
         grant_stardust
+        voting_locked
         fraud_daily_summary
         shop_order_daily_summary
         shipping

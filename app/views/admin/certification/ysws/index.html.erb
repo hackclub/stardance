@@ -1,0 +1,71 @@
+<% content_for :title, "YSWS Review Queue" %>
+
+<main class="certification-ysws" role="main">
+  <h1>YSWS Review Queue</h1>
+
+  <% if @reviews.any? %>
+    <div class="review-queue-header" role="status" aria-live="polite">
+      <p><strong>Pending Reviews:</strong> <%= @reviews.count %></p>
+    </div>
+
+    <div class="review-queue-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Review ID</th>
+            <th>Project Type</th>
+            <th>Project Name</th>
+            <th>User</th>
+            <th>Length (hours)</th>
+            <th>Age</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @reviews.each do |review| %>
+            <tr>
+              <td>#<%= review.id %></td>
+              <td>
+                <% if review.project.project_categories.present? %>
+                  <%= review.project.project_categories.join(", ") %>
+                <% else %>
+                  <span style="opacity: 0.5;">—</span>
+                <% end %>
+              </td>
+              <td>
+                <%= link_to review.project.title, admin_project_path(review.project), class: "btn-primary slim" %>
+              </td>
+              <td>
+                <%= link_to review.user.display_name || "Unknown", admin_user_path(review.user), class: "btn-primary slim" %><br>
+                <small><%= review.user.email %></small>
+              </td>
+              <td>
+                <% hours = review.original_minutes ? (review.original_minutes / 60.0).round(1) : 0 %>
+                <%= hours %> hrs
+              </td>
+              <td>
+                <% age_in_days = ((Time.current - review.created_at) / 1.day).floor %>
+                <% if age_in_days == 0 %>
+                  <span class="age-today">Today</span>
+                <% elsif age_in_days == 1 %>
+                  <span class="age-recent">1 day ago</span>
+                <% elsif age_in_days < 7 %>
+                  <span class="age-recent"><%= age_in_days %> days ago</span>
+                <% else %>
+                  <span class="age-old"><%= age_in_days %> days ago</span>
+                <% end %>
+              </td>
+              <td>
+                <%= link_to "View", admin_certification_ysws_review_path(review), class: "btn-view" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="empty-state" role="status">
+      <p>No pending reviews. Great job!</p>
+    </div>
+  <% end %>
+</main>

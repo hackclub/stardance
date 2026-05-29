@@ -27,6 +27,36 @@ class ApplicationController < ActionController::Base
   rescue_from ActionController::InvalidAuthenticityToken, with: :handle_invalid_auth_token
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
+  # Declares which discover-rail widgets render on this controller's pages, and
+  # optionally the page context handed to them:
+  #
+  #   class MissionsController < ApplicationController
+  #     discover_rail_widgets :mission_guide, :available_missions,
+  #                           context: -> { { mission: @mission } }
+  #   end
+  #
+  # Slugs are resolved against the widget registry (DiscoverRail::BaseWidget),
+  # so naming a slug no widget has claimed is simply ignored. Subclasses that
+  # stay silent inherit an empty rail.
+  class_attribute :discover_rail_widget_slugs, default: [], instance_accessor: false
+  class_attribute :discover_rail_context_proc, default: nil, instance_accessor: false
+
+  def self.discover_rail_widgets(*slugs, context: nil)
+    self.discover_rail_widget_slugs = slugs.map(&:to_sym)
+    self.discover_rail_context_proc = context if context
+  end
+
+  def discover_rail_widgets
+    self.class.discover_rail_widget_slugs
+  end
+  helper_method :discover_rail_widgets
+
+  def discover_rail_context
+    proc = self.class.discover_rail_context_proc
+    proc ? instance_exec(&proc) : {}
+  end
+  helper_method :discover_rail_context
+
   def current_user(preloads = [])
     return @current_user if defined?(@current_user)
 
@@ -37,6 +67,7 @@ class ApplicationController < ActionController::Base
     end
   end
   helper_method :current_user
+  helper_method :admin_policy
 
   def impersonating?
     session[:impersonator_user_id].present? && session[:user_id].present?
@@ -137,6 +168,26 @@ class ApplicationController < ActionController::Base
     nil
   rescue URI::InvalidURIError
     nil
+  end
+
+  def pundit_namespace(record)
+    record
+  end
+
+  def authorize(record, ...)
+    super(pundit_namespace(record), ...)
+  end
+
+  def policy_scope(scope, ...)
+    super(pundit_namespace(scope), ...)
+  end
+
+  def policy(record)
+    super(pundit_namespace(record))
+  end
+
+  def admin_policy(record)
+    policy([ :admin, record ])
   end
 
   def handle_invalid_auth_token

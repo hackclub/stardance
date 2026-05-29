@@ -1,35 +1,12 @@
 <%
   steps = []
-  steps << { intro: true, text: "Welcome to your first project!" }
   steps << {
-    selector: ".project-show__hero",
-    text: "Here's your pre-filled project details.",
-    padding: 12,
-    radius: 12
-  }
-  steps << {
-    selector: ".project-show__pill--outline",
-    text: "Edit your project here.",
-    padding: 8,
-    radius: 999
-  }
-  if @project_onboarding_mission.present?
-    steps << {
-      selector: ".project-show__onboarding-card--mission",
-      text: "Because this project is part of a mission, you can view the mission's details here.",
-      arrowPosition: "bottom",
-      padding: 12,
-      radius: 12
-    }
-  end
-  unless @hackatime_linked
-    steps << {
-      selector: ".project-show__hackatime-cta",
-      text: "Click here to link Hackatime before you start working so we can track your time spent!",
-      padding: 8,
-      radius: 999
-    }
-  end
+    intro: true,
+    ceremonial: true,
+    text: "Welcome to your first project",
+    subtitle: @project.title.presence ? "— #{@project.title} —" : nil,
+    autoAdvance: 3200
+  }.compact
 %>
 
 <div class="welcome-tour"
@@ -50,6 +27,7 @@
                        focusable: false %>
 
     <p class="welcome-tour__text" data-welcome-tour-target="text"></p>
+    <p class="welcome-tour__subtitle" data-welcome-tour-target="subtitle" hidden></p>
 
     <div class="welcome-tour__actions">
       <button type="button"

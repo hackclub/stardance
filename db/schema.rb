@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_132028) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -153,6 +153,62 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
     t.index ["creator_id"], name: "index_blazer_queries_on_creator_id"
   end
 
+  create_table "certification_devlog_reviews", force: :cascade do |t|
+    t.integer "approved_minutes"
+    t.datetime "created_at", null: false
+    t.text "justification"
+    t.integer "original_minutes"
+    t.bigint "post_devlog_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "ysws_review_id", null: false
+    t.index ["post_devlog_id"], name: "index_certification_devlog_reviews_on_post_devlog_id"
+    t.index ["ysws_review_id"], name: "index_certification_devlog_reviews_on_ysws_review_id"
+  end
+
+  create_table "certification_ship_reviews", force: :cascade do |t|
+    t.datetime "claim_expires_at"
+    t.datetime "claimed_at"
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.text "feedback"
+    t.text "internal_reason"
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.bigint "reviewer_id"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
+    t.index ["project_id"], name: "index_ship_reviews_unique_pending_project", unique: true, where: "(status = 0)"
+    t.index ["reviewer_id"], name: "index_certification_ship_reviews_on_reviewer_id"
+    t.index ["status", "claim_expires_at"], name: "idx_on_status_claim_expires_at_c7a5e87a52"
+  end
+
+  create_table "certification_ysws_reviews", force: :cascade do |t|
+    t.datetime "airtable_synced_at", precision: nil
+    t.integer "approved_minutes"
+    t.datetime "created_at", null: false
+    t.datetime "demo_checked_at", precision: nil
+    t.integer "original_minutes"
+    t.bigint "post_ship_event_id", null: false
+    t.bigint "project_id", null: false
+    t.datetime "repo_checked_at", precision: nil
+    t.datetime "reviewed_at", precision: nil
+    t.bigint "reviewer_id"
+    t.bigint "ship_cert_id"
+    t.datetime "spotchecked_at", precision: nil
+    t.bigint "spotchecked_by_id"
+    t.text "summary_justification"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["post_ship_event_id"], name: "index_certification_ysws_reviews_on_post_ship_event_id"
+    t.index ["project_id"], name: "index_certification_ysws_reviews_on_project_id"
+    t.index ["reviewer_id"], name: "index_certification_ysws_reviews_on_reviewer_id"
+    t.index ["ship_cert_id"], name: "index_certification_ysws_reviews_on_ship_cert_id"
+    t.index ["spotchecked_by_id"], name: "index_certification_ysws_reviews_on_spotchecked_by_id"
+    t.index ["user_id"], name: "index_certification_ysws_reviews_on_user_id"
+  end
+
   create_table "comments", force: :cascade do |t|
     t.text "body", null: false
     t.bigint "commentable_id", null: false
@@ -288,6 +344,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
+  create_table "mission_guide_variants", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "body_updated_at"
+    t.datetime "created_at", null: false
+    t.string "language", null: false
+    t.bigint "mission_id", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index "mission_id, lower((language)::text)", name: "index_mission_guide_variants_unique_language", unique: true
+    t.index ["mission_id"], name: "index_mission_guide_variants_on_mission_id"
+  end
+
   create_table "mission_memberships", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "mission_id", null: false
@@ -312,6 +380,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
     t.index ["shop_item_id"], name: "index_mission_prizes_on_shop_item_id"
   end
 
+  create_table "mission_section_completions", force: :cascade do |t|
+    t.datetime "completed_at", null: false
+    t.datetime "created_at", null: false
+    t.bigint "mission_id", null: false
+    t.bigint "mission_step_id", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mission_id"], name: "index_mission_section_completions_on_mission_id"
+    t.index ["mission_step_id"], name: "index_mission_section_completions_on_mission_step_id"
+    t.index ["project_id", "mission_step_id"], name: "index_mission_section_completions_unique", unique: true
+    t.index ["project_id"], name: "index_mission_section_completions_on_project_id"
+  end
+
   create_table "mission_shop_unlocks", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "mission_id", null: false
@@ -322,19 +403,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
     t.index ["shop_item_id"], name: "index_mission_shop_unlocks_on_shop_item_id"
   end
 
-  create_table "mission_step_completions", force: :cascade do |t|
-    t.datetime "completed_at"
+  create_table "mission_step_bodies", force: :cascade do |t|
+    t.text "body", default: "", null: false
+    t.datetime "body_updated_at"
     t.datetime "created_at", null: false
+    t.string "language", null: false
     t.bigint "mission_step_id", null: false
-    t.bigint "project_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["mission_step_id"], name: "index_mission_step_completions_on_mission_step_id"
-    t.index ["project_id", "mission_step_id"], name: "index_mission_step_completions_unique", unique: true
-    t.index ["project_id"], name: "index_mission_step_completions_on_project_id"
+    t.index "mission_step_id, lower((language)::text)", name: "index_mission_step_bodies_unique_language", unique: true
+    t.index ["mission_step_id"], name: "index_mission_step_bodies_on_mission_step_id"
   end
 
   create_table "mission_steps", force: :cascade do |t|
-    t.text "body", null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "mission_id", null: false
@@ -358,6 +438,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
     t.bigint "ship_event_id", null: false
     t.bigint "shop_order_id"
     t.string "status", null: false
+    t.datetime "submission_guide_acknowledged_at"
     t.datetime "updated_at", null: false
     t.index ["chosen_prize_id"], name: "index_mission_submissions_on_chosen_prize_id"
     t.index ["deleted_at"], name: "index_mission_submissions_on_deleted_at"
@@ -375,17 +456,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
     t.text "achievement_description"
     t.string "achievement_name"
     t.datetime "created_at", null: false
+    t.text "default_project_description"
+    t.string "default_project_title"
     t.datetime "deleted_at"
     t.text "description", null: false
     t.string "difficulty"
     t.boolean "enabled", default: true, null: false
     t.datetime "end_at"
+    t.integer "estimated_completion_minutes"
     t.datetime "featured_at"
     t.string "name", null: false
     t.integer "prizes_count", default: 0, null: false
     t.string "slug", null: false
     t.datetime "start_at"
     t.integer "steps_count", default: 0, null: false
+    t.text "submission_guide"
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_missions_on_deleted_at"
     t.index ["enabled"], name: "index_missions_on_enabled"
@@ -967,8 +1052,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
     t.string "verification_status", default: "needs_submission", null: false
     t.integer "vote_balance", default: 0, null: false
     t.integer "votes_count"
-    t.boolean "voting_locked", default: false, null: false
     t.boolean "ysws_eligible", default: false, null: false
+    t.index "lower((display_name)::text)", name: "index_users_on_lower_display_name_unique", unique: true, where: "((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))"
     t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["email"], name: "index_users_on_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
@@ -1033,6 +1118,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "certification_devlog_reviews", "certification_ysws_reviews", column: "ysws_review_id"
+  add_foreign_key "certification_devlog_reviews", "post_devlogs"
+  add_foreign_key "certification_ship_reviews", "projects"
+  add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"
+  add_foreign_key "certification_ysws_reviews", "post_ship_events"
+  add_foreign_key "certification_ysws_reviews", "post_ship_events", column: "ship_cert_id"
+  add_foreign_key "certification_ysws_reviews", "projects"
+  add_foreign_key "certification_ysws_reviews", "users"
+  add_foreign_key "certification_ysws_reviews", "users", column: "reviewer_id"
+  add_foreign_key "certification_ysws_reviews", "users", column: "spotchecked_by_id"
   add_foreign_key "comments", "users"
   add_foreign_key "devlog_versions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "users"
@@ -1045,14 +1140,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_200559) do
   add_foreign_key "likes", "users"
   add_foreign_key "messages", "users"
   add_foreign_key "messages", "users", column: "sent_by_id"
+  add_foreign_key "mission_guide_variants", "missions"
   add_foreign_key "mission_memberships", "missions"
   add_foreign_key "mission_memberships", "users"
   add_foreign_key "mission_prizes", "missions"
   add_foreign_key "mission_prizes", "shop_items"
+  add_foreign_key "mission_section_completions", "mission_steps", on_delete: :cascade
+  add_foreign_key "mission_section_completions", "missions"
+  add_foreign_key "mission_section_completions", "projects"
   add_foreign_key "mission_shop_unlocks", "missions"
   add_foreign_key "mission_shop_unlocks", "shop_items"
-  add_foreign_key "mission_step_completions", "mission_steps"
-  add_foreign_key "mission_step_completions", "projects"
+  add_foreign_key "mission_step_bodies", "mission_steps"
   add_foreign_key "mission_steps", "missions"
   add_foreign_key "mission_submissions", "mission_prizes", column: "chosen_prize_id"
   add_foreign_key "mission_submissions", "missions"

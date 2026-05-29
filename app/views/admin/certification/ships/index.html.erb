@@ -1,0 +1,35 @@
+<% content_for :title, "Reviewer queue" %>
+
+<div class="reviewer-queue">
+  <header class="reviewer-queue__header">
+    <h1>Review queue</h1>
+    <p><%= pluralize(@ships.size, "pending review") %></p>
+    <%= link_to "Start reviewing", next_admin_certification_ships_path, class: "btn btn-primary" %>
+  </header>
+
+  <% if @ships.empty? %>
+    <p class="reviewer-queue__empty">No pending reviews. Nice work.</p>
+  <% else %>
+    <ul class="reviewer-queue__list">
+      <% @ships.each do |ship| %>
+        <li class="reviewer-queue__item">
+          <div class="reviewer-queue__item-main">
+            <strong><%= ship.project.title %></strong>
+            <span class="reviewer-queue__item-meta">
+              created <%= time_ago_in_words(ship.created_at) %> ago
+            </span>
+          </div>
+          <div class="reviewer-queue__item-status">
+            <% if ship.claim_expires_at.present? && ship.claim_expires_at > Time.current %>
+              <span class="reviewer-queue__claimed">
+                claimed by <%= ship.reviewer&.display_name.presence || "another reviewer" %>
+              </span>
+            <% else %>
+              <%= link_to "Open", admin_certification_ship_path(ship), class: "btn btn-secondary" %>
+            <% end %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

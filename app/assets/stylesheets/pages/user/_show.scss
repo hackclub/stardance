@@ -692,24 +692,16 @@ turbo-frame#profile_tabs {
 .profile-project-card__meta-item {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px; // consistent icon→text spacing across devlog, time, mission, etc.
   font-size: 1rem; // 16px
   white-space: nowrap;
 }
 
-.profile-project-card__meta-item--time {
-  gap: 8px; // breathing room between clock and "8h"
-}
-
 .profile-project-card__meta-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   color: currentColor;
-}
-
-.profile-project-card__meta-icon--time {
-  width: 18px;
-  height: 18px;
+  flex: 0 0 auto;
 }
 
 .profile-project-card__authors {

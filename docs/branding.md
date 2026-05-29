@@ -34,9 +34,11 @@ context.
    not yellow.** Yellow `#FFE564` is *only* used inside
    `--gradient-extra-highlight` (see §1.2).
 8. Salmon `#FF8D9D` signals warn / destructive.
-9. Disabled = 50% opacity over the normal state — don't invent a separate
-   disabled color.
-10. CSS lives in `app/assets/stylesheets/`, all selectors follow BEM
+9. Orange `#FFB07A` (dashed border) is the **admin / manageable-by-viewer
+   marker** — see §1.5. Never use it for anything else.
+10. Disabled = 50% opacity over the normal state — don't invent a separate
+    disabled color.
+11. CSS lives in `app/assets/stylesheets/`, all selectors follow BEM
     (`block / block__element / block--modifier`). Reference design tokens via
     `var(--token-name)`, not inline hex.
 
@@ -135,9 +137,72 @@ write SCSS, reference the variable, not the hex.
 | Accent 4 blue `#95DBFF` | `--color-brand-blue` | ✓ exact |
 | Accent 5 lilac `#EBB7FF` | `--color-brand-lilac` | ✓ exact |
 | Accent 6 mint `#81FFFF` | `--color-brand-mint` | ✓ exact |
+| Admin marker orange `#FFB07A` | `--color-brand-orange` | ✓ exact (also `--color-brand-orange-soft` α 0.18). Not in the Figma palette — added for §1.5. |
 | Highlight `#F4EBB9` | `--color-brand-highlight` | ✓ exact (also `--color-brand-highlight-soft` α 0.4 and `-faint` α 0.12) |
 | Secondary highlight `#FEFCE7` | `--color-brand-highlight-secondary` | ✓ exact |
 | Extra-highlight gradient | `--gradient-extra-highlight` | Four-stop radial blend — yellow / salmon / lilac / blue. Use as the value of `background:` (not `background-color`). |
+
+### 1.5 Admin / staff-only marking
+
+Some surfaces are visible to a user *because* they have elevated permissions
+on the underlying thing — an admin viewing every mission, an owner seeing
+their own draft mission on the public events page, a manager viewing a
+project they reviewed. Those surfaces need a visual cue that says "this is
+shown to you, but it isn't public chrome", without hijacking the action
+language reserved for warn / destructive (salmon) or primary action
+(highlight cream).
+
+**The convention:**
+
+| Element | Treatment |
+| --- | --- |
+| **Border** | `2px dashed var(--color-brand-orange)` (`#FFB07A`). The dashed style does most of the semantic work — it signals "draft-ish / not finished / not for everyone". |
+| **Companion pills / chips** | `var(--color-brand-orange-soft)` background, `var(--color-brand-orange)` text. Bold, uppercase, letter-spaced — same shape as a status pill. Optional but encouraged when the user might wonder *why* a thing is visible to them ("Draft", "Disabled", "Admin-only", etc.). |
+| **Hover** | Keep the orange dashed border on hover instead of switching to the regular accent hover — the marker is a *state* of the item, not a per-interaction effect. |
+
+**When to use it**
+
+- A card / row / panel surfaced to the viewer purely because they can
+  manage it (admin role or membership-based ownership), and which other
+  viewers wouldn't see.
+- A surface in the public part of the app that's mid-draft, disabled, or
+  otherwise pre-publication and is being revealed to its managers.
+
+**When NOT to use it**
+
+- General "internal" or "admin section" pages (`/admin/...`). Those live
+  behind their own URL and already read as off-product; they don't need
+  per-element marking.
+- Destructive controls — that's salmon's job (§1.3).
+- "You are the author / owner" markers on otherwise-public content where
+  the affordance is *editing*, not *managing visibility*. Use a regular
+  edit pill instead.
+
+**How to apply in code**
+
+```scss
+.thing--manageable {
+  border-style: dashed;
+  border-width: 2px;
+  border-color: var(--color-brand-orange);
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-brand-orange);
+  }
+}
+
+.thing__pill--draft {
+  background: var(--color-brand-orange-soft);
+  color: var(--color-brand-orange);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+```
+
+Existing usages: `.mission-card--manageable` +
+`.mission-card__meta-item--draft` on the events page.
 
 ---
 

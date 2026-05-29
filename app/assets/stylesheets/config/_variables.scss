@@ -52,6 +52,12 @@
   --color-brand-peach: #ffd598;
   --color-brand-cream: #fff8d5;
   --color-brand-off-white: #fffcf4;
+  // Pastel orange — reserved for admin / manageable-by-current-viewer
+  // markers (see docs/branding.md §1.5). Not part of the original Figma
+  // palette; sits between peach (yellow-leaning) and salmon (pink-leaning,
+  // already used for warn/destructive) so it reads as its own warning-but-
+  // not-destructive hue.
+  --color-brand-orange: #ffb07a;
 
   // Highlights — softer, less saturated accents for badges, callouts, ship
   // tints. Canonical hexes from docs/branding.md §1.2.
@@ -75,6 +81,7 @@
   --color-brand-lilac-soft: rgba(235, 183, 255, 0.18);
   --color-brand-salmon-soft: rgba(255, 141, 157, 0.18);
   --color-brand-yellow-soft: rgba(255, 229, 100, 0.18);
+  --color-brand-orange-soft: rgba(255, 176, 122, 0.18);
 
   // Stardance design-system "set" container backgrounds. Canonical hexes from
   // docs/branding.md §1.1 — set 1 is the page backdrop, set 2 is for clickable
@@ -139,7 +146,7 @@
   // Yellow/Gold
   --color-yellow-200: hsl(52, 60%, 83%);
 
-  // Brand palette (Figma — eight swatches)
+  // Brand palette (Figma — eight swatches + orange admin marker)
   --color-brand-mint: #81ffff;
   --color-brand-lilac: #ebb7ff;
   --color-brand-blue: #95dbff;
@@ -148,6 +155,8 @@
   --color-brand-peach: #ffd598;
   --color-brand-cream: #fff8d5;
   --color-brand-ivory: #fffcf4;
+  // Pastel orange — admin / manageable-by-viewer marker (branding.md §1.5).
+  --color-brand-orange: #ffb07a;
 
   // Brown
   --color-brown-700: hsl(348, 28%, 24%);

@@ -8,19 +8,41 @@
     <h1 class="onboarding-screen__title">What should we call you?</h1>
 
     <%= form_with url: onboarding_name_path, method: :post,
-                   class: "onboarding-name__form" do |f| %>
-      <%= f.text_field :display_name,
-                       value: @display_name_default,
-                       placeholder: "Your name",
-                       autocomplete: "off",
-                       required: true,
-                       class: "ship__input onboarding-name__input" %>
+                   class: "onboarding-name__form",
+                   data: {
+                     controller: "username-availability",
+                     username_availability_url_value: username_availability_path,
+                     username_availability_max_value: User::MAX_DISPLAY_NAME_LENGTH
+                   } do |f| %>
+      <% max_len = User::MAX_DISPLAY_NAME_LENGTH %>
+      <div class="onboarding-name__field">
+        <%= f.text_field :display_name,
+                         value: @display_name_default,
+                         placeholder: "Pick a username",
+                         autocomplete: "off",
+                         required: true,
+                         class: "onboarding-name__input",
+                         data: {
+                           username_availability_target: "input",
+                           action: "input->username-availability#onInput"
+                         } %>
+        <span class="onboarding-name__counter"
+              data-username-availability-target="counter"
+              aria-hidden="true">0/<%= max_len %></span>
+      </div>
       <%= render SpecialActionButtonComponent.new(
             text: "Go",
             type: :submit,
+            disabled: true,
             class: "onboarding-name__submit",
-            data: { action: "click->onboarding-transition#press" }
+            data: {
+              username_availability_target: "submit",
+              action: "click->onboarding-transition#press"
+            }
           ) %>
+      <p class="onboarding-name__availability"
+         data-username-availability-target="feedback"
+         aria-live="polite"></p>
     <% end %>
   </div>
 </main>

@@ -525,6 +525,44 @@
     text-decoration: underline;
   }
 
+  &__mission-submission-guide {
+    margin-top: 12px;
+    padding: 16px;
+    border-radius: var(--profile-radius);
+    background: var(--color-brand-yellow-soft);
+    border: 1px solid var(--color-brand-yellow);
+  }
+
+  &__mission-submission-guide-title {
+    margin: 0 0 8px;
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    color: var(--color-brand-off-white);
+  }
+
+  &__mission-submission-guide-body {
+    margin-bottom: 12px;
+  }
+
+  &__mission-submission-guide-ack {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: var(--profile-radius);
+    background: var(--color-overlay-light);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    color: var(--color-space-text);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      margin-top: 3px;
+    }
+  }
+
   &__actions {
     display: flex;
     justify-content: flex-end;

@@ -1,0 +1,1147 @@
+<div class="shop-item-form">
+  <%= form_with model: shop_item.becomes(ShopItem), url: (shop_item.persisted? ? admin_shop_item_path(shop_item) : admin_shop_items_path), method: (shop_item.persisted? ? :patch : :post), local: true do |f| %>
+    <% if shop_item.errors.any? %>
+      <div class="shop-item-form__errors">
+        <h4><%= pluralize(shop_item.errors.count, "error") %> prohibited this shop item from being saved:</h4>
+        <ul>
+          <% shop_item.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="shop-item-form__grid">
+      <div class="shop-item-form__main">
+        <div class="card">
+          <h3>Basic Information</h3>
+
+          <div class="shop-item-form__field">
+            <label class="shop-item-form__label">Type</label>
+            <% if shop_item.persisted? %>
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <code><%= shop_item.type %></code>
+                <details style="position: relative;">
+                  <summary class="btn-secondary" style="cursor: pointer; font-size: 0.8rem; padding: 2px 8px;">Convert…</summary>
+                  <div style="position: absolute; z-index: 10; background: var(--color-tan-400); border: 1px solid var(--color-brown-500); border-radius: 0.5rem; padding: 0.75rem; margin-top: 0.25rem; min-width: 280px;">
+                    <%= form_with url: admin_shop_item_path(shop_item), method: :patch, scope: :shop_item, local: true do |cf| %>
+                      <%= cf.select :type, @shop_item_types, {}, { class: "form-control", style: "margin-bottom: 0.5rem;" } %>
+                      <%= cf.submit "Convert type", class: "btn-primary", style: "width: 100%;" %>
+                    <% end %>
+                  </div>
+                </details>
+              </div>
+            <% elsif shop_item.type.present? %>
+              <%= f.hidden_field :type, value: shop_item.type %>
+              <code><%= shop_item.type %></code>
+            <% else %>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <% @shop_item_types.each do |type_name| %>
+                  <%= link_to type_name.demodulize.titleize, new_admin_shop_item_path(type: type_name), class: "btn-secondary", style: "text-align: center; text-decoration: none; padding: 0.4rem 0.75rem;" %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="shop-item-form__field">
+            <%= f.label :name, class: "shop-item-form__label" %>
+            <%= f.text_field :name, class: "form-control", required: true %>
+          </div>
+
+          <div class="shop-item-form__field">
+            <%= f.label :description, class: "shop-item-form__label" %>
+            <%= f.text_area :description, rows: 3, class: "form-control", required: true %>
+          </div>
+
+          <div class="shop-item-form__field" data-controller="markdown-preview" data-markdown-preview-url-value="<%= preview_markdown_admin_shop_items_path %>">
+            <%= f.label :long_description, "Extended Description (Markdown)", class: "shop-item-form__label" %>
+            <div class="shop-item-form__markdown-editor">
+              <%= f.text_area :long_description, rows: 8, class: "form-control shop-item-form__code", placeholder: "Supports **bold**, *italic*, [links](url), lists, and more...", data: { markdown_preview_target: "input", action: "input->markdown-preview#update" } %>
+              <div class="shop-item-form__markdown-preview" data-markdown-preview-target="preview"></div>
+            </div>
+            <span class="shop-item-form__hint">Detailed description shown on the order page. Supports Markdown formatting.</span>
+          </div>
+
+          <div class="shop-item-form__field">
+            <%= f.label :internal_description, "Internal Description (admin only)", class: "shop-item-form__label" %>
+            <%= f.text_area :internal_description, rows: 2, class: "form-control" %>
+          </div>
+
+          <div class="shop-item-form__field">
+            <%= f.label :image, class: "shop-item-form__label" %>
+            <%= f.file_field :image, class: "form-control", required: !shop_item.persisted? %>
+            <% if shop_item.persisted? && shop_item.image.attached? %>
+              <div class="shop-item-form__current-image">
+                <span class="shop-item-form__hint">Current image:</span>
+                <%= image_tag shop_item.image.variant(:carousel_sm), class: "shop-item-form__image-preview" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Pricing</h3>
+
+          <div class="shop-item-form__row">
+            <div class="shop-item-form__field">
+              <%= f.label :usd_cost, "USD Cost ($)", class: "shop-item-form__label" %>
+              <%= f.number_field :usd_cost, step: 0.01, min: 0, class: "form-control", id: "shop_item_usd_cost", placeholder: "0.00" %>
+              <span class="shop-item-form__hint">Real-world cost of this item</span>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :hacker_score, "Hacker Score", class: "shop-item-form__label" %>
+              <%= f.number_field :hacker_score, min: 0, max: 100, value: (shop_item.hacker_score || 50), class: "form-control", id: "shop_item_hacker_score" %>
+              <span class="shop-item-form__hint">0 = easy to buy, 100 = hackers only</span>
+            </div>
+          </div>
+
+          <div class="shop-item-form__row">
+            <div class="shop-item-form__field">
+              <%= f.label :ticket_cost, class: "shop-item-form__label" do %><%= stardust_icon %> Stardust Cost<% end %>
+              <%= f.number_field :ticket_cost, step: "any", class: "form-control", id: "shop_item_ticket_cost", required: true %>
+              <span class="shop-item-form__hint">Auto-calculated from USD & Hacker Score, or set manually</span>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :sale_percentage, "Sale (%)", class: "shop-item-form__label" %>
+              <%= f.number_field :sale_percentage, min: 0, max: 100, class: "form-control", placeholder: "0" %>
+              <span class="shop-item-form__hint">Discount off base price</span>
+            </div>
+          </div>
+
+          <div class="shop-item-form__calculated">
+            <div class="shop-item-form__calc-item">
+              <span class="shop-item-form__calc-label">Suggested Tickets</span>
+              <span class="shop-item-form__calc-value" id="estimated_tickets">—</span>
+            </div>
+            <div class="shop-item-form__calc-item">
+              <span class="shop-item-form__calc-label">Est. Hours to Earn</span>
+              <span class="shop-item-form__calc-value" id="average_hours_estimated">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Availability</h3>
+
+          <div class="shop-item-form__toggles">
+            <% unless current_user.shop_manager? && !current_user.admin? %>
+              <label class="shop-item-form__toggle">
+                <%= f.check_box :enabled, id: "shop_item_enabled" %>
+                <span class="shop-item-form__toggle-content">
+                  <strong>Enabled</strong>
+                  <span class="shop-item-form__toggle-desc">Item is visible and purchasable in the shop</span>
+                </span>
+              </label>
+
+              <label class="shop-item-form__toggle">
+                <%= f.check_box :unlisted %>
+                <span class="shop-item-form__toggle-content">
+                  <strong>Unlisted</strong>
+                  <span class="shop-item-form__toggle-desc">Hidden from shop and API, but accessible via direct link</span>
+                </span>
+              </label>
+
+              <label class="shop-item-form__toggle">
+                <%= f.check_box :show_in_carousel %>
+                <span class="shop-item-form__toggle-content">
+                  <strong>Show in Carousel</strong>
+                  <span class="shop-item-form__toggle-desc">Feature this item in the homepage carousel</span>
+                </span>
+              </label>
+            <% end %>
+
+            <label class="shop-item-form__toggle">
+              <%= f.check_box :one_per_person_ever %>
+              <span class="shop-item-form__toggle-content">
+                <strong>One Per Person</strong>
+                <span class="shop-item-form__toggle-desc">Users can only purchase this item once ever</span>
+              </span>
+            </label>
+
+            <label class="shop-item-form__toggle">
+              <%= f.check_box :limited, id: "shop_item_limited" %>
+              <span class="shop-item-form__toggle-content">
+                <strong>Limited Stock</strong>
+                <span class="shop-item-form__toggle-desc">Enable inventory tracking for this item</span>
+              </span>
+            </label>
+
+            <label class="shop-item-form__toggle">
+              <%= f.check_box :requires_verification_call %>
+              <span class="shop-item-form__toggle-content">
+                <strong>Requires Call</strong>
+                <span class="shop-item-form__toggle-desc">Orders require a verification call before fulfillment</span>
+              </span>
+            </label>
+          </div>
+
+          <div class="shop-item-form__field" id="stock_field_container">
+            <%= f.label :stock, "Stock Quantity", class: "shop-item-form__label" %>
+            <%= f.number_field :stock, min: 0, class: "form-control", id: "shop_item_stock" %>
+            <span class="shop-item-form__hint">Number of items available for purchase</span>
+          </div>
+
+          <% unless current_user.shop_manager? && !current_user.admin? %>
+            <div class="shop-item-form__field shop-item-form__enabled-until">
+              <%= f.label :enabled_until, "Enabled Until", class: "shop-item-form__label" %>
+              <%= f.datetime_local_field :enabled_until, class: "form-control" %>
+              <span class="shop-item-form__hint">If set, the item will auto-disable after this date. Leave blank to keep enabled indefinitely.</span>
+            </div>
+          <% end %>
+
+          <div class="shop-item-form__field">
+            <%= f.label :max_qty, "Max Per Order", class: "shop-item-form__label" %>
+            <%= f.number_field :max_qty, min: 1, class: "form-control", placeholder: "Unlimited" %>
+            <span class="shop-item-form__hint">Maximum quantity a user can add to a single order</span>
+          </div>
+
+          <div class="shop-item-form__field">
+            <%= f.label :past_purchases, "Past Purchases", class: "shop-item-form__label" %>
+            <%= f.number_field :past_purchases, min: 0, class: "form-control", placeholder: "0" %>
+            <span class="shop-item-form__hint">Historical purchase numbers (if we got em)</span>
+          </div>
+
+          <div class="shop-item-form__toggles" style="margin-top: 1rem;">
+            <label class="shop-item-form__toggle">
+              <%= f.check_box :requires_ship, id: "shop_item_requires_ship" %>
+              <span class="shop-item-form__toggle-content">
+                <strong>Requires Shipped Project</strong>
+                <span class="shop-item-form__toggle-desc">User must have shipped projects in a date range to purchase</span>
+              </span>
+            </label>
+
+          </div>
+
+          <div class="shop-item-form__field" style="margin-top: 1rem;">
+            <%= f.label :requires_achievement, "Requires Achievements", class: "shop-item-form__label" %>
+            <div class="shop-item-form__checkbox-list">
+              <%= f.collection_check_boxes :requires_achievement, Achievement.all.select { |a| !a.hidden? }, ->(a) { a.slug.to_s }, ->(a) { "#{a.name} (#{a.slug})" } do |b| %>
+                <label class="shop-item-form__checkbox">
+                  <%= b.check_box %>
+                  <span><%= b.text %></span>
+                </label>
+              <% end %>
+            </div>
+            <span class="shop-item-form__hint">User must have earned AT LEAST ONE of the selected achievements to purchase. You can select multiple by checking the boxes.</span>
+          </div>
+
+          <div class="shop-item-form__field" style="margin-top: 1rem;">
+            <label class="shop-item-form__checkbox">
+              <%= f.check_box :mission_prize_only %>
+              <span class="shop-item-form__toggle-content">
+                <strong>Mission prize only</strong>
+                <span class="shop-item-form__toggle-desc">Hidden from catalog. Claimable only via the mission redemption flow.</span>
+              </span>
+            </label>
+          </div>
+
+          <div class="shop-item-form__field" style="margin-top: 1rem;">
+            <%= f.label :unlocking_mission_ids, "Unlocked by Missions", class: "shop-item-form__label" %>
+            <div class="shop-item-form__checkbox-list">
+              <% Mission.not_deleted.order(:name).each do |mission| %>
+                <label class="shop-item-form__checkbox">
+                  <%= check_box_tag "shop_item[unlocking_mission_ids][]", mission.id, shop_item.unlocking_mission_ids.include?(mission.id), id: "shop_item_unlocking_mission_ids_#{mission.id}" %>
+                  <span><%= mission.name %> (<%= mission.slug %>)</span>
+                </label>
+              <% end %>
+            </div>
+            <span class="shop-item-form__hint">User must have completed AT LEAST ONE of these missions to purchase. Leave empty for no mission gate.</span>
+          </div>
+
+          <div id="ship_requirement_fields" style="display: none; margin-top: 1rem;">
+            <div class="shop-item-form__field">
+              <%= f.label :required_ships_count, "Required Ships Count", class: "shop-item-form__label" %>
+              <%= f.number_field :required_ships_count, min: 1, class: "form-control", value: (shop_item.required_ships_count || 1), id: "shop_item_required_ships_count" %>
+              <span class="shop-item-form__hint">Minimum number of projects shipped in the date range</span>
+            </div>
+
+            <div class="shop-item-form__row">
+              <div class="shop-item-form__field">
+                <%= f.label :required_ships_start_date, "Ships Required From", class: "shop-item-form__label" %>
+                <%= f.date_field :required_ships_start_date, class: "form-control", id: "shop_item_required_ships_start_date" %>
+                <span class="shop-item-form__hint">Start of the eligibility date range</span>
+              </div>
+              <div class="shop-item-form__field">
+                <%= f.label :required_ships_end_date, "Ships Required Until", class: "shop-item-form__label" %>
+                <%= f.date_field :required_ships_end_date, class: "form-control", id: "shop_item_required_ships_end_date" %>
+                <span class="shop-item-form__hint">End of the eligibility date range</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <% if shop_item.type == "ShopItem::HackClubberItem" %>
+          <div class="card">
+            <h3>Hack Clubber Settings</h3>
+            <div class="shop-item-form__field">
+              <%= f.label :user_id, "Seller (User ID)", class: "shop-item-form__label" %>
+              <%= f.number_field :user_id, class: "form-control", placeholder: "User ID" %>
+              <span class="shop-item-form__hint">The ID of the Hack Clubber selling this item</span>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :payout_percentage, "Payout Percentage (%)", class: "shop-item-form__label" %>
+              <%= f.number_field :payout_percentage, min: 0, max: 100, class: "form-control" %>
+              <span class="shop-item-form__hint">Percentage of the sale price that goes to the seller</span>
+            </div>
+          </div>
+        <% end %>
+
+        <% if shop_item.type.in?(%w[ShopItem::HCBGrant ShopItem::HCBPreauthGrant]) %>
+          <div class="card">
+            <h3>HCB Locks</h3>
+            <div class="shop-item-form__field">
+              <%= f.label :hcb_merchant_lock, "HCB Merchant Lock", class: "shop-item-form__label" %>
+              <%= f.text_field :hcb_merchant_lock, class: "form-control" %>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :hcb_category_lock, "HCB Category Lock", class: "shop-item-form__label" %>
+              <%= f.text_field :hcb_category_lock, class: "form-control" %>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :hcb_keyword_lock, "HCB Keyword Lock", class: "shop-item-form__label" %>
+              <%= f.text_field :hcb_keyword_lock, class: "form-control" %>
+            </div>
+
+            <div class="shop-item-form__toggles" style="margin-top: 1rem;">
+              <label class="shop-item-form__toggle">
+                <%= f.check_box :hcb_one_time_use %>
+                <span class="shop-item-form__toggle-content">
+                  <strong>One-Time Use</strong>
+                  <span class="shop-item-form__toggle-desc">freeze card after one txn</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        <% end %>
+
+        <% if shop_item.type == "ShopItem::HCBPreauthGrant" %>
+          <div class="card">
+            <h3>HCB Preauthorization</h3>
+            <div class="shop-item-form__field">
+              <%= f.label :hcb_preauthorization_instructions, "Preauthorization Instructions", class: "shop-item-form__label" %>
+              <%= f.text_area :hcb_preauthorization_instructions, rows: 3, class: "form-control", placeholder: "Instructions for preauthorized HCB grants" %>
+              <span class="shop-item-form__hint">Used by HCB Preauth Grant items to provide spending instructions</span>
+            </div>
+          </div>
+        <% end %>
+
+        <% if shop_item.type.in?(%w[ShopItem::WarehouseItem ShopItem::PileOfStickersItem]) %>
+          <div class="card">
+            <h3>Warehouse Settings</h3>
+            <div class="shop-item-form__field">
+              <%= f.label :agh_contents, "AGH Contents (JSON)", class: "shop-item-form__label" %>
+              <%= f.text_area :agh_contents, rows: 4, id: "shop_item_agh_contents", class: "form-control shop-item-form__code", placeholder: '[{"sku": "ITEM-001", "quantity": 1}]', value: shop_item.agh_contents.present? ? JSON.pretty_generate(shop_item.agh_contents) : '' %>
+              <span class="shop-item-form__hint">List SKUs to include. Quantity selected by user will batch all SKUs together.</span>
+              <div class="alert alert-warning" style="margin-top: 0.5rem;">
+                <strong>Required:</strong> This field must contain valid JSON (not Ruby hash syntax).
+                Use double quotes for keys and strings. <a href="https://github.com/hackclub/stardance/issues/1172" target="_blank" rel="noopener">See issue #1172 for more info</a>.
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <% if shop_item.type.in?(%w[ShopItem::HackClubberItem ShopItem::ThirdPartyDigital ShopItem::HQMailItem]) %>
+          <div class="card">
+            <h3>Source Region</h3>
+            <div class="shop-item-form__field">
+              <%= f.label :source_region, "Source Region", class: "shop-item-form__label" %>
+              <%= f.select :source_region,
+                [["None (use default behavior)", ""]] + Shop::Regionalizable::REGIONS.map { |code, config| [config[:name], code] },
+                {},
+                { class: "form-control" } %>
+              <span class="shop-item-form__hint">If you set this, people will get a scary warning if the selected address is outside this region.</span>
+            </div>
+          </div>
+        <% end %>
+
+        <div class="card">
+          <h3>Country Blacklist</h3>
+          <div class="shop-item-form__field">
+            <%= f.label :blocked_countries, "Blocked Countries", class: "shop-item-form__label" %>
+            <%= f.select :blocked_countries,
+                ISO3166::Country.all.sort_by { |c| c.common_name.presence || c.iso_short_name }.map { |c| [c.common_name.presence || c.iso_short_name, c.alpha2] },
+                { include_hidden: false },
+                { multiple: true, class: "form-control", size: 8 } %>
+            <span class="shop-item-form__hint">Select countries to block. Addresses with these countries will be blocked, even if the item is enabled for their region. This trumps all other regional restrictions.</span>
+          </div>
+        </div>
+
+        <div class="card" id="modifiers-card">
+          <h3>Modifiers</h3>
+          <p class="shop-item-form__hint" style="margin-bottom: 1rem;">
+            Modifiers let buyers customise their order (e.g., colour, storage) without creating a separate order.
+            Modifiers with the same group name are mutually exclusive. Leave ticket cost at 0 for free options.
+          </p>
+
+          <div id="modifier-entries">
+            <% if shop_item.persisted? %>
+              <%= f.fields_for :shop_item_modifiers, shop_item.shop_item_modifiers.ordered do |mf| %>
+                <%= render "modifier_fields", mf: mf %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <button type="button" id="add-modifier-btn" class="btn-secondary" style="margin-top: 1rem;" onclick="addModifier()">
+            + Add Modifier
+          </button>
+        </div>
+
+        <% if shop_item.type == "ShopItem::Accessory" %>
+          <div class="card">
+            <h3>Accessory Settings</h3>
+            <label class="shop-item-form__checkbox">
+              <%= f.check_box :buyable_by_self, id: "shop_item_buyable_by_self" %>
+              <span>Buyable By Self</span>
+            </label>
+            <span class="shop-item-form__hint">If unchecked, this accessory can only be purchased with an attached item</span>
+
+            <div class="shop-item-form__field" style="margin-top: 1rem;">
+              <%= f.label :accessory_tag, "Accessory Tag", class: "shop-item-form__label" %>
+              <%= f.text_field :accessory_tag, class: "form-control", placeholder: "e.g., color_item, ram_type" %>
+              <span class="shop-item-form__hint">Accessories with the same tag are mutually exclusive (only one can be selected)</span>
+            </div>
+
+            <label class="shop-item-form__checkbox" style="margin-top: 1rem;">
+              <%= f.check_box :show_image_in_shop, id: "shop_item_show_image_in_shop" %>
+              <span>Show Image in Shop</span>
+            </label>
+            <span class="shop-item-form__hint">Display this accessory's image on the order page</span>
+
+            <div class="shop-item-form__field">
+              <label class="shop-item-form__label">Attached To (Shop Items)</label>
+              <div class="shop-item-form__checkbox-list">
+                <% current_parent_ids = shop_item.persisted? ? shop_item.shop_item_attachments.where.not(parent_item_id: nil).pluck(:parent_item_id) : [] %>
+                <% ShopItem.where.not(type: "ShopItem::Accessory").order(:name).each do |item| %>
+                  <label class="shop-item-form__checkbox">
+                    <%= check_box_tag "shop_item[parent_item_ids][]", item.id, current_parent_ids.include?(item.id), id: "shop_item_parent_item_ids_#{item.id}" %>
+                    <span><%= item.name %></span>
+                  </label>
+                <% end %>
+              </div>
+              <span class="shop-item-form__hint">Select items this accessory can be attached to</span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="shop-item-form__sidebar">
+        <div class="card">
+          <h3>Actions</h3>
+          <div class="shop-item-form__actions">
+            <%= f.submit shop_item.persisted? ? "Update Item" : "Create Item", class: "btn-primary" %>
+            <%= link_to "Cancel", admin_shop_path, class: "btn-secondary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem;">
+      <h3>Regional Availability & Pricing</h3>
+
+      <div class="shop-item-form__info-box">
+        <strong>Regional Logic:</strong>
+        <br><strong>XX (Rest of World):</strong> Items enabled for XX appear in <em>all</em> regions using XX pricing
+        <br><strong>Specific Regions:</strong> Items enabled for specific regions (US, EU, etc.) only appear in those
+        regions
+        <br><strong>Priority:</strong> Regional pricing takes precedence over XX pricing when both are enabled
+      </div>
+
+      <div class="shop-item-form__table-wrap">
+        <table class="table-data">
+          <thead>
+          <tr>
+            <th>Region</th>
+            <th>Enabled</th>
+            <th>Default Assignee</th>
+            <th>Δ USD</th>
+            <th>Δ Hours</th>
+            <th>Δ Tickets</th>
+            <th>Final Price</th>
+            <th>Est. Hours</th>
+          </tr>
+          </thead>
+          <tbody>
+          <% Shop::Regionalizable::REGIONS.each do |code, config| %>
+            <%
+              flag = case code
+                     when "US" then "🇺🇸"
+                     when "EU" then "🇪🇺"
+                     when "UK" then "🇬🇧"
+                     when "CA" then "🇨🇦"
+                     when "AU" then "🇦🇺"
+                     when "IN" then "🇮🇳"
+                     when "XX" then "🌍"
+                     else "🏳️"
+                     end
+            %>
+            <tr>
+              <td>
+                <span class="shop-item-form__region-flag"><%= flag %></span>
+                <strong><%= config[:name] %></strong>
+              </td>
+              <td>
+                <%= f.check_box "enabled_#{code.downcase}", class: "region-enabled", data: { region: code.downcase } %>
+              </td>
+              <td>
+                <%= f.select "default_assigned_user_id_#{code.downcase}",
+                    @fulfillment_users.map { |u| [u.display_name, u.id] },
+                    { include_blank: "None", selected: shop_item.send("default_assigned_user_id_#{code.downcase}") },
+                    { class: "form-control form-control--sm", style: "width: 120px;" } %>
+              </td>
+              <td>
+                <%= f.number_field "usd_offset_#{code.downcase}", step: 0.01, class: "form-control form-control--sm usd-offset", data: { region: code.downcase }, placeholder: "0.00", value: shop_item.send("usd_offset_#{code.downcase}") %>
+              </td>
+              <td>
+                <input type="number" step="0.1" class="form-control form-control--sm delta-hours-input" data-region="<%= code.downcase %>" placeholder="0.0" autocomplete="off">
+              </td>
+              <td>
+                <code class="delta-tickets-display shop-item-form__muted" data-region="<%= code.downcase %>">0</code>
+              </td>
+              <td>
+                <code class="shop-item-form__final-price" data-region="<%= code.downcase %>">
+                  <%= shop_item.base_price_for_region(code).to_i %>
+                </code>
+              </td>
+              <td>
+                <span class="estimated-hours shop-item-form__muted" data-region="<%= code.downcase %>">0.0</span>
+              </td>
+            </tr>
+          <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<style>
+    .shop-item-form__grid {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    @media (max-width: 900px) {
+        .shop-item-form__grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .shop-item-form__main .card {
+        margin-bottom: 1.5rem;
+    }
+
+    .shop-item-form__sidebar .card {
+        position: sticky;
+        top: 1rem;
+    }
+
+    .shop-item-form__errors {
+        background: #fee2e2;
+        border: 1px solid #ef4444;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        color: #991b1b;
+    }
+
+    .shop-item-form__errors h4 {
+        margin: 0 0 0.5rem 0;
+    }
+
+    .shop-item-form__errors ul {
+        margin: 0;
+        padding-left: 1.25rem;
+    }
+
+    .shop-item-form__field {
+        margin-bottom: 1rem;
+    }
+
+    .shop-item-form__label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .shop-item-form__hint {
+        display: block;
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+
+    .shop-item-form__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .shop-item-form__readonly {
+        background: var(--color-tan-400) !important;
+        cursor: not-allowed;
+        color: #6b7280 !important;
+    }
+
+    /* Calculated values display */
+    .shop-item-form__calculated {
+        display: flex;
+        gap: 1.5rem;
+        padding: 1rem;
+        background: var(--color-tan-400);
+        border: 1px dashed var(--color-brown-500);
+        border-radius: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .shop-item-form__calc-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+
+    .shop-item-form__calc-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .shop-item-form__calc-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-brown-700);
+    }
+
+    /* Toggle switches with descriptions */
+    .shop-item-form__toggles {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .shop-item-form__toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: var(--color-tan-400);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background 0.1s;
+    }
+
+    .shop-item-form__toggle:hover {
+        background: var(--color-tan-500, #d4c4a8);
+    }
+
+    .shop-item-form__toggle input[type="checkbox"] {
+        width: 1.125rem;
+        height: 1.125rem;
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+    }
+
+    .shop-item-form__toggle-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .shop-item-form__toggle-content strong {
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .shop-item-form__toggle-desc {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    /* Legacy checkboxes (keep for accessory settings) */
+    .shop-item-form__checkboxes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--color-tan-400);
+        border-radius: 0.5rem;
+    }
+
+    .shop-item-form__checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+    .shop-item-form__checkbox input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .shop-item-form__checkbox-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        background: var(--color-tan-400);
+        border-radius: 0.5rem;
+    }
+
+    .shop-item-form__current-image {
+        margin-top: 0.5rem;
+    }
+
+    .shop-item-form__image-preview {
+        max-width: 100px;
+        border-radius: 4px;
+        margin-top: 0.25rem;
+    }
+
+    .shop-item-form__code {
+        font-family: ui-monospace, monospace;
+        font-size: 0.8125rem;
+    }
+
+    .shop-item-form__markdown-editor {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .shop-item-form__markdown-editor {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .shop-item-form__markdown-preview {
+        background: var(--color-tan-400);
+        border: 1px solid var(--color-brown-500);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        min-height: 180px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    .shop-item-form__markdown-preview h1,
+    .shop-item-form__markdown-preview h2,
+    .shop-item-form__markdown-preview h3 {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .shop-item-form__markdown-preview p {
+        margin-bottom: 0.5rem;
+    }
+
+    .shop-item-form__markdown-preview ul,
+    .shop-item-form__markdown-preview ol {
+        margin-left: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .shop-item-form__markdown-preview code {
+        background: rgba(0, 0, 0, 0.1);
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.8125rem;
+    }
+
+    .shop-item-form__markdown-preview a {
+        color: var(--color-brown-700);
+        text-decoration: underline;
+    }
+
+    .markdown-preview__empty {
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .shop-item-form__actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .shop-item-form__actions .btn-primary,
+    .shop-item-form__actions .btn-secondary {
+        width: 100%;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .shop-item-form__info-box {
+        background: var(--color-tan-400);
+        border: 1px solid var(--color-brown-500);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+    }
+
+    .shop-item-form__table-wrap {
+        overflow-x: auto;
+    }
+
+    .shop-item-form__region-flag {
+        font-size: 1.25rem;
+        margin-right: 0.5rem;
+    }
+
+    .shop-item-form__final-price {
+        background: var(--color-tan-400);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    .shop-item-form__muted {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .form-control--sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        width: 80px;
+    }
+
+    /* Form controls */
+    .form-control {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-brown-500);
+        background: var(--color-tan-400);
+        font-size: 0.875rem;
+        color: inherit;
+    }
+
+    .shop-item-form__enabled-until .form-control {
+        color: #1a1a1a;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--color-brown-700);
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    (function () {
+        const gameConstants = {
+            doubloons_per_dollar: <%= Rails.configuration.game_constants.tickets_per_dollar.to_json %>,
+            dollars_per_mean_hour: <%= Rails.configuration.game_constants.dollars_per_mean_hour.to_json %>
+        };
+
+        const usdCostField = document.getElementById('shop_item_usd_cost');
+        const ticketCostField = document.getElementById('shop_item_ticket_cost');
+        const hackerScoreField = document.getElementById('shop_item_hacker_score');
+        const estimatedTicketsDisplay = document.getElementById('estimated_tickets');
+        const averageHoursDisplay = document.getElementById('average_hours_estimated');
+
+        let isTicketCostManuallySet = false;
+
+        if (ticketCostField && ticketCostField.value && parseFloat(ticketCostField.value) !== 0) {
+            isTicketCostManuallySet = true;
+            ticketCostField.value = Math.round(parseFloat(ticketCostField.value));
+        }
+
+        function calculateEstimatedTickets() {
+            const usdCost = parseFloat(usdCostField.value) || 0;
+            const hackerScore = parseFloat(hackerScoreField.value) || 50;
+            const hackerScorePercent = hackerScore / 100;
+            const estimatedTickets = gameConstants.doubloons_per_dollar * usdCost * (0.5 + (1 - hackerScorePercent));
+            return estimatedTickets;
+        }
+
+        function calculateAverageHours() {
+            const ticketCost = parseFloat(ticketCostField.value) || 0;
+            const averageHours = ticketCost / (gameConstants.doubloons_per_dollar * gameConstants.dollars_per_mean_hour);
+            return averageHours;
+        }
+
+        function updateCalculations() {
+            const estimatedTickets = calculateEstimatedTickets();
+            const averageHours = calculateAverageHours();
+            if (estimatedTicketsDisplay) {
+                estimatedTicketsDisplay.textContent = estimatedTickets > 0 ? Math.round(estimatedTickets) : '—';
+            }
+            if (averageHoursDisplay) {
+                averageHoursDisplay.textContent = averageHours > 0 ? averageHours.toFixed(1) + 'h' : '—';
+            }
+        }
+
+        function autoFillTicketCost() {
+            if (isTicketCostManuallySet) return;
+
+            const estimatedTickets = calculateEstimatedTickets();
+            if (usdCostField.value) {
+                ticketCostField.value = Math.round(estimatedTickets);
+                updateCalculations();
+                updateAllRegionalPricing();
+            }
+        }
+
+        if (usdCostField) {
+            usdCostField.addEventListener('input', function () {
+                updateCalculations();
+                autoFillTicketCost();
+            });
+        }
+
+        if (ticketCostField) {
+            ticketCostField.addEventListener('input', function (e) {
+                if (e.isTrusted) {
+                    isTicketCostManuallySet = true;
+                    if (this.value === '' || parseFloat(this.value) === 0) {
+                        isTicketCostManuallySet = false;
+                        autoFillTicketCost();
+                    }
+                }
+                updateCalculations();
+                updateAllRegionalPricing();
+            });
+        }
+
+        if (hackerScoreField) {
+            hackerScoreField.addEventListener('input', function () {
+                updateCalculations();
+                autoFillTicketCost();
+                updateAllRegionalPricing();
+            });
+        }
+
+        const limitedCheckbox = document.getElementById('shop_item_limited');
+        const stockFieldContainer = document.getElementById('stock_field_container');
+
+        function toggleStockField() {
+            if (limitedCheckbox && stockFieldContainer) {
+                stockFieldContainer.style.display = limitedCheckbox.checked ? 'block' : 'none';
+            }
+        }
+
+        if (limitedCheckbox) {
+            limitedCheckbox.addEventListener('change', toggleStockField);
+            toggleStockField();
+        }
+
+        const requiresShipCheckbox = document.getElementById('shop_item_requires_ship');
+        const shipRequirementFields = document.getElementById('ship_requirement_fields');
+
+        function toggleShipRequirementFields() {
+            if (requiresShipCheckbox && shipRequirementFields) {
+                shipRequirementFields.style.display = requiresShipCheckbox.checked ? 'block' : 'none';
+            }
+        }
+
+        if (requiresShipCheckbox) {
+            requiresShipCheckbox.addEventListener('change', toggleShipRequirementFields);
+            toggleShipRequirementFields();
+        }
+
+        function getHackerMultiplier() {
+            const hackerScore = parseFloat(hackerScoreField.value) || 50;
+            return 0.5 + (1 - hackerScore / 100);
+        }
+
+        // usd_offset is the canonical stored value. All other regional fields derive from it.
+        function updateFromUsdOffset(region, skipHours = false) {
+            const basePrice = parseFloat(ticketCostField.value) || 0;
+            const usdOffsetField = document.querySelector(`[data-region="${region}"].usd-offset`);
+            const usdOffset = parseFloat(usdOffsetField.value) || 0;
+            const hackerMultiplier = getHackerMultiplier();
+
+            const deltaTickets = usdOffset * gameConstants.doubloons_per_dollar * hackerMultiplier;
+            const finalPrice = basePrice + deltaTickets;
+
+            const deltaTicketsDisplay = document.querySelector(`[data-region="${region}"].delta-tickets-display`);
+            if (deltaTicketsDisplay) deltaTicketsDisplay.textContent = Math.round(deltaTickets);
+
+            const finalPriceSpan = document.querySelector(`[data-region="${region}"].shop-item-form__final-price`);
+            if (finalPriceSpan) finalPriceSpan.textContent = Math.round(finalPrice);
+
+            const estimatedHours = finalPrice / (gameConstants.doubloons_per_dollar * gameConstants.dollars_per_mean_hour);
+            const estimatedHoursSpan = document.querySelector(`[data-region="${region}"].estimated-hours`);
+            if (estimatedHoursSpan) estimatedHoursSpan.textContent = estimatedHours.toFixed(1);
+
+            if (!skipHours) {
+                // delta_hours = usd_offset * hacker_multiplier / dollars_per_mean_hour
+                const deltaHours = usdOffset * hackerMultiplier / gameConstants.dollars_per_mean_hour;
+                const deltaHoursInput = document.querySelector(`[data-region="${region}"].delta-hours-input`);
+                if (deltaHoursInput) deltaHoursInput.value = deltaHours.toFixed(1);
+            }
+        }
+
+        function updateFromDeltaHours(region) {
+            const deltaHoursInput = document.querySelector(`[data-region="${region}"].delta-hours-input`);
+            const deltaHours = parseFloat(deltaHoursInput.value) || 0;
+            const hackerMultiplier = getHackerMultiplier();
+            // usd_offset = delta_hours * dollars_per_mean_hour / hacker_multiplier
+            const usdOffset = hackerMultiplier > 0
+                ? (deltaHours * gameConstants.dollars_per_mean_hour / hackerMultiplier)
+                : 0;
+            const usdOffsetField = document.querySelector(`[data-region="${region}"].usd-offset`);
+            if (usdOffsetField) usdOffsetField.value = usdOffset.toFixed(2);
+            updateFromUsdOffset(region, true);
+        }
+
+        function updateAllRegionalPricing() {
+            document.querySelectorAll('.usd-offset').forEach(field => {
+                updateFromUsdOffset(field.dataset.region);
+            });
+        }
+
+        document.querySelectorAll('.usd-offset').forEach(field => {
+            field.addEventListener('input', function () {
+                updateFromUsdOffset(this.dataset.region);
+            });
+        });
+
+        document.querySelectorAll('.delta-hours-input').forEach(field => {
+            field.addEventListener('input', function () {
+                updateFromDeltaHours(this.dataset.region);
+            });
+        });
+
+        updateCalculations();
+        autoFillTicketCost();
+        updateAllRegionalPricing();
+
+        var aghContentsField = document.getElementById('shop_item_agh_contents');
+        if (aghContentsField) {
+            aghContentsField.required = (<%= (shop_item.type == "ShopItem::WarehouseItem").to_json %>);
+        }
+    })();
+</script>
+
+<script>
+(function() {
+    var REGIONS = <%= Shop::Regionalizable::REGIONS.map { |code, cfg| { code: code, name: cfg[:name] } }.to_json.html_safe %>;
+    var FLAGS = { US: "🇺🇸", EU: "🇪🇺", UK: "🇬🇧", CA: "🇨🇦", AU: "🇦🇺", IN: "🇮🇳", XX: "🌍" };
+
+    function buildModifierTemplate(index) {
+        var regionRows = REGIONS.map(function(r) {
+            var code = r.code.toLowerCase();
+            return '<tr>' +
+                '<td>' + (FLAGS[r.code] || "🏳️") + ' <strong>' + r.code + '</strong></td>' +
+                '<td><input type="checkbox" name="shop_item[shop_item_modifiers_attributes][' + index + '][enabled_' + code + ']" value="1"></td>' +
+                '<td><input type="number" step="0.01" class="form-control form-control--sm" name="shop_item[shop_item_modifiers_attributes][' + index + '][usd_offset_' + code + ']" placeholder="0.00" style="width:90px;"></td>' +
+                '</tr>';
+        }).join('');
+
+        return '<div class="modifier-entry" data-modifier-id="new">' +
+            '<input type="hidden" name="shop_item[shop_item_modifiers_attributes][' + index + '][id]" value="">' +
+            '<input type="hidden" name="shop_item[shop_item_modifiers_attributes][' + index + '][_destroy]" class="modifier-destroy-field" value="0">' +
+            '<div class="modifier-entry__header">' +
+                '<strong class="modifier-entry__title">New Modifier</strong>' +
+                '<button type="button" class="btn-secondary modifier-entry__remove" onclick="removeModifier(this)" style="padding:2px 8px;font-size:0.75rem;">Remove</button>' +
+            '</div>' +
+            '<div class="shop-item-form__row">' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">Name</label>' +
+                    '<input type="text" name="shop_item[shop_item_modifiers_attributes][' + index + '][name]" class="form-control" placeholder="e.g., Blue, 16GB RAM" required>' +
+                '</div>' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">Group Name (optional)</label>' +
+                    '<input type="text" name="shop_item[shop_item_modifiers_attributes][' + index + '][group_name]" class="form-control" placeholder="e.g., Color, Storage">' +
+                    '<span class="shop-item-form__hint">Modifiers sharing a group name are mutually exclusive</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="shop-item-form__row">' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">&#10022; Stardust Cost</label>' +
+                    '<input type="number" min="0" step="1" name="shop_item[shop_item_modifiers_attributes][' + index + '][ticket_cost]" class="form-control" value="0">' +
+                    '<span class="shop-item-form__hint">0 = free modifier (e.g., colour choice)</span>' +
+                '</div>' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">USD Cost ($)</label>' +
+                    '<input type="number" min="0" step="0.01" name="shop_item[shop_item_modifiers_attributes][' + index + '][usd_cost]" class="form-control" placeholder="0.00">' +
+                '</div>' +
+            '</div>' +
+            '<div class="shop-item-form__row">' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">Position</label>' +
+                    '<input type="number" min="0" step="1" name="shop_item[shop_item_modifiers_attributes][' + index + '][position]" class="form-control" value="0">' +
+                '</div>' +
+                '<div class="shop-item-form__field" style="display:flex;align-items:center;padding-top:1.5rem;">' +
+                    '<label class="shop-item-form__checkbox">' +
+                        '<input type="checkbox" name="shop_item[shop_item_modifiers_attributes][' + index + '][enabled]" value="1" checked>' +
+                        '<span>Enabled</span>' +
+                    '</label>' +
+                '</div>' +
+            '</div>' +
+            '<div class="shop-item-form__field">' +
+                '<label class="shop-item-form__label">Image (optional)</label>' +
+                '<input type="file" name="shop_item[shop_item_modifiers_attributes][' + index + '][image]" class="form-control">' +
+            '</div>' +
+            '<details style="margin-top:0.75rem;">' +
+                '<summary style="cursor:pointer;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Regional Pricing</summary>' +
+                '<div class="shop-item-form__table-wrap" style="margin-top:0.5rem;">' +
+                    '<table class="table-data" style="font-size:0.8rem;">' +
+                        '<thead><tr><th>Region</th><th>Enabled</th><th>Δ USD Offset</th></tr></thead>' +
+                        '<tbody>' + regionRows + '</tbody>' +
+                    '</table>' +
+                '</div>' +
+            '</details>' +
+        '</div>';
+    }
+
+    window.addModifier = function() {
+        var index = new Date().getTime();
+        var container = document.getElementById('modifier-entries');
+        var div = document.createElement('div');
+        div.innerHTML = buildModifierTemplate(index);
+        container.appendChild(div.firstChild);
+    };
+
+    window.removeModifier = function(btn) {
+        var entry = btn.closest('.modifier-entry');
+        var destroyField = entry.querySelector('.modifier-destroy-field');
+        if (destroyField && destroyField.value !== "0") {
+            // already marked, just in case
+        } else if (destroyField) {
+            destroyField.value = "1";
+        }
+        entry.style.display = 'none';
+    };
+})();
+</script>
+
+<style>
+    .modifier-entry {
+        background: var(--color-tan-400);
+        border: 1px solid var(--color-brown-500);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .modifier-entry__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .modifier-entry__title {
+        font-size: 0.95rem;
+    }
+</style>

@@ -100,6 +100,7 @@ gem "active_storage_validations"
 gem "rails_performance"
 
 gem "commonmarker"
+gem "rouge"
 gem "inline_svg"
 
 gem "dartsass-rails", "~> 0.5.1"

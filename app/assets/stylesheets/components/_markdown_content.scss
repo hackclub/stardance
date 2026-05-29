@@ -1,12 +1,14 @@
 .markdown-content {
   font-family: var(--font-family-text);
-  color: var(--color-brown-600);
+  color: var(--color-space-text);
   line-height: var(--line-height-body);
-  margin-top: 1rem;
-  padding: 1rem 1.25rem;
-  background-color: rgba(255, 255, 255, 0.4);
-  border-radius: var(--border-radius);
-  border: 1px solid var(--color-tan-400);
+
+  > :first-child {
+    margin-top: 0;
+  }
+  > :last-child {
+    margin-bottom: 0;
+  }
 
   h1,
   h2,
@@ -14,10 +16,11 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-family-subtitle);
-    color: var(--color-brown-700);
-    margin-top: 1em;
-    margin-bottom: 0.5em;
+    font-family: var(--font-family-text);
+    color: var(--color-brand-off-white);
+    font-weight: 700;
+    line-height: var(--line-height-headers);
+    margin: var(--space-l) 0 var(--space-s);
 
     &:first-child {
       margin-top: 0;
@@ -25,22 +28,23 @@
   }
 
   h1 {
-    font-size: 1.5rem;
+    font-size: var(--font-size-xl);
   }
   h2 {
-    font-size: 1.3rem;
+    font-size: var(--font-size-l);
   }
   h3 {
-    font-size: 1.15rem;
+    font-size: var(--font-size-m);
   }
   h4,
   h5,
   h6 {
-    font-size: 1rem;
+    font-size: var(--font-size-m);
   }
 
   p {
-    margin-bottom: 0.75em;
+    margin: 0 0 var(--space-s);
+
     &:last-child {
       margin-bottom: 0;
     }
@@ -48,60 +52,84 @@
 
   ul,
   ol {
-    margin: 0.5em 0;
-    padding-left: 1.5em;
+    margin: var(--space-s) 0;
+    padding-left: var(--space-l);
 
     li {
-      margin-bottom: 0.25em;
+      margin-bottom: var(--space-xxs);
     }
   }
 
   a {
-    color: var(--color-blue-500);
+    color: var(--color-brand-mint);
     text-decoration: underline;
+    text-underline-offset: 2px;
+
     &:hover {
-      color: var(--color-blue-600);
+      color: var(--color-brand-lilac);
     }
-  }
-
-  code {
-    background-color: var(--color-tan-300);
-    padding: 0.15em 0.4em;
-    border-radius: 4px;
-    font-size: 0.9em;
-  }
-
-  pre {
-    background-color: var(--color-tan-300);
-    padding: 0.75em 1em;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 0.75em 0;
-
-    code {
-      padding: 0;
-      background: none;
-    }
-  }
-
-  blockquote {
-    border-left: 3px solid var(--color-brown-400);
-    padding-left: 1em;
-    margin: 0.75em 0;
-    color: var(--color-brown-500);
-    font-style: italic;
   }
 
   strong {
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--color-brand-off-white);
   }
+
   em {
     font-style: italic;
   }
 
+  code {
+    background: var(--color-overlay-light);
+    border: 1px solid var(--color-space-border);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    color: var(--color-brand-cream);
+  }
+
+  pre {
+    background: var(--color-space-bg-2);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+    padding: var(--space-m);
+    margin: var(--space-s) 0;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--font-size-s);
+    line-height: 1.55;
+
+    code {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      color: inherit;
+      font-family: inherit;
+    }
+  }
+
+  blockquote {
+    border-left: 3px solid var(--color-brand-lilac);
+    background: var(--color-space-surface-faint);
+    padding: var(--space-s) var(--space-m);
+    border-radius: 0 var(--profile-radius) var(--profile-radius) 0;
+    color: var(--color-space-text-muted);
+    font-style: italic;
+    margin: var(--space-s) 0;
+  }
+
   hr {
-    border: none;
-    border-top: 1px solid var(--color-tan-400);
-    margin: 1em 0;
+    border: 0;
+    border-top: 1px solid var(--color-space-border);
+    margin: var(--space-l) 0;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--profile-radius);
+    display: block;
+    margin: var(--space-s) auto;
   }
 }

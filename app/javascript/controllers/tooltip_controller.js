@@ -1,149 +1,138 @@
 import { Controller } from "@hotwired/stimulus";
 
+// Standard tooltip. Attach to the element that should reveal it; the popover is
+// rendered into <body> and positioned relative to the element. Supports an
+// optional bold title above the message.
+//
+// Hover-capable pointers reveal on hover/focus; coarse-pointer (touch) devices
+// fall back to tap-to-toggle, since hover semantics don't apply there.
 export default class extends Controller {
   static values = {
-    targetId: String,
+    title: String,
+    message: String,
     position: { type: String, default: "top" },
   };
 
   connect() {
     this.boundShow = this.show.bind(this);
     this.boundHide = this.hide.bind(this);
-    this.boundUpdatePosition = () => {
-      if (!this.element.classList.contains("tooltip--visible")) return;
-      requestAnimationFrame(() => this.updatePosition());
-    };
+    this.boundKey = this.handleKey.bind(this);
+    this.boundReposition = this.reposition.bind(this);
+    this.boundOutsideClick = this.handleOutsideClick.bind(this);
 
-    this.targetElement = document.getElementById(this.targetIdValue);
+    this.hoverCapable = window.matchMedia?.("(hover: hover)")?.matches ?? false;
 
-    if (!this.targetElement) {
-      console.warn(`Tooltip target #${this.targetIdValue} not found`);
-      return;
+    if (this.hoverCapable) {
+      this.element.addEventListener("mouseenter", this.boundShow);
+      this.element.addEventListener("mouseleave", this.boundHide);
+      this.element.addEventListener("focusin", this.boundShow);
+      this.element.addEventListener("focusout", this.boundHide);
+    } else {
+      this.element.addEventListener("click", this.toggle);
     }
-
-    this.targetElement.addEventListener("mouseenter", this.boundShow, {
-      passive: true,
-    });
-    this.targetElement.addEventListener("mouseleave", this.boundHide, {
-      passive: true,
-    });
-    this.targetElement.addEventListener("focus", this.boundShow);
-    this.targetElement.addEventListener("blur", this.boundHide);
-
-    window.addEventListener("scroll", this.boundUpdatePosition, {
-      passive: true,
-    });
-    window.addEventListener("resize", this.boundUpdatePosition, {
-      passive: true,
-    });
-
-    this.ensureInBody();
-    requestAnimationFrame(() => this.ensureInBody());
   }
 
   disconnect() {
-    if (this.targetElement) {
-      this.targetElement.removeEventListener("mouseenter", this.boundShow);
-      this.targetElement.removeEventListener("mouseleave", this.boundHide);
-      this.targetElement.removeEventListener("focus", this.boundShow);
-      this.targetElement.removeEventListener("blur", this.boundHide);
+    if (this.hoverCapable) {
+      this.element.removeEventListener("mouseenter", this.boundShow);
+      this.element.removeEventListener("mouseleave", this.boundHide);
+      this.element.removeEventListener("focusin", this.boundShow);
+      this.element.removeEventListener("focusout", this.boundHide);
+    } else {
+      this.element.removeEventListener("click", this.toggle);
     }
-
-    if (this.boundUpdatePosition) {
-      window.removeEventListener("scroll", this.boundUpdatePosition);
-      window.removeEventListener("resize", this.boundUpdatePosition);
-    }
-
-    if (this.element.parentElement === document.body) {
-      this.element.remove();
-    }
+    this.hide();
   }
 
-  ensureInBody() {
-    if (this.element.parentElement !== document.body) {
-      document.body.appendChild(this.element);
-    }
-  }
+  toggle = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.popover) this.hide();
+    else this.show();
+  };
 
   show() {
-    this.ensureInBody();
+    if (this.popover) return;
 
-    this.element.classList.add("tooltip--visible");
-    this.element.setAttribute("aria-hidden", "false");
-    this.updatePosition();
+    this.popover = document.createElement("div");
+    this.popover.className = `tooltip tooltip--${this.positionValue}`;
+    this.popover.setAttribute("role", "tooltip");
+
+    if (this.titleValue) {
+      const title = document.createElement("strong");
+      title.className = "tooltip__title";
+      title.textContent = this.titleValue;
+      this.popover.appendChild(title);
+    }
+    this.popover.appendChild(document.createTextNode(this.messageValue));
+
+    document.body.appendChild(this.popover);
+
+    this.reposition();
+
+    requestAnimationFrame(() => {
+      if (this.popover) this.popover.classList.add("tooltip--visible");
+    });
+
+    // Deferred so the opening tap doesn't immediately trip the outside-click.
+    setTimeout(() => {
+      document.addEventListener("click", this.boundOutsideClick);
+      document.addEventListener("keydown", this.boundKey);
+      window.addEventListener("scroll", this.boundReposition, { passive: true });
+      window.addEventListener("resize", this.boundReposition, { passive: true });
+    }, 0);
   }
 
   hide() {
-    this.element.classList.remove("tooltip--visible");
-    this.element.setAttribute("aria-hidden", "true");
+    document.removeEventListener("click", this.boundOutsideClick);
+    document.removeEventListener("keydown", this.boundKey);
+    window.removeEventListener("scroll", this.boundReposition);
+    window.removeEventListener("resize", this.boundReposition);
+
+    if (this.popover) {
+      this.popover.remove();
+      this.popover = null;
+    }
   }
 
-  updatePosition() {
-    if (!this.targetElement) return;
-
-    const targetRect = this.targetElement.getBoundingClientRect();
-    const gap = 8;
-
-    this.element.style.top = "0";
-    this.element.style.left = "0";
-    this.element.style.visibility = "hidden";
-    this.element.classList.add("tooltip--visible");
-
-    const tooltipRect = this.element.getBoundingClientRect();
-
-    this.element.style.visibility = "";
-
-    const scrollY = window.scrollY;
-    const scrollX = window.scrollX;
-
+  reposition() {
+    if (!this.popover) return;
+    const rect = this.element.getBoundingClientRect();
+    const pop = this.popover.getBoundingClientRect();
+    const gap = 12;
     let top, left;
 
     switch (this.positionValue) {
       case "bottom":
-        top = targetRect.bottom + scrollY + gap;
-        left =
-          targetRect.left +
-          scrollX +
-          targetRect.width / 2 -
-          tooltipRect.width / 2;
+        top = rect.bottom + gap;
+        left = rect.left + rect.width / 2 - pop.width / 2;
         break;
       case "left":
-        top =
-          targetRect.top +
-          scrollY +
-          targetRect.height / 2 -
-          tooltipRect.height / 2;
-        left = targetRect.left + scrollX - tooltipRect.width - gap;
+        top = rect.top + rect.height / 2 - pop.height / 2;
+        left = rect.left - pop.width - gap;
         break;
       case "right":
-        top =
-          targetRect.top +
-          scrollY +
-          targetRect.height / 2 -
-          tooltipRect.height / 2;
-        left = targetRect.right + scrollX + gap;
+        top = rect.top + rect.height / 2 - pop.height / 2;
+        left = rect.right + gap;
         break;
       case "top":
       default:
-        top = targetRect.top + scrollY - tooltipRect.height - gap;
-        left =
-          targetRect.left +
-          scrollX +
-          targetRect.width / 2 -
-          tooltipRect.width / 2;
+        top = rect.top - pop.height - gap;
+        left = rect.left + rect.width / 2 - pop.width / 2;
         break;
     }
 
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+    this.popover.style.top = `${Math.max(8, top)}px`;
+    this.popover.style.left = `${Math.max(8, left)}px`;
+  }
 
-    left = Math.min(Math.max(left, 8), viewportWidth - tooltipRect.width - 8);
-    top = Math.min(
-      Math.max(top, scrollY + 8),
-      scrollY + viewportHeight - tooltipRect.height - 8,
-    );
+  handleOutsideClick(event) {
+    if (this.element.contains(event.target)) return;
+    if (this.popover && this.popover.contains(event.target)) return;
+    this.hide();
+  }
 
-    this.element.style.top = `${top}px`;
-    this.element.style.left = `${left}px`;
+  handleKey(event) {
+    if (event.key === "Escape") this.hide();
   }
 }

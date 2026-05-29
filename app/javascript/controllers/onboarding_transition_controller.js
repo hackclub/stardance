@@ -1,7 +1,11 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static values = { duration: { type: Number, default: 700 } };
+  static values = {
+    duration: { type: Number, default: 700 },
+    autoAdvanceDelay: { type: Number, default: 0 },
+    autoAdvanceHref: { type: String, default: "" },
+  };
 
   connect() {
     this.onSubmitStart = (event) => {
@@ -10,10 +14,52 @@ export default class extends Controller {
     };
 
     document.addEventListener("turbo:submit-start", this.onSubmitStart);
+
+    if (this.autoAdvanceDelayValue > 0 && this.autoAdvanceHrefValue) {
+      this.autoAdvanceTimer = setTimeout(() => {
+        this._autoAdvance(this.autoAdvanceHrefValue);
+      }, this.autoAdvanceDelayValue);
+
+      this.skipClickHandler = (event) => {
+        if (event.target.closest("a, button, input, label, [role=button]"))
+          return;
+        if (this.element.classList.contains("is-leaving")) return;
+        if (this.autoAdvanceTimer) {
+          clearTimeout(this.autoAdvanceTimer);
+          this.autoAdvanceTimer = null;
+        }
+        this._autoAdvance(this.autoAdvanceHrefValue);
+      };
+      this.element.addEventListener("click", this.skipClickHandler);
+    }
   }
 
   disconnect() {
     document.removeEventListener("turbo:submit-start", this.onSubmitStart);
+    if (this.autoAdvanceTimer) clearTimeout(this.autoAdvanceTimer);
+    if (this.skipClickHandler) {
+      this.element.removeEventListener("click", this.skipClickHandler);
+    }
+  }
+
+  _autoAdvance(href) {
+    // Pin the screen + moon at their currently-animated opacity so the
+    // fade-out keyframes interpolate from the visible state instead of
+    // snapping back to the underlying default of 1.
+    const planet = this.element.querySelector(".onboarding-welcome__planet");
+    this.element.style.opacity = getComputedStyle(this.element).opacity;
+    if (planet) planet.style.opacity = getComputedStyle(planet).opacity;
+    void this.element.offsetHeight;
+
+    this.element.classList.add("is-leaving");
+    this._holdNextRender(this.durationValue);
+    if (window.Turbo) {
+      window.Turbo.visit(href);
+    } else {
+      setTimeout(() => {
+        window.location.href = href;
+      }, this.durationValue);
+    }
   }
 
   leave(event) {

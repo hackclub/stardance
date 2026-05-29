@@ -1,0 +1,9 @@
+<%# Themed hover/focus tooltip for the little "?" help badges next to form
+    fields. Uses the standard tooltip controller.
+    Locals: text (tooltip body), position (default "top"). %>
+<span class="project-show__help"
+      tabindex="0"
+      aria-label="<%= text %>"
+      data-controller="tooltip"
+      data-tooltip-message-value="<%= text %>"
+      data-tooltip-position-value="<%= local_assigns.fetch(:position, "top") %>">?</span>

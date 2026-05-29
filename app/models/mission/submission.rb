@@ -2,19 +2,20 @@
 #
 # Table name: mission_submissions
 #
-#  id                :bigint           not null, primary key
-#  deleted_at        :datetime
-#  payout_path       :string           not null
-#  rejection_message :text
-#  reviewed_at       :datetime
-#  status            :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  chosen_prize_id   :bigint
-#  mission_id        :bigint           not null
-#  reviewed_by_id    :bigint
-#  ship_event_id     :bigint           not null
-#  shop_order_id     :bigint
+#  id                               :bigint           not null, primary key
+#  deleted_at                       :datetime
+#  payout_path                      :string           not null
+#  rejection_message                :text
+#  reviewed_at                      :datetime
+#  status                           :string           not null
+#  submission_guide_acknowledged_at :datetime
+#  created_at                       :datetime         not null
+#  updated_at                       :datetime         not null
+#  chosen_prize_id                  :bigint
+#  mission_id                       :bigint           not null
+#  reviewed_by_id                   :bigint
+#  ship_event_id                    :bigint           not null
+#  shop_order_id                    :bigint
 #
 # Indexes
 #
@@ -92,9 +93,7 @@ class Mission::Submission < ApplicationRecord
     pending.where("created_at < ?", days.days.ago)
   }
 
-  # Users who should be notified when this submission becomes :pending.
-  # Per-mission owners + reviewers, plus global :mission_reviewer holders.
-  # Excludes the builder/teammates so we never ask people to self-review.
+  # Per-mission + global reviewers, minus teammates (no self-review).
   def reviewer_recipients
     teammate_ids = ship_event&.post&.project&.users&.pluck(:id) || []
 

@@ -54,7 +54,14 @@ class ActionButtonComponent < ViewComponent::Base
 
   def shared_attributes
     attrs = html_options.except(:class).merge(class: root_classes)
-    attrs[:disabled] = true if disabled
+    # `disabled: :soft` keeps the disabled styling but uses aria-disabled
+    # instead of the native attribute, so the control still receives
+    # hover/focus events (e.g. to show a tooltip explaining why it's disabled).
+    if disabled == :soft
+      attrs["aria-disabled"] = "true"
+    elsif disabled
+      attrs[:disabled] = true
+    end
     attrs
   end
 

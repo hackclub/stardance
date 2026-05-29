@@ -52,8 +52,6 @@
     <% if in_beta? %>
       <script defer data-domain="stardance.hackclub.com" src="https://plausible.hackclub.com/js/script.js"></script>
     <% end %>
-    <script src="/howler.js"></script>
-    <script src="/yappingv2.js"></script>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
     <% if Rails.env.development? %>
       <script src="http://localhost:7340/overlay.js" defer></script>
@@ -76,8 +74,8 @@
               <span class="top-banner__detail">(as <%= real_user.display_name %>)</span>
             </div>
             <%= button_to "Stop Impersonating",
-                          stop_impersonating_admin_users_path,
-                          method: :post,
+                          admin_impersonation_path,
+                          method: :delete,
                           class: "top-banner__action",
                           form: { style: "margin: 0;" } %>
           </div>

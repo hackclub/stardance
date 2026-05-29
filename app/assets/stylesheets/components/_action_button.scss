@@ -51,8 +51,8 @@
     font-size: var(--font-body);
     padding: 12px 32px;
 
-    &:hover .action-btn__icon--trailing,
-    &:focus-visible .action-btn__icon--trailing {
+    &:hover:not([aria-disabled="true"]) .action-btn__icon--trailing,
+    &:focus-visible:not([aria-disabled="true"]) .action-btn__icon--trailing {
       transform: translateX(6px);
     }
   }
@@ -63,13 +63,13 @@
     border-color: var(--color-brand-highlight);
     color: var(--color-set-1-bg);
 
-    &:hover,
-    &:focus-visible {
+    &:hover:not([aria-disabled="true"]),
+    &:focus-visible:not([aria-disabled="true"]) {
       background-color: var(--color-brand-highlight-secondary);
       border-color: var(--color-brand-highlight-secondary);
     }
 
-    &:active {
+    &:active:not([aria-disabled="true"]) {
       background-color: #fff;
       border-color: #fff;
     }
@@ -80,13 +80,13 @@
     border-color: var(--color-set-3-bg);
     color: #fff;
 
-    &:hover:not(:disabled),
-    &:focus-visible:not(:disabled) {
+    &:hover:not(:disabled):not([aria-disabled="true"]),
+    &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
       border-color: var(--color-brand-highlight-secondary);
       color: var(--color-brand-highlight-secondary);
     }
 
-    &:active {
+    &:active:not([aria-disabled="true"]) {
       color: var(--color-brand-highlight);
       border-color: var(--color-brand-highlight);
     }
@@ -97,13 +97,13 @@
     border-color: var(--color-brand-salmon);
     color: var(--color-brand-salmon);
 
-    &:hover,
-    &:focus-visible {
+    &:hover:not([aria-disabled="true"]),
+    &:focus-visible:not([aria-disabled="true"]) {
       background-color: var(--color-brand-salmon);
       color: var(--color-set-1-bg);
     }
 
-    &:active {
+    &:active:not([aria-disabled="true"]) {
       background-color: var(--color-brand-salmon);
       color: var(--color-set-1-bg);
       filter: brightness(0.92);
@@ -116,13 +116,13 @@
     border-color: #fff;
     color: var(--color-set-1-bg);
 
-    &:hover,
-    &:focus-visible {
+    &:hover:not([aria-disabled="true"]),
+    &:focus-visible:not([aria-disabled="true"]) {
       background-color: var(--color-brand-highlight-secondary);
       border-color: var(--color-brand-highlight-secondary);
     }
 
-    &:active {
+    &:active:not([aria-disabled="true"]) {
       background-color: var(--color-brand-highlight);
       border-color: var(--color-brand-highlight);
     }
@@ -141,6 +141,12 @@
   &--disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  // Natively-disabled controls block all pointer events. Soft-disabled
+  // (aria-disabled) ones keep them so a tooltip can still show on hover —
+  // the hover/active rules above are guarded to suppress visual feedback.
+  &:disabled {
     pointer-events: none;
   }
 }

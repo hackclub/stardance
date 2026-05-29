@@ -1,16 +1,16 @@
 class Admin::ProjectsController < Admin::ApplicationController
   def index
-    authorize :admin, :manage_projects?
+    authorize ::Project
     @query = params[:query]
     @filter = params[:filter] || "active"
 
     projects = case @filter
     when "deleted"
-      Project.unscoped.deleted
+      ::Project.unscoped.deleted
     when "all"
-      Project.unscoped.all
+      ::Project.unscoped.all
     else
-      Project.all
+      ::Project.all
     end
 
     if @query.present?
@@ -22,13 +22,13 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def show
-    authorize :admin, :manage_projects?
-    @project = Project.unscoped.find(params[:id])
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project
   end
 
   def votes
-    authorize :admin, :manage_projects?
-    @project = Project.find(params[:id])
+    @project = ::Project.find(params[:id])
+    authorize @project, :show?
 
     @pagy, @votes = pagy(
       @project.votes.includes(:user).order(created_at: :desc)
@@ -36,8 +36,8 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def restore
-    authorize :admin, :manage_projects?
-    @project = Project.unscoped.find(params[:id])
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project
 
     if @project.deleted?
       @project.restore!
@@ -48,8 +48,8 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def delete
-    authorize :admin, :manage_projects?
-    @project = Project.unscoped.find(params[:id])
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :destroy?
 
     if @project.deleted?
       redirect_to admin_project_path(@project), alert: "Project is already deleted."
@@ -60,13 +60,13 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def update_ship_status
-    authorize :admin, :manage_projects?
-    @project = Project.unscoped.find(params[:id])
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :update?
 
     old_status = @project.ship_status
     new_status = params[:ship_status]
 
-    unless Project.aasm.states.map { |s| s.name.to_s }.include?(new_status)
+    unless ::Project.aasm.states.map { |s| s.name.to_s }.include?(new_status)
       redirect_to admin_project_path(@project), alert: "Invalid ship status."
       return
     end
@@ -77,8 +77,9 @@ class Admin::ProjectsController < Admin::ApplicationController
     end
 
     @project.update_column(:ship_status, new_status)
+    sync_last_ship_event_certification(new_status)
 
-    PaperTrail::Version.create!(
+    ::PaperTrail::Version.create!(
       item: @project,
       event: "update",
       whodunnit: current_user.id.to_s,
@@ -88,15 +89,28 @@ class Admin::ProjectsController < Admin::ApplicationController
     redirect_to admin_project_path(@project), notice: "Ship status changed from #{old_status} to #{new_status}."
   end
 
-  def force_state
-    authorize :admin, :manage_projects?
-    @project = Project.unscoped.find(params[:id])
+  def sync_last_ship_event_certification(new_status)
+    ship_event = @project.last_ship_event
+    return unless ship_event
 
-    state_column = Project.aasm.attribute_name
+    new_cert = case new_status
+    when "approved" then "approved"
+    when "rejected" then "rejected"
+    else "pending"
+    end
+    return if ship_event.certification_status == new_cert
+    ship_event.update!(certification_status: new_cert)
+  end
+
+  def force_state
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :update?
+
+    state_column = ::Project.aasm.attribute_name
     old_state = @project.send(state_column)
     new_state = params[:target_state]
 
-    unless Project.aasm.states.map { |s| s.name.to_s }.include?(new_state)
+    unless ::Project.aasm.states.map { |s| s.name.to_s }.include?(new_state)
       redirect_to admin_project_path(@project), alert: "Invalid state."
       return
     end
@@ -108,7 +122,7 @@ class Admin::ProjectsController < Admin::ApplicationController
 
     @project.update_column(state_column, new_state)
 
-    PaperTrail::Version.create!(
+    ::PaperTrail::Version.create!(
       item: @project,
       event: "update",
       whodunnit: current_user.id.to_s,

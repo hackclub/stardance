@@ -32,7 +32,6 @@
 #  verification_status          :string           default("needs_submission"), not null
 #  vote_balance                 :integer          default(0), not null
 #  votes_count                  :integer
-#  voting_locked                :boolean          default(FALSE), not null
 #  ysws_eligible                :boolean          default(FALSE), not null
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
@@ -40,11 +39,12 @@
 #
 # Indexes
 #
-#  index_users_on_email               (email)
-#  index_users_on_lower_email_unique  (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
-#  index_users_on_onboarded_at        (onboarded_at)
-#  index_users_on_session_token       (session_token) UNIQUE
-#  index_users_on_slack_id            (slack_id) UNIQUE
+#  index_users_on_email                      (email)
+#  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
+#  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
+#  index_users_on_onboarded_at               (onboarded_at)
+#  index_users_on_session_token              (session_token) UNIQUE
+#  index_users_on_slack_id                   (slack_id) UNIQUE
 #
 require "test_helper"
 
@@ -183,5 +183,59 @@ class UserTest < ActiveSupport::TestCase
     user = users(:one)
     user.hcb_email = nil
     assert user.valid?
+  end
+
+  test "display_name must be present" do
+    user = users(:one)
+    user.display_name = ""
+    assert_not user.valid?
+    assert_includes user.errors[:display_name], "can't be blank"
+  end
+
+  test "display_name rejects spaces" do
+    user = users(:one)
+    user.display_name = "hello world"
+    assert_not user.valid?
+    assert user.errors[:display_name].any? { |m| m.include?("can only contain") }
+  end
+
+  test "display_name rejects unicode and special characters" do
+    user = users(:one)
+    %w[héllo user@name cool! ñoño 🚀rocket].each do |bad_name|
+      user.display_name = bad_name
+      assert_not user.valid?, "Expected '#{bad_name}' to be invalid"
+    end
+  end
+
+  test "display_name allows letters digits hyphens and underscores" do
+    user = users(:one)
+    %w[hello Hello_World test-user User123 a-b_c].each do |good_name|
+      user.display_name = good_name
+      assert user.valid?, "Expected '#{good_name}' to be valid but got: #{user.errors.full_messages}"
+    end
+  end
+
+  test "display_name enforces max length of 30" do
+    user = users(:one)
+    user.display_name = "a" * 31
+    assert_not user.valid?
+    assert user.errors[:display_name].any? { |m| m.include?("too long") }
+  end
+
+  test "display_name must be unique case-insensitively" do
+    user = users(:one)
+    other = users(:two)
+    other.update_column(:display_name, "TakenName")
+    user.display_name = "takenname"
+    assert_not user.valid?
+    assert user.errors[:display_name].any? { |m| m.include?("taken") }
+  end
+
+  test "random_funny_display_name produces safe characters" do
+    20.times do
+      name = User.random_funny_display_name
+      assert_match(/\A[a-zA-Z0-9_-]+\z/, name, "Generated name '#{name}' contains unsafe chars")
+      assert name.length <= 30, "Generated name '#{name}' exceeds 30 chars"
+    end
   end
 end

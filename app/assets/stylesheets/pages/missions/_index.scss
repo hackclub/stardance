@@ -1,6 +1,3 @@
-// Missions index — themed track listing. Mirrors the dark-space styling used
-// on profile/project/guide pages.
-
 .missions-index__header {
   margin: var(--space-xxl) 0 var(--space-l);
 }
@@ -53,8 +50,6 @@
   color: var(--color-space-text-muted, var(--color-space-text));
 }
 
-// Mission card — used on the index grid. Picks up dark-space styling from
-// the layout-level tokens.
 .mission-card {
   display: flex;
   align-items: center;
@@ -75,6 +70,18 @@
     transform: translateY(-2px);
     border-color: var(--color-space-accent, var(--color-yellow-450));
     background: var(--color-space-card-hover, rgba(255, 255, 255, 0.06));
+  }
+
+  // Orange dashed border = admin / manageable-by-viewer marker (branding §1.5).
+  &--manageable {
+    border-style: dashed;
+    border-width: 2px;
+    border-color: var(--color-brand-orange);
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-brand-orange);
+    }
   }
 }
 
@@ -110,7 +117,6 @@
   font-size: 0.95rem;
   line-height: 1.4;
   color: var(--color-space-text-muted, var(--color-space-text));
-  // Two-line clamp keeps cards even-height in the grid.
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -139,6 +145,14 @@
 
   &--badge {
     background: var(--color-space-accent-soft, rgba(167, 139, 250, 0.18));
+  }
+
+  &--draft {
+    background: var(--color-brand-orange-soft);
+    color: var(--color-brand-orange);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   &--difficulty {

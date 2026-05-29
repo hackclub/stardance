@@ -54,6 +54,18 @@
           <%= inline_svg_tag "icons/time.svg", class: "profile-project-card__meta-icon profile-project-card__meta-icon--time" %>
           <span><%= total_hours %>h</span>
         </li>
+        <% mission = ship.mission_submission&.mission %>
+        <% if mission %>
+          <li class="profile-project-card__meta-item profile-project-card__meta-item--mission">
+            <%= inline_svg_tag "icons/flag.svg", class: "profile-project-card__meta-icon profile-project-card__meta-icon--mission" %>
+            <span>
+              <%= link_to mission.name,
+                          mission_path(mission.slug),
+                          class: "project-show__latest-ship-mission-link",
+                          data: { turbo_frame: "_top" } %>
+            </span>
+          </li>
+        <% end %>
       </ul>
 
       <% if project.demo_url.present? || project.repo_url.present? %>

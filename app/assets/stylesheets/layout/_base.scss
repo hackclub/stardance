@@ -108,6 +108,17 @@ body.app-layout-page.signed-in {
   gap: var(--space-m);
 }
 
+// Full-width variant — drops the reading-column cap; for rail-less pages.
+.app-layout--wide {
+  @media (min-width: 1281px) {
+    margin-right: var(--layout-gap);
+  }
+}
+
+.app-layout__main--wide {
+  max-width: none;
+}
+
 .dev-footer {
   text-align: center;
   font-size: 0.75rem;

@@ -1,5 +1,4 @@
 class Projects::MissionsController < ApplicationController
-  before_action :require_missions_enabled
   before_action :set_project
 
   def create
@@ -30,10 +29,5 @@ class Projects::MissionsController < ApplicationController
 
   def set_project
     @project = Project.find(params[:project_id])
-  end
-
-  def require_missions_enabled
-    return if Flipper.enabled?(:missions, current_user)
-    raise ActionController::RoutingError, "Not Found"
   end
 end

@@ -5,7 +5,7 @@
   <div class="onboarding-screen__content">
     <p class="onboarding-screen__eyebrow">ok anywayssss</p>
     <h1 class="onboarding-screen__title">What kind of stuff are you interested in?</h1>
-    <p class="onboarding-screen__subhead">Pick as many as you want! This helps us find resources and cool stuff that are right for you.</p>
+    <p class="onboarding-screen__subhead">Pick as many as you want! We'll use this to highlight stuff you might like &mdash; you can still explore everything else.</p>
 
     <%= form_with url: onboarding_interests_path, method: :post,
                    data: { controller: "onboarding-interests", action: "change->onboarding-interests#toggle" },
@@ -34,7 +34,7 @@
                             @selected == [ User::INTERESTS_UNKNOWN ],
                             class: "onboarding-interests__checkbox",
                             data: { onboarding_interests_target: "unknown" } %>
-          <span class="onboarding-interests__label">I'm not sure yet. I wanna see everything!</span>
+          <span class="onboarding-interests__label">I'm not sure yet &mdash; surprise me!</span>
         </label>
         <%= render ActionButtonComponent.new(
               text: "Next",

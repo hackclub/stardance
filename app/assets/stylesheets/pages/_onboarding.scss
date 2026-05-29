@@ -118,7 +118,7 @@
 // Welcome — different from other screens (planet bg, no progress bar)
 .onboarding-screen--welcome {
   align-items: center;
-  animation: welcome-fade-in 1900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: welcome-fade-in 4200ms cubic-bezier(0.4, 0, 0.6, 1) both;
   background: linear-gradient(180deg, #0a0820 0%, #100735 70%, #1a0a4a 100%);
   height: 100vh;
   min-height: 0;
@@ -152,23 +152,12 @@
   }
 }
 
-@keyframes welcome-cta-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 // Exit animation when leaving welcome → birthday
 .onboarding-screen--welcome.is-leaving {
-  animation: welcome-fade-out 600ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  animation: welcome-fade-out 600ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
 
   .onboarding-welcome__planet {
-    animation: moon-slide-out 700ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    animation: moon-slide-out 600ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
   }
 }
 
@@ -267,7 +256,6 @@
 @media (prefers-reduced-motion: reduce) {
   .onboarding-screen--welcome,
   .onboarding-welcome__planet,
-  .onboarding-welcome__cta,
   .onboarding-screen--welcome.is-leaving,
   .onboarding-screen--welcome.is-leaving .onboarding-welcome__planet,
   .onboarding-screen:not(.onboarding-screen--welcome) .onboarding-progress-bar,
@@ -295,8 +283,8 @@
   }
 
   &__planet {
-    animation: moon-slide-up 3000ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
-    bottom: -148%;
+    animation: moon-slide-up 1500ms cubic-bezier(0.22, 1, 0.36, 1) 0ms both;
+    bottom: -162%;
     display: block;
     height: auto;
     left: 50%;
@@ -368,46 +356,12 @@
     margin: 0 0 5rem;
   }
 
-  &__cta {
-    background: rgba(8, 6, 31, 0.85);
-    border: 1.5px solid rgba(255, 255, 255, 0.5);
-    border-radius: 0.4rem;
-    color: white;
-    cursor: pointer;
-    display: inline-block;
-    font-family: "Exo 2", sans-serif;
-    font-size: clamp(1.5rem, 2.5vw, 2.5rem);
-    font-weight: 700;
-    padding: 1.5rem 4rem;
-    text-decoration: none;
-    transition:
-      transform 150ms ease,
-      background 150ms ease;
-
-    &:hover,
-    &:focus-visible {
-      background: rgba(8, 6, 31, 1);
-      transform: translateY(-2px);
-    }
-  }
-
-  &__cta:not(.is-pressed) {
-    animation: welcome-cta-in 800ms cubic-bezier(0.16, 1, 0.3, 1) 2200ms both;
-  }
-
-  &__cta-form {
-    display: inline;
-  }
-
   @media (max-width: 768px) {
     &__partnership {
       flex-direction: column;
       gap: 0.5rem;
       right: 1rem;
       top: 1rem;
-    }
-    &__cta {
-      padding: 1rem 2rem;
     }
   }
 }
@@ -931,11 +885,138 @@ $slider-star: url("onboarding/star-radio-active.svg");
   }
 }
 
-// Visual styling comes from .ship__input — this class only locks the field
-// to the form-row width so the Go button stays inline beside it.
-.onboarding-name__input {
+// Wraps the input + the inline character counter as a single field-shaped
+// row. The wrapper renders the border/background; the input itself drops its
+// chrome so the counter sits next to it without ever overlapping the text.
+.onboarding-name__field {
+  align-items: center;
+  background: var(--color-set-1-bg);
+  border: 2px solid hsla(0, 0%, 100%, 0.5);
+  border-radius: var(--profile-radius);
+  display: flex;
+  height: 45px;
   max-width: 425px;
+  padding: 0 0.75rem 0 0.9rem;
+  transition: border-color 0.15s ease;
   width: 100%;
+
+  &:focus-within {
+    border-color: var(--color-border-input-focus, hsla(0, 0%, 100%, 0.9));
+  }
+}
+
+.onboarding-name__input {
+  background: transparent;
+  border: none;
+  color: var(--color-space-text);
+  flex: 1;
+  font-family: var(--font-family-text);
+  font-size: var(--font-body);
+  height: 100%;
+  min-width: 0;
+  outline: none;
+  padding: 0;
+  width: auto;
+
+  &::placeholder {
+    color: hsla(0, 0%, 100%, 0.5);
+  }
+}
+
+.onboarding-name__counter {
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  font-family: var(--font-family-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  margin-left: 0.6rem;
+  pointer-events: none;
+  transition: color 150ms ease;
+
+  &[data-status="over"] {
+    color: var(--color-brand-salmon);
+  }
+}
+
+.onboarding-name__availability {
+  align-items: center;
+  color: rgba(255, 255, 255, 0.7);
+  display: inline-flex;
+  flex-basis: 100%;
+  font-family: var(--font-family-text);
+  font-size: 16px;
+  font-weight: 400;
+  gap: 0.55rem;
+  justify-content: center;
+  margin: -0.25rem 0 0;
+  min-height: 1.4em;
+  text-align: center;
+  transition: color 150ms ease;
+
+  // Indicator left of the message. Sized to the line, shape + animation
+  // swap per state. Pill-shaped status chip for resolved states (mirrors the
+  // brand's "fully rounded" button motif); spinning ring while checking.
+  &::before {
+    border-radius: 999px;
+    content: "";
+    display: inline-block;
+    flex-shrink: 0;
+    height: 0.6em;
+    opacity: 0;
+    transform: scale(0.5);
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease;
+    width: 0.6em;
+  }
+
+  &[data-status="checking"] {
+    color: rgba(255, 255, 255, 0.7);
+
+    &::before {
+      animation: name-availability-spin 700ms linear infinite;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      height: 0.95em;
+      opacity: 1;
+      transform: none;
+      width: 0.95em;
+    }
+  }
+
+  &[data-status="available"] {
+    color: var(--color-brand-mint);
+
+    &::before {
+      background: currentColor;
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  &[data-status="taken"],
+  &[data-status="too_long"],
+  &[data-status="invalid"] {
+    color: var(--color-brand-salmon);
+
+    &::before {
+      background: currentColor;
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  &[data-status="empty"],
+  &[data-status="error"] {
+    color: transparent;
+  }
+}
+
+@keyframes name-availability-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // Fade-out keyframe for the welcome overlay

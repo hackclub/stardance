@@ -655,7 +655,7 @@ turbo-frame#project_hero {
   gap: 14px;
   align-items: stretch;
   position: sticky;
-  top: 0;
+  top: var(--space-m);
   z-index: 5;
 
   .action-btn {
@@ -704,7 +704,6 @@ turbo-frame#project_hero {
   display: flex;
   flex-direction: column;
   gap: 28px;
-  padding-top: 16px;
   color: var(--color-space-text);
 }
 
@@ -923,6 +922,16 @@ turbo-frame#project_hero {
   opacity: 0.5;
 }
 
+.project-show__latest-ship-mission-link {
+  color: var(--color-brand-yellow);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--color-brand-cream);
+  }
+}
+
 .project-show__latest-ship-text {
   margin: 0;
   font-size: 1.1875rem; // 19px
@@ -936,7 +945,7 @@ turbo-frame#project_hero {
   padding: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-l);
   opacity: 0.75;
 }
 
@@ -1084,6 +1093,10 @@ turbo-frame#project_hero {
   font-weight: 700;
 }
 
+.project-show__payout-votes-info {
+  cursor: help;
+}
+
 .project-show__payout-votes-row {
   display: flex;
   align-items: center;
@@ -1209,6 +1222,7 @@ turbo-frame#project_hero {
 
   .feed-composer__chips,
   .feed-composer__grid,
+  .feed-composer__attach-wrap,
   .feed-composer__info-wrap,
   .feed-composer__toolbar {
     flex-shrink: 0;

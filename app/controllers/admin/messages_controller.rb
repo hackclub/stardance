@@ -1,7 +1,7 @@
 module Admin
   class MessagesController < Admin::ApplicationController
     def index
-      authorize :admin, :manage_messages?
+      authorize Message
 
       base_scope = Message.includes(:sent_by, :user).order(created_at: :desc)
 
@@ -22,7 +22,7 @@ module Admin
     end
 
     def create
-      authorize :admin, :manage_messages?
+      authorize Message
 
       content = params[:content].presence
       block_path = params[:block_path].presence
@@ -51,7 +51,7 @@ module Admin
           return
         end
 
-        PaperTrail::Version.create!(
+        ::PaperTrail::Version.create!(
           item_type: "User",
           item_id: current_user.id,
           event: "mass_dm_sent",

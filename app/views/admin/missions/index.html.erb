@@ -1,42 +1,76 @@
 <% content_for :title, "Admin · Missions" %>
 
-<div>
-  <header>
-    <h1>Missions</h1>
-    <%= link_to "New mission", new_admin_mission_path %>
-  </header>
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide">
+    <article class="admin-mission">
+      <header class="admin-mission__page-header">
+        <h1 class="admin-mission__page-title">Missions</h1>
+        <%= render ActionButtonComponent.new(
+              text: "New mission",
+              href: new_admin_mission_path,
+              size: :small,
+              variant: :primary
+            ) %>
+      </header>
 
-  <nav>
-    <%= link_to "All", admin_missions_path %> ·
-    <%= link_to "Disabled", admin_missions_path(filter: "disabled") %> ·
-    <%= link_to "Deleted", admin_missions_path(filter: "deleted") %>
-  </nav>
+      <nav class="admin-mission__filter">
+        <% [
+             [ "All",      nil ],
+             [ "Active",   "active" ],
+             [ "Disabled", "disabled" ],
+             [ "Deleted",  "deleted" ],
+           ].each do |label, key| %>
+          <% if @current_filter == key %>
+            <strong class="admin-mission__filter-tab admin-mission__filter-tab--current"><%= label %></strong>
+          <% else %>
+            <%= link_to label, admin_missions_path(filter: key), class: "admin-mission__filter-tab" %>
+          <% end %>
+        <% end %>
+      </nav>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Slug</th>
-        <th>Enabled</th>
-        <th>Window</th>
-        <th>Submissions</th>
-        <th>Deleted</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @missions.each do |m| %>
-        <tr>
-          <td><%= link_to m.name, admin_mission_path(m.slug) %></td>
-          <td><code><%= m.slug %></code></td>
-          <td><%= m.enabled? ? "yes" : "no" %></td>
-          <td>
-            <%= m.start_at&.to_date %> →
-            <%= m.end_at&.to_date %>
-          </td>
-          <td><%= @submission_counts[m.id] || 0 %></td>
-          <td><%= m.deleted_at? ? "deleted #{time_ago_in_words(m.deleted_at)} ago" : "—" %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+      <section class="admin-mission__section">
+        <table class="admin-mission__table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Slug</th>
+              <th>Enabled</th>
+              <th>Window</th>
+              <th>Submissions</th>
+              <% if @current_filter == "deleted" %>
+                <th>Deleted</th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @missions.each do |m| %>
+              <tr>
+                <td><%= link_to m.name, admin_mission_path(m.slug), class: "admin-mission__link" %></td>
+                <td><code class="admin-mission__code"><%= m.slug %></code></td>
+                <td>
+                  <% if m.enabled? %>
+                    <span class="admin-mission__bool admin-mission__bool--yes">Yes</span>
+                  <% else %>
+                    <span class="admin-mission__bool admin-mission__bool--no">No</span>
+                  <% end %>
+                </td>
+                <td class="admin-mission__muted">
+                  <%= m.start_at&.to_date %> →
+                  <%= m.end_at&.to_date %>
+                </td>
+                <td><%= @submission_counts[m.id] || 0 %></td>
+                <% if @current_filter == "deleted" %>
+                  <td class="admin-mission__muted"><%= time_ago_in_words(m.deleted_at) %> ago</td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if @missions.empty? %>
+          <p class="admin-mission__empty">No missions match the current filter.</p>
+        <% end %>
+      </section>
+    </article>
+  </div>
 </div>

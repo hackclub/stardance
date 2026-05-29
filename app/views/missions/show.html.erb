@@ -5,88 +5,170 @@
 
 <div class="app-layout">
   <div class="app-layout__main">
-    <article class="mission-show">
+    <article class="mission-home">
       <% if @mission.banner.attached? %>
-        <div class="mission-show__banner">
-          <%= image_tag @mission.banner, alt: "", class: "mission-show__banner-img" %>
+        <div class="mission-home__banner">
+          <%= image_tag @mission.banner, alt: "", class: "mission-home__banner-img" %>
         </div>
       <% end %>
 
-      <header class="mission-show__header">
-        <% if @mission.icon.attached? %>
-          <div class="mission-show__icon">
-            <%= image_tag @mission.icon, alt: "" %>
-          </div>
-        <% end %>
+      <p class="mission-home__crumb">
+        <span class="mission-home__crumb-links">
+          <%= link_to "Missions", missions_path, class: "mission-home__crumb-link" %>
+          <% if policy(@mission).manage? %>
+            <span class="mission-home__crumb-dot" aria-hidden="true">·</span>
+            <%= link_to "Manage", edit_admin_mission_path(@mission.slug), class: "mission-home__crumb-link" %>
+          <% end %>
+        </span>
+      </p>
 
-        <div class="mission-show__heading">
-          <p class="mission-show__breadcrumb">
-            <%= link_to "Missions", missions_path, class: "mission-show__breadcrumb-link" %>
-            <% if policy(@mission).manage? %>
-              · <%= link_to "Manage", edit_manage_mission_path(@mission.slug), class: "mission-show__breadcrumb-link" %>
+      <section class="mission-home__hero">
+        <%# star creature peeking off the top-right of the hero card %>
+        <%= image_tag "missions/card-star.png", alt: "",
+              aria: { hidden: "true" }, class: "mission-home__hero-creature" %>
+
+        <div class="mission-home__hero-top">
+          <%= render "missions/mission_patch", mission: @mission, size: 132 %>
+
+          <div class="mission-home__hero-text">
+            <ul class="mission-home__hero-chips">
+              <% status_label, status_glyph = case @progress_state
+                 when :completed   then [ "completed",   "✓" ]
+                 when :in_voting   then [ "in voting",   "◉" ]
+                 when :in_review   then [ "in review",   "⊙" ]
+                 when :in_progress then [ "in progress", "◐" ]
+                 else                   [ "not started", "○" ]
+                 end %>
+              <li class="mission-home__hero-chip mission-home__hero-chip--status mission-home__hero-chip--status-<%= @progress_state.to_s.dasherize %>">
+                <span class="mission-home__hero-chip-dot" aria-hidden="true"><%= status_glyph %></span> <%= status_label %>
+              </li>
+              <% if @mission.difficulty.present? %>
+                <li class="mission-home__hero-chip mission-home__hero-chip--difficulty mission-home__hero-chip--difficulty-<%= @mission.difficulty %>">
+                  <%= @mission.difficulty %>
+                </li>
+              <% end %>
+              <% if @estimated_label.present? %>
+                <li class="mission-home__hero-chip mission-home__hero-chip--time"><%= @estimated_label %></li>
+              <% end %>
+              <% if @mission.has_guide? %>
+                <li class="mission-home__hero-chip mission-home__hero-chip--sections"><%= pluralize(@guide_outline.length, "section") %></li>
+              <% end %>
+            </ul>
+
+            <h1 class="mission-home__hero-title">
+              <em class="mission-home__hero-title-accent"><%= @mission.name %></em>
+            </h1>
+          </div>
+        </div>
+
+        <div class="mission-home__hero-brief"><%= md(@mission.description) %></div>
+
+        <% unless @mission.available_to_builders? %>
+          <p class="mission-home__windowed-banner">
+            <% if @mission.coming_soon? %>
+              Lifts off <%= @mission.start_at.strftime("%b %-d, %Y") %> — see you there.
+            <% elsif @mission.ended? %>
+              This mission has wrapped — feel free to read the walkthrough anyway.
+            <% else %>
+              This mission is taking a quick break.
             <% end %>
           </p>
-          <h1 class="mission-show__title"><%= @mission.name %></h1>
+        <% end %>
 
-          <% if @mission.difficulty.present? %>
-            <p class="mission-show__tags">
-              <span class="mission-tag mission-tag--difficulty mission-tag--difficulty-<%= @mission.difficulty %>"><%= @mission.difficulty.titleize %></span>
-            </p>
+        <div class="mission-home__hero-actions">
+          <% if @active_project %>
+            <%= link_to "View my project",
+                        project_path(@active_project),
+                        data: { turbo: false },
+                        class: "action-btn action-btn--large action-btn--primary" %>
+          <% else %>
+            <%= button_to "Create a project",
+                          projects_setup_submit_mission_path,
+                          method: :post,
+                          params: { mission_slug: @mission.slug },
+                          data: { turbo: false },
+                          form: { class: "mission-home__cta-form" },
+                          class: "action-btn action-btn--large action-btn--primary" %>
           <% end %>
-
-          <% unless @mission.available_to_builders? %>
-            <p class="mission-show__windowed-banner">
-              <% if @mission.coming_soon? %>
-                ⏳ Starts <%= @mission.start_at.strftime("%b %-d, %Y") %>.
-              <% elsif @mission.ended? %>
-                ⛳ This mission ended <%= time_ago_in_words(@mission.end_at) %> ago.
-              <% else %>
-                🚫 This mission is currently disabled.
-              <% end %>
-            </p>
+          <% if @mission.has_guide? %>
+            <%= link_to (@active_project ? "View the guide" : "Preview the guide"),
+                        guide_mission_path(@mission.slug),
+                        data: { turbo: false },
+                        class: "action-btn action-btn--large action-btn--secondary" %>
+          <% end %>
+          <% if @mission.has_guide? && @mission.guide_body_updated_at %>
+            <span class="mission-home__hero-updated">updated <%= time_ago_in_words(@mission.guide_body_updated_at) %> ago</span>
           <% end %>
         </div>
-      </header>
-
-      <section class="mission-show__description">
-        <%= md(@mission.description) %>
       </section>
 
-      <% if @ordered_prizes.any? %>
-        <section class="mission-show__prizes" aria-labelledby="mission-show-prizes">
-          <h2 id="mission-show-prizes" class="mission-show__section-title">Prizes</h2>
-          <ul class="mission-show__prize-list">
-            <% @ordered_prizes.each do |prize| %>
-              <li class="mission-show__prize">
-                <strong><%= prize.shop_item.name %></strong>
-                <% if prize.shop_item.description.present? %>
-                  <span class="mission-show__prize-description"><%= prize.shop_item.description %></span>
+      <div class="mission-home__columns">
+        <%# Submission requirements card %>
+        <% if @mission.submission_guide.present? %>
+          <section class="mission-home__card mission-home__requirements"
+                   aria-labelledby="mission-home-requirements">
+            <h2 id="mission-home-requirements" class="mission-home__card-title">
+              Submission <em class="mission-home__card-title-accent">requirements</em>
+            </h2>
+            <%= render "missions/submission_requirements", mission: @mission %>
+          </section>
+        <% end %>
+
+        <%# Prizes card %>
+        <% if @ordered_prizes.any? %>
+          <section class="mission-home__card mission-home__rewards"
+                   aria-labelledby="mission-home-rewards">
+            <h2 id="mission-home-rewards" class="mission-home__card-title">
+              <em class="mission-home__card-title-accent">Prizes</em>
+            </h2>
+            <ul class="mission-home__prize-list">
+              <% tones = %w[yellow lilac peach mint] %>
+              <% @ordered_prizes.each_with_index do |prize, idx| %>
+                <% tone = tones[idx % tones.length] %>
+                <li class="mission-home__prize mission-home__prize--<%= tone %>">
+                  <div class="mission-home__prize-tile">
+                    <% if prize.shop_item.respond_to?(:image) && prize.shop_item.image.respond_to?(:attached?) && prize.shop_item.image.attached? %>
+                      <%= image_tag prize.shop_item.image, alt: "", class: "mission-home__prize-img" %>
+                    <% else %>
+                      <svg viewBox="0 0 24 24" width="28" height="28" class="mission-home__prize-glyph" aria-hidden="true">
+                        <path d="M12 1.5 13.6 10.4 22.5 12 13.6 13.6 12 22.5 10.4 13.6 1.5 12 10.4 10.4Z" />
+                      </svg>
+                    <% end %>
+                  </div>
+                  <div class="mission-home__prize-body">
+                    <p class="mission-home__prize-title"><%= prize.shop_item.name %></p>
+                    <% if prize.shop_item.description.present? %>
+                      <p class="mission-home__prize-blurb"><%= prize.shop_item.description %></p>
+                    <% end %>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          </section>
+        <% end %>
+      </div>
+
+      <% if @gallery_projects.any? %>
+        <section class="mission-home__gallery" aria-labelledby="mission-home-gallery">
+          <h2 id="mission-home-gallery" class="mission-home__section-title">
+            Projects for this <em class="mission-home__section-title-accent">mission</em>
+          </h2>
+          <ul class="mission-home__gallery-grid">
+            <% @gallery_projects.first(3).each do |project| %>
+              <li class="mission-home__gallery-item">
+                <% if @approved_project_ids.include?(project.id) %>
+                  <span class="mission-home__gallery-badge mission-home__gallery-badge--approved">Approved</span>
+                <% else %>
+                  <span class="mission-home__gallery-badge mission-home__gallery-badge--in-progress">In progress</span>
                 <% end %>
+                <%= render Projects::ShelfCardComponent.new(project: project) %>
               </li>
             <% end %>
           </ul>
-          <p class="mission-show__prizes-note">
-            Approved submissions can redeem one prize. You'll pick which prize at redemption time.
-          </p>
-        </section>
-      <% end %>
-
-      <% if @ordered_steps.any? %>
-        <section class="mission-show__steps" aria-labelledby="mission-show-steps">
-          <h2 id="mission-show-steps" class="mission-show__section-title">Guide</h2>
-          <ol class="mission-show__step-list">
-            <% @ordered_steps.each_with_index do |step, idx| %>
-              <li class="mission-show__step">
-                <div class="mission-show__step-eyebrow">Step <%= idx + 1 %></div>
-                <h3 class="mission-show__step-title"><%= step.title %></h3>
-                <div class="mission-show__step-body"><%= md(step.body) %></div>
-              </li>
-            <% end %>
-          </ol>
         </section>
       <% end %>
     </article>
   </div>
 
-  <%= render "shared/discover_rail" rescue nil %>
+  <%= render DiscoverRailComponent.new %>
 </div>

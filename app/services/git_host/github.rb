@@ -11,6 +11,10 @@ module GitHost
       "github"
     end
 
+    def provider_display_name
+      "GitHub"
+    end
+
     def fetch_commits(since: nil, per_page: 100)
       return [] unless owner && repo
 

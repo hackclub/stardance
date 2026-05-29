@@ -1,0 +1,316 @@
+.mission-guide {
+  margin: var(--space-l) 0 var(--space-xxl);
+}
+
+.mission-guide__header {
+  margin-bottom: var(--space-l);
+}
+
+.mission-guide__breadcrumb {
+  margin: 0 0 var(--space-s);
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}
+
+.mission-guide__breadcrumb-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+
+  &:hover {
+    color: var(--color-brand-mint);
+  }
+}
+
+.mission-guide__title {
+  margin: 0;
+  font-size: var(--font-size-xxxl);
+  font-weight: 700;
+  color: var(--color-space-text);
+}
+
+.mission-guide__subtitle {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--font-size-m);
+  color: var(--color-space-text-muted);
+}
+
+.mission-guide__lang-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: var(--space-m);
+  background: var(--color-overlay-light);
+  border-radius: 999px;
+}
+
+.mission-guide__lang-toggle-option {
+  border: none;
+  background: transparent;
+  color: var(--color-brand-cream);
+  font: inherit;
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+
+  &:hover {
+    color: var(--color-brand-off-white);
+  }
+
+  &--active {
+    background: var(--color-brand-mint);
+    color: var(--color-space-bg);
+  }
+}
+
+.mission-guide__sync-hint {
+  margin: var(--space-s) 0 var(--space-m);
+  padding: var(--space-s) var(--space-m);
+  border-radius: 10px;
+  background: var(--color-overlay-light);
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+  line-height: 1.5;
+}
+
+.mission-guide__sync-hint-link {
+  color: var(--color-brand-mint);
+  text-decoration: underline;
+}
+
+.mission-guide__layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+
+  @media (min-width: 1024px) {
+    grid-template-columns: 240px 1fr;
+  }
+}
+
+.mission-guide__sidebar {
+  order: 2;
+
+  @media (min-width: 1024px) {
+    order: 1;
+  }
+}
+
+.mission-guide__sidebar-inner {
+  position: sticky;
+  top: var(--space-l);
+  padding: var(--space-m);
+  border-radius: var(--profile-radius);
+  background: var(--color-space-surface-faint);
+  border: 1px solid var(--color-space-border);
+  max-height: calc(100vh - var(--space-xxl));
+  overflow-y: auto;
+}
+
+.mission-guide__progress-label {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.mission-guide__progress-bar {
+  width: 100%;
+  height: 6px;
+  margin-bottom: var(--space-xs);
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-overlay-light-soft);
+
+  &::-webkit-progress-bar {
+    background: var(--color-overlay-light-soft);
+    border-radius: 999px;
+  }
+
+  &::-webkit-progress-value {
+    background: var(--color-brand-mint);
+    border-radius: 999px;
+    transition: width 240ms ease;
+  }
+
+  &::-moz-progress-bar {
+    background: var(--color-brand-mint);
+    border-radius: 999px;
+  }
+}
+
+.mission-guide__outline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+}
+
+.mission-guide__outline-item {
+  --marker-color: var(--color-space-text-muted);
+
+  &.is-completed {
+    --marker-color: var(--color-brand-mint);
+  }
+
+  &.is-current {
+    .mission-guide__outline-link {
+      background: var(--color-brand-mint-soft);
+      color: var(--color-brand-off-white);
+    }
+  }
+}
+
+.mission-guide__outline-link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-s);
+  border-radius: 6px;
+  color: var(--color-space-text);
+  font-size: var(--font-size-s);
+  text-decoration: none;
+  line-height: 1.4;
+
+  &:hover {
+    background: var(--color-overlay-light-soft);
+  }
+}
+
+.mission-guide__outline-marker {
+  color: var(--marker-color);
+  font-size: 1.1em;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.mission-guide__main {
+  order: 1;
+  min-width: 0;
+
+  @media (min-width: 1024px) {
+    order: 2;
+  }
+}
+
+.mission-guide__empty {
+  padding: var(--space-l);
+  border-radius: var(--profile-radius);
+  border: 1px dashed var(--color-space-border);
+  color: var(--color-space-text-muted);
+  text-align: center;
+}
+
+// Scope to .mission-guide so admin/manage static previews still show all sections.
+.mission-guide .guide-section--hidden {
+  display: none;
+}
+
+.mission-guide__step-nav {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-m);
+  margin-top: var(--space-xxl);
+  padding-top: var(--space-l);
+  border-top: 1px solid var(--color-space-border);
+}
+
+.mission-guide__step-nav-spacer {
+  flex: 1;
+}
+
+.mission-guide__step-nav-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  padding: var(--space-s) var(--space-m);
+  border-radius: var(--profile-radius);
+  border: 1px solid var(--color-space-border);
+  background: var(--color-space-surface-faint);
+  color: var(--color-space-text);
+  cursor: pointer;
+  font-family: var(--font-family-text);
+  text-align: left;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-brand-mint-soft);
+    border-color: var(--color-brand-mint);
+    outline: none;
+  }
+
+  &--next {
+    text-align: right;
+  }
+}
+
+.mission-guide__step-nav-eyebrow {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--color-space-text-muted);
+}
+
+.mission-guide__step-nav-title {
+  font-size: var(--font-size-m);
+  font-weight: 600;
+  color: var(--color-space-text);
+}
+
+@media print {
+  .mission-guide__sidebar,
+  .mission-guide__breadcrumb,
+  .mission-guide__step-nav {
+    display: none;
+  }
+
+  .mission-guide__layout {
+    display: block;
+  }
+
+  .mission-guide .guide-section--hidden {
+    display: block;
+  }
+
+  .mission-guide,
+  .mission-guide__title,
+  .guide-content {
+    color: #000;
+  }
+
+  .guide-content {
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .guide-content a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  .guide-content a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #444;
+  }
+
+  .guide-section {
+    break-inside: avoid-page;
+    break-after: page;
+  }
+}

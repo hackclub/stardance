@@ -35,67 +35,51 @@
       <% end %>
     </header>
 
-    <% steps = mission.steps.ordered.to_a %>
-    <% if steps.any? %>
-      <% completed_ids = project.completed_mission_steps.pluck(:id).to_set %>
-      <% completed_count = steps.count { |s| completed_ids.include?(s.id) } %>
-      <% all_done = completed_count == steps.length %>
+    <% if mission.has_guide? %>
+      <%
+        outline  = mission.guide_sections
+        total    = outline.length
+        # Sections are keyed on mission_step_id (shared across languages).
+        # Count only completions whose step is still in the current outline,
+        # so `done` can never exceed `total`.
+        step_ids = outline.map { |o| o[:mission_step_id] }
+        done     = step_ids.any? ?
+                     project.mission_section_completions
+                            .where(mission_step_id: step_ids)
+                            .count :
+                     0
+        all_done = total.positive? && done >= total
+      %>
 
-      <% current = steps.find { |s| !completed_ids.include?(s.id) } %>
-
-      <% if all_done %>
-        <div class="mission-panel__all-done">
-          🎉 You've completed every step of this mission. Time to ship!
-        </div>
-      <% elsif current %>
-        <div class="mission-panel__current-step">
-          <p class="mission-panel__current-step-eyebrow">
-            Step <%= steps.index(current) + 1 %> of <%= steps.length %>
+      <% if total.positive? %>
+        <div class="mission-panel__progress">
+          <p class="mission-panel__progress-label">
+            <strong><%= done %></strong> of <%= total %> sections
+            <% if all_done %><span class="mission-panel__progress-pill">complete</span><% end %>
           </p>
-          <h3 class="mission-panel__current-step-title"><%= current.title %></h3>
-          <div class="mission-panel__current-step-body markdown-content">
-            <%= md(current.body) %>
-          </div>
-          <% if is_member %>
-            <%= button_to "Mark step complete",
-                          project_mission_step_completions_path(project, mission_step_id: current.id),
-                          method: :post,
-                          class: "mission-panel__complete-btn" %>
-          <% end %>
+          <progress class="mission-panel__progress-bar"
+                    max="<%= total %>"
+                    value="<%= done %>"></progress>
         </div>
       <% end %>
 
-      <details class="mission-panel__step-list-wrapper">
-        <summary>
-          All steps
-          <span class="mission-panel__step-list-summary-count"><%= completed_count %>/<%= steps.length %></span>
-        </summary>
-        <ol class="mission-panel__step-list">
-          <% steps.each_with_index do |step, idx| %>
-            <% done = completed_ids.include?(step.id) %>
-            <li class="mission-panel__step <%= 'mission-panel__step--complete' if done %> <%= 'mission-panel__step--current' if step == current %>">
-              <span class="mission-panel__step-num"><%= idx + 1 %>.</span>
-              <span class="mission-panel__step-title"><%= step.title %></span>
-              <% if is_member %>
-                <% if done %>
-                  <%= button_to "Undo",
-                                project_mission_step_completion_path(project, mission_step_id: step.id),
-                                method: :delete,
-                                class: "mission-panel__step-action" %>
-                <% else %>
-                  <%= button_to "Mark done",
-                                project_mission_step_completions_path(project, mission_step_id: step.id),
-                                method: :post,
-                                class: "mission-panel__step-action" %>
-                <% end %>
-              <% end %>
-            </li>
-          <% end %>
-        </ol>
-      </details>
+      <div class="mission-panel__actions">
+        <%= link_to (all_done ? "Review the guide" : "Continue the guide"),
+                    guide_mission_path(mission.slug),
+                    data: { turbo: false },
+                    class: "action-btn action-btn--small action-btn--primary" %>
+        <%= link_to "View the mission",
+                    mission_path(mission.slug),
+                    data: { turbo: false },
+                    class: "action-btn action-btn--small action-btn--secondary" %>
+      </div>
+
     <% else %>
-      <div class="mission-panel__loose-body markdown-content">
-        <%= md(truncate(mission.description.to_s, length: 600)) %>
+      <div class="mission-panel__actions">
+        <%= link_to "View the mission",
+                    mission_path(mission.slug),
+                    data: { turbo: false },
+                    class: "action-btn action-btn--small action-btn--secondary" %>
       </div>
     <% end %>
   </section>

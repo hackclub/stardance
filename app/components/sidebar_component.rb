@@ -44,10 +44,12 @@ class SidebarComponent < ViewComponent::Base
         icon: :avatar, active_prefix: "/users/" }
     ]
 
-    items << { slug: "admin",   label: "admin",   path: helpers.admin_users_path, icon: "code" } if helpers.policy(:admin).access_admin_endpoints?
+    items << { slug: "support", label: "support", path: helpers.admin_support_path, icon: "help" } if helpers.admin_policy(:support_dashboard).show?
+    items << { slug: "fraud",   label: "fraud",   path: helpers.admin_fraud_path, icon: "code" } if helpers.admin_policy(:fraud_dashboard).show? && !user.admin?
+    items << { slug: "admin",   label: "admin",   path: helpers.admin_users_path, icon: "code" } if user.admin?
+    items << { slug: "shop",    label: "shop",    path: helpers.admin_shop_path, icon: "shopping_cart_1_fill" } if helpers.admin_policy(ShopItem).index?
     items << { slug: "fulfil",  label: "fulfil",  path: helpers.admin_shop_orders_path(view: "fulfillment"), icon: "shopping_cart_1_fill" } if user.fulfillment_person? && !user.admin?
     items << { slug: "seller",  label: "seller",  path: helpers.seller_orders_path, icon: "shopping_cart_1_fill" } if user.seller?
-    items << { slug: "helper",  label: "helper",  path: helpers.helper_root_path, icon: "help" } if helpers.policy(:helper).access_helper_dashboard?
     items << { slug: "certify", label: "certify", path: "https://review.hackclub.com/", icon: "ship" } if user.project_certifier?
 
     items

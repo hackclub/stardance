@@ -86,15 +86,15 @@ class Project < ApplicationRecord
   has_many :git_commit_posts, -> { where(postable_type: "Post::GitCommit").order(created_at: :desc) }, class_name: "Post"
   has_many :votes, dependent: :destroy
   has_many :reports, class_name: "Project::Report", dependent: :destroy
+  has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
   has_many :followers, through: :project_follows, source: :user
 
   has_many :mission_attachments,      class_name: "Project::MissionAttachment",  dependent: :destroy, inverse_of: :project
   has_many :missions,                 through:    :mission_attachments
-  has_many :mission_step_completions, class_name: "Mission::StepCompletion",     dependent: :destroy
-  has_many :completed_mission_steps,  through:    :mission_step_completions, source: :mission_step
-  has_many :mission_submissions,      class_name: "Mission::Submission",         through: :ship_events
+  has_many :mission_section_completions, class_name: "Mission::SectionCompletion",  dependent: :destroy
+  has_many :mission_submissions,         class_name: "Mission::Submission",         through: :ship_events
 
   def current_mission_attachment
     mission_attachments.where(detached_at: nil).order(attached_at: :desc).first
@@ -102,10 +102,6 @@ class Project < ApplicationRecord
 
   def current_mission
     current_mission_attachment&.mission
-  end
-
-  def has_completed_mission_step?(step)
-    mission_step_completions.exists?(mission_step_id: step.id)
   end
 
   # needs to be implemented
@@ -229,13 +225,15 @@ class Project < ApplicationRecord
     state :draft, initial: true
     state :submitted
     state :under_review
+    state :needs_changes
     state :approved
     state :rejected
 
     event :submit_for_review do
-      transitions from: [ :draft, :submitted, :under_review, :approved, :rejected ], to: :submitted, guard: :shippable?
+      transitions from: [ :draft, :submitted, :under_review, :needs_changes, :approved, :rejected ], to: :submitted, guard: :shippable?
       after do
         self.shipped_at = Time.current
+        ship_reviews.find_or_create_by!(status: :pending)
       end
     end
 
@@ -249,6 +247,10 @@ class Project < ApplicationRecord
 
     event :reject do
       transitions from: :under_review, to: :rejected
+    end
+
+    event :return_for_changes do
+      transitions from: :under_review, to: :needs_changes
     end
   end
 
@@ -435,6 +437,7 @@ class Project < ApplicationRecord
   def url_reachable?(url)
     cache_key = "url_reachable_#{Digest::MD5.hexdigest(url)}"
     Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      next false unless SafeUrl.safe_to_probe?(url)
       uri = URI.parse(url)
       response = head_with_redirects(uri)
       response.is_a?(Net::HTTPSuccess) || response.is_a?(Net::HTTPRedirection)
@@ -455,7 +458,9 @@ class Project < ApplicationRecord
       response = http.request_head(uri.request_uri)
 
       if response.is_a?(Net::HTTPRedirection) && response["location"]
-        head_with_redirects(URI.parse(response["location"]), limit - 1)
+        next_uri = URI.parse(response["location"])
+        return Net::HTTPForbidden.new("1.1", "403", "Redirect target not safe") unless SafeUrl.safe_to_probe?(next_uri.to_s)
+        head_with_redirects(next_uri, limit - 1)
       else
         response
       end

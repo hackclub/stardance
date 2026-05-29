@@ -6,7 +6,8 @@ class Projects::Ships::ReviewsController < ApplicationController
 
     session[:ship_wizard] = {
       "review_instructions" => params[:review_instructions].to_s.strip.presence,
-      "mission_payout_path" => params[:mission_payout_path].to_s.strip.presence
+      "mission_payout_path" => params[:mission_payout_path].to_s.strip.presence,
+      "mission_submission_guide_acknowledged" => params[:mission_submission_guide_acknowledged].to_s == "1"
     }
 
     redirect_to compose_project_ships_path(@project)

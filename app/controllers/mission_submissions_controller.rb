@@ -1,5 +1,4 @@
 class MissionSubmissionsController < ApplicationController
-  before_action :require_missions_enabled
   before_action :set_body_class, only: [ :index, :show, :redeem ]
   before_action :set_submission, only: [ :show, :approve, :reject, :undo, :redeem ]
 
@@ -70,10 +69,6 @@ class MissionSubmissionsController < ApplicationController
     @submission = Mission::Submission.find(params[:id])
   end
 
-  def require_missions_enabled
-    return if Flipper.enabled?(:missions, current_user)
-    raise ActionController::RoutingError, "Not Found"
-  end
 
   def grant_mission_achievement_if_configured
     mission = @submission.mission

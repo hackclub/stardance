@@ -22,19 +22,4 @@ class UserPolicy < ApplicationPolicy
   def view_deleted_devlogs?
     user&.can_see_deleted_devlogs?
   end
-
-  def impersonate?
-    # must be admin or super_admin to impersonate
-    return false unless user.admin? || user.super_admin?
-
-    # cannot impersonate yourself
-    return false if user.id == record.id
-
-    # only super admins can impersonate admins
-    if record.admin? && !user.super_admin?
-      return false
-    end
-
-    true
-  end
 end

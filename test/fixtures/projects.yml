@@ -39,13 +39,7 @@
 one:
   title: MyString
   description: MyText
-  repo_url: MyText
-  demo_url: MyText
-  readme_url: MyText
 
 two:
   title: MyString
   description: MyText
-  repo_url: MyText
-  demo_url: MyText
-  readme_url: MyText

@@ -15,6 +15,8 @@ module User::Roles
 
   def admin? = has_role?(:admin) || has_role?(:super_admin)
 
+  def can_review? = admin? || has_role?(:project_certifier)
+
   def can_see_deleted_devlogs? = admin? || has_role?(:fraud_dept)
 
   def highest_role

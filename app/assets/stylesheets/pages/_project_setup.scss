@@ -162,8 +162,14 @@
     line-height: 1.35;
   }
 
-  &__card-difficulty {
+  &__card-meta {
     align-self: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  &__card-difficulty {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 999px;
     color: var(--color-brand-cream);
@@ -172,6 +178,15 @@
     letter-spacing: 0.05em;
     padding: 0.15rem 0.55rem;
     text-transform: uppercase;
+  }
+
+  &__card-steps {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
   }
 
   &__empty {
