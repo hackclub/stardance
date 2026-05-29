@@ -1,0 +1,184 @@
+// Checkout-style screens for the shop tutorial flow. Used by the address
+// step (and reusable for other minimal pre-order screens) — item lives on
+// the left, action panel on the right. Modeled after the existing
+// `_order.scss` layout, scaled down for the simpler tutorial UX.
+
+.shop-checkout {
+  --checkout-radius: 14px;
+  --checkout-gap: 2.5rem;
+  --checkout-bg: rgba(255, 255, 255, 0.04);
+  --checkout-border: rgba(255, 255, 255, 0.12);
+
+  color: var(--color-space-text);
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 2rem clamp(1rem, 3vw, 2rem) 4rem;
+
+  &__back {
+    margin-bottom: 1.5rem;
+  }
+
+  &__content {
+    background: var(--checkout-bg);
+    border: 1px solid var(--checkout-border);
+    border-radius: var(--checkout-radius);
+    display: grid;
+    gap: var(--checkout-gap);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 2.25rem;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+      padding: 1.5rem;
+    }
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    min-width: 0;
+  }
+
+  &__image {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    display: flex;
+    height: 320px;
+    justify-content: center;
+    overflow: hidden;
+
+    img {
+      height: 90%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+  }
+
+  &__item-name {
+    color: var(--color-space-text);
+    font-family: "Exo 2", sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__item-description {
+    color: var(--color-brand-off-white);
+    font-size: 1rem;
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  &__item-note {
+    color: var(--color-brand-off-white);
+    font-size: 0.9rem;
+    font-style: italic;
+    margin: 0;
+    opacity: 0.8;
+  }
+
+  &__item-meta {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-top: auto;
+    padding: 0.85rem 1rem;
+  }
+
+  &__item-meta-key {
+    color: var(--color-brand-off-white);
+    font-size: 0.95rem;
+    opacity: 0.85;
+  }
+
+  &__item-meta-value {
+    align-items: center;
+    color: var(--color-space-text);
+    display: inline-flex;
+    font-size: 1.25rem;
+    font-weight: 700;
+    gap: 0.4rem;
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    min-width: 0;
+  }
+
+  &__eyebrow {
+    color: var(--color-brand-yellow);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__panel-title {
+    color: var(--color-space-text);
+    font-family: "Playfair Display", serif;
+    font-size: 1.85rem;
+    font-style: italic;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    p {
+      color: var(--color-brand-off-white);
+      font-size: 1rem;
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+
+  &__cta {
+    align-self: flex-start;
+    margin-top: 0.75rem;
+  }
+
+  &__footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    padding-top: 0.85rem;
+  }
+
+  &__footer-line {
+    color: var(--color-brand-off-white);
+    font-size: 0.85rem;
+    margin: 0;
+    opacity: 0.85;
+  }
+
+  &__footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: 0;
+  }
+
+  &__footer-link {
+    color: var(--color-brand-off-white);
+    font-size: 0.9rem;
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-highlight);
+    }
+  }
+}

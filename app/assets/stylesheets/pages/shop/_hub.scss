@@ -1,0 +1,455 @@
+// Stardance shop hub — category tiles + Discover row on the left, YOUR
+// ORDERS / SHOP UPDATES / WISHLIST rail on the right. The sidebar comes from
+// the application layout; this file only styles the hub content area.
+
+.shop-hub {
+  --shop-hub-gutter: 2.5rem;
+  --shop-hub-rail-width: 22rem;
+
+  color: var(--color-space-text);
+  padding: 1.5rem clamp(1.5rem, 4vw, 3rem) 4rem;
+
+  &__layout {
+    display: grid;
+    column-gap: var(--shop-hub-gutter);
+    row-gap: 2rem;
+    grid-template-columns: minmax(0, 1fr) var(--shop-hub-rail-width);
+    grid-template-areas:
+      "topbar topbar"
+      "main   rail"
+      "items  items";
+
+    @media (max-width: 1100px) {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "topbar"
+        "main"
+        "items"
+        "rail";
+    }
+  }
+
+  &__topbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    grid-area: topbar;
+  }
+
+  &__search {
+    flex: 1 1 360px;
+    margin: 0;
+    max-width: 580px;
+    position: relative;
+  }
+
+  &__search-input {
+    background: transparent;
+    border: 2px solid var(--color-space-text);
+    border-radius: 8px;
+    color: var(--color-space-text);
+    font-family: inherit;
+    font-size: 1.05rem;
+    height: 48px;
+    padding: 0 44px 0 16px;
+    width: 100%;
+
+    &::placeholder {
+      color: var(--color-space-text);
+      opacity: 0.7;
+    }
+
+    &:focus {
+      border-color: var(--color-brand-highlight);
+      outline: none;
+    }
+  }
+
+  &__search-icon {
+    color: var(--color-space-text);
+    height: 18px;
+    pointer-events: none;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+  }
+
+  &__topbar-right {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    margin-left: auto;
+  }
+
+  &__region {
+    flex-shrink: 0;
+  }
+
+  &__suggest {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 0.5rem;
+    padding: 0;
+  }
+
+  &__suggest-img {
+    height: 64px;
+    transform: rotate(6deg);
+    width: auto;
+  }
+
+  &__suggest-pill {
+    background: var(--color-brand-highlight);
+    border: 1.5px solid var(--color-brand-highlight);
+    border-radius: 999px;
+    color: var(--color-space-bg);
+    font-family: "Exo 2", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 0.55rem 1.2rem;
+  }
+
+  &__main {
+    grid-area: main;
+    min-width: 0;
+  }
+
+  // Category tiles — image stack on top, name below. Smaller text so
+  // everything fits the tile bounds without overlap on the 3-col grid.
+  &__category-grid {
+    display: grid;
+    gap: 2rem 1.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    @media (max-width: 700px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  &__category-tile {
+    min-width: 0;
+  }
+
+  &__category-link {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--color-space-text);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    text-decoration: none;
+    transition: transform 160ms ease;
+
+    &:hover,
+    &:focus-visible {
+      outline: none;
+      transform: translateY(-3px);
+    }
+  }
+
+  &__category-art {
+    height: 110px;
+    position: relative;
+    width: 180px;
+  }
+
+  &__category-thumb {
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(8, 6, 30, 0.55);
+    height: 72px;
+    object-fit: cover;
+    position: absolute;
+    width: 72px;
+
+    &--0 {
+      left: 0;
+      top: 20%;
+      transform: rotate(-9deg);
+      z-index: 1;
+    }
+
+    &--1 {
+      left: 35%;
+      top: 0;
+      transform: rotate(2deg);
+      z-index: 2;
+    }
+
+    &--2 {
+      left: 70%;
+      top: 22%;
+      transform: rotate(11deg);
+      z-index: 1;
+    }
+  }
+
+  &__category-thumb-placeholder {
+    align-items: center;
+    color: var(--color-brand-highlight);
+    display: flex;
+    font-family: "Playfair Display", serif;
+    font-size: 3rem;
+    font-style: italic;
+    height: 100%;
+    justify-content: center;
+    opacity: 0.55;
+  }
+
+  &__category-name {
+    color: var(--color-space-text);
+    font-family: "Exo 2", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+  }
+
+  &__section-title {
+    color: var(--color-space-text);
+    font-family: "Exo 2", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+  }
+
+  // "Discover" — the full-width item grid below the categories + sidebar. Uses
+  // the same card component and grid sizing as the category subpages so an item
+  // looks identical here and inside its category.
+  &__items {
+    grid-area: items;
+    min-width: 0;
+  }
+
+  &__items-header {
+    align-items: baseline;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    .shop-hub__section-title {
+      margin-bottom: 0;
+    }
+  }
+
+  // "See all →" beside the Discover heading — same treatment as the
+  // mission rail's see-all link.
+  &__see-all {
+    color: var(--color-space-text);
+    font-size: 1rem;
+    opacity: 0.6;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+    }
+  }
+
+  // Discover is a 2-row preview: extra rows fall into 0-height implicit rows
+  // and get clipped, so the grid is always at most two cards tall.
+  &__items-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-rows: repeat(2, auto);
+    grid-auto-rows: 0;
+    list-style: none;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  // Flex column so the card stretches to the (grid-stretched) cell height —
+  // that's what keeps every card in a row the same height.
+  &__items-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  // Stickers + nothing get their own leading row, sharing the items grid's
+  // column sizing so the cards match the rest, with a hand-drawn arrow + nudge
+  // pointing at them.
+  &__picks {
+    margin: 0 0 2rem;
+  }
+
+  &__picks-row {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__picks-cue {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  &__picks-cue-graphic {
+    height: auto;
+    max-width: 220px;
+    width: 100%;
+  }
+
+  &__picks-cue-row {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  &__picks-cue-arrow {
+    color: var(--color-space-text);
+    flex: none;
+    height: auto;
+    // Points horizontally left, back at the two pick cards.
+    transform: rotate(-45deg);
+    width: 72px;
+  }
+
+  &__picks-cue-text {
+    color: var(--color-space-text);
+    font-family: "Exo 2", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  // First-time-only "Ok, I'll do it!" — dismisses the intro dim overlay.
+  &__picks-cue-dismiss {
+    appearance: none;
+    background: var(--color-brand-highlight);
+    border: 0;
+    border-radius: 999px;
+    color: var(--color-space-bg);
+    cursor: pointer;
+    font-family: "Exo 2", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    padding: 0.5rem 1.1rem;
+
+    &:hover,
+    &:focus-visible {
+      filter: brightness(1.05);
+      outline: none;
+    }
+  }
+
+  &__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    grid-area: rail;
+  }
+
+  &__sidebar-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__sidebar-title {
+    color: var(--color-space-text);
+    font-family: "Exo 2", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin: 0;
+  }
+
+  &__sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__sidebar-card {
+    background: rgba(217, 217, 217, 0.18);
+    border-radius: 8px;
+    color: var(--color-space-text);
+    min-height: 64px;
+    padding: 0.75rem 0.9rem;
+  }
+
+  &__sidebar-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+    text-decoration: underline;
+  }
+
+  &__sidebar-card-body {
+    color: var(--color-brand-off-white);
+    font-size: 0.85rem;
+    margin: 0.2rem 0 0;
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__sidebar-empty {
+    background: rgba(217, 217, 217, 0.08);
+    border-radius: 8px;
+    color: var(--color-brand-off-white);
+    font-size: 0.9rem;
+    margin: 0;
+    opacity: 0.75;
+    padding: 0.7rem 0.9rem;
+  }
+
+  &__sidebar-link {
+    align-self: flex-end;
+    color: var(--color-space-text);
+    font-size: 0.95rem;
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-highlight);
+    }
+  }
+
+  &__sidebar-block--wishlist {
+    .shop-goals__container {
+      background: transparent;
+      border: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .shop-goals__items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+  }
+
+  &__closed {
+    grid-area: main;
+    text-align: center;
+  }
+}

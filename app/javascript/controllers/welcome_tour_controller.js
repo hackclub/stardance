@@ -25,6 +25,9 @@ export default class extends Controller {
     steps: Array,
     minWidth: { type: Number, default: 900 },
     lockScroll: { type: Boolean, default: true },
+    // When set, finishing the tour records a server-side dismissal so it
+    // doesn't show again (via POST /my/dismissals).
+    dismissThing: { type: String, default: "" },
   };
 
   connect() {
@@ -41,6 +44,10 @@ export default class extends Controller {
     window.addEventListener("scroll", this._onReflow, { passive: true });
     document.addEventListener("keydown", this._onKey);
     document.addEventListener("click", this._onDocumentClick, true);
+    // Lets an outside trigger (e.g. the shop's inline "Ok, I'll do it!" button)
+    // dismiss the tour, which still records the server-side dismissal.
+    this._onExternalDismiss = () => this.finish();
+    document.addEventListener("welcome-tour:dismiss", this._onExternalDismiss);
 
     if (this.lockScrollValue) {
       this._previousOverflow = document.body.style.overflow;
@@ -59,6 +66,10 @@ export default class extends Controller {
     window.removeEventListener("scroll", this._onReflow);
     document.removeEventListener("keydown", this._onKey);
     document.removeEventListener("click", this._onDocumentClick, true);
+    document.removeEventListener(
+      "welcome-tour:dismiss",
+      this._onExternalDismiss,
+    );
     this._clearWaitForTarget();
     if (this._previousOverflow !== undefined) {
       document.body.style.overflow = this._previousOverflow;
@@ -90,7 +101,20 @@ export default class extends Controller {
   finish() {
     this._clearAutoAdvance();
     this._clearWaitForTarget();
+    if (this.dismissThingValue) this._recordDismissal(this.dismissThingValue);
     this.element.remove();
+  }
+
+  _recordDismissal(thing) {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    fetch("/my/dismissals", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": token || "",
+      },
+      body: JSON.stringify({ thing_name: thing }),
+    }).catch(() => {});
   }
 
   _clearAutoAdvance() {
@@ -197,6 +221,14 @@ export default class extends Controller {
     }
     this._clearWaitForTarget();
 
+    // Bring the highlighted target to the vertical middle of the viewport the
+    // first time we render it (scroll reflow re-runs _render, repositioning
+    // the spotlight to follow).
+    if (step.scrollToCenter && !this._scrolledToCenter) {
+      this._scrolledToCenter = true;
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+
     const pad = step.padding ?? 12;
     const rect = target.getBoundingClientRect();
 
@@ -240,9 +272,9 @@ export default class extends Controller {
     this.counterTarget.textContent = `${visibleIndex + 1}/${visibleTotal}`;
 
     const isLast = visibleIndex === visibleTotal - 1;
-    this.nextTarget.textContent = isLast
-      ? "Finish! →"
-      : `Next (${visibleIndex + 1}/${visibleTotal}) →`;
+    this.nextTarget.textContent =
+      step.nextLabel ||
+      (isLast ? "Finish! →" : `Next (${visibleIndex + 1}/${visibleTotal}) →`);
     this.nextTarget.hidden = !!step.clickToAdvance;
     this.backTarget.hidden = this.stepValue === 0 || !!step.clickToAdvance;
 

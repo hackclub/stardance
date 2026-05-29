@@ -1,0 +1,64 @@
+<% content_for :title, "Order #{@shop_item.name}" %>
+
+<div class="shop-checkout">
+  <div class="shop-checkout__back">
+    <%= render ActionButtonComponent.new(
+          text: "← Back to the shop",
+          href: shop_path,
+          size: :small,
+          variant: :secondary
+        ) %>
+  </div>
+
+  <div class="shop-checkout__content">
+    <section class="shop-checkout__item" aria-label="Your pick">
+      <div class="shop-checkout__image">
+        <% if @shop_item.image.attached? %>
+          <%= image_tag @shop_item.image, alt: @shop_item.name, loading: "lazy", decoding: "async" %>
+        <% end %>
+      </div>
+
+      <h1 class="shop-checkout__item-name"><%= @shop_item.name %></h1>
+      <p class="shop-checkout__item-description"><%= @shop_item.description %></p>
+
+      <% if @shop_item.is_a?(ShopItem::TutorialNothing) %>
+        <p class="shop-checkout__item-note">No shipment, no Stardust spent — this just shows you how checkout works.</p>
+      <% else %>
+        <div class="shop-checkout__item-meta">
+          <span class="shop-checkout__item-meta-key">Price</span>
+          <span class="shop-checkout__item-meta-value">
+            <%= stardust_icon %>
+            <%= number_to_currency(@shop_item.price_for_region(@user_region), precision: 0).delete('$') %>
+          </span>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="shop-checkout__panel" aria-label="Shipping address">
+      <p class="shop-checkout__eyebrow">Order details</p>
+      <h2 class="shop-checkout__panel-title">Where should we send it?</h2>
+
+      <div class="shop-checkout__panel-body">
+        <p>We collect your address through Hack Club's portal — the same place your account lives. It's encrypted, only used to ship prizes to you, and never shared with anyone outside Hack Club.</p>
+        <p>Add your address once and you'll come right back here to finish your order.</p>
+      </div>
+
+      <%= render ActionButtonComponent.new(
+            text: "Add your address",
+            href: HCAService.address_portal_url(return_to: request.original_url),
+            variant: :primary,
+            size: :large,
+            class: "shop-checkout__cta",
+            data: { turbo: false }
+          ) %>
+
+      <footer class="shop-checkout__footer">
+        <p class="shop-checkout__footer-line">501(c)(3) nonprofit · We don't sell data or run ads</p>
+        <p class="shop-checkout__footer-links">
+          <%= link_to "Why we ask for your info →", guide_path("why_we_ask"), target: "_blank", rel: "noopener", class: "shop-checkout__footer-link" %>
+          <%= link_to "Privacy policy →", "https://hackclub.com/privacy", target: "_blank", rel: "noopener", class: "shop-checkout__footer-link" %>
+        </p>
+      </footer>
+    </section>
+  </div>
+</div>

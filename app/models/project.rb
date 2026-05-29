@@ -331,6 +331,20 @@ class Project < ApplicationRecord
         passed: memberships.owner.first&.user&.vote_balance.to_i >= 0
       },
       {
+        key: :idv,
+        label: "Verify your identity",
+        fail_label: "Verify your identity before shipping",
+        tooltip: "Stardance needs to verify your identity through Hack Club Auth before you can ship — it keeps the program safe and is how we know where to send prizes.",
+        passed: memberships.owner.first&.user&.identity_verified?
+      },
+      {
+        key: :shop_tutorial,
+        label: "Pick stickers or nothing in the shop once",
+        fail_label: "Visit the shop and pick stickers (or nothing) to get started",
+        tooltip: "Before your first ship, go to the shop and pick either stickers or nothing. It shows you how the order flow works so a real order down the line doesn't catch you off guard.",
+        passed: memberships.owner.first&.user&.shop_tutorial_completed?
+      },
+      {
         key: :project_isnt_rejected,
         label: "Your project must not have been rejected",
         fail_label: "Your project is rejected!",

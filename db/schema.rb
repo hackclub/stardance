@@ -713,6 +713,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
     t.index ["user_id"], name: "index_shop_card_grants_on_user_id"
   end
 
+  create_table "shop_categories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "hub_title", null: false
+    t.integer "position", default: 0, null: false
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position"], name: "index_shop_categories_on_position"
+    t.index ["slug"], name: "index_shop_categories_on_slug", unique: true
+  end
+
   create_table "shop_item_attachments", force: :cascade do |t|
     t.bigint "accessory_item_id", null: false
     t.datetime "created_at", null: false
@@ -721,6 +732,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
     t.index ["accessory_item_id"], name: "index_shop_item_attachments_on_accessory_item_id"
     t.index ["parent_item_id", "accessory_item_id"], name: "idx_on_parent_item_id_accessory_item_id_9641b2d0dd", unique: true
     t.index ["parent_item_id"], name: "index_shop_item_attachments_on_parent_item_id"
+  end
+
+  create_table "shop_item_categories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "shop_category_id", null: false
+    t.bigint "shop_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_category_id"], name: "index_shop_item_categories_on_shop_category_id"
+    t.index ["shop_item_id", "shop_category_id"], name: "index_shop_item_categories_unique", unique: true
+    t.index ["shop_item_id"], name: "index_shop_item_categories_on_shop_item_id"
   end
 
   create_table "shop_item_modifiers", force: :cascade do |t|
@@ -753,6 +774,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
   create_table "shop_item_site_action_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+  create_table "shop_item_sources", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "shop_item_id", null: false
+    t.bigint "shop_source_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_item_id", "shop_source_id"], name: "index_shop_item_sources_unique", unique: true
+    t.index ["shop_item_id"], name: "index_shop_item_sources_on_shop_item_id"
+    t.index ["shop_source_id"], name: "index_shop_item_sources_on_shop_source_id"
   end
 
   create_table "shop_items", force: :cascade do |t|
@@ -894,6 +924,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
     t.index ["user_id", "shop_item_id"], name: "idx_shop_orders_user_item_unique"
     t.index ["user_id"], name: "index_shop_orders_on_user_id"
     t.index ["warehouse_package_id"], name: "index_shop_orders_on_warehouse_package_id"
+  end
+
+  create_table "shop_sources", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position"], name: "index_shop_sources_on_position"
+    t.index ["slug"], name: "index_shop_sources_on_slug", unique: true
   end
 
   create_table "shop_suggestions", force: :cascade do |t|
@@ -1051,6 +1091,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
     t.string "session_token"
     t.jsonb "shenanigans_state", default: {}
     t.enum "shop_region", enum_type: "shop_region_type"
+    t.datetime "shop_tutorial_completed_at"
+    t.datetime "shop_tutorial_started_at"
     t.string "slack_id"
     t.datetime "synced_at"
     t.string "things_dismissed", default: [], null: false, array: true
@@ -1184,9 +1226,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_133839) do
   add_foreign_key "shop_card_grants", "users"
   add_foreign_key "shop_item_attachments", "shop_items", column: "accessory_item_id", on_delete: :cascade
   add_foreign_key "shop_item_attachments", "shop_items", column: "parent_item_id", on_delete: :cascade
+  add_foreign_key "shop_item_categories", "shop_categories"
+  add_foreign_key "shop_item_categories", "shop_items"
   add_foreign_key "shop_item_modifiers", "shop_items"
+  add_foreign_key "shop_item_sources", "shop_items"
+  add_foreign_key "shop_item_sources", "shop_sources"
   add_foreign_key "shop_items", "users"
-  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
+  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"

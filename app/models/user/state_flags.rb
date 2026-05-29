@@ -1,7 +1,7 @@
 module User::StateFlags
   extend ActiveSupport::Concern
 
-  DISMISSIBLE_THINGS = %w[home_intro flagship_ad shop_suggestion_box willsbuilds_banner].freeze
+  DISMISSIBLE_THINGS = %w[home_intro flagship_ad shop_suggestion_box willsbuilds_banner shop_picks_intro].freeze
 
   def has_dismissed?(thing_name) = things_dismissed.include?(thing_name.to_s)
 

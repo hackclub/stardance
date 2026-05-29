@@ -3,215 +3,192 @@
 <% content_for :og_description, "Spend your Stardust on stickers, hardware, and other prizes. Earn Stardust by building projects and voting!" %>
 <% content_for :og_image, og_image_url('shop', format: :png) %>
 
-<div class="shop" data-controller="shop" data-shop-user-region-value="<%= @user_region %>">
-  <h1 class="shop__title">Shop</h1>
+<div class="shop-hub shop-hub--mode-<%= @shop_mode %>"
+     data-controller="shop"
+     data-shop-user-region-value="<%= @user_region %>"
+     data-shop-mode-value="<%= @shop_mode %>">
 
-  <div class="shop-goals" data-controller="shop-goals" data-shop-goals-balance-value="<%= @user_balance %>" data-shop-goals-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>">
-    <div class="shop-goals__container" data-shop-goals-target="container" style="display: none;">
-      <h3 class="shop-goals__title"><%= inline_svg_tag "icons/star_fill.svg" %> My Goal Items</h3>
-      <div class="shop-goals__items" data-shop-goals-target="items"></div>
-    </div>
-    <script>
-      try {
-        var w = JSON.parse(localStorage.getItem("shop_wishlist"));
-        if (w && Object.keys(w).length) document.currentScript.previousElementSibling.style.display = "block";
-      } catch (e) {}
-    </script>
+  <% if @shop_mode == :preview %>
+    <%= render "shop/preview_banner" %>
+  <% end %>
+
+  <% tutorial_active = @shop_mode == :tutorial && @tutorial_items.values.all?(&:present?) %>
+
+  <div class="shop-hub__layout">
+    <header class="shop-hub__topbar">
+      <%= form_with url: shop_path, method: :get, local: true, class: "shop-hub__search" do |f| %>
+        <%= f.search_field :q,
+                           value: params[:q],
+                           class: "shop-hub__search-input",
+                           placeholder: "Search...",
+                           "aria-label": "Search the shop",
+                           autocomplete: "off" %>
+        <%= inline_svg_tag "icons/search.svg", class: "shop-hub__search-icon" %>
+      <% end %>
+
+      <div class="shop-hub__topbar-right">
+        <div class="shop-hub__region">
+          <%= render DropdownComponent.new(
+                label: "Region",
+                options: @region_options,
+                selected_option: Shop::Regionalizable::REGIONS.dig(@user_region, :name),
+                color: :blue,
+                action: "change->shop#filter"
+              ) %>
+        </div>
+
+        <% if current_user && Flipper.enabled?(:shop_suggestion_box, current_user) && !current_user.has_dismissed?("shop_suggestion_box") %>
+          <button type="button" class="shop-hub__suggest" onclick="document.getElementById('shop-suggestion-modal').showModal()">
+            <%= image_tag "Rummage.avif", alt: "", class: "shop-hub__suggest-img" %>
+            <span class="shop-hub__suggest-pill">Suggest a prize?</span>
+          </button>
+        <% end %>
+      </div>
+    </header>
+
+    <% if @shop_open %>
+      <% pick_ids = tutorial_active ? @tutorial_items.values.compact.map(&:id) : [] %>
+      <section class="shop-hub__main">
+        <ul class="shop-hub__category-grid" aria-label="Shop categories">
+          <% @categories.each do |category| %>
+            <% category_items = Shop::Categorization.filter(@shop_items, category.slug) %>
+            <% category_thumbs = category_items.select { |i| i.image.attached? }.first(3) %>
+            <li class="shop-hub__category-tile">
+              <%= link_to shop_category_path(category.slug), class: "shop-hub__category-link", data: { turbo: true } do %>
+                <div class="shop-hub__category-art" aria-hidden="true">
+                  <% if category_thumbs.any? %>
+                    <% category_thumbs.each_with_index do |thumb, idx| %>
+                      <%= image_tag thumb.image.variant(:carousel_sm), alt: "", class: "shop-hub__category-thumb shop-hub__category-thumb--#{idx}" %>
+                    <% end %>
+                  <% else %>
+                    <span class="shop-hub__category-thumb-placeholder">✦</span>
+                  <% end %>
+                </div>
+                <h2 class="shop-hub__category-name"><%= category.hub_title %></h2>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+
+      <aside class="shop-hub__sidebar" aria-label="Shop status">
+        <section class="shop-hub__sidebar-block">
+          <h2 class="shop-hub__sidebar-title">YOUR ORDERS</h2>
+          <% if current_user && @sidebar_orders.any? %>
+            <ul class="shop-hub__sidebar-list">
+              <% @sidebar_orders.each do |order| %>
+                <li class="shop-hub__sidebar-card">
+                  <p class="shop-hub__sidebar-card-title">Order (ID: <%= order.id %>) <%= order.aasm_state&.humanize&.downcase %></p>
+                  <p class="shop-hub__sidebar-card-body"><%= truncate(order.shop_item&.name.to_s, length: 60) %></p>
+                </li>
+              <% end %>
+            </ul>
+            <%= link_to "see more →", shop_my_orders_path, class: "shop-hub__sidebar-link" %>
+          <% else %>
+            <p class="shop-hub__sidebar-empty">No orders yet.</p>
+          <% end %>
+        </section>
+
+        <section class="shop-hub__sidebar-block">
+          <h2 class="shop-hub__sidebar-title">SHOP UPDATES</h2>
+          <p class="shop-hub__sidebar-empty">No updates right now.</p>
+        </section>
+
+        <section class="shop-hub__sidebar-block shop-hub__sidebar-block--wishlist">
+          <h2 class="shop-hub__sidebar-title">WISHLIST</h2>
+
+          <div class="shop-goals"
+               data-controller="shop-goals"
+               data-shop-goals-balance-value="<%= @user_balance %>"
+               data-shop-goals-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>">
+            <div class="shop-goals__container" data-shop-goals-target="container" style="display: none;">
+              <div class="shop-goals__items" data-shop-goals-target="items"></div>
+            </div>
+            <p class="shop-hub__sidebar-empty" data-shop-goals-empty>
+              Tap the star on any item to add it here.
+            </p>
+            <script>
+              try {
+                var w = JSON.parse(localStorage.getItem("shop_wishlist"));
+                if (w && Object.keys(w).length) {
+                  document.currentScript.previousElementSibling.style.display = "none";
+                  document.currentScript.previousElementSibling.previousElementSibling.style.display = "block";
+                }
+              } catch (e) {}
+            </script>
+          </div>
+        </section>
+      </aside>
+
+      <% if tutorial_active || @random_items&.any? %>
+        <section class="shop-hub__items" aria-label="Items">
+          <div class="shop-hub__items-header">
+            <h2 class="shop-hub__section-title">Discover</h2>
+            <%= link_to "See all →", shop_category_path("all"), class: "shop-hub__see-all", data: { turbo: true } %>
+          </div>
+
+          <% if tutorial_active %>
+            <div class="shop-hub__picks">
+              <ul class="shop-hub__picks-row" id="shop-picks">
+                <% [ @tutorial_items[:stickers], @tutorial_items[:nothing] ].compact.each do |item| %>
+                  <li class="shop-hub__items-card">
+                    <%= render "shop/item_card",
+                          item: item,
+                          mode: :tutorial,
+                          region: @user_region,
+                          balance: @user_balance,
+                          tutorial_item_ids: pick_ids,
+                          spotlight: false %>
+                  </li>
+                <% end %>
+                <li class="shop-hub__picks-cue">
+                  <%= image_tag "shop/buy_something.png", alt: "", class: "shop-hub__picks-cue-graphic", aria: { hidden: true } %>
+                  <span class="shop-hub__picks-cue-row">
+                    <%= inline_svg_tag "icons/tour-arrow.svg", class: "shop-hub__picks-cue-arrow", aria: { hidden: true }, focusable: false %>
+                    <span class="shop-hub__picks-cue-text">Pick one of these to try buying something!</span>
+                  </span>
+                  <% unless current_user&.has_dismissed?("shop_picks_intro") %>
+                    <button type="button"
+                            class="shop-hub__picks-cue-dismiss"
+                            onclick="document.dispatchEvent(new CustomEvent('welcome-tour:dismiss')); this.remove()">Ok, I'll do it!</button>
+                  <% end %>
+                </li>
+              </ul>
+            </div>
+            <% if current_user && !current_user.has_dismissed?("shop_picks_intro") %>
+              <%= render "shop/picks_intro_tour" %>
+            <% end %>
+          <% end %>
+
+          <% if @random_items&.any? %>
+            <ul class="shop-hub__items-grid">
+              <% @random_items.each do |item| %>
+                <li class="shop-hub__items-card">
+                  <%= render "shop/item_card",
+                        item: item,
+                        mode: @shop_mode,
+                        region: @user_region,
+                        balance: @user_balance,
+                        tutorial_item_ids: pick_ids %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </section>
+      <% end %>
+    <% else %>
+      <h2 class="shop-hub__closed">The shop is not opened yet!</h2>
+    <% end %>
   </div>
 
-  <% if @shop_open %>
-    <% if current_user&.admin? %>
-      <div class="admin-banner">
-        <div class="admin-banner__content">
-          <span class="admin-banner__count"><%= @shop_items.count %> items</span>
-          <%= link_to "Edit items →", admin_shop_path, class: "admin-banner__link" %>
-        </div>
-      </div>
-    <% end %>
-
-    <% unless current_user %>
-      <div class="shop__signup-cta">
-        <div class="shop__signup-cta-content">
-          <h3><%= stardust_icon %> Want to order something?</h3>
-          <p>Join <%= link_to "Hack Club Stardance", "/" %> to start earning Stardust by building personal projects!</p>
-        </div>
-        <div class="shop__signup-cta-buttons">
-          <%= link_to "Get building!", root_path, class: "action-btn action-btn--large action-btn--primary shop__signup-cta-btn" %>
-          <%= form_tag "/auth/hack_club", method: :post, data: { turbo: false }, class: "shop__signin-form" do %>
-            <button type="submit" class="shop__signin-link">Already a member? Sign in</button>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-
-    <div class="shop__buttons">
-      <% if current_user %>
-        <%= render ActionButtonComponent.new(
-          text: "View My Orders",
-          href: "/shop/my_orders",
-          size: :small,
-          variant: :secondary
-        ) %>
-      <% end %>
-      <%= render DropdownComponent.new(
-        label: "Region",
-        options: @region_options,
-        selected_option: Shop::Regionalizable::REGIONS.dig(@user_region, :name),
-        color: :blue,
-        action: "change->shop#filter"
-      ) %>
-    </div>
-    <% if @featured_item && current_user %>
-      <%= render partial: "shop/banner", locals: { featured_item: @featured_item, user_region: @user_region } %>
-    <% end %>
-    <%= render partial: "shop/recently_added", locals: { recently_added_items: @recently_added_items, user_region: @user_region, user_balance: @user_balance, logged_in: current_user.present? } %>
-    <div class="shop__nav">
-      <div class="shop__searchbar">
-        <%= form_with url: shop_path, method: :get, local: true do |f| %>
-          <%= render InputComponent.new(
-            label: nil,
-            icon: "icons/search.svg",
-            placeholder: "Search item",
-            form: f,
-            attribute: :q,
-            color: :yellow,
-            input_html: {
-              value: params[:q],
-              data: { action: "input->shop#search" }
-            }
-          ) %>
-        <% end %>
-      </div>
-      <div class="shop__filters">
-        <%= render DropdownComponent.new(
-          label: "Category",
-          options: ["All", "Grants", "HQ", "Digital", "Locally Fulfilled", "Made by Hack Clubbers"],
-          selected_option: "All",
-          color: :blue,
-          action: "change->shop#filter"
-        ) %>
-        <%= render DropdownComponent.new(
-          label: "Price Range",
-          options: [
-            { label: "None", value: "none" },
-            { label: "0 - 100", value: "0-100" },
-            { label: "100 - 500", value: "100-500" },
-            { label: "500 - 1000", value: "500-1000" },
-            { label: "> 1000", value: "1000+" }
-          ],
-          selected_option: "None",
-          color: :pink,
-          action: "change->shop#filter"
-        ) %>
-        <%= render DropdownComponent.new(
-          label: "Sort by",
-          options: ["Prices", "Alphabetical"],
-          selected_option: "Prices",
-          color: :green,
-          action: "change->shop#filter"
-        ) %>
-        <%= render DropdownComponent.new(
-          label: "Access",
-          options: ["All", "Available", "Locked"],
-          selected_option: "All",
-          color: :red,
-          action: "change->shop#filter"
-        ) %>
-        <button id="sort-btn">
-          <span>
-            <%= inline_svg_tag "icons/sort.svg", title: "Sort Icon" %>
-          </span>
-          <%= inline_svg_tag "icons/sort-btn-icon.svg", title: "Sort Arrow" %>
-        </button>
+  <% if current_user&.admin? %>
+    <div class="admin-banner">
+      <div class="admin-banner__content">
+        <span class="admin-banner__count"><%= @shop_items.count %> items</span>
+        <%= link_to "Edit items →", admin_shop_path, class: "admin-banner__link" %>
       </div>
     </div>
-    <%= turbo_frame_tag "shop_items" do %>
-      <div class="shop__items">
-        <% @shop_items.each do |item| %>
-          <% if item.image.present? && item.enabled_in_region?(@user_region) %>
-            <% sale_price = item.price_for_region(@user_region) %>
-            <% item_achievement_infos = item.required_achievement_objects %>
-            <% item_achievement_locked = item.achievement_locked_for?(current_user) %>
-            <%= render ShopItemCardComponent.new(
-              item_id: item.id,
-              name: item.name,
-              description: item.description,
-              hours: item.fixed_estimate(sale_price).to_i,
-              price: item.ticket_cost,
-              image_url: item.image.variant(:carousel_lg),
-              item_type: item.type,
-              balance: @user_balance,
-              enabled_regions: item.enabled_region_codes,
-              regional_price: sale_price,
-              logged_in: current_user.present?,
-              remaining_stock: item.remaining_stock,
-              limited: item.limited?,
-              on_sale: item.on_sale?,
-              sale_percentage: item.sale_percentage,
-              original_price: item.base_price_for_region(@user_region),
-              purchase_count: item.display_purchase_count,
-              is_new: item.new_item?,
-              enabled_until: item.enabled_until,
-              locked_by_achievement: item_achievement_locked,
-              required_achievement_names: item_achievement_infos.map(&:name),
-              required_achievement_hints: item_achievement_infos.map(&:description)
-            ) %>
-          <% end %>
-        <% end %>
-        <div class="shop__empty" style="display: none;" data-shop-target="empty">
-          <p>No items match your filters.</p>
-        </div>
-      </div>
-    <% end %>
-  <% else %>
-    <h2>The shop is not opened yet!</h2>
   <% end %>
 </div>
 
-<% if current_user && Flipper.enabled?(:shop_suggestion_box, current_user) && !current_user.has_dismissed?("shop_suggestion_box") %>
-  <div class="shop-suggestion-box">
-    <button type="button" class="shop-suggestion-box__trigger" onclick="document.getElementById('shop-suggestion-modal').showModal()">
-      <%= image_tag "Rummage.avif", alt: "Suggestion Box", class: "shop-suggestion-box__image" %>
-    </button>
-  </div>
-
-  <dialog id="shop-suggestion-modal" class="shop-suggestion-modal">
-      <button type="button" class="shop-suggestion-modal__close" onclick="document.getElementById('shop-suggestion-modal').close()" aria-label="Close">
-        X
-      </button>
-
-      <h2 class="shop-suggestion-modal__title">The Suggestion Box</h2>
-      <p class="shop-suggestion-modal__description">Have an idea for something we should add to the shop? Let us know!</p>
-
-      <%= form_with model: ShopSuggestion.new, url: shop_suggestions_path, local: true, class: "shop-suggestion-modal__form" do |f| %>
-        <div class="shop-suggestion-modal__field">
-          <%= f.label :item, "What can we add?" %>
-          <%= f.text_area :item,
-                          placeholder: "A super cool HeidixOrpheusxForever plushie!",
-                          rows: 1,
-                          required: true,
-                          minlength: 10,
-                          maxlength: 1000 %>
-        </div>
-
-        <div class="shop-suggestion-modal__field">
-          <%= f.label :explanation, "How would this help you as a hacker?" %>
-          <%= f.text_area :explanation,
-                          placeholder: "The entire world needs this...",
-                          rows: 4,
-                          required: true,
-                          minlength: 10,
-                          maxlength: 10000 %>
-        </div>
-
-        <div class="shop-suggestion-modal__field">
-          <%= f.label :link, "Link to the item (if applicable)" %>
-          <%= f.url_field :link,
-                          placeholder: "https://hackclub.com/iwantmoreplushies",
-                          maxlength: 2000 %>
-        </div>
-
-        <%= f.submit "Submit Suggestion", class: "action-btn action-btn--large action-btn--primary" %>
-      <% end %>
-  </dialog>
-<% end %>
+<%= render "shop/suggestion_modal" if current_user && Flipper.enabled?(:shop_suggestion_box, current_user) && !current_user.has_dismissed?("shop_suggestion_box") %>

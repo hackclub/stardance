@@ -1,0 +1,63 @@
+<%#
+  One-time spotlight shown the first time an eligible user (has a project) opens
+  the shop. Highlights the stickers/nothing picks and invites them to try an
+  order. Dismissible with "Ok, I'll do it!" — finishing records a server-side
+  dismissal (shop_picks_intro) so it never shows again.
+%>
+<%
+  # The instruction + dismiss live in the inline cue beside the picks (see the
+  # shop hub), so this overlay only dims + spotlights the picks and centers
+  # them on screen. Its floating tooltip is hidden via CSS.
+  steps = [
+    {
+      selector: "#shop-picks",
+      placement: "below",
+      padding: 16,
+      radius: 16,
+      scrollToCenter: true
+    }
+  ]
+%>
+
+<div class="welcome-tour welcome-tour--shop-picks"
+     data-controller="welcome-tour"
+     data-welcome-tour-steps-value="<%= steps.to_json %>"
+     data-welcome-tour-dismiss-thing-value="shop_picks_intro"
+     data-welcome-tour-lock-scroll-value="false"
+     role="dialog"
+     aria-modal="true"
+     aria-label="Shop tip">
+  <div class="welcome-tour__overlay" aria-hidden="true"></div>
+  <div class="welcome-tour__spotlight"
+       data-welcome-tour-target="spotlight"
+       aria-hidden="true"></div>
+
+  <div class="welcome-tour__tooltip" data-welcome-tour-target="tooltip">
+    <%= inline_svg_tag "icons/tour-arrow.svg",
+                       class: "welcome-tour__arrow",
+                       aria: { hidden: true },
+                       focusable: false %>
+
+    <p class="welcome-tour__text" data-welcome-tour-target="text"></p>
+    <p class="welcome-tour__subtitle" data-welcome-tour-target="subtitle" hidden></p>
+
+    <div class="welcome-tour__actions">
+      <button type="button"
+              class="welcome-tour__back"
+              data-welcome-tour-target="back"
+              data-action="click->welcome-tour#back"
+              hidden>
+        Back
+      </button>
+      <button type="button"
+              class="welcome-tour__next"
+              data-welcome-tour-target="next"
+              data-action="click->welcome-tour#next">
+      </button>
+    </div>
+
+    <span class="welcome-tour__counter"
+          data-welcome-tour-target="counter"
+          aria-hidden="true"></span>
+  </div>
+</div>

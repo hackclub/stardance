@@ -1,0 +1,63 @@
+<%#
+  Renders a full ShopItemCardComponent for `item`, deriving interactivity and
+  CTA from the shop `mode` (:preview / :tutorial / :normal). Shared by the
+  category subpage, the hub's Discover row, and the tutorial picks so all three
+  show the same complete card instead of a summary tile.
+
+  Locals:
+    item              - ShopItem (required)
+    mode              - shop mode symbol (default :normal)
+    region            - region code for pricing
+    balance           - viewer's Stardust balance
+    tutorial_item_ids - ids of the two tutorial picks (default [])
+    spotlight         - force the glow/badge on or off (default: on for a
+                        tutorial pick in :tutorial mode)
+%>
+<% mode ||= :normal %>
+<% tutorial_item_ids ||= [] %>
+<% sale_price = item.price_for_region(region) %>
+<% item_achievement_infos = item.required_achievement_objects %>
+<% item_achievement_locked = item.achievement_locked_for?(current_user) %>
+<% is_tutorial_pick = tutorial_item_ids.include?(item.id) %>
+<% show_spotlight = local_assigns.fetch(:spotlight, is_tutorial_pick && mode == :tutorial) %>
+<%# Only preview mode locks everything. In tutorial mode the shop behaves
+    normally — the two picks just get a "Buy now" + spotlight, every other item
+    stays a normal orderable card, so a card looks the same here as it does on
+    a category page. %>
+<% item_interactive = mode != :preview %>
+<%# A tutorial pick's first gate is "verify your identity" when the viewer
+    isn't verified yet — surface the verify popup in place rather than routing
+    to a separate screen. Otherwise it's a normal "Buy now". %>
+<% pick_needs_verify = is_tutorial_pick && current_user && !current_user.identity_verified? %>
+<% cta_mode = case mode
+              when :preview  then :preview_locked
+              when :tutorial then is_tutorial_pick ? (pick_needs_verify ? :tutorial_verify : :tutorial_buy) : :order
+              else                :order
+              end %>
+<%= render ShopItemCardComponent.new(
+  item_id: item.id,
+  name: item.name,
+  description: item.description,
+  hours: item.fixed_estimate(sale_price).to_i,
+  price: item.ticket_cost,
+  image_url: item.image.variant(:carousel_lg),
+  item_type: item.type,
+  balance: balance,
+  enabled_regions: item.enabled_region_codes,
+  regional_price: sale_price,
+  logged_in: current_user.present?,
+  interactive: item_interactive,
+  tutorial_spotlight: show_spotlight,
+  cta_mode: cta_mode,
+  remaining_stock: item.remaining_stock,
+  limited: item.limited?,
+  on_sale: item.on_sale?,
+  sale_percentage: item.sale_percentage,
+  original_price: item.base_price_for_region(region),
+  purchase_count: item.display_purchase_count,
+  is_new: item.new_item?,
+  enabled_until: item.enabled_until,
+  locked_by_achievement: item_achievement_locked,
+  required_achievement_names: item_achievement_infos.map(&:name),
+  required_achievement_hints: item_achievement_infos.map(&:description)
+) %>

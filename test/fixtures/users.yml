@@ -30,6 +30,8 @@
 #  session_token                :string
 #  shenanigans_state            :jsonb
 #  shop_region                  :enum
+#  shop_tutorial_completed_at   :datetime
+#  shop_tutorial_started_at     :datetime
 #  synced_at                    :datetime
 #  things_dismissed             :string           default([]), not null, is an Array
 #  verification_checked_at      :datetime
@@ -52,13 +54,13 @@
 #
 one:
   email: one@example.test
-  display_name: user_one
+  display_name: fixture_one
   slack_id: U_FIXTURE_ONE
   votes_count: 1
 
 two:
   email: two@example.test
-  display_name: user_two
+  display_name: fixture_two
   slack_id: U_FIXTURE_TWO
   votes_count: 1
 

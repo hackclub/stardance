@@ -28,6 +28,8 @@
 #  session_token                :string
 #  shenanigans_state            :jsonb
 #  shop_region                  :enum
+#  shop_tutorial_completed_at   :datetime
+#  shop_tutorial_started_at     :datetime
 #  synced_at                    :datetime
 #  things_dismissed             :string           default([]), not null, is an Array
 #  verification_checked_at      :datetime
@@ -185,6 +187,41 @@ class UserTest < ActiveSupport::TestCase
     user = users(:one)
     user.hcb_email = nil
     assert user.valid?
+  end
+
+  test "shop_tutorial_needed? requires HCA, a project, and an unfinished walkthrough" do
+    user = create_user(slack_id: "U_TUT_NEEDED", display_name: "tutorialneeded")
+    refute user.shop_tutorial_needed?, "no project yet"
+
+    project = Project.create!(title: "p", description: "d")
+    project.memberships.create!(user: user, role: :owner)
+    user.reload
+
+    assert user.shop_tutorial_needed?, "HCA + project + uncompleted = needed"
+
+    user.mark_shop_tutorial_completed!
+    refute user.shop_tutorial_needed?, "completed tutorials drop out"
+  end
+
+  test "shop_tutorial_needed? is false for guests (no HCA)" do
+    user = create_user(slack_id: "U_GUEST", display_name: "guesty", hca_linked: false)
+    refute user.shop_tutorial_needed?
+  end
+
+  test "mark_shop_tutorial_completed! is idempotent and backfills started_at" do
+    user = users(:one)
+    user.update_columns(shop_tutorial_started_at: nil, shop_tutorial_completed_at: nil)
+
+    user.mark_shop_tutorial_completed!
+    first_completion = user.reload.shop_tutorial_completed_at
+    assert first_completion.present?
+    assert user.shop_tutorial_started_at.present?
+
+    travel 5.minutes do
+      user.mark_shop_tutorial_completed!
+      assert_equal first_completion.to_i, user.reload.shop_tutorial_completed_at.to_i,
+        "second call should not advance the timestamp"
+    end
   end
 
   test "display_name must be present" do

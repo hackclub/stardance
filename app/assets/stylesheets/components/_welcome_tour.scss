@@ -229,6 +229,17 @@
     display: none;
   }
 
+  // Shop picks intro: dim + spotlight only. The instruction + "Ok, I'll do
+  // it!" dismiss live in the inline cue beside the picks, so hide the floating
+  // tooltip, and let clicks pass through the dim so "Buy now" stays usable.
+  &--shop-picks &__tooltip {
+    display: none;
+  }
+
+  &--shop-picks &__overlay {
+    pointer-events: none;
+  }
+
   &__counter {
     position: absolute;
     width: 1px;

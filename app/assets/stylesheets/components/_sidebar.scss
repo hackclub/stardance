@@ -280,6 +280,19 @@ button.sidebar__nav-link {
     block-size 0.15s ease;
 }
 
+// Small pip rendered when a nav item is asking for attention (e.g. the shop
+// tutorial nudge). Sits just to the right of the label text.
+.sidebar__nav-notify-dot {
+  align-self: center;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-left: calc(var(--space-s) * -0.4);
+  border-radius: 50%;
+  background: var(--color-brand-salmon);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
 // PNG icon pair (illustrative nav icons): stack idle + active on top of each
 // other inside the wrapper, then fade between them based on whether the parent
 // nav link carries the --active modifier.

@@ -16,7 +16,7 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
   test "guest with no HCA identity gets identity attached on first sign-in" do
     guest = User.create!(
       email:            "newteen@example.com",
-      display_name:     "Wizard Name",
+      display_name:     "WizardName",
       age_attestation:  "teen_13_18",
       experience_level: "little",
       interests:        %w[web_dev],
@@ -37,13 +37,59 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
     guest.reload
     assert_equal 1, guest.identities.where(provider: "hack_club").count
     assert guest.hca_linked?, "expected guest to now be HCA-linked"
-    assert_equal "Wizard Name", guest.display_name, "wizard display_name should be preserved"
+    assert_equal "WizardName", guest.display_name, "wizard display_name should be preserved"
+  end
+
+  test "direct HCA sign-in links an existing unlinked user with matching email" do
+    guest = User.create!(
+      email:            "honest@example.com",
+      display_name:     "ExistingGuest",
+      age_attestation:  "teen_13_18",
+      experience_level: "little",
+      interests:        %w[web_dev],
+      onboarded_at:     Time.current
+    )
+
+    with_stubbed_hca_identity(birthday: "2010-06-15", email: "HONEST@example.com") do
+      with_omniauth_mock(@access_token) do
+        get "/auth/hack_club/callback"
+      end
+    end
+
+    assert_equal guest.id, session[:user_id]
+    assert_equal 1, guest.reload.identities.where(provider: "hack_club", uid: @uid).count
+    assert_equal "honest@example.com", guest.email
+    assert_equal "ExistingGuest", guest.display_name
+  end
+
+  test "direct HCA sign-in updates existing linked user found by matching email" do
+    existing = User.create!(
+      email:        "honest@example.com",
+      display_name: "ExistingLinkedUser",
+      slack_id:     "U_OLD_SLACK"
+    )
+    identity = existing.identities.create!(
+      provider:     "hack_club",
+      uid:          "old-hca-uid-#{SecureRandom.hex(4)}",
+      access_token: "existing-token"
+    )
+
+    with_stubbed_hca_identity(birthday: "2010-06-15", email: "HONEST@example.com") do
+      with_omniauth_mock(@access_token) do
+        get "/auth/hack_club/callback"
+      end
+    end
+
+    assert_equal existing.id, session[:user_id]
+    assert_equal @uid, identity.reload.uid
+    assert_equal @slack_id, existing.reload.slack_id
+    assert_equal 1, existing.identities.where(provider: "hack_club").count
   end
 
   test "HCA birthday under 13 flags guest as ineligible and signs out" do
     guest = User.create!(
       email:            "tooyoung@example.com",
-      display_name:     "Young Liar",
+      display_name:     "YoungLiar",
       age_attestation:  "teen_13_18",
       experience_level: "none",
       interests:        [],
@@ -66,7 +112,7 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
   test "HCA birthday over 18 also flags as ineligible" do
     guest = User.create!(
       email:            "tooold@example.com",
-      display_name:     "Old Liar",
+      display_name:     "OldLiar",
       age_attestation:  "teen_13_18",
       experience_level: "experienced",
       interests:        %w[hardware],
@@ -87,7 +133,7 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
   test "OAuth resolving to a different existing user resets the guest session and signs in as that user" do
     guest = User.create!(
       email:            "collision-guest@example.com",
-      display_name:     "Collision Guest",
+      display_name:     "CollisionGuest",
       age_attestation:  "teen_13_18",
       experience_level: "some",
       interests:        [],
@@ -97,7 +143,7 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
     # A different HCA-linked user already exists with the slack_id that HCA will return.
     existing = User.create!(
       slack_id:     @slack_id,
-      display_name: "Existing HCA User",
+      display_name: "ExistingHCAUser",
       email:        "existing-hca@example.com"
     )
     existing.identities.create!(
@@ -129,7 +175,7 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
   test "HCA birthday in 13-18 range is accepted" do
     guest = User.create!(
       email:            "honest@example.com",
-      display_name:     "Honest Teen",
+      display_name:     "HonestTeen",
       age_attestation:  "teen_13_18",
       experience_level: "some",
       interests:        %w[app_dev],
@@ -149,8 +195,8 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
 
   private
 
-  def with_stubbed_hca_identity(birthday:)
-    payload = identity_payload(birthday: birthday)
+  def with_stubbed_hca_identity(birthday:, email: "honest@example.com")
+    payload = identity_payload(birthday: birthday, email: email)
     original = HCAService.method(:identity)
     HCAService.define_singleton_method(:identity) { |_| payload }
     yield
@@ -158,12 +204,12 @@ class SessionsControllerGuestUpgradeTest < ActionDispatch::IntegrationTest
     HCAService.define_singleton_method(:identity, original) if original
   end
 
-  def identity_payload(birthday:)
+  def identity_payload(birthday:, email:)
     {
       "id" => @uid,
       "verification_status" => "verified",
       "ysws_eligible" => true,
-      "primary_email" => "honest@example.com",
+      "primary_email" => email,
       "first_name" => "Test",
       "last_name" => "Teen",
       "slack_id" => @slack_id,

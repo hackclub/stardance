@@ -1,0 +1,100 @@
+// Shop preview banner (visible to users without a first project yet) and the
+// inline tutorial integrations that live inside the shop grid itself once the
+// user is HCA-linked + has a project but hasn't completed the walkthrough.
+
+.shop-preview {
+  align-items: stretch;
+  background: var(--color-set-3-bg, #606684);
+  border: 2px solid var(--color-brand-highlight);
+  border-radius: 8px;
+  color: var(--color-brand-cream);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1 1 320px;
+  }
+
+  &__eyebrow {
+    color: var(--color-brand-yellow);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    color: var(--color-brand-cream);
+    font-family: "Playfair Display", serif;
+    font-size: var(--font-size-xl, 1.75rem);
+    font-style: italic;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  &__lede {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-m);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__cta {
+    align-items: center;
+    display: flex;
+  }
+
+  &__cta-form {
+    margin: 0;
+  }
+}
+
+// Inline prompt that sits right above the shop grid in tutorial mode —
+// quieter than a full banner, points down at the spotlighted tiles below.
+.shop__tutorial-prompt {
+  align-items: baseline;
+  background: rgba(244, 235, 185, 0.08);
+  border-left: 3px solid var(--color-brand-highlight);
+  border-radius: 0 6px 6px 0;
+  color: var(--color-brand-off-white);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--font-size-m);
+  gap: 0.5rem 0.85rem;
+  margin: 0 0 1rem;
+  padding: 0.65rem 1rem;
+}
+
+.shop__tutorial-prompt-eyebrow {
+  color: var(--color-brand-mint);
+  font-size: var(--font-size-s);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.shop__tutorial-prompt-text {
+  line-height: 1.4;
+
+  strong {
+    color: var(--color-brand-cream);
+    font-weight: 700;
+  }
+}
+
+// Non-interactive shop item cards (preview mode + tutorial-locked items)
+// stay visible so users can browse but lose their click affordance.
+.shop-item-card--non-interactive {
+  filter: saturate(0.5);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}

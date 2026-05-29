@@ -52,6 +52,11 @@
 @use "pages/votes";
 @use "pages/achievements/index" as achievements_index;
 @use "pages/shop/shop";
+@use "pages/shop/hub";
+@use "pages/shop/category";
+@use "pages/shop/tutorial";
+@use "pages/shop/tutorial_step";
+@use "pages/shop/checkout";
 @use "pages/shop/order";
 @use "pages/shop/my_orders";
 @use "pages/shop/admin_order_show";

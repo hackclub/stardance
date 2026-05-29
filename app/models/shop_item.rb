@@ -263,6 +263,10 @@ class ShopItem < ApplicationRecord
   has_many :shop_item_modifiers, dependent: :destroy
   accepts_nested_attributes_for :shop_item_modifiers, allow_destroy: true,
     reject_if: proc { |attrs| attrs["name"].blank? }
+  has_many :shop_item_categories, dependent: :destroy
+  has_many :shop_categories, through: :shop_item_categories
+  has_many :shop_item_sources, dependent: :destroy
+  has_many :shop_sources, through: :shop_item_sources
 
   def agh_contents=(value)
     if value.is_a?(String) && value.present?

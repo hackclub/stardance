@@ -1,0 +1,29 @@
+<section class="shop-preview" aria-live="polite">
+  <div class="shop-preview__body">
+    <p class="shop-preview__eyebrow">browsing as a guest</p>
+    <h2 class="shop-preview__title">This is everything you could earn.</h2>
+    <p class="shop-preview__lede">Create your first project to start earning Stardust. The full shop unlocks once your project is set up — until then, take a look around.</p>
+  </div>
+
+  <div class="shop-preview__cta">
+    <% if current_user.present? %>
+      <%= render ActionButtonComponent.new(
+            text: "Create your first project",
+            href: new_project_path,
+            variant: :primary,
+            size: :large,
+            class: "shop-preview__cta-btn"
+          ) %>
+    <% else %>
+      <%= form_tag "/auth/hack_club", method: :post, data: { turbo: false }, class: "shop-preview__cta-form" do %>
+        <%= render ActionButtonComponent.new(
+              text: "Sign in to get started",
+              variant: :primary,
+              size: :large,
+              type: :submit,
+              class: "shop-preview__cta-btn"
+            ) %>
+      <% end %>
+    <% end %>
+  </div>
+</section>

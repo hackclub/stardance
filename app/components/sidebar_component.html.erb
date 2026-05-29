@@ -28,6 +28,13 @@
             </span>
           <% end %>
 
+          <% label_block = capture do %>
+            <span class="sidebar__nav-label"><%= item[:label] %></span>
+            <% if item[:notify] %>
+              <span class="sidebar__nav-notify-dot" aria-hidden="true"></span>
+            <% end %>
+          <% end %>
+
           <% if item[:locked] %>
             <button type="button"
                     class="<%= link_classes %> sidebar__nav-link--locked"
@@ -38,7 +45,7 @@
                     aria-haspopup="dialog"
                     aria-label="<%= item[:label] %> (locked) — click for details">
               <%= icon_block %>
-              <span class="sidebar__nav-label"><%= item[:label] %></span>
+              <%= label_block %>
               <span class="sidebar__nav-lock" aria-hidden="true">
                 <%= inline_svg_tag "icons/lock.svg", class: "sidebar__nav-lock-icon" %>
               </span>
@@ -46,12 +53,12 @@
           <% elsif item[:path] == "#" %>
             <span class="<%= link_classes %> sidebar__nav-link--inert" data-slug="<%= item[:slug] %>" aria-disabled="true">
               <%= icon_block %>
-              <span class="sidebar__nav-label"><%= item[:label] %></span>
+              <%= label_block %>
             </span>
           <% else %>
             <%= link_to item[:path], class: link_classes, aria: (active?(item) ? { current: "page" } : {}), data: { turbo: true, active_prefix: item[:active_prefix], slug: item[:slug] }.compact do %>
               <%= icon_block %>
-              <span class="sidebar__nav-label"><%= item[:label] %></span>
+              <%= label_block %>
             <% end %>
           <% end %>
         </li>

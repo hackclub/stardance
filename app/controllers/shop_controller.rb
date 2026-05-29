@@ -1,15 +1,24 @@
 class ShopController < ApplicationController
-  skip_before_action :refresh_identity_on_portal_return, only: [ :index ]
+  skip_before_action :refresh_identity_on_portal_return, only: [ :index, :category ]
 
   def index
-    @shop_open = Flipper.enabled?(:shop_open, current_user)
-    @user_region = user_region
-    @body_class = "shop-page"
-    @region_options = Shop::Regionalizable::REGIONS.map do |code, config|
-      { label: config[:name], value: code }
-    end
-
+    prepare_shop_chrome
     load_shop_items
+    load_random_items
+    load_orders_sidebar
+  end
+
+  def category
+    @slug = params[:slug].to_s
+    @category = Shop::Categorization.find(@slug)
+    raise ActiveRecord::RecordNotFound unless @category
+
+    @category_title = @category.title
+    @category_hub_title = @category.hub_title
+
+    prepare_shop_chrome
+    load_shop_items
+    @shop_items = Shop::Categorization.filter(@shop_items, @slug)
   end
 
   def my_orders
@@ -54,7 +63,11 @@ class ShopController < ApplicationController
       return
     end
 
-    unless @shop_item.buyable_by_self?
+    # TutorialNothing is intentionally `buyable_by_self: false`-friendly in
+    # spirit (we don't want it surfacing as a normal item), but we need the
+    # buyable check to pass when the user is in the tutorial. Bypass it for
+    # the two tutorial items.
+    unless @shop_item.buyable_by_self? || tutorial_item?(@shop_item)
       redirect_to shop_path, alert: "This item cannot be ordered on its own."
       return
     end
@@ -65,6 +78,12 @@ class ShopController < ApplicationController
     end
 
     @user_region = user_region
+
+    if tutorial_step = required_tutorial_step(@shop_item)
+      render tutorial_step, layout: "application"
+      return
+    end
+
     @sale_price = @shop_item.price_for_region(@user_region)
     @regional_base_price = @shop_item.base_price_for_region(@user_region)
     @accessories = @shop_item.available_accessories.includes(:image_attachment)
@@ -119,7 +138,7 @@ class ShopController < ApplicationController
       return
     end
 
-    unless @shop_item.buyable_by_self?
+    unless @shop_item.buyable_by_self? || tutorial_item?(@shop_item)
       redirect_to shop_path, alert: "This item cannot be ordered on its own."
       return
     end
@@ -178,7 +197,7 @@ class ShopController < ApplicationController
 
     selected_address = current_user.addresses.find { |a| a["id"] == params[:address_id] } || current_user.addresses.first
 
-    unless selected_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(ShopItem::FreeStickers)
+    unless selected_address&.dig("phone_number").present? || Rails.env.development? || tutorial_item?(@shop_item)
       return redirect_to shop_order_path(shop_item_id: @shop_item.id), alert: "You need to have a phone number on file to place an order! Please update your profile."
     end
 
@@ -240,6 +259,11 @@ class ShopController < ApplicationController
         end
       end
 
+      # Mark the tutorial finished as soon as the order is committed. The user
+      # picked an item, added an address and clicked Buy — they've done their
+      # part. Fulfilment is the system's job and shouldn't gate ship access.
+      current_user.mark_shop_tutorial_completed! if tutorial_item?(@shop_item)
+
       unless current_user.eligible_for_shop?
         @order.queue_for_verification!
         @order.accessory_orders.each(&:queue_for_verification!)
@@ -248,6 +272,12 @@ class ShopController < ApplicationController
       end
 
       return if @shop_item.is_a?(ShopItem::FreeStickers) && !fulfill_free_stickers!
+
+      if @shop_item.is_a?(ShopItem::TutorialNothing)
+        @shop_item.fulfill!(@order)
+        redirect_to shop_my_orders_path, notice: "Nice — that's your first order in! You're ready to ship your first project."
+        return
+      end
 
       if @shop_item.is_a?(ShopItem::SillyItemType) || @shop_item.is_a?(ShopItem::SiteActionItem)
         @order.approve!
@@ -263,14 +293,144 @@ class ShopController < ApplicationController
 
   private
 
+  # Common chrome variables consumed by both the hub (`index`) and category
+  # subpages (`category`) — region, shop open flag, tutorial state.
+  def prepare_shop_chrome
+    @shop_open = Flipper.enabled?(:shop_open, current_user)
+    @user_region = user_region
+    @body_class = "shop-page"
+    @region_options = Shop::Regionalizable::REGIONS.map do |code, config|
+      { label: config[:name], value: code }
+    end
+
+    @shop_mode = derive_shop_mode
+    if @shop_mode == :tutorial
+      @tutorial_items = load_tutorial_items
+      current_user&.mark_shop_tutorial_started!
+    end
+
+    @categories = Shop::Categorization.all
+  end
+
+  # Picks a small randomised subset of the catalogue for the hub's "Discover"
+  # row. Excludes unlisted/tutorial items and anything in a region the viewer
+  # can't actually order from.
+  def load_random_items
+    return @random_items = [] if @shop_items.blank?
+
+    pool = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
+
+    # In tutorial mode the stickers/nothing picks get their own leading row, so
+    # keep them out of the Discover grid below.
+    if @shop_mode == :tutorial && @tutorial_items
+      pick_ids = @tutorial_items.values.compact.map(&:id).to_set
+      pool = pool.reject { |item| pick_ids.include?(item.id) }
+    end
+
+    # Discover is a 2-row preview clipped in CSS; "See all" leads to the full
+    # listing. Cap the pool so we don't ship a giant hidden grid.
+    @random_items = pool.shuffle.first(12)
+  end
+
+  # Latest non-cancelled orders for the hub sidebar — keep it tiny.
+  def load_orders_sidebar
+    @sidebar_orders = if current_user
+                        current_user.shop_orders
+                                    .where(parent_order_id: nil)
+                                    .includes(shop_item: { image_attachment: :blob })
+                                    .order(id: :desc)
+                                    .limit(3)
+    else
+                        []
+    end
+  end
+
+  # `:preview`  — anyone who hasn't earned shop access yet (guests, signed-in
+  #               users without a project). They can browse but not buy.
+  # `:tutorial` — signed-in user with HCA + ≥1 project who hasn't finished the
+  #               shop walkthrough yet. They can interact with the two
+  #               tutorial items only.
+  # `:normal`   — everyone else. Standard shop behavior.
+  def derive_shop_mode
+    return :preview if current_user.nil? || current_user.guest?
+    return :preview unless current_user.projects.exists?
+    return :tutorial if current_user.shop_tutorial_needed?
+
+    :normal
+  end
+
+  def load_tutorial_items
+    {
+      stickers: ShopItem::FreeStickers.where(enabled: true).first,
+      nothing:  ShopItem::TutorialNothing.where(enabled: true).first
+    }
+  end
+
+  def tutorial_item?(shop_item)
+    shop_item.is_a?(ShopItem::FreeStickers) || shop_item.is_a?(ShopItem::TutorialNothing)
+  end
+
+  # When a user clicks into the tutorial flow, walk them through every
+  # prerequisite before showing the normal order page — project → IDV →
+  # address. Direct URL access to /shop/order?shop_item_id=X bypasses the
+  # shop hub's preview/tutorial gating, so we re-check server-side here.
+  # Returns the template name to render, or nil to fall through.
+  def required_tutorial_step(shop_item)
+    return nil unless current_user
+    return nil unless tutorial_item?(shop_item)
+    return nil if current_user.shop_tutorial_completed?
+
+    return "shop/tutorial_project" unless current_user.projects.exists?
+    return "shop/tutorial_verify"  unless current_user.identity_verified?
+    return "shop/tutorial_address" if current_user.addresses.empty?
+
+    nil
+  end
+
   def load_shop_items
-    excluded_free_stickers = current_user && has_ordered_free_stickers?
+    # Free stickers + "nothing" are the tutorial picks. Once the walkthrough is
+    # done — whether they picked stickers or nothing — both should vanish from
+    # the regular shop. (Nothing is `unlisted` so it's already gone; stickers
+    # only dropped out before if they'd ordered them, leaving a leak when the
+    # user finished via "nothing".)
+    excluded_free_stickers = current_user && (has_ordered_free_stickers? || current_user.shop_tutorial_completed?)
     shop_page_data = ShopItem.cached_shop_page_data
     @shop_items = shop_page_data[:buyable_standalone]
     @shop_items = @shop_items.reject { |item| item.type == "ShopItem::FreeStickers" } if excluded_free_stickers
     @featured_item = featured_free_stickers_item unless excluded_free_stickers
     @recently_added_items = shop_page_data[:recently_added]
     @user_balance = current_user&.cached_balance || 0
+
+    # The cached_shop_page_data stores AR objects post-eager-load, but Rails
+    # marshals them through Rails.cache and strips the association cache. On
+    # cache hits, the blobs would otherwise N+1 every render. Re-preload them.
+    preload_shop_item_images(@shop_items + Array(@recently_added_items) + [ @featured_item ].compact)
+
+    if @shop_mode == :tutorial && @tutorial_items[:nothing].present?
+      # TutorialNothing is `unlisted` (so it stays out of the regular shop grid
+      # after the tutorial finishes); during the walkthrough we splice it in so
+      # the user can interact with it alongside the stickers, and float both
+      # tutorial picks to the front of the grid so the spotlight badges land
+      # near the page top.
+      tutorial_ids = @tutorial_items.values.compact.map(&:id).to_set
+      @shop_items = @shop_items + [ @tutorial_items[:nothing] ]
+      tutorial_picks, rest = @shop_items.partition { |item| tutorial_ids.include?(item.id) }
+      @shop_items = tutorial_picks + rest
+    end
+  end
+
+  def preload_shop_item_images(items)
+    items = items.compact.uniq
+    return if items.empty?
+
+    # Preload both the blob and the polymorphic :record back-pointer.
+    # Bullet otherwise flags the implicit attachment→record access during
+    # URL generation as a missing eager-load, even though `record` resolves
+    # to the ShopItem we already have in memory.
+    ActiveRecord::Associations::Preloader.new(
+      records: items,
+      associations: { image_attachment: [ :blob, :record ] }
+    ).call
   end
 
   def has_ordered_free_stickers?

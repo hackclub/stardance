@@ -15,6 +15,7 @@
 #                                 shop_order GET    /shop/order(.:format)                                                                             shop#order
 #                                            POST   /shop/order(.:format)                                                                             shop#create_order
 #                         shop_update_region PATCH  /shop/update_region(.:format)                                                                     shop#update_region
+#                              shop_category GET    /shop/category/:slug(.:format)                                                                    shop#category
 #                           shop_suggestions POST   /shop_suggestions(.:format)                                                                       shop_suggestions#create
 #                        review_report_token GET    /report-reviews/review/:token(.:format)                                                           report_reviews#review
 #                       dismiss_report_token GET    /report-reviews/dismiss/:token(.:format)                                                          report_reviews#dismiss
@@ -44,6 +45,8 @@
 #                                my_settings PATCH  /my/settings(.:format)                                                                            my/settings#update
 #                                            PUT    /my/settings(.:format)                                                                            my/settings#update
 #                              my_dismissals POST   /my/dismissals(.:format)                                                                          my/dismissals#create
+#                    my_verification_refresh POST   /my/verification/refresh(.:format)                                                                my/verifications#refresh
+#                         my_pretend_idv_dev POST   /my/dev/pretend_idv(.:format)                                                                     my/dev_tools#pretend_idv
 #                            my_achievements GET    /my/achievements(.:format)                                                                        achievements#index
 #                reveal_address_seller_order POST   /seller/orders/:id/reveal_address(.:format)                                                       seller/orders#reveal_address
 #                mark_fulfilled_seller_order POST   /seller/orders/:id/mark_fulfilled(.:format)                                                       seller/orders#mark_fulfilled
@@ -425,6 +428,7 @@ Rails.application.routes.draw do
   get "shop/order", to: "shop#order"
   post "shop/order", to: "shop#create_order"
   patch "shop/update_region", to: "shop#update_region"
+  get "shop/category/:slug", to: "shop#category", as: :shop_category
   resources :shop_suggestions, only: [ :create ]
 
   # Report Reviews

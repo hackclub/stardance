@@ -17,6 +17,12 @@ Rails.application.config.middleware.use OmniAuth::Builder do
       Rails.application.credentials.dig(:idv, :client_secret),
       {
         name: :hack_club,
+        # `address` and `phone` are required for the `/api/v1/me` payload to
+        # include `addresses` (and phone numbers), which the shop reads via
+        # `User#addresses`. Without them HCA refuses to return the data even
+        # after the user adds it via `/portal/address`. They were dropped in
+        # 5/8/2026 (commit b085984e) by accident; restore so the shop
+        # tutorial + order flow works.
         scope: "openid email name profile verification_status slack_id address phone",
         callback_path: "/oauth/callback",
         client_options: {
