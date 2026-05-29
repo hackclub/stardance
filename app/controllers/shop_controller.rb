@@ -249,7 +249,7 @@ class ShopController < ApplicationController
 
       return if @shop_item.is_a?(ShopItem::FreeStickers) && !fulfill_free_stickers!
 
-      if @shop_item.is_a?(ShopItem::SillyItemType)
+      if @shop_item.is_a?(ShopItem::SillyItemType) || @shop_item.is_a?(ShopItem::SiteActionItem)
         @order.approve!
         redirect_to shop_my_orders_path, notice: "Order placed and fulfilled!"
         return

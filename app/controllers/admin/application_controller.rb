@@ -24,6 +24,7 @@ module Admin
     def pundit_namespace(record)
       return record if record.is_a?(Array) && record.first == :admin
 
+      record = record.becomes(record.class.base_class) if record.is_a?(ApplicationRecord) && record.class != record.class.base_class
       [ :admin, record ]
     end
 

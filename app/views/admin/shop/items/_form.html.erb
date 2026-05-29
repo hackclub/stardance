@@ -325,6 +325,27 @@
             </div>
           </div>
         <% end %>
+        <% if shop_item.type == "ShopItem::SiteActionItem" %>
+          <div class="card">
+            <h3>Site Action</h3>
+            <div class="shop-item-form__field">
+              <%= f.label :site_action, "Action Type", class: "shop-item-form__label" %>
+              <%= f.select :site_action, ShopItem.site_actions.keys.map { |k| [k.humanize, k] }, { include_blank: "Select an action" }, { class: "form-control", id: "site_action_select" } %>
+            </div>
+            <div class="shop-item-form__field" id="audio_file_field" style="<%= shop_item.site_action == 'audio_play' ? '' : 'display: none;' %>">
+              <%= f.label :audio_file, "Audio File", class: "shop-item-form__label" %>
+              <%= f.file_field :audio_file, class: "form-control", accept: "audio/*" %>
+              <% if shop_item.audio_file.attached? %>
+                <span class="shop-item-form__hint">Current file: <%= shop_item.audio_file.filename %></span>
+              <% end %>
+            </div>
+            <script>
+              document.getElementById("site_action_select")?.addEventListener("change", function() {
+                document.getElementById("audio_file_field").style.display = this.value === "audio_play" ? "" : "none";
+              });
+            </script>
+          </div>
+        <% end %>
 
         <% if shop_item.type.in?(%w[ShopItem::WarehouseItem ShopItem::PileOfStickersItem]) %>
           <div class="card">

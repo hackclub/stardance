@@ -4,6 +4,7 @@
     <title><%= content_for?(:title) ? "#{strip_tags(yield(:title))} - Stardance" : "Stardance - Hack Club" %></title>
     <%= favicon_link_tag 'favicon.png', type: 'image/png' %>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= action_cable_meta_tag %>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta property="og:type" content="website">

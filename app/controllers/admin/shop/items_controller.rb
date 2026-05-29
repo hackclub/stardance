@@ -196,6 +196,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         :hacker_score,
         :unlock_on,
         :site_action,
+        :audio_file,
         :hcb_category_lock,
         :hcb_keyword_lock,
         :hcb_merchant_lock,

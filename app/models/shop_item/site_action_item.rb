@@ -90,7 +90,9 @@ class ShopItem::SiteActionItem < ShopItem
   def fulfill!(shop_order)
     case site_action
     when "audio_play"
-      ActionCable.server.broadcast("site_actions", { type: "audio_play", file: audio_file.blob&.service_url })
+      url_options = Rails.application.config.action_mailer.default_url_options
+      file_url = Rails.application.routes.url_helpers.rails_blob_url(audio_file.blob, **url_options)
+      ActionCable.server.broadcast("site_actions", { type: "audio_play", file: file_url })
     when "italics"
       shop_order.user.shenanigans_state[:italics] = true
       shop_order.user.save!

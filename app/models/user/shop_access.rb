@@ -23,7 +23,23 @@ module User::ShopAccess
     end
   end
 
+  DEV_ADDRESS = {
+    "id" => "dev-address",
+    "primary" => true,
+    "first_name" => "Dev",
+    "last_name" => "User",
+    "line_1" => "15 Falls Road",
+    "line_2" => nil,
+    "city" => "Shelburne",
+    "state" => "VT",
+    "postal_code" => "05482",
+    "country" => "US",
+    "phone_number" => "+18025550100"
+  }.freeze
+
   def addresses
+    return [ DEV_ADDRESS ] if Rails.env.development?
+
     identity = hack_club_identity
     return [] unless identity&.access_token.present?
 
