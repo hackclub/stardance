@@ -30,6 +30,7 @@
 #  shop_region                  :enum
 #  synced_at                    :datetime
 #  things_dismissed             :string           default([]), not null, is an Array
+#  verification_checked_at      :datetime
 #  verification_status          :string           default("needs_submission"), not null
 #  vote_balance                 :integer          default(0), not null
 #  votes_count                  :integer
