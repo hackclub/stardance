@@ -8,6 +8,7 @@
 #  external_ref                       :string
 #  frozen_address_ciphertext          :text
 #  frozen_item_price                  :decimal(6, 2)
+#  frozen_modifiers_price             :integer          default(0), not null
 #  fulfilled_at                       :datetime
 #  fulfilled_by                       :string
 #  fulfillment_cost                   :decimal(6, 2)

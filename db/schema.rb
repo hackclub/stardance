@@ -750,6 +750,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
     t.index ["shop_item_id"], name: "index_shop_item_modifiers_on_shop_item_id"
   end
 
+  create_table "shop_item_site_action_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "shop_items", force: :cascade do |t|
     t.string "accessory_tag"
     t.jsonb "agh_contents"

@@ -28,6 +28,7 @@
 #  ref                          :string
 #  regions                      :string           default([]), is an Array
 #  session_token                :string
+#  shenanigans_state            :jsonb
 #  shop_region                  :enum
 #  synced_at                    :datetime
 #  things_dismissed             :string           default([]), not null, is an Array

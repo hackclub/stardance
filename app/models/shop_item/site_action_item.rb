@@ -1,5 +1,5 @@
 class ShopItem::SiteActionItem < ShopItem
-  enum site_action {
+  enum :site_action, {
     audio_play: 0,
     italics: 1
   }
