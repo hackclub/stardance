@@ -1,9 +1,5 @@
 class ShopItem::SiteActionItem < ShopItem
-  enum :site_action, {
-    audio_play: 0,
-    italics: 1
-  }
-  has_one_attached :audio_file, dependent: :destroy, optional: true
+  has_one_attached :audio_file, dependent: :destroy
 
   def fulfill!(shop_order)
     case site_action

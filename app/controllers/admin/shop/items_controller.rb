@@ -154,7 +154,8 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         "ShopItem::SpecialFulfillmentItem",
         "ShopItem::HackClubberItem",
         "ShopItem::FreeStickers",
-        "ShopItem::SillyItemType"
+        "ShopItem::SillyItemType",
+        "ShopItem::SiteActionItem"
       ]
     end
 

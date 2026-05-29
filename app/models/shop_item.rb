@@ -149,6 +149,11 @@ class ShopItem < ApplicationRecord
     Sti/Sti/Orp/Thu
   ].freeze
 
+  enum :site_action, {
+    audio_play: 0,
+    italics: 1
+  }
+
   RECENTLY_ADDED_WINDOW = 2.weeks
   SHOP_PAGE_CACHE_KEY = "shop_items/shop_page"
 
