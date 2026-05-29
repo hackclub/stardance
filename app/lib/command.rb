@@ -11,7 +11,7 @@ class Command
   # TODO: add admin
   ALL = [
     new(id: :home,         title: "Home",            path: "/home",            keywords: %w[dashboard start]),
-    new(id: :vote,         title: "Vote",             path: "/votes/new",       keywords: %w[review projects rate],       icon: "star_outline"),
+    new(id: :vote,         title: "Vote",             path: "/rate/new",        keywords: %w[review projects rate],       icon: "star_outline"),
     new(id: :shop,         title: "Shop",             path: "/shop",            keywords: %w[store buy prizes stardust],  icon: "cart_outline"),
     new(id: :resources,    title: "Resources",        path: "/guides",          keywords: %w[guides help docs tutorials], icon: "resources"),
     new(id: :projects,     title: "My Projects",      path: "/projects",        keywords: %w[builds code work]),

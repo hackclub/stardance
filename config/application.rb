@@ -74,6 +74,8 @@ module Battlemage
                          secure: Rails.env.production?,
                          httponly: true
 
+    config.exceptions_app = self.routes
+
     config.middleware.insert_before ActionDispatch::Static, ServeAvif
     config.middleware.insert_before ActionDispatch::Static, NoCacheErrors
   end

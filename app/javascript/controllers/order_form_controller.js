@@ -31,6 +31,7 @@ export default class extends Controller {
     }
 
     this.setupAccessoryRadioUndo();
+    this.setupModifierRadioUndo();
     this.setupOrderSummary();
     this.setupBlockedCountryCheck();
   }
@@ -81,6 +82,28 @@ export default class extends Controller {
     });
   }
 
+  setupModifierRadioUndo() {
+    const radios = this.element.querySelectorAll(
+      ".shop-order__modifier-option-input[type='radio']",
+    );
+    radios.forEach((radio) => {
+      radio.addEventListener("click", () => {
+        if (radio.dataset.wasChecked === "true") {
+          radio.checked = false;
+          radio.dataset.wasChecked = "false";
+          radio.dispatchEvent(new Event("change", { bubbles: true }));
+        } else {
+          this.element
+            .querySelectorAll(`input[name="${radio.name}"]`)
+            .forEach((r) => {
+              r.dataset.wasChecked = "false";
+            });
+          radio.dataset.wasChecked = "true";
+        }
+      });
+    });
+  }
+
   setupOrderSummary() {
     this.quantityInput =
       this.element.querySelector("#shop-order__quantity-input") || null;
@@ -90,6 +113,12 @@ export default class extends Controller {
     );
     this.accessoryRadios = this.element.querySelectorAll(
       ".shop-order__accessory-option-input[type='radio']",
+    );
+    this.modifierCheckboxes = this.element.querySelectorAll(
+      ".shop-order__modifier-option-input[type='checkbox']",
+    );
+    this.modifierRadios = this.element.querySelectorAll(
+      ".shop-order__modifier-option-input[type='radio']",
     );
 
     if (this.quantityInput) {
@@ -103,6 +132,14 @@ export default class extends Controller {
     });
 
     this.accessoryRadios.forEach((radio) => {
+      radio.addEventListener("change", () => this.updateOrderSummary());
+    });
+
+    this.modifierCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", () => this.updateOrderSummary());
+    });
+
+    this.modifierRadios.forEach((radio) => {
       radio.addEventListener("change", () => this.updateOrderSummary());
     });
 
@@ -135,24 +172,71 @@ export default class extends Controller {
     return accessories;
   }
 
+  getSelectedModifiers() {
+    const modifiers = [];
+
+    this.modifierCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        const name =
+          checkbox.dataset.name ||
+          checkbox
+            .closest("label")
+            .querySelector(".shop-order__accessory-option-name")?.textContent ||
+          "";
+        const price = parseFloat(checkbox.dataset.price) || 0;
+        modifiers.push({ name, price });
+      }
+    });
+
+    this.modifierRadios.forEach((radio) => {
+      if (radio.checked) {
+        const name =
+          radio.dataset.name ||
+          radio
+            .closest("label")
+            .querySelector(".shop-order__accessory-option-name")?.textContent ||
+          "";
+        const price = parseFloat(radio.dataset.price) || 0;
+        modifiers.push({ name, price });
+      }
+    });
+
+    return modifiers;
+  }
+
   updateOrderSummary() {
     const qty =
       parseInt(this.quantityInput ? this.quantityInput.value : 1, 10) || 1;
     const accessories = this.getSelectedAccessories();
+    const modifiers = this.getSelectedModifiers();
     const accTotal = accessories.reduce((sum, acc) => sum + acc.price, 0);
-    // Accessories are multiplied by quantity (e.g., 10 RPis with 8GB RAM = 10 accessories)
-    const total = this.baseTicketCostValue * qty + accTotal * qty;
+    const modTotal = modifiers.reduce((sum, mod) => sum + mod.price, 0);
+    // Accessories are multiplied by quantity; modifiers are per-order (not per-unit)
+    const total = this.baseTicketCostValue * qty + accTotal * qty + modTotal;
 
     if (
       this.hasAccessoriesListContainerTarget &&
       this.hasAccessoriesListItemsTarget
     ) {
-      if (accessories.length > 0) {
+      const allSelections = [
+        ...accessories.map((a) => ({
+          ...a,
+          display: `${a.name} ${qty > 1 ? `(${qty}x)` : ""}`,
+          cost: Math.round(a.price * qty),
+        })),
+        ...modifiers.map((m) => ({
+          ...m,
+          display: m.name,
+          cost: Math.round(m.price),
+        })),
+      ];
+
+      if (allSelections.length > 0) {
         this.accessoriesListContainerTarget.style.display = "block";
-        this.accessoriesListItemsTarget.innerHTML = accessories
+        this.accessoriesListItemsTarget.innerHTML = allSelections
           .map(
-            (acc) =>
-              `<li>${acc.name} ${qty > 1 ? `(${qty}x)` : ""} <span>${this.stardustIconHtml()} ${Math.round(acc.price * qty)}</span></li>`,
+            (s) =>
+              `<li>${s.display} <span>${s.cost > 0 ? `${this.stardustIconHtml()} ${s.cost}` : "Free"}</span></li>`,
           )
           .join("");
       } else {

@@ -1,0 +1,124 @@
+body.error-page-body {
+  background-color: var(--color-space-bg);
+  color: var(--color-space-text);
+}
+
+.error-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-xxxxl) var(--space-xl);
+  gap: var(--space-l);
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-m);
+    margin: 0 auto;
+    max-width: 1055px;
+    width: 100%;
+  }
+
+  &__code {
+    font-family: var(--font-family-text);
+    font-weight: 700;
+    font-size: var(--font-display);
+    line-height: var(--line-height-headers);
+    margin: 0;
+  }
+
+  &__lede {
+    font-family: var(--font-family-text);
+    font-size: var(--font-body);
+    line-height: var(--line-height-body);
+    margin: 0 0 var(--space-m);
+  }
+
+  &__art {
+    display: block;
+    width: min(100%, 420px);
+    height: auto;
+    aspect-ratio: 634 / 499;
+    margin: var(--space-l) auto;
+    opacity: 0.85;
+  }
+
+  &__body {
+    font-family: var(--font-family-text);
+    font-size: var(--font-body);
+    line-height: var(--line-height-body);
+    margin: 0;
+  }
+
+  &__channel,
+  &__home-link {
+    color: var(--color-brand-yellow);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  &__home-link:hover {
+    color: var(--color-brand-highlight);
+  }
+
+  &__trace {
+    display: inline-block;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-s);
+    color: var(--color-brand-mint);
+    background-color: var(--color-overlay-light);
+    border: none;
+    border-radius: var(--profile-radius);
+    padding: var(--space-xxs) var(--space-s);
+    word-break: break-all;
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+
+    &:hover {
+      background-color: var(--color-overlay-light-soft);
+      color: var(--color-brand-highlight);
+    }
+
+    &--copied {
+      color: var(--color-brand-yellow);
+    }
+  }
+
+  // only for the homies i.e admins
+  &__details {
+    width: min(100%, 720px);
+    margin-top: var(--space-l);
+    text-align: left;
+    background-color: var(--color-space-bg-2);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+    padding: var(--space-m);
+    overflow-x: auto;
+  }
+
+  &__details-summary {
+    font-family: var(--font-family-text);
+    font-weight: 700;
+    color: var(--color-brand-salmon);
+    cursor: pointer;
+  }
+
+  &__details-message {
+    font-family: var(--font-family-text);
+    font-size: var(--font-body);
+    margin: var(--space-s) 0 0;
+  }
+
+  &__details-trace {
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+    margin: var(--space-xs) 0 0;
+    white-space: pre;
+  }
+}

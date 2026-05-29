@@ -78,6 +78,47 @@
                 </div>
               </div>
 
+              <%
+                s = order.aasm_state
+                prog_steps = [
+                  { key: :placed,    label: "Placed" },
+                  { key: :review,    label: "Review" },
+                  { key: :preparing, label: "Preparing" },
+                  { key: :done,      label: "Done" }
+                ]
+                # Which step index is "current" (0-based)
+                step_idx = case s
+                  when "pending"                           then 0
+                  when "awaiting_verification",
+                       "awaiting_verification_call"        then 1
+                  when "awaiting_periodical_fulfillment",
+                       "on_hold"                          then 2
+                  when "fulfilled", "rejected", "refunded" then 3
+                  else 0
+                end
+              %>
+              <div class="my-orders__progress">
+                <% prog_steps.each_with_index do |step, i| %>
+                  <%
+                    cls = if i < step_idx then "my-orders__progress-step--done"
+                    elsif i == step_idx
+                      if s == "fulfilled"   then "my-orders__progress-step--success"
+                      elsif s == "rejected" then "my-orders__progress-step--danger"
+                      elsif s == "refunded" then "my-orders__progress-step--muted"
+                      else                       "my-orders__progress-step--active"
+                      end
+                    else ""
+                    end
+                  %>
+                  <div class="my-orders__progress-step <%= cls %>">
+                    <div class="my-orders__progress-dot">
+                      <%= i < step_idx ? "✓" : (i + 1) %>
+                    </div>
+                    <span class="my-orders__progress-label"><%= step[:label] %></span>
+                  </div>
+                <% end %>
+              </div>
+
               <div class="my-orders__details">
                 <div class="my-orders__detail-row">
                   <span class="my-orders__label">Quantity:</span>

@@ -204,7 +204,7 @@
               <div class="project-show__sparkle" aria-hidden="true"></div>
 
               <label class="project-show__field project-show__field--inline">
-                <span>Demo URL <span class="project-show__help" title="A live URL where anyone can try your project.">?</span></span>
+                <span>Demo URL <%= render "projects/help_tooltip", text: "A live URL where anyone can try your project." %></span>
                 <%= form.url_field :demo_url,
                                    class: "project-show__control",
                                    placeholder: "https://example.com",
@@ -216,7 +216,7 @@
               </label>
 
               <label class="project-show__field project-show__field--inline">
-                <span>Github URL <span class="project-show__help" title="A public repository URL.">?</span></span>
+                <span>Github URL <%= render "projects/help_tooltip", text: "A public repository URL." %></span>
                 <%= form.url_field :repo_url,
                                    class: "project-show__control",
                                    placeholder: "https://github.com/user/repo",
@@ -230,7 +230,7 @@
               <label class="project-show__field project-show__field--inline"
                      data-project-form-target="readmeContainer"
                      <%= "hidden" if @project.readme_url.blank? %>>
-                <span>Readme URL <span class="project-show__help" title="A raw README URL for your project page.">?</span></span>
+                <span>Readme URL <%= render "projects/help_tooltip", text: "A raw README URL for your project page." %></span>
                 <%= form.url_field :readme_url,
                                    class: "project-show__control",
                                    placeholder: "https://raw.githubusercontent.com/user/repo/main/README.md",
@@ -363,11 +363,11 @@
                   text: "Post a devlog +",
                   variant: devlog_variant,
                   type: :button,
-                  disabled: true,
+                  disabled: :soft,
                   data: {
-                    controller: "disabled-tooltip",
-                    disabled_tooltip_message_value: devlog_disabled_message,
-                    disabled_tooltip_position_value: "top"
+                    controller: "tooltip",
+                    tooltip_message_value: devlog_disabled_message,
+                    tooltip_position_value: "top"
                   }
                 ) %>
           <% else %>
@@ -407,11 +407,11 @@
                   variant: :secondary,
                   type: :button,
                   icon: "icons/rocket.png",
-                  disabled: true,
+                  disabled: :soft,
                   data: {
-                    controller: "disabled-tooltip",
-                    disabled_tooltip_message_value: "Post at least one devlog before shipping!",
-                    disabled_tooltip_position_value: "top"
+                    controller: "tooltip",
+                    tooltip_message_value: "Post at least one devlog before shipping!",
+                    tooltip_position_value: "top"
                   }
                 ) %>
           <% end %>
@@ -419,11 +419,11 @@
                 text: "Manage teammates",
                 variant: :secondary,
                 type: :button,
-                disabled: true,
+                disabled: :soft,
                 data: {
-                  controller: "disabled-tooltip",
-                  disabled_tooltip_message_value: "This feature is WIP!",
-                  disabled_tooltip_position_value: "top"
+                  controller: "tooltip",
+                  tooltip_message_value: "This feature is WIP!",
+                  tooltip_position_value: "top"
                 }
               ) %>
         </nav>
@@ -475,7 +475,13 @@
 
     <% if @votes_for_payout.present? %>
       <section class="project-show__payout-votes" aria-label="Votes needed to unlock payout">
-        <h3 class="project-show__payout-votes-title">Votes needed to unlock payout <span id="votes-progress-info">ⓘ</span></h3>
+        <h3 class="project-show__payout-votes-title">Votes needed to unlock payout <span class="project-show__payout-votes-info"
+              tabindex="0"
+              aria-label="What does this mean?"
+              data-controller="tooltip"
+              data-tooltip-title-value="Votes needed to unlock payout"
+              data-tooltip-message-value="This shows the number of times other people need to vote for your project!"
+              data-tooltip-position-value="top">ⓘ</span></h3>
         <div class="project-show__payout-votes-row">
           <progress class="project-show__payout-votes-progress"
                     value="<%= @votes_for_payout[:current] %>"
@@ -602,10 +608,3 @@
 
   <%= render DiscoverRailComponent.new %>
 </div>
-
-<% if @votes_for_payout.present? %>
-  <%= render TooltipComponent.new(target_id: "votes-progress-info", position: :top) do %>
-    <strong>Votes needed to unlock payout</strong>
-    This shows the number of times <i>other</i> people need to vote for your project!
-  <% end %>
-<% end %>

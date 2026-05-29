@@ -11,7 +11,7 @@ class VotesController < ApplicationController
     @vote = @assignment.submit_vote(vote_params)
 
     if @vote.persisted?
-      redirect_to new_vote_path, notice: "Vote submitted."
+      redirect_to new_rate_path, notice: "Vote submitted."
     else
       @ship_event = @assignment.ship_event
       @project = @ship_event.project
@@ -26,6 +26,8 @@ class VotesController < ApplicationController
       if @assignment
         @ship_event = @assignment.ship_event
         @project = @ship_event.project
+        return @assignment = nil unless @project
+
         @vote = Vote.new(ship_event: @ship_event, project: @project)
         load_timeline_posts
       end

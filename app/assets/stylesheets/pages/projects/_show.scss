@@ -1093,6 +1093,10 @@ turbo-frame#project_hero {
   font-weight: 700;
 }
 
+.project-show__payout-votes-info {
+  cursor: help;
+}
+
 .project-show__payout-votes-row {
   display: flex;
   align-items: center;
@@ -1218,6 +1222,7 @@ turbo-frame#project_hero {
 
   .feed-composer__chips,
   .feed-composer__grid,
+  .feed-composer__attach-wrap,
   .feed-composer__info-wrap,
   .feed-composer__toolbar {
     flex-shrink: 0;

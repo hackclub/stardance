@@ -1,6 +1,11 @@
 .like-button {
   display: inline-flex;
 
+  &__form {
+    display: inline-flex;
+    margin: 0;
+  }
+
   &__btn {
     display: flex;
     align-items: flex-end;

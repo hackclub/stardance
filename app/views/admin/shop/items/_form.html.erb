@@ -367,6 +367,26 @@
           </div>
         </div>
 
+        <div class="card" id="modifiers-card">
+          <h3>Modifiers</h3>
+          <p class="shop-item-form__hint" style="margin-bottom: 1rem;">
+            Modifiers let buyers customise their order (e.g., colour, storage) without creating a separate order.
+            Modifiers with the same group name are mutually exclusive. Leave ticket cost at 0 for free options.
+          </p>
+
+          <div id="modifier-entries">
+            <% if shop_item.persisted? %>
+              <%= f.fields_for :shop_item_modifiers, shop_item.shop_item_modifiers.ordered do |mf| %>
+                <%= render "modifier_fields", mf: mf %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <button type="button" id="add-modifier-btn" class="btn-secondary" style="margin-top: 1rem;" onclick="addModifier()">
+            + Add Modifier
+          </button>
+        </div>
+
         <% if shop_item.type == "ShopItem::Accessory" %>
           <div class="card">
             <h3>Accessory Settings</h3>
@@ -1011,3 +1031,117 @@
         }
     })();
 </script>
+
+<script>
+(function() {
+    var REGIONS = <%= Shop::Regionalizable::REGIONS.map { |code, cfg| { code: code, name: cfg[:name] } }.to_json.html_safe %>;
+    var FLAGS = { US: "🇺🇸", EU: "🇪🇺", UK: "🇬🇧", CA: "🇨🇦", AU: "🇦🇺", IN: "🇮🇳", XX: "🌍" };
+
+    function buildModifierTemplate(index) {
+        var regionRows = REGIONS.map(function(r) {
+            var code = r.code.toLowerCase();
+            return '<tr>' +
+                '<td>' + (FLAGS[r.code] || "🏳️") + ' <strong>' + r.code + '</strong></td>' +
+                '<td><input type="checkbox" name="shop_item[shop_item_modifiers_attributes][' + index + '][enabled_' + code + ']" value="1"></td>' +
+                '<td><input type="number" step="0.01" class="form-control form-control--sm" name="shop_item[shop_item_modifiers_attributes][' + index + '][usd_offset_' + code + ']" placeholder="0.00" style="width:90px;"></td>' +
+                '</tr>';
+        }).join('');
+
+        return '<div class="modifier-entry" data-modifier-id="new">' +
+            '<input type="hidden" name="shop_item[shop_item_modifiers_attributes][' + index + '][id]" value="">' +
+            '<input type="hidden" name="shop_item[shop_item_modifiers_attributes][' + index + '][_destroy]" class="modifier-destroy-field" value="0">' +
+            '<div class="modifier-entry__header">' +
+                '<strong class="modifier-entry__title">New Modifier</strong>' +
+                '<button type="button" class="btn-secondary modifier-entry__remove" onclick="removeModifier(this)" style="padding:2px 8px;font-size:0.75rem;">Remove</button>' +
+            '</div>' +
+            '<div class="shop-item-form__row">' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">Name</label>' +
+                    '<input type="text" name="shop_item[shop_item_modifiers_attributes][' + index + '][name]" class="form-control" placeholder="e.g., Blue, 16GB RAM" required>' +
+                '</div>' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">Group Name (optional)</label>' +
+                    '<input type="text" name="shop_item[shop_item_modifiers_attributes][' + index + '][group_name]" class="form-control" placeholder="e.g., Color, Storage">' +
+                    '<span class="shop-item-form__hint">Modifiers sharing a group name are mutually exclusive</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="shop-item-form__row">' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">&#10022; Stardust Cost</label>' +
+                    '<input type="number" min="0" step="1" name="shop_item[shop_item_modifiers_attributes][' + index + '][ticket_cost]" class="form-control" value="0">' +
+                    '<span class="shop-item-form__hint">0 = free modifier (e.g., colour choice)</span>' +
+                '</div>' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">USD Cost ($)</label>' +
+                    '<input type="number" min="0" step="0.01" name="shop_item[shop_item_modifiers_attributes][' + index + '][usd_cost]" class="form-control" placeholder="0.00">' +
+                '</div>' +
+            '</div>' +
+            '<div class="shop-item-form__row">' +
+                '<div class="shop-item-form__field">' +
+                    '<label class="shop-item-form__label">Position</label>' +
+                    '<input type="number" min="0" step="1" name="shop_item[shop_item_modifiers_attributes][' + index + '][position]" class="form-control" value="0">' +
+                '</div>' +
+                '<div class="shop-item-form__field" style="display:flex;align-items:center;padding-top:1.5rem;">' +
+                    '<label class="shop-item-form__checkbox">' +
+                        '<input type="checkbox" name="shop_item[shop_item_modifiers_attributes][' + index + '][enabled]" value="1" checked>' +
+                        '<span>Enabled</span>' +
+                    '</label>' +
+                '</div>' +
+            '</div>' +
+            '<div class="shop-item-form__field">' +
+                '<label class="shop-item-form__label">Image (optional)</label>' +
+                '<input type="file" name="shop_item[shop_item_modifiers_attributes][' + index + '][image]" class="form-control">' +
+            '</div>' +
+            '<details style="margin-top:0.75rem;">' +
+                '<summary style="cursor:pointer;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Regional Pricing</summary>' +
+                '<div class="shop-item-form__table-wrap" style="margin-top:0.5rem;">' +
+                    '<table class="table-data" style="font-size:0.8rem;">' +
+                        '<thead><tr><th>Region</th><th>Enabled</th><th>Δ USD Offset</th></tr></thead>' +
+                        '<tbody>' + regionRows + '</tbody>' +
+                    '</table>' +
+                '</div>' +
+            '</details>' +
+        '</div>';
+    }
+
+    window.addModifier = function() {
+        var index = new Date().getTime();
+        var container = document.getElementById('modifier-entries');
+        var div = document.createElement('div');
+        div.innerHTML = buildModifierTemplate(index);
+        container.appendChild(div.firstChild);
+    };
+
+    window.removeModifier = function(btn) {
+        var entry = btn.closest('.modifier-entry');
+        var destroyField = entry.querySelector('.modifier-destroy-field');
+        if (destroyField && destroyField.value !== "0") {
+            // already marked, just in case
+        } else if (destroyField) {
+            destroyField.value = "1";
+        }
+        entry.style.display = 'none';
+    };
+})();
+</script>
+
+<style>
+    .modifier-entry {
+        background: var(--color-tan-400);
+        border: 1px solid var(--color-brown-500);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .modifier-entry__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .modifier-entry__title {
+        font-size: 0.95rem;
+    }
+</style>

@@ -70,16 +70,17 @@ class Mission::Step < ApplicationRecord
   scope :ordered, -> { order(:position, :id) }
 
   # .detect (not find_by) so includes(:bodies) hits the preloaded cache.
-  def body_for(language)
+  def body_record_for(language)
     return nil if language.blank?
     target = language.to_s.downcase
-    bodies.detect { |b| b.language.to_s.downcase == target }&.body
+    bodies.detect { |b| b.language.to_s.downcase == target }
   end
+
+  def body_for(language) = body_record_for(language)&.body
 
   def upsert_body_for!(language, body)
     return if language.blank?
-    target = language.to_s.downcase
-    existing = bodies.detect { |b| b.language.to_s.downcase == target }
+    existing = body_record_for(language)
     body_str = body.to_s
     if existing
       existing.update!(body: body_str) if existing.body != body_str

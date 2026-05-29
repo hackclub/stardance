@@ -7,99 +7,102 @@
 <% displayed_versions = dedupe_versions(versions.limit(limit * 2).to_a).first(limit) %>
 <% users_by_id = User.where(id: displayed_versions.map(&:whodunnit).compact.uniq).index_by { |u| u.id.to_s } %>
 
-<div>
-  <div>
-    <h3>📜 Audit Log</h3>
-    <span><%= versions.count %> changes</span>
+<div class="audit-log">
+  <div class="audit-log__header">
+    <h3 class="audit-log__title">📜 Audit Log</h3>
+    <span class="audit-log__count"><%= versions.count %> changes</span>
   </div>
 
   <% if versions.any? %>
-    <table>
-      <thead>
-        <tr>
-          <th>Timestamp</th>
-          <th>User</th>
-          <th>Action</th>
-          <th>Changes</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% displayed_versions.each do |version| %>
+    <div class="audit-log__table-wrap">
+      <table class="audit-log__table">
+        <thead>
           <tr>
-            <td>
-              <span><%= version.created_at.strftime("%b %d, %Y") %></span>
-              <span><%= version.created_at.strftime("%H:%M:%S") %></span>
-            </td>
-            <td>
-              <% if version.whodunnit.present? %>
-                <% user = users_by_id[version.whodunnit.to_s] %>
-                <% if user %>
-                  <div>
-                    <img src="<%= user.avatar %>" alt="">
-                    <span><%= user.display_name %></span>
+            <th class="audit-log__th">Timestamp</th>
+            <th class="audit-log__th">User</th>
+            <th class="audit-log__th">Action</th>
+            <th class="audit-log__th">Changes</th>
+            <th class="audit-log__th"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% displayed_versions.each do |version| %>
+            <tr class="audit-log__row">
+              <td class="audit-log__td audit-log__td--time">
+                <span class="audit-log__date"><%= version.created_at.strftime("%b %-d, %Y") %></span>
+                <span class="audit-log__time"><%= version.created_at.strftime("%-I:%M:%S%p") %></span>
+              </td>
+              <td class="audit-log__td">
+                <% if version.whodunnit.present? %>
+                  <% user = users_by_id[version.whodunnit.to_s] %>
+                  <% if user %>
+                    <div class="audit-log__user">
+                      <img src="<%= user.avatar %>" alt="" class="audit-log__avatar">
+                      <span class="audit-log__username"><%= user.display_name %></span>
+                    </div>
+                  <% else %>
+                    <span class="audit-log__system">User #<%= version.whodunnit %></span>
+                  <% end %>
+                <% else %>
+                  <span class="audit-log__system">System</span>
+                <% end %>
+              </td>
+              <td class="audit-log__td">
+                <% display = audit_event_display(version) %>
+                <span class="audit-log__event"><%= display[:label] %></span>
+              </td>
+              <td class="audit-log__td">
+                <% if version.object_changes.present? %>
+                  <%
+                    raw_changes = version.object_changes
+                    changes = if raw_changes.is_a?(Hash)
+                      raw_changes
+                    elsif raw_changes.is_a?(String)
+                      YAML.safe_load(raw_changes, permitted_classes: [Time, Date, DateTime, BigDecimal, Symbol]) rescue {}
+                    else
+                      {}
+                    end
+                  %>
+                  <% sensitive_fields = %w[encrypted_password password_digest frozen_address frozen_address_ciphertext frozen_phone_ciphertext email address ip_address phone phone_number hcb_email] %>
+                  <div class="audit-log__changes">
+                    <% changes.keys.take(3).each do |k| %>
+                      <% v = changes[k] %>
+                      <div class="audit-log__change">
+                        <code class="audit-log__field"><%= k %></code>
+                        <% if sensitive_fields.include?(k.to_s) %>
+                          <span class="audit-log__redacted">🔒 redacted</span>
+                        <% elsif v.is_a?(Array) && v.length == 2 %>
+                          <span class="audit-log__old"><%= truncate(v[0].to_s, length: 25) %></span>
+                          <span class="audit-log__arrow">→</span>
+                          <span class="audit-log__new"><%= truncate(v[1].to_s, length: 25) %></span>
+                        <% else %>
+                          <span class="audit-log__val"><%= truncate(v.to_s, length: 40) %></span>
+                        <% end %>
+                      </div>
+                    <% end %>
+                    <% if changes.keys.count > 3 %>
+                      <span class="audit-log__more">+<%= changes.keys.count - 3 %> more</span>
+                    <% end %>
                   </div>
                 <% else %>
-                  <span>User #<%= version.whodunnit %></span>
+                  <span class="audit-log__empty">—</span>
                 <% end %>
-              <% else %>
-                <span>System</span>
-              <% end %>
-            </td>
-            <td>
-              <% display = audit_event_display(version) %>
-              <span><%= display[:label] %></span>
-            </td>
-            <td>
-              <% if version.object_changes.present? %>
-                <%
-                  raw_changes = version.object_changes
-                  changes = if raw_changes.is_a?(Hash)
-                    raw_changes
-                  elsif raw_changes.is_a?(String)
-                    YAML.safe_load(raw_changes, permitted_classes: [Time, Date, DateTime, BigDecimal, Symbol]) rescue {}
-                  else
-                    {}
-                  end
-                %>
-                <% sensitive_fields = %w[encrypted_password password_digest frozen_address frozen_address_ciphertext frozen_phone_ciphertext email address ip_address phone phone_number hcb_email] %>
-                <div>
-                  <% changes.keys.take(3).each do |k| %>
-                    <% v = changes[k] %>
-                    <div>
-                      <code><%= k %></code>
-                      <% if sensitive_fields.include?(k.to_s) %>
-                        <span>🔒 [REDACTED]</span>
-                      <% elsif v.is_a?(Array) && v.length == 2 %>
-                        <span><%= truncate(v[0].to_s, length: 30) %></span>
-                        → <span><%= truncate(v[1].to_s, length: 30) %></span>
-                      <% else %>
-                        <span><%= truncate(v.to_s, length: 50) %></span>
-                      <% end %>
-                    </div>
-                  <% end %>
-                  <% if changes.keys.count > 3 %>
-                    <span>(+<%= changes.keys.count - 3 %> more)</span>
-                  <% end %>
-                </div>
-              <% else %>
-                <span>—</span>
-              <% end %>
-            </td>
-            <td>
-              <%= link_to "Details", admin_audit_log_path(version) %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+              </td>
+              <td class="audit-log__td audit-log__td--action">
+                <%= link_to "Details →", admin_audit_log_path(version), class: "audit-log__link" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
 
     <% if versions.count > limit %>
-      <p>
-        <%= link_to "View all #{versions.count} changes →", admin_audit_logs_path(item_type: item_type, item_id: record.id) %>
-      </p>
+      <div class="audit-log__footer">
+        <%= link_to "View all #{versions.count} changes →", admin_audit_logs_path(item_type: item_type, item_id: record.id), class: "audit-log__view-all" %>
+      </div>
     <% end %>
   <% else %>
-    <p>No audit history yet.</p>
+    <p class="audit-log__empty-msg">No audit history yet.</p>
   <% end %>
 </div>

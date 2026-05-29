@@ -4,21 +4,28 @@
 <% cookie_id = local_assigns.fetch(:cookie_id, "vote-verdict-cookie") %>
 <% small = local_assigns.fetch(:small, false) %>
 <% cookie_classes = class_names("vote-verdict-cookie", "vote-verdict-cookie--sm": small) %>
+<% tooltip_position = small ? "top" : "bottom" %>
 
 <% if verdict.cursed? %>
-  <div id="<%= cookie_id %>" class="<%= cookie_classes %>" tabindex="0" aria-label="Vote quality flagged">
+  <%= tag.div id: cookie_id, class: cookie_classes, tabindex: 0,
+        aria: { label: "Vote quality flagged" },
+        data: {
+          controller: "tooltip",
+          tooltip_title_value: "You have been cursed!",
+          tooltip_message_value: "Ship payouts reduced 50% & your votes don't count toward others' payouts. Please write detailed responses, specific to the project, go through demos and readmes and don't rush through voting.",
+          tooltip_position_value: tooltip_position
+        } do %>
     <%= image_tag "icons/cursed-cookie.png", alt: "", class: "vote-verdict-cookie__img" %>
-  </div>
-  <%= render TooltipComponent.new(target_id: cookie_id, position: small ? :top : :bottom) do %>
-    <strong>You have been cursed!</strong>
-    Ship payouts reduced 50% & your votes don't count toward others' payouts. Please write detailed responses, specific to the project, go through demos and readmes and don't rush through voting.
   <% end %>
 <% elsif verdict.blessed? %>
-  <div id="<%= cookie_id %>" class="<%= cookie_classes %>" tabindex="0" aria-label="Vote quality blessed">
+  <%= tag.div id: cookie_id, class: cookie_classes, tabindex: 0,
+        aria: { label: "Vote quality blessed" },
+        data: {
+          controller: "tooltip",
+          tooltip_title_value: "You have been blessed!",
+          tooltip_message_value: "Your ship payouts include a 20% bonus. Thank you for doing this! - With Love, @cskartikey",
+          tooltip_position_value: tooltip_position
+        } do %>
     <%= image_tag "icons/blessed-cookie.png", alt: "", class: "vote-verdict-cookie__img" %>
-  </div>
-  <%= render TooltipComponent.new(target_id: cookie_id, position: small ? :top : :bottom) do %>
-    <strong>You have been blessed!</strong>
-    Your ship payouts include a 20% bonus. Thank you for doing this! - With Love, @cskartikey
   <% end %>
 <% end %>

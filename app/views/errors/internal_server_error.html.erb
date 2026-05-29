@@ -1,20 +1,7 @@
-<div class="error-page">
-  <h1>Something went wrong</h1>
-  <p>We've been notified and are looking into it.</p>
+<% content_for :title, "Something went wrong" %>
 
-  <% if @trace_id.present? %>
-    <div class="error-page__trace">
-      <p>If you need help, please share this reference code:</p>
-      <code><%= @trace_id %></code>
-    </div>
-  <% end %>
-
-  <% if @exception.present? %>
-    <div class="error-page__details" style="margin-top: 2rem; text-align: left; background: #1a1a1a; padding: 1rem; border-radius: 8px; overflow-x: auto;">
-      <p><strong><%= @exception.class %>:</strong> <%= @exception.message %></p>
-      <pre style="font-size: 0.75rem; color: #ccc; margin-top: 0.5rem;"><%= @exception.backtrace&.first(20)&.join("\n") %></pre>
-    </div>
-  <% end %>
-
-  <p><%= link_to "Go back home", root_path %></p>
-</div>
+<%= render "errors/error",
+           code: "500",
+           lede: "Something went wrong on our end.",
+           trace_id: @trace_id,
+           exception: @exception %>

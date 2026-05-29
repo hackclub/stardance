@@ -42,7 +42,11 @@ class Vote::Assignment < ApplicationRecord
   validate :ship_event_can_be_assigned, on: :create
 
   def self.current_for(user)
-    assigned.where(user: user).order(created_at: :desc).first
+    assigned
+      .joins(ship_event: :post)
+      .where(user: user)
+      .order(created_at: :desc)
+      .first
   end
 
   def self.assign_to(user)
@@ -82,6 +86,7 @@ class Vote::Assignment < ApplicationRecord
         .select(:id)
 
       Post::ShipEvent
+        .joins(:post)
         .where(certification_status: %w[pending approved])
         .where.not(id: excluded_ship_event_ids)
         .where.not(id: voted_ship_event_ids)

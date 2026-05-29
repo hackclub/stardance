@@ -58,8 +58,8 @@ ShopItem::FreeStickers.find_or_create_by!(name: "Stickers!!") do |item|
   item.enabled = true
   item.one_per_person_ever = true
   item.image.attach(
-    io: File.open(Rails.root.join("app/assets/images/free_sticker.png")),
-    filename: "free_sticker.png",
-    content_type: "image/png"
+    io: File.open(Rails.root.join("app/assets/images/free_sticker.avif")),
+    filename: "free_sticker.avif",
+    content_type: "image/avif"
   )
 end

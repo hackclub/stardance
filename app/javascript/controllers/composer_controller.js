@@ -11,6 +11,7 @@ export default class extends Controller {
     "form",
     "textarea",
     "submit",
+    "attachWrap",
   ];
   static values = {
     maxFiles: { type: Number, default: 4 },
@@ -77,6 +78,13 @@ export default class extends Controller {
         this.hasTextareaTarget && this.textareaTarget.value.trim().length > 0;
     } else {
       enabled = this.#files.length > 0 && this.#previewSeconds >= 15 * 60;
+    }
+    if (this.hasAttachWrapTarget) {
+      const show = this.#composerOpen && this.#files.length === 0;
+      this.attachWrapTarget.classList.toggle(
+        "feed-composer__attach-wrap--expanded",
+        show,
+      );
     }
     if (this.hasSubmitTarget) {
       this.submitTarget.disabled = !enabled;
@@ -149,10 +157,6 @@ export default class extends Controller {
     if (!this.hasPreviewTimeUrlValue) return;
     if (this.timeFrameTarget.getAttribute("src")) return;
     this.timeFrameTarget.setAttribute("src", this.previewTimeUrlValue);
-  }
-
-  openFilePicker() {
-    this.fileInputTarget.click();
   }
 
   selectFiles() {

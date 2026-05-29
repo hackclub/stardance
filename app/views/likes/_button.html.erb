@@ -4,29 +4,24 @@
   else
     current_user && likeable.likes.exists?(user: current_user)
   end
+
+  icon = liked ? "icons/like-fill.svg" : "icons/like.svg"
+  button_classes = [ "like-button__btn", ("like-button__btn--liked" if liked) ].compact
 %>
 
 <%= turbo_frame_tag dom_id(likeable, :like_button) do %>
   <div class="like-button">
     <% if current_user %>
-      <% if liked %>
-        <%= link_to devlog_like_path(likeable),
-              data: { turbo_method: :delete },
-              class: "like-button__btn like-button__btn--liked" do %>
-          <%= inline_svg_tag("icons/star_fill.svg", class: "like-button__icon") %>
-          <span class="like-button__count"><%= likeable.likes_count %></span>
-        <% end %>
-      <% else %>
-        <%= link_to devlog_like_path(likeable),
-              data: { turbo_method: :post },
-              class: "like-button__btn" do %>
-          <%= inline_svg_tag("icons/star_fill.svg", class: "like-button__icon") %>
-          <span class="like-button__count"><%= likeable.likes_count %></span>
-        <% end %>
+      <%= button_to devlog_like_path(likeable),
+            method: liked ? :delete : :post,
+            class: button_classes,
+            form_class: "like-button__form" do %>
+        <%= inline_svg_tag(icon, class: "like-button__icon") %>
+        <span class="like-button__count"><%= likeable.likes_count %></span>
       <% end %>
     <% else %>
       <div class="like-button__btn like-button__btn--disabled">
-        <%= inline_svg_tag("icons/star_fill.svg", class: "like-button__icon") %>
+        <%= inline_svg_tag("icons/like.svg", class: "like-button__icon") %>
         <span class="like-button__count"><%= likeable.likes_count %></span>
       </div>
     <% end %>

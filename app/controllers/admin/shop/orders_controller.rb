@@ -198,10 +198,40 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
         object_changes: { order_id: @order.id, shop_item: @order.shop_item&.name }
       )
 
-      render turbo_stream: turbo_stream.replace(
-        "phone-content",
-        html: "<div><div><b>Phone:</b> #{phone_number.present? ? ERB::Util.html_escape(phone_number) : 'N/A'}</div></div><div><small>Phone access has been logged for security purposes.</small></div>".html_safe
-      )
+      phone_html = if phone_number.present?
+        phone_safe = ERB::Util.html_escape(phone_number)
+        <<~HTML.html_safe
+          <div class="aorder__row">
+            <span class="aorder__row-label">Phone</span>
+            <span class="aorder__row-value">
+              <span class="sensitive">#{phone_safe}</span>
+              <button type="button" class="aorder__copy-btn" data-copy="#{phone_safe}" aria-label="Copy phone">📋</button>
+            </span>
+          </div>
+          <div class="aorder__row" style="padding-top:var(--space-s);">
+            <span class="aorder__row-label" style="color:var(--color-space-text-muted);font-size:var(--font-size-xs);">🔒 Phone access has been logged for security purposes.</span>
+          </div>
+          <script>
+            document.querySelectorAll('.aorder__copy-btn').forEach(function(btn){
+              if(btn._copyBound) return; btn._copyBound=true;
+              btn.addEventListener('click',function(){
+                navigator.clipboard.writeText(this.dataset.copy).then(function(){
+                  btn.textContent='✓'; setTimeout(function(){btn.textContent='📋';},1500);
+                });
+              });
+            });
+          </script>
+        HTML
+      else
+        <<~HTML.html_safe
+          <div class="aorder__row">
+            <span class="aorder__row-label">Phone</span>
+            <span class="aorder__row-value" style="color:var(--color-space-text-muted);font-style:italic;">N/A</span>
+          </div>
+        HTML
+      end
+
+      render turbo_stream: turbo_stream.replace("phone-content", html: phone_html)
     else
       render plain: "Unauthorized", status: :forbidden
     end

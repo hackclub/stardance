@@ -101,7 +101,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
 
       reviewer = User.find_by(id: 27)
       if reviewer&.slack_id.present?
-        msg = "📋 *#{current_user.display_name}* requested approval for draft shop item \"#{@shop_item.name}\" — <#{Rails.application.routes.url_helpers.admin_shop_item_url(@shop_item, host: Rails.application.config.action_mailer.default_url_options&.dig(:host) || "flavortown.hackclub.com")}|Review it>"
+        msg = "📋 *#{current_user.display_name}* requested approval for draft shop item \"#{@shop_item.name}\" — <#{Rails.application.routes.url_helpers.admin_shop_item_url(@shop_item, host: Rails.application.config.action_mailer.default_url_options&.dig(:host) || "stardance.hackclub.com")}|Review it>"
         SendSlackDmJob.perform_later(reviewer.slack_id, msg)
       end
 
@@ -119,8 +119,10 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         authorize @shop_item, :update?
         if must_be_draft && (!@shop_item.draft? || @shop_item.created_by_user_id != current_user.id)
           redirect_to admin_shop_path, alert: "You can only edit your own draft items."
-          return false  # signal to caller
+          return false
         end
+      elsif current_user.fulfillment_person? && !current_user.admin?
+        authorize :admin, :view_shop_items?
       else
         authorize @shop_item, must_be_draft ? :update? : :show?
       end
@@ -223,7 +225,13 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         requires_achievement: [],
         blocked_countries: [],
         unlocking_mission_ids: [],
-        parent_item_ids: []
+        parent_item_ids: [],
+        shop_item_modifiers_attributes: [
+          :id, :name, :group_name, :ticket_cost, :usd_cost, :enabled, :position,
+          :enabled_us, :enabled_eu, :enabled_uk, :enabled_ca, :enabled_au, :enabled_in, :enabled_xx,
+          :usd_offset_us, :usd_offset_eu, :usd_offset_uk, :usd_offset_ca, :usd_offset_au, :usd_offset_in, :usd_offset_xx,
+          :image, :_destroy
+        ]
       )
     end
 

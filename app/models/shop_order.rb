@@ -67,6 +67,8 @@ class ShopOrder < ApplicationRecord
   belongs_to :shop_card_grant, optional: true
   belongs_to :parent_order, class_name: "ShopOrder", optional: true
   has_many :accessory_orders, class_name: "ShopOrder", foreign_key: :parent_order_id, dependent: :destroy
+  has_many :shop_order_modifier_selections, dependent: :destroy
+  has_many :selected_modifiers, through: :shop_order_modifier_selections, source: :shop_item_modifier
   has_many :reviews, class_name: "ShopOrderReview", dependent: :destroy
   has_one :mission_submission, class_name: "Mission::Submission", inverse_of: :shop_order
   belongs_to :warehouse_package, class_name: "ShopWarehousePackage", optional: true
@@ -281,10 +283,15 @@ class ShopOrder < ApplicationRecord
     total_cost + (accessory_orders_total_cost || 0)
   end
 
+  def total_cost_with_modifiers
+    total_cost + (frozen_modifiers_price || 0)
+  end
+
   def high_value?
     frozen_item_price > HIGH_VALUE_THRESHOLD ||
       total_cost > HIGH_VALUE_THRESHOLD ||
-      total_cost_with_accessories > HIGH_VALUE_THRESHOLD
+      total_cost_with_accessories > HIGH_VALUE_THRESHOLD ||
+      total_cost_with_modifiers > HIGH_VALUE_THRESHOLD
   end
 
   def requires_additional_review?
@@ -471,7 +478,7 @@ class ShopOrder < ApplicationRecord
     return unless frozen_item_price.present? && frozen_item_price > 0 && quantity.present?
 
     user.ledger_entries.create!(
-      amount: -total_cost,
+      amount: -total_cost_with_modifiers,
       reason: "Shop order of #{shop_item.name.pluralize(quantity)}",
       created_by: "System",
       ledgerable: self
@@ -483,7 +490,7 @@ class ShopOrder < ApplicationRecord
     return if shop_item.is_a?(ShopItem::FreeStickers)
 
     user.ledger_entries.create!(
-      amount: total_cost,
+      amount: total_cost_with_modifiers,
       reason: "Refund for rejected order of #{shop_item.name.pluralize(quantity)}",
       created_by: "System",
       ledgerable: self
@@ -546,7 +553,7 @@ class ShopOrder < ApplicationRecord
       user.slack_id,
       nil,
       blocks_path: "notifications/shop_orders/assigned",
-      locals: { order: self, admin_url: Rails.application.routes.url_helpers.admin_shop_order_url(self, host: "flavortown.hackclub.com", protocol: "https") }
+      locals: { order: self, admin_url: Rails.application.routes.url_helpers.admin_shop_order_url(self, host: "stardance.hackclub.com", protocol: "https") }
     )
   end
 end

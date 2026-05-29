@@ -723,9 +723,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
     t.index ["parent_item_id"], name: "index_shop_item_attachments_on_parent_item_id"
   end
 
-  create_table "shop_item_site_action_items", force: :cascade do |t|
+  create_table "shop_item_modifiers", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.boolean "enabled_au"
+    t.boolean "enabled_ca"
+    t.boolean "enabled_eu"
+    t.boolean "enabled_in"
+    t.boolean "enabled_uk"
+    t.boolean "enabled_us"
+    t.boolean "enabled_xx"
+    t.string "group_name"
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "shop_item_id", null: false
+    t.integer "ticket_cost", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.decimal "usd_cost", precision: 10, scale: 2
+    t.decimal "usd_offset_au", precision: 10, scale: 2
+    t.decimal "usd_offset_ca", precision: 10, scale: 2
+    t.decimal "usd_offset_eu", precision: 10, scale: 2
+    t.decimal "usd_offset_in", precision: 10, scale: 2
+    t.decimal "usd_offset_uk", precision: 10, scale: 2
+    t.decimal "usd_offset_us", precision: 10, scale: 2
+    t.decimal "usd_offset_xx", precision: 10, scale: 2
+    t.index ["shop_item_id"], name: "index_shop_item_modifiers_on_shop_item_id"
   end
 
   create_table "shop_items", force: :cascade do |t|
@@ -802,6 +824,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
     t.index ["user_id"], name: "index_shop_items_on_user_id"
   end
 
+  create_table "shop_order_modifier_selections", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "frozen_modifier_price", default: 0, null: false
+    t.bigint "shop_item_modifier_id", null: false
+    t.bigint "shop_order_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_item_modifier_id"], name: "index_shop_order_modifier_selections_on_shop_item_modifier_id"
+    t.index ["shop_order_id", "shop_item_modifier_id"], name: "idx_modifier_selections_unique", unique: true
+    t.index ["shop_order_id"], name: "index_shop_order_modifier_selections_on_shop_order_id"
+  end
+
   create_table "shop_order_reviews", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "reason", null: false
@@ -823,6 +856,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
     t.bigint "fraud_related_project_id"
     t.text "frozen_address_ciphertext"
     t.decimal "frozen_item_price", precision: 6, scale: 2
+    t.integer "frozen_modifiers_price", default: 0, null: false
     t.datetime "fulfilled_at"
     t.string "fulfilled_by"
     t.decimal "fulfillment_cost", precision: 6, scale: 2
@@ -1144,9 +1178,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_172811) do
   add_foreign_key "shop_card_grants", "users"
   add_foreign_key "shop_item_attachments", "shop_items", column: "accessory_item_id", on_delete: :cascade
   add_foreign_key "shop_item_attachments", "shop_items", column: "parent_item_id", on_delete: :cascade
+  add_foreign_key "shop_item_modifiers", "shop_items"
   add_foreign_key "shop_items", "users"
   add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
+  add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
+  add_foreign_key "shop_order_modifier_selections", "shop_orders"
   add_foreign_key "shop_order_reviews", "shop_orders"
   add_foreign_key "shop_order_reviews", "users"
   add_foreign_key "shop_orders", "fulfillment_payout_lines"

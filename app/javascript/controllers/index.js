@@ -70,9 +70,6 @@ application.register("customs-warning", CustomsWarningController);
 import DecisionTreeController from "./decision_tree_controller";
 application.register("decision-tree", DecisionTreeController);
 
-import DisabledTooltipController from "./disabled_tooltip_controller";
-application.register("disabled-tooltip", DisabledTooltipController);
-
 import EmojiPickerController from "./emoji_picker_controller";
 application.register("emoji-picker", EmojiPickerController);
 

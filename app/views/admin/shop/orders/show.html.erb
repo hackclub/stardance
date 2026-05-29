@@ -1,534 +1,768 @@
 <% content_for :title, "Order ##{@order.id}" %>
-<h1>
-  <span title="ID: <%= @order.id %>&#10;User: <%= @order.user.display_name %><%= " (Slack: #{@order.user.slack_id || 'N/A'})" unless current_user.shop_manager? && !current_user.admin? %>&#10;Item: <%= @order.shop_item.name %>&#10;Qty: <%= @order.quantity %> × <%= @order.frozen_item_price %> = <%= @order.total_cost %> tickets&#10;Status: <%= @order.aasm_state.humanize %>&#10;Created: <%= @order.created_at.strftime('%Y-%m-%d %H:%M') %><%= @order.assigned_to_user.present? ? "&#10;Assigned: #{@order.assigned_to_user.display_name}" : '' %>">Order #<%= @order.id %></span>
-</h1>
+<%
+  s = @order.aasm_state
 
-<% if @other_viewers.any? %>
-  <div>
-    👀 <%= @other_viewers.to_sentence %> <%= @other_viewers.one? ? "is" : "are" %> also looking at this order
-  </div>
-<% end %>
+  # Pipeline steps: index maps to how far through the flow we are
+  # 0=pending, 1=verification, 2=awaiting_fulfillment, 3=fulfilled
+  # exception states: on_hold, rejected, refunded — still show the pipeline
+  step_idx = case s
+    when "pending"                                   then 0
+    when "awaiting_verification",
+         "awaiting_verification_call"                then 1
+    when "awaiting_periodical_fulfillment", "on_hold" then 2
+    when "fulfilled", "rejected", "refunded"          then 3
+    else 0
+  end
 
-<div>
-  <div>
-    <div>
-      <span>Status</span>
-      <span>
-        <%= @order.aasm_state.humanize %>
-      </span>
+  is_terminal = %w[fulfilled rejected refunded].include?(s)
+  is_exception = %w[on_hold rejected refunded].include?(s)
+
+  pipeline = [
+    { label: "Placed",        sublabel: "Order received" },
+    { label: "Verification",  sublabel: "Identity check" },
+    { label: "Fulfillment",   sublabel: "Processing" },
+    { label: "Done",          sublabel: s == "rejected" ? "Rejected" : s == "refunded" ? "Refunded" : "Fulfilled" }
+  ]
+%>
+
+<div class="aorder">
+
+  <%# ── Page header ──────────────────────────────────────────────────── %>
+  <div class="aorder__header">
+    <div class="aorder__title-group">
+      <h1 class="aorder__title">
+        Order #<%= @order.id %>
+        <span class="aorder__state-badge aorder__state-badge--<%= s %>"><%= s.humanize %></span>
+      </h1>
+      <p class="aorder__subtitle"><%= @order.shop_item.name %> · <%= @order.created_at.strftime("%b %-d, %Y at %-I:%M%p") %></p>
     </div>
-
-    <div>
-      <span>Created</span>
-      <span><%= @order.created_at.strftime("%m/%d %l:%M%p") %></span>
-    </div>
-
-    <div>
-      <span>User</span>
-      <%= link_to @order.user.display_name || "Unknown", admin_user_path(@order.user), style: "font-size: 0.875rem; color: #3b82f6;" %>
-      <% unless current_user.shop_manager? && !current_user.admin? %>
-        <div>
-          <div>Slack: <% if @order.user.slack_id.present? %><a href="https://hackclub.slack.com/team/<%= @order.user.slack_id %>" target="_blank"><code><%= @order.user.slack_id %></code></a><% else %><span>N/A</span><% end %></div>
-          <% hackatime_identity = @order.user.identities.find { |i| i.provider == "hackatime" } %>
-          <% if hackatime_identity %>
-            <div>Hackatime: <code><%= hackatime_identity.uid %></code></div>
-          <% end %>
-          <% hack_club_identity = @order.user.identities.find { |i| i.provider == "hack_club" } %>
-          <% if hack_club_identity %>
-            <div>Hack Club: <code><%= hack_club_identity.uid %></code></div>
-          <% end %>
-        </div>
-      <% end %>
-      <% if current_user.admin? || current_user.fraud_dept? %>
-        <div>
-          <% if hackatime_identity %>
-            <%= link_to "Billy", "https://billy.3kh0.net/?u=#{hackatime_identity.uid}", target: "_blank", style: "font-size: 0.65rem; padding: 0.15rem 0.3rem;" %>
-            <%= link_to "Joe", "https://joe.fraud.hackclub.com/profile/#{hackatime_identity.uid}", target: "_blank", style: "font-size: 0.65rem; padding: 0.15rem 0.3rem;" %>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
-
-    <div>
-      <span>Item</span>
-      <span><%= truncate(@order.shop_item.name, length: 25) %></span>
-    </div>
-
-    <div>
-      <span>Quantity</span>
-      <span>
-        ×<%= @order.quantity %>
-      </span>
-      <% if @order.quantity > 1 %>
-        <span>MORE THAN ONE</span>
-      <% end %>
-    </div>
-
-    <div>
-      <span>Cost</span>
-      <span>
-        <%= @order.quantity %> × <%= @order.frozen_item_price %> tickets
-        = <strong><%= @order.total_cost %> total</strong>
-      </span>
-    </div>
-  </div>
-</div>
-
-<div>
-  <div>
-    <h2>Shop Orders Summary</h2>
-    <div>
-      <div><strong>Total Orders:</strong> <%= @user_order_stats[:total] %></div>
-      <div><strong>Fulfilled:</strong> <%= @user_order_stats[:fulfilled] %></div>
-      <div><strong>Pending:</strong> <%= @user_order_stats[:pending] %></div>
-      <div><strong>Rejected:</strong> <%= @user_order_stats[:rejected] %></div>
-      <div><strong>Total Quantity:</strong> <%= @user_order_stats[:total_quantity] %></div>
-      <div><strong>On Hold:</strong> <%= @user_order_stats[:on_hold] %></div>
-      <div><strong>Awaiting Fulfillment:</strong> <%= @user_order_stats[:awaiting_fulfillment] %></div>
-    </div>
-    <% if @user_orders.present? %>
-      <details>
-        <summary>▸ View All Orders (<%= @user_order_stats[:total] %>)</summary>
-        <div>
-          <% @order.user.shop_orders.order(created_at: :desc).each do |order| %>
-            <div>
-              <%= link_to "##{order.id}", admin_shop_order_path(order), style: "color: #3b82f6;" %>
-              - <%= truncate(order.shop_item.name, length: 15) %>
-              <span><%= order.aasm_state.humanize %></span>
-            </div>
-          <% end %>
-        </div>
-      </details>
-    <% end %>
-  </div>
-
-  <div>
-    <h2>Shop Item</h2>
-    <% item = @order.shop_item %>
-    <%= link_to item.name, "#", style: "color: #60a5fa; font-size: 0.95rem; text-decoration: underline;" %>
-    <div>
-      <div><strong>Description:</strong> <%= item.description %></div>
-      <div><strong>Internal description:</strong> <%= item.internal_description %></div>
-      <% regional_usd_offset = @order.region.present? ? (item.send("usd_offset_#{@order.region.downcase}") || item.send("usd_offset_xx") || 0) : 0 %>
-      <div><strong>USD cost:</strong> $<%= number_with_precision((item.usd_cost || 0) + regional_usd_offset, precision: 2) %>
-        <% if regional_usd_offset != 0 %>
-          <small>(base $<%= number_with_precision(item.usd_cost, precision: 2) %> + $<%= number_with_precision(regional_usd_offset, precision: 2) %> <%= @order.region %> offset)</small>
-        <% end %>
-      </div>
-      <% displayed_frozen_ticket_cost = number_with_precision(@order.frozen_item_price || 0, precision: 0) %>
-      <% displayed_base_ticket_cost   = number_with_precision(item.ticket_cost || 0, precision: 0) %>
-      <div><strong>Ticket cost:</strong> <%= displayed_frozen_ticket_cost %>
-        <% if displayed_frozen_ticket_cost.to_i != displayed_base_ticket_cost.to_i %>
-          <small>(base: <%= displayed_base_ticket_cost %>)</small>
-        <% end %>
-      </div>
-      <div><strong>Type:</strong> <%= item.type %></div>
-    </div>
-    <% if item.image.attached? %>
-      <div>
-        <%= image_tag item.image.variant(:carousel_sm), style: "max-width: 120px; border-radius: 4px;" %>
+    <% if @other_viewers.any? %>
+      <div class="aorder__viewers">
+        👀 <%= @other_viewers.to_sentence %> <%= @other_viewers.one? ? "is" : "are" %> also here
       </div>
     <% end %>
   </div>
-</div>
 
-<% if @order.parent_order.present? %>
-<div>
-  <h2>🔗 This is an Accessory Order</h2>
-  <div>
-    <p>This accessory was ordered with:</p>
-    <div>
-      <% if @order.parent_order.shop_item.image.attached? %>
-        <%= image_tag @order.parent_order.shop_item.image.variant(:carousel_sm), style: "width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" %>
-      <% end %>
-      <div>
-        <strong><%= @order.parent_order.shop_item.name %></strong>
-        <br>
-        <%= link_to "View Parent Order ##{@order.parent_order.id}", admin_shop_order_path(@order.parent_order), style: "color: #3b82f6; font-size: 0.8rem;" %>
-      </div>
-    </div>
-  </div>
-</div>
-<% end %>
-
-<% if @order.accessory_orders.any? %>
-<div>
-  <h2>🎁 Accessories Ordered</h2>
-  <div>
-    <% @order.accessory_orders.includes(shop_item: { image_attachment: :blob }).each do |acc_order| %>
-      <div>
-        <% if acc_order.shop_item.image.attached? %>
-          <%= image_tag acc_order.shop_item.image.variant(:carousel_sm), style: "width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" %>
-        <% end %>
-        <div>
-          <strong><%= acc_order.shop_item.name %></strong>
-          <br>
-          <small><%= stardust_icon %> <%= acc_order.frozen_item_price || acc_order.shop_item.ticket_cost %></small>
+  <%# ── State machine stepper ────────────────────────────────────────── %>
+  <div class="aorder__stepper">
+    <% pipeline.each_with_index do |step, i| %>
+      <%
+        step_cls = if i < step_idx then "aorder__step--completed"
+        elsif i == step_idx
+          if s == "fulfilled"   then "aorder__step--success"
+          elsif s == "rejected" then "aorder__step--danger"
+          elsif s == "on_hold"  then "aorder__step--active"
+          elsif s == "refunded" then "aorder__step--completed"
+          else                       "aorder__step--active"
+          end
+        else ""
+        end
+      %>
+      <div class="aorder__step <%= step_cls %>">
+        <div class="aorder__step-dot">
+          <% if i < step_idx || (i == step_idx && s == "fulfilled") %>✓<% elsif i == step_idx && s == "rejected" %>✗<% else %><%= i + 1 %><% end %>
         </div>
-        <div>
-          <span>
-            <%= acc_order.aasm_state.humanize %>
+        <span class="aorder__step-label"><%= step[:label] %></span>
+        <span class="aorder__step-sublabel">
+          <% if i == step_idx && s == "awaiting_verification_call" %>Verification Call
+          <% elsif i == step_idx && s == "awaiting_verification" %>Identity Check
+          <% elsif i == step_idx && s == "on_hold" %>On Hold
+          <% else %><%= step[:sublabel] %>
+          <% end %>
+        </span>
+      </div>
+    <% end %>
+
+    <%# Admin-only force state selector %>
+    <% if current_user.admin? %>
+      <div class="aorder__force-state">
+        <span class="aorder__force-label">Force state</span>
+        <form method="post" action="<%= force_state_admin_shop_order_path(@order) %>"
+              onsubmit="var sel = this.querySelector('select'); return confirm('Force state from ' + <%= s.to_json %> + ' to ' + sel.value + '?\n\nThis bypasses all AASM guards and writes directly to the database.')">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <select name="target_state" class="aorder__input aorder__select">
+            <% ShopOrder.aasm.states.map { |st| st.name.to_s }.sort.each do |state| %>
+              <option value="<%= state %>"<%= " selected" if state == s %>><%= state.humanize %></option>
+            <% end %>
+          </select>
+          <button type="submit" class="aorder__btn aorder__btn--warn">⚠ Force</button>
+        </form>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Overview + User ─────────────────────────────────────────────── %>
+  <div class="aorder__grid">
+
+    <%# Overview card %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">Overview</h2>
+      </div>
+      <div class="aorder__card-body">
+        <div class="aorder__row">
+          <span class="aorder__row-label">Status</span>
+          <span class="aorder__row-value">
+            <span class="aorder__state-badge aorder__state-badge--<%= s %>"><%= s.humanize %></span>
           </span>
         </div>
-        <div>
-          <%= link_to "View", admin_shop_order_path(acc_order), style: "font-size: 0.75rem; padding: 0.2rem 0.5rem;" %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Quantity</span>
+          <span class="aorder__row-value">
+            ×<%= @order.quantity %>
+            <% if @order.quantity > 1 %> <strong style="color:#fb923c">MORE THAN ONE</strong><% end %>
+          </span>
         </div>
-      </div>
-    <% end %>
-  </div>
-</div>
-<% end %>
-
-<% if @can_view_address %>
-<div>
-  <h2>Shipping Address</h2>
-  <% if @is_digital_fulfillment_type && current_user.admin? %>
-    <div>
-      <small>
-        ℹ️ This is a digital fulfillment item. Address visible because you are an admin.
-      </small>
-    </div>
-  <% end %>
-  <% if @can_view_address %>
-    <div id="address-container">
-
-      <turbo-frame id="address-content"> <div>
-        <p>
-          🔒 Address is encrypted. Click below to decrypt and view.
-        </p>
-        <%= button_to "Reveal Address", reveal_address_admin_shop_order_path(@order),
-            method: :post,
-            data: {
-              turbo_frame: "address-content",
-              turbo_method: "post"
-            } %>
-      </div></turbo-frame>
-      <turbo-frame id="phone-content">
-        <div>
-          <p>
-            📱 Phone number is encrypted. Click below to decrypt and view.
-          </p>
-          <%= button_to "Reveal Phone Number", reveal_phone_admin_shop_order_path(@order),
-              method: :post,
-              data: {
-                turbo_frame: "phone-content",
-                turbo_method: "post"
-              } %>
-        </div>
-      </turbo-frame>
-    </div>
-  <% else %>
-    <div>
-      <p>
-        🔒 You do not have permission to view this address. Only admins and fulfillment persons in the order's region can access this information.
-      </p>
-    </div>
-  <% end %>
-</div>
-<% end %>
-
-<div>
-  <h2>Fulfillment Information</h2>
-  <div>
-    <% if current_user.admin? || current_user.fulfillment_person? %>
-      <div>
-        <b>Assigned To:</b>
-        <% if @order.assigned_to_user.present? %>
-          <div>
-            <%= image_tag @order.assigned_to_user.avatar, alt: @order.assigned_to_user.display_name, style: "width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" %>
-            <span><%= @order.assigned_to_user.display_name %></span>
-            <% if @order.assigned_to_user.has_regions? %>
-              <span>
-                <%= @order.assigned_to_user.regions.join(", ") %>
-              </span>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Cost</span>
+          <span class="aorder__row-value">
+            <%= @order.quantity %> × <%= @order.frozen_item_price %> = <strong><%= @order.total_cost %> tickets</strong>
+            <% if @order.frozen_modifiers_price.to_i > 0 %>
+              + <%= @order.frozen_modifiers_price %> modifiers = <strong><%= @order.total_cost_with_modifiers %> total</strong>
             <% end %>
+          </span>
+        </div>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Region</span>
+          <span class="aorder__row-value"><%= @order.region || "—" %></span>
+        </div>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Created</span>
+          <span class="aorder__row-value"><%= @order.created_at.strftime("%m/%d/%Y %-I:%M%p") %></span>
+        </div>
+        <% if @order.rejection_reason.present? %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Rejection reason</span>
+            <span class="aorder__row-value" style="color:#f87171;"><%= @order.rejection_reason %></span>
           </div>
-        <% else %>
-          <span>Unassigned</span>
         <% end %>
+        <% if @order.internal_rejection_reason.present? %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Internal reason</span>
+            <span class="aorder__row-value" style="color:#f87171;"><%= @order.internal_rejection_reason %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
 
-        <div data-controller="searchable-select">
-          <%= form_with url: assign_user_admin_shop_order_path(@order), method: :post, local: true, data: { turbo: false } do |f| %>
-            <%= f.hidden_field :assigned_to_user_id, value: @order.assigned_to_user_id, data: { searchable_select_target: "hiddenField" } %>
-            <input
-              type="text"
-              placeholder="<%= @order.assigned_to_user.present? ? 'Change assignee...' : 'Assign someone...' %>"
-              data-searchable-select-target="input"
-              data-action="focus->searchable-select#open input->searchable-select#filter"
-              autocomplete="off">
-            <div data-searchable-select-target="dropdown">
-              <div
-                data-searchable-select-target="option"
-                data-action="click->searchable-select#selectAndSubmit"
-                data-value=""
-                data-label=""
-                data-search-text="unassigned none remove">
-                <span>Unassign</span>
+    <%# User card %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">Customer</h2>
+        <% unless current_user.fulfillment_person? %>
+          <%= link_to "View Profile →", admin_user_path(@order.user), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
+        <% end %>
+      </div>
+      <div class="aorder__card-body">
+        <div class="aorder__user-row">
+          <img src="<%= @order.user.avatar %>" alt="<%= @order.user.display_name %>" class="aorder__user-avatar">
+          <div>
+            <span class="aorder__user-name">
+              <%= link_to @order.user.display_name || "Unknown", admin_user_path(@order.user) unless current_user.fulfillment_person? %>
+              <% if current_user.fulfillment_person? %><%= @order.user.display_name %><% end %>
+            </span>
+            <% unless current_user.shop_manager? && !current_user.admin? %>
+              <div class="aorder__user-meta">
+                <% if @order.user.slack_id.present? %>
+                  <span>Slack: <a href="https://hackclub.slack.com/team/<%= @order.user.slack_id %>" target="_blank"><code><%= @order.user.slack_id %></code></a></span>
+                <% end %>
+                <% hackatime_identity = @order.user.identities.find { |i| i.provider == "hackatime" } %>
+                <% if hackatime_identity %>
+                  <span>Hackatime: <code><%= hackatime_identity.uid %></code></span>
+                <% end %>
+                <% hack_club_identity = @order.user.identities.find { |i| i.provider == "hack_club" } %>
+                <% if hack_club_identity %>
+                  <span>HCA: <code><%= hack_club_identity.uid %></code></span>
+                <% end %>
               </div>
-              <% @fulfillment_users.each do |user| %>
-                <div
-                  data-searchable-select-target="option"
-                  data-action="click->searchable-select#selectAndSubmit"
-                  data-value="<%= user.id %>"
-                  data-label="<%= user.display_name %>"
-                  data-search-text="<%= "#{user.display_name} #{user.regions.join(' ')} #{user.id}".downcase %>">
-                  <img src="<%= user.avatar %>" alt="">
-                  <span><%= user.display_name %></span>
-                  <% if user.has_regions? %>
-                    <span><%= user.regions.join(", ") %></span>
+              <% if current_user.admin? || current_user.fraud_dept? %>
+                <div class="aorder__fraud-tools">
+                  <% if hackatime_identity %>
+                    <%= link_to "Billy", "https://billy.3kh0.net/?u=#{hackatime_identity.uid}", target: "_blank", class: "aorder__fraud-btn" %>
+                    <%= link_to "Joe", "https://joe.fraud.hackclub.com/profile/#{hackatime_identity.uid}", target: "_blank", class: "aorder__fraud-btn" %>
                   <% end %>
                 </div>
               <% end %>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Order stats %>
+        <div class="aorder__stats">
+          <div class="aorder__stat">
+            <span class="aorder__stat-value"><%= @user_order_stats[:total] %></span>
+            <span class="aorder__stat-label">Total</span>
+          </div>
+          <div class="aorder__stat">
+            <span class="aorder__stat-value" style="color:#4ade80"><%= @user_order_stats[:fulfilled] %></span>
+            <span class="aorder__stat-label">Fulfilled</span>
+          </div>
+          <div class="aorder__stat">
+            <span class="aorder__stat-value" style="color:#f87171"><%= @user_order_stats[:rejected] %></span>
+            <span class="aorder__stat-label">Rejected</span>
+          </div>
+          <div class="aorder__stat">
+            <span class="aorder__stat-value" style="color:#fbbf24"><%= @user_order_stats[:pending] %></span>
+            <span class="aorder__stat-label">Pending</span>
+          </div>
+          <div class="aorder__stat">
+            <span class="aorder__stat-value"><%= @user_order_stats[:total_quantity] %></span>
+            <span class="aorder__stat-label">Items</span>
+          </div>
+          <div class="aorder__stat">
+            <span class="aorder__stat-value" style="color:#fbbf24"><%= @user_order_stats[:on_hold] %></span>
+            <span class="aorder__stat-label">On Hold</span>
+          </div>
+        </div>
+
+        <% if @user_orders.present? %>
+          <details style="margin-top: var(--space-s);">
+            <summary style="cursor:pointer; font-size: var(--font-size-xs); color: var(--color-space-text-muted); font-family: var(--font-family-text);">▸ Recent orders (<%= @user_order_stats[:total] %>)</summary>
+            <div style="margin-top: var(--space-xs);">
+              <% @order.user.shop_orders.order(created_at: :desc).limit(10).each do |ord| %>
+                <div class="aorder__history-item">
+                  <%= link_to "##{ord.id}", admin_shop_order_path(ord) %>
+                  <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= truncate(ord.shop_item.name, length: 20) %></span>
+                  <span class="aorder__state-badge aorder__state-badge--<%= ord.aasm_state %>" style="padding: 1px 8px; font-size:10px;"><%= ord.aasm_state.humanize %></span>
+                </div>
+              <% end %>
             </div>
+          </details>
+        <% end %>
+      </div>
+    </div>
+
+  </div><%# end .aorder__grid %>
+
+  <%# ── Item info + Shipping address (grid row) ─────────────────────── %>
+  <div class="aorder__grid">
+
+    <%# Shop item card %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">Shop Item</h2>
+        <div style="display:flex; gap: var(--space-xs); align-items:center;">
+          <%= link_to "Admin →", admin_shop_item_path(@order.shop_item), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
+          <%= link_to "Public →", shop_order_path(shop_item_id: @order.shop_item.id), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;", target: "_blank" %>
+          <% if policy(:admin).manage_shop? || policy(:admin).manage_draft_shop_items? %>
+            <%= link_to "Edit →", edit_admin_shop_item_path(@order.shop_item), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
           <% end %>
         </div>
       </div>
-    <% end %>
-    <% if @order.external_ref.present? %>
-      <div>
-        <b>Tracking/External Reference:</b>
-        <% if @order.shop_item.type.in?(%w[ShopItem::LetterMail ShopItem::FreeStickers]) %>
-          <a href="<%= "https://mail.hackclub.com/back_office/letters/#{@order.external_ref}" %>" target="_blank"><%= @order.external_ref %></a>
-        <% else %>
-          <%= @order.external_ref %>
+      <div class="aorder__card-body">
+        <% item = @order.shop_item %>
+        <% if item.image.attached? %>
+          <%= image_tag item.image.variant(:carousel_sm), class: "aorder__item-thumb" %>
         <% end %>
-      </div>
-    <% end %>
-    <% if @order.fulfilled_by.present? %>
-      <div><b>Fulfilled By:</b> <%= @order.fulfilled_by %></div>
-    <% end %>
-    <% if @order.fulfillment_cost.present? && @order.fulfillment_cost > 0 %>
-      <div><b>Fulfillment Cost:</b> $<%= number_to_currency(@order.fulfillment_cost, precision: 2, unit: "") %></div>
-    <% end %>
-    <% if @order.rejection_reason.present? %>
-      <div><b>Rejection Reason:</b> <%= @order.rejection_reason %></div>
-    <% end %>
-    <% if @order.internal_rejection_reason.present? %>
-      <div><b>Internal Reason:</b> <%= @order.internal_rejection_reason %></div>
-    <% end %>
-    <% if @order.fraud_related_project_id.present? %>
-      <div><b>Related Project:</b> <%= link_to "##{@order.fraud_related_project_id}", project_path(@order.fraud_related_project_id) %></div>
-    <% end %>
-    <% if @order.joe_case_url.present? %>
-      <div>
-        <b>Joe Case:</b>
-        <% begin %>
-          <% uri = URI.parse(@order.joe_case_url.to_s) %>
-          <% if uri.is_a?(URI::HTTP) && uri.host.present? %>
-            <%= link_to @order.joe_case_url, uri.to_s, target: "_blank", rel: "noopener" %>
-          <% else %>
-            <%= @order.joe_case_url %>
-          <% end %>
-        <% rescue URI::InvalidURIError %>
-          <%= @order.joe_case_url %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Name</span>
+          <span class="aorder__row-value"><strong><%= item.name %></strong></span>
+        </div>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Type</span>
+          <span class="aorder__row-value"><code><%= item.type %></code></span>
+        </div>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Description</span>
+          <span class="aorder__row-value"><%= item.description %></span>
+        </div>
+        <% if item.internal_description.present? %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Internal</span>
+            <span class="aorder__row-value"><%= item.internal_description %></span>
+          </div>
         <% end %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Ticket cost</span>
+          <span class="aorder__row-value">
+            <%= number_with_precision(@order.frozen_item_price || 0, precision: 0) %>
+            <% base = number_with_precision(item.ticket_cost || 0, precision: 0) %>
+            <% if @order.frozen_item_price.to_i != item.ticket_cost.to_i %>
+              <small style="color: var(--color-space-text-muted);">(base: <%= base %>)</small>
+            <% end %>
+          </span>
+        </div>
+        <% regional_usd_offset = @order.region.present? ? (item.send("usd_offset_#{@order.region.downcase}") || item.send("usd_offset_xx") || 0) : 0 %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">USD cost</span>
+          <span class="aorder__row-value">
+            $<%= number_with_precision((item.usd_cost || 0) + regional_usd_offset, precision: 2) %>
+            <% if regional_usd_offset != 0 %>
+              <small style="color: var(--color-space-text-muted);">(+<%= @order.region %> offset)</small>
+            <% end %>
+          </span>
+        </div>
+        <div style="clear:both;"></div>
       </div>
-    <% end %>
-    <% if @order.internal_notes.present? %>
-      <div><b>Internal Notes:</b> <%= @order.internal_notes %></div>
-    <% end %>
-  </div>
-</div>
+    </div>
 
-<% if @order.shop_card_grant_id.present? %>
-  <div>
-    <h2>Card Grant</h2>
-    <div>
-      <div><b>Card Grant ID:</b> <%= @order.shop_card_grant_id %></div>
-      <% if @order.shop_card_grant&.hcb_grant_hashid.present? %>
-        <div><b>HCB Grant ID:</b> <%= @order.shop_card_grant.hcb_grant_hashid %></div>
-        <div>
-          <%= link_to "View on HCB", @order.shop_card_grant.hcb_url, target: "_blank", style: "margin-right: 0.5rem;" %>
+    <%# Shipping address card %>
+    <% if @can_view_address %>
+      <div class="aorder__card">
+        <div class="aorder__card-header">
+          <h2 class="aorder__card-title">📦 Shipping Address</h2>
+          <% if @is_digital_fulfillment_type && current_user.admin? %>
+            <span style="font-size:11px; color: var(--color-space-text-muted); font-family: var(--font-family-text);">ℹ️ Digital — admin only</span>
+          <% end %>
+        </div>
+        <div class="aorder__card-body">
+          <div id="address-container">
+            <turbo-frame id="address-content">
+              <div style="display:flex; align-items:center; gap: var(--space-m); color: var(--color-space-text-muted); font-family: var(--font-family-text); font-size: var(--font-size-s);">
+                🔒 Encrypted.
+                <%= button_to "Reveal Address", reveal_address_admin_shop_order_path(@order),
+                    method: :post,
+                    class: "aorder__btn aorder__btn--secondary",
+                    data: { turbo_frame: "address-content", turbo_method: "post" } %>
+              </div>
+            </turbo-frame>
+            <turbo-frame id="phone-content" style="display:block; margin-top: var(--space-m);">
+              <div style="display:flex; align-items:center; gap: var(--space-m); color: var(--color-space-text-muted); font-family: var(--font-family-text); font-size: var(--font-size-s);">
+                📱 Encrypted.
+                <%= button_to "Reveal Phone", reveal_phone_admin_shop_order_path(@order),
+                    method: :post,
+                    class: "aorder__btn aorder__btn--secondary",
+                    data: { turbo_frame: "phone-content", turbo_method: "post" } %>
+              </div>
+            </turbo-frame>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+  </div><%# end item/address grid %>
+
+  <%# ── Parent / Accessories / Modifiers ────────────────────────────── %>
+  <% if @order.parent_order.present? %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">🔗 Accessory of</h2>
+        <%= link_to "View Parent ##{@order.parent_order.id} →", admin_shop_order_path(@order.parent_order), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
+      </div>
+      <div class="aorder__card-body">
+        <div class="aorder__accessory">
+          <% if @order.parent_order.shop_item.image.attached? %>
+            <%= image_tag @order.parent_order.shop_item.image.variant(:carousel_sm), class: "aorder__accessory-img" %>
+          <% end %>
+          <div class="aorder__accessory-info">
+            <span class="aorder__accessory-name"><strong><%= @order.parent_order.shop_item.name %></strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @order.accessory_orders.any? %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">🎁 Accessories</h2>
+      </div>
+      <div class="aorder__card-body">
+        <% @order.accessory_orders.includes(shop_item: { image_attachment: :blob }).each do |acc_order| %>
+          <div class="aorder__accessory">
+            <% if acc_order.shop_item.image.attached? %>
+              <%= image_tag acc_order.shop_item.image.variant(:carousel_sm), class: "aorder__accessory-img" %>
+            <% end %>
+            <div class="aorder__accessory-info">
+              <span class="aorder__accessory-name"><%= acc_order.shop_item.name %></span>
+              <span class="aorder__accessory-price"><%= stardust_icon %> <%= acc_order.frozen_item_price || acc_order.shop_item.ticket_cost %></span>
+            </div>
+            <span class="aorder__state-badge aorder__state-badge--<%= acc_order.aasm_state %>" style="font-size:11px; padding: 2px 10px;"><%= acc_order.aasm_state.humanize %></span>
+            <%= link_to "View", admin_shop_order_path(acc_order), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 11px;" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @order.shop_order_modifier_selections.any? %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">⚙️ Modifiers</h2>
+        <span style="font-size: var(--font-size-xs); color: var(--color-space-text-muted); font-family: var(--font-family-text);">Total: <%= stardust_icon %> <%= @order.frozen_modifiers_price %></span>
+      </div>
+      <div class="aorder__card-body">
+        <% @order.shop_order_modifier_selections.includes(:shop_item_modifier).each do |sel| %>
+          <div class="aorder__accessory">
+            <div class="aorder__accessory-info">
+              <span class="aorder__accessory-name"><%= sel.shop_item_modifier.name %></span>
+              <% if sel.shop_item_modifier.group_name.present? %>
+                <span class="aorder__accessory-price">Group: <%= sel.shop_item_modifier.group_name %></span>
+              <% end %>
+            </div>
+            <span class="aorder__accessory-price"><%= sel.frozen_modifier_price > 0 ? "#{stardust_icon} #{sel.frozen_modifier_price}" : "Free" %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Fulfillment info ────────────────────────────────────────────── %>
+  <div class="aorder__card">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">🚚 Fulfillment</h2>
+    </div>
+    <div class="aorder__card-body">
+      <% if current_user.admin? || current_user.fulfillment_person? %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Assigned to</span>
+          <span class="aorder__row-value">
+            <% if @order.assigned_to_user.present? %>
+              <img src="<%= @order.assigned_to_user.avatar %>" alt="" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:4px;">
+              <%= @order.assigned_to_user.display_name %>
+              <% if @order.assigned_to_user.has_regions? %>
+                <small style="color: var(--color-space-text-muted);">(<%= @order.assigned_to_user.regions.join(", ") %>)</small>
+              <% end %>
+            <% else %>
+              <em style="color: var(--color-space-text-muted);">Unassigned</em>
+            <% end %>
+          </span>
+        </div>
+        <div class="aorder__assign-form">
+          <div data-controller="searchable-select">
+            <%= form_with url: assign_user_admin_shop_order_path(@order), method: :post, local: true, data: { turbo: false } do |f| %>
+              <%= f.hidden_field :assigned_to_user_id, value: @order.assigned_to_user_id, data: { searchable_select_target: "hiddenField" } %>
+              <input
+                type="text"
+                placeholder="<%= @order.assigned_to_user.present? ? 'Change assignee...' : 'Assign someone...' %>"
+                data-searchable-select-target="input"
+                data-action="focus->searchable-select#open input->searchable-select#filter"
+                autocomplete="off"
+                class="aorder__input"
+                style="width: 100%; box-sizing: border-box;">
+              <div data-searchable-select-target="dropdown">
+                <div
+                  data-searchable-select-target="option"
+                  data-action="click->searchable-select#selectAndSubmit"
+                  data-value=""
+                  data-label=""
+                  data-search-text="unassigned none remove">
+                  <span>Unassign</span>
+                </div>
+                <% @fulfillment_users.each do |user| %>
+                  <div
+                    data-searchable-select-target="option"
+                    data-action="click->searchable-select#selectAndSubmit"
+                    data-value="<%= user.id %>"
+                    data-label="<%= user.display_name %>"
+                    data-search-text="<%= "#{user.display_name} #{user.regions.join(' ')} #{user.id}".downcase %>">
+                    <img src="<%= user.avatar %>" alt="" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;">
+                    <span><%= user.display_name %></span>
+                    <% if user.has_regions? %>
+                      <small style="color: var(--color-space-text-muted);"><%= user.regions.join(", ") %></small>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @order.external_ref.present? %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Tracking / Ref</span>
+          <span class="aorder__row-value">
+            <% if @order.shop_item.type.in?(%w[ShopItem::LetterMail ShopItem::FreeStickers]) %>
+              <a href="https://mail.hackclub.com/back_office/letters/<%= @order.external_ref %>" target="_blank"><%= @order.external_ref %></a>
+            <% else %>
+              <%= @order.external_ref %>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+      <% if @order.fulfilled_by.present? %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Fulfilled by</span>
+          <span class="aorder__row-value"><%= @order.fulfilled_by %></span>
+        </div>
+      <% end %>
+      <% if @order.fulfillment_cost.present? && @order.fulfillment_cost > 0 %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Fulfillment cost</span>
+          <span class="aorder__row-value">$<%= number_with_precision(@order.fulfillment_cost, precision: 2) %></span>
+        </div>
+      <% end %>
+      <% if @order.fraud_related_project_id.present? %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Related project</span>
+          <span class="aorder__row-value"><%= link_to "##{@order.fraud_related_project_id}", project_path(@order.fraud_related_project_id) %></span>
+        </div>
+      <% end %>
+      <% if @order.joe_case_url.present? %>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Joe case</span>
+          <span class="aorder__row-value">
+            <% begin %>
+              <% uri = URI.parse(@order.joe_case_url.to_s) %>
+              <% if uri.is_a?(URI::HTTP) && uri.host.present? %>
+                <%= link_to @order.joe_case_url, uri.to_s, target: "_blank", rel: "noopener" %>
+              <% else %>
+                <%= @order.joe_case_url %>
+              <% end %>
+            <% rescue URI::InvalidURIError %>
+              <%= @order.joe_case_url %>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Card grant ───────────────────────────────────────────────────── %>
+  <% if @order.shop_card_grant_id.present? %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">💳 Card Grant</h2>
+      </div>
+      <div class="aorder__card-body">
+        <div class="aorder__row">
+          <span class="aorder__row-label">Grant ID</span>
+          <span class="aorder__row-value"><%= @order.shop_card_grant_id %></span>
+        </div>
+        <% if @order.shop_card_grant&.hcb_grant_hashid.present? %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">HCB ID</span>
+            <span class="aorder__row-value"><%= @order.shop_card_grant.hcb_grant_hashid %></span>
+          </div>
+        <% end %>
+        <div style="margin-top: var(--space-m); display: flex; gap: var(--space-s); flex-wrap: wrap;">
+          <% if @order.shop_card_grant&.hcb_url.present? %>
+            <%= link_to "View on HCB →", @order.shop_card_grant.hcb_url, target: "_blank", class: "aorder__btn aorder__btn--secondary" %>
+          <% end %>
           <% if current_user.admin? && @order.fulfilled? %>
-            <form method="post" action="<%= cancel_hcb_grant_admin_shop_order_path(@order) %>">
+            <form method="post" action="<%= cancel_hcb_grant_admin_shop_order_path(@order) %>" style="display:inline;">
               <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-              <button type="submit" onclick="return confirm('Are you sure you want to cancel this HCB grant? This cannot be undone.')">Cancel HCB Grant</button>
+              <button type="submit" class="aorder__btn aorder__btn--reject" onclick="return confirm('Cancel this HCB grant? This cannot be undone.')">Cancel HCB Grant</button>
             </form>
           <% end %>
         </div>
-      <% end %>
-    </div>
-  </div>
-<% end %>
-
-<% if @order.warehouse_package_id.present? %>
-  <div>
-    <h2>Warehouse Package</h2>
-    <div>
-      <div><b>Package ID:</b> <%= @order.warehouse_package_id %></div>
-    </div>
-  </div>
-<% end %>
-
-<div>
-  <h2>Actions</h2>
-  <% if @order.reviews.any? %>
-    <div>
-      <% @order.reviews.includes(:user).each do |review| %>
-        <div>
-          <strong><%= review.user.display_name %></strong> — <%= review.verdict == "approve" ? "✓ Approve" : "✗ Reject" %>
-          <p><%= review.reason %></p>
-          <small><%= review.created_at.strftime("%m/%d %l:%M%p") %></small>
-        </div>
-      <% end %>
+      </div>
     </div>
   <% end %>
 
-  <% unless current_user.shop_manager? && !current_user.admin? %>
-    <% if @order.high_value? && @order.pending? %>
-      <div>
-        ⚠️ High-value order (<%= @order.total_cost_with_accessories %> tickets) — requires 2 fraud dept reviews before approval (<%= @order.reviews.count %>/2).
+  <%# ── Warehouse package ────────────────────────────────────────────── %>
+  <% if @order.warehouse_package_id.present? %>
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">🏭 Warehouse</h2>
       </div>
+      <div class="aorder__card-body">
+        <div class="aorder__row">
+          <span class="aorder__row-label">Package ID</span>
+          <span class="aorder__row-value"><%= @order.warehouse_package_id %></span>
+        </div>
+      </div>
+    </div>
+  <% end %>
 
-      <% unless @order.reviews.exists?(user: current_user) %>
-        <%= form_with url: review_order_admin_shop_order_path(@order), method: :post, local: true do |f| %>
-          <div>
-            <label>Your verdict</label>
-            <div>
-              <label>
-                <%= radio_button_tag :verdict, "approve", false, required: true %>
-                ✓ Approve
-              </label>
-              <label>
-                <%= radio_button_tag :verdict, "reject", false, required: true %>
-                ✗ Reject
-              </label>
+  <%# ── Actions ──────────────────────────────────────────────────────── %>
+  <div class="aorder__card aorder__card--actions">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">⚡ Actions</h2>
+    </div>
+    <div class="aorder__card-body">
+
+      <%# Reviews %>
+      <% if @order.reviews.any? %>
+        <% @order.reviews.includes(:user).each do |review| %>
+          <div class="aorder__review aorder__review--<%= review.verdict %>">
+            <div class="aorder__review-header">
+              <span class="aorder__review-verdict" style="color: <%= review.verdict == 'approve' ? '#4ade80' : '#f87171' %>">
+                <%= review.verdict == "approve" ? "✓ Approve" : "✗ Reject" %> — <%= review.user.display_name %>
+              </span>
+              <span class="aorder__review-time"><%= review.created_at.strftime("%m/%d %-I:%M%p") %></span>
             </div>
+            <p class="aorder__review-reason"><%= review.reason %></p>
           </div>
-          <div>
-            <%= f.label :review_reason, "Reason (required)" %>
-            <%= text_area_tag :review_reason, nil, placeholder: "Why are you approving or rejecting this order?", rows: 3, required: true %>
-          </div>
-          <%= f.submit "Submit Review" %>
         <% end %>
       <% end %>
-    <% end %>
-  <% end %>
 
-  <div>
-    <%= link_to "← Back", admin_shop_orders_path %>
-    <% unless current_user.fulfillment_person? %>
-      <%= link_to "View User", admin_user_path(@order.user) %>
-    <% end %>
-
-    <% unless current_user.shop_manager? && !current_user.admin? %>
-    <form method="post" action="<%= approve_admin_shop_order_path(@order) %>">
-      <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-      <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
-      <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
-      <div>
-        <input type="text" name="tracking_number" placeholder="Tracking # (optional)" autocomplete="off">
-        <button type="submit" <% unless (@order.pending? || @order.awaiting_verification_call?) && !@order.requires_additional_review? %> disabled<% end %> onclick="return confirm('Approve this order for fulfillment?')">✓ Approve</button>
-      </div>
-    </form>
-
-    <%# Reject button for all non-fulfilled states %>
-    <% if %w[pending awaiting_verification awaiting_verification_call awaiting_periodical_fulfillment on_hold].include?(@order.aasm_state) %>
-      <button type="button" onclick="document.getElementById('reject-modal').showModal()" <% if @order.requires_additional_review? %> disabled<% end %>>✗ Reject</button>
-      <%= render "reject_modal", order: @order %>
-    <% end %>
-
-    <%# Refresh verification button for awaiting_verification state %>
-    <% if @order.awaiting_verification? %>
-      <form method="post" action="<%= refresh_verification_admin_shop_order_path(@order) %>">
-        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-        <button type="submit" onclick="return confirm('Refresh verification status for this user?')">🔄 Refresh Verification</button>
-      </form>
-    <% end %>
-
-    <% if (@order.pending? || @order.awaiting_verification? || @order.awaiting_verification_call? || @order.awaiting_periodical_fulfillment?) && !current_user.fulfillment_person? %>
-      <form method="post" action="<%= place_on_hold_admin_shop_order_path(@order) %>">
-        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-        <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
-        <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
-        <button type="submit" onclick="return confirm('Place this order on hold?')">⏸ Hold</button>
-      </form>
-    <% end %>
-
-    <% if @order.awaiting_verification_call? && current_user.admin? %>
-      <form method="post" action="<%= approve_verification_call_admin_shop_order_path(@order) %>">
-        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-        <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
-        <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
-        <button type="submit">I have verified this person is legit</button>
-      </form>
-
-      <% m = 'verification-call-fulfillment-modal' %>
-      <button type="button" onclick="document.getElementById(<%= m.to_json %>).showModal()">✓ Mark as Fulfilled</button>
-      <dialog id="<%= m %>">
-        <h3>Mark verification call order fulfilled</h3>
-        <form method="post" action="<%= mark_fulfilled_admin_shop_order_path(@order) %>">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-          <label>Spent (USD)<input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off"></label>
-          <label>Order #<input type="text" name="external_ref" placeholder="e.g. ORD-12345" autocomplete="off"></label>
-          <div>
-            <button type="button" onclick="document.getElementById(<%= m.to_json %>).close()">Cancel</button>
-            <button type="submit">Mark as Fulfilled</button>
+      <%# High-value warning + review form %>
+      <% unless current_user.shop_manager? && !current_user.admin? %>
+        <% if @order.high_value? && @order.pending? %>
+          <div class="aorder__warning">
+            ⚠️ High-value order (<%= @order.total_cost_with_accessories %> tickets) — requires 2 fraud dept reviews before approval (<%= @order.reviews.count %>/2).
           </div>
-        </form>
-      </dialog>
-    <% end %>
 
-    <% if @order.awaiting_periodical_fulfillment? && @order.shop_item.type == "ShopItem::LetterMail" && (current_user.admin? || current_user.fulfillment_person?) %>
-      <form method="post" action="<%= send_to_theseus_admin_shop_order_path(@order) %>">
-        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-        <button type="submit" onclick="return confirm('Send this order to Theseus?')">Send to Theseus</button>
-      </form>
-      <% if @theseus_sibling_orders&.any? %>
-        <form method="post" action="<%= send_to_theseus_admin_shop_order_path(@order) %>">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-          <% @theseus_sibling_orders.each do |sibling| %>
-            <%= hidden_field_tag "order_ids[]", sibling.id %>
+          <% unless @order.reviews.exists?(user: current_user) %>
+            <%= form_with url: review_order_admin_shop_order_path(@order), method: :post, local: true do |f| %>
+              <div class="aorder__review-form">
+                <div>
+                  <label style="font-size: var(--font-size-s); color: var(--color-space-text-muted); font-family: var(--font-family-text); display:block; margin-bottom: var(--space-xs);">Your verdict</label>
+                  <div class="aorder__radio-group">
+                    <label class="aorder__radio-label">
+                      <%= radio_button_tag :verdict, "approve", false, required: true %>
+                      <span style="color:#4ade80">✓ Approve</span>
+                    </label>
+                    <label class="aorder__radio-label">
+                      <%= radio_button_tag :verdict, "reject", false, required: true %>
+                      <span style="color:#f87171">✗ Reject</span>
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <%= text_area_tag :review_reason, nil,
+                      placeholder: "Why are you approving or rejecting this order?",
+                      rows: 3,
+                      required: true,
+                      class: "aorder__textarea" %>
+                </div>
+                <div>
+                  <%= f.submit "Submit Review", class: "aorder__btn aorder__btn--secondary" %>
+                </div>
+              </div>
+            <% end %>
           <% end %>
-          <button type="submit" onclick="return confirm(<%= "Send #{@theseus_sibling_orders.size + 1} orders to Theseus as one letter?".to_json %>)">Send all to Theseus (<%= @theseus_sibling_orders.size + 1 %> orders)</button>
-        </form>
+        <% end %>
       <% end %>
-    <% end %>
 
-    <% if @order.awaiting_periodical_fulfillment? && (current_user.admin? || current_user.fulfillment_person?) %>
-      <% m = 'fulfillment-modal' %>
-      <button type="button" onclick="document.getElementById(<%= m.to_json %>).showModal()">Mark as Fulfilled</button>
-      <dialog id="<%= m %>">
-        <h3>Mark order fulfilled</h3>
-        <form method="post" action="<%= mark_fulfilled_admin_shop_order_path(@order) %>">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-          <label>Spent (USD)<input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off"></label>
-          <label>Order #<input type="text" name="external_ref" placeholder="e.g. ORD-12345" autocomplete="off"></label>
-          <div>
-            <button type="button" onclick="document.getElementById(<%= m.to_json %>).close()">Cancel</button>
-            <button type="submit">Mark as Fulfilled</button>
-          </div>
-        </form>
-      </dialog>
-    <% end %>
+      <div class="aorder__actions">
+        <%= link_to "← Back", admin_shop_orders_path, class: "aorder__btn aorder__btn--back" %>
 
-    <% if @order.on_hold? %>
-      <form method="post" action="<%= release_from_hold_admin_shop_order_path(@order) %>">
-        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-        <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
-        <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
-        <button type="submit" onclick="return confirm('Release this order from hold?')">▶ Release</button>
-      </form>
-    <% end %>
-    <% end %>
-  </div>
-</div>
+        <% unless current_user.fulfillment_person? %>
+          <%= link_to "View User", admin_user_path(@order.user), class: "aorder__btn aorder__btn--secondary" %>
+        <% end %>
 
-<div>
-  <h2>📝 Internal Notes</h2>
-  <p>⚠️ Shared between fraud, fulfilment, and admins. Changes are audit logged.</p>
-  <% if @order.internal_notes.present? %>
-    <div>
-      <strong>Note:</strong> <%= simple_format(@order.internal_notes, {}, wrapper_tag: "span") %>
+        <% unless current_user.shop_manager? && !current_user.admin? %>
+          <%# Approve %>
+          <form method="post" action="<%= approve_admin_shop_order_path(@order) %>" style="display:contents;">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
+            <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
+            <button type="submit"
+              class="aorder__btn aorder__btn--approve"
+              <% unless (@order.pending? || @order.awaiting_verification_call?) && !@order.requires_additional_review? %> disabled<% end %>
+              onclick="return confirm('Approve this order for fulfillment?')">✓ Approve</button>
+          </form>
+
+          <%# Reject %>
+          <% if %w[pending awaiting_verification awaiting_verification_call awaiting_periodical_fulfillment on_hold].include?(s) %>
+            <button type="button"
+              class="aorder__btn aorder__btn--reject"
+              onclick="document.getElementById('reject-modal').showModal()"
+              <% if @order.requires_additional_review? %> disabled<% end %>>✗ Reject</button>
+            <%= render "reject_modal", order: @order %>
+          <% end %>
+
+          <%# Refresh verification %>
+          <% if @order.awaiting_verification? %>
+            <form method="post" action="<%= refresh_verification_admin_shop_order_path(@order) %>" style="display:contents;">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <button type="submit" class="aorder__btn aorder__btn--secondary" onclick="return confirm('Refresh verification for this user?')">🔄 Refresh Verification</button>
+            </form>
+          <% end %>
+
+          <%# Hold / Release %>
+          <% if (@order.pending? || @order.awaiting_verification? || @order.awaiting_verification_call? || @order.awaiting_periodical_fulfillment?) && !current_user.fulfillment_person? %>
+            <form method="post" action="<%= place_on_hold_admin_shop_order_path(@order) %>" style="display:contents;">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
+              <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
+              <button type="submit" class="aorder__btn aorder__btn--hold" onclick="return confirm('Place this order on hold?')">⏸ Hold</button>
+            </form>
+          <% end %>
+
+          <% if @order.on_hold? %>
+            <form method="post" action="<%= release_from_hold_admin_shop_order_path(@order) %>" style="display:contents;">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
+              <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
+              <button type="submit" class="aorder__btn aorder__btn--release" onclick="return confirm('Release this order from hold?')">▶ Release</button>
+            </form>
+          <% end %>
+
+          <%# Verification call actions %>
+          <% if @order.awaiting_verification_call? && current_user.admin? %>
+            <form method="post" action="<%= approve_verification_call_admin_shop_order_path(@order) %>" style="display:contents;">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
+              <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
+              <button type="submit" class="aorder__btn aorder__btn--approve">✓ Person is legit</button>
+            </form>
+
+            <% m = 'verification-call-fulfillment-modal' %>
+            <button type="button" class="aorder__btn aorder__btn--fulfill" onclick="document.getElementById(<%= m.to_json %>).showModal()">Mark as Fulfilled</button>
+            <dialog id="<%= m %>">
+              <h3 style="margin:0 0 1rem; font-family: var(--font-family-subtitle);">Mark verification call order fulfilled</h3>
+              <form method="post" action="<%= mark_fulfilled_admin_shop_order_path(@order) %>">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <div style="display:flex; flex-direction:column; gap: 0.75rem; margin-bottom: 1rem;">
+                  <label style="font-size:0.875rem;">Spent (USD)<br><input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
+                  <label style="font-size:0.875rem;">Order #<br><input type="text" name="external_ref" placeholder="e.g. ORD-12345" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                  <button type="button" class="aorder__btn aorder__btn--secondary" onclick="document.getElementById(<%= m.to_json %>).close()">Cancel</button>
+                  <button type="submit" class="aorder__btn aorder__btn--fulfill">Mark as Fulfilled</button>
+                </div>
+              </form>
+            </dialog>
+          <% end %>
+
+          <%# Theseus (LetterMail) %>
+          <% if @order.awaiting_periodical_fulfillment? && @order.shop_item.type == "ShopItem::LetterMail" && (current_user.admin? || current_user.fulfillment_person?) %>
+            <form method="post" action="<%= send_to_theseus_admin_shop_order_path(@order) %>" style="display:contents;">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <button type="submit" class="aorder__btn aorder__btn--secondary" onclick="return confirm('Send this order to Theseus?')">📬 Send to Theseus</button>
+            </form>
+            <% if @theseus_sibling_orders&.any? %>
+              <form method="post" action="<%= send_to_theseus_admin_shop_order_path(@order) %>" style="display:contents;">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <% @theseus_sibling_orders.each do |sibling| %>
+                  <%= hidden_field_tag "order_ids[]", sibling.id %>
+                <% end %>
+                <button type="submit" class="aorder__btn aorder__btn--secondary" onclick="return confirm(<%= "Send #{@theseus_sibling_orders.size + 1} orders to Theseus as one letter?".to_json %>)">📬 Send all (<%= @theseus_sibling_orders.size + 1 %>)</button>
+              </form>
+            <% end %>
+          <% end %>
+
+          <%# Mark fulfilled (fulfillment view) %>
+          <% if @order.awaiting_periodical_fulfillment? && (current_user.admin? || current_user.fulfillment_person?) %>
+            <% m = 'fulfillment-modal' %>
+            <button type="button" class="aorder__btn aorder__btn--fulfill" onclick="document.getElementById(<%= m.to_json %>).showModal()">✓ Mark as Fulfilled</button>
+            <dialog id="<%= m %>">
+              <h3 style="margin:0 0 1rem; font-family: var(--font-family-subtitle);">Mark order fulfilled</h3>
+              <form method="post" action="<%= mark_fulfilled_admin_shop_order_path(@order) %>">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <div style="display:flex; flex-direction:column; gap: 0.75rem; margin-bottom: 1rem;">
+                  <label style="font-size:0.875rem;">Spent (USD)<br><input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
+                  <label style="font-size:0.875rem;">Order #<br><input type="text" name="external_ref" placeholder="e.g. ORD-12345" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                  <button type="button" class="aorder__btn aorder__btn--secondary" onclick="document.getElementById(<%= m.to_json %>).close()">Cancel</button>
+                  <button type="submit" class="aorder__btn aorder__btn--fulfill">Mark as Fulfilled</button>
+                </div>
+              </form>
+            </dialog>
+          <% end %>
+
+        <% end %><%# end unless shop_manager %>
+      </div><%# end .aorder__actions %>
+    </div><%# end card-body %>
+  </div><%# end Actions card %>
+
+  <%# ── Internal notes ───────────────────────────────────────────────── %>
+  <div class="aorder__card">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">📝 Internal Notes</h2>
     </div>
-  <% end %>
-  <form method="post" action="<%= update_internal_notes_admin_shop_order_path(@order) %>">
-    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-    <textarea name="internal_notes" rows="3" placeholder="Add internal notes about this order..."><%= @order.internal_notes %></textarea>
-    <button type="submit">Save Notes</button>
-  </form>
-</div>
+    <div class="aorder__card-body">
+      <p class="aorder__notes-hint">⚠️ Shared between fraud, fulfilment, and admins. Changes are audit logged.</p>
+      <% if @order.internal_notes.present? %>
+        <div style="background: rgba(255,255,255,0.03); border-radius:8px; padding: var(--space-m); margin-bottom: var(--space-m); font-family: var(--font-family-text); font-size: var(--font-size-s); color: var(--color-space-text); border-left: 3px solid var(--color-space-accent);">
+          <%= simple_format(@order.internal_notes, {}, wrapper_tag: "span") %>
+        </div>
+      <% end %>
+      <form method="post" action="<%= update_internal_notes_admin_shop_order_path(@order) %>">
+        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+        <textarea name="internal_notes" rows="3" placeholder="Add internal notes about this order..." class="aorder__textarea"><%= @order.internal_notes %></textarea>
+        <button type="submit" class="aorder__btn aorder__btn--secondary">Save Notes</button>
+      </form>
+    </div>
+  </div>
 
-<%= render Admin::PastOrdersComponent.new(user: @order.user, orders: @user_orders) %>
+  <%# ── Past orders component + audit log ──────────────────────────── %>
+  <%= render Admin::PastOrdersComponent.new(user: @order.user, orders: @user_orders) %>
+  <%= render "admin/shared/audit_log", record: @order, item_type: "ShopOrder" %>
 
-<%= render "admin/shared/audit_log", record: @order, item_type: "ShopOrder" %>
+</div><%# end .aorder %>
