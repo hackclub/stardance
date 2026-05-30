@@ -14,6 +14,9 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       .find(params[:id])
     authorize @review
 
+    # Check if review is already in unified DB
+    check_unified_db_status(@review)
+
     devlog_minutes = @review.devlog_reviews.map(&:original_minutes).compact
 
     @stats = {
@@ -57,7 +60,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     # Run the Airtable sync synchronously so we know if it succeeds
     # Only mark as reviewed if the sync succeeds
     ActiveRecord::Base.transaction do
-      # Temporarily set reviewer_id for the sync job to use
+      # Set reviewer_id to track who completed this review
       @review.update!(reviewer_id: current_user.id)
 
       # Perform sync synchronously - this will raise an error if it fails
@@ -78,5 +81,40 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       success: false,
       error: "Failed to complete review and sync to Airtable: #{e.message}. Please try again or contact support if the issue persists."
     }, status: :unprocessable_entity
+  end
+
+  private
+
+  def check_unified_db_status(review)
+    # Skip check if already marked as in unified DB
+    return if review.in_unified_db?
+
+    begin
+      # Fetch record from Airtable
+      table = airtable_table
+      existing_record = table.all(filter: "{review_id} = '#{review.id}'").first
+
+      # If record exists and "Automation - YSWS Record ID" is populated, mark as in unified DB
+      if existing_record && existing_record["Automation - YSWS Record ID"].present?
+        review.update_column(:in_unified_db, true)
+      end
+    rescue StandardError => e
+      # Log error but don't break the page load
+      Rails.logger.warn "[YswsController] Could not check unified DB status for review ##{review.id}: #{e.message}"
+      Sentry.capture_exception(e, extra: { ysws_review_id: review.id })
+    end
+  end
+
+  def airtable_table
+    api_key = Rails.application.credentials.dig(:ysws_review, :airtable_api_key) ||
+              Rails.application.credentials&.airtable&.api_key ||
+              ENV["AIRTABLE_API_KEY"]
+    base_id = Rails.application.credentials.dig(:ysws_review, :airtable_base_id) ||
+              ENV["YSWS_REVIEW_AIRTABLE_BASE_ID"]
+    table_name = Rails.application.credentials.dig(:ysws_review, :airtable_table_name) ||
+                 ENV["YSWS_REVIEW_AIRTABLE_TABLE"] ||
+                 "YSWS Project Submission"
+
+    Norairrecord.table(api_key, base_id, table_name)
   end
 end

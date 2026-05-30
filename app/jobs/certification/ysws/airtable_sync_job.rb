@@ -18,6 +18,9 @@ module Certification
 
         Rails.logger.info "[Certification::Ysws::AirtableSyncJob] Starting sync for review ##{review.id}"
 
+        # Check if this review has already been submitted to unified DB
+        check_stardance_review_submitted_unified(review)
+
         # Check if user is banned
         rejection_info = check_user_status(review)
 
@@ -57,6 +60,19 @@ module Certification
             devlog_reviews: { post_devlog: { attachments_attachments: :blob } }
           )
           .find_by(id: ysws_review_id)
+      end
+
+      def check_stardance_review_submitted_unified(review)
+        # Fetch existing Airtable record by review_id
+        existing_record = table.all(filter: "{review_id} = '#{review.id}'").first
+
+        # If record exists and has "Automation - YSWS Record ID" populated, it's already in unified DB
+        if existing_record && existing_record["Automation - YSWS Record ID"].present?
+          raise StandardError, "This review is already in the unified db"
+        end
+      rescue Faraday::Error => e
+        # If Airtable fetch fails, log and allow sync to continue
+        Rails.logger.warn "[Certification::Ysws::AirtableSyncJob] Could not check unified DB status: #{e.message}"
       end
 
       def check_user_status(review)
