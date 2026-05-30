@@ -76,10 +76,10 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       redirect_url: admin_certification_ysws_reviews_path
     }, status: :ok
   rescue StandardError => e
-    Sentry.capture_exception(e, extra: { ysws_review_id: params[:id], user_id: current_user.id })
+    Sentry.capture_exception(e, tags: { category: 'certification.ysws' }, extra: { ysws_review_id: params[:id], user_id: current_user.id })
     render json: {
       success: false,
-      error: "Failed to complete review and sync to Airtable: #{e.message}. Please try again or contact support if the issue persists."
+      error: "Failed to complete review and sync to Airtable: #{e.message}. Let AVD know!"
     }, status: :unprocessable_entity
   end
 end

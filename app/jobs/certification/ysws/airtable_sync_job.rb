@@ -8,8 +8,8 @@ module Certification
       queue_as :default
 
       # Retry configuration for network errors
-      retry_on Faraday::Error, wait: :exponentially_longer, attempts: 5
-      retry_on Faraday::TimeoutError, wait: 30.seconds, attempts: 3
+      retry_on Faraday::Error, wait: :exponentially_longer, attempts: 3
+      retry_on Faraday::TimeoutError, wait: 30.seconds, attempts: 2
       discard_on ActiveRecord::RecordNotFound
 
       def perform(ysws_review_id)
