@@ -704,6 +704,7 @@ Rails.application.routes.draw do
       get "review", to: "ysws#index", as: "ysws_reviews"
       get "review/:id", to: "ysws#show", as: "ysws_review"
       post "review/:id/report_fraud", to: "ysws#report_fraud", as: "ysws_report_fraud"
+      post "review/:id/complete", to: "ysws#complete", as: "complete_ysws_review"
     end
   end
 

@@ -49,4 +49,28 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       render json: { success: false, errors: report.errors.full_messages }, status: :unprocessable_entity
     end
   end
+
+  def complete
+    @review = ::Certification::Ysws.find(params[:id])
+    authorize @review, :update?
+
+    # Mark as reviewed (or update review timestamp if already reviewed)
+    @review.update!(
+      reviewed_at: Time.current,
+      reviewer_id: current_user.id
+    )
+
+    # Trigger Airtable sync job
+    ::Certification::Ysws::AirtableSyncJob.perform_later(@review.id)
+
+    render json: {
+      success: true,
+      message: "Review completed successfully and queued for Airtable sync",
+      redirect_url: admin_certification_ysws_reviews_path
+    }, status: :ok
+  rescue StandardError => e
+    Rails.logger.error "[YswsController] Failed to complete review ##{params[:id]}: #{e.message}"
+    Sentry.capture_exception(e, extra: { ysws_review_id: params[:id], user_id: current_user.id })
+    render json: { success: false, error: "Failed to complete review: #{e.message}" }, status: :unprocessable_entity
+  end
 end

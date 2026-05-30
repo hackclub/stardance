@@ -13,6 +13,12 @@ application.register("address-select", AddressSelectController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import Certification__Ysws__CompleteReviewController from "./certification/ysws/complete_review_controller";
+application.register(
+  "certification--ysws--complete-review",
+  Certification__Ysws__CompleteReviewController,
+);
+
 import Certification__Ysws__DevlogReviewController from "./certification/ysws/devlog_review_controller";
 application.register(
   "certification--ysws--devlog-review",

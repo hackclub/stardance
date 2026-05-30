@@ -1,6 +1,6 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
 
-<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>">
+<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>">
   <!-- Header Section -->
   <div class="review-detail-header">
     <%= link_to "← back", admin_certification_ysws_reviews_path, class: "btn-back", "aria-label": "Back to review queue" %>
@@ -432,7 +432,9 @@
       <button class="action-btn btn-return" disabled>
         Return to Ship Certs
       </button>
-      <button class="action-btn btn-complete" disabled>
+      <button class="action-btn btn-complete"
+              data-certification--ysws--complete-review-target="button"
+              data-action="click->certification--ysws--complete-review#complete">
         Complete Review
       </button>
     </div>
