@@ -54,23 +54,29 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @review = ::Certification::Ysws.find(params[:id])
     authorize @review, :update?
 
-    # Mark as reviewed (or update review timestamp if already reviewed)
-    @review.update!(
-      reviewed_at: Time.current,
-      reviewer_id: current_user.id
-    )
+    # Run the Airtable sync synchronously so we know if it succeeds
+    # Only mark as reviewed if the sync succeeds
+    ActiveRecord::Base.transaction do
+      # Temporarily set reviewer_id for the sync job to use
+      @review.update!(reviewer_id: current_user.id)
 
-    # Trigger Airtable sync job
-    ::Certification::Ysws::AirtableSyncJob.perform_later(@review.id)
+      # Perform sync synchronously - this will raise an error if it fails
+      ::Certification::Ysws::AirtableSyncJob.new.perform(@review.id)
+
+      # Only mark as reviewed if sync succeeded
+      @review.update!(reviewed_at: Time.current)
+    end
 
     render json: {
       success: true,
-      message: "Review completed successfully and queued for Airtable sync",
+      message: "Review completed and synced to Airtable successfully",
       redirect_url: admin_certification_ysws_reviews_path
     }, status: :ok
   rescue StandardError => e
-    Rails.logger.error "[YswsController] Failed to complete review ##{params[:id]}: #{e.message}"
     Sentry.capture_exception(e, extra: { ysws_review_id: params[:id], user_id: current_user.id })
-    render json: { success: false, error: "Failed to complete review: #{e.message}" }, status: :unprocessable_entity
+    render json: {
+      success: false,
+      error: "Failed to complete review and sync to Airtable: #{e.message}. Please try again or contact support if the issue persists."
+    }, status: :unprocessable_entity
   end
 end
