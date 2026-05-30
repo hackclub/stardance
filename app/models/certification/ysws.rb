@@ -53,5 +53,45 @@ module Certification
 
     validates :original_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: false
     validates :approved_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+
+    # Check if this review has been moved to the unified DB and update the flag
+    def check_and_update_unified_db_status!
+      # Skip check if already marked as in unified DB
+      return true if in_unified_db?
+
+      begin
+        # Fetch record from Airtable
+        table = airtable_table
+        existing_record = table.all(filter: "{review_id} = '#{id}'").first
+
+        # If record exists and "Automation - YSWS Record ID" is populated, mark as in unified DB
+        if existing_record && existing_record["Automation - YSWS Record ID"].present?
+          update_column(:in_unified_db, true)
+          true
+        else
+          false
+        end
+      rescue StandardError => e
+        # Log error but don't break the calling code
+        Rails.logger.warn "[Certification::Ysws] Could not check unified DB status for review ##{id}: #{e.message}"
+        Sentry.capture_exception(e, extra: { ysws_review_id: id })
+        false
+      end
+    end
+
+    private
+
+    def airtable_table
+      api_key = Rails.application.credentials.dig(:ysws_review, :airtable_api_key) ||
+                Rails.application.credentials&.airtable&.api_key ||
+                ENV["AIRTABLE_API_KEY"]
+      base_id = Rails.application.credentials.dig(:ysws_review, :airtable_base_id) ||
+                ENV["YSWS_REVIEW_AIRTABLE_BASE_ID"]
+      table_name = Rails.application.credentials.dig(:ysws_review, :airtable_table_name) ||
+                   ENV["YSWS_REVIEW_AIRTABLE_TABLE"] ||
+                   "YSWS Project Submission"
+
+      Norairrecord.table(api_key, base_id, table_name)
+    end
   end
 end
