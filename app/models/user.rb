@@ -230,6 +230,12 @@ class User < ApplicationRecord
       .first
   end
 
+  before_create :generate_api_key
+
+  def reroll_api_key!
+    update!(api_key: unique_api_key)
+  end
+
   private
 
   def increment_signup_counter
@@ -238,6 +244,17 @@ class User < ApplicationRecord
 
   def enqueue_geocode_job
     UserGeocodeJob.perform_later(id) if ip_address.present?
+  end
+
+  def generate_api_key
+    self.api_key = unique_api_key
+  end
+
+  def unique_api_key
+    loop do
+      candidate = "sd_#{SecureRandom.urlsafe_base64(32)}"
+      break candidate unless User.exists?(api_key: candidate)
+    end
   end
 
   def interests_must_be_allowed
