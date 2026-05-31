@@ -11,7 +11,7 @@ module ApiAuthenticatable
     auth = request.headers["Authorization"]
 
     unless auth&.starts_with?("Bearer ")
-      render json: { error: "Missing or invalid Authorization header — use: Bearer YOUR_API_KEY", request_id: request.request_id }, status: :unauthorized
+      render json: { error: "Missing or invalid Authorization header -- use: Bearer YOUR_API_KEY", request_id: request.request_id }, status: :unauthorized
       return
     end
 

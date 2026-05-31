@@ -444,7 +444,7 @@ Rails.application.routes.draw do
       resources :ambassador_referrals, only: [ :index, :show ]
 
       # public api endpoints:
-      resource :me, only: [ :show, :update ], controller: "me" do
+      resource :me, only: [ :show, :update ] do
         resources :projects, only: [ :index ], module: :me
       end
     end
