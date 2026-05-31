@@ -1,9 +1,9 @@
-class Api::BaseController < ApplicationController
+class Api::BaseController < ActionController::Base
   include Pagy::Method
 
   skip_before_action :verify_authenticity_token
   skip_before_action :track_ahoy_visit, raise: false
-  skip_after_action :set_ahoy_request_store, raise: false
+  skip_around_action :set_ahoy_request_store, raise: false
 
   after_action :set_performance_headers
   after_action :set_request_id_headers

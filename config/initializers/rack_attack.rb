@@ -1,11 +1,11 @@
 require "rack/attack"
 
 Rack::Attack.throttle("api/ip", limit: 50, period: 1.minute) do |req|
-  req.id if req.path.start_with?("/api/")
+  req.ip if req.path.start_with?("/api/")
 end
 
 Rack::Attack.throttle("api/token", limit: 50, period: 1.minute) do |req|
-  req.get_header("HTTP_AUTHORIZATION")&.delete_prefix("Bearer ")&.strip.presence if req.start_with?("/api/")
+  req.get_header("HTTP_AUTHORIZATION")&.delete_prefix("Bearer ")&.strip.presence if req.path.start_with?("/api/")
 end
 
 Rack::Attack.throttled_responder = lambda do |req|

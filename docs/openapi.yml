@@ -3,19 +3,98 @@ openapi: 3.0.3
 info:
   title: Stardance API
   version: v1
-  description: You need an API key to use this! Go to your account settings to get one.
+  description: |
+    this built-in scalar theme looks cool, doesnt it? like... kind space y.... 
+    
+    ## Authentication
+
+    Every endpoint requires an API key. Send it as a Bearer token:
+
+    ```
+    Authorization: Bearer YOUR_API_KEY
+    ```
+
+    Open **Settings** from the sidebar to generate or rotate your key and replace `YOUR_API_KEY` with your generated one.
+
+    ---
+
+    ## Rate limiting
+
+    30 requests per 1 minute, enforced per IP address and per API key. Exceeding either limit returns `429 Too Many Requests` with body `{ "error": "rate_limited" }`.
+
+    ---
+    
+    ## Pagination
+
+    Paginated endpoints (eg. projects and devlogs) accept `?page` (1-based, default 1) and `?limit` (1–100, default 100). A `400` is returned if `limit` is out of that range. Responses include a `pagination` object:
+
+    ```json
+    {
+      "current_page": 1,
+      "total_pages": 4,
+      "total_count": 312,
+      "next_page": 2
+    }
+    ```
+
+    `next_page` is `null` on the last page.
+
+    ---
+    
+    ## Media URLs
+
+    `media[].url` and `banner_url` are **relative paths** (e.g.
+    `/rails/active_storage/blobs/…`). Prepend the server base URL
+    (`https://stardance.hackclub.com`) to get a fully qualified URL.
+
 servers:
-- url: https://flavortown.hackclub.com/api/v1
+  - url: https://stardance.hackclub.com/api/v1
+    description: Production server
+  - url: http://sd.67.pl.eu.org/api/v1
+    description: Playground server for testing
 security:
-- bearerAuth: []
+  - bearerAuth: []
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      description: 'Include your API key via `Authorization: Bearer YOUR_API_KEY`.
-        You can find or regenerate your API key in your account settings.'
+      description: >-
+        `Authorization: Bearer YOUR_API_KEY`. Find or rotate your key in Settings
+        (bottom left) on the Stardance website.
+
+  headers:
+    X-Request-ID:
+      description: Unique ID for this request. Include it when reporting issues.
+      schema:
+        type: string
+
   schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        request_id:
+          type: string
+      required: [error]
+
+    ValidationError:
+      type: object
+      description: >-
+        Returned when model validation fails. `request_id` is present on some
+        paths but not all.
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+        request_id:
+          type: string
+          nullable: true
+      required: [errors]
+
     Pagination:
       type: object
       properties:
@@ -28,6 +107,39 @@ components:
         next_page:
           type: integer
           nullable: true
+          description: Page number of the next page, or null on the last page.
+      required: [current_page, total_pages, total_count, next_page]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        display_name:
+          type: string
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        verification_status:
+          type: string
+          enum: [needs_submission, pending, verified, ineligible]
+          description: >-
+            Whether the user has been verified for YSWS eligibility.
+            `needs_submission` → user hasn't applied; `pending` → under review;
+            `verified` → approved; `ineligible` → not eligible.
+        avatar_url:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
     Project:
       type: object
       properties:
@@ -37,16 +149,54 @@ components:
           type: string
         description:
           type: string
-        repo_url:
-          type: string
-        demo_url:
-          type: string
-        readme_url:
-          type: string
-        ai_declaration:
-          type: string
+          nullable: true
         ship_status:
           type: string
+          enum: [draft, submitted, under_review, approved, rejected]
+          description: >-
+            Lifecycle state of the project. `draft` → not yet submitted;
+            `submitted` → awaiting review; `under_review` → being reviewed;
+            `approved` → shipped; `rejected` → not approved.
+        project_type:
+          type: string
+          nullable: true
+          description: Free-form project type tag set by the owner.
+        project_categories:
+          type: array
+          items:
+            type: string
+            enum:
+              - CLI
+              - Cargo
+              - Web App
+              - Chat Bot
+              - Extension
+              - Desktop App (Windows)
+              - Desktop App (Linux)
+              - Desktop App (macOS)
+              - Minecraft Mods
+              - Hardware
+              - Android App
+              - iOS App
+              - Other
+        repo_url:
+          type: string
+          nullable: true
+        demo_url:
+          type: string
+          nullable: true
+        readme_url:
+          type: string
+          nullable: true
+        ai_declaration:
+          type: string
+          nullable: true
+          description: How much AI was used in building this project (free text).
+        devlogs_count:
+          type: integer
+        duration_seconds:
+          type: integer
+          description: Total Hackatime-logged seconds across all devlogs.
         devlog_ids:
           type: array
           items:
@@ -54,34 +204,21 @@ components:
         banner_url:
           type: string
           nullable: true
+          description: >-
+            Relative path to the project banner image. Prepend
+            `https://stardance.hackclub.com` for a full URL.
+        shipped_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the project was first submitted for review.
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-    Comment:
-      type: object
-      properties:
-        id:
-          type: integer
-        author:
-          type: object
-          properties:
-            id:
-              type: integer
-            display_name:
-              type: string
-            avatar:
-              type: string
-        body:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+
     Devlog:
       type: object
       properties:
@@ -89,22 +226,25 @@ components:
           type: integer
         body:
           type: string
-        comments_count:
-          type: integer
+          description: Markdown content of the devlog entry.
         duration_seconds:
           type: integer
+          nullable: true
+          description: Hackatime-logged seconds that this devlog consumed.
         likes_count:
           type: integer
-        scrapbook_url:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+        comments_count:
+          type: integer
+        tutorial:
+          type: boolean
+        project_id:
+          type: integer
+          nullable: true
         media:
           type: array
+          description: >-
+            Attached images/files. `url` is a relative path — prepend
+            `https://stardance.hackclub.com` for a full URL.
           items:
             type: object
             properties:
@@ -112,657 +252,154 @@ components:
                 type: string
               content_type:
                 type: string
-        comments:
-          type: array
-          items:
-            "$ref": "#/components/schemas/Comment"
-    User:
-      type: object
-      properties:
-        id:
-          type: integer
-        slack_id:
+        created_at:
           type: string
-        display_name:
+          format: date-time
+        updated_at:
           type: string
-        avatar:
-          type: string
-        project_ids:
-          type: array
-          items:
-            type: integer
-        cookies:
-          type: integer
-          nullable: true
-    Achievement:
-      type: object
-      properties:
-        slug:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-    UserDetail:
-      allOf:
-      - "$ref": "#/components/schemas/User"
-      - type: object
-        properties:
-          vote_count:
-            type: integer
-          like_count:
-            type: integer
-          devlog_seconds_total:
-            type: integer
-          devlog_seconds_today:
-            type: integer
-          achievements:
-            type: array
-            items:
-              "$ref": "#/components/schemas/Achievement"
-    RegionEnabled:
-      type: object
-      properties:
-        enabled_au:
-          type: boolean
-        enabled_ca:
-          type: boolean
-        enabled_eu:
-          type: boolean
-        enabled_in:
-          type: boolean
-        enabled_uk:
-          type: boolean
-        enabled_us:
-          type: boolean
-        enabled_xx:
-          type: boolean
-    TicketCost:
-      type: object
-      properties:
-        base_cost:
-          type: number
-        au:
-          type: number
-        ca:
-          type: number
-        eu:
-          type: number
-        in:
-          type: number
-        uk:
-          type: number
-        us:
-          type: number
-        xx:
-          type: number
-    StoreItem:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        description:
-          type: string
-        old_prices:
-          type: array
-          items: {}
-        limited:
-          type: boolean
-        stock:
-          type: integer
-        type:
-          type: string
-        show_in_carousel:
-          type: boolean
-        accessory_tag:
-          type: string
-        agh_contents:
-          type: string
-        attached_shop_item_ids:
-          type: array
-          items: {}
-        buyable_by_self:
-          type: boolean
-        long_description:
-          type: string
-        max_qty:
-          type: integer
-        one_per_person_ever:
-          type: boolean
-        sale_percentage:
-          type: integer
-        image_url:
-          type: string
-        enabled:
-          "$ref": "#/components/schemas/RegionEnabled"
-        ticket_cost:
-          "$ref": "#/components/schemas/TicketCost"
-    ReadmeLink:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        readme_url:
-          type: string
-    DemoLink:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        demo_url:
-          type: string
-    RepoLink:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        repo_url:
-          type: string
-    ProjectLink:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        link:
-          type: string
-    Error:
-      type: object
-      properties:
-        error:
-          type: string
-    ValidationErrors:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-  responses:
-    BadRequest:
-      description: Invalid request parameters
-      content:
-        application/json:
-          schema:
-            "$ref": "#/components/schemas/Error"
-          example:
-            error: Limit cannot exceed 100
-    Unauthorized:
-      description: Missing or invalid API key
-      content:
-        application/json:
-          schema:
-            "$ref": "#/components/schemas/Error"
-          example:
-            error: Invalid API key
-    Forbidden:
-      description: Permission denied
-      content:
-        application/json:
-          schema:
-            "$ref": "#/components/schemas/Error"
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            "$ref": "#/components/schemas/Error"
-          example:
-            error: Resource not found
-    UnprocessableEntity:
-      description: Validation failed
-      content:
-        application/json:
-          schema:
-            "$ref": "#/components/schemas/ValidationErrors"
-    TooManyRequests:
-      description: Rate limit exceeded
-      headers:
-        Retry-After:
-          description: Number of seconds to wait before retrying
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              message:
-                type: string
-          example:
-            error: rate_limited
-            message: Too many requests. Please slow down.
+          format: date-time
+
   parameters:
-    limit:
+    Limit:
       name: limit
       in: query
-      description: Number of links to return (min 1)
+      description: Results per page (1–100, default 100).
       required: false
       schema:
         type: integer
         minimum: 1
-paths:
-  "/projects":
-    get:
-      summary: List projects
-      tags:
-      - Projects
-      description: 'Fetch a list of projects. Ratelimit: 5 reqs/min, 20 reqs/min if
-        searching.'
-      operationId: listProjects
-      parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-        description: Page number for pagination
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 100
-        description: Number of results per page (max 100)
-      - name: query
-        in: query
-        required: false
-        schema:
-          type: string
-        description: Search projects by title or description
-      responses:
-        '200':
-          description: A paginated list of projects
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  projects:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/Project"
-                  pagination:
-                    "$ref": "#/components/schemas/Pagination"
-        '400':
-          "$ref": "#/components/responses/BadRequest"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-    post:
-      summary: Create a project
-      tags:
-      - Projects
-      description: Create a new project.
-      operationId: createProject
-      parameters: []
-      responses:
-        '201':
-          description: Project created
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/Project"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '422':
-          "$ref": "#/components/responses/UnprocessableEntity"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              required:
-              - title
-              - description
-              properties:
-                title:
-                  type: string
-                  description: Project title
-                description:
-                  type: string
-                  description: Project description
-                repo_url:
-                  type: string
-                  description: URL to the source code repository
-                demo_url:
-                  type: string
-                  description: URL to the live demo
-                readme_url:
-                  type: string
-                  description: URL to the README
-                ai_declaration:
-                  type: string
-                  description: Declaration of AI tools used in this project
-        required: true
-  "/projects/{id}":
-    parameters:
-    - name: id
-      in: path
-      required: true
+        maximum: 100
+        default: 100
+    Page:
+      name: page
+      in: query
+      description: Page number (1-based, default 1).
+      required: false
       schema:
         type: integer
+        minimum: 1
+        default: 1
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/X-Request-ID"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "Invalid API key"
+            request_id: "abc123"
+
+    NotFound:
+      description: Resource not found.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/X-Request-ID"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "Resource not found"
+            request_id: "abc123"
+
+    Forbidden:
+      description: Authenticated user is not a member of this project.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/X-Request-ID"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    InvalidLimit:
+      description: >-
+        `limit` query parameter is outside the allowed range (1–100).
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/X-Request-ID"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "Limit must be between 1 and 100"
+            request_id: "abc123"
+
+paths:
+  /me:
     get:
-      summary: Get a project
-      tags:
-      - Projects
-      description: 'Fetch a specific project by ID. Ratelimit: 30 reqs/min.'
-      operationId: getProject
+      summary: Get the authenticated user's profile
+      tags: [Me]
       responses:
-        '200':
-          description: A single project
+        "200":
+          description: The current user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Project"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     patch:
-      summary: Update a project
-      tags:
-      - Projects
-      description: Update an existing project.
-      operationId: updateProject
-      parameters: []
-      responses:
-        '200':
-          description: Project updated
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/Project"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '403':
-          "$ref": "#/components/responses/Forbidden"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '422':
-          "$ref": "#/components/responses/UnprocessableEntity"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
+      summary: Update the authenticated user's profile
+      tags: [Me]
       requestBody:
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
               type: object
               properties:
-                title:
+                display_name:
                   type: string
-                  description: Project title
-                description:
+                first_name:
                   type: string
-                  description: Project description
-                repo_url:
+                last_name:
                   type: string
-                  description: URL to the source code repository
-                demo_url:
+                bio:
                   type: string
-                  description: URL to the live demo
-                readme_url:
-                  type: string
-                  description: URL to the README
-                ai_declaration:
-                  type: string
-                  description: Declaration of AI tools used in this project
-        required: true
-  "/projects/{project_id}/devlogs":
-    get:
-      summary: List project devlogs
-      tags:
-      - Projects
-      description: Fetch all devlogs for a specific project.
-      operationId: listProjectDevlogs
-      parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: integer
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-        description: Page number for pagination
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 100
-        description: Number of results per page (max 100)
       responses:
-        '200':
-          description: A paginated list of devlogs for the project
+        "200":
+          description: The updated user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  devlogs:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/Devlog"
-                  pagination:
-                    "$ref": "#/components/schemas/Pagination"
-        '400':
-          "$ref": "#/components/responses/BadRequest"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/devlogs":
-    get:
-      summary: List devlogs
-      tags:
-      - Devlogs
-      description: Fetch all devlogs across all projects.
-      operationId: listDevlogs
-      parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-        description: Page number for pagination
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 100
-        description: Number of results per page (max 100)
-      responses:
-        '200':
-          description: A paginated list of devlogs
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Validation failed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  devlogs:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/Devlog"
-                  pagination:
-                    "$ref": "#/components/schemas/Pagination"
-        '400':
-          "$ref": "#/components/responses/BadRequest"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/devlogs/{id}":
+                $ref: "#/components/schemas/ValidationError"
+
+  /me/projects:
     get:
-      summary: Get a devlog
-      tags:
-      - Devlogs
-      description: Fetch a devlog by ID.
-      operationId: getDevlog
+      summary: List the authenticated user's projects
+      tags: [Me]
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
       responses:
-        '200':
-          description: A single devlog
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/Devlog"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/store":
-    get:
-      summary: List store items
-      tags:
-      - Store
-      description: 'Fetch a list of store items. Ratelimit: 5 reqs/min.'
-      operationId: listStoreItems
-      responses:
-        '200':
-          description: A list of store items
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/StoreItem"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/store/{id}":
-    get:
-      summary: Get a store item
-      tags:
-      - Store
-      description: 'Fetch a specific store item by ID. Ratelimit: 30 reqs/min.'
-      operationId: getStoreItem
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          description: A single store item
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/StoreItem"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/users":
-    get:
-      summary: List users
-      tags:
-      - Users
-      description: 'Fetch a list of users. Ratelimit: 5 reqs/min.'
-      operationId: listUsers
-      parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-        description: Page number for pagination
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 100
-        description: Number of results per page (max 100)
-      - name: query
-        in: query
-        required: false
-        schema:
-          type: string
-        description: Search users by display name or slack ID
-      responses:
-        '200':
-          description: A paginated list of users
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  users:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/User"
-                  pagination:
-                    "$ref": "#/components/schemas/Pagination"
-        '400':
-          "$ref": "#/components/responses/BadRequest"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/users/{user_id}/projects":
-    get:
-      summary: List projects for a user
-      tags:
-      - Users
-      description: Fetch a paginated list of projects belonging to a specific user.
-        Use "me" as the user ID to fetch projects for the authenticated user.
-      operationId: listUserProjects
-      parameters:
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: string
-        description: User ID or "me" for the authenticated user
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-        description: Page number for pagination
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 100
-        description: Number of results per page (max 100)
-      responses:
-        '200':
-          description: A paginated list of the user's projects
+        "200":
+          description: Paginated list of the current user's projects.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
           content:
             application/json:
               schema:
@@ -771,167 +408,10 @@ paths:
                   projects:
                     type: array
                     items:
-                      "$ref": "#/components/schemas/Project"
+                      $ref: "#/components/schemas/Project"
                   pagination:
-                    "$ref": "#/components/schemas/Pagination"
-        '400':
-          "$ref": "#/components/responses/BadRequest"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/users/{id}":
-    get:
-      summary: Get a user
-      tags:
-      - Users
-      description: Fetch a specific user by ID. Use "me" as the ID to fetch the authenticated
-        user.
-      operationId: getUser
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-        description: User ID or "me" for the authenticated user
-      responses:
-        '200':
-          description: A single user with additional stats
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/UserDetail"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '429':
-          "$ref": "#/components/responses/TooManyRequests"
-  "/links":
-    get:
-      summary: List grouped links
-      tags:
-      - Links
-      description: 'Fetch link collections (readme, demo, repo, project).'
-      operationId: listLinks
-      responses:
-        '200':
-          description: A grouped object of link arrays
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  readme_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/ReadmeLink"
-                  demo_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/DemoLink"
-                  repo_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/RepoLink"
-                  project_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/ProjectLink"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-  "/links/demos":
-    get:
-      summary: List demo links
-      tags:
-      - Links
-      description: 'Fetch demo URLs for projects.'
-      operationId: listDemoLinks
-      parameters:
-      - "$ref": "#/components/parameters/limit"
-      responses:
-        '200':
-          description: Demo links
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  demo_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/DemoLink"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-  "/links/repo":
-    get:
-      summary: List repository links
-      tags:
-      - Links
-      description: 'Fetch repo URLs for projects. Optional `limit` query param limits results.'
-      operationId: listRepoLinks
-      parameters:
-      - "$ref": "#/components/parameters/limit"
-      responses:
-        '200':
-          description: Repo links
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  repo_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/RepoLink"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-  "/links/readme":
-    get:
-      summary: List readme links
-      tags:
-      - Links
-      description: 'Fetch readme URLs for projects. Optional `limit` query param limits results.'
-      operationId: listReadmeLinks
-      parameters:
-      - "$ref": "#/components/parameters/limit"
-      responses:
-        '200':
-          description: Readme links
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  readme_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/ReadmeLink"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
-  "/links/projects":
-    get:
-      summary: List internal project links
-      tags:
-      - Links
-      description: 'Fetch internal project paths for all projects. Optional `limit` query param limits results.'
-      operationId: listProjectLinks
-      parameters:
-      - "$ref": "#/components/parameters/limit"
-      responses:
-        '200':
-          description: Project links
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  project_links:
-                    type: array
-                    items:
-                      "$ref": "#/components/schemas/ProjectLink"
-        '401':
-          "$ref": "#/components/responses/Unauthorized"
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"

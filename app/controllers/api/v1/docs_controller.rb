@@ -17,11 +17,11 @@ class Api::V1::DocsController < ActionController::Base
           <script>
             Scalar.createApiReference('#app', {
               spec: { content: #{escaped_spec_json} },
-              theme: 'purple',
               hideClientButton: true,
-              hideDarkModeToggle: true,
+              theme: 'kepler',
               showDeveloperTools: 'never',
-              agent: { disabled: true }
+              agent: { disabled: true },
+              customCss: '.scalar-mcp-layer { display: none !important; } main { background: #0b0920; }'
             })
           </script>
         </body>
