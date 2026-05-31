@@ -819,5 +819,13 @@ Rails.application.routes.draw do
   match "/422", to: "errors#unprocessable_entity",  via: :all
   match "/500", to: "errors#internal_server_error", via: :all
 
+  namespace :api do
+    root to: "root#index"
+    get "v1", to: redirect("/api")
+    namespace :v1 do
+      get "docs", to: "docs#index", as: :docs
+    end
+  end
+
   get "/:ref", to: "landing#index", constraints: { ref: /[a-z0-9][a-z0-9_-]{0,63}/ }
 end
