@@ -8,10 +8,7 @@ class CommentsController < ApplicationController
     authorize @comment
 
     if @comment.save
-      respond_to do |format|
-        format.turbo_stream
-        format.html { redirect_back fallback_location: fallback_path }
-      end
+      redirect_back fallback_location: fallback_path
     else
       redirect_back fallback_location: fallback_path, alert: @comment.errors.full_messages.to_sentence
     end
@@ -22,10 +19,7 @@ class CommentsController < ApplicationController
 
     @comment.destroy
 
-    respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_back fallback_location: fallback_path }
-    end
+    redirect_back fallback_location: fallback_path
   end
 
   private
@@ -48,6 +42,6 @@ class CommentsController < ApplicationController
 
   def fallback_path
     post = Post.find_by(postable: @commentable)
-    post ? project_path(post.project) : root_path
+    post ? project_devlog_path(post.project, @commentable) : root_path
   end
 end

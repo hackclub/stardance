@@ -3,7 +3,7 @@
   placeholder   = local_assigns[:placeholder] || "jebediah@hackclub.com"
   leading       = local_assigns[:leading]
   trailing      = local_assigns[:trailing]
-  signup_mode   = Flipper.enabled?(:new_onboarding)
+  signup_mode   = local_assigns.fetch(:new_onboarding) { Flipper.enabled?(:new_onboarding) }
   form_url      = signup_mode ? onboarding_start_path : rsvps_path
   form_scope    = signup_mode ? nil : :rsvp
   submit_label  = signup_mode ? "Start! →" : "RSVP →"

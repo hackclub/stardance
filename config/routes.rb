@@ -706,7 +706,7 @@ Rails.application.routes.draw do
   resources :projects, shallow: true, except: [ :index ] do
     post :add_test_time, on: :member
     resources :memberships, only: [ :create, :destroy ], module: :projects
-    resources :devlogs, only: %i[create edit update destroy], module: :projects, shallow: false do
+    resources :devlogs, only: %i[show create edit update destroy], module: :projects, shallow: false do
       member do
         get :versions
       end

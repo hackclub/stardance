@@ -1,4 +1,8 @@
 class Post::DevlogPolicy < ApplicationPolicy
+    def show?
+        true
+    end
+
     def new?
         create?
     end

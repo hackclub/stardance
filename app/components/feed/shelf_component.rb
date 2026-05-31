@@ -13,7 +13,7 @@ module Feed
     end
 
     def render?
-      items_collection.present?
+      items_collection.any?
     end
   end
 end

@@ -19,15 +19,6 @@
     transition: all 0.15s ease;
     text-decoration: none;
 
-    &:hover {
-      background: var(--brown);
-      color: var(--bg-brown);
-
-      .like-button__icon {
-        fill: var(--bg-brown);
-      }
-    }
-
     &--liked {
       background: var(--yellow);
       border-color: var(--brown);
@@ -35,15 +26,6 @@
 
       .like-button__icon {
         fill: var(--brown);
-      }
-
-      &:hover {
-        background: var(--bg-brown);
-        color: var(--brown);
-
-        .like-button__icon {
-          fill: var(--brown);
-        }
       }
     }
 

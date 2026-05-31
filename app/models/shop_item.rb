@@ -95,7 +95,6 @@ class ShopItem < ApplicationRecord
   before_validation :floor_ticket_cost
   before_validation :clean_requires_achievement
 
-  after_commit :refresh_carousel_cache, if: :carousel_relevant_change?
   after_commit :invalidate_shop_page_cache
 
   GITHUB_STICKERS = %w[
@@ -413,10 +412,6 @@ class ShopItem < ApplicationRecord
 
   def carousel_relevant_change?
     show_in_carousel? || saved_change_to_show_in_carousel?
-  end
-
-  def refresh_carousel_cache
-    Cache::CarouselPrizesJob.perform_later(force: true)
   end
 
   def invalidate_shop_page_cache

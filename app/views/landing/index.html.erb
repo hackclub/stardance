@@ -22,27 +22,29 @@
     <%= render "landing/sections/hero" %>
   </div>
 
+  <% cache landing_static_sections_cache_key do %>
     <%= render "landing/sections/what_is_this" %>
 
-  <%= render "landing/sections/how_this_works" %>
+    <%= render "landing/sections/how_this_works" %>
 
-  <%= render "landing/sections/project_thumbnails" %>
+    <%= render "landing/sections/project_thumbnails" %>
 
-  <%= render "landing/sections/gain_stardust" %>
+    <%= render "landing/sections/gain_stardust" %>
 
-  <%= render "landing/sections/prizes" %>
+    <%= render "landing/sections/prizes" %>
 
-  <%= render "landing/sections/project_outcome" %>
+    <%= render "landing/sections/project_outcome" %>
 
-  <%= render "landing/sections/weekend" %>
+    <%= render "landing/sections/weekend" %>
 
-  <%= render "landing/sections/done_before" %>
+    <%= render "landing/sections/done_before" %>
 
-  <%= render "landing/sections/faq" %>
+    <%= render "landing/sections/faq" %>
 
-  <%= render "landing/sections/cta" %>
+    <%= render "landing/sections/cta", new_onboarding: @new_onboarding %>
 
-  <%= render "landing/sections/footer" %>
+    <%= render "landing/sections/footer" %>
+  <% end %>
 </div>
 
 <%= render "landing/sections/user_ref_modal", token: @user_ref_token if @user_ref_token.present? %>

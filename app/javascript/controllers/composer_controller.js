@@ -114,6 +114,16 @@ export default class extends Controller {
       this.submitTarget.getAttribute("aria-disabled") === "true"
     ) {
       event.preventDefault();
+      return;
+    }
+
+    // The form uses local:true (non-Turbo), so data-turbo-submits-with won't
+    // fire. Manually swap the button text and disable it to give feedback and
+    // prevent double-clicks.
+    if (this.hasSubmitTarget) {
+      const label = this.submitTarget.querySelector(".action-btn__label");
+      if (label) label.textContent = "Posting...";
+      this.submitTarget.disabled = true;
     }
   }
 

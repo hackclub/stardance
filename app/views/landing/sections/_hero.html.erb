@@ -10,18 +10,19 @@
     </h1>
     <p class="hero__subhead">The largest STEM event of the summer:<br>make anything you want and earn free prizes.
       <br><br>
-      <% if Flipper.enabled?(:new_onboarding) %>
+      <% if @new_onboarding %>
         Enter your email to sign up and start your first project.
       <% else %>
         RSVP to get notified when we launch on <strong>June 1st</strong>.
       <% end %></p>
 
     <%= render "landing/sections/rsvp_form",
+               new_onboarding: @new_onboarding,
                placeholder: "Enter your email...",
                leading: image_tag(image_url("landing/hero/star-character.png"), class: "hero__doodle-arrow", alt: "", data: { controller: "falling-star", action: "pointerdown->falling-star#fall" }) do %>
-      <% unless Flipper.enabled?(:new_onboarding) %>
+      <% unless @new_onboarding %>
         <%= turbo_stream_from "rsvp_counter" %>
-        <p class="hero__caption" data-controller="rsvp-counter" aria-live="polite">Join <%= render "landing/sections/rsvp_counter" %> others RSVP&rsquo;d!</p>
+        <p class="hero__caption" data-controller="rsvp-counter" aria-live="polite">Join <%= render "landing/sections/rsvp_counter", count: @rsvp_count %> others RSVP&rsquo;d!</p>
       <% end %>
       <% if Rails.env.development? && current_user.blank? %>
         <%= button_to "dev login", dev_login_auto_path, method: :get, form_class: "hero__dev-login", class: "hero__dev-login-btn" %>

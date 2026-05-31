@@ -1,0 +1,68 @@
+<% content_for :title, "Devlog by @#{@post.user&.display_name}" %>
+
+<div class="app-layout">
+  <main class="app-layout__main devlog-detail" aria-label="Devlog">
+    <nav class="devlog-detail__back" aria-label="Back">
+      <%= link_to project_path(@project), class: "devlog-detail__back-link" do %>
+        <%= inline_svg_tag "icons/chevron-down.svg", class: "devlog-detail__back-arrow", aria: { hidden: true } %>
+        <span>Back to <%= @project.title %></span>
+      <% end %>
+    </nav>
+
+    <div class="devlog-detail__thread">
+      <article class="devlog-detail__post">
+        <%= render Posts::CardComponent.new(
+              post: @post,
+              current_user: current_user,
+              show_comments: false,
+              show_actions: current_user.present?
+            ) %>
+      </article>
+
+      <section class="devlog-detail__comments" id="comments">
+        <header class="devlog-detail__comments-header">
+          <h3 class="devlog-detail__comments-heading">
+            Comments
+            <span class="devlog-detail__comments-count" id="<%= "comments_count_post_devlog_#{@devlog.id}" %>"><%= @devlog.comments_count %></span>
+          </h3>
+        </header>
+
+        <div class="devlog-detail__comments-list">
+          <% if @comments.any? %>
+            <%= render partial: "comments/comment", collection: @comments %>
+          <% else %>
+            <p class="devlog-detail__empty">No comments yet. Be the first!</p>
+          <% end %>
+        </div>
+
+        <% if current_user %>
+          <%= form_with url: devlog_comments_path(@devlog), scope: :comment, class: "devlog-detail__comment-form", local: true do |f| %>
+            <div class="devlog-detail__comment-input-row">
+              <%= image_tag current_user.avatar, alt: "", class: "devlog-detail__comment-avatar" %>
+              <%= f.text_area :body,
+                    id: "comment_body",
+                    class: "devlog-detail__comment-textarea",
+                    placeholder: "Add a comment...",
+                    rows: 1,
+                    maxlength: Comment::BODY_MAX_LENGTH %>
+            </div>
+            <div class="devlog-detail__comment-actions">
+              <%= render ActionButtonComponent.new(
+                    text: "Comment",
+                    size: :small,
+                    type: :submit,
+                    variant: :primary
+                  ) %>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="devlog-detail__sign-in">
+            <%= link_to "Sign in", root_path %> to join the conversation.
+          </p>
+        <% end %>
+      </section>
+    </div>
+  </main>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

@@ -151,6 +151,9 @@ application.register("parallax", ParallaxController);
 import PrizeFloatController from "./prize_float_controller";
 application.register("prize-float", PrizeFloatController);
 
+import PostMenuController from "./post_menu_controller";
+application.register("post-menu", PostMenuController);
+
 import ProfileEditController from "./profile_edit_controller";
 application.register("profile-edit", ProfileEditController);
 

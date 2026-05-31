@@ -1,0 +1,23 @@
+<div id="comment_<%= comment.id %>" class="devlog-comment">
+  <div class="devlog-comment__header">
+    <%= link_to profile_path(comment.user.display_name), class: "devlog-comment__avatar-link" do %>
+      <%= image_tag comment.user.avatar, alt: "", class: "devlog-comment__avatar" %>
+    <% end %>
+    <div class="devlog-comment__meta">
+      <%= link_to "@#{comment.user.display_name}", profile_path(comment.user.display_name), class: "devlog-comment__author" %>
+      <time class="devlog-comment__time" datetime="<%= comment.created_at.iso8601 %>">
+        · <%= time_ago_in_words(comment.created_at) %>
+      </time>
+    </div>
+    <% if policy(comment).destroy? %>
+      <%= button_to devlog_comment_path(comment.commentable, comment),
+            method: :delete,
+            class: "devlog-comment__delete",
+            form: { onsubmit: "return confirm('Delete this comment?')" },
+            aria: { label: "Delete comment" } do %>
+        &times;
+      <% end %>
+    <% end %>
+  </div>
+  <div class="devlog-comment__body"><%= simple_format(comment.body) %></div>
+</div>

@@ -1,4 +1,12 @@
 <article id="<%= dom_id(post) %>" class="<%= card_classes %>">
+  <% if card_link_url.present? %>
+    <%= link_to card_link_url,
+          class: "feed-post-card__overlay-link",
+          aria: { label: "Open comments for this post" } do %>
+      <span class="feed-post-card__overlay-text">Open comments for this post</span>
+    <% end %>
+  <% end %>
+
   <% if plain_repost? %>
     <div class="feed-post-card__reposted-by">
       <%= inline_svg_tag "icons/repost.svg", class: "feed-post-card__reposted-by-icon" %>
@@ -98,7 +106,7 @@
   <% if show_footer? %>
   <footer class="feed-post-card__actions">
     <% if show_comments && interaction_post&.postable_type == "Post::Devlog" %>
-      <%= link_to interaction_post.project.present? ? project_path(interaction_post.project, anchor: dom_id(interaction_post)) : "#",
+      <%= link_to comment_url,
             class: "feed-post-card__action",
             aria: { label: "#{interaction_postable.comments_count} comments" } do %>
         <%= inline_svg_tag "icons/comment.svg", class: "feed-post-card__action-icon" %>
@@ -186,9 +194,28 @@
     <% end %>
 
     <% if show_actions %>
-      <button type="button" class="feed-post-card__more" aria-label="More actions">
-        <span aria-hidden="true">•••</span>
-      </button>
+      <div class="feed-post-card__more-wrap" data-controller="post-menu" data-post-menu-url-value="<%= post_url %>">
+        <button type="button" class="feed-post-card__more" aria-label="More actions" data-action="post-menu#toggle">
+          <span aria-hidden="true">•••</span>
+        </button>
+
+        <div class="feed-post-card__menu" data-post-menu-target="menu" hidden>
+          <% if can_edit? && edit_url.present? %>
+            <%= link_to "Edit", edit_url, class: "feed-post-card__menu-item" %>
+          <% end %>
+
+          <% if can_delete? && delete_url.present? %>
+            <%= button_to "Delete", delete_url,
+                  method: :delete,
+                  class: "feed-post-card__menu-item feed-post-card__menu-item--danger",
+                  form: { class: "feed-post-card__menu-form", onsubmit: "return confirm('Are you sure you want to delete this devlog?')" } %>
+          <% end %>
+
+          <button type="button" class="feed-post-card__menu-item" data-action="post-menu#share">
+            Copy link to clipboard
+          </button>
+        </div>
+      </div>
     <% end %>
   </footer>
   <% end %>

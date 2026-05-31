@@ -42,10 +42,17 @@ module Posts
     def card_classes
       class_names(
         "feed-post-card",
+        "feed-post-card--linked": card_link_url.present?,
         "feed-post-card--compact": compact,
         "feed-post-card--quote-repost": quote_repost?,
         "feed-post-card--#{theme}": theme.present?
       )
+    end
+
+    def card_link_url
+      if interaction_post&.postable_type == "Post::Devlog" && interaction_post.project.present?
+        helpers.project_devlog_path(interaction_post.project, interaction_postable)
+      end
     end
 
     def author
@@ -81,7 +88,7 @@ module Posts
     end
 
     def attachments
-      if display_postable.respond_to?(:attachments)
+      @attachments ||= if display_postable.respond_to?(:attachments)
         display_postable.attachments
       else
         []
@@ -94,6 +101,10 @@ module Posts
 
     def show_footer?
       show_comments || show_reposts || show_likes || show_actions
+    end
+
+    def comment_url
+      card_link_url || "#"
     end
 
     def comments_count_id
@@ -149,6 +160,44 @@ module Posts
         author.present? &&
         current_user.id == author.id &&
         !current_user.identity_verified?
+    end
+
+    def can_edit?
+      action_allowed?(:edit?)
+    end
+
+    def can_delete?
+      action_allowed?(:destroy?)
+    end
+
+    def post_url
+      if card_link_url.present?
+        card_link_url
+      elsif project.present?
+        helpers.project_path(project, anchor: helpers.dom_id(post))
+      else
+        "#"
+      end
+    end
+
+    def edit_url
+      if devlog? && project.present?
+        helpers.edit_project_devlog_path(project, postable)
+      end
+    end
+
+    def delete_url
+      if devlog? && project.present?
+        helpers.project_devlog_path(project, postable)
+      end
+    end
+
+    def action_allowed?(action)
+      if current_user.present? && devlog?
+        helpers.policy(postable).public_send(action)
+      else
+        false
+      end
     end
   end
 end

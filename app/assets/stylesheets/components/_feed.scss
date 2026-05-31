@@ -455,10 +455,57 @@
   --feed-avatar-size: 39px;
   --feed-content-offset: 50px;
 
+  position: relative;
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+
+  &--linked {
+    cursor: pointer;
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--color-space-text-muted);
+      background: rgba(5, 4, 24, 0.48);
+    }
+  }
+
+  &__overlay-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+  }
+
+  &__overlay-link:focus-visible {
+    outline: 2px solid var(--color-brand-mint);
+    outline-offset: 3px;
+  }
+
+  &__overlay-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  a:not(.feed-post-card__overlay-link),
+  button,
+  summary,
+  input,
+  textarea,
+  select,
+  video,
+  dialog {
+    position: relative;
+    z-index: 2;
+  }
 
   &__reposted-by {
     margin-left: calc(var(--feed-avatar-size) * 0.5);
@@ -667,16 +714,16 @@
   }
 
   &__actions {
-    padding-left: var(--feed-content-offset);
-    display: grid;
-    grid-template-columns: repeat(3, minmax(64px, 1fr)) auto;
+    margin-left: var(--feed-content-offset);
+    width: calc(100% - var(--feed-content-offset));
+    display: flex;
     align-items: center;
-    gap: 14px;
+    justify-content: space-between;
     color: var(--color-space-text-muted);
 
     @media (max-width: 640px) {
-      padding-left: 0;
-      grid-template-columns: repeat(3, 1fr) auto;
+      margin-left: 0;
+      width: 100%;
     }
   }
 
@@ -698,8 +745,8 @@
 
   &__action-icon,
   .like-button__icon {
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
     fill: currentColor;
     color: currentColor;
   }
@@ -723,14 +770,12 @@
 
   &__repost {
     display: flex;
-    justify-content: center;
     min-width: 0;
   }
 
   &__repost-menu {
     position: relative;
     display: flex;
-    justify-content: center;
     min-width: 0;
 
     summary {
@@ -817,7 +862,6 @@
   .like-button,
   &__like {
     display: flex;
-    justify-content: center;
   }
 
   .like-button__btn {
@@ -835,7 +879,60 @@
 
   &__more {
     letter-spacing: 0;
-    justify-self: end;
+  }
+
+  &__more-wrap {
+    position: relative;
+  }
+
+  &__menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 20;
+    min-width: 160px;
+    padding: 6px 0;
+    background: var(--color-space-bg-2);
+    border: 1px solid var(--color-space-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__menu-form {
+    margin: 0;
+  }
+
+  &__menu-item {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    color: var(--color-space-text);
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-size: var(--font-size-s);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    &--danger {
+      color: var(--color-brand-salmon);
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
   }
 }
 
@@ -935,5 +1032,241 @@
     color: var(--color-space-text-muted);
     font-size: calc(var(--font-size-s) * 1.2);
     line-height: 1.25;
+  }
+}
+
+// Devlog detail page — post + comments thread view.
+// Uses .app-layout__main so it inherits the 722px reading column,
+// centered margins, and responsive breakpoints from _base.scss.
+.devlog-detail {
+  &__thread {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__back {
+    margin-bottom: 14px;
+  }
+
+  &__back-link {
+    align-items: center;
+    color: var(--color-space-text-muted);
+    display: inline-flex;
+    font-size: calc(var(--font-size-s) * 1.15);
+    gap: 0.35rem;
+    text-decoration: none;
+    transition: color 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__back-arrow {
+    height: 14px;
+    transform: rotate(90deg);
+    width: 14px;
+  }
+
+  &__post {
+    .feed-post-card {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom: 0;
+    }
+  }
+
+  &__comments {
+    background: rgba(5, 4, 24, 0.35);
+    border: 2px solid var(--color-space-border);
+    border-top: 0;
+    border-radius: 0 0 var(--profile-radius, var(--border-radius))
+      var(--profile-radius, var(--border-radius));
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+  }
+
+  &__comments-header {
+    margin-bottom: 14px;
+  }
+
+  &__comments-heading {
+    align-items: center;
+    color: var(--color-space-text);
+    display: flex;
+    font-family: "Exo 2", sans-serif;
+    font-size: calc(var(--font-size-s) * 1.2);
+    font-weight: 700;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  &__comments-count {
+    background: var(--color-space-surface-faint);
+    border-radius: 999px;
+    color: var(--color-space-text-muted);
+    font-size: calc(var(--font-size-s) * 1.05);
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+  }
+
+  &__comments-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__empty {
+    color: var(--color-space-text-muted);
+    font-size: calc(var(--font-size-s) * 1.1);
+    margin: 0;
+    padding: var(--space-s) 0;
+  }
+
+  &__comment-form {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 8px;
+    padding-top: 14px;
+  }
+
+  &__comment-input-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.65rem;
+  }
+
+  &__comment-avatar {
+    border-radius: 50%;
+    flex-shrink: 0;
+    height: 32px;
+    object-fit: cover;
+    width: 32px;
+  }
+
+  &__comment-textarea {
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid var(--color-space-border);
+    border-radius: var(--profile-radius, var(--border-radius));
+    color: var(--color-space-text);
+    flex: 1;
+    font-family: inherit;
+    font-size: calc(var(--font-size-s) * 1.1);
+    min-height: 42px;
+    padding: 0.5rem 0.75rem;
+    resize: vertical;
+    transition: border-color 120ms ease;
+
+    &::placeholder {
+      color: var(--color-space-text-muted);
+    }
+
+    &:focus {
+      border-color: var(--color-brand-highlight);
+      outline: none;
+    }
+  }
+
+  &__comment-actions {
+    align-self: flex-end;
+  }
+
+  &__sign-in {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--color-space-text-muted);
+    font-size: calc(var(--font-size-s) * 1.1);
+    margin: 0;
+    padding-top: 14px;
+
+    a {
+      color: var(--color-brand-highlight);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+}
+
+.devlog-comment {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 0;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &__header {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__avatar-link {
+    flex-shrink: 0;
+  }
+
+  &__avatar {
+    border-radius: 50%;
+    height: 28px;
+    object-fit: cover;
+    width: 28px;
+  }
+
+  &__meta {
+    align-items: baseline;
+    display: flex;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  &__author {
+    color: var(--color-space-text);
+    font-size: calc(var(--font-size-s) * 1.1);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__time {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__delete {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    margin-left: auto;
+    padding: 0.25rem;
+    transition: color 120ms ease;
+
+    &:hover {
+      color: var(--color-brand-salmon);
+    }
+  }
+
+  &__body {
+    color: var(--color-space-text);
+    font-size: calc(var(--font-size-s) * 1.1);
+    line-height: 1.5;
+    margin: 0.25rem 0 0;
+    padding-left: calc(28px + 0.5rem);
+
+    p {
+      margin: 0 0 0.4em;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
   }
 }

@@ -39,7 +39,7 @@ class HomeController < ApplicationController
                   .where(post_devlogs: { deleted_at: nil })
                   .where(project_id: Project.not_deleted)
                   .includes(:user, :project)
-                  .preload(postable: { attachments_attachments: :blob })
+                  .preload(postable: [ :post, { attachments_attachments: :blob } ])
                   .order(created_at: :desc)
                   .limit(20)
 
@@ -47,14 +47,22 @@ class HomeController < ApplicationController
                       .visible_to(current_user)
                       .where.not(post_ship_events: { certification_status: "rejected" })
                       .where(project_id: Project.not_deleted)
-                      .includes(:user, :project)
-                      .preload(postable: { mission_submission: :mission })
+                      .includes(:user, :project, postable: { mission_submission: :mission })
                       .order(created_at: :desc)
                       .limit(20)
 
     reposts = Post.of_reposts(join: true)
                   .visible_to(current_user)
-                  .includes(:user, postable: { original_post: [ :user, :project, :postable ] })
+                  .includes(
+                    :user,
+                    postable: {
+                      original_post: [
+                        :user,
+                        :project,
+                        { postable: [ :post, :attachments_attachments ] }
+                      ]
+                    }
+                  )
                   .order(created_at: :desc)
                   .limit(20)
                   .select { |post| post.visible_repost_original_for?(current_user) }

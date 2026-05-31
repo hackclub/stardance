@@ -2,9 +2,16 @@ class Projects::DevlogsController < ApplicationController
   TEST_TIME_SECONDS = 15.minutes.to_i
 
   before_action :set_project
-  before_action :set_devlog, only: %i[edit update destroy versions]
+  before_action :set_devlog, only: %i[show edit update destroy versions]
   before_action :require_hackatime_project, only: %i[create]
   before_action :sync_hackatime_projects, only: %i[create]
+
+  def show
+    authorize @devlog
+    @body_class = "app-layout-page"
+    @post = @project.posts.visible_to(current_user).find_by!(postable: @devlog)
+    @comments = @devlog.comments.includes(:user).order(created_at: :asc)
+  end
 
   def create
     authorize @project, :create_devlog?
