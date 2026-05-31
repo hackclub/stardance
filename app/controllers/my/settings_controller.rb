@@ -16,6 +16,22 @@ class My::SettingsController < ApplicationController
     redirect_back fallback_location: root_path, notice: "Settings saved"
   end
 
+  def roll_api_key
+    authorize :my, :update_settings?
+    current_user.reroll_api_key!
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "api_key",
+          partial: "users/api_key",
+          locals: { user: current_user, just_generated: true }
+        )
+      end
+      format.html { redirect_back fallback_location: root_path, notice: "API key rotated" }
+    end
+  end
+
   def toggle_streamer_mode
     session[:streamer_mode] = params.key?(:enable) ? params[:enable] == "true" : !session[:streamer_mode]
     respond_to do |format|

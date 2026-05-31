@@ -167,5 +167,13 @@
       </div>
     <% end %>
 
+    <div class="api-key-section">
+      <label class="settings-form__label">Your API Key</label>
+      <%= helpers.turbo_frame_tag "api_key" do %>
+        <%= render "users/api_key", user: user %>
+      <% end %>
+      <small class="settings-form__hint api-key-section__hint">Used to access the <a href="/api/v1/docs" target="_blank" rel="noopener" class="api-docs-link">Stardance API</a>. Keep it secret and reroll if compromised.</small>
+    </div>
+
   <% end %>
 </aside>
