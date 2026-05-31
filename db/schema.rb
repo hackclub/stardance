@@ -235,6 +235,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.index ["user_id"], name: "index_devlog_versions_on_user_id"
   end
 
+  create_table "disco_recommendations", force: :cascade do |t|
+    t.string "context"
+    t.datetime "created_at", null: false
+    t.bigint "item_id"
+    t.string "item_type"
+    t.float "score"
+    t.bigint "subject_id"
+    t.string "subject_type"
+    t.datetime "updated_at", null: false
+    t.index ["item_type", "item_id"], name: "index_disco_recommendations_on_item"
+    t.index ["subject_type", "subject_id"], name: "index_disco_recommendations_on_subject"
+  end
+
   create_table "flipper_features", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "key", null: false
@@ -1066,6 +1079,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
 
   create_table "users", force: :cascade do |t|
     t.string "age_attestation"
+    t.string "api_key"
     t.boolean "banned", default: false, null: false
     t.datetime "banned_at"
     t.text "banned_reason"
@@ -1111,6 +1125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.boolean "ysws_eligible", default: false, null: false
     t.index "lower((display_name)::text)", name: "index_users_on_lower_display_name_unique", unique: true, where: "((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))"
     t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
+    t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["email"], name: "index_users_on_email"
     t.index ["guest_email"], name: "index_users_on_guest_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
@@ -1242,7 +1257,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
   add_foreign_key "shop_item_sources", "shop_items"
   add_foreign_key "shop_item_sources", "shop_sources"
   add_foreign_key "shop_items", "users"
-  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify
+  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"
