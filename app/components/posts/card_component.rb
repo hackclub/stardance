@@ -4,9 +4,9 @@ module Posts
   class CardComponent < ViewComponent::Base
     delegate :inline_svg_tag, to: :helpers
 
-    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :liked_devlog_ids
+    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :liked_devlog_ids, :reposted_post_ids
 
-    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, liked_devlog_ids: nil)
+    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, liked_devlog_ids: nil, reposted_post_ids: nil)
       @post = post
       @current_user = current_user
       @theme = theme
@@ -16,6 +16,7 @@ module Posts
       @show_reposts = show_reposts
       @show_actions = show_actions
       @liked_devlog_ids = liked_devlog_ids
+      @reposted_post_ids = reposted_post_ids
     end
 
     def render?
@@ -130,11 +131,10 @@ module Posts
     end
 
     def reposted_by_current_user?
-      if current_user.present? && repostable?
-        Post::Repost.exists?(original_post: repost_target, user: current_user)
-      else
-        false
-      end
+      return false unless current_user.present? && repostable?
+      return reposted_post_ids.include?(repost_target.id) unless reposted_post_ids.nil?
+
+      Post::Repost.exists?(original_post: repost_target, user: current_user)
     end
 
     def quote_dialog_id

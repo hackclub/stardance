@@ -65,6 +65,7 @@ class HomeController < ApplicationController
 
     @feed_posts = all_posts.select { |post| post.postable.present? }
     @liked_devlog_ids = liked_devlog_ids_for(@feed_posts)
+    @reposted_post_ids = reposted_post_ids_for(@feed_posts)
   end
 
   def liked_devlog_ids_for(posts)
@@ -72,6 +73,18 @@ class HomeController < ApplicationController
     return Set.new if devlog_posts.empty?
 
     Like.where(user: current_user, likeable_type: "Post::Devlog", likeable_id: devlog_posts.map(&:postable_id)).pluck(:likeable_id).to_set
+  end
+
+  def reposted_post_ids_for(posts)
+    target_ids = posts.filter_map do |p|
+      case p.postable_type
+      when "Post::Devlog" then p.id
+      when "Post::Repost" then p.postable&.original_post_id
+      end
+    end
+    return Set.new if target_ids.empty?
+
+    Post::Repost.where(user: current_user, original_post_id: target_ids).pluck(:original_post_id).to_set
   end
 
   def load_composer
