@@ -3,6 +3,8 @@
   <head>
     <title><%= content_for?(:title) ? "#{strip_tags(yield(:title))} - Stardance" : "Stardance - Hack Club" %></title>
     <%= favicon_link_tag 'favicon.png', type: 'image/png' %>
+    <%= favicon_link_tag '/apple-touch-icon.png', rel: 'apple-touch-icon', sizes: '180x180', type: 'image/png' %>
+    <meta name="apple-mobile-web-app-title" content="Stardance">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -46,6 +48,13 @@
       <script>
         window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
         plausible.init()
+      </script>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18182651878"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'AW-18182651878');
       </script>
     <% end %>
     <%# Testing our second instance of plausible — beta only %>
