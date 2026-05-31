@@ -1,6 +1,7 @@
 <%
-  liked = if current_user && defined?(@liked_devlog_ids) && @liked_devlog_ids.present?
-    @liked_devlog_ids.include?(likeable.id)
+  liked_devlog_ids = local_assigns.fetch(:liked_devlog_ids) { defined?(@liked_devlog_ids) ? @liked_devlog_ids : nil }
+  liked = if current_user && !liked_devlog_ids.nil?
+    liked_devlog_ids.include?(likeable.id)
   else
     current_user && likeable.likes.exists?(user: current_user)
   end

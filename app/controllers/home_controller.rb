@@ -39,7 +39,7 @@ class HomeController < ApplicationController
                   .where(post_devlogs: { deleted_at: nil })
                   .where(project_id: Project.not_deleted)
                   .includes(:user, :project)
-                  .preload(postable: :attachments_attachments)
+                  .preload(postable: { attachments_attachments: :blob })
                   .order(created_at: :desc)
                   .limit(20)
 
@@ -47,7 +47,8 @@ class HomeController < ApplicationController
                       .visible_to(current_user)
                       .where.not(post_ship_events: { certification_status: "rejected" })
                       .where(project_id: Project.not_deleted)
-                      .includes(:user, :project, :postable)
+                      .includes(:user, :project)
+                      .preload(postable: { mission_submission: :mission })
                       .order(created_at: :desc)
                       .limit(20)
 
@@ -75,7 +76,7 @@ class HomeController < ApplicationController
 
   def load_composer
     @devlog = Post::Devlog.new
-    @composer_projects = current_user.projects.order(updated_at: :desc)
+    @composer_projects = current_user.projects.includes(:hackatime_projects).order(updated_at: :desc)
     @selected_project = selected_composer_project
   end
 

@@ -18,7 +18,7 @@
         <% if post.postable_type == "Post::ShipEvent" %>
           <%= render "projects/ship_card", post: post, project: post.project %>
         <% else %>
-          <%= render Posts::CardComponent.new(post: post, current_user: current_user) %>
+          <%= render Posts::CardComponent.new(post: post, current_user: current_user, liked_devlog_ids: @liked_devlog_ids) %>
         <% end %>
 
         <% if index.zero? && @recommended_projects.any? %>

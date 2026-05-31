@@ -4,9 +4,9 @@ module Posts
   class CardComponent < ViewComponent::Base
     delegate :inline_svg_tag, to: :helpers
 
-    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions
+    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :liked_devlog_ids
 
-    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true)
+    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, liked_devlog_ids: nil)
       @post = post
       @current_user = current_user
       @theme = theme
@@ -15,6 +15,7 @@ module Posts
       @show_comments = show_comments
       @show_reposts = show_reposts
       @show_actions = show_actions
+      @liked_devlog_ids = liked_devlog_ids
     end
 
     def render?
@@ -87,7 +88,7 @@ module Posts
     end
 
     def attachment_count
-      attachments.respond_to?(:count) ? attachments.count : 0
+      attachments.respond_to?(:size) ? attachments.size : 0
     end
 
     def show_footer?

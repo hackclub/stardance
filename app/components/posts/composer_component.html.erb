@@ -21,7 +21,7 @@
                       composer_post_url_param: project_devlogs_path(project),
                       composer_preview_url_param: preview_time_project_devlogs_path(project),
                       composer_edit_url_param: project_path(project, editing: true),
-                      composer_hackatime_linked_param: project.hackatime_keys.present? || (project == selected_project && test_time_granted) } %>
+                      composer_hackatime_linked_param: project.hackatime_projects.any? || (project == selected_project && test_time_granted) } %>
       <% end %>
       </div>
     <% end %>

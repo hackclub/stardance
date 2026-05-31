@@ -181,7 +181,7 @@
 
     <% if show_likes && likeable.present? %>
       <div class="feed-post-card__like">
-        <%= render "likes/button", likeable: likeable %>
+        <%= render "likes/button", likeable: likeable, liked_devlog_ids: liked_devlog_ids %>
       </div>
     <% end %>
 

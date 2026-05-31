@@ -19,6 +19,17 @@ Rails.application.configure do
       class_name: "ActiveStorage::Attachment",
       association: :record
     )
+
+    # The composer eager-loads Project#hackatime_projects so it can answer "is
+    # this project Hackatime-linked?" across all of a user's projects in one
+    # query. The chip checks `.any?`, which Bullet doesn't register as using the
+    # loaded records, so it flags the eager load as unused — but removing it
+    # restores a per-project N+1. Safelist the false positive.
+    Bullet.add_safelist(
+      type: :unused_eager_loading,
+      class_name: "Project",
+      association: :hackatime_projects
+    )
   end
 
   # Settings specified here will take precedence over those in config/application.rb.
