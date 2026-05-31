@@ -19,5 +19,5 @@
       <% end %>
     <% end %>
   </div>
-  <div class="devlog-comment__body"><%= simple_format(comment.body) %></div>
+  <div class="devlog-comment__body markdown-content"><%= md(comment.body) %></div>
 </div>
