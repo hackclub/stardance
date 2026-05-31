@@ -515,6 +515,7 @@ Rails.application.routes.draw do
     resource :balance, only: [ :show ]
     resource :settings, only: [ :update ] do
       post :streamer_mode, on: :member, action: :toggle_streamer_mode
+      post :roll_api_key, on: :member, action: :roll_api_key
     end
     resources :dismissals, only: [ :create ]
     post "verification/refresh", to: "verifications#refresh", as: :verification_refresh
