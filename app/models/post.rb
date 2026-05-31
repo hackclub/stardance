@@ -94,16 +94,15 @@ class Post < ApplicationRecord
     end
 
     def visible_repost_original_for?(viewer)
-      if repost?
-        original_post = postable&.original_post
+      return false unless repost?
 
-        original_post&.postable_type == "Post::Devlog" &&
-          original_post.postable.present? &&
-          !original_post.postable.deleted? &&
-          Post.visible_to(viewer).where(id: original_post.id).exists?
-      else
-        false
-      end
+      original_post = postable&.original_post
+      return false unless original_post&.postable_type == "Post::Devlog"
+      return false unless original_post.postable.present? && !original_post.postable.deleted?
+      return true if viewer&.admin?
+
+      author = original_post.user
+      author.nil? || (viewer.present? && author.id == viewer.id) || author.verification_status == "verified"
     end
 
     # For multiple types, use .with to create a CTE with UNION ALL:

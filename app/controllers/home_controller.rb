@@ -59,7 +59,7 @@ class HomeController < ApplicationController
                       original_post: [
                         :user,
                         :project,
-                        { postable: [ :post, :attachments_attachments ] }
+                        { postable: [ :post, { attachments_attachments: :blob } ] }
                       ]
                     }
                   )
