@@ -57,7 +57,7 @@
             <% end %>
 
             <label class="project-show__banner-upload">
-              <span>Change screenshot</span>
+              <span>Change banner</span>
               <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
                     data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
             </label>
