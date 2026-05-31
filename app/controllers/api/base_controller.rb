@@ -3,7 +3,7 @@ class Api::BaseController < ApplicationController
 
   skip_before_action :verify_authenticity_token
   skip_before_action :track_ahoy_visit, raise: false
-  skip_after_action :set_ahoy_request_store, raise: false # TODO ???
+  skip_after_action :set_ahoy_request_store, raise: false
 
   after_action :set_performance_headers
   after_action :set_request_id_headers
@@ -31,7 +31,7 @@ class Api::BaseController < ApplicationController
       exception,
       extra: {
         request_id: request.request_id,
-        user_id: respond_to?(:current_api_user) ? current_api_user&.id : nil, #TODO implement current_api_user
+        user_id: respond_to?(:current_api_user) ? current_api_user&.id : nil,
         endpoint: "#{request.method} #{request.path}",
         params: request.filtered_parameters,
         action: action_name
