@@ -438,8 +438,15 @@ Rails.application.routes.draw do
   get "tic_tac", to: "rsvps#tic_tac", as: :tic_tac, defaults: { format: :text }
 
   namespace :api, defaults: { format: :json } do
+    root to: "root#index"
     namespace :v1 do
+      get "docs", to: "docs#index", as: :docs
       resources :ambassador_referrals, only: [ :index, :show ]
+
+      # public api endpoints:
+      resource :me, only: [ :show, :update ], controller: "me" do
+        resources :projects, only: [ :index ], module: :me
+      end
     end
   end
 
@@ -822,14 +829,6 @@ Rails.application.routes.draw do
   match "/406", to: "errors#not_acceptable",        via: :all
   match "/422", to: "errors#unprocessable_entity",  via: :all
   match "/500", to: "errors#internal_server_error", via: :all
-
-  namespace :api do
-    root to: "root#index"
-    get "v1", to: redirect("/api")
-    namespace :v1 do
-      get "docs", to: "docs#index", as: :docs
-    end
-  end
 
   get "/:ref", to: "landing#index", constraints: { ref: /[a-z0-9][a-z0-9_-]{0,63}/ }
 end
