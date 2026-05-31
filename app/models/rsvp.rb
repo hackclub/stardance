@@ -98,5 +98,4 @@ class Rsvp < ApplicationRecord
   end
 
   def enqueue_geocode_job = RsvpGeocodeJob.perform_later(id)
-
 end

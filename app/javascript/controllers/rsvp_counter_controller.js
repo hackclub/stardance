@@ -157,7 +157,9 @@ export default class extends Controller {
     const animations = [];
     for (let i = 0; i < newText.length; i++) {
       if (newText[i] !== this.digitEls[i].value) {
-        animations.push(this.animateDigit(this.digitEls[i], newText[i], duration));
+        animations.push(
+          this.animateDigit(this.digitEls[i], newText[i], duration),
+        );
       }
     }
 
