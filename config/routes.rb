@@ -446,6 +446,8 @@ Rails.application.routes.draw do
       # public api endpoints:
       resource :me, only: [ :show, :update ], controller: "me" do
         resources :projects, only: [ :index ], module: :me
+        resources :feed, only: [ :index ], module: :me
+        resources :recommended_projects, only: [ :index ], module: :me
       end
     end
   end

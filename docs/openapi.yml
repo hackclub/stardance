@@ -61,8 +61,7 @@ components:
       type: http
       scheme: bearer
       description: >-
-        `Authorization: Bearer YOUR_API_KEY`. Find or rotate your key in Settings
-        (bottom left) on the Stardance website.
+        `Authorization: Bearer YOUR_API_KEY`. Find or rotate your key in settings (bottom left on the Stardance website).
 
   headers:
     X-Request-ID:
@@ -83,8 +82,7 @@ components:
     ValidationError:
       type: object
       description: >-
-        Returned when model validation fails. `request_id` is present on some
-        paths but not all.
+        Returned when model validation fails. `request_id` is present on some paths but not all.
       properties:
         errors:
           type: array
@@ -335,6 +333,7 @@ paths:
   /me:
     get:
       summary: Get the authenticated user's profile
+      description: Provides info like display name, bio and avatar. Same as `/profile` but for the profile of the key owner.
       tags: [Me]
       responses:
         "200":
@@ -409,6 +408,64 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Project"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /me/recommended_projects:
+    get:
+      summary: Get recommended projects
+      description: Paginated list of projects recommended for the user. The same as you can find on `/home` of the website!
+      tags: [Me]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of projects recommended for the user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /me/feed:
+    get:
+      summary: Get devlog feed
+      description: Paginated list of recent devlogs in the user's feed. The same as you can find on `/home` of the website!
+      tags: [Me]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of recent devlogs recommended for the user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devlogs:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Devlog"
                   pagination:
                     $ref: "#/components/schemas/Pagination"
         "400":
