@@ -1,14 +1,24 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["sortBtn", "items", "empty"];
+  static targets = [
+    "sortBtn",
+    "items",
+    "empty",
+    "stardustMinInput",
+    "stardustMaxInput",
+    "stardustMinValue",
+    "stardustMaxValue",
+    "stardustTrackFill",
+  ];
   static values = { userRegion: { type: String, default: "US" } };
 
   connect() {
     this.sortAscending = true;
     this.sortType = "Prices";
     this.categoryFilter = "All";
-    this.priceRange = "none";
+    this.stardustMin = this.stardustMinValue();
+    this.stardustMax = this.stardustMaxValue();
     this.regionFilter = this.userRegionValue;
     this.accessFilter = "All";
 
@@ -18,6 +28,7 @@ export default class extends Controller {
     this.searchQuery = (searchInput?.value || "").toLowerCase();
 
     this.setupSortButton();
+    this.updateStardustRange();
     this.applyFiltersAndSort();
   }
 
@@ -35,8 +46,6 @@ export default class extends Controller {
 
     if (filterType === "Category") {
       this.categoryFilter = value;
-    } else if (filterType === "Price Range") {
-      this.priceRange = value;
     } else if (filterType === "Sort by") {
       this.sortType = value;
     } else if (filterType === "Region") {
@@ -46,6 +55,11 @@ export default class extends Controller {
       this.accessFilter = value;
     }
 
+    this.applyFiltersAndSort();
+  }
+
+  stardustRangeChanged() {
+    this.updateStardustRange();
     this.applyFiltersAndSort();
   }
 
@@ -100,9 +114,8 @@ export default class extends Controller {
   }
 
   checkPrice(item) {
-    const [min, max] = this.getPriceRange(this.priceRange);
     const price = this.extractPrice(item);
-    return price >= min && price <= max;
+    return price >= this.stardustMin && price <= this.stardustMax;
   }
 
   checkSearch(item) {
@@ -125,15 +138,6 @@ export default class extends Controller {
     if (this.accessFilter === "Available") return !isLocked;
     if (this.accessFilter === "Locked") return isLocked;
     return true;
-  }
-
-  getPriceRange(range) {
-    if (range === "none") return [0, Infinity];
-    if (range === "0-100") return [0, 100];
-    if (range === "100-500") return [100, 500];
-    if (range === "500-1000") return [500, 1000];
-    if (range === "1000+") return [1000, Infinity];
-    return [0, Infinity];
   }
 
   sortItems() {
@@ -184,6 +188,85 @@ export default class extends Controller {
   search(event) {
     this.searchQuery = event.target.value.toLowerCase();
     this.applyFiltersAndSort();
+  }
+
+  updateStardustRange() {
+    if (!this.hasStardustMinInputTarget || !this.hasStardustMaxInputTarget) {
+      return;
+    }
+
+    const min = this.stardustMinValue();
+    const max = this.stardustMaxValue();
+
+    if (min > max) {
+      const activeInput = document.activeElement;
+      if (activeInput === this.stardustMinInputTarget) {
+        this.stardustMaxInputTarget.value = min;
+      } else {
+        this.stardustMinInputTarget.value = max;
+      }
+    }
+
+    this.stardustMin = this.stardustMinValue();
+    this.stardustMax = this.stardustMaxValue();
+
+    if (this.hasStardustMinValueTarget) {
+      this.stardustMinValueTarget.textContent = this.formatStardust(
+        this.stardustMin,
+      );
+    }
+
+    if (this.hasStardustMaxValueTarget) {
+      this.stardustMaxValueTarget.textContent = this.formatStardust(
+        this.stardustMax,
+      );
+    }
+
+    this.updateStardustTrackFill();
+  }
+
+  updateStardustTrackFill() {
+    if (
+      !this.hasStardustTrackFillTarget ||
+      !this.hasStardustMinInputTarget ||
+      !this.hasStardustMaxInputTarget
+    ) {
+      return;
+    }
+
+    const sliderMin = parseFloat(this.stardustMinInputTarget.min) || 0;
+    const sliderMax = parseFloat(this.stardustMaxInputTarget.max) || 10000;
+    const sliderRange = sliderMax - sliderMin;
+    const minPercent = ((this.stardustMin - sliderMin) / sliderRange) * 100;
+    const maxPercent = ((this.stardustMax - sliderMin) / sliderRange) * 100;
+
+    this.stardustTrackFillTarget.style.left = `${minPercent}%`;
+    this.stardustTrackFillTarget.style.right = `${100 - maxPercent}%`;
+  }
+
+  stardustMinValue() {
+    const input = this.hasStardustMinInputTarget
+      ? this.stardustMinInputTarget
+      : null;
+    return this.parseStardustInput(input, 0);
+  }
+
+  stardustMaxValue() {
+    const input = this.hasStardustMaxInputTarget
+      ? this.stardustMaxInputTarget
+      : null;
+    return this.parseStardustInput(input, 10000);
+  }
+
+  parseStardustInput(input, fallback) {
+    if (!input) return fallback;
+
+    const value = parseInt(input.value, 10);
+    return Number.isNaN(value) ? fallback : value;
+  }
+
+  formatStardust(value) {
+    return new Intl.NumberFormat().format(value);
   }
 
   saveRegion(region) {

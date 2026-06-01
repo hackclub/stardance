@@ -34,19 +34,6 @@
 
       <div class="shop-category__filters">
         <%= render DropdownComponent.new(
-              label: "Price Range",
-              options: [
-                { label: "None", value: "none" },
-                { label: "0 - 100", value: "0-100" },
-                { label: "100 - 500", value: "100-500" },
-                { label: "500 - 1000", value: "500-1000" },
-                { label: "> 1000", value: "1000+" }
-              ],
-              selected_option: "None",
-              color: :space,
-              action: "change->shop#filter"
-            ) %>
-        <%= render DropdownComponent.new(
               label: "Access",
               options: [ "All", "Available", "Locked" ],
               selected_option: "All",
@@ -67,6 +54,42 @@
               color: :space,
               action: "change->shop#filter"
             ) %>
+        <div class="shop-category__stardust-filter">
+          <div class="shop-category__stardust-filter-header">
+            <span class="shop-category__stardust-filter-label">Stardust</span>
+            <output class="shop-category__stardust-filter-value" aria-live="polite">
+              <span data-shop-target="stardustMinValue">0</span>
+              -
+              <span data-shop-target="stardustMaxValue">10,000</span>
+            </output>
+          </div>
+
+          <div class="shop-category__stardust-slider">
+            <div class="shop-category__stardust-slider-track" aria-hidden="true">
+              <span class="shop-category__stardust-slider-fill" data-shop-target="stardustTrackFill"></span>
+            </div>
+            <input type="range"
+                   min="0"
+                   max="10000"
+                   step="1"
+                   value="0"
+                   autocomplete="off"
+                   class="shop-category__stardust-slider-input shop-category__stardust-slider-input--min"
+                   aria-label="Minimum Stardust"
+                   data-shop-target="stardustMinInput"
+                   data-action="input->shop#stardustRangeChanged change->shop#stardustRangeChanged">
+            <input type="range"
+                   min="0"
+                   max="10000"
+                   step="1"
+                   value="10000"
+                   autocomplete="off"
+                   class="shop-category__stardust-slider-input shop-category__stardust-slider-input--max"
+                   aria-label="Maximum Stardust"
+                   data-shop-target="stardustMaxInput"
+                   data-action="input->shop#stardustRangeChanged change->shop#stardustRangeChanged">
+          </div>
+        </div>
       </div>
     </div>
 

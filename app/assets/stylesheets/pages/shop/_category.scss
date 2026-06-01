@@ -116,6 +116,145 @@
     margin-left: auto;
   }
 
+  &__stardust-filter {
+    background: var(--color-space-surface-faint);
+    border: 2px solid var(--color-space-border);
+    border-radius: 8px;
+    color: var(--color-space-text);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    justify-content: center;
+    min-height: 48px;
+    width: clamp(200px, 20vw, 240px);
+    padding: 0.42rem 0.65rem 0.52rem;
+  }
+
+  &__stardust-filter-header {
+    align-items: baseline;
+    display: flex;
+    gap: 0.55rem;
+    justify-content: space-between;
+  }
+
+  &__stardust-filter-label {
+    color: var(--color-space-text-muted);
+    font-family: "Exo 2", sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__stardust-filter-value {
+    color: var(--color-brand-cream);
+    font-family: "Exo 2", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__stardust-slider {
+    height: 16px;
+    position: relative;
+  }
+
+  &__stardust-slider-track {
+    background: var(--color-space-border);
+    border-radius: 999px;
+    height: 4px;
+    left: 0;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  &__stardust-slider-fill {
+    background: linear-gradient(
+      90deg,
+      var(--color-brand-mint),
+      var(--color-brand-blue)
+    );
+    border-radius: inherit;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+
+  &__stardust-slider-input {
+    appearance: none;
+    background: transparent;
+    height: 16px;
+    left: 0;
+    margin: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    width: 100%;
+
+    &--min {
+      z-index: 3;
+    }
+
+    &--max {
+      z-index: 4;
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible::-webkit-slider-thumb {
+      box-shadow:
+        0 0 0 3px var(--color-space-bg),
+        0 0 0 5px var(--color-brand-highlight);
+    }
+
+    &:focus-visible::-moz-range-thumb {
+      box-shadow:
+        0 0 0 3px var(--color-space-bg),
+        0 0 0 5px var(--color-brand-highlight);
+    }
+
+    &::-webkit-slider-runnable-track {
+      background: transparent;
+      border: 0;
+      height: 4px;
+    }
+
+    &::-webkit-slider-thumb {
+      appearance: none;
+      background: var(--color-brand-off-white);
+      border: 2px solid var(--color-brand-blue);
+      border-radius: 50%;
+      cursor: pointer;
+      height: 14px;
+      margin-top: -5px;
+      pointer-events: auto;
+      width: 14px;
+    }
+
+    &::-moz-range-track {
+      background: transparent;
+      border: 0;
+      height: 4px;
+    }
+
+    &::-moz-range-thumb {
+      background: var(--color-brand-off-white);
+      border: 2px solid var(--color-brand-blue);
+      border-radius: 50%;
+      cursor: pointer;
+      height: 14px;
+      pointer-events: auto;
+      width: 14px;
+    }
+  }
+
   // Three per row to match the hub's Discover grid (the category area is a
   // hair too narrow for auto-fill to land on 3, so pin it explicitly).
   &__items {
@@ -155,6 +294,19 @@
     &:focus-visible {
       color: var(--color-brand-highlight);
       text-decoration: underline;
+    }
+  }
+
+  @media (max-width: 700px) {
+    &__toolbar,
+    &__filters,
+    &__stardust-filter,
+    .dropdown {
+      width: 100%;
+    }
+
+    &__filters {
+      margin-left: 0;
     }
   }
 }
