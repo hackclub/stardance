@@ -64,15 +64,16 @@ class Onboarding::WizardController < ApplicationController
       redirect_to onboarding_guest_email_path and return
     end
 
+    user = create_guest!(normalized)
+    session[:user_id] = user.id
+    UserMailer.onboarding_start(user).deliver_later
+    track_event "onboarding_started", { user_id: user.id }
+
     if HCAService.email_known?(normalized)
       @login_hint = normalized
       return render :redirecting_to_hca
     end
 
-    user = create_guest!(normalized)
-    session[:user_id] = user.id
-    UserMailer.onboarding_start(user).deliver_later
-    track_event "onboarding_started", { user_id: user.id }
     redirect_to onboarding_welcome_path
   end
 

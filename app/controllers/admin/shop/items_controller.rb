@@ -133,6 +133,11 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
       @shop_item = ShopItem.find(params[:id])
     end
 
+    def pundit_namespace(record)
+      record = record.becomes(ShopItem) if record.is_a?(ShopItem) && record.class != ShopItem
+      super
+    end
+
     def set_shop_item_types
       @shop_item_types = available_shop_item_types
     end

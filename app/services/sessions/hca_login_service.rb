@@ -151,7 +151,7 @@ module Sessions
         user.last_name = fields[:last_name] if fields[:last_name].present?
         user.slack_id = fields[:slack_id] if user.slack_id.to_s != fields[:slack_id]
 
-        case hca_age_attestation(fields)
+        case hca_age_attestation(fields, user)
         when :teen then user.age_attestation = "teen_13_18"
         when :ineligible then user.age_attestation = "ineligible"
         end
@@ -191,19 +191,15 @@ module Sessions
         fail_result(:identity_save_failed, "Unable to link your Hack Club account. Please contact support.")
       end
 
-      def age_from_birthday(birthday)
-        today = Date.current
-        age = today.year - birthday.year
-        age -= 1 if today < birthday + age.years
-        age
-      end
+      def hca_age_attestation(fields, user)
+        verified = fields[:verification_status] == "verified" || user.verification_verified?
+        ysws = fields[:ysws_eligible] || user.ysws_eligible?
 
-      def hca_age_attestation(fields)
-        return :teen if fields[:ysws_eligible]
-        return nil if fields[:birthday].nil?
-
-        age = age_from_birthday(fields[:birthday])
-        age >= 13 && age <= 18 ? :teen : :ineligible
+        if verified && ysws
+          :teen
+        elsif verified && !ysws
+          :ineligible
+        end
       end
 
       def age_ineligible_result(user, is_new_user, guest_collision)

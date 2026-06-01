@@ -305,13 +305,17 @@
                     </div>
                 </div>
             </div>
-            <% primary_address = current_user.addresses.find { |a| a["primary"] } || current_user.addresses.first %>
-            <% has_phone = primary_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(ShopItem::FreeStickers) %>
-            <% unless has_phone %>
-              <div class="shop-order__no-phone-warning">
-                <p class="shop-order__no-phone-title">📱 Phone number required</p>
-                <p class="shop-order__no-phone-text">You need a phone number on file to place an order. Please update your profile on the <a href="https://auth.hackclub.com/identity/edit">address portal</a>.</p>
-              </div>
+            <% user_addrs = current_user.addresses %>
+            <% has_phone = true %>
+            <% if user_addrs.any? %>
+              <% primary_address = user_addrs.find { |a| a["primary"] } || user_addrs.first %>
+              <% has_phone = primary_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(ShopItem::FreeStickers) %>
+              <% unless has_phone %>
+                <div class="shop-order__no-phone-warning">
+                  <p class="shop-order__no-phone-title">📱 Phone number required</p>
+                  <p class="shop-order__no-phone-text">You need a phone number on file to place an order. Please update your profile on the <a href="https://auth.hackclub.com/identity/edit">address portal</a>.</p>
+                </div>
+              <% end %>
             <% end %>
             <%= render ActionButtonComponent.new(
                   size: :large,
