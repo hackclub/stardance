@@ -6,7 +6,7 @@ class MarkdownRenderer
 
   # Bump on any rendered-output change (sanitizer, shortcodes, Rouge, link
   # hardening) — the cache key uses it to invalidate deployment-wide.
-  RENDERER_VERSION      = "v3".freeze
+  RENDERER_VERSION      = "v5".freeze
   CACHE_NAMESPACE       = "markdown".freeze
   GUIDE_CACHE_NAMESPACE = "guide-markdown".freeze
   CACHE_EXPIRES_IN      = 7.days
@@ -36,7 +36,10 @@ class MarkdownRenderer
 
     Rails.cache.fetch([ CACHE_NAMESPACE, RENDERER_VERSION, "images-#{allow_images}", Digest::SHA1.hexdigest(text) ],
                       expires_in: CACHE_EXPIRES_IN) do
-      raw = get_markdown(text)
+      doc = get_markdown(text)
+      promote_raw_images(doc)
+
+      raw = doc.to_html
       sanitised = sanitize_html(raw, extra_tags: %w[u], extra_attributes: %w[target rel])
       doc = Nokogiri::HTML::DocumentFragment.parse(sanitised)
       remove_images(doc) unless allow_images
@@ -67,7 +70,7 @@ class MarkdownRenderer
   private
 
   def self.get_markdown(text)
-    Commonmarker.to_html(
+    Commonmarker.parse(
       text,
       options: {
         parse: { smart: true },
@@ -79,5 +82,48 @@ class MarkdownRenderer
         }
       }
     )
+  end
+
+  def self.promote_raw_images(doc)
+    nodes = []
+    doc.walk do |node|
+      nodes << node if node.type == :html_inline || node.type == :html_block
+    end
+
+    nodes.each do |node|
+      image = raw_image_node(node)
+      next if image.blank?
+
+      if node.type == :html_block
+        paragraph = Commonmarker::Node.new(:paragraph)
+        paragraph.append_child(image)
+        node.replace(paragraph)
+      else
+        node.replace(image)
+      end
+    end
+  end
+
+  def self.raw_image_node(node)
+    fragment = Nokogiri::HTML5.fragment(node.to_commonmark)
+    children = fragment.children.reject { |child| child.text? && child.text.blank? }
+    return unless children.one? && children.first.element? && children.first.name == "img"
+
+    img = children.first
+
+    src = img["src"].presence
+    return if src.blank?
+
+    image = Commonmarker::Node.new(:image, url: src)
+    image.title = img["title"].presence if img["title"].present?
+
+    alt = img["alt"].to_s
+    if alt.present?
+      alt_node = Commonmarker::Node.new(:text)
+      alt_node.string_content = alt
+      image.append_child(alt_node)
+    end
+
+    image
   end
 end
