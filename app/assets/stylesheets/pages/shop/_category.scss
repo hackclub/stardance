@@ -123,22 +123,24 @@
     color: var(--color-space-text);
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
-    min-width: 280px;
-    padding: 0.55rem 0.75rem 0.7rem;
+    gap: 0.45rem;
+    justify-content: center;
+    min-height: 48px;
+    width: clamp(200px, 20vw, 240px);
+    padding: 0.42rem 0.65rem 0.52rem;
   }
 
   &__stardust-filter-header {
     align-items: baseline;
     display: flex;
-    gap: 0.75rem;
+    gap: 0.55rem;
     justify-content: space-between;
   }
 
   &__stardust-filter-label {
     color: var(--color-space-text-muted);
     font-family: "Exo 2", sans-serif;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -147,13 +149,13 @@
   &__stardust-filter-value {
     color: var(--color-brand-cream);
     font-family: "Exo 2", sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     font-weight: 700;
     white-space: nowrap;
   }
 
   &__stardust-slider {
-    height: 22px;
+    height: 16px;
     position: relative;
   }
 
@@ -186,7 +188,7 @@
   &__stardust-slider-input {
     appearance: none;
     background: transparent;
-    height: 22px;
+    height: 16px;
     left: 0;
     margin: 0;
     pointer-events: none;
@@ -230,10 +232,10 @@
       border: 2px solid var(--color-brand-blue);
       border-radius: 50%;
       cursor: pointer;
-      height: 18px;
-      margin-top: -7px;
+      height: 14px;
+      margin-top: -5px;
       pointer-events: auto;
-      width: 18px;
+      width: 14px;
     }
 
     &::-moz-range-track {

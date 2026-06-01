@@ -33,6 +33,27 @@
       <% end %>
 
       <div class="shop-category__filters">
+        <%= render DropdownComponent.new(
+              label: "Access",
+              options: [ "All", "Available", "Locked" ],
+              selected_option: "All",
+              color: :space,
+              action: "change->shop#filter"
+            ) %>
+        <%= render DropdownComponent.new(
+              label: "Sort by",
+              options: [ "Prices", "Alphabetical" ],
+              selected_option: "Prices",
+              color: :space,
+              action: "change->shop#filter"
+            ) %>
+        <%= render DropdownComponent.new(
+              label: "Region",
+              options: @region_options,
+              selected_option: Shop::Regionalizable::REGIONS.dig(@user_region, :name),
+              color: :space,
+              action: "change->shop#filter"
+            ) %>
         <div class="shop-category__stardust-filter">
           <div class="shop-category__stardust-filter-header">
             <span class="shop-category__stardust-filter-label">Stardust</span>
@@ -40,7 +61,6 @@
               <span data-shop-target="stardustMinValue">0</span>
               -
               <span data-shop-target="stardustMaxValue">10,000</span>
-              Stardust
             </output>
           </div>
 
@@ -68,27 +88,6 @@
                    data-action="input->shop#stardustRangeChanged change->shop#stardustRangeChanged">
           </div>
         </div>
-        <%= render DropdownComponent.new(
-              label: "Access",
-              options: [ "All", "Available", "Locked" ],
-              selected_option: "All",
-              color: :space,
-              action: "change->shop#filter"
-            ) %>
-        <%= render DropdownComponent.new(
-              label: "Sort by",
-              options: [ "Prices", "Alphabetical" ],
-              selected_option: "Prices",
-              color: :space,
-              action: "change->shop#filter"
-            ) %>
-        <%= render DropdownComponent.new(
-              label: "Region",
-              options: @region_options,
-              selected_option: Shop::Regionalizable::REGIONS.dig(@user_region, :name),
-              color: :space,
-              action: "change->shop#filter"
-            ) %>
       </div>
     </div>
 
