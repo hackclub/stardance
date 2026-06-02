@@ -489,6 +489,7 @@ button.sidebar__nav-link {
 .api-key-container {
   display: flex;
   gap: var(--space-xs);
+  margin: var(--space-xxs) 0;
   align-items: stretch;
   width: 100%;
 
@@ -547,11 +548,11 @@ button.sidebar__nav-link {
 
 .api-docs-link {
   text-decoration: underline;
-  color: var(--color-brand-lilac);
+  color: var(--color-brand-yellow);
 }
 
 .api-key-section__new-key-notice {
-  margin: var(--space-xs) 0 0;
+  margin: var(--space-xs) 0;
   font-size: var(--font-size-s);
   color: var(--color-brand-mint);
 }
