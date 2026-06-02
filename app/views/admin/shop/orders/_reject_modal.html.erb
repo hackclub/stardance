@@ -2,7 +2,7 @@
 <dialog id="reject-modal">
   <h2>Reject Order #<%= order.id %></h2>
 
-  <%= form_with url: reject_admin_shop_order_path(order), method: :post, local: true do |f| %>
+  <%= form_with url: reject_admin_shop_order_path(order), method: :post, data: { turbo: false } do |f| %>
     <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
     <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
 

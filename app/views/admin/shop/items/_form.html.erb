@@ -1,5 +1,5 @@
 <div class="shop-item-form">
-  <%= form_with model: shop_item.becomes(ShopItem), url: (shop_item.persisted? ? admin_shop_item_path(shop_item) : admin_shop_items_path), method: (shop_item.persisted? ? :patch : :post), local: true do |f| %>
+  <%= form_with model: shop_item.becomes(ShopItem), url: (shop_item.persisted? ? admin_shop_item_path(shop_item) : admin_shop_items_path), method: (shop_item.persisted? ? :patch : :post), data: { turbo: false } do |f| %>
     <% if shop_item.errors.any? %>
       <div class="shop-item-form__errors">
         <h4><%= pluralize(shop_item.errors.count, "error") %> prohibited this shop item from being saved:</h4>
@@ -24,7 +24,7 @@
                 <details style="position: relative;">
                   <summary class="btn-secondary" style="cursor: pointer; font-size: 0.8rem; padding: 2px 8px;">Convert…</summary>
                   <div style="position: absolute; z-index: 10; background: var(--color-tan-400); border: 1px solid var(--color-brown-500); border-radius: 0.5rem; padding: 0.75rem; margin-top: 0.25rem; min-width: 280px;">
-                    <%= form_with url: admin_shop_item_path(shop_item), method: :patch, scope: :shop_item, local: true do |cf| %>
+                    <%= form_with url: admin_shop_item_path(shop_item), method: :patch, scope: :shop_item, data: { turbo: false } do |cf| %>
                       <%= cf.select :type, @shop_item_types, {}, { class: "form-control", style: "margin-bottom: 0.5rem;" } %>
                       <%= cf.submit "Convert type", class: "btn-primary", style: "width: 100%;" %>
                     <% end %>

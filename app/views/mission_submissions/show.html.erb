@@ -67,7 +67,7 @@
         <% end %>
 
         <% if @submission.may_reject? %>
-          <%= form_with url: reject_mission_submission_path(@submission), method: :post, local: true, class: "submission-show__reject-form" do %>
+          <%= form_with url: reject_mission_submission_path(@submission), method: :post, data: { turbo: false }, class: "submission-show__reject-form" do %>
             <label>Rejection reason
               <%= text_area_tag :rejection_message, "", rows: 3, required: true %>
             </label>

@@ -60,7 +60,7 @@
   <% if o.awaiting_periodical_fulfillment? %>
     <div class="admin-section">
       <h2 class="admin-section__header">Mark as Fulfilled</h2>
-      <%= form_with url: mark_fulfilled_seller_order_path(o), method: :post, local: true, class: "seller-portal__fulfill-form" do %>
+      <%= form_with url: mark_fulfilled_seller_order_path(o), method: :post, data: { turbo: false }, class: "seller-portal__fulfill-form" do %>
         <label>Tracking / Order #<input type="text" name="external_ref" placeholder="e.g. 1Z999AA10123456784" autocomplete="off" class="input-primary"></label>
         <label>Fulfillment Cost (USD)<input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off" class="input-primary"></label>
         <button type="submit" class="btn-primary" onclick="return confirm('Mark this order as fulfilled?')">✓ Mark Fulfilled</button>

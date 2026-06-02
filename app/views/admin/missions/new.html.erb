@@ -19,7 +19,7 @@
           there when it's ready to ship.
         </p>
 
-        <%= form_with model: @mission, url: admin_missions_path, method: :post, local: true, class: "admin-mission__form" do |f| %>
+        <%= form_with model: @mission, url: admin_missions_path, method: :post, data: { turbo: false }, class: "admin-mission__form" do |f| %>
           <% if @mission.errors.any? %>
             <div class="admin-mission__errors">
               <ul>

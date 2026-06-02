@@ -17,8 +17,7 @@
             method: :patch,
             html: { multipart: true },
             class: "devlog-edit__form",
-            data: { controller: "devlog-edit" },
-            local: true do |f| %>
+            data: { controller: "devlog-edit" } do |f| %>
 
         <div class="devlog-edit__field">
           <%= f.label :body, "What are you working on?", class: "devlog-edit__label" %>

@@ -420,7 +420,7 @@
         </div>
         <div class="aorder__assign-form">
           <div data-controller="searchable-select">
-            <%= form_with url: assign_user_admin_shop_order_path(@order), method: :post, local: true, data: { turbo: false } do |f| %>
+            <%= form_with url: assign_user_admin_shop_order_path(@order), method: :post, data: { turbo: false } do |f| %>
               <%= f.hidden_field :assigned_to_user_id, value: @order.assigned_to_user_id, data: { searchable_select_target: "hiddenField" } %>
               <input
                 type="text"
@@ -586,7 +586,7 @@
           </div>
 
           <% unless @order.reviews.exists?(user: current_user) %>
-            <%= form_with url: review_order_admin_shop_order_path(@order), method: :post, local: true do |f| %>
+            <%= form_with url: review_order_admin_shop_order_path(@order), method: :post, data: { turbo: false } do |f| %>
               <div class="aorder__review-form">
                 <div>
                   <label style="font-size: var(--font-size-s); color: var(--color-space-text-muted); font-family: var(--font-family-text); display:block; margin-bottom: var(--space-xs);">Your verdict</label>

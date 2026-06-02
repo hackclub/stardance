@@ -15,7 +15,7 @@
 
     <section class="admin-mission-edit__section">
       <h2 class="admin-mission-edit__section-title">Mission details</h2>
-      <%= form_with model: @mission, url: admin_mission_path(@mission.slug), method: :patch, local: true, multipart: true, class: "admin-mission-edit__form" do |f| %>
+      <%= form_with model: @mission, url: admin_mission_path(@mission.slug), method: :patch, data: { turbo: false }, multipart: true, class: "admin-mission-edit__form" do |f| %>
         <label>Name <%= f.text_field :name, required: true %></label>
         <label>Description (markdown) <%= f.text_area :description, rows: 4 %></label>
 
@@ -138,7 +138,7 @@
           will 404 after this change.
         </p>
         <%= form_with model: @mission, url: admin_mission_path(@mission.slug), method: :patch,
-              local: true, class: "admin-mission-edit__form" do |f| %>
+              data: { turbo: false }, class: "admin-mission-edit__form" do |f| %>
           <label>
             Slug
             <%= f.text_field :slug, required: true, value: @mission.slug %>
@@ -170,7 +170,7 @@
         <% else %>
           <p class="admin-mission-edit__empty">No owners yet. Add one so this mission can be managed without admin.</p>
         <% end %>
-        <%= form_with url: admin_mission_memberships_path(@mission.slug), method: :post, local: true, class: "admin-mission-edit__form" do %>
+        <%= form_with url: admin_mission_memberships_path(@mission.slug), method: :post, data: { turbo: false }, class: "admin-mission-edit__form" do %>
           <%= hidden_field_tag "mission_membership[role]", "owner" %>
           <label>User ID or Slack ID
             <%= text_field_tag "mission_membership[user_id]", nil, required: true, autocomplete: "off" %>

@@ -32,8 +32,7 @@
           html: { multipart: true,
                   data: { composer_target: "form",
                           action: class_names("submit->composer#guardSubmit", "paste->composer#paste": show_attachments?) } },
-          class: "feed-composer__form",
-          local: true do |f| %>
+          class: "feed-composer__form" do |f| %>
       <div class="feed-composer__scroll">
         <div class="feed-composer__main">
           <%= image_tag current_user.avatar, alt: "", class: "feed-composer__avatar" %>

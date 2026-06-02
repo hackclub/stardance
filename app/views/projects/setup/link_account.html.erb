@@ -14,7 +14,7 @@
     </div>
 
     <%= form_with url: hack_club_auth_path(login_hint: current_user.email),
-                   method: :post, local: true,
+                   method: :post,
                    data: { turbo: false },
                    html: { class: "project-setup-link__form" } do %>
       <%= render ActionButtonComponent.new(

@@ -8,6 +8,15 @@ class ApplicationController < ActionController::Base
   include Achievementable
   include Trackable
 
+  # Default to 303 See Other for redirects after POST/PATCH/PUT/DELETE so
+  # Turbo (and browsers) always follow with GET instead of re-submitting.
+  def redirect_to(options = {}, response_options = {})
+    if request.method != "GET" && !response_options.key?(:status)
+      response_options[:status] = :see_other
+    end
+    super
+  end
+
   before_action :store_referral_code
   before_action :remember_page
   before_action :enforce_ban

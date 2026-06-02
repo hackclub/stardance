@@ -6,7 +6,7 @@
   <h2 class="shop-suggestion-modal__title">The Suggestion Box</h2>
   <p class="shop-suggestion-modal__description">Have an idea for something we should add to the shop? Let us know!</p>
 
-  <%= form_with model: ShopSuggestion.new, url: shop_suggestions_path, local: true, class: "shop-suggestion-modal__form" do |f| %>
+  <%= form_with model: ShopSuggestion.new, url: shop_suggestions_path, data: { turbo: false }, class: "shop-suggestion-modal__form" do |f| %>
     <div class="shop-suggestion-modal__field">
       <%= f.label :item, "What can we add?" %>
       <%= f.text_area :item,

@@ -9,8 +9,8 @@
   submit_label  = signup_mode ? "Start! →" : "RSVP →"
 %>
 <div class="<%= ["rsvp-form", wrapper_class].compact.join(" ") %>">
-  <%= form_with url: form_url, scope: form_scope, method: :post, local: true,
-                 data: { controller: "form-submit-once" } do |form| %>
+  <%= form_with url: form_url, scope: form_scope, method: :post,
+                 data: { turbo: false, controller: "form-submit-once" } do |form| %>
     <div class="rsvp-form__row">
       <%= leading %>
       <div class="input-yellow">

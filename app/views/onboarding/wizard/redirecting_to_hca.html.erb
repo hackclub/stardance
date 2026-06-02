@@ -8,7 +8,7 @@
     <% end %>
 
     <%= form_with url: hack_club_auth_path(login_hint: @login_hint),
-                   method: :post, local: true,
+                   method: :post, data: { turbo: false },
                    id: "hca-auto-redirect-form" do %>
       <noscript>
         <%= render ActionButtonComponent.new(text: "Continue", variant: :primary, size: :large, type: :submit, icon: "icons/right-arrow.svg", class: "project-setup-link__cta") %>

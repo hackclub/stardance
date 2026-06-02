@@ -3,7 +3,7 @@
            title: "One more thing — how'd you hear about us?",
            class_name: "user-ref-modal" do %>
   <div data-controller="user-ref-modal">
-    <%= form_with url: user_ref_rsvps_path, method: :patch, local: true, class: "user-ref-modal__form" do |f| %>
+    <%= form_with url: user_ref_rsvps_path, method: :patch, data: { turbo: false }, class: "user-ref-modal__form" do |f| %>
       <%= hidden_field_tag :token, token %>
 
       <div class="user-ref-modal__options">
