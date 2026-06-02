@@ -84,8 +84,9 @@ class Home::FeedsController < ApplicationController
   def load_recommended_projects
     @recommended_projects = Project.excluding_member(current_user)
                                    .where(deleted_at: nil)
-                                   .with_banner_priority
-                                   .limit(6)
+                                   .joins(:banner_attachment)
+                                   .includes(banner_attachment: :blob)
+                                   .limit(5)
   end
 
   def first_page?
