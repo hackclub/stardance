@@ -443,11 +443,22 @@ Rails.application.routes.draw do
       get "docs", to: "docs#index", as: :docs
       resources :ambassador_referrals, only: [ :index, :show ]
 
-      # public api endpoints:
-      resource :me, only: [ :show, :update ], controller: "me" do
-        resources :projects, only: [ :index ], module: :me
-        resources :feed, only: [ :index ], module: :me
-        resources :recommended_projects, only: [ :index ], module: :me
+      # public api endpoints
+
+      get   "users/me", to: "users/me#show",                       as: :me
+      patch "users/me", to: "users/me#update"
+      get   "users/me/projects", to: "users/me/projects#index",             as: :me_projects
+      post  "users/me/projects", to: "users/me/projects#create"
+      get   "users/me/feed", to: "users/me/feed#index",                 as: :me_feed
+      get   "users/me/recommended_projects", to: "users/me/recommended_projects#index", as: :me_recommended_projects
+
+      resources :users, only: [ :show ], constraints: { id: /\d+/ } do
+        resources :projects, only: [ :index ], module: :users
+        resources :posts, only: [ :index ], module: :users
+      end
+
+      resources :projects, only: [ :show, :update ] do
+        resources :posts, only: [ :index, :show, :create, :update ], module: :projects
       end
     end
   end

@@ -1,4 +1,4 @@
-class Api::V1::Me::FeedController < Api::BaseController
+class Api::V1::Users::Me::FeedController < Api::BaseController
   include ApiAuthenticatable
 
   def index
@@ -13,5 +13,6 @@ class Api::V1::Me::FeedController < Api::BaseController
 
     @pagy, paged = pagy(posts, limit: limit)
     @devlogs = paged.map(&:postable)
+    render "api/v1/devlogs/index"
   end
 end

@@ -1,4 +1,4 @@
-class Api::V1::MeController < Api::BaseController
+class Api::V1::Users::MeController < Api::BaseController
   include ApiAuthenticatable
 
   def show

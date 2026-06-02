@@ -1,4 +1,4 @@
-class Api::V1::Me::RecommendedProjectsController < Api::BaseController
+class Api::V1::Users::Me::RecommendedProjectsController < Api::BaseController
   include ApiAuthenticatable
 
   def index
