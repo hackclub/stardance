@@ -444,25 +444,22 @@ Rails.application.routes.draw do
       resources :ambassador_referrals, only: [ :index, :show ]
 
       # public api endpoints
-
-      get "users/me", to: "users/me#show",                       as: :me
+      get "search", to: "search#index", as: :search
+      get "users/me", to: "users/me#show", as: :me
       patch "users/me", to: "users/me#update"
-      get "users/me/projects", to: "users/me/projects#index",             as: :me_projects
+      get "users/me/projects", to: "users/me/projects#index", as: :me_projects
       post "users/me/projects", to: "users/me/projects#create"
-      get "users/me/feed", to: "users/me/feed#index",                 as: :me_feed
+      get "users/me/feed", to: "users/me/feed#index", as: :me_feed
       get "users/me/recommended_projects", to: "users/me/recommended_projects#index", as: :me_recommended_projects
-      get "users/me/orders", to: "users/me/orders#index",             as: :me_orders
-      get "users/me/orders/:id", to: "users/me/orders#show",          as: :me_order
-
+      get "users/me/orders", to: "users/me/orders#index", as: :me_orders
+      get "users/me/orders/:id", to: "users/me/orders#show", as: :me_order
       resources :users, only: [ :show ], constraints: { id: /\d+/ } do
         resources :projects, only: [ :index ], module: :users
         resources :posts, only: [ :index ], module: :users
       end
-
       resources :projects, only: [ :show, :update ] do
         resources :posts, only: [ :index, :show, :create, :update ], module: :projects
       end
-
       resources :shop_items, only: [ :index, :show ]
     end
   end
