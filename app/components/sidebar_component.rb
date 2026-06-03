@@ -40,6 +40,8 @@ class SidebarComponent < ViewComponent::Base
     items.concat([
       { slug: "missions",      label: "missions",      path: helpers.missions_path,
         icon: { idle: "calendar", active: "calendar_active" } },
+      { slug: "leaderboard",   label: "leaderboard",   path: "/leaderboard",
+        icon: "leaderboard" },
       { slug: "shop",          label: "shop",          path: "/shop",
         icon: { idle: "cart", active: "cart_active" },
         notify: signed_in? && user.shop_tutorial_notify? },
