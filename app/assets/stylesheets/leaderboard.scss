@@ -44,17 +44,39 @@ h1 {
   font-size: 1rem;
 }
 
+.leaderboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  width: 90%;
+  max-width: 1200px;
+  margin-top: 2rem;
+  margin-bottom: 4rem;
+
+  @media (max-width: 1000px) {
+    grid-template-columns: 1fr;
+    width: 100%;
+    padding: 0 1rem;
+  }
+}
+
+.leaderboard-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.section-title {
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+  text-align: center;
+}
+
 .users {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
-
-  width: 50%;
-
-  @media (max-width: 900px) {
-    width: 100%;
-  }
+  width: 100%;
 }
 
 .user {
@@ -72,11 +94,22 @@ h1 {
     display: flex;
     align-items: center;
 
+    .rank {
+      min-width: 3rem;
+      font-size: 1.25rem;
+      margin: 0;
+    }
+
     img {
       width: 3rem;
       height: 3rem;
       border-radius: 50%;
       margin: 0 1rem 0 1rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin: 0;
     }
 
     a {
@@ -90,8 +123,11 @@ h1 {
 
     p {
       margin-left: auto;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
     }
   }
 }
