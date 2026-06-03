@@ -145,6 +145,12 @@ application.register("hero-warp", HeroWarpController);
 import JsonHighlightController from "./json_highlight_controller";
 application.register("json-highlight", JsonHighlightController);
 
+import LookoutCaptureController from "./lookout_capture_controller";
+application.register("lookout-capture", LookoutCaptureController);
+
+import LookoutRecorderController from "./lookout_recorder_controller";
+application.register("lookout-recorder", LookoutRecorderController);
+
 import MarkdownPreviewController from "./markdown_preview_controller";
 application.register("markdown-preview", MarkdownPreviewController);
 
@@ -187,6 +193,9 @@ application.register("profile-edit", ProfileEditController);
 import ProfileModalController from "./profile_modal_controller";
 application.register("profile-modal", ProfileModalController);
 
+import ProjectBuilderController from "./project_builder_controller";
+application.register("project-builder", ProjectBuilderController);
+
 import ProjectCreationController from "./project_creation_controller";
 application.register("project-creation", ProjectCreationController);
 
@@ -198,6 +207,9 @@ application.register("project-thumbs-loop", ProjectThumbsLoopController);
 
 import ProjectThumbsScrollController from "./project_thumbs_scroll_controller";
 application.register("project-thumbs-scroll", ProjectThumbsScrollController);
+
+import ProjectTypeController from "./project_type_controller";
+application.register("project-type", ProjectTypeController);
 
 import ReadmeImageController from "./readme_image_controller";
 application.register("readme-image", ReadmeImageController);

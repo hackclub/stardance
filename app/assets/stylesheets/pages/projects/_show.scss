@@ -177,6 +177,37 @@ turbo-frame#project_hero {
   letter-spacing: 0;
 }
 
+// Title + its tag(s) sit on one line; the tag wraps under on narrow screens.
+.project-show__title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  .project-show__title {
+    width: auto;
+  }
+}
+
+.project-show__tag {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+
+  // Orange "Hardware" pill — orange is the "different kind of thing" accent.
+  &--hardware {
+    background: var(--color-brand-orange-soft);
+    color: var(--color-brand-orange);
+  }
+}
+
 .project-show__title-input {
   padding: 0;
   border: 0;
@@ -344,6 +375,57 @@ turbo-frame#project_hero {
   option {
     color: var(--color-set-1-bg);
   }
+}
+
+// Hardware project Design/Build stage toggle — segmented pills, primary-fill
+// (brand highlight) on the selected stage.
+.project-show__stage-toggle {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.project-show__stage-choice {
+  display: inline-flex;
+}
+
+.project-show__stage-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.project-show__stage-choice-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 45px;
+  padding: 8px 28px;
+  border: 2px solid var(--color-border-input);
+  border-radius: 999px;
+  color: var(--color-space-text);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.project-show__stage-choice:hover .project-show__stage-choice-label {
+  border-color: var(--color-space-text);
+}
+
+.project-show__stage-radio:focus-visible + .project-show__stage-choice-label {
+  border-color: var(--color-border-input-focus);
+}
+
+.project-show__stage-radio:checked + .project-show__stage-choice-label {
+  background: var(--color-brand-highlight);
+  border-color: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
 }
 
 .project-show__hackatime-picker {

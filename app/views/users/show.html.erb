@@ -234,7 +234,12 @@
 
               <div class="profile-project-card__body">
                 <div class="profile-project-card__header">
-                  <h3 class="profile-project-card__title"><%= project.title %></h3>
+                  <div class="profile-project-card__title-row">
+                    <h3 class="profile-project-card__title"><%= project.title %></h3>
+                    <% if project.hardware? %>
+                      <span class="profile-project-card__tag profile-project-card__tag--hardware">Hardware</span>
+                    <% end %>
+                  </div>
                   <ul class="profile-project-card__meta">
                     <li class="profile-project-card__meta-item">
                       <%= inline_svg_tag "icons/devlogs.svg", class: "profile-project-card__meta-icon" %>

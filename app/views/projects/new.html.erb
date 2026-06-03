@@ -75,15 +75,54 @@
 
     <div class="project-creation__or" aria-hidden="true">OR, YOU CAN ALSO</div>
 
-    <section class="project-creation__blank-section" aria-labelledby="project-creation-blank-heading">
+    <section class="project-creation__blank-section" aria-labelledby="project-creation-blank-heading"
+             data-controller="project-builder">
       <h2 id="project-creation-blank-heading" class="project-creation__section-heading">Make anything you want</h2>
 
-      <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
-        <%= hidden_field_tag "project[title]", "Untitled" %>
-        <%= f.button type: :submit, class: "project-creation__blank-btn" do %>
-          Blank new project +
+      <div class="project-creation__blank-buttons">
+        <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
+          <%= hidden_field_tag "project[title]", "Untitled" %>
+          <%= f.button type: :submit, class: "project-creation__blank-btn" do %>
+            Blank new project +
+          <% end %>
         <% end %>
-      <% end %>
+
+        <button type="button"
+                class="project-creation__blank-btn project-creation__blank-btn--hardware"
+                data-action="project-builder#toggle"
+                data-project-builder-target="hardwareBtn"
+                aria-expanded="false"
+                aria-controls="project-creation-stage-chooser">
+          Blank new hardware project +
+        </button>
+      </div>
+
+      <div id="project-creation-stage-chooser"
+           class="project-creation__stage-chooser"
+           data-project-builder-target="chooser"
+           inert>
+        <div class="project-creation__stage-chooser-inner">
+          <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" }, class: "project-creation__stage-form" do %>
+            <%= hidden_field_tag "project[title]", "Untitled" %>
+            <%= hidden_field_tag "project[hardware_stage]", "design" %>
+            <button type="submit" class="project-creation__stage-option">
+              <span class="project-creation__stage-label">Design Stage</span>
+              <span class="project-creation__stage-title">I am in the design stage of my project</span>
+              <span class="project-creation__stage-subtext">I still need to buy my parts</span>
+            </button>
+          <% end %>
+
+          <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" }, class: "project-creation__stage-form" do %>
+            <%= hidden_field_tag "project[title]", "Untitled" %>
+            <%= hidden_field_tag "project[hardware_stage]", "build" %>
+            <button type="submit" class="project-creation__stage-option">
+              <span class="project-creation__stage-label">Build Stage</span>
+              <span class="project-creation__stage-title">I am in the build stage of my project</span>
+              <span class="project-creation__stage-subtext">I already have my parts and am ready to start building</span>
+            </button>
+          <% end %>
+        </div>
+      </div>
     </section>
 
   </div>

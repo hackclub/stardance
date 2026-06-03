@@ -783,6 +783,13 @@ Rails.application.routes.draw do
       end
     end
     resources :reports, only: [ :create ], module: :projects
+    resources :lookout_sessions, only: %i[create show], module: :projects, shallow: false do
+      get  :record, on: :member
+      post :stop, on: :member
+      post :set_mode, on: :member
+      post :forward_heartbeats, on: :member
+      get  :status, on: :collection
+    end
     resource :og_image, only: [ :show ], module: :projects, defaults: { format: :png }
     resource :ships, only: [ :create ], module: :projects
     resource :recertification, only: [ :create ], module: :projects

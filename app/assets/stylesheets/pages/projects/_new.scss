@@ -355,6 +355,14 @@
   gap: var(--space-m);
 }
 
+// Software + hardware blank buttons sit side by side, wrapping on narrow widths.
+.project-creation__blank-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+  align-items: center;
+}
+
 .project-creation__blank-btn {
   display: inline-flex;
   align-items: center;
@@ -380,6 +388,83 @@
     border-color: var(--color-space-text);
     outline: none;
   }
+
+  // Keep the hardware toggle visibly "active" while its chooser is open.
+  &--hardware[aria-expanded="true"] {
+    background: rgba(94, 102, 135, 0.85);
+    border-color: var(--color-space-text);
+  }
+}
+
+// ── Hardware stage chooser (animated reveal) ─────────────────────────────────
+
+.project-creation__stage-chooser {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease;
+}
+
+.project-creation__stage-chooser.is-open {
+  grid-template-rows: 1fr;
+}
+
+.project-creation__stage-chooser-inner {
+  // grid-rows 0fr/1fr animation requires a single overflow-hidden child.
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+}
+
+.project-creation__stage-form {
+  display: flex;
+  flex: 1 1 240px;
+}
+
+.project-creation__stage-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-m);
+  border: 2px solid var(--pc-border);
+  border-radius: var(--pc-radius);
+  background: rgba(94, 102, 135, 0.18);
+  color: var(--color-space-text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(94, 102, 135, 0.5);
+    border-color: var(--color-space-text);
+    outline: none;
+  }
+}
+
+.project-creation__stage-label {
+  font-size: var(--font-size-m);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-yellow-200, #f4ebb9);
+}
+
+.project-creation__stage-title {
+  font-size: var(--font-size-l);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.project-creation__stage-subtext {
+  font-size: var(--font-size-m);
+  line-height: 1.35;
+  color: var(--color-space-text-muted);
 }
 
 // ── Mobile ───────────────────────────────────────────────────────────────────

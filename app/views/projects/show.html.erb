@@ -133,7 +133,49 @@
                                  "project-form-target": "description"
                                } %>
 
-            <div class="project-show__edit-grid">
+            <div class="project-show__edit-grid" data-controller="project-type">
+              <div class="project-show__field project-show__field--inline">
+                <span>Project type <%= render "projects/help_tooltip", text: "Software projects track coding time with Hackatime. Hardware projects (electronics, 3D printing, robotics, etc.) record a screen/build timelapse instead." %></span>
+                <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project type">
+                  <label class="project-show__stage-choice">
+                    <input type="radio" name="project_type_selector" value="software" class="project-show__stage-radio"
+                           <%= "checked" unless @project.hardware? %>
+                           data-project-type-target="typeRadio"
+                           data-action="change->project-type#sync">
+                    <span class="project-show__stage-choice-label">Software</span>
+                  </label>
+                  <label class="project-show__stage-choice">
+                    <input type="radio" name="project_type_selector" value="hardware" class="project-show__stage-radio"
+                           <%= "checked" if @project.hardware? %>
+                           data-project-type-target="typeRadio"
+                           data-action="change->project-type#sync">
+                    <span class="project-show__stage-choice-label">Hardware</span>
+                  </label>
+                </div>
+              </div>
+
+              <%# Hardware vs software is derived purely from hardware_stage. This
+                  empty field clears the column to "" (→ nil via the model
+                  normalizer) for software projects; when Hardware is selected the
+                  enabled stage radios below submit after it and win (last value). %>
+              <%= hidden_field_tag "project[hardware_stage]", "" %>
+
+              <div class="project-show__field project-show__field--inline"
+                   data-project-type-target="stageSection"
+                   <%= "hidden" unless @project.hardware? %>>
+                <span>Project stage <%= render "projects/help_tooltip", text: "Design stage means you're still planning and buying parts. Build stage means you have your parts and are building. You can switch between them anytime." %></span>
+                <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project stage">
+                  <label class="project-show__stage-choice">
+                    <%= form.radio_button :hardware_stage, "design", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
+                    <span class="project-show__stage-choice-label">Design</span>
+                  </label>
+                  <label class="project-show__stage-choice">
+                    <%= form.radio_button :hardware_stage, "build", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
+                    <span class="project-show__stage-choice-label">Build</span>
+                  </label>
+                </div>
+              </div>
+
               <div class="project-show__field project-show__field--inline project-show__field--hackatime">
                 <span>Hackatime projects</span>
                 <% if !@hackatime_linked %>
@@ -303,7 +345,12 @@
           <div class="project-show__panel project-show__panel--read">
             <div class="project-show__summary">
               <div class="project-show__identity">
-                <h1 class="project-show__title"><%= @project.title %></h1>
+                <div class="project-show__title-row">
+                  <h1 class="project-show__title"><%= @project.title %></h1>
+                  <% if @project.hardware? %>
+                    <span class="project-show__tag project-show__tag--hardware">Hardware</span>
+                  <% end %>
+                </div>
                 <div class="project-show__byline">
                   <% if members.any? %>
                     <ul class="project-show__avatars" aria-hidden="true">
@@ -394,6 +441,11 @@
           devlog_modifier_class = devlog_primary ? "project-show__action--primary" : "project-show__action--secondary"
         %>
         <nav class="project-show__actions" aria-label="Project actions">
+          <% if @project.hardware? %>
+            <%= render "projects/record_timelapse_button",
+                       project: @project,
+                       disabled_message: (@hackatime_linked ? nil : "Link your Hackatime account to start recording") %>
+          <% end %>
           <% devlog_variant = devlog_primary ? :primary : :secondary %>
           <% if devlog_disabled_message %>
             <%= render ActionButtonComponent.new(
@@ -507,6 +559,11 @@
         </nav>
       <% else %>
         <nav class="project-show__actions" aria-label="Project actions">
+          <% if @project.hardware? %>
+            <%= render "projects/record_timelapse_button",
+                       project: @project,
+                       disabled_message: "Link your Hackatime account to start recording" %>
+          <% end %>
           <%= button_to "/auth/hackatime",
                         method: :post,
                         params: { origin: request.fullpath },

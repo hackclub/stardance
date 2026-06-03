@@ -54,6 +54,39 @@ class Post::Devlog < ApplicationRecord
 
   has_many :likes, as: :likeable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
+
+  # Lookout screen-recording sessions backing this devlog (hardware projects).
+  # Provenance only — logged time still comes from Hackatime.
+  has_many :devlog_lookout_sessions, foreign_key: :devlog_id, dependent: :destroy
+  has_many :lookout_sessions, through: :devlog_lookout_sessions
+
+  # only for images – not for videos or gif!
+  has_many_attached :attachments do |attachable|
+    attachable.variant :large,
+                       resize_to_limit: [ 1600, 900 ],
+                       format: :webp,
+                       preprocessed: true,
+                       saver: { strip: true, quality: 75 }
+
+    attachable.variant :medium,
+                       resize_to_limit: [ 800, 800 ],
+                       format: :webp,
+                       preprocessed: false,
+                       saver: { strip: true, quality: 75 }
+
+    attachable.variant :thumb,
+                       resize_to_limit: [ 400, 400 ],
+                       format: :webp,
+                       preprocessed: false,
+                       saver: { strip: true, quality: 75 }
+  end
+
+  validates :attachments,
+            content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
+            size: { less_than: 50.megabytes, message: "is too large (max 50 MB)" },
+            processable_file: true
+  validate :at_least_one_attachment
+  validate :at_most_max_attachments
   validates :duration_seconds,
             numericality: {
               greater_than_or_equal_to: 15.minutes,

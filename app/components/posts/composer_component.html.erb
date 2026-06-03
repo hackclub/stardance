@@ -14,14 +14,16 @@
         <% selected = project == selected_project %>
         <%= link_to project.title,
               home_path(project_id: project.id),
-              class: class_names("feed-composer__chip", "feed-composer__chip--active": selected),
+              class: class_names("feed-composer__chip", "feed-composer__chip--active": selected, "feed-composer__chip--hardware": project.hardware?),
               aria: (selected ? { current: "true" } : {}),
               data: { turbo: false,
                       action: "click->composer#selectProject",
                       composer_post_url_param: project_devlogs_path(project),
                       composer_preview_url_param: preview_time_project_devlogs_path(project),
                       composer_edit_url_param: project_path(project, editing: true),
-                      composer_hackatime_linked_param: project.hackatime_keys.present? || (project == selected_project && test_time_granted) } %>
+                      composer_hackatime_linked_param: project.hackatime_keys.present? || (project == selected_project && test_time_granted),
+                      composer_hardware_param: project.hardware?,
+                      composer_record_url_param: (project.hardware? ? project_lookout_sessions_path(project) : "") } %>
       <% end %>
       </div>
     <% end %>
@@ -106,6 +108,22 @@
         </div>
 
         <div class="feed-composer__submit-group">
+          <% unless simple_mode? %>
+            <%# Record a timelapse — only shown while a hardware project is the
+                selected one; selectProject() in the composer controller toggles
+                it and re-points its create URL as you switch project chips. %>
+            <button type="button"
+                    class="feed-composer__record"
+                    data-controller="lookout-recorder"
+                    data-composer-target="recordBtn"
+                    data-action="lookout-recorder#record"
+                    data-lookout-recorder-create-url-value="<%= selected_project&.hardware? ? project_lookout_sessions_path(selected_project) : "" %>"
+                    aria-label="Record a timelapse"
+                    <%= "hidden" unless selected_project&.hardware? %>>
+              <span class="feed-composer__record-dot" aria-hidden="true"></span>
+              Record
+            </button>
+          <% end %>
           <%= render IdvBadgeComponent.new(user: current_user, context: :devlog) unless simple_mode? %>
           <%= render ActionButtonComponent.new(
                 text: submit_text,
@@ -123,6 +141,7 @@
               ) %>
         </div>
       </div>
+
     <% end %>
   </section>
 <% elsif setup_pending? %>

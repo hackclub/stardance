@@ -185,6 +185,61 @@
     &--new {
       border-style: dashed;
     }
+
+    // Hardware projects read as slightly orange so they stand apart from
+    // software ones — orange is the "different kind of thing" accent (branding.md).
+    &--hardware {
+      border-color: var(--color-brand-orange);
+      color: var(--color-brand-orange);
+
+      &:hover,
+      &:focus-visible,
+      &.feed-composer__chip--active {
+        color: var(--color-brand-orange);
+        background: var(--color-brand-orange-soft);
+      }
+    }
+  }
+
+  // Little red "Record" button — hardware projects only; toggled by the composer
+  // controller as you switch project chips.
+  &__record {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    min-height: 29px;
+    padding: 0 13px;
+    border: 2px solid var(--color-brand-salmon);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-brand-salmon);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      color 150ms ease,
+      background 150ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-set-1-bg);
+      background: var(--color-brand-salmon);
+      outline: none;
+
+      .feed-composer__record-dot {
+        background: var(--color-set-1-bg);
+      }
+    }
+  }
+
+  &__record-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-brand-salmon);
   }
 
   &__form {

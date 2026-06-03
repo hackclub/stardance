@@ -12,6 +12,7 @@ export default class extends Controller {
     "textarea",
     "submit",
     "attachWrap",
+    "recordBtn",
   ];
   static values = {
     maxFiles: { type: Number, default: 4 },
@@ -192,7 +193,8 @@ export default class extends Controller {
 
   selectProject(event) {
     event.preventDefault();
-    const { postUrl, previewUrl, editUrl, hackatimeLinked } = event.params;
+    const { postUrl, previewUrl, editUrl, hackatimeLinked, hardware, recordUrl } =
+      event.params;
     const linked = !!hackatimeLinked;
     const chip = event.currentTarget;
 
@@ -230,7 +232,16 @@ export default class extends Controller {
       if (editUrl) this.warnTarget.href = editUrl;
     }
 
-    this.#loadPreviewTime();
+    // The Record button only applies to hardware projects; show it and point it
+    // at the newly-selected project's create-session endpoint.
+    if (this.hasRecordBtnTarget) {
+      this.recordBtnTarget.hidden = !hardware;
+      if (recordUrl) {
+        this.recordBtnTarget.dataset.lookoutRecorderCreateUrlValue = recordUrl;
+      }
+    }
+
+    if (this.#composerOpen) this.#loadPreviewTime();
     this.#updateSubmit();
   }
 

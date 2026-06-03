@@ -9,6 +9,7 @@
 #  description          :text
 #  devlogs_count        :integer          default(0), not null
 #  duration_seconds     :integer          default(0), not null
+#  hardware_stage       :string
 #  marked_fire_at       :datetime
 #  memberships_count    :integer          default(0), not null
 #  nominated_fire_at    :datetime
@@ -63,6 +64,11 @@ class Project < ApplicationRecord
     "Minecraft Mods", "Hardware", "Android App", "iOS App", "Other"
   ].freeze
 
+  # Hardware projects carry a build/design stage; software projects leave
+  # hardware_stage nil. Drives the Lookout screen-recording flow on the project
+  # page (hardware builders can't run a Hackatime editor plugin).
+  HARDWARE_STAGES = %w[design build].freeze
+
   scope :excluding_member, ->(user) {
     user ? where.not(id: user.projects) : all
   }
@@ -87,6 +93,7 @@ class Project < ApplicationRecord
   has_many :memberships, class_name: "Project::Membership", dependent: :destroy
   has_many :users, through: :memberships
   has_many :hackatime_projects, class_name: "User::HackatimeProject", dependent: :nullify
+  has_many :lookout_sessions, dependent: :destroy
   has_many :posts, dependent: :destroy
   has_many :devlog_posts, -> { where(postable_type: "Post::Devlog").order(created_at: :desc) }, class_name: "Post"
   has_many :devlogs, through: :devlog_posts, source: :postable, source_type: "Post::Devlog"
@@ -168,6 +175,12 @@ class Project < ApplicationRecord
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
             size: { less_than: MAX_BANNER_SIZE, message: "is too large (max 10 MB)" },
             processable_file: true
+  # A blank hardware_stage means "software project". The edit form's type
+  # toggle submits an empty string when Software is selected; coerce it to nil
+  # so the column actually clears and passes the inclusion validation (which
+  # allows nil, but not "").
+  normalizes :hardware_stage, with: ->(value) { value.presence }
+  validates :hardware_stage, inclusion: { in: HARDWARE_STAGES }, allow_nil: true
   validate :validate_project_categories
 
   def validate_project_categories
@@ -216,6 +229,28 @@ class Project < ApplicationRecord
 
   def shipped?
     shipped_at.present? || !draft?
+  end
+
+  # Hardware projects are the ones with a stage set; software projects leave it
+  # nil. Gates the Lookout recorder UI on the project page.
+  def hardware?
+    hardware_stage.present?
+  end
+
+  def design_stage?
+    hardware_stage == "design"
+  end
+
+  def build_stage?
+    hardware_stage == "build"
+  end
+
+  # Name of the Hackatime project that Lookout timelapse heartbeats are filed
+  # under (and auto-linked to this project). Suffixed "- Lookout" so it's the
+  # only destination for a recording and stays distinct from any code-based
+  # Hackatime project of the same name.
+  def hackatime_recorder_name
+    "#{title} - Lookout"
   end
 
   def display_description

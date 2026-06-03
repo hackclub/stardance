@@ -69,6 +69,49 @@ class HackatimeService
       nil
     end
 
+    # Exchange a user's OAuth access token for their Hackatime API key (the
+    # credential the heartbeat-ingestion endpoint requires). The endpoint
+    # returns an existing key or creates one. Returns the key string or nil.
+    def fetch_api_key(access_token)
+      return nil if access_token.blank?
+
+      response = connection.get("authenticated/api_keys") do |req|
+        req.headers["Authorization"] = "Bearer #{access_token}"
+      end
+
+      if response.success?
+        JSON.parse(response.body)["token"]
+      else
+        Rails.logger.error "HackatimeService fetch_api_key error: #{response.status} - #{response.body}"
+        nil
+      end
+    rescue => e
+      Rails.logger.error "HackatimeService fetch_api_key exception: #{e.message}"
+      nil
+    end
+
+    # Push heartbeats to Hackatime on behalf of a user using their API key (NOT
+    # the OAuth token — the Wakatime-compatible ingestion endpoint wants the key,
+    # which you can get via fetch_api_key). Used to forward Lookout timelapse
+    # capture timestamps so the time shows up under a Hackatime project the user
+    # can then link. Returns true on success.
+    def push_heartbeats(api_key:, heartbeats:)
+      return false if api_key.blank? || heartbeats.blank?
+
+      response = heartbeat_connection.post("users/current/heartbeats.bulk") do |req|
+        req.headers["Authorization"] = "Bearer #{api_key}"
+        req.body = heartbeats.to_json
+      end
+
+      return true if response.success?
+
+      Rails.logger.error "HackatimeService push_heartbeats error: #{response.status} - #{response.body}"
+      false
+    rescue => e
+      Rails.logger.error "HackatimeService push_heartbeats exception: #{e.message}"
+      false
+    end
+
     private
 
       def stats_request(hackatime_uid, params, access_token: nil)
@@ -126,6 +169,14 @@ class HackatimeService
           conn.headers["Content-Type"] = "application/json"
           conn.headers["User-Agent"] = Rails.application.config.user_agent
           conn.headers["RACK_ATTACK_BYPASS"] = ENV["HACKATIME_BYPASS_KEYS"] if ENV["HACKATIME_BYPASS_KEYS"].present?
+        end
+      end
+
+      # Heartbeats live under a different path prefix than the stats API.
+      def heartbeat_connection
+        @heartbeat_connection ||= Faraday.new(url: "#{BASE_URL}/api/hackatime/v1") do |conn|
+          conn.headers["Content-Type"] = "application/json"
+          conn.headers["User-Agent"] = Rails.application.config.user_agent
         end
       end
   end
