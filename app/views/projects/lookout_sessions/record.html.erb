@@ -139,6 +139,12 @@
       </div>
     </div>
 
+    <%# Shown after the time is sent — nudge to actually log it in a devlog. %>
+    <div class="lookout-rec__post-prompt" data-lookout-capture-target="postPrompt" hidden>
+      <%= link_to "Post a Devlog", project_path(@project), class: "lookout-rec__post-btn" %>
+      <p class="lookout-rec__post-sub">Your time only counts once you do a devlog.</p>
+    </div>
+
     <%= link_to "Back to project →", project_path(@project),
                 class: "lookout-rec__link lookout-rec__done-close",
                 data: { "lookout-capture-target": "doneClose" },

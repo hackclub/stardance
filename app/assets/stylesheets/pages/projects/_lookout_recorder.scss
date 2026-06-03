@@ -350,6 +350,39 @@
   align-self: center;
 }
 
+// Post-finish nudge: log the just-sent time in a devlog (it only counts then).
+.lookout-rec__post-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.lookout-rec__post-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-s) var(--space-xl);
+  border-radius: var(--profile-radius);
+  background: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-brand-highlight-secondary, #fefce7);
+    outline: none;
+  }
+}
+
+.lookout-rec__post-sub {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+  text-align: center;
+}
+
 @media (max-width: 640px) {
   .lookout-rec__options {
     grid-template-columns: 1fr;

@@ -34,6 +34,7 @@ export default class extends Controller {
     "newName",
     "finishBtn",
     "destError",
+    "postPrompt",
     "doneClose",
     "error",
   ];
@@ -317,6 +318,11 @@ export default class extends Controller {
     }
 
     if (this.hasDestinationTarget) this.destinationTarget.hidden = true;
+    // The time only counts toward the project once it's in a devlog — nudge the
+    // user there, but only when we actually sent time.
+    if (projectName && this.hasPostPromptTarget) {
+      this.postPromptTarget.hidden = false;
+    }
     if (this.hasDoneCloseTarget) this.doneCloseTarget.hidden = false;
   }
 
