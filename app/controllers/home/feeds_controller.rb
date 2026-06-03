@@ -46,15 +46,36 @@ class Home::FeedsController < ApplicationController
     remaining = pagy.limit - rec_slice.size
     if remaining.positive?
       sql_offset = [ pagy.offset - recommended.size, 0 ].max
-      backfill.offset(sql_offset).limit(remaining).each do |post|
+      backfill_slice = backfill.offset(sql_offset).limit(remaining).to_a
+      preload_feed_associations(backfill_slice)
+
+      visible_ids = visible_original_post_ids(backfill_slice)
+      backfill_slice.each do |post|
         next unless post.postable.present?
-        next if post.repost? && !post.visible_repost_original_for?(current_user)
+        next if post.repost? && !visible_ids.include?(post.postable.original_post_id)
 
         candidates << [ post, "quality_latest" ]
       end
     end
 
     dedupe_by_content(candidates)
+  end
+
+  # Batch-checks which repost originals are visible to current_user — one query instead of one per repost.
+  def visible_original_post_ids(posts)
+    repost_posts = posts.select { |p| p.repost? && p.postable.present? }
+    return Set.new if repost_posts.empty?
+
+    candidate_ids = repost_posts.filter_map do |post|
+      original = post.postable.original_post
+      next unless original&.postable_type == "Post::Devlog" &&
+                  original.postable.present? &&
+                  !original.postable.deleted?
+      original.id
+    end
+    return Set.new if candidate_ids.empty?
+
+    Post.visible_to(current_user).where(id: candidate_ids).pluck(:id).to_set
   end
 
   # don't want to show dupe reposts
@@ -76,11 +97,12 @@ class Home::FeedsController < ApplicationController
     [ posts, sources ]
   end
 
+  # Reads original_post_id from already-preloaded postables — no extra query needed.
   def repost_original_ids(posts)
-    repost_ids = posts.select(&:repost?).map(&:postable_id)
-    return {} if repost_ids.empty?
-
-    Post::Repost.where(id: repost_ids).pluck(:id, :original_post_id).to_h
+    posts.each_with_object({}) do |post, hash|
+      next unless post.repost? && post.postable
+      hash[post.postable_id] = post.postable.original_post_id
+    end
   end
 
   def feed_scope
