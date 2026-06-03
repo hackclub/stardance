@@ -90,6 +90,9 @@ class Projects::SetupController < ApplicationController
 
     is_first_attach = existing.nil?
 
+    # Detach any active mission that isn't the one being selected.
+    project.mission_attachments.active.where.not(mission_id: mission.id).find_each(&:detach!)
+
     if existing
       existing.update!(detached_at: nil, attached_at: Time.current)
     else
