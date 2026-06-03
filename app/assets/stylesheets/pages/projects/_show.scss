@@ -599,6 +599,17 @@ turbo-frame#project_hero {
 
 .project-show__followers {
   font-size: 1rem;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 // Author avatars stack horizontally with a slight overlap, like a multi-user
@@ -682,6 +693,20 @@ turbo-frame#project_hero {
     background: var(--gradient-extra-highlight) center / cover no-repeat;
     color: var(--color-set-1-bg);
   }
+
+  // A pending nomination is reviewer-only and not yet the real thing, so it
+  // gets a subdued tint rather than the reserved highlight gradient above.
+  &--nominated {
+    background: color-mix(in srgb, var(--color-brand-yellow) 16%, transparent);
+    color: var(--color-brand-yellow);
+  }
+}
+
+// The fire controls use button_to (Turbo Drive is off app-wide, so these must
+// be real form submits). Collapse the wrapping form so each button still lines
+// up as a flex sibling of the surrounding pills.
+.project-show__pill-form {
+  display: contents;
 }
 
 // Action row sits between the header and the latest-ship card.
@@ -1735,4 +1760,182 @@ turbo-frame#project_hero {
   font-size: 13px;
   font-style: italic;
   opacity: 0.7;
+}
+
+// -- Mission browse widget (discover rail) --
+
+.mission-browse-widget {
+  background: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
+  border-radius: 14px;
+  color: var(--color-space-text);
+  padding: var(--space-m);
+}
+
+.mission-browse-widget__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 var(--space-xs);
+}
+
+.mission-browse-widget__body {
+  color: var(--color-brand-off-white);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0 0 var(--space-s);
+  opacity: 0.8;
+}
+
+.mission-browse-widget__btn {
+  width: 100%;
+}
+
+// -- Mission browse modal --
+
+.mission-browse-modal {
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--profile-radius);
+  box-shadow: 0 24px 60px var(--color-shadow-deep);
+  color: var(--color-space-text);
+  max-height: 85vh;
+  max-width: 620px;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+
+  &::backdrop {
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal__title {
+    margin: 0 0 var(--space-l);
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--font-size-xxxl);
+    line-height: var(--line-height-headers);
+    color: var(--color-space-text);
+    background-color: transparent;
+  }
+}
+
+.mission-browse-modal__grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mission-browse-modal__card {
+  align-items: flex-start;
+  background: var(--color-set-2-bg);
+  border: 2px solid rgba(131, 130, 141, 0.3);
+  border-radius: var(--profile-radius);
+  display: flex;
+  gap: var(--space-s);
+  padding: var(--space-m);
+  transition: border-color 0.15s ease;
+}
+
+.mission-browse-modal__card-icon {
+  flex: 0 0 44px;
+  height: 44px;
+  width: 44px;
+}
+
+.mission-browse-modal__card-icon-img {
+  border-radius: 8px;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.mission-browse-modal__card-icon-fallback {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--color-brand-yellow);
+  display: flex;
+  font-size: 1.25rem;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+.mission-browse-modal__card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mission-browse-modal__card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.mission-browse-modal__card-desc {
+  color: var(--color-brand-off-white);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0 0 var(--space-xs);
+  opacity: 0.75;
+}
+
+.mission-browse-modal__card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mission-browse-modal__card-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  text-transform: capitalize;
+
+  &--beginner {
+    background: rgba(129, 255, 255, 0.12);
+    color: var(--color-brand-mint);
+  }
+
+  &--intermediate {
+    background: rgba(255, 229, 100, 0.12);
+    color: var(--color-brand-yellow);
+  }
+
+  &--advanced {
+    background: rgba(255, 141, 157, 0.12);
+    color: var(--color-brand-salmon);
+  }
+}
+
+.mission-browse-modal__card-actions {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.mission-browse-modal__empty {
+  color: var(--color-space-text-muted, var(--color-space-text));
+  font-size: var(--font-size-m);
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+  padding: var(--space-l) 0;
 }

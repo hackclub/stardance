@@ -5,9 +5,15 @@ import { Controller } from "@hotwired/stimulus";
 // or date changes, and ticks the per-row claim countdowns.
 export default class extends Controller {
   static targets = ["tab", "panel", "filters", "countdown"];
-  static values = { period: String };
+  static values = { period: String, serverNow: String };
 
   connect() {
+    if (this.hasServerNowValue) {
+      const serverNow = new Date(this.serverNowValue).getTime();
+      this.timeOffset = serverNow - Date.now();
+    } else {
+      this.timeOffset = 0;
+    }
     this.tick();
     this.timer = setInterval(() => this.tick(), 1000);
   }
@@ -33,7 +39,7 @@ export default class extends Controller {
   }
 
   tick() {
-    const now = Date.now();
+    const now = Date.now() + (this.timeOffset || 0);
     this.countdownTargets.forEach((el) => {
       const target = new Date(el.dataset.expiresAt).getTime();
       const remaining = Math.max(0, Math.floor((target - now) / 1000));

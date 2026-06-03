@@ -558,6 +558,7 @@ Rails.application.routes.draw do
 
   namespace :admin, constraints: AdminConstraint do
     root to: "application#index"
+    resource :funnel, only: [ :show ], controller: "funnel"
 
     mount Blazer::Engine, at: "blazer", constraints: ->(request) {
       AdminConstraint.allow?(request, :access_blazer?)
@@ -690,12 +691,18 @@ Rails.application.routes.draw do
     end
 
     namespace :certification do
+      # Reviewer stats & payout requests
+      scope "/ship" do
+        get  "mystats", to: "mystats#show", as: "mystats"
+        post "mystats/payout_request", to: "mystats#create_payout_request", as: "mystats_payout_request"
+      end
+
       resources :ships, path: "ship", only: [ :index, :show, :update ] do
         collection do
           get :next
         end
-        member do
-          post :claim
+        scope module: :ships do
+          resource :claim, only: [ :create, :destroy ]
         end
       end
 
@@ -707,6 +714,14 @@ Rails.application.routes.draw do
       get "review/:id", to: "ysws#show", as: "ysws_review"
       get "review/:id/commits", to: "ysws#commits", as: "ysws_commits"
       post "review/:id/report_fraud", to: "ysws#report_fraud", as: "ysws_report_fraud"
+
+      # Admin payout management
+      resources :payouts, only: [ :index, :show ] do
+        member do
+          post :pay
+          post :reject
+        end
+      end
     end
   end
 
@@ -744,6 +759,7 @@ Rails.application.routes.draw do
     resource :ships, only: [ :create ], module: :projects
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
+    resource :fire_nomination, only: [ :create, :destroy ], module: :projects
     resources :mission_section_completions,
               only: [ :create, :destroy ],
               module: :projects,
@@ -752,6 +768,7 @@ Rails.application.routes.draw do
       get :readme
       post :follow
       delete :unfollow
+      get :followers
     end
   end
 

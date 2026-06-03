@@ -1,0 +1,84 @@
+<% content_for :title, "Reviewer Payouts" %>
+
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide sw-payouts">
+    <%= link_to "← back to admin", admin_root_path, class: "sw-payouts__back" %>
+
+    <header class="sw-payouts__header">
+      <h1>Reviewer Payouts</h1>
+      <div class="sw-payouts__tabs">
+        <% %w[all pending paid rejected].each do |status| %>
+          <%= link_to status == "all" ? "All" : status.capitalize,
+                admin_certification_payouts_path(status: status),
+                class: "sw-payouts__tab #{'is-active' if @status == status}" %>
+        <% end %>
+      </div>
+    </header>
+
+    <% if @payout_requests.any? %>
+      <div class="sw-payouts__table-wrap">
+        <table class="sw-payouts__table">
+          <thead>
+            <tr>
+              <th>Reviewer</th>
+              <th>Requested</th>
+              <th>Adjusted</th>
+              <th>Paid</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Admin</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @payout_requests.each do |req| %>
+              <tr>
+                <td class="sw-payouts__cell-user">
+                  <%= req.user.display_name %>
+                </td>
+                <td><%= req.amount %> ✦</td>
+                <td>
+                  <% if req.adjusted_amount.present? && req.adjusted_amount != req.amount %>
+                    <span class="sw-payouts__adjusted"><%= req.adjusted_amount %> ✦</span>
+                    <span class="sw-payouts__adjust-reason" title="<%= req.adjust_reason %>">
+                      (<%= truncate(req.adjust_reason.to_s, length: 30) %>)
+                    </span>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+                <td>
+                  <% if req.paid? %>
+                    <strong><%= req.paid_amount %> ✦</strong>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+                <td>
+                  <span class="status-pill status-pill--<%= req.aasm_state %>">
+                    <%= req.aasm_state.capitalize %>
+                  </span>
+                </td>
+                <td class="sw-payouts__cell-date">
+                  <%= req.created_at.strftime('%b %d, %Y') %>
+                </td>
+                <td><%= req.admin&.display_name || '—' %></td>
+                <td>
+                  <% if req.pending? %>
+                    <%= link_to "Review",
+                          admin_certification_payout_path(req),
+                          class: "action-btn action-btn--small action-btn--primary" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="sw-payouts__empty">
+        <p>No payout requests match this filter.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

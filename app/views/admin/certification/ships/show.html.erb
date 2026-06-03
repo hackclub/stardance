@@ -2,10 +2,12 @@
 
 <%
   owner = @ship.project.memberships.find(&:owner?)&.user
-  can_review = @ship.reviewer_id == current_user.id && !@ship.claim_expired?
+  can_review = @ship.claim_held_by?(current_user) && @ship.pending?
 %>
 
-<div class="app-layout app-layout--wide">
+<div class="app-layout app-layout--wide"
+     data-controller="certification--queue"
+     data-certification--queue-server-now-value="<%= Time.current.iso8601 %>">
   <div class="app-layout__main app-layout__main--wide ship-review">
     <%= link_to "← back to queue", admin_certification_ships_path, class: "ship-review__back" %>
 
@@ -94,7 +96,7 @@
         <% else %>
           <div class="ship-review__claim">
             <p>You don't currently hold the claim on this review.</p>
-            <%= button_to "Claim this review", claim_admin_certification_ship_path(@ship), method: :post,
+            <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
                   class: "action-btn action-btn--large action-btn--primary" %>
             <%= link_to "Back to queue", admin_certification_ships_path,
                   class: "action-btn action-btn--small action-btn--secondary" %>

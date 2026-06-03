@@ -1,4 +1,18 @@
+<%# Unclaim form is rendered outside the verdict form to avoid invalid nesting.
+    The button inside the verdict form references it via the HTML `form` attribute. %>
+<%= form_with url: admin_certification_ship_claim_path(ship), method: :delete,
+      id: "unclaim-form-#{ship.id}" do %>
+<% end %>
+
 <%= form_with model: ship, url: admin_certification_ship_path(ship), method: :patch, class: "review-form" do |f| %>
+<% if ship.claim_expires_at.present? %>
+  <div class="review-form__claim-banner">
+    <span>Claim active</span>
+    <span class="review-form__countdown"
+          data-certification--queue-target="countdown"
+          data-expires-at="<%= ship.claim_expires_at.iso8601 %>"></span>
+  </div>
+<% end %>
   <% if ship.errors.any? %>
     <div class="review-form__errors">
       <ul>
@@ -67,6 +81,10 @@
     <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary" %>
     <%= link_to "Skip and get next", next_admin_certification_ships_path(skip: ship.id),
           class: "action-btn action-btn--small action-btn--secondary" %>
+    <button type="submit" form="unclaim-form-<%= ship.id %>"
+            class="action-btn action-btn--small action-btn--destructive">
+      Unclaim review
+    </button>
     <%= link_to "Back to queue", admin_certification_ships_path, class: "review-form__back" %>
   </div>
 <% end %>

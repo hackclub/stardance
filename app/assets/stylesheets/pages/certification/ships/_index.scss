@@ -47,6 +47,12 @@
     }
   }
 
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
   // Shared card chrome.
   &__stats,
   &__leaderboard,

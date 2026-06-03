@@ -1,0 +1,152 @@
+<% content_for :title, "My Review Stats" %>
+<% minimum_payout = ReviewerPayoutRequest::MINIMUM_AMOUNT %>
+
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide reviewer-stats">
+    <%= link_to "← back to review queue", admin_certification_ships_path, class: "reviewer-stats__back" %>
+
+    <header class="reviewer-stats__header">
+      <h1>My Review Stats</h1>
+    </header>
+
+    <section class="reviewer-stats__overview">
+      <div class="reviewer-stats__stats-card">
+        <h2 class="reviewer-stats__stats-title">Your Stats</h2>
+
+        <div class="reviewer-stats__stats-list">
+          <div class="reviewer-stats__stats-row">
+            <span class="reviewer-stats__stats-label">Total:</span>
+            <span class="reviewer-stats__stats-value"><%= @total_count %></span>
+          </div>
+
+          <div class="reviewer-stats__stats-row">
+            <span class="reviewer-stats__stats-label">Approved:</span>
+            <span class="reviewer-stats__stats-value reviewer-stats__stats-value--approved">
+              <%= @approved_count %>
+            </span>
+          </div>
+
+          <div class="reviewer-stats__stats-row">
+            <span class="reviewer-stats__stats-label">Returned:</span>
+            <span class="reviewer-stats__stats-value reviewer-stats__stats-value--returned">
+              <%= @returned_count %>
+            </span>
+          </div>
+
+          <hr class="reviewer-stats__divider">
+
+          <div class="reviewer-stats__stats-row">
+            <span class="reviewer-stats__stats-label">Rate:</span>
+            <span class="reviewer-stats__stats-value"><%= @approval_rate %>%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="reviewer-stats__payout-card">
+        <h2 class="reviewer-stats__payout-title">
+          <span>✦</span> Stardust
+        </h2>
+
+        <div class="reviewer-stats__balance-container">
+          <div class="reviewer-stats__balance-big"><%= @unclaimed %></div>
+          <div class="reviewer-stats__balance-text">balance</div>
+        </div>
+
+        <div class="reviewer-stats__payout-action" data-controller="modal">
+          <% if @pending_request %>
+            <div class="action-btn action-btn--large action-btn--primary action-btn--disabled reviewer-stats__payout-btn">
+              pending request (<%= @pending_request.amount %> ✦)
+            </div>
+          <% elsif @unclaimed < minimum_payout %>
+            <div class="action-btn action-btn--large action-btn--primary action-btn--disabled reviewer-stats__payout-btn">
+              need <%= minimum_payout %>+ stardust
+            </div>
+          <% else %>
+            <button type="button" class="action-btn action-btn--large action-btn--primary reviewer-stats__payout-btn" data-action="click->modal#open">
+              Request Payout
+            </button>
+
+            <dialog data-modal-target="dialog" class="modal reviewer-stats__modal" aria-labelledby="payout-modal-title">
+              <%= form_with url: admin_certification_mystats_payout_request_path, method: :post, class: "reviewer-stats__modal-form" do %>
+                <header class="reviewer-stats__modal-header">
+                  <h3 id="payout-modal-title" class="reviewer-stats__modal-title">Request Payout</h3>
+                  <button type="button" class="reviewer-stats__modal-close" aria-label="Close" data-action="click->modal#close">×</button>
+                </header>
+
+                <p class="reviewer-stats__modal-desc">
+                  You have <strong><%= @unclaimed %> ✦</strong> stardust available. How much stardust would you like to request?
+                </p>
+
+                <div class="reviewer-stats__modal-field">
+                  <%= label_tag :amount, "Amount to Request" %>
+                  <%= number_field_tag :amount, @unclaimed,
+                        min: minimum_payout,
+                        max: @unclaimed,
+                        required: true,
+                        autocomplete: "off",
+                        class: "reviewer-stats__modal-input" %>
+                  <span class="reviewer-stats__modal-hint">Minimum <%= minimum_payout %> ✦, Maximum <%= @unclaimed %> ✦</span>
+                </div>
+
+                <div class="reviewer-stats__modal-actions">
+                  <button type="button" class="action-btn action-btn--large action-btn--secondary" data-action="click->modal#close">
+                    Cancel
+                  </button>
+                  <%= submit_tag "Submit Request", class: "action-btn action-btn--large action-btn--primary" %>
+                </div>
+              <% end %>
+            </dialog>
+          <% end %>
+        </div>
+      </div>
+    </section>
+
+    <section class="reviewer-stats__history">
+      <h2>History</h2>
+      <% if @history_items.any? %>
+        <div class="reviewer-stats__table-wrap">
+          <table class="reviewer-stats__table">
+            <thead>
+              <tr>
+                <th>Activity</th>
+                <th>Status</th>
+                <th>Amount</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @history_items.each do |item| %>
+                <tr>
+                  <td class="reviewer-stats__cell-project">
+                    <% if item[:type] == :review %>
+                      <%= link_to item[:title], item[:path], class: "reviewer-stats__project-link" %>
+                      <span class="reviewer-stats__review-id">#<%= item[:id] %></span>
+                    <% else %>
+                      <span class="reviewer-stats__payout-log-title"><%= item[:title] %></span>
+                      <span class="reviewer-stats__review-id">#<%= item[:id] %></span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <span class="status-pill status-pill--<%= item[:status] %>">
+                      <%= item[:status].to_s.capitalize %>
+                    </span>
+                  </td>
+                  <td class="reviewer-stats__cell-earned <%= 'reviewer-stats__cell-earned--negative' if item[:type] == :payout %>">
+                    <%= item[:type] == :review ? "+" : "-" %><%= item[:amount] %> ✦
+                  </td>
+                  <td class="reviewer-stats__cell-date">
+                    <%= item[:date]&.strftime('%b %d, %Y') || '—' %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="reviewer-stats__empty">
+          <p>No activity yet. Start reviewing to earn Stardust!</p>
+        </div>
+      <% end %>
+    </section>
+  </div>
+</div>

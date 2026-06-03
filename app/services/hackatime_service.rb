@@ -19,11 +19,11 @@ class HackatimeService
       nil
     end
 
-    def fetch_stats(hackatime_uid, start_date: START_DATE, end_date: nil)
+    def fetch_stats(hackatime_uid, start_date: START_DATE, end_date: nil, access_token: nil)
       params = { features: "projects", start_date: start_date, test_param: true }
       params[:end_date] = end_date if end_date
 
-      response = connection.get("users/#{hackatime_uid}/stats", params)
+      response = stats_request(hackatime_uid, params, access_token: access_token)
 
       if response.success?
         data = JSON.parse(response.body)
@@ -42,7 +42,7 @@ class HackatimeService
       nil
     end
 
-    def fetch_total_seconds_for_projects(hackatime_uid, project_keys, start_date: START_DATE, end_date: nil)
+    def fetch_total_seconds_for_projects(hackatime_uid, project_keys, start_date: START_DATE, end_date: nil, access_token: nil)
       return nil if hackatime_uid.blank? || project_keys.blank?
 
       params = {
@@ -54,7 +54,7 @@ class HackatimeService
       }
       params[:end_date] = end_date if end_date
 
-      response = connection.get("users/#{hackatime_uid}/stats", params)
+      response = stats_request(hackatime_uid, params, access_token: access_token)
 
       if response.success?
         JSON.parse(response.body)["total_seconds"].to_i
@@ -68,6 +68,46 @@ class HackatimeService
     end
 
     private
+
+      def stats_request(hackatime_uid, params, access_token: nil)
+        if access_token.present?
+          api_key = resolve_api_key(hackatime_uid, access_token)
+          if api_key
+            return connection.get("users/my/stats", params) do |req|
+              req.headers["Authorization"] = "Bearer #{api_key}"
+            end
+          end
+        end
+
+        connection.get("users/#{hackatime_uid}/stats", params)
+      end
+
+      def resolve_api_key(hackatime_uid, access_token)
+        cache_key = "hackatime_api_key:#{hackatime_uid}"
+        cached = Rails.cache.read(cache_key)
+        return cached if cached.present?
+
+        key = fetch_api_key(access_token)
+        Rails.cache.write(cache_key, key, expires_in: 1.week) if key.present?
+        key
+      end
+
+      def fetch_api_key(access_token)
+        response = connection.get("authenticated/api_keys") do |req|
+          req.headers["Authorization"] = "Bearer #{access_token}"
+        end
+
+        if response.success?
+          JSON.parse(response.body)["token"]
+        else
+          Rails.logger.error "HackatimeService.fetch_api_key error: #{response.status}"
+          nil
+        end
+      rescue => e
+        Rails.logger.error "HackatimeService.fetch_api_key exception: #{e.message}"
+        nil
+      end
+
       def connection
         @connection ||= Faraday.new(url: "#{BASE_URL}/api/v1") do |conn|
           conn.headers["Content-Type"] = "application/json"

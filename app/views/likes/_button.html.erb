@@ -4,23 +4,26 @@
   else
     current_user && likeable.likes.exists?(user: current_user)
   end
-
-  icon = liked ? "icons/like-fill.svg" : "icons/like.svg"
-  button_classes = [ "like-button__btn", ("like-button__btn--liked" if liked) ].compact
 %>
 
-<div id="<%= dom_id(likeable, :like_button) %>" class="like-button">
+<div id="<%= dom_id(likeable, :like_button) %>" class="like-button"
+     <% if current_user %>
+       data-controller="like-button"
+       data-like-button-url-value="<%= devlog_like_path(likeable) %>"
+       data-like-button-liked-value="<%= liked %>"
+     <% end %>>
   <% if current_user %>
-    <%= button_to devlog_like_path(likeable),
-          method: liked ? :delete : :post,
-          class: button_classes,
-          form_class: "like-button__form" do %>
-      <%= inline_svg_tag(icon, class: "like-button__icon") %>
-      <span class="like-button__count"><%= likeable.likes_count %></span>
-    <% end %>
+    <button type="button"
+            class="like-button__btn <%= 'like-button__btn--liked' if liked %>"
+            data-like-button-target="btn"
+            data-action="click->like-button#toggle">
+      <div class="like-button__sprite <%= 'is-liked' if liked %>"
+           data-like-button-target="sprite"></div>
+      <span class="like-button__count" data-like-button-target="count"><%= likeable.likes_count %></span>
+    </button>
   <% else %>
     <div class="like-button__btn like-button__btn--disabled">
-      <%= inline_svg_tag("icons/like.svg", class: "like-button__icon") %>
+      <div class="like-button__sprite"></div>
       <span class="like-button__count"><%= likeable.likes_count %></span>
     </div>
   <% end %>

@@ -1,7 +1,7 @@
 class ProjectsController < ApplicationController
   # Mission + payout-votes render as discover-rail modules on the project page.
   # The expanded mission module also previews the next guide step.
-  discover_rail_widgets :project_mission_expanded, :ship_intro, :payout_votes,
+  discover_rail_widgets :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes,
                         context: -> { { project: @project, votes_for_payout: @votes_for_payout } }
 
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]
@@ -98,6 +98,23 @@ class ProjectsController < ApplicationController
 
     @show_project_onboarding = @is_member && @posts.empty?
     @project_onboarding_mission = @project.current_mission
+
+    @available_missions = if @is_member && @project.current_mission.nil? && !@project.shipped?
+      taken_mission_ids = current_user.projects
+                                      .where(deleted_at: nil)
+                                      .joins(:mission_attachments)
+                                      .where(project_mission_attachments: { detached_at: nil, deleted_at: nil })
+                                      .pluck("project_mission_attachments.mission_id")
+                                      .uniq
+      Mission.available
+             .where.not(id: taken_mission_ids)
+             .with_attached_icon
+             .order(featured_at: :desc)
+             .limit(12)
+             .to_a
+    else
+      []
+    end
 
     @show_project_tour = params[:welcome] == "1" && current_user.present? && @is_member &&
                          current_user.projects.count == 1 && !session[:project_tour_seen]
@@ -369,6 +386,13 @@ class ProjectsController < ApplicationController
     else
       redirect_to project_path(@project), alert: "Could not unfollow."
     end
+  end
+
+  def followers
+    @project = Project.find(params[:id])
+    authorize @project, :show?
+    @followers = @project.followers.order(:display_name)
+    render "users/followers", layout: false
   end
 
   def readme

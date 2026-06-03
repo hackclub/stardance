@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>User Funnel - Stardance Admin</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { margin: 0; background: #0f0f1e; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  </style>
+</head>
+<body>
+
+<style>
+  .funnel-chart { display: flex; flex-direction: row; align-items: flex-end; gap: 2px; justify-content: center; padding: 0 1rem; }
+  .funnel-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 0;
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+  .funnel-bar-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .funnel-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 6px;
+    min-height: 20px;
+    position: relative;
+  }
+  .funnel-count {
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    white-space: nowrap;
+  }
+  .funnel-pct {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.65rem;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .funnel-label {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    color: #ccc;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 8px 0;
+    white-space: nowrap;
+    height: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .funnel-drop {
+    color: #f88;
+    font-size: 0.6rem;
+    text-align: center;
+    margin-top: 2px;
+    opacity: 0.8;
+  }
+</style>
+
+<%
+  first_count = @funnel_steps.first&.dig(:count) || 1
+  first_count = 1 if first_count == 0
+  max_bar_height = 300
+%>
+
+<div style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <h2 style="font-size: 1.8rem; color: #fff; margin: 0 0 0.3rem;">User Funnel</h2>
+    <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Distinct users per step · via Ahoy events</p>
+  </div>
+
+  <% if @funnel_steps.blank? || @funnel_steps.all? { |s| s[:count] == 0 } %>
+    <p style="text-align: center; color: #888; padding: 3rem 0;">No funnel data available</p>
+  <% else %>
+    <div class="funnel-chart">
+      <% @funnel_steps.each_with_index do |step, i| %>
+        <%
+          pct_of_first = (step[:count].to_f / first_count * 100).round(1)
+          bar_height = [(pct_of_first / 100.0 * max_bar_height).round, 20].max
+          prev_count = i > 0 ? @funnel_steps[i - 1][:count] : step[:count]
+          step_retention = prev_count > 0 ? (step[:count].to_f / prev_count * 100).round(1) : 0
+          label = step[:name].tr("_", " ")
+          t = i.to_f / [@funnel_steps.length - 1, 1].max
+          hue = 230 + (210 - 230) * t
+          lightness = 55 + 10 * t
+        %>
+        <div class="funnel-col" title="<%= label %> — <%= number_with_delimiter(step[:count]) %> users (<%= pct_of_first %>% of first step<%= i > 0 && step_retention < 100 ? ", #{step_retention}% from previous" : "" %>)">
+          <div class="funnel-bar-wrap">
+            <span class="funnel-count"><%= number_with_delimiter(step[:count]) %></span>
+            <span class="funnel-pct"><%= pct_of_first %>%</span>
+            <% if i > 0 && step_retention < 100 %>
+              <span class="funnel-drop">↓<%= step_retention %>%</span>
+            <% end %>
+            <div class="funnel-bar" style="height: <%= bar_height %>px; background: hsl(<%= hue %>, 70%, <%= lightness %>%);"></div>
+          </div>
+          <div class="funnel-label"><%= label %></div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div style="text-align: center; margin-top: 3rem; margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.8rem; color: #fff; margin: 0 0 0.3rem;">User Flow</h2>
+    <p style="color: #aaa; font-size: 0.85rem; margin: 0;">How users move between steps</p>
+  </div>
+
+  <div id="sankeyChart" style="width: 100%; border-radius: 8px;"></div>
+
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <script>
+    (function() {
+      const nodeNames = <%= raw @sankey_nodes.map { |n| n[:name] }.to_json %>;
+      const rawLinks = <%= raw @sankey_links.to_json %>;
+
+      const nodeMap = {};
+      nodeNames.forEach((name, i) => { nodeMap[name] = i; });
+
+      const shortName = n => n.replace(/_/g, ' ').replace(/^onboarding /, '').replace(/^drop after /, '✗ after ');
+      const labels = nodeNames.map(shortName);
+
+      const sources = [];
+      const targets = [];
+      const values = [];
+
+      rawLinks.forEach(l => {
+        if (nodeMap[l.source] !== undefined && nodeMap[l.target] !== undefined) {
+          sources.push(nodeMap[l.source]);
+          targets.push(nodeMap[l.target]);
+          values.push(l.value);
+        }
+      });
+
+      const palette = ['#4361ee','#4cc9f0','#56cfe1','#72efdd','#52b788','#2d6a4f'];
+      let pi = 0;
+      const nodeColors = nodeNames.map(n =>
+        n.startsWith('drop_') ? 'rgba(255,80,80,0.25)' : palette[pi++ % palette.length]
+      );
+
+      const linkColors = sources.map((s, i) => {
+        const targetName = nodeNames[targets[i]];
+        if (targetName && targetName.startsWith('drop_')) return 'rgba(255,80,80,0.10)';
+        return nodeColors[s] + '30';
+      });
+
+      // Auto-assign x positions: main steps get evenly-spaced columns,
+      // dropout nodes sit in the same column as the next main step
+      const mainSteps = nodeNames.filter(n => !n.startsWith('drop_'));
+      const stepX = {};
+      mainSteps.forEach((s, i) => { stepX[s] = 0.01 + (i / Math.max(mainSteps.length - 1, 1)) * 0.94; });
+
+      const xPos = nodeNames.map(n => {
+        if (stepX[n] !== undefined) return stepX[n];
+        // dropout node: find its source step and use the next step's x
+        const srcStep = n.replace(/^drop_after_/, '');
+        const srcName = mainSteps.find(s => s === srcStep || s.endsWith(srcStep));
+        if (srcName) {
+          const srcIdx = mainSteps.indexOf(srcName);
+          return srcIdx < mainSteps.length - 1 ? stepX[mainSteps[srcIdx + 1]] : stepX[srcName] + 0.05;
+        }
+        return 0.5;
+      });
+      const yPos = nodeNames.map(n => n.startsWith('drop_') ? 0.85 : 0.25);
+
+      Plotly.newPlot('sankeyChart', [{
+        type: 'sankey',
+        orientation: 'h',
+        arrangement: 'snap',
+        node: {
+          pad: 25,
+          thickness: 20,
+          line: { color: 'rgba(255,255,255,0.15)', width: 1 },
+          label: labels,
+          color: nodeColors,
+          x: xPos,
+          y: yPos,
+          hovertemplate: '%{label}<br>%{value:,.0f} users<extra></extra>'
+        },
+        link: {
+          source: sources,
+          target: targets,
+          value: values,
+          color: linkColors,
+          hovertemplate: '%{source.label} → %{target.label}<br>%{value:,.0f} users<extra></extra>'
+        }
+      }], {
+        font: { size: 11, color: '#ccc', family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        height: 600,
+        margin: { l: 20, r: 20, t: 20, b: 20 }
+      }, {
+        displayModeBar: false,
+        responsive: true
+      });
+    })();
+  </script>
+
+  <div style="margin-top: 2rem; text-align: center;">
+    <%= link_to "← Back to Admin", admin_root_path, style: "color: #93c5fd; text-decoration: none; font-size: 0.9rem;" %>
+  </div>
+</div>
+</body>
+</html>

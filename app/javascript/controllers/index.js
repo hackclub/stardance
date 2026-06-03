@@ -100,6 +100,9 @@ application.register("feed-engagement", FeedEngagementController);
 import HorizontalScrollController from "./horizontal_scroll_controller";
 application.register("horizontal-scroll", HorizontalScrollController);
 
+import LikeButtonController from "./like_button_controller";
+application.register("like-button", LikeButtonController);
+
 import FaqAccordionController from "./faq_accordion_controller";
 application.register("faq-accordion", FaqAccordionController);
 

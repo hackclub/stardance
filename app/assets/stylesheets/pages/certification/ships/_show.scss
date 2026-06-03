@@ -241,6 +241,28 @@
     }
   }
 
+  &__claim-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-xs) var(--space-s);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-brand-mint);
+    background: rgba(129, 255, 255, 0.08);
+    border: 1px solid rgba(129, 255, 255, 0.2);
+    border-radius: 8px;
+
+    &__countdown {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+
+      &.is-expired {
+        color: var(--color-brand-salmon);
+      }
+    }
+  }
+
   &__fieldset {
     display: flex;
     flex-direction: column;

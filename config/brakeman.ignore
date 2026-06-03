@@ -1,6 +1,27 @@
 {
   "ignored_warnings": [
     {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "6554659cfed6052983bd9d5d78a2dc018078472e922b9d769c79dce5cb7f34ba",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/controllers/admin/funnel_controller.rb",
+      "line": 78,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": null,
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::FunnelController",
+        "method": "fetch_transitions"
+      },
+      "user_input": null,
+      "confidence": "High",
+      "cwe_id": [89],
+      "note": "Values interpolated via connection.quote are from a frozen constant (SANKEY_STEPS), not user input"
+    },
+    {
       "warning_type": "Cross-Site Scripting",
       "warning_code": 4,
       "fingerprint": "855e9efffdfea2c597048f3062d5ad5153fe97677a5ffe3ca09fe39ed13af855",

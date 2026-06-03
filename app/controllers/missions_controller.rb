@@ -26,6 +26,19 @@ class MissionsController < ApplicationController
     @estimated_label      = @mission.estimated_completion_label
     @active_project       = current_user&.active_project_for_mission(@mission)
     @progress_state       = compute_progress_state(@mission, @active_project, @guide_outline)
+
+    if current_user && @active_project.nil?
+      @attachable_projects = current_user.projects
+                                         .where(deleted_at: nil, ship_status: "draft")
+                                         .where.not(
+                                           id: current_user.projects
+                                                           .joins(:mission_attachments)
+                                                           .where(project_mission_attachments: { detached_at: nil, deleted_at: nil })
+                                                           .select(:id)
+                                         )
+                                         .order(updated_at: :desc)
+                                         .to_a
+    end
   end
 
   def guide

@@ -1,0 +1,219 @@
+.sw-payouts {
+  --card-bg: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  --card-border: var(--color-space-border, rgba(255, 255, 255, 0.1));
+  --accent: var(--color-brand-highlight);
+  --muted: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+
+  color: var(--color-space-text);
+
+  &__back {
+    display: inline-block;
+    margin-bottom: var(--space-m);
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+    }
+  }
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    margin-bottom: var(--space-l);
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: var(--line-height-headers);
+    }
+  }
+
+  &__tabs {
+    display: flex;
+    gap: var(--space-xxs);
+  }
+
+  &__tab {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--card-border);
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition:
+      color 150ms ease,
+      border-color 150ms ease,
+      background 150ms ease;
+
+    &:hover {
+      color: var(--color-space-text);
+      border-color: var(--color-space-text);
+    }
+
+    &.is-active {
+      color: var(--color-set-1-bg);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+  }
+
+  &__table-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    overflow-x: auto;
+  }
+
+  &__table {
+    --grid-line: rgba(255, 255, 255, 0.2);
+
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+
+    thead th {
+      text-align: left;
+      padding: var(--space-s) var(--space-m);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.32);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: var(--space-s) var(--space-m);
+      border-bottom: 1px solid var(--grid-line);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+  }
+
+  &__cell-user {
+    font-weight: 600;
+    min-width: 140px;
+  }
+
+  &__cell-date {
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  &__adjusted {
+    color: var(--color-brand-salmon);
+    font-weight: 600;
+  }
+
+  &__adjust-reason {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  &__empty {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: var(--space-xl);
+    text-align: center;
+    color: var(--muted);
+  }
+
+  &__detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-m);
+
+    @media (max-width: 720px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__detail-card,
+  &__actions-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: var(--space-l);
+  }
+
+  &__detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  &__actions-card {
+    h2 {
+      margin: 0 0 var(--space-m);
+      font-size: 1.1rem;
+    }
+  }
+
+  &__pay-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  &__form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__input {
+    padding: var(--space-xs) var(--space-s);
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: var(--color-space-bg-2, rgba(0, 0, 0, 0.3));
+    color: var(--color-space-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    color-scheme: dark;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    &--textarea {
+      resize: vertical;
+      min-height: 50px;
+    }
+  }
+
+  &__reject-section {
+    margin-top: var(--space-l);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--card-border);
+  }
+}

@@ -25,7 +25,7 @@
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
 %>
 
-<div class="app-layout">
+<div class="app-layout" data-controller="profile-modal">
   <div class="app-layout__main">
 
     <%= turbo_frame_tag "project_hero" do %>
@@ -335,11 +335,15 @@
             <% end %>
 
             <div class="project-show__read-footer">
-              <span class="project-show__followers"><strong><%= follower_count %></strong> <%= "follower".pluralize(follower_count) %></span>
+              <%= button_tag type: "button",
+                             class: "project-show__followers",
+                             data: { action: "click->profile-modal#open",
+                                     "profile-modal-url-param": followers_project_path(@project),
+                                     "profile-modal-title-param": "Followers" } do %>
+                <strong><%= follower_count %></strong> <%= "follower".pluralize(follower_count) %>
+              <% end %>
               <div class="project-show__panel-actions">
-                <% if @project.fire? %>
-                  <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
-                <% end %>
+                <%= render "projects/fire_controls", project: @project %>
 
                 <% if can_edit_project %>
                   <%= link_to "Edit project", project_path(@project, editing: true),
@@ -867,4 +871,17 @@
   <% end %>
 
   <%= render DiscoverRailComponent.new %>
+
+  <dialog id="followers-modal"
+          class="followers-modal"
+          data-profile-modal-target="dialog"
+          data-action="click->profile-modal#backdropClose">
+    <header class="followers-modal__header">
+      <h2 class="followers-modal__title" data-profile-modal-target="title">Followers</h2>
+      <button type="button" class="followers-modal__close" data-action="click->profile-modal#close" aria-label="Close">×</button>
+    </header>
+    <div class="followers-modal__body" data-profile-modal-target="body">
+      <p class="followers-modal__loading">Loading…</p>
+    </div>
+  </dialog>
 </div>

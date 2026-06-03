@@ -76,3 +76,5 @@
 @use "pages/admin/missions_edit" as admin_missions_edit;
 @use "pages/certification/ships/index" as certification_ships_index;
 @use "pages/certification/ships/show" as certification_ships_show;
+@use "pages/certification/mystats" as certification_mystats;
+@use "pages/certification/payouts" as certification_payouts;

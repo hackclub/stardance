@@ -788,8 +788,7 @@
     cursor: pointer;
   }
 
-  &__action-icon,
-  .like-button__icon {
+  &__action-icon {
     width: 25px;
     height: 25px;
     fill: currentColor;
@@ -907,11 +906,44 @@
   .like-button,
   &__like {
     display: flex;
+    align-items: center;
+  }
+
+  [data-controller="like-button"] {
+    display: flex;
+    align-items: center;
   }
 
   .like-button__btn {
     padding: 0;
     border-radius: 0;
+    background: transparent;
+    border: 0;
+    max-height: 32px;
+    overflow: visible;
+  }
+
+  .like-button__sprite {
+    width: 50px;
+    height: 50px;
+    margin-right: -12px;
+    -webkit-mask-size: auto 50px;
+    mask-size: auto 50px;
+    transition:
+      -webkit-mask-position 1s steps(28),
+      mask-position 1s steps(28);
+    transition-duration: 0s;
+
+    &.is-liked {
+      -webkit-mask-position: -1400px 0;
+      mask-position: -1400px 0;
+    }
+
+    &.is-animating {
+      transition-duration: 1s;
+      -webkit-mask-position: -1400px 0;
+      mask-position: -1400px 0;
+    }
   }
 
   .like-button__btn--liked {
