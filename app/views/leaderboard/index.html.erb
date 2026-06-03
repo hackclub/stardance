@@ -15,9 +15,10 @@
             <h2 class="section-title">✨ Current Balance</h2>
             <div class="users">
                 <% @current_users.each_with_index do |user, index| %>
-                    <div class="user">
+                    <% rank = index + 1 %>
+                    <div class="user user--rank-<%= rank %>">
                         <div class="content">
-                            <h2 class="rank">#<%= index + 1 %></h2>
+                            <h2 class="rank">#<%= rank %></h2>
 
                             <%= image_tag user.avatar %>
                             <h2>
@@ -35,9 +36,10 @@
             <h2 class="section-title">🏆 All-Time Highest</h2>
             <div class="users">
                 <% @all_time_users.each_with_index do |user, index| %>
-                    <div class="user">
+                    <% rank = index + 1 %>
+                    <div class="user user--rank-<%= rank %>">
                         <div class="content">
-                            <h2 class="rank">#<%= index + 1 %></h2>
+                            <h2 class="rank">#<%= rank %></h2>
 
                             <%= image_tag user.avatar %>
                             <h2>
