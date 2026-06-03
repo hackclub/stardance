@@ -61,7 +61,7 @@ module OgImage
         draw_glowing_text(
           line,
           x: 70, y: 200 + (i * 90), size: 68,
-          color: "#fffcf4", glow_color: "#81ffff",
+          color: "#fffcf4", glow_color: "#ebb7ff",
           glow_radius: 8, glow_opacity: 0.35,
           font: title_font_name
         )
@@ -74,7 +74,7 @@ module OgImage
       elsif @total_count >= MIN_TOTAL_THRESHOLD
         "#{@total_count} #{"project".pluralize @total_count} built so far"
       end
-      draw_text(subtitle, x: 70, y: 390, size: 30, color: "#ffe564") if subtitle
+      draw_text(subtitle, x: 70, y: 390, size: 30, color: "#c9c9c9") if subtitle
     end
   end
 end

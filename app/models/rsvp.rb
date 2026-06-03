@@ -27,12 +27,12 @@
 class Rsvp < ApplicationRecord
   AMBASSADOR_REFERRAL_PREFIX = "a-".freeze
   USER_REF_OPTIONS = [
-    "Teacher",
+    "HackClub",
     "NASA",
     "AMD",
-    "Linus Tech Tips",
     "GitHub",
-    "HackClub",
+    "Linus Tech Tips",
+    "Teacher",
     "Friend"
   ].freeze
 
@@ -49,7 +49,7 @@ class Rsvp < ApplicationRecord
   before_validation :downcase_email
   after_commit :deliver_signup_confirmation, on: :create
   after_commit :enqueue_geocode_job, on: :create
-  after_create_commit :broadcast_counter_update
+  after_commit :increment_signup_counter, on: :create, if: -> { Flipper.enabled?(:new_onboarding) }
 
   class << self
     def ambassador_referrals
@@ -100,14 +100,7 @@ class Rsvp < ApplicationRecord
 
   def enqueue_geocode_job = RsvpGeocodeJob.perform_later(id)
 
-  def broadcast_counter_update
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "rsvp_counter",
-      target: "rsvp_counter",
-      partial: "landing/sections/rsvp_counter"
-    )
-  rescue StandardError => e
-    Rails.logger.warn("[Rsvp#broadcast_counter_update] #{e.class}: #{e.message}")
-    Sentry.capture_exception(e) if defined?(Sentry)
+  def increment_signup_counter
+    Rails.cache.increment("landing/signup_count", 1, expires_in: 30.seconds)
   end
 end

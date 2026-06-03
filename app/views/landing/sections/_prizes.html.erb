@@ -8,37 +8,35 @@
     <div data-controller="prize-float" class="prizes__item prizes__item--bambu">
       <%= image_tag image_url("landing/prizes/bambu-a1m.png"), class: "prizes__item-img", alt: "Bambu Lab A1 mini 3D printer", loading: "lazy" %>
       <%= image_tag image_url("landing/prizes/star-deco.png"), class: "prizes__item-star prizes__item-star--bambu", alt: "", aria: { hidden: true }, loading: "lazy" %>
-      <span class="prizes__label prizes__label--bambu">bambu a1 mini 3d printer</span>
     </div>
 
-    <div data-controller="prize-float" class="prizes__item prizes__item--switch">
-      <%= image_tag image_url("landing/prizes/switch.png"), class: "prizes__item-img", alt: "Nintendo Switch", loading: "lazy" %>
-      <span class="prizes__label prizes__label--switch">nintendo switch</span>
-    </div>
-
-    <div data-controller="prize-float" class="prizes__item prizes__item--camera">
-      <%= image_tag image_url("landing/prizes/camera.png"), class: "prizes__item-img", alt: "Digital camera", loading: "lazy" %>
-      <span class="prizes__label prizes__label--camera">digital camera</span>
-    </div>
-
-    <div data-controller="prize-float" class="prizes__item prizes__item--airpods">
-      <%= image_tag image_url("landing/prizes/airpods.png"), class: "prizes__item-img", alt: "AirPods Pro", loading: "lazy" %>
-      <span class="prizes__label prizes__label--airpods">airpods pro</span>
-    </div>
-
-    <div data-controller="prize-float" class="prizes__item prizes__item--mouse">
-      <%= image_tag image_url("landing/prizes/mouse.png"), class: "prizes__item-img", alt: "Logitech MX Master 3S", loading: "lazy" %>
-      <span class="prizes__label prizes__label--mouse">mx master 3s mouse</span>
-    </div>
-
-    <div data-controller="prize-float" class="prizes__item prizes__item--kindle">
-      <%= image_tag image_url("landing/prizes/kindle.avif"), class: "prizes__item-img", alt: "Kindle Paperwhite", loading: "lazy" %>
-      <span class="prizes__label prizes__label--kindle">kindle paperwhite</span>
+    <div data-controller="prize-float" class="prizes__item prizes__item--framework">
+      <%= image_tag image_url("landing/prizes/framework-laptop.png"), class: "prizes__item-img", alt: "Framework Laptop", loading: "lazy" %>
     </div>
 
     <div data-controller="prize-float" class="prizes__item prizes__item--ipad">
       <%= image_tag image_url("landing/prizes/ipad.png"), class: "prizes__item-img", alt: "Apple iPad", loading: "lazy" %>
-      <span class="prizes__label prizes__label--ipad">apple ipad</span>
     </div>
+
+    <%= image_tag image_url("landing/prizes/star-deco-2.png"), class: "prizes__star-deco-2", alt: "", aria: { hidden: true }, loading: "lazy" %>
+
+    <div data-controller="prize-float" class="prizes__item prizes__item--gpu">
+      <%= image_tag image_url("landing/prizes/amd-rx9060.png"), class: "prizes__item-img", alt: "AMD RX 9060 GPU", loading: "lazy" %>
+    </div>
+
+    <div data-controller="prize-float" class="prizes__item prizes__item--rpi">
+      <%= image_tag image_url("landing/prizes/raspberry-pi-5.png"), class: "prizes__item-img", alt: "Raspberry Pi 5", loading: "lazy" %>
+    </div>
+
+    <div data-controller="prize-float" class="prizes__item prizes__item--quest">
+      <%= image_tag image_url("landing/prizes/meta-quest-3.png"), class: "prizes__item-img", alt: "Meta Quest 3", loading: "lazy" %>
+    </div>
+
+    <span class="prizes__label prizes__label--bambu">bambu a1 mini 3d printer</span>
+    <span class="prizes__label prizes__label--framework">framework laptop</span>
+    <span class="prizes__label prizes__label--ipad">apple ipad</span>
+    <span class="prizes__label prizes__label--gpu">AMD RX 9060 GPU</span>
+    <span class="prizes__label prizes__label--rpi">Raspberry Pi 5</span>
+    <span class="prizes__label prizes__label--quest">Meta Quest 3</span>
   </div>
 </section>

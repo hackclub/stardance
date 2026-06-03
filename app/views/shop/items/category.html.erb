@@ -1,9 +1,8 @@
 <% content_for :title, @category_title %>
 
-<div class="shop-category shop-category--mode-<%= @shop_mode %>"
+<div class="shop-category"
      data-controller="shop"
-     data-shop-user-region-value="<%= @user_region %>"
-     data-shop-mode-value="<%= @shop_mode %>">
+     data-shop-user-region-value="<%= @user_region %>">
 
   <header class="shop-category__title-row">
     <span class="shop-category__title-divider shop-category__title-divider--left" aria-hidden="true"></span>
@@ -73,15 +72,13 @@
 
     <%= turbo_frame_tag "shop_items" do %>
       <div class="shop-category__items">
-        <% tutorial_item_ids = @shop_mode == :tutorial ? @tutorial_items.values.compact.map(&:id) : [] %>
         <% @shop_items.each do |item| %>
           <% if item.image.present? && item.enabled_in_region?(@user_region) %>
             <%= render "shop/items/item_card",
                   item: item,
-                  mode: @shop_mode,
                   region: @user_region,
                   balance: @user_balance,
-                  tutorial_item_ids: tutorial_item_ids %>
+                  wishlisted_item_ids: @wishlisted_item_ids %>
           <% end %>
         <% end %>
         <% if @shop_items.empty? %>

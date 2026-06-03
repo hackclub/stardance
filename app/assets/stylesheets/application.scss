@@ -44,6 +44,7 @@
 @use "components/streamer_mode";
 @use "components/idv_setup_card";
 @use "components/settings-form";
+@use "components/slack_doodle";
 
 // Pages
 @use "pages/onboarding" as onboarding_pages;

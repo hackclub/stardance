@@ -129,6 +129,14 @@
 
   &__item-title {
     flex: 1;
+    min-width: 0;
+  }
+
+  &__item-meta {
+    color: var(--color-brand-off-white);
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+    opacity: 0.62;
   }
 
   &__empty {

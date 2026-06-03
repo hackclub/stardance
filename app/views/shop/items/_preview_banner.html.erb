@@ -2,7 +2,9 @@
   <%
     step1_done = current_user&.hca_linked? && current_user&.projects&.exists?
     step2_done = step1_done && current_user&.hackatime_identity&.present?
-    step3_done = step2_done && current_user&.identity_verified?
+    step3_done = step2_done && current_user&.identity_submitted?
+    step4_done = step3_done && Post.where(user: current_user, postable_type: "Post::Devlog").exists?
+    first_project = current_user&.projects&.first
   %>
   <section class="shop-hub__tutorial-card shop-hub__tutorial-card--preview" aria-label="Free stickers">
     <div class="shop-hub__tutorial-card-header">
@@ -39,6 +41,16 @@
             Verify your identity
           <% end %>
         </div>
+        <div class="shop-hub__progress-item <%= 'shop-hub__progress-item--done' if step4_done %>">
+          <span class="shop-hub__progress-check"><%= step4_done ? "✓" : "4" %></span>
+          <% if step4_done %>
+            Post a devlog
+          <% elsif step3_done && first_project %>
+            <%= link_to "Post a devlog", project_path(first_project), class: "shop-hub__progress-link" %>
+          <% else %>
+            Post a devlog
+          <% end %>
+        </div>
       </div>
       <% unless current_user %>
         <%= form_tag "/auth/hack_club", method: :post, data: { turbo: false }, class: "shop-hub__progress-form" do %>
@@ -57,10 +69,8 @@
           <li class="shop-hub__items-card">
             <%= render "shop/items/item_card",
                   item: item,
-                  mode: :preview,
                   region: @user_region,
                   balance: 0,
-                  tutorial_item_ids: [],
                   spotlight: false %>
           </li>
         <% end %>

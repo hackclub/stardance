@@ -1,199 +1,130 @@
 <% content_for :title, @shop_item.name %>
-<div>
-  <div>
-    <div>
-      <h1><%= @shop_item.name %></h1>
-      <div>
+<% content_for :stylesheets do %>
+  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="shop-item-show">
+  <header class="shop-item-show__header">
+    <div class="shop-item-show__header-main">
+      <h1 class="shop-item-show__title"><%= @shop_item.name %></h1>
+      <div class="shop-item-show__badges">
         <% if @shop_item.draft? %>
-          <span>Draft</span>
+          <span class="badge badge-on_hold">Draft</span>
         <% end %>
         <% if @shop_item.enabled %>
           <% if @shop_item.expired? %>
-            <span>Expired</span>
+            <span class="badge badge-rejected">Expired</span>
           <% elsif @shop_item.enabled_until.present? %>
-            <span>Enabled until <%= @shop_item.enabled_until.strftime("%b %d, %Y %H:%M") %></span>
+            <span class="badge badge-fulfilled">Enabled until <%= @shop_item.enabled_until.strftime("%b %d, %Y %H:%M") %></span>
           <% else %>
-            <span>Enabled</span>
+            <span class="badge badge-fulfilled">Enabled</span>
           <% end %>
         <% else %>
-          <span>Disabled</span>
+          <span class="badge badge-rejected">Disabled</span>
         <% end %>
         <% if @shop_item.show_in_carousel %>
-          <span>In Carousel</span>
+          <span class="badge badge-awaiting_periodical_fulfillment">In Carousel</span>
         <% end %>
         <% if @shop_item.limited %>
-          <span>Limited</span>
+          <span class="badge badge-on_hold">Limited</span>
         <% end %>
       </div>
     </div>
-    <div>
+    <div class="shop-item-show__header-meta">
       <code>#<%= @shop_item.id %></code>
-      <span><%= @shop_item.type.to_s.gsub("ShopItem::", "") %></span>
+      <span class="badge" style="background: var(--color-set-1-bg); color: var(--color-space-text-muted); border: 1px solid #83828d;">
+        <%= @shop_item.type.to_s.gsub("ShopItem::", "") %>
+      </span>
     </div>
-  </div>
+  </header>
 
-  <div>
-    <div>
-      <div>
+  <div class="shop-item-show__layout">
+    <div class="shop-item-show__main">
+
+      <div class="card">
         <h3>Details</h3>
 
-        <div>
-          <div>
-            <span>Description</span>
-            <span><%= @shop_item.description.presence || "—" %></span>
+        <div class="shop-item-show__stats">
+          <div class="shop-item-show__stat">
+            <span class="shop-item-show__stat-value"><%= @shop_item.ticket_cost.to_i %></span>
+            <span class="shop-item-show__stat-label"><%= stardust_icon %> Stardust</span>
           </div>
+          <div class="shop-item-show__stat">
+            <span class="shop-item-show__stat-value"><%= @shop_item.usd_cost ? number_to_currency(@shop_item.usd_cost) : "—" %></span>
+            <span class="shop-item-show__stat-label">USD Cost</span>
+          </div>
+          <% if @shop_item.sale_percentage.present? && @shop_item.sale_percentage > 0 %>
+            <div class="shop-item-show__stat">
+              <span class="shop-item-show__stat-value"><%= @shop_item.sale_percentage %>%</span>
+              <span class="shop-item-show__stat-label">Sale</span>
+            </div>
+          <% end %>
+          <% if @shop_item.hacker_score.present? && @shop_item.hacker_score > 0 %>
+            <div class="shop-item-show__stat">
+              <span class="shop-item-show__stat-value"><%= @shop_item.hacker_score %></span>
+              <span class="shop-item-show__stat-label">Hacker Score</span>
+            </div>
+          <% end %>
+        </div>
 
+        <div class="shop-item-show__rows">
+          <div class="shop-item-show__row">
+            <span class="shop-item-show__row-label">Description</span>
+            <span class="shop-item-show__row-value"><%= @shop_item.description.presence || "—" %></span>
+          </div>
           <% if @shop_item.long_description.present? %>
-            <div>
-              <span>Extended Description</span>
-              <div>
-                <%= render MarkdownContentComponent.new(markdown: @shop_item.long_description) %>
-              </div>
+            <div class="shop-item-show__row">
+              <span class="shop-item-show__row-label">Extended Description</span>
+              <div class="shop-item-show__row-value"><%= render MarkdownContentComponent.new(markdown: @shop_item.long_description) %></div>
             </div>
           <% end %>
-
           <% if @shop_item.internal_description.present? %>
-            <div>
-              <span>Internal Notes</span>
-              <span><%= @shop_item.internal_description %></span>
+            <div class="shop-item-show__row">
+              <span class="shop-item-show__row-label">Internal Notes</span>
+              <span class="shop-item-show__row-value"><%= @shop_item.internal_description %></span>
             </div>
           <% end %>
-
-          <div>
-            <div>
-              <span><%= @shop_item.ticket_cost.to_i %></span>
-              <span>Tickets</span>
-            </div>
-            <div>
-              <span><%= @shop_item.usd_cost ? number_to_currency(@shop_item.usd_cost) : "—" %></span>
-              <span>USD Cost</span>
-            </div>
-            <% if @shop_item.sale_percentage.present? && @shop_item.sale_percentage > 0 %>
-              <div>
-                <span><%= @shop_item.sale_percentage %>%</span>
-                <span>Sale</span>
-              </div>
-            <% end %>
-            <% if @shop_item.hacker_score.present? && @shop_item.hacker_score > 0 %>
-              <div>
-                <span><%= @shop_item.hacker_score %></span>
-                <span>Hacker Score</span>
-              </div>
-            <% end %>
+          <div class="shop-item-show__row">
+            <span class="shop-item-show__row-label">Max Quantity</span>
+            <span class="shop-item-show__row-value"><%= @shop_item.max_qty || "Unlimited" %></span>
           </div>
-
-          <div>
-            <span>Max Quantity</span>
-            <span><%= @shop_item.max_qty || "Unlimited" %></span>
-          </div>
-
           <% if @shop_item.limited %>
-            <div>
-              <span>Stock</span>
-              <span><%= @shop_item.stock %> remaining</span>
+            <div class="shop-item-show__row">
+              <span class="shop-item-show__row-label">Stock</span>
+              <span class="shop-item-show__row-value"><%= @shop_item.stock %> remaining</span>
             </div>
           <% end %>
-
-          <div>
-            <span>One Per Person</span>
-            <span><%= @shop_item.one_per_person_ever ? "Yes" : "No" %></span>
+          <div class="shop-item-show__row">
+            <span class="shop-item-show__row-label">One Per Person</span>
+            <span class="shop-item-show__row-value"><%= @shop_item.one_per_person_ever ? "Yes" : "No" %></span>
           </div>
-
-          <div>
-            <span>Created</span>
-            <span><%= @shop_item.created_at.strftime("%b %d, %Y at %H:%M") %></span>
+          <div class="shop-item-show__row">
+            <span class="shop-item-show__row-label">Created</span>
+            <span class="shop-item-show__row-value"><%= @shop_item.created_at.strftime("%b %d, %Y at %H:%M") %></span>
           </div>
-
-          <div>
-            <span>Updated</span>
-            <span><%= @shop_item.updated_at.strftime("%b %d, %Y at %H:%M") %></span>
+          <div class="shop-item-show__row">
+            <span class="shop-item-show__row-label">Updated</span>
+            <span class="shop-item-show__row-value"><%= @shop_item.updated_at.strftime("%b %d, %Y at %H:%M") %></span>
           </div>
         </div>
       </div>
 
-      <div>
-        <h3>Country Blacklist</h3>
-
-        <div>
-          <div>
-            <span>Blocked Countries</span>
-            <span>
-              <% if @shop_item.blocked_countries.present? %>
-                <span>
-                  <%= @shop_item.blocked_countries.join(", ") %>
-                </span>
-              <% else %>
-                <span>None :D</span>
-              <% end %>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <% if @shop_item.is_a?(ShopItem::Accessory) %>
-        <div>
-          <h3>Parent Items</h3>
-          <% parent_items = @shop_item.attached_shop_items %>
-          <% if parent_items.any? %>
-            <div>
-              <% parent_items.each do |item| %>
-                <div>
-                  <%= link_to item.name, admin_shop_item_path(item) %>
-                  <span><%= item.type.to_s.demodulize.underscore.humanize %></span>
-                </div>
-              <% end %>
-            </div>
-          <% else %>
-            <p>No parent items attached.</p>
-          <% end %>
-        </div>
-      <% elsif @shop_item.has_accessories? %>
-        <div>
-          <h3>Accessories</h3>
-          <div>
-            <% @shop_item.available_accessories.each do |accessory| %>
-              <div>
-                <%= link_to accessory.name, admin_shop_item_path(accessory) %>
-                <% if accessory.has_tag? %>
-                  <span><%= accessory.accessory_tag.titleize %></span>
-                <% end %>
-                <span><%= stardust_icon %> <%= accessory.ticket_cost.to_i %></span>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-
-      <div>
+      <div class="card">
         <h3>Regional Availability</h3>
-
-        <div>
+        <div class="shop-item-show__regions">
           <% Shop::Regionalizable::REGIONS.each do |code, config| %>
             <%
               enabled = @shop_item.send("enabled_#{code.downcase}")
               offset = @shop_item.send("usd_offset_#{code.downcase}") || 0
-              flag = case code
-                     when "US" then "🇺🇸"
-                     when "EU" then "🇪🇺"
-                     when "UK" then "🇬🇧"
-                     when "CA" then "🇨🇦"
-                     when "AU" then "🇦🇺"
-                     when "IN" then "🇮🇳"
-                     when "XX" then "🌍"
-                     else "🏳️"
-                     end
+              flag = { "US" => "🇺🇸", "EU" => "🇪🇺", "UK" => "🇬🇧", "CA" => "🇨🇦", "AU" => "🇦🇺", "IN" => "🇮🇳", "XX" => "🌍" }[code] || "🏳️"
             %>
-            <div>
-              <span><%= flag %></span>
-              <span><%= config[:name] %></span>
+            <div class="shop-item-show__region <%= enabled ? "shop-item-show__region--enabled" : "shop-item-show__region--disabled" %>">
+              <span><%= flag %> <%= config[:name] %></span>
               <span>
                 <% if enabled %>
-                  <span>✓</span>
-                  <% if offset != 0 %>
-                    <span><%= offset >= 0 ? "+#{offset}" : offset %></span>
-                  <% end %>
+                  <span class="badge badge-fulfilled">✓<% if offset != 0 %> <%= offset >= 0 ? "+#{offset}" : offset %><% end %></span>
                 <% else %>
-                  <span>Disabled</span>
+                  <span class="badge badge-rejected">Disabled</span>
                 <% end %>
               </span>
             </div>
@@ -201,28 +132,63 @@
         </div>
       </div>
 
+      <% if @shop_item.blocked_countries.present? %>
+        <div class="card">
+          <h3>Country Blacklist</h3>
+          <div class="shop-item-show__row">
+            <span class="shop-item-show__row-label">Blocked</span>
+            <span class="shop-item-show__row-value"><%= @shop_item.blocked_countries.join(", ") %></span>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @shop_item.is_a?(ShopItem::Accessory) %>
+        <div class="card">
+          <h3>Parent Items</h3>
+          <% parent_items = @shop_item.attached_shop_items %>
+          <% if parent_items.any? %>
+            <% parent_items.each do |item| %>
+              <div class="shop-item-show__row">
+                <%= link_to item.name, admin_shop_item_path(item) %>
+                <span class="badge" style="background: var(--color-set-1-bg); color: var(--color-space-text-muted); border: 1px solid #83828d;"><%= item.type.to_s.demodulize.underscore.humanize %></span>
+              </div>
+            <% end %>
+          <% else %>
+            <p style="color: var(--color-space-text-muted); margin: 0;">No parent items attached.</p>
+          <% end %>
+        </div>
+      <% elsif @shop_item.has_accessories? %>
+        <div class="card">
+          <h3>Accessories</h3>
+          <% @shop_item.available_accessories.each do |accessory| %>
+            <div class="shop-item-show__row">
+              <%= link_to accessory.name, admin_shop_item_path(accessory) %>
+              <span style="color: var(--color-space-text-muted); font-size: 0.875rem;"><%= stardust_icon %> <%= accessory.ticket_cost.to_i %></span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
       <% if @shop_item.type.in?(["ShopItem::HCBGrant", "ShopItem::HCBPreauthGrant"]) %>
-        <div>
+        <div class="card">
           <h3>HCB Settings</h3>
-
-          <div>
-            <div>
-              <span>Merchant Lock</span>
-              <span><code><%= @shop_item.hcb_merchant_lock.presence || "—" %></code></span>
+          <div class="shop-item-show__rows">
+            <div class="shop-item-show__row">
+              <span class="shop-item-show__row-label">Merchant Lock</span>
+              <span class="shop-item-show__row-value"><code><%= @shop_item.hcb_merchant_lock.presence || "—" %></code></span>
             </div>
-            <div>
-              <span>Category Lock</span>
-              <span><code><%= @shop_item.hcb_category_lock.presence || "—" %></code></span>
+            <div class="shop-item-show__row">
+              <span class="shop-item-show__row-label">Category Lock</span>
+              <span class="shop-item-show__row-value"><code><%= @shop_item.hcb_category_lock.presence || "—" %></code></span>
             </div>
-            <div>
-              <span>Keyword Lock</span>
-              <span><code><%= @shop_item.hcb_keyword_lock.presence || "—" %></code></span>
+            <div class="shop-item-show__row">
+              <span class="shop-item-show__row-label">Keyword Lock</span>
+              <span class="shop-item-show__row-value"><code><%= @shop_item.hcb_keyword_lock.presence || "—" %></code></span>
             </div>
-
             <% if @shop_item.type == "ShopItem::HCBPreauthGrant" && @shop_item.hcb_preauthorization_instructions.present? %>
-              <div>
-                <span>Preauthorization Instructions</span>
-                <div><%= simple_format(@shop_item.hcb_preauthorization_instructions) %></div>
+              <div class="shop-item-show__row">
+                <span class="shop-item-show__row-label">Preauth Instructions</span>
+                <div class="shop-item-show__row-value"><%= simple_format(@shop_item.hcb_preauthorization_instructions) %></div>
               </div>
             <% end %>
           </div>
@@ -230,122 +196,105 @@
       <% end %>
 
       <% if @shop_item.type.in?(["ShopItem::HackClubberItem", "ShopItem::ThirdPartyDigital", "ShopItem::HQMailItem"]) %>
-        <div>
+        <div class="card">
           <h3>Source Region</h3>
-          <div>
-            <div>
-              <span>Source Region</span>
-              <span>
-                <% if @shop_item.source_region.present? %>
-                  <% region_config = Shop::Regionalizable::REGIONS[@shop_item.source_region] %>
-                  <%= region_config ? region_config[:name] : @shop_item.source_region %>
-                <% else %>
-                  <span>Not set (using default behavior)</span>
-                <% end %>
-              </span>
-            </div>
+          <div class="shop-item-show__row">
+            <span class="shop-item-show__row-label">Region</span>
+            <span class="shop-item-show__row-value">
+              <% if @shop_item.source_region.present? %>
+                <% region_config = Shop::Regionalizable::REGIONS[@shop_item.source_region] %>
+                <%= region_config ? region_config[:name] : @shop_item.source_region %>
+              <% else %>
+                <span style="color: var(--color-space-text-muted);">Not set (using default behavior)</span>
+              <% end %>
+            </span>
           </div>
         </div>
       <% end %>
 
-      <div>
-        <div>
-          <h3>Orders for this Item</h3>
-          <span><%= @shop_item.shop_orders.count %> orders</span>
+      <div class="card">
+        <div class="shop-item-show__section-header">
+          <h3>Orders</h3>
+          <span><%= @shop_item.shop_orders.count %> total</span>
         </div>
 
         <% if @shop_orders.any? %>
-          <div>
-            <table>
-              <thead>
+          <table class="table-data">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>User</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Region</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @shop_orders.each do |order| %>
                 <tr>
-                  <th>Order ID</th>
-                  <th>User</th>
-                  <th>Quantity</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Region</th>
-                  <th>Created</th>
-                  <th>Actions</th>
+                  <td><code>#<%= order.id %></code></td>
+                  <td>
+                    <%= link_to order.user.display_name || "Unknown", admin_user_path(order.user) %><br>
+                    <small style="color: var(--color-space-text-muted);"><%= order.user.email %></small>
+                  </td>
+                  <td><%= order.quantity %></td>
+                  <td><%= order.total_cost %></td>
+                  <td>
+                    <span class="badge badge-<%= order.aasm_state %>"><%= order.aasm_state.humanize %></span>
+                  </td>
+                  <td>
+                    <% if order.frozen_address.present? %>
+                      <%= country_name_from_code(order.frozen_address["country"]) %>
+                    <% else %>
+                      <span style="color: var(--color-space-text-muted);">—</span>
+                    <% end %>
+                  </td>
+                  <td style="white-space: nowrap;">
+                    <%= order.created_at.strftime("%b %d, %Y") %><br>
+                    <small style="color: var(--color-space-text-muted);"><%= order.created_at.strftime("%l:%M %p") %></small>
+                  </td>
+                  <td><%= link_to "View", admin_shop_order_path(order), class: "btn-primary slim" %></td>
                 </tr>
-              </thead>
-              <tbody>
-                <% @shop_orders.each do |order| %>
-                  <tr>
-                    <td>#<%= order.id %></td>
-                    <td>
-                      <%= link_to order.user.display_name || "Unknown", admin_user_path(order.user) %><br>
-                      <small><%= order.user.email %></small>
-                    </td>
-                    <td><%= order.quantity %></td>
-                    <td><%= order.total_cost %></td>
-                    <td>
-                      <span>
-                        <%= order.aasm_state.humanize %>
-                      </span>
-                    </td>
-                    <td>
-                      <% if order.frozen_address.present? %>
-                        <span>
-                          <%= country_name_from_code(order.frozen_address["country"]) %>
-                        </span>
-                      <% else %>
-                        <span>—</span>
-                      <% end %>
-                    </td>
-                    <td>
-                      <%= order.created_at.strftime("%b %d, %Y") %><br>
-                      <small><%= order.created_at.strftime("%l:%M %p") %></small>
-                    </td>
-                    <td>
-                      <%= link_to "View", admin_shop_order_path(order) %>
-                    </td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-
+              <% end %>
+            </tbody>
+          </table>
           <% if @pagy.pages > 1 %>
-            <div>
-              <%== @pagy.series_nav %>
-            </div>
+            <div class="pagination" style="margin-top: 1rem;"><%== @pagy.series_nav %></div>
           <% end %>
         <% else %>
-          <div>
-            <p>No orders for this item yet.</p>
-          </div>
+          <p style="color: var(--color-space-text-muted); margin: 0;">No orders for this item yet.</p>
         <% end %>
       </div>
 
       <%= render "admin/shared/audit_log", record: @shop_item, item_type: "ShopItem" %>
     </div>
 
-    <div>
+    <div class="shop-item-show__sidebar">
       <% if @shop_item.image.attached? %>
-        <div>
+        <div class="card">
           <h3>Image</h3>
-          <div>
-            <%= image_tag @shop_item.image.variant(:carousel_lg) %>
-          </div>
+          <%= image_tag @shop_item.image.variant(:carousel_lg), style: "width: 100%; border-radius: 8px; display: block;" %>
         </div>
       <% end %>
 
-      <div>
+      <div class="card">
         <h3>Actions</h3>
-        <div>
-          <%= link_to "New Item", new_admin_shop_item_path %>
+        <div class="shop-item-show__actions">
+          <%= link_to "New Item", new_admin_shop_item_path, class: "btn-secondary" %>
+          <%= link_to "Edit Item", edit_admin_shop_item_path(@shop_item), class: "btn-primary" %>
           <% if @shop_item.draft? && current_user.shop_manager? && @shop_item.created_by_user_id == current_user.id %>
-            <%= button_to "Request Approval", request_approval_admin_shop_item_path(@shop_item), method: :post, data: { turbo_confirm: "Request admin approval for this draft?" } %>
+            <%= button_to "Request Approval", request_approval_admin_shop_item_path(@shop_item), method: :post, class: "btn-secondary", data: { turbo_confirm: "Request admin approval for this draft?" } %>
           <% end %>
-          <%= link_to "Edit Item", edit_admin_shop_item_path(@shop_item) %>
-          <%= button_to "Delete", admin_shop_item_path(@shop_item), method: :delete, data: { confirm: "Are you sure you want to delete this item?" } %>
+          <%= button_to "Delete", admin_shop_item_path(@shop_item), method: :delete, class: "btn-danger", onclick: "return confirm('Are you sure you want to delete this item? This cannot be undone.')" %>
         </div>
       </div>
     </div>
   </div>
 
-  <div>
+  <div style="margin-top: var(--space-m);">
     <%= link_to "← Back to Shop", admin_shop_path %>
   </div>
 </div>

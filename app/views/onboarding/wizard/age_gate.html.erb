@@ -1,4 +1,10 @@
 <% content_for :title, "Too old" %>
+<% content_for :escape_extras do %>
+  <span class="onboarding-escape__sep">&middot;</span>
+  <%= form_tag "/auth/hack_club", method: :post, data: { turbo: false }, class: "onboarding-escape__reauth" do %>
+    <%= submit_tag "Re-verify", class: "onboarding-escape__link onboarding-escape__link--reauth" %>
+  <% end %>
+<% end %>
 <main class="onboarding-screen onboarding-screen--age-gate">
   <div class="onboarding-age-gate__illustration" aria-hidden="true">
     <%= image_tag "onboarding/uh-oh-dino.svg", class: "onboarding-age-gate__dino", alt: "" %>
@@ -21,6 +27,6 @@
     <%= link_to "Landing page", root_path, class: "onboarding-age-gate__link" %>
     <%= link_to "Teacher? see edu page", "/edu", class: "onboarding-age-gate__link" %>
     <%= link_to "Learn about hack club", "https://hackclub.com", target: "_blank", rel: "noopener", class: "onboarding-age-gate__link" %>
-    <%= link_to "look at the platform anyway", root_path, class: "onboarding-age-gate__link onboarding-age-gate__link--centered" %>
+    <%= link_to "look at the platform anyway", home_path, class: "onboarding-age-gate__link onboarding-age-gate__link--centered" %>
   </footer>
 </main>

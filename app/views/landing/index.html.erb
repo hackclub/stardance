@@ -1,6 +1,6 @@
 <% content_for :title, "Home" %>
 <% content_for :twitter_card, "summary_large_image" %>
-<% content_for :og_image, og_image_url('home', format: :png) %>
+<% content_for :og_image, image_url("landing/space/og-default.png") %>
 
 <%= content_for :stylesheets do %>
   <%= stylesheet_link_tag "landing", "data-turbo-track": "reload" %>
@@ -13,8 +13,6 @@
   <script>document.documentElement.classList.add('warping');</script>
 <% end %>
 
-<%= render "landing/sections/countdown_bar" %>
-
 <div data-controller="reveal-on-scroll">
   <div class="hero-header-wrapper" data-controller="hero-warp">
     <div class="hero__left-gradient" aria-hidden="true"></div>
@@ -22,29 +20,33 @@
     <%= render "landing/sections/hero" %>
   </div>
 
-  <% cache landing_static_sections_cache_key do %>
-    <%= render "landing/sections/what_is_this" %>
+  <%= render "landing/sections/what_is_this" %>
 
-    <%= render "landing/sections/how_this_works" %>
+  <%= render "landing/sections/how_this_works" %>
 
-    <%= render "landing/sections/project_thumbnails" %>
+  <%= render "landing/sections/project_thumbnails" %>
 
-    <%= render "landing/sections/gain_stardust" %>
+  <%= render "landing/sections/gain_stardust" %>
 
-    <%= render "landing/sections/prizes" %>
+  <%= render "landing/sections/prizes" %>
 
-    <%= render "landing/sections/project_outcome" %>
+  <%= render "landing/sections/project_outcome" %>
 
-    <%= render "landing/sections/weekend" %>
+  <%= render "landing/sections/weekend" %>
 
-    <%= render "landing/sections/done_before" %>
+  <%= render "landing/sections/what_is_hc" %>
 
-    <%= render "landing/sections/faq" %>
+  <%= render "landing/sections/highlights" %>
 
-    <%= render "landing/sections/cta", new_onboarding: @new_onboarding %>
+  <%= render "landing/sections/done_before" %>
 
-    <%= render "landing/sections/footer" %>
-  <% end %>
+  <%= render "landing/sections/partners" %>
+
+  <%= render "landing/sections/faq" %>
+
+  <%= render "landing/sections/cta", new_onboarding: @new_onboarding %>
+
+  <%= render "landing/sections/footer" %>
 </div>
 
 <%= render "landing/sections/user_ref_modal", token: @user_ref_token if @user_ref_token.present? %>

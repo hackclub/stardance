@@ -93,12 +93,8 @@ class ShopItem::FreeStickers < ShopItem
 
     if email.blank? || address.blank?
       Rails.logger.warn(
-        "FreeStickers order #{shop_order.id} missing email or address — re-enqueuing"
+        "FreeStickers order #{shop_order.id} missing email or address — will retry via daily job"
       )
-
-      # push to end of queue (new job)
-      FulfillShopOrderJob.perform_later(shop_order.id)
-
       return
     end
 

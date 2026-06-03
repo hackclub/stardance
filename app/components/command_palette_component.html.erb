@@ -1,7 +1,8 @@
 <dialog class="command-palette"
         id="command-palette-dialog"
         data-controller="command-palette"
-        data-action="cancel->command-palette#handleCancel click->command-palette#backdropClick"
+        data-command-palette-search-url-value="<%= helpers.global_search_path %>"
+        data-action="cancel->command-palette#handleCancel click->command-palette#backdropClick turbo:frame-load->command-palette#resultsLoaded"
         aria-label="Command palette"
         aria-modal="true">
 
@@ -18,7 +19,10 @@
            aria-activedescendant="">
   </div>
 
-  <div class="command-palette__results" role="listbox">
+  <turbo-frame id="command-palette-results"
+               class="command-palette__results"
+               role="listbox"
+               data-command-palette-target="results">
     <p class="command-palette__section-label">Commands</p>
     <ul class="command-palette__list">
       <% initial_commands.each_with_index do |cmd, i| %>
@@ -27,6 +31,7 @@
             id="cp-item-<%= i %>"
             data-command-palette-target="item"
             data-action="click->command-palette#select mouseenter->command-palette#highlight"
+            data-static="true"
             data-path="<%= cmd.path %>"
             data-keywords="<%= cmd.keywords.join(" ") %>"
             <% if cmd.post? %> data-method="post"<% end %>>
@@ -39,7 +44,7 @@
         </li>
       <% end %>
     </ul>
-  </div>
+  </turbo-frame>
 
   <div class="command-palette__footer">
     <div class="command-palette__footer-hints">

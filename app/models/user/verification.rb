@@ -6,6 +6,7 @@ module User::Verification
   end
 
   def identity_verified? = verification_verified?
+  def identity_submitted? = verification_verified? || verification_pending?
 
   def ysws_eligible?
     return manual_ysws_override if manual_ysws_override.in?([ true, false ])

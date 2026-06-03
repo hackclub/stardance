@@ -13,14 +13,19 @@ export default class extends Controller {
     "banner",
     "bannerLabel",
     "bannerInput",
+    "placeholder",
   ];
   static classes = ["editing"];
   static values = { defaultBanner: String };
 
   connect() {
-    // bannerTarget is an <img class="profile__banner-image">; remember its
-    // src so cancel can restore it after an in-progress preview.
     this._originalBanner = this.bannerTarget.src;
+    this._onSubmitEnd = this._onSubmitEnd.bind(this);
+    this.element.addEventListener("turbo:submit-end", this._onSubmitEnd);
+  }
+
+  disconnect() {
+    this.element.removeEventListener("turbo:submit-end", this._onSubmitEnd);
   }
 
   enter(event) {
@@ -52,6 +57,24 @@ export default class extends Controller {
     if (!file) return;
     const url = URL.createObjectURL(file);
     this.bannerTarget.src = url;
+    const banner = this.element.querySelector(".profile__banner");
+    if (banner) banner.classList.remove("profile__banner--empty");
+    if (this.hasPlaceholderTarget) {
+      banner.appendChild(this.bannerInputTarget);
+      this.bannerInputTarget.hidden = true;
+      this.placeholderTarget.remove();
+    }
+  }
+
+  _onSubmitEnd(event) {
+    if (!event.detail.success) return;
+    this._originalBanner = this.bannerTarget.src;
+    this.element.classList.remove(this.editingClass);
+    this._toggleHidden(this.editBtnTarget, false);
+    this._toggleHidden(this.saveBtnTarget, true);
+    this._toggleHidden(this.cancelBtnTarget, true);
+    if (this.hasBioEditTarget) this.bioEditTarget.hidden = true;
+    if (this.hasBioViewTarget) this.bioViewTarget.hidden = false;
   }
 
   _toggleHidden(el, hidden) {

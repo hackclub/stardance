@@ -55,14 +55,14 @@ module OgImage
 
     def draw_mission_label
       draw_soft_shadow("MISSION", x: 70, y: 170, size: 24, radius: 4, opacity: 0.7)
-      draw_text("MISSION", x: 70, y: 170, size: 24, color: "#81ffff")
+      draw_text("MISSION", x: 70, y: 170, size: 24, color: "#95dbff")
     end
 
     def draw_mission_name
       lines = wrap_text(@mission.name, 20).take(3)
       spacing = (64 * 1.3).to_i
       lines.each_with_index do |line, i|
-        draw_soft_shadow(line, x: 70, y: 210 + (i * spacing), size: 64, font: title_font_name, radius: 8, opacity: 0.7)
+        draw_soft_shadow(line, x: 70, y: 210 + (i * spacing), size: 64, font: heading_font_name, radius: 8, opacity: 0.7)
       end
 
       @name_lines = draw_glowing_multiline_text(
@@ -71,7 +71,7 @@ module OgImage
         color: "#fffcf4", glow_color: "#ebb7ff",
         max_chars: 20, max_lines: 3,
         glow_radius: 8, glow_opacity: 0.35,
-        font: title_font_name
+        font: heading_font_name
       )
     end
 

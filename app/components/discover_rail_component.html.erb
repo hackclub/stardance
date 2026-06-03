@@ -1,10 +1,31 @@
-<aside class="discover-rail" aria-label="Discover">
+<aside class="discover-rail"
+       aria-label="Discover"
+       data-controller="discover-rail-search"
+       data-discover-rail-search-url-value="<%= helpers.global_search_path %>">
   <div class="discover-rail__search">
-    <input type="text" class="discover-rail__search-input" placeholder="Search…" aria-label="Search" autocomplete="off" disabled>
+    <input type="search"
+           class="discover-rail__search-input"
+           placeholder="Search…"
+           aria-label="Search"
+           autocomplete="off"
+           data-discover-rail-search-target="input"
+           data-action="input->discover-rail-search#search">
     <%= helpers.inline_svg_tag "icons/search.svg", class: "discover-rail__search-icon" %>
+    <button type="button"
+            class="discover-rail__search-clear"
+            aria-label="Clear search"
+            data-discover-rail-search-target="clearButton"
+            data-action="discover-rail-search#clear"
+            hidden>
+      <%= helpers.inline_svg_tag "icons/close.svg", class: "discover-rail__search-clear-icon" %>
+    </button>
   </div>
 
-  <% widgets.each do |widget| %>
-    <%= render widget %>
-  <% end %>
+  <turbo-frame id="discover-rail-results" data-discover-rail-search-target="results" hidden></turbo-frame>
+
+  <div data-discover-rail-search-target="widgets">
+    <% widgets.each do |widget| %>
+      <%= render widget %>
+    <% end %>
+  </div>
 </aside>

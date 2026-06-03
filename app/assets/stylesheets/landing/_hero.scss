@@ -151,7 +151,7 @@
   user-select: none;
   z-index: 10;
   transform: rotate(-9deg);
-  right: calc(-420px + 30vw);
+  right: calc(-250px + 18vw);
 
   &.is-falling {
     animation: hero-doodle-arrow-fall 1.2s ease-in forwards !important;
@@ -189,7 +189,7 @@ html.warped .hero__doodle-arrow.is-falling {
 
 .hero__caption {
   font-family: "Exo 2", sans-serif;
-  font-size: var(--font-subtitle);
+  font-size: clamp(18px, 1.6vw, 20px);
   font-style: italic;
   color: var(--color-yellow-200);
   margin: 0;
@@ -198,12 +198,8 @@ html.warped .hero__doodle-arrow.is-falling {
   position: relative;
 }
 
-// Live RSVP counter. The exiting number stays in normal flow (so the
-// counter's box size and baseline are stable for surrounding text); the
-// entering number is absolutely stacked on top, starts offset below,
-// and fades+slides into place while the exiting one fades+slides out the
-// top. Fading out the exiting number avoids needing to clip it as it
-// passes above the line.
+// Odometer-style live counter. Each digit is its own element so only
+// the changing digits animate (slide up/fade) on each tick.
 .rsvp-counter {
   position: relative;
   display: inline-block;
@@ -211,39 +207,49 @@ html.warped .hero__doodle-arrow.is-falling {
   font-variant-numeric: tabular-nums;
 }
 
-.rsvp-counter__inner {
+.rsvp-counter__digit {
   display: inline-block;
-  line-height: inherit;
-  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  vertical-align: top;
 }
 
-.rsvp-counter__inner--exiting {
-  animation: rsvp-counter-exit 680ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.rsvp-counter__sep {
+  display: inline-block;
+}
+
+.rsvp-counter__digit-inner {
+  display: block;
+  line-height: inherit;
+}
+
+.rsvp-counter__digit-inner--exiting {
+  animation: rsvp-digit-exit 680ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
 }
 
-.rsvp-counter__inner--entering {
+.rsvp-counter__digit-inner--entering {
   position: absolute;
   top: 0;
   left: 0;
-  animation: rsvp-counter-enter 680ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: rsvp-digit-enter 680ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: none;
 }
 
-@keyframes rsvp-counter-exit {
+@keyframes rsvp-digit-exit {
   0% {
     transform: translateY(0);
     opacity: 1;
   }
   100% {
-    transform: translateY(-0.55em);
+    transform: translateY(-100%);
     opacity: 0;
   }
 }
 
-@keyframes rsvp-counter-enter {
+@keyframes rsvp-digit-enter {
   0% {
-    transform: translateY(0.55em);
+    transform: translateY(100%);
     opacity: 0;
   }
   100% {
@@ -252,7 +258,6 @@ html.warped .hero__doodle-arrow.is-falling {
   }
 }
 
-// Brief color brighten on the whole counter as the new number arrives.
 .rsvp-counter--tick {
   animation: rsvp-counter-tick 620ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -273,8 +278,8 @@ html.warped .hero__doodle-arrow.is-falling {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rsvp-counter__inner--exiting,
-  .rsvp-counter__inner--entering {
+  .rsvp-counter__digit-inner--exiting,
+  .rsvp-counter__digit-inner--entering {
     animation: none;
   }
   .rsvp-counter--tick {

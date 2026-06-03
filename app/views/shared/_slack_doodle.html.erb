@@ -1,0 +1,20 @@
+<% if current_user&.hca_linked? && !current_user.has_dismissed?("slack_doodle") %>
+  <div class="slack-doodle" data-controller="slack-doodle">
+    <div class="slack-doodle__art">
+      <%= image_tag "slack-doodle.png", alt: "Orpheus holding the Slack logo", class: "slack-doodle__image" %>
+    </div>
+
+    <div class="slack-doodle__card">
+      <p class="slack-doodle__text">
+        btw, check your inbox for an invite to
+        <strong>Hack Club Slack</strong> &mdash; it's where we hang out,
+        ask questions, and make cool things!
+      </p>
+      <button type="button"
+              class="slack-doodle__dismiss"
+              data-action="click->slack-doodle#dismiss">
+        Got it!
+      </button>
+    </div>
+  </div>
+<% end %>

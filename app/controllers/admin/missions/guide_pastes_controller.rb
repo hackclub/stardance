@@ -17,13 +17,13 @@ module Admin
                       alert: "Guide is too large (#{(body.bytesize / 1024.0).round}KB). Max is #{MAX_PASTE_BYTES / 1024}KB." and return
         end
 
-        if Mission.guide_paste_preamble(body).present?
+        body = strip_preamble(body)
+
+        if Mission.parse_h2_sections(body).empty?
           redirect_to edit_admin_mission_path(@mission.slug, language: language_label),
-                      alert: "Move any intro text inside the first step — the guide must start with an `## H2 heading`." and return
+                      alert: "No steps found — the guide needs at least one ## heading." and return
         end
 
-        # Case-insensitive match — re-pasting `python` finds the existing `Python`
-        # variant instead of tripping uniqueness.
         variant = @mission.guide_variants
                           .where("LOWER(language) = ?", language_label.downcase)
                           .first ||
@@ -36,6 +36,24 @@ module Admin
 
         redirect_to edit_admin_mission_path(@mission.slug, language: variant.language),
                     notice: "Guide replaced for #{variant.language}."
+      end
+
+      private
+
+      def strip_preamble(text)
+        normalized = text.gsub("\r\n", "\n").gsub("\r", "\n")
+        lines = normalized.split("\n")
+
+        # If there are no ## headings but there are # headings, promote them.
+        has_h2 = lines.any? { |l| l.match?(/\A##\s+/) }
+        unless has_h2
+          has_h1 = lines.any? { |l| l.match?(/\A#\s+/) }
+          lines = lines.map { |l| l.sub(/\A#(\s+)/, '##\1') } if has_h1
+        end
+
+        first_h2 = lines.index { |l| l.match?(/\A##\s+/) }
+        return lines.join("\n") if first_h2.nil? || first_h2 == 0
+        lines.drop(first_h2).join("\n")
       end
     end
   end

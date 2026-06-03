@@ -29,6 +29,7 @@ class Projects::DevlogsController < ApplicationController
       if @devlog.save
         Post.create!(project: @project, user: current_user, postable: @devlog)
         session.delete(test_time_session_key) if test_time_granted?
+        track_event "devlog_posted", { project_id: @project.id, devlog_id: @devlog.id, duration_seconds: @devlog.duration_seconds }
         flash[:notice] = "Devlog created successfully"
 
         return redirect_to project_path(@project)

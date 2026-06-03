@@ -25,6 +25,8 @@ class ProjectsController < ApplicationController
     end
 
     prepare_project_show_context
+
+    render :show_hackpad if @project_onboarding_mission&.slug == "hackpad"
   end
 
   def prepare_project_show_context
@@ -119,7 +121,10 @@ class ProjectsController < ApplicationController
       @liked_devlog_ids = Set.new
     end
 
-    ahoy.track "Viewed project", project_id: @project.id
+    track_event "Viewed project", project_id: @project.id
+    if current_user.present? && !@is_member
+      @project.send_gorse_feedback_later(user: current_user, item: @project, feedback_type: :read, comment: "project_show")
+    end
 
     @latest_ship_post = @posts.find { |post| post.postable_type == "Post::ShipEvent" }
     latest_ship_event = @latest_ship_post&.postable
@@ -221,13 +226,21 @@ class ProjectsController < ApplicationController
     end
 
     if success
+      track_event "project_created", { project_id: @project.id, source: "new_form" }
       flash[:notice] = "Project created successfully"
 
       project_hours = @project.total_hackatime_hours
 
-      if (slug = params[:mission_slug].presence)
-        mission = Mission.find_by(slug: slug)
-        @project.missions << mission if mission
+      if (slug = params[:mission_slug].presence) && (mission = Mission.find_by(slug: slug))
+        @project.missions << mission
+        attrs = {}
+        if @project.title.blank? || @project.title == "Untitled"
+          attrs[:title] = mission.default_project_title.presence || mission.name
+        end
+        if @project.description.blank? && mission.default_project_description.present?
+          attrs[:description] = mission.default_project_description
+        end
+        @project.update!(attrs) if attrs.any?
       end
 
       first_project = current_user.projects.count == 1
@@ -397,7 +410,7 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, hackatime_project_ids: [])
+    params.require(:project).permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, :update_description, hackatime_project_ids: [])
   end
 
   def hackatime_project_ids
@@ -433,8 +446,6 @@ class ProjectsController < ApplicationController
 
   def validate_url_not_dead(attribute, name)
     require "uri"
-    require "faraday"
-    require "faraday/follow_redirects"
 
     return unless @project.send(attribute).present?
 
@@ -444,20 +455,19 @@ class ProjectsController < ApplicationController
       return
     end
 
-    conn = Faraday.new(
-      url: uri.to_s,
-      headers: { "User-Agent" => "Stardance project validator (https://stardance.hackclub.com/)" }
-    ) do |faraday|
-      faraday.response :follow_redirects, max_redirects: 3
-      faraday.adapter Faraday.default_adapter
-    end
-    response = conn.get() do |req|
-      req.options.timeout = 5
-      req.options.open_timeout = 5
-    end
+    # Pinned probe: resolves+verifies the host and connects to that exact IP, so
+    # the address we vetted is the one we hit even across redirects. This is the
+    # SSRF-safe path the model's url_reachable? already uses — keep both on it.
+    response = SafeUrl.safe_get(
+      uri.to_s,
+      headers: { "User-Agent" => "Stardance project validator (https://stardance.hackclub.com/)" },
+      open_timeout: 5,
+      read_timeout: 5
+    )
+    status = response.code.to_i
 
-    unless (200..299).cover?(response.status)
-      @project.errors.add(attribute, "Your #{name} needs to return a 200 status. I got #{response.status}, is your code/website set to public!?!?")
+    unless (200..299).cover?(status)
+      @project.errors.add(attribute, "Your #{name} needs to return a 200 status. I got #{status}, is your code/website set to public!?!?")
     end
 
 
@@ -503,12 +513,19 @@ class ProjectsController < ApplicationController
 
   rescue URI::InvalidURIError
     @project.errors.add(attribute, "#{name} is not a valid URL")
-  rescue Faraday::ConnectionFailed => e
-    @project.errors.add(attribute, "Please make sure the URL is valid and reachable: #{e.message}")
+  rescue SafeUrl::Error => e
+    # Host failed SSRF verification (non-public IP, unresolvable, bad scheme).
+    # Keep the real reason in the logs; give the user a cheeky generic message
+    # so we don't confirm whether an internal host exists.
+    Rails.logger.warn("URL validation rejected #{attribute}: #{e.message}")
+    @project.errors.add(attribute, "nice try ding dong — #{name} has to be a real, public URL")
+  rescue SocketError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError => e
+    Rails.logger.warn("URL validation failed for #{attribute}: #{e.class}: #{e.message}")
+    @project.errors.add(attribute, "#{name} could not be reached. Please make sure the URL is valid and publicly accessible.")
   rescue StandardError => e
-    @project.errors.add(attribute, "#{name} could not be verified (idk why, pls let a admin know if this is happening a lot and your sure that the URL is valid): #{e.message}")
+    Rails.logger.warn("URL validation error for #{attribute}: #{e.class}: #{e.message}")
+    @project.errors.add(attribute, "#{name} could not be verified. Please try again or contact support if the issue persists.")
   end
-
   def link_hackatime_projects
     # Unlink hackatime projects that were removed
     @project.hackatime_projects.where.not(id: hackatime_project_ids).find_each do |hp|

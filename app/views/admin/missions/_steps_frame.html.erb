@@ -37,6 +37,29 @@
                 data-action="click->modal#open"
                 title="Add a new language">+ language</button>
       </nav>
+
+      <% if current_language.present? %>
+        <details class="admin-mission-edit__lang-rename">
+          <summary class="admin-mission-edit__lang-rename-toggle">Rename or delete "<%= current_language %>"</summary>
+          <div class="admin-mission-edit__lang-rename-actions">
+            <%= form_with url: admin_mission_language_rename_path(mission.slug),
+                  method: :post, class: "admin-mission-edit__lang-rename-form" do %>
+              <%= hidden_field_tag :old_language, current_language %>
+              <%= text_field_tag :new_language, current_language,
+                    required: true, autocomplete: "off",
+                    class: "admin-mission-edit__lang-rename-input",
+                    placeholder: "New name…" %>
+              <%= submit_tag "Rename", class: "action-btn action-btn--small action-btn--primary" %>
+            <% end %>
+
+            <%= button_to "Delete language",
+                  admin_mission_language_rename_path(mission.slug, language: current_language),
+                  method: :delete,
+                  data: { turbo_confirm: "Delete the '#{current_language}' guide variant and all its step bodies? This can't be undone." },
+                  class: "action-btn action-btn--small action-btn--destructive" %>
+          </div>
+        </details>
+      <% end %>
     <% end %>
 
     <p class="admin-mission-edit__hint">
@@ -132,7 +155,8 @@
             data-modal-target="dialog"
             aria-labelledby="paste-guide-dialog-title">
       <%= form_with url: admin_mission_guide_paste_path(mission.slug),
-            method: :post, class: "admin-mission-edit__paste-form" do %>
+            method: :post, class: "admin-mission-edit__paste-form",
+            data: { turbo_frame: "_top" } do %>
         <header class="admin-mission-edit__paste-header">
           <h3 id="paste-guide-dialog-title" class="admin-mission-edit__paste-title">Paste a full guide</h3>
           <button type="button"

@@ -261,6 +261,7 @@
 #                      username_availability GET    /username_availability(.:format)                                                                  users/username_availabilities#show
 #                               search_users GET    /search/users(.:format)                                                                           search#users
 #                            search_projects GET    /search/projects(.:format)                                                                        search#projects
+#                              global_search GET    /search/global(.:format)                                                                          search#global
 #                                        edu GET    /edu(.:format)                                                                                    landing#edu
 #                                     guides GET    /guides(.:format)                                                                                 guides#index
 #                                      guide GET    /guides/:id(.:format)                                                                             guides#show
@@ -275,6 +276,7 @@
 #                        mission_submissions GET    /mission_submissions(.:format)                                                                    mission_submissions#index
 #                         mission_submission GET    /mission_submissions/:id(.:format)                                                                mission_submissions#show
 #                                                   /400(.:format)                                                                                    errors#bad_request
+#                                                   /403(.:format)                                                                                    errors#not_authorized
 #                                                   /404(.:format)                                                                                    errors#not_found
 #                                                   /406(.:format)                                                                                    errors#not_acceptable
 #                                                   /422(.:format)                                                                                    errors#unprocessable_entity
@@ -425,7 +427,8 @@ Rails.application.routes.draw do
   get "og/:page", to: "og_images#show", as: :og_image, defaults: { format: :png }
   # Landing
   root "landing#index"
-  # get "marketing", to: "landing#marketing"
+  get "landing/signup_count", to: "landing#signup_count", as: :landing_signup_count
+  get "landing/rsvp_count", to: "landing#rsvp_count", as: :landing_rsvp_count
 
   # RSVPs
   resources :rsvps, only: [ :create ] do
@@ -452,6 +455,8 @@ Rails.application.routes.draw do
     resource :region, only: [ :update ]
     get "category/:slug", to: "items#category", as: :category
     resources :suggestions, only: [ :create ]
+    post "wishlists/:id", to: "wishlists#create", as: :create_wishlist
+    delete "wishlists/:id", to: "wishlists#destroy", as: :wishlist
   end
 
   # Report Reviews
@@ -469,8 +474,6 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Test error page for Sentry
-  get "test_error" => "debug#error" unless Rails.env.production?
 
   # Letter opener web for development email preview
   if Rails.env.development?
@@ -500,6 +503,7 @@ Rails.application.routes.draw do
 
   # Home
   get "home", to: "home#index"
+  resources :feed_events, only: [ :create ]
   namespace :home do
     resource :feed, only: [ :show ]
   end
@@ -675,6 +679,7 @@ Rails.application.routes.draw do
       # Mission::ShopUnlock model namespace. `controller:` is set explicitly
       # because `scope module: :missions` doesn't reliably propagate inside
       # a parent `resources do ... end` block.
+      resource  :language_rename, only: [ :create, :destroy ],         controller: "missions/language_renames"
       resource  :guide_paste,    only: [ :create ],                  controller: "missions/guide_pastes"
       resource  :guide_preview,  only: [ :create ],                  controller: "missions/guide_previews"
       resources :memberships,    only: [ :create, :update, :destroy ], controller: "missions/memberships"
@@ -696,8 +701,11 @@ Rails.application.routes.draw do
 
       resources :devlog_reviews, only: [ :update ]
 
+      get "devlogs/:devlog_id/commits", to: "devlog_commits#index", as: "devlog_commits"
+
       get "review", to: "ysws#index", as: "ysws_reviews"
       get "review/:id", to: "ysws#show", as: "ysws_review"
+      get "review/:id/commits", to: "ysws#commits", as: "ysws_commits"
       post "review/:id/report_fraud", to: "ysws#report_fraud", as: "ysws_report_fraud"
     end
   end
@@ -782,6 +790,7 @@ Rails.application.routes.draw do
   # Autocomplete search endpoints (used by the bio editor and elsewhere).
   get "search/users",    to: "search#users",    as: :search_users
   get "search/projects", to: "search#projects", as: :search_projects
+  get "search/global",   to: "search#global",   as: :global_search
 
   get "edu", to: "landing#edu", as: :edu
 

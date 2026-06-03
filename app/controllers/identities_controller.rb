@@ -20,6 +20,7 @@ class IdentitiesController < ApplicationController
     result = current_user.try_sync_hackatime_data!(force: true)
     total_seconds = result&.dig(:projects)&.values&.sum || 0
 
+    track_event "hackatime_linked", { user_id: current_user.id }
     redirect_to return_path, notice: "Hackatime linked!"
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.warn("Hackatime identity save failed: #{e.record.errors.full_messages.join(", ")}")

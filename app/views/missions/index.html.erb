@@ -11,6 +11,17 @@
       </p>
     </header>
 
+    <% if @draft_missions.any? %>
+      <section class="missions-index__section" aria-labelledby="missions-index-drafts">
+        <h2 id="missions-index-drafts" class="missions-index__section-title">Drafts</h2>
+        <ul class="missions-index__grid">
+          <% @draft_missions.each do |mission| %>
+            <li><%= render "missions/mission_card", mission: mission, badge: "Draft", manageable: true %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
     <% if @available_missions.any? %>
       <section class="missions-index__section" aria-labelledby="missions-index-available">
         <h2 id="missions-index-available" class="missions-index__section-title">Available now</h2>

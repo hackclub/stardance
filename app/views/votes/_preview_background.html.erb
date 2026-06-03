@@ -1,0 +1,127 @@
+<%# Static, non-interactive preview of the rate page with sample data.
+    Rendered behind the gate card while rating is closed. %>
+<div class="vote-page__layout" aria-hidden="true" inert>
+  <section class="vote-page__main">
+    <header class="vote-page__toolbar">
+      <h1 class="vote-page__title">Rate this project</h1>
+      <span class="vote-page__skip">
+        <span>Skip</span>
+        <span>→</span>
+      </span>
+    </header>
+
+    <article class="project-show project-show--vote">
+      <header class="project-show__hero">
+        <div class="project-show__banner">
+          <%= image_tag "profile/default-banner.png", alt: "", class: "project-show__banner-image" %>
+        </div>
+
+        <div class="project-show__panel project-show__panel--read">
+          <div class="project-show__summary">
+            <div class="project-show__identity">
+              <h2 class="project-show__title">Sample Project</h2>
+              <div class="project-show__byline">
+                <ul class="project-show__avatars" aria-hidden="true">
+                  <li class="project-show__avatars-item">
+                    <span class="project-show__avatar project-show__avatar--placeholder">A</span>
+                  </li>
+                </ul>
+                <p class="project-show__authors">
+                  By <span class="project-show__author">@anon</span>
+                </p>
+              </div>
+            </div>
+
+            <ul class="project-show__stats" aria-label="Project stats">
+              <li class="project-show__stats-item">
+                <strong class="project-show__stats-num">3</strong>
+                <span class="project-show__stats-label">Devlogs</span>
+              </li>
+              <li class="project-show__stats-item">
+                <strong class="project-show__stats-num">10</strong>
+                <span class="project-show__stats-label">Total hours</span>
+              </li>
+            </ul>
+          </div>
+
+          <p class="project-show__description">
+            This is a sample project description. Ship your first project to start rating real ones!
+          </p>
+
+          <div class="project-show__read-footer">
+            <span class="project-show__followers"><strong>0</strong> followers</span>
+          </div>
+        </div>
+      </header>
+    </article>
+
+    <section class="vote-page__timeline">
+      <article class="feed-post-card">
+        <header class="feed-post-card__header">
+          <span class="feed-post-card__avatar-link">
+            <span class="project-show__avatar project-show__avatar--placeholder feed-post-card__avatar">A</span>
+          </span>
+          <div class="feed-post-card__meta">
+            <p class="feed-post-card__byline">
+              <span class="feed-post-card__author">@anon</span>
+              <span class="feed-post-card__context">on</span>
+              <span class="feed-post-card__project">Sample Project</span>
+              <span class="feed-post-card__time">· 1 day ago</span>
+            </p>
+            <div class="feed-post-card__body feed-post-card__body--inline">
+              <p>This is a sample devlog entry. Your devlogs will show up here when
+              other people are rating your project!</p>
+            </div>
+          </div>
+        </header>
+      </article>
+    </section>
+  </section>
+
+  <aside class="vote-page__aside">
+    <section class="vote-scorecard">
+      <header class="vote-scorecard__header">
+        <span class="vote-scorecard__sparkle">
+          <%= inline_svg_tag "icons/star_fill.svg", class: "vote-scorecard__sparkle-icon" %>
+        </span>
+        <h2 class="vote-scorecard__title">Scorecard</h2>
+        <span class="vote-scorecard__sparkle">
+          <%= inline_svg_tag "icons/star_fill.svg", class: "vote-scorecard__sparkle-icon" %>
+        </span>
+      </header>
+
+      <div class="vote-scorecard__form">
+        <div class="vote-scorecard__scores">
+          <% [
+            ["Originality", "How distinct is the project from common projects?"],
+            ["Technicality", "How much effort did the creator put into the implementation?"],
+            ["Usability", "Did you like using it? Could you use it at all?"],
+            ["Storytelling", "How well does the creator document the development journey?"]
+          ].each do |name, desc| %>
+            <fieldset class="vote-score">
+              <legend class="vote-score__legend">
+                <span class="vote-score__name"><%= name %></span>
+                <span class="vote-score__description"><%= desc %></span>
+              </legend>
+              <div class="vote-score__options">
+                <% (1..9).each do |score| %>
+                  <span class="vote-score__star">
+                    <%= inline_svg_tag "icons/star_fill.svg", class: "vote-score__star-icon" %>
+                  </span>
+                <% end %>
+              </div>
+            </fieldset>
+          <% end %>
+        </div>
+
+        <div class="vote-scorecard__feedback">
+          <span class="vote-scorecard__label">Feedback</span>
+          <p class="vote-scorecard__feedback-help">Any thoughts for the creator? (At least 10 words)</p>
+          <div class="vote-scorecard__textarea"></div>
+        </div>
+
+        <span class="vote-scorecard__submit">Submit vote →</span>
+      </div>
+    </section>
+  </aside>
+</div>

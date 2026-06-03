@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:10.0
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: gorse
+      POSTGRES_USER: gorse
+      POSTGRES_PASSWORD: gorse_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  gorse:
+    image: zhenghaoz/gorse-in-one
+    restart: unless-stopped
+    ports:
+      - 8086:8086 # gRPC port
+      - 8088:8088 # HTTP port
+    environment:
+      # Use PostgreSQL as cache storage backend.
+      GORSE_CACHE_STORE: postgres://gorse:gorse_pass@postgres/gorse?sslmode=disable
+      # Use PostgreSQL as data storage backend.
+      GORSE_DATA_STORE: postgres://gorse:gorse_pass@postgres/gorse?sslmode=disable
+    command: >
+      -c /etc/gorse/config.toml 
+      --log-path /var/log/gorse/master.log 
+      --cache-path /var/lib/gorse/master_cache.data
+    volumes:
+      - ./config.toml:/etc/gorse/config.toml:ro
+      - gorse_data:/var/lib/gorse
+      - gorse_log:/var/log/gorse
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  gorse_data:
+  gorse_log:

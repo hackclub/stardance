@@ -22,7 +22,9 @@
 class Post::Devlog < ApplicationRecord
   include Postable
   include SoftDeletable
+  include SemanticSearchIndexable
   has_paper_trail ignore: [ :likes_count, :comments_count, :hackatime_pulled_at, :synced_at ]
+  semantic_search_indexable type: "devlog"
 
   # Ignore devlog_review_id column before removing it in migration
   self.ignored_columns += [ "devlog_review_id" ]
@@ -151,5 +153,8 @@ class Post::Devlog < ApplicationRecord
 
     delta = deleted_at.present? ? -1 : 1
     Project.unscoped.where(id: project_id).update_counters(devlogs_count: delta)
+
+    # Keep cached duration_seconds accurate when devlogs are soft-deleted/restored.
+    Project.unscoped.find_by(id: project_id)&.recalculate_duration_seconds!
   end
 end

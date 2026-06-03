@@ -22,6 +22,7 @@
 #  synced_at          :datetime
 #  title              :string           not null
 #  tutorial           :boolean          default(FALSE), not null
+#  update_description :text
 #  created_at         :datetime         not null
 #  updated_at         :datetime         not null
 #  fire_letter_id     :string

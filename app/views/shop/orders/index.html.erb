@@ -36,7 +36,7 @@
             <div class="my-orders__header-item my-orders__header-item--right">
               <div class="my-orders__order-number-section">
                   <span class="my-orders__header-label">Order # <%= order.id %></span>
-                  <% if order.pending? || order.aasm_state == "awaiting_periodical_fulfillment" %>
+                  <% if (order.pending? || order.aasm_state == "awaiting_periodical_fulfillment") && !order.shop_item.is_a?(ShopItem::FreeStickers) %>
                     <%= button_to "Cancel Order", cancel_shop_order_path(order), method: :delete, class: "my-orders__cancel-link", form: { onsubmit: "return confirm('Are you sure you want to cancel this order?')"   } %>
                   <% end %>
                 </div>

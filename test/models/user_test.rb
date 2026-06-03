@@ -51,7 +51,6 @@
 # Indexes
 #
 #  index_users_on_email                      (email)
-#  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
 #  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
 #  index_users_on_onboarded_at               (onboarded_at)

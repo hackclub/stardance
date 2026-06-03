@@ -1,148 +1,245 @@
 <% content_for :title, "Manage Shop" %>
-<div>
-  <div>
-    <h1>Manage Shop</h1>
-    <div>
-      <%= link_to current_user.shop_manager? && !current_user.admin? ? "New Draft" : "New Product", new_admin_shop_item_path %>
+<% content_for :stylesheets do %>
+  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
+<% end %>
+<div class="shop-dashboard">
+  <header class="shop-dashboard__header">
+    <h1 class="shop-dashboard__title">Manage Shop</h1>
+    <div class="shop-dashboard__header-actions">
+      <%= link_to current_user.shop_manager? && !current_user.admin? ? "New Draft" : "New Product", new_admin_shop_item_path, class: "btn-primary" %>
       <% unless current_user.shop_manager? && !current_user.admin? %>
-        <%= button_to "Clear Carousel Cache", admin_clear_carousel_cache_path, method: :post, form: { onsubmit: "return confirm('Are you sure you want to clear the carousel cache?')" } %>
+        <%= button_to "Clear Carousel Cache", admin_clear_carousel_cache_path, method: :post, class: "btn-secondary", form: { onsubmit: "return confirm('Are you sure you want to clear the carousel cache?')" } %>
       <% end %>
     </div>
-  </div>
+  </header>
 
-  <div>
+  <div class="shop-dashboard__panel">
     <h3>Filters & Search</h3>
 
     <%= form_with url: admin_shop_path, method: :get, local: true do |f| %>
-      <div>
-        <div>
+      <div class="shop-dashboard__filter-grid">
+        <div class="shop-dashboard__filter-field">
           <%= f.label :search, "Search" %>
           <%= f.text_field :search, value: params[:search], placeholder: "Name or ID...", autocomplete: "off" %>
         </div>
 
-        <div>
+        <div class="shop-dashboard__filter-field" data-controller="searchable-select" style="position: relative;">
           <%= f.label :type, "Type" %>
-          <%= f.select :type, options_for_select(@item_types.map { |t| [t.gsub("ShopItem::", ""), t] }, params[:type]), { include_blank: "All Types" } %>
+          <%= f.hidden_field :type, value: params[:type], data: { searchable_select_target: "hiddenField" } %>
+          <input type="text"
+            placeholder="All Types"
+            value="<%= params[:type]&.gsub('ShopItem::', '') %>"
+            data-searchable-select-target="input"
+            data-action="focus->searchable-select#open input->searchable-select#filter"
+            autocomplete="off">
+          <div class="searchable-select-dropdown" data-searchable-select-target="dropdown" style="display: none;">
+            <div class="searchable-select-option"
+              data-searchable-select-target="option"
+              data-action="click->searchable-select#clear"
+              data-value=""
+              data-label=""
+              data-search-text="all types">All Types</div>
+            <% @item_types.each do |type| %>
+              <div class="searchable-select-option"
+                data-searchable-select-target="option"
+                data-action="click->searchable-select#select"
+                data-value="<%= type %>"
+                data-label="<%= type.gsub('ShopItem::', '') %>"
+                data-search-text="<%= type.gsub('ShopItem::', '').downcase %>">
+                <%= type.gsub('ShopItem::', '') %>
+              </div>
+            <% end %>
+          </div>
         </div>
 
-        <div>
+        <div class="shop-dashboard__filter-field" data-controller="searchable-select" style="position: relative;">
           <%= f.label :enabled, "Status" %>
-          <%= f.select :enabled, options_for_select([["Enabled", "true"], ["Disabled", "false"]], params[:enabled]), { include_blank: "All" } %>
+          <%= f.hidden_field :enabled, value: params[:enabled], data: { searchable_select_target: "hiddenField" } %>
+          <%
+            status_label = case params[:enabled]
+                           when "true" then "Enabled"
+                           when "false" then "Disabled"
+                           end
+          %>
+          <input type="text"
+            placeholder="All"
+            value="<%= status_label %>"
+            data-searchable-select-target="input"
+            data-action="focus->searchable-select#open input->searchable-select#filter"
+            autocomplete="off">
+          <div class="searchable-select-dropdown" data-searchable-select-target="dropdown" style="display: none;">
+            <div class="searchable-select-option"
+              data-searchable-select-target="option"
+              data-action="click->searchable-select#clear"
+              data-value=""
+              data-label=""
+              data-search-text="all">All</div>
+            <div class="searchable-select-option"
+              data-searchable-select-target="option"
+              data-action="click->searchable-select#select"
+              data-value="true"
+              data-label="Enabled"
+              data-search-text="enabled">Enabled</div>
+            <div class="searchable-select-option"
+              data-searchable-select-target="option"
+              data-action="click->searchable-select#select"
+              data-value="false"
+              data-label="Disabled"
+              data-search-text="disabled">Disabled</div>
+          </div>
         </div>
 
-        <div>
+        <div class="shop-dashboard__filter-field" data-controller="searchable-select" style="position: relative;">
           <%= f.label :carousel, "Carousel" %>
-          <%= f.select :carousel, options_for_select([["In Carousel", "true"], ["Not in Carousel", "false"]], params[:carousel]), { include_blank: "All" } %>
+          <%= f.hidden_field :carousel, value: params[:carousel], data: { searchable_select_target: "hiddenField" } %>
+          <%
+            carousel_label = case params[:carousel]
+                             when "true" then "In Carousel"
+                             when "false" then "Not in Carousel"
+                             end
+          %>
+          <input type="text"
+            placeholder="All"
+            value="<%= carousel_label %>"
+            data-searchable-select-target="input"
+            data-action="focus->searchable-select#open input->searchable-select#filter"
+            autocomplete="off">
+          <div class="searchable-select-dropdown" data-searchable-select-target="dropdown" style="display: none;">
+            <div class="searchable-select-option"
+              data-searchable-select-target="option"
+              data-action="click->searchable-select#clear"
+              data-value=""
+              data-label=""
+              data-search-text="all">All</div>
+            <div class="searchable-select-option"
+              data-searchable-select-target="option"
+              data-action="click->searchable-select#select"
+              data-value="true"
+              data-label="In Carousel"
+              data-search-text="in carousel">In Carousel</div>
+            <div class="searchable-select-option"
+              data-searchable-select-target="option"
+              data-action="click->searchable-select#select"
+              data-value="false"
+              data-label="Not in Carousel"
+              data-search-text="not in carousel">Not in Carousel</div>
+          </div>
         </div>
       </div>
 
-      <div>
-        <%= f.submit "Apply Filters" %>
-        <%= link_to "Clear All", admin_shop_path %>
+      <div class="shop-dashboard__filter-actions">
+        <%= f.submit "Apply Filters", class: "btn-primary" %>
+        <%= link_to "Clear All", admin_shop_path, class: "btn-secondary" %>
       </div>
     <% end %>
   </div>
 
-  <div>
-    <div>
+  <div class="shop-dashboard__panel">
+    <div class="shop-dashboard__section-header">
       <h3>Items</h3>
       <span><%= @shop_items.count %> items</span>
     </div>
 
     <% if @shop_items.any? %>
-       <table>
-         <thead>
-         <tr>
-           <th>ID</th>
-           <th></th>
-           <th>Name</th>
-           <th>Type</th>
-           <th>Stardust Cost</th>
-           <th>USD Cost</th>
-           <th>Regions</th>
-           <th>Status</th>
-           <th>Carousel</th>
-           <th>Created</th>
-           <th></th>
-         </tr>
-         </thead>
-         <tbody>
-         <% @shop_items.each do |item| %>
-           <tr>
-             <td><code>#<%= item.id %></code></td>
-             <td>
-               <% if item.image.attached? %>
-                 <%= image_tag item.image.variant(:carousel_sm) %>
-               <% else %>
-                 <div>—</div>
-               <% end %>
+      <table class="table-data">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th></th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Categories</th>
+            <th>Stardust Cost</th>
+            <th>USD Cost</th>
+            <th>Regions</th>
+            <th>Status</th>
+            <th>Carousel</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @shop_items.each do |item| %>
+            <tr>
+              <td><code>#<%= item.id %></code></td>
+              <td>
+                <% if item.image.attached? %>
+                  <%= image_tag item.image.variant(:carousel_sm), class: "shop-dashboard__thumb" %>
+                <% else %>
+                  <div class="shop-dashboard__thumb-placeholder">—</div>
+                <% end %>
+              </td>
+              <td><%= item.name %></td>
+              <td>
+                <span class="badge" style="background: var(--color-set-1-bg); color: var(--color-space-text-muted); border: 1px solid #83828d;">
+                  <%= item.type.to_s.gsub("ShopItem::", "") %>
+                </span>
+              </td>
+              <td>
+               <% cats = item.shop_categories %>
+               <%= cats.any? ? cats.map(&:title).join(", ") : "—" %>
              </td>
-             <td><%= item.name %></td>
-             <td><span><%= item.type.to_s.gsub("ShopItem::", "") %></span></td>
-             <td><%= stardust_icon %> <%= item.ticket_cost.to_i %></td>
-             <td><%= item.usd_cost ? number_to_currency(item.usd_cost) : "—" %></td>
-             <td>
-               <%
-                 regions = []
-                 regions << "🇺🇸" if item.enabled_us
-                 regions << "🇪🇺" if item.enabled_eu
-                 regions << "🇬🇧" if item.enabled_uk
-                 regions << "🇨🇦" if item.enabled_ca
-                 regions << "🇦🇺" if item.enabled_au
-                 regions << "🇮🇳" if item.enabled_in
-                 regions << "🌍" if item.enabled_xx
-                 all_regions = item.enabled_us && item.enabled_eu && item.enabled_uk && item.enabled_ca && item.enabled_au && item.enabled_in && item.enabled_xx
-               %>
-               <% if all_regions %>
-                 <span title="All regions">🌐</span>
-               <% elsif regions.any? %>
-                 <span title="<%= regions.join(" ") %>"><%= regions.join("") %></span>
-               <% else %>
-                 <span>—</span>
-               <% end %>
-             </td>
-             <td>
-               <% if item.draft? %>
-                 <span>Draft</span>
-               <% elsif item.enabled %>
-                 <span>Enabled</span>
-               <% else %>
-                 <span>Disabled</span>
-               <% end %>
-             </td>
-             <td>
-               <% if item.show_in_carousel %>
-                 <span>✓</span>
-               <% else %>
-                 <span>—</span>
-               <% end %>
-             </td>
-             <td><%= item.created_at.strftime("%b %d, %Y") %></td>
-             <td>
-               <%= link_to "View", admin_shop_item_path(item) %>
-             </td>
-           </tr>
-         <% end %>
-         </tbody>
-       </table>
-
-       <div>
-         <% if @pagy.page > 1 %>
-           <%= link_to "← Previous", admin_shop_path(search: params[:search], type: params[:type], enabled: params[:enabled], carousel: params[:carousel], page: @pagy.page - 1) %>
-         <% end %>
-
-         <span>Page <%= @pagy.page %> of <%= @pagy.pages %></span>
-
-         <% if @pagy.page < @pagy.pages %>
-           <%= link_to "Next →", admin_shop_path(search: params[:search], type: params[:type], enabled: params[:enabled], carousel: params[:carousel], page: @pagy.page + 1) %>
-         <% end %>
-       </div>
+              <td><%= stardust_icon %> <%= item.ticket_cost.to_i %></td>
+              <td><%= item.usd_cost ? number_to_currency(item.usd_cost) : "—" %></td>
+              <td>
+                <%
+                  regions = []
+                  regions << "🇺🇸" if item.enabled_us
+                  regions << "🇪🇺" if item.enabled_eu
+                  regions << "🇬🇧" if item.enabled_uk
+                  regions << "🇨🇦" if item.enabled_ca
+                  regions << "🇦🇺" if item.enabled_au
+                  regions << "🇮🇳" if item.enabled_in
+                  regions << "🌍" if item.enabled_xx
+                  all_regions = item.enabled_us && item.enabled_eu && item.enabled_uk && item.enabled_ca && item.enabled_au && item.enabled_in && item.enabled_xx
+                %>
+                <% if all_regions %>
+                  <span title="All regions">🌐</span>
+                <% elsif regions.any? %>
+                  <span title="<%= regions.join(" ") %>"><%= regions.join("") %></span>
+                <% else %>
+                  <span style="color: var(--color-text-muted);">—</span>
+                <% end %>
+              </td>
+              <td>
+                <% if item.draft? %>
+                  <span class="badge badge-on_hold">Draft</span>
+                <% elsif item.enabled %>
+                  <span class="badge badge-fulfilled">Enabled</span>
+                <% else %>
+                  <span class="badge badge-rejected">Disabled</span>
+                <% end %>
+              </td>
+              <td>
+                <% if item.show_in_carousel %>
+                  <span class="badge badge-fulfilled">✓</span>
+                <% else %>
+                  <span style="color: var(--color-text-muted);">—</span>
+                <% end %>
+              </td>
+              <td style="white-space: nowrap;"><%= item.created_at.strftime("%b %d, %Y") %></td>
+              <td>
+                <%= link_to "View", admin_shop_item_path(item), class: "btn-primary slim" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <div class="shop-dashboard__pagination">
+        <% if @pagy.page > 1 %>
+          <%= link_to "← Previous", admin_shop_path(search: params[:search], type: params[:type], enabled: params[:enabled], carousel: params[:carousel], page: @pagy.page - 1) %>
+        <% end %>
+        <span>Page <%= @pagy.page %> of <%= @pagy.pages %></span>
+        <% if @pagy.page < @pagy.pages %>
+          <%= link_to "Next →", admin_shop_path(search: params[:search], type: params[:type], enabled: params[:enabled], carousel: params[:carousel], page: @pagy.page + 1) %>
+        <% end %>
+      </div>
     <% else %>
-      <p>No items found matching your filters.</p>
+      <p style="color: var(--color-space-text-muted); margin: 0;">No items found matching your filters.</p>
     <% end %>
   </div>
 
-  <div>
+  <div class="shop-dashboard__back">
     <%= link_to "← Back to Users", admin_users_path %>
   </div>
 </div>

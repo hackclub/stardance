@@ -1,23 +1,41 @@
 <section class="discover-rail__section discover-rail__section--wishlist" aria-label="Wishlist">
   <h3 class="discover-rail__heading">WISHLIST</h3>
-  <div class="shop-goals"
-       data-controller="shop-goals"
-       data-shop-goals-balance-value="<%= balance %>"
-       data-shop-goals-stardust-icon-url-value="<%= helpers.image_path('icons/stardust.png') %>">
-    <div class="shop-goals__container" data-shop-goals-target="container" style="display: none;">
-      <div class="shop-goals__items" data-shop-goals-target="items"></div>
+  <% if wishlisted_items.any? %>
+    <div class="shop-goals__container">
+      <div class="shop-goals__items">
+        <% wishlisted_items.each do |item| %>
+          <div class="shop-goals__item">
+            <%= button_to shop_wishlist_path(item.id), method: :delete, class: "shop-goals__remove", title: "Remove from wishlist" do %>
+              &times;
+            <% end %>
+            <%= link_to shop_item_path(item), class: "shop-goals__link" do %>
+              <%= image_tag item.image.variant(:carousel_sm), alt: item.name, class: "shop-goals__image" %>
+              <div class="shop-goals__info">
+                <span class="shop-goals__name"><%= item.name %></span>
+                <div class="shop-goals__progress-container">
+                  <% progress = balance > 0 ? [((balance.to_f / item.ticket_cost) * 100), 100].min : 0 %>
+                  <% can_afford = balance >= item.ticket_cost %>
+                  <div class="shop-goals__progress-bar">
+                    <div class="shop-goals__progress-fill<%= ' shop-goals__progress-fill--complete' if can_afford %>" style="width: <%= progress %>%"></div>
+                  </div>
+                  <span class="shop-goals__progress-text">
+                    <% if can_afford %>
+                      &#10003; Ready to order!
+                    <% else %>
+                      <%= image_tag "icons/stardust.png", alt: "Stardust", class: "currency-icon" %>
+                      <%= number_to_currency([item.ticket_cost - balance, 0].max, precision: 0).delete('$') %> more needed
+                    <% end %>
+                  </span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
     </div>
-    <p class="discover-rail__placeholder-text" data-shop-goals-empty>
+  <% else %>
+    <p class="discover-rail__placeholder-text">
       Tap the star on any item to add it here.
     </p>
-    <script>
-      try {
-        var w = JSON.parse(localStorage.getItem("shop_wishlist"));
-        if (w && Object.keys(w).length) {
-          document.currentScript.previousElementSibling.style.display = "none";
-          document.currentScript.previousElementSibling.previousElementSibling.style.display = "block";
-        }
-      } catch (e) {}
-    </script>
-  </div>
+  <% end %>
 </section>

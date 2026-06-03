@@ -8,9 +8,20 @@
   total_hours = (project.duration_seconds / 3600.0).round
   ship_number      = local_assigns[:ship_number]
   pending_review   = ship.certification_status == "pending"
+  engagement_data = {
+    controller: "feed-engagement",
+    feed_engagement_item_type_value: "post",
+    feed_engagement_post_id_value: post.id,
+    feed_engagement_project_id_value: project.id,
+    feed_engagement_post_type_value: post.postable_type,
+    feed_engagement_source_value: local_assigns[:source],
+    feed_engagement_position_value: local_assigns[:position],
+    feed_engagement_page_value: local_assigns[:page],
+    feed_engagement_feed_request_id_value: local_assigns[:feed_request_id]
+  }.compact
 %>
 
-<article class="feed-post-card project-show__latest-ship">
+<article class="feed-post-card project-show__latest-ship" <%= tag.attributes(data: engagement_data) %>>
   <div class="feed-post-card__reposted-by project-show__latest-ship-label">
     <%= inline_svg_tag "icons/sticker.svg", class: "project-show__latest-ship-icon" %>
     <span><%= ship_number ? "Ship ##{ship_number}" : "Ship" %></span>

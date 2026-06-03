@@ -1,22 +1,20 @@
-<div class="shop-item-card<%= ' shop-item-card--achievement-locked' if locked_by_achievement %><%= ' shop-item-card--mission-locked' if mission_locked %><%= ' shop-item-card--out-of-stock' if out_of_stock? %><%= ' shop-item-card--on-sale' if on_sale %><%= ' shop-item-card--with-bow' if show_bow %><%= ' shop-item-card--non-interactive' unless interactive %><%= ' shop-item-card--spotlight' if tutorial_spotlight %>"
+<div class="shop-item-card<%= ' shop-item-card--achievement-locked' if locked_by_achievement %><%= ' shop-item-card--mission-locked' if mission_locked %><%= ' shop-item-card--out-of-stock' if out_of_stock? %><%= ' shop-item-card--on-sale' if on_sale %><%= ' shop-item-card--with-bow' if show_bow %><%= ' shop-item-card--spotlight' if tutorial_spotlight %><%= ' shop-item-card--wishlisted' if wishlisted %>"
      data-categories="<%= categories.join(',') %>"
      data-regions="<%= enabled_regions.join(',') %>"
      data-achievement-locked="<%= locked_by_achievement %>"
+     data-price="<%= display_price %>"
      data-shop-id="<%= item_id %>"
      data-controller="shop-wishlist"
      data-shop-wishlist-item-id-value="<%= item_id %>"
-     data-shop-wishlist-item-name-value="<%= name %>"
-     data-shop-wishlist-item-price-value="<%= display_price %>"
-     data-shop-wishlist-item-image-value="<%= url_for(image_url) %>">
+     data-shop-wishlist-wishlisted-value="<%= wishlisted %>">
 
   <%
     if cta_mode == :tutorial_verify
       image_href = "#"
       image_opts = { class: "shop-item-card__image-wrap", onclick: "event.preventDefault(); #{OPEN_VERIFY_MODAL}" }
     else
-      image_href = interactive ? order_url : "#"
-      image_opts = { class: "shop-item-card__image-wrap", data: (interactive ? { turbo_frame: "_top" } : { turbo: false }) }
-      image_opts[:tabindex] = "-1" unless interactive
+      image_href = order_url
+      image_opts = { class: "shop-item-card__image-wrap", data: { turbo_frame: "_top" } }
     end
   %>
   <%= link_to image_href, image_opts do %>
@@ -51,14 +49,11 @@
     <% end %>
   <% end %>
 
-  <% if logged_in && interactive %>
+  <% if logged_in %>
     <button type="button"
             class="shop-item-card__star"
-            data-shop-wishlist-target="starButton"
             data-action="click->shop-wishlist#toggle"
-            aria-label="Add to wishlist"
-            aria-pressed="false"
-            title="Add to wishlist to track progress">
+            aria-label="Toggle wishlist">
       <%= helpers.inline_svg_tag "icons/star_fill.svg" %>
     </button>
   <% end %>
@@ -106,28 +101,18 @@
           <span class="action-btn__label"><%= cta_price_label %></span>
         </button>
       <% end %>
-    <% when :tutorial_locked %>
-      <span class="action-btn action-btn--large action-btn--primary action-btn--disabled shop-item-card__order-cta shop-item-card__order-cta--locked" aria-disabled="true">Not enough Stardust</span>
-    <% when :preview_locked %>
-      <span class="action-btn action-btn--large action-btn--secondary action-btn--disabled shop-item-card__order-cta shop-item-card__order-cta--locked" aria-disabled="true"><%= cta_price_label %></span>
     <% else %>
-      <% if logged_in && interactive %>
-        <%= render ActionButtonComponent.new(
-              text: cta_price_label,
-              leading_icon: cta_price_icon,
-              href: order_url,
-              size: :large,
-              variant: :primary,
-              class: "shop-item-card__order-cta",
-              disabled: balance < display_price,
-              data: { turbo_frame: "_top" }
-            ) %>
-      <% elsif logged_in %>
-        <span class="action-btn action-btn--large action-btn--secondary shop-item-card__order-cta shop-item-card__order-cta--locked" aria-disabled="true">
-          <% if cta_price_icon %><%= image_tag cta_price_icon, class: "action-btn__icon action-btn__icon--leading", "aria-hidden": true %><% end %>
-          <span class="action-btn__label"><%= cta_price_label %></span>
-        </span>
-      <% end %>
+      <% can_buy = logged_in && balance.to_i >= display_price %>
+      <%= render ActionButtonComponent.new(
+            text: cta_price_label,
+            leading_icon: cta_price_icon,
+            href: can_buy ? order_url : nil,
+            size: :large,
+            variant: :primary,
+            class: "shop-item-card__order-cta",
+            disabled: !can_buy,
+            data: can_buy ? { turbo_frame: "_top" } : {}
+          ) %>
     <% end %>
   </div>
 </div>

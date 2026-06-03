@@ -38,6 +38,8 @@
 class Post::ShipEvent < ApplicationRecord
   include Postable
   include Ledgerable
+  include SemanticSearchIndexable
+  semantic_search_indexable type: "ship"
 
   LEGACY_VOTING_SCALE_VERSION = 1
   CURRENT_VOTING_SCALE_VERSION = 2

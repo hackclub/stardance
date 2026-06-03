@@ -1636,7 +1636,7 @@
 
       &:focus {
         outline: none;
-        border-color: var(--color-brand-blue);
+        border-color: var(--color-brand-mint);
       }
 
       &:disabled {
@@ -1649,22 +1649,31 @@
       }
     }
 
-    // Visual states for approved/rejected status
+    // Button active states — always colored when clicked
+    .status-btn.btn-approve.active {
+      background: var(--color-brand-mint);
+      color: var(--color-set-1-bg);
+    }
+
+    .status-btn.btn-reject.active {
+      background: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+
+    // Border color — only when status selected AND justification not empty
     &.approved {
       border-color: var(--color-brand-mint);
 
-      .status-btn.btn-approve.active {
-        background: var(--color-brand-mint);
-        color: var(--color-set-1-bg);
+      .notes-textarea {
+        border-color: var(--color-brand-mint);
       }
     }
 
     &.rejected {
       border-color: var(--color-brand-salmon);
 
-      .status-btn.btn-reject.active {
-        background: var(--color-brand-salmon);
-        color: var(--color-set-1-bg);
+      .notes-textarea {
+        border-color: var(--color-brand-salmon);
       }
     }
 

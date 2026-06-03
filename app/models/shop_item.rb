@@ -85,6 +85,8 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class ShopItem < ApplicationRecord
+  def self.policy_class = ShopItemPolicy
+
   has_paper_trail
 
   include Shop::Regionalizable
@@ -150,9 +152,11 @@ class ShopItem < ApplicationRecord
 
   RECENTLY_ADDED_WINDOW = 2.weeks
   SHOP_PAGE_CACHE_KEY = "shop_items/shop_page"
+  SHOP_PAGE_CACHE_VERSION_KEY = "shop_items/shop_page/version"
+  SHOP_PAGE_CACHE_INITIAL_VERSION = 1
 
   def self.cached_shop_page_data
-    Rails.cache.fetch(SHOP_PAGE_CACHE_KEY, expires_in: 5.minutes) do
+    Rails.cache.fetch(versioned_shop_page_cache_key, expires_in: 5.minutes) do
       buyable = enabled.listed.buyable_standalone.where(mission_prize_only: false).includes(image_attachment: :blob).to_a
       item_ids = buyable.map(&:id)
 
@@ -177,7 +181,13 @@ class ShopItem < ApplicationRecord
   end
 
   def self.invalidate_shop_page_cache!
-    Rails.cache.delete(SHOP_PAGE_CACHE_KEY)
+    Rails.cache.write(SHOP_PAGE_CACHE_VERSION_KEY, SHOP_PAGE_CACHE_INITIAL_VERSION, raw: true, unless_exist: true)
+    Rails.cache.increment(SHOP_PAGE_CACHE_VERSION_KEY)
+  end
+
+  def self.versioned_shop_page_cache_key
+    version = Rails.cache.fetch(SHOP_PAGE_CACHE_VERSION_KEY, raw: true) { SHOP_PAGE_CACHE_INITIAL_VERSION }
+    "#{SHOP_PAGE_CACHE_KEY}/v=#{version}"
   end
 
   MANUAL_FULFILLMENT_TYPES = [
@@ -253,6 +263,8 @@ class ShopItem < ApplicationRecord
 
   has_many :shop_item_attachments, foreign_key: :parent_item_id, dependent: :destroy
   has_many :accessories, through: :shop_item_attachments, source: :accessory_item
+
+  has_many :shop_wishlists, dependent: :destroy
 
   has_many :shop_item_modifiers, dependent: :destroy
   accepts_nested_attributes_for :shop_item_modifiers, allow_destroy: true,
@@ -387,7 +399,12 @@ class ShopItem < ApplicationRecord
   end
 
   def required_achievement_objects
-    requires_achievement.map { |slug| Achievement.find(slug) }
+    requires_achievement.filter_map do |slug|
+      Achievement.find(slug)
+    rescue KeyError
+      Rails.logger.warn("[ShopItem##{id}] requires unknown achievement slug: #{slug}")
+      nil
+    end
   end
 
   # True iff this item is gated by mission_shop_unlocks AND the user has not

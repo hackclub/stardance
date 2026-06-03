@@ -1,5 +1,5 @@
 // "This project could get..." — shows a sample project (phthallo.site) and
-// the two prizes it would earn (camera + mouse), connected by an arrow + plus.
+// the two prizes it would earn (domain grant + Raspberry Pi 5), connected by an arrow + plus.
 // Figma layout is 1280px-wide: title at left 169px, 3 cards 260px tall,
 // card widths 264px / 223px / 223px, arrow between cards 1-2, "+" between 2-3,
 // Stardust meter bar beneath each card.
@@ -150,20 +150,14 @@
     transform-origin: center;
   }
 
-  // camera.png ships from Figma export already tilted ~-50° CCW.
-  // Net rotation needs to land at Figma's intended +57° CW; applying ~+107°
-  // in CSS compensates. Side effect: the "4K" / "48.0" labels rotate with
-  // the camera body (which is Figma's intent too).
-  &__card-prize-img--camera {
-    transform: rotate(107deg);
-    max-width: 90%;
-    max-height: 90%;
+  &__card-prize-img--domain {
+    max-width: 80%;
+    max-height: 85%;
   }
 
-  &__card-prize-img--mouse {
-    transform: rotate(4.51deg);
+  &__card-prize-img--rpi {
     max-width: 95%;
-    max-height: 75%;
+    max-height: 85%;
   }
 
   &__card-prize-label {
@@ -259,7 +253,7 @@
     // Layout on mobile:
     //   row 1: project column (full width)
     //   row 2: down-arrow (full width, centered)
-    //   row 3: camera col | + | mouse col
+    //   row 3: domain col | + | rpi col
     &__stage {
       grid-template-columns: 1fr auto 1fr;
       gap: var(--space-m);
@@ -307,5 +301,13 @@
       justify-self: center;
     }
   }
+  &__disclaimer {
+    text-align: center;
+    font-style: italic;
+    font-size: var(--font-subtitle);
+    color: var(--color-yellow-200);
+    margin-top: var(--space-l);
+  }
+
   margin-bottom: 5rem;
 }

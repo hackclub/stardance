@@ -29,6 +29,7 @@ export default class extends Controller {
     "approveButton",
     "rejectButton",
     "notesTextarea",
+    "hoursDisplay",
   ];
 
   static values = {
@@ -72,6 +73,8 @@ export default class extends Controller {
       event.target.value = 0;
       return;
     }
+
+    this.updateHoursDisplay(minutes);
 
     // Clear existing timer
     if (this.minutesDebounceTimer) clearTimeout(this.minutesDebounceTimer);
@@ -118,6 +121,9 @@ export default class extends Controller {
   updateNotes(event) {
     const notes = event.target.value;
 
+    // Update border color immediately — it depends on notes being non-empty
+    this.updateVisualState(this.statusValue);
+
     // Clear existing timer
     if (this.notesDebounceTimer) clearTimeout(this.notesDebounceTimer);
 
@@ -160,11 +166,16 @@ export default class extends Controller {
 
     //console.log(`DevlogReview #${this.idValue}: Quick adjust ${action} - ${currentMinutes} → ${newMinutes} minutes`);
 
-    // Update the input field
+    // Update the input field and hours display
     this.minutesInputTarget.value = newMinutes;
+    this.updateHoursDisplay(newMinutes);
 
     // Send update immediately (no debounce for button clicks)
     this.sendUpdate({ approved_minutes: newMinutes });
+  }
+
+  updateHoursDisplay(minutes) {
+    this.hoursDisplayTarget.textContent = `(${(minutes / 60).toFixed(1)}h)`;
   }
 
   // Send update to server
@@ -195,9 +206,10 @@ export default class extends Controller {
           this.updateVisualState(data.status);
         }
 
-        // Update input field if minutes were changed (for quick adjust buttons)
+        // Update input field and hours display if minutes were changed
         if (data.approved_minutes !== undefined) {
           this.minutesInputTarget.value = data.approved_minutes;
+          this.updateHoursDisplay(data.approved_minutes);
         }
       } else {
         console.error(
@@ -214,26 +226,23 @@ export default class extends Controller {
 
   // Update visual state based on status
   updateVisualState(status) {
-    // Remove all status classes
+    const hasNotes = this.notesTextareaTarget.value.trim().length > 0;
+
     this.panelTarget.classList.remove("approved", "rejected", "pending");
     this.approveButtonTarget.classList.remove("active");
     this.rejectButtonTarget.classList.remove("active");
 
-    // Add appropriate class
     switch (status) {
       case "approved":
-        this.panelTarget.classList.add("approved");
+        if (hasNotes) this.panelTarget.classList.add("approved");
         this.approveButtonTarget.classList.add("active");
-        //console.log(`DevlogReview #${this.idValue}: Visual state → approved (light green)`);
         break;
       case "rejected":
-        this.panelTarget.classList.add("rejected");
+        if (hasNotes) this.panelTarget.classList.add("rejected");
         this.rejectButtonTarget.classList.add("active");
-        //console.log(`DevlogReview #${this.idValue}: Visual state → rejected (light red)`);
         break;
       case "pending":
         this.panelTarget.classList.add("pending");
-        //console.log(`DevlogReview #${this.idValue}: Visual state → pending`);
         break;
     }
   }

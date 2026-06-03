@@ -36,6 +36,15 @@
         <% end %>
 
         <div class="ship-review__panel">
+          <h2 class="ship-review__panel-title">AI Declaration</h2>
+          <% if @ship.project.ai_declaration.present? %>
+            <p class="ship-review__description"><%= @ship.project.ai_declaration %></p>
+          <% else %>
+            <p class="ship-review__no-declaration">No AI declaration provided for this project.</p>
+          <% end %>
+        </div>
+
+        <div class="ship-review__panel">
           <h2 class="ship-review__panel-title">Links</h2>
           <dl class="ship-review__links">
             <% if @ship.project.repo_url.present? %>

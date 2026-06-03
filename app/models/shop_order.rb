@@ -137,6 +137,7 @@ class ShopOrder < ApplicationRecord
   end
 
   def cancel_by_user
+    return { success: false, error: "Free sticker orders cannot be cancelled" } if shop_item.is_a?(ShopItem::FreeStickers)
     return { success: false, error: "Your order can not be canceled" } unless may_refund?
 
     with_lock do
@@ -399,6 +400,7 @@ class ShopOrder < ApplicationRecord
     ShopItem::ThirdPartyDigital
     ShopItem::SillyItemType
     ShopItem::SpecialFulfillmentItem
+    ShopItem::TutorialNothing
   ].freeze
 
   def check_regional_availability
@@ -429,9 +431,11 @@ class ShopOrder < ApplicationRecord
     return if Rails.env.development?
     return if user&.has_gotten_free_stickers?
     return if shop_item.is_a?(ShopItem::FreeStickers)
+    return if shop_item.is_a?(ShopItem::TutorialNothing)
     return if user.shop_orders.joins(:shop_item).where(shop_items: { type: "ShopItem::FreeStickers" }).worth_counting.exists?
+    return if user.shop_orders.joins(:shop_item).where(shop_items: { type: "ShopItem::TutorialNothing" }).worth_counting.exists?
 
-    errors.add(:base, "You must order the Free Stickers first before ordering other items!")
+    errors.add(:base, "You must complete the shop tutorial first before ordering other items!")
   end
 
   def check_devlog_for_free_stickers

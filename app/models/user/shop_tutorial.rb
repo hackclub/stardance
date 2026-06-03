@@ -11,17 +11,12 @@ module User::ShopTutorial
     hca_linked? && projects.exists? && !shop_tutorial_completed?
   end
 
-  # Like shop_tutorial_needed? but also requires Hackatime to be linked.
-  # Used for the sidebar red dot so it doesn't appear immediately on project
-  # creation — only once the user has linked Hackatime and is ready to
-  # progress toward shipping.
   def shop_tutorial_notify?
-    shop_tutorial_needed? && hackatime_identity.present? && identity_verified?
+    shop_tutorial_needed? && hackatime_identity.present? && identity_submitted? &&
+      Post.where(user: self, postable_type: "Post::Devlog").exists?
   end
 
-  # Tutorial can only be *finished* once the user has IDV — address collection
-  # via HCA requires the linked account to be verified.
-  def shop_tutorial_can_complete? = identity_verified?
+  def shop_tutorial_can_complete? = identity_submitted?
 
   def mark_shop_tutorial_started!
     return if shop_tutorial_started_at.present?

@@ -34,9 +34,13 @@ class Post::Repost < ApplicationRecord
   validates :original_post_id, uniqueness: { scope: :user_id, conditions: -> { not_deleted } }
   validate :original_post_is_visible_devlog
 
+  after_create_commit :send_gorse_repost_later
   after_update :update_reposts_count_on_soft_delete
 
   private
+  def send_gorse_repost_later
+    send_gorse_feedback_later(user: user, item: original_post, feedback_type: :repost, timestamp: created_at)
+  end
 
   def original_post_is_visible_devlog
     if original_post.present? && user.present?

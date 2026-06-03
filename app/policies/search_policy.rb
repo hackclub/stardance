@@ -6,4 +6,8 @@ class SearchPolicy < ApplicationPolicy
   def projects?
     signed_in_any?
   end
+
+  def global?
+    signed_in_any?
+  end
 end

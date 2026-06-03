@@ -3,45 +3,11 @@
     {
       "warning_type": "Cross-Site Scripting",
       "warning_code": 4,
-      "fingerprint": "0217f708c95628d98fe6a7375ac2c460c8440149cfefd5f2fbb0b0f7f2476af5",
+      "fingerprint": "855e9efffdfea2c597048f3062d5ad5153fe97677a5ffe3ca09fe39ed13af855",
       "check_name": "LinkToHref",
       "message": "Potentially unsafe model attribute in `link_to` href",
-      "file": "app/views/projects/show.html.erb",
-      "line": 705,
-      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
-      "code": "link_to(\"See source code \\u2192\", Project.find(params[:id]).repo_url, :target => \"_blank\", :rel => \"noopener\", :class => \"project-show__latest-ship-btn\")",
-      "render_path": [
-        {
-          "type": "controller",
-          "class": "ProjectsController",
-          "method": "show",
-          "line": 28,
-          "file": "app/controllers/projects_controller.rb",
-          "rendered": {
-            "name": "projects/show",
-            "file": "app/views/projects/show.html.erb"
-          }
-        }
-      ],
-      "location": {
-        "type": "template",
-        "template": "projects/show"
-      },
-      "user_input": "Project.find(params[:id]).repo_url",
-      "confidence": "Weak",
-      "cwe_id": [
-        79
-      ],
-      "note": "False positive: demo_url/repo_url are validated http(s)-only at write time (project.rb:148 format: URI regexp %w[http https]). Same link_to pattern as _ship_card.html.erb."
-    },
-    {
-      "warning_type": "Cross-Site Scripting",
-      "warning_code": 4,
-      "fingerprint": "aafce676f881aaf2ee33560b17aa381c364f61396204cfbd7bccd9c138ccf2e9",
-      "check_name": "LinkToHref",
-      "message": "Potentially unsafe model attribute in `link_to` href",
-      "file": "app/views/projects/show.html.erb",
-      "line": 700,
+      "file": "app/views/projects/show_hackpad.html.erb",
+      "line": 806,
       "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
       "code": "link_to(\"Try project \\u2192\", Project.find(params[:id]).demo_url, :target => \"_blank\", :rel => \"noopener\", :class => \"project-show__latest-ship-btn project-show__latest-ship-btn--primary\")",
       "render_path": [
@@ -49,25 +15,59 @@
           "type": "controller",
           "class": "ProjectsController",
           "method": "show",
-          "line": 28,
+          "line": 29,
           "file": "app/controllers/projects_controller.rb",
           "rendered": {
-            "name": "projects/show",
-            "file": "app/views/projects/show.html.erb"
+            "name": "projects/show_hackpad",
+            "file": "app/views/projects/show_hackpad.html.erb"
           }
         }
       ],
       "location": {
         "type": "template",
-        "template": "projects/show"
+        "template": "projects/show_hackpad"
       },
       "user_input": "Project.find(params[:id]).demo_url",
       "confidence": "Weak",
       "cwe_id": [
         79
       ],
-      "note": "False positive: demo_url/repo_url are validated http(s)-only at write time (project.rb:148 format: URI regexp %w[http https]). Same link_to pattern as _ship_card.html.erb."
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "f9b55899dd94c5ddbaff853fb9716c1135cc957e6d349a250d090221b4f3dca6",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/projects/show_hackpad.html.erb",
+      "line": 811,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(\"See source code \\u2192\", Project.find(params[:id]).repo_url, :target => \"_blank\", :rel => \"noopener\", :class => \"project-show__latest-ship-btn\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "ProjectsController",
+          "method": "show",
+          "line": 29,
+          "file": "app/controllers/projects_controller.rb",
+          "rendered": {
+            "name": "projects/show_hackpad",
+            "file": "app/views/projects/show_hackpad.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "projects/show_hackpad"
+      },
+      "user_input": "Project.find(params[:id]).repo_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": ""
     }
   ],
-  "brakeman_version": null
+  "brakeman_version": "8.0.4"
 }

@@ -111,6 +111,12 @@ production:
     concurrency: 1
     description: "Send daily shop order summary to Slack with backlog, assignments, and hang times"
 
+  shop_retry_free_sticker_orders:
+    class: Shop::RetryFreeStickerOrdersJob
+    schedule: every day at 6am UTC
+    concurrency: 1
+    description: "Retry fulfillment for free sticker orders stuck in pending"
+
   shop_calculate_fulfillment_payouts:
     class: Shop::CalculateFulfillmentPayoutsJob
     schedule: every Friday at 12pm Europe/London

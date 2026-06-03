@@ -1,4 +1,4 @@
-<%= link_to project_path(project), class: "project-shelf-card" do %>
+<%= link_to project_path(project), class: "project-shelf-card", data: engagement_data do %>
   <span class="project-shelf-card__media">
     <% if project.banner.attached? %>
       <%= image_tag project.banner.variant(:card), alt: "", class: "project-shelf-card__image" %>

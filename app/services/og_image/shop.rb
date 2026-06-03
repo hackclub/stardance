@@ -47,7 +47,7 @@ module OgImage
       draw_glowing_text(
         "Earn prizes.",
         x: 70, y: 200, size: 86,
-        color: "#ffe564", glow_color: "#ffe564",
+        color: "#fffcf4", glow_color: "#ebb7ff",
         glow_radius: 10, glow_opacity: 0.35,
         font: title_font_name
       )

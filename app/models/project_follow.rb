@@ -26,7 +26,13 @@ class ProjectFollow < ApplicationRecord
   validates :user_id, uniqueness: { scope: :project_id, message: "is already following this project" }
   validate :cannot_follow_own_project
 
+  after_create_commit :send_gorse_follow_later
+
   private
+
+  def send_gorse_follow_later
+    send_gorse_feedback_later(user: user, item: project, feedback_type: :follow_project, timestamp: created_at)
+  end
 
   def cannot_follow_own_project
     project_users = project.users

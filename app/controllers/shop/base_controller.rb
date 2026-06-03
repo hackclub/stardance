@@ -24,22 +24,13 @@ class Shop::BaseController < ApplicationController
   end
 
   def load_shop_items
-    excluded_free_stickers = current_user && (has_ordered_free_stickers? || current_user.shop_tutorial_completed?)
     shop_page_data = ShopItem.cached_shop_page_data
     @shop_items = shop_page_data[:buyable_standalone]
-    @shop_items = @shop_items.reject { |item| item.type == "ShopItem::FreeStickers" } if excluded_free_stickers
-    @featured_item = featured_free_stickers_item unless excluded_free_stickers
+    @shop_items = @shop_items.reject { |item| item.type.in?(%w[ShopItem::FreeStickers ShopItem::TutorialNothing]) }
     @recently_added_items = shop_page_data[:recently_added]
     @user_balance = current_user&.cached_balance || 0
 
-    preload_shop_item_images(@shop_items + Array(@recently_added_items) + [ @featured_item ].compact)
-
-    if @shop_mode == :tutorial && @tutorial_items[:nothing].present?
-      tutorial_ids = @tutorial_items.values.compact.map(&:id).to_set
-      @shop_items = @shop_items + [ @tutorial_items[:nothing] ]
-      tutorial_picks, rest = @shop_items.partition { |item| tutorial_ids.include?(item.id) }
-      @shop_items = tutorial_picks + rest
-    end
+    preload_shop_item_images(@shop_items + Array(@recently_added_items))
   end
 
   def preload_shop_item_images(items)
@@ -52,16 +43,6 @@ class Shop::BaseController < ApplicationController
     ).call
   end
 
-  def has_ordered_free_stickers?
-    current_user.has_gotten_free_stickers? ||
-      current_user.shop_orders.joins(:shop_item).where(shop_items: { type: "ShopItem::FreeStickers" }).exists?
-  end
-
-  def featured_free_stickers_item
-    item = ShopItem.find_by(id: 1, type: "ShopItem::FreeStickers", enabled: true)
-    item if item&.enabled_in_region?(@user_region)
-  end
-
   def tutorial_item?(shop_item)
     shop_item.is_a?(ShopItem::FreeStickers) || shop_item.is_a?(ShopItem::TutorialNothing)
   end
@@ -70,7 +51,8 @@ class Shop::BaseController < ApplicationController
     return :preview if current_user.nil? || current_user.guest?
     return :preview unless current_user.projects.exists?
     return :preview unless current_user.hackatime_identity.present?
-    return :preview unless current_user.identity_verified?
+    return :preview unless current_user.identity_submitted?
+    return :preview unless Post.where(user: current_user, postable_type: "Post::Devlog").exists?
     return :tutorial if current_user.shop_tutorial_needed?
 
     :normal

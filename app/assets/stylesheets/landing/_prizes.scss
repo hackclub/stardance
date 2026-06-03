@@ -1,9 +1,9 @@
 // Prizes section — scattered collage of product images.
-// Positions derived from Figma design (1280 × 672 bounding box around items).
+// Positions derived from Figma design context (1325 × 616 Prize Bar).
 .prizes {
   position: relative;
   width: 100%;
-  aspect-ratio: 1280 / 672;
+  aspect-ratio: 1325 / 616;
   overflow: visible;
   overflow-x: clip;
   margin-top: var(--space-m);
@@ -59,6 +59,11 @@
     pointer-events: none;
   }
 
+  &__star-deco-2 {
+    position: absolute;
+    pointer-events: none;
+  }
+
   &__label {
     position: absolute;
     font-family: "Exo 2", sans-serif;
@@ -69,115 +74,103 @@
     pointer-events: none;
     transform: translate(-50%, -50%);
     transform-origin: center center;
+    z-index: 10;
   }
 
-  // ---- Per-item positioning (from Figma, bar = 1280 × 672) ----
+  // ---- Item positioning (from Figma design context) ----
 
   &__item--bambu {
-    left: 0.3%;
-    top: 9.6%;
-    width: 20.5%;
+    left: 0%;
+    top: 0%;
+    width: 25.2%;
     transform: rotate(10.8deg);
     z-index: 5;
   }
   &__item-star--bambu {
-    top: 6.4%;
-    left: 54.7%;
-    width: 46%;
-    transform: rotate(0.22deg);
+    top: 12.6%;
+    left: 56.7%;
+    width: 42.7%;
+    transform: rotate(9.87deg);
     z-index: 6;
   }
 
-  &__item--switch {
-    left: 24.1%;
-    top: 28.2%;
-    width: 29%;
-    transform: rotate(0.46deg);
+  &__item--framework {
+    left: 19.2%;
+    top: 10.6%;
+    width: 25.5%;
+    transform: rotate(-5.23deg);
     z-index: 3;
   }
 
-  &__item--camera {
-    left: 40.9%;
-    top: 44.8%;
-    width: 15%;
-    transform: rotate(79.69deg);
-    z-index: 6;
-  }
-
-  &__item--airpods {
-    left: 17.7%;
-    top: 39.9%;
-    width: 13.1%;
-    transform: rotate(-10.27deg);
+  &__item--ipad {
+    left: 26.6%;
+    top: 13.9%;
+    width: 36.1%;
     z-index: 7;
   }
 
-  &__item--mouse {
-    left: 52.2%;
-    top: 60.8%;
-    width: 19.6%;
-    transform: rotate(4.59deg);
-    z-index: 6;
-    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));
+  &__star-deco-2 {
+    left: 47.9%;
+    top: 24%;
+    width: 12.3%;
+    transform: rotate(-151.42deg) scaleY(-1);
+    z-index: 9;
   }
 
-  &__item--kindle {
-    left: 65.7%;
-    top: 37.5%;
-    width: 19%;
-    transform: rotate(-4.26deg);
+  &__item--gpu {
+    left: 47.3%;
+    top: 47%;
+    width: 22.6%;
+    transform: rotate(1.31deg);
+    z-index: 6;
+  }
+
+  &__item--rpi {
+    left: 68.5%;
+    top: 44.2%;
+    width: 19.9%;
+    transform: rotate(-2.68deg);
     z-index: 4;
   }
 
-  &__item--ipad {
-    left: 80.8%;
-    top: 37.9%;
-    width: 24%;
-    z-index: 2;
+  &__item--quest {
+    left: 83%;
+    top: 46.9%;
+    width: 15.2%;
+    z-index: 3;
   }
 
-  // ---- Labels (centered at bar-relative percentages) ----
+  // ---- Labels (bar-relative, from Figma absolute coords) ----
 
-  // Label positions are relative to their parent item (so they translate +
-  // rotate with the item), pre-computed from Figma bar-coords.
   &__label--bambu {
-    left: 60%;
-    top: 99.7%;
-    --label-rot: -1.45deg;
-    rotate: -5deg;
+    left: 8%;
+    top: 75.4%;
+    rotate: 9.35deg;
   }
-  &__label--switch {
-    left: 54.2%;
-    top: 10.8%;
-    --label-rot: 7.38deg;
-    rotate: 8deg;
-  }
-  &__label--camera {
-    left: 73.9%;
-    top: 40.2%;
-    --label-rot: -70.68deg;
-    rotate: -71deg;
-  }
-  &__label--airpods {
-    left: 52.9%;
-    top: 103.1%;
-    --label-rot: -0.04deg;
-  }
-  &__label--mouse {
-    left: 49%;
-    top: 103%;
-    --label-rot: 2.56deg;
-  }
-  &__label--kindle {
-    left: 48.6%;
-    top: 102.1%;
-    --label-rot: -0.03deg;
+  &__label--framework {
+    left: 29.3%;
+    top: 13.8%;
+    rotate: -15.82deg;
   }
   &__label--ipad {
-    left: 64.2%;
-    top: 5.4%;
-    --label-rot: 15.22deg;
-    rotate: 14deg;
+    left: 34.2%;
+    top: 72.1%;
+    rotate: 29.62deg;
+  }
+  &__label--gpu {
+    left: 56%;
+    top: 74.6%;
+    rotate: 0.71deg;
+  }
+  &__label--rpi {
+    left: 75.7%;
+    top: 45.6%;
+    rotate: -22.8deg;
+  }
+  &__label--quest {
+    left: 92%;
+    top: 70.9%;
+    rotate: -5.45deg;
   }
 
   @media (max-width: 600px) {
@@ -203,66 +196,78 @@
       min-height: 540px;
     }
 
-    // Tighter positions so nothing overflows the 360-ish px viewport.
-    // Two-column scattered grid: bambu/switch top, airpods/camera middle,
-    // mouse/kindle/ipad bottom.
     &__item--bambu {
       left: 2%;
       top: 2%;
       width: 38%;
     }
 
-    &__item--switch {
+    &__item--framework {
       left: 42%;
-      top: 6%;
-      width: 50%;
-    }
-
-    &__item--airpods {
-      top: 13%;
-      left: 40.8%;
-      transform: rotate(-12.15deg);
-      width: 28%;
-    }
-
-    &__item--camera {
-      top: 22.6%;
-      left: 73%;
-      width: 38%;
-    }
-
-    &__item--mouse {
-      top: 54.4%;
-      left: 3.5%;
-      width: 34%;
-    }
-
-    &__item--kindle {
-      top: 48.1%;
-      left: 41.3%;
-      width: 30%;
-      transform: rotate(15.4deg);
+      top: 4%;
+      width: 44%;
     }
 
     &__item--ipad {
-      top: 57.7%;
-      left: 64.8%;
-      width: 32%;
-      rotate: -10deg;
+      left: 10%;
+      top: 28%;
+      width: 52%;
+    }
+
+    &__item--gpu {
+      left: 2%;
+      top: 58%;
+      width: 42%;
+    }
+
+    &__star-deco-2 {
+      display: none;
+    }
+
+    &__item--rpi {
+      left: 48%;
+      top: 56%;
+      width: 36%;
+    }
+
+    &__item--quest {
+      left: 60%;
+      top: 34%;
+      width: 30%;
     }
 
     &__label {
       font-size: var(--font-subtitle);
     }
 
-    &__label--camera {
-      left: 66.1%;
-      top: 51.4%;
+    &__label--bambu {
+      left: 12%;
+      top: 38%;
+    }
+
+    &__label--framework {
+      left: 65%;
+      top: 2%;
     }
 
     &__label--ipad {
-      left: 50%;
-      top: 102%;
+      left: 20%;
+      top: 52%;
+    }
+
+    &__label--gpu {
+      left: 25%;
+      top: 78%;
+    }
+
+    &__label--rpi {
+      left: 65%;
+      top: 52%;
+    }
+
+    &__label--quest {
+      left: 78%;
+      top: 55%;
     }
   }
 }

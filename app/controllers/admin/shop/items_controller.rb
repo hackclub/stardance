@@ -139,6 +139,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
 
     def set_fulfillment_users
       @fulfillment_users = User.where("'fulfillment_person' = ANY(granted_roles)").order(:display_name)
+      @shop_categories = ShopCategory.order(:position, :title)
     end
 
     def available_shop_item_types
@@ -225,6 +226,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         requires_achievement: [],
         blocked_countries: [],
         unlocking_mission_ids: [],
+        shop_category_ids: [],
         parent_item_ids: [],
         shop_item_modifiers_attributes: [
           :id, :name, :group_name, :ticket_cost, :usd_cost, :enabled, :position,
@@ -244,7 +246,8 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         :source_region, :buyable_by_self, :accessory_tag, :show_image_in_shop,
         :mission_prize_only,
         requires_achievement: [], blocked_countries: [],
-        unlocking_mission_ids: []
+        unlocking_mission_ids: [],
+        shop_category_ids: []
       )
     end
 end

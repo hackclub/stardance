@@ -6,20 +6,24 @@
 
 <div class="app-layout">
   <main class="app-layout__main feed-home" aria-label="Home feed">
-    <%= render Posts::ComposerComponent.new(
-          post: @devlog,
-          current_user: current_user,
-          projects: @composer_projects,
-          selected_project: @selected_project
-        ) %>
+    <% if current_user.present? %>
+      <%= render Posts::ComposerComponent.new(
+            post: @devlog,
+            current_user: current_user,
+            projects: @composer_projects,
+            selected_project: @selected_project
+          ) %>
+    <% end %>
 
     <%= turbo_frame_tag "home_feed", src: home_feed_path, target: "_top", class: "feed-home__frame" do %>
       <div class="feed-loading" role="status" aria-live="polite">
         <span class="feed-loading__spinner" aria-hidden="true"></span>
-        <span class="feed-loading__label">Loading your feed&hellip;</span>
+        <span class="feed-loading__label">Loading the feed&hellip;</span>
       </div>
     <% end %>
   </main>
 
-  <%= render DiscoverRailComponent.new %>
+  <% if current_user.present? %>
+    <%= render DiscoverRailComponent.new %>
+  <% end %>
 </div>

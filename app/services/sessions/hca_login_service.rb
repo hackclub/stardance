@@ -36,7 +36,7 @@ module Sessions
         return failure
       end
 
-      if user.age_attestation_ineligible?
+      if user.age_blocked?
         return age_ineligible_result(user, is_new_user, guest_collision)
       end
 
@@ -139,11 +139,22 @@ module Sessions
       end
 
       def assign_user_attributes(user, fields, is_new_user)
-        if user.email.present? && fields[:email].present? && user.email != fields[:email]
-          user.guest_email = user.email
-          user.email = fields[:email]
-        else
-          user.email ||= fields[:email]
+        new_email = fields[:email]
+        if new_email.present? && user.email != new_email
+          conflicting_user = User.where.not(id: user.id).find_by("LOWER(email) = ?", new_email.downcase)
+          if conflicting_user
+            if conflicting_user.identities.where(provider: "hack_club").none?
+              conflicting_user.update_columns(email: nil)
+              Rails.logger.info("HCA login: reclaimed email #{new_email} from orphan user #{conflicting_user.id} for user #{user.id}")
+            else
+              Rails.logger.warn("HCA login: skipping email update for user #{user.id} — #{new_email} belongs to HCA-linked user #{conflicting_user.id}")
+            end
+          end
+
+          unless conflicting_user&.identities&.where(provider: "hack_club")&.exists?
+            user.guest_email = user.email if user.email.present?
+            user.email = new_email
+          end
         end
 
         user.display_name = User.random_funny_display_name if user.display_name.to_s.strip.blank?
@@ -151,7 +162,7 @@ module Sessions
         user.last_name = fields[:last_name] if fields[:last_name].present?
         user.slack_id = fields[:slack_id] if user.slack_id.to_s != fields[:slack_id]
 
-        case hca_age_attestation(fields)
+        case hca_age_attestation(user, fields)
         when :teen then user.age_attestation = "teen_13_18"
         when :ineligible then user.age_attestation = "ineligible"
         end
@@ -198,8 +209,9 @@ module Sessions
         age
       end
 
-      def hca_age_attestation(fields)
+      def hca_age_attestation(user, fields)
         return :teen if fields[:ysws_eligible]
+        return :teen if user.persisted? && user.manual_ysws_override == true
         return nil if fields[:birthday].nil?
 
         age = age_from_birthday(fields[:birthday])

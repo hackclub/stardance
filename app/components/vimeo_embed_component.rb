@@ -3,8 +3,8 @@
 class VimeoEmbedComponent < ViewComponent::Base
   VIDEOS = {
     what_is_a_ship: {
-      id: "1157267554",
-      hash: "664d0fac8e",
+      id: "1197437107",
+      hash: nil,
       title: "What is a Ship?"
     }
   }.freeze
@@ -22,8 +22,11 @@ class VimeoEmbedComponent < ViewComponent::Base
   end
 
   def embed_url
-    url = "https://player.vimeo.com/video/#{video_config[:id]}?h=#{video_config[:hash]}"
-    url += "&autoplay=1" if autoplay
+    url = "https://player.vimeo.com/video/#{video_config[:id]}"
+    params = []
+    params << "h=#{video_config[:hash]}" if video_config[:hash]
+    params << "autoplay=1" if autoplay
+    url += "?#{params.join("&")}" if params.any?
     url
   end
 
@@ -35,7 +38,9 @@ class VimeoEmbedComponent < ViewComponent::Base
     config = VIDEOS[video_key.to_sym]
     raise ArgumentError, "Unknown video: #{video_key}" unless config
 
-    "https://player.vimeo.com/video/#{config[:id]}?h=#{config[:hash]}"
+    url = "https://player.vimeo.com/video/#{config[:id]}"
+    url += "?h=#{config[:hash]}" if config[:hash]
+    url
   end
 
   private

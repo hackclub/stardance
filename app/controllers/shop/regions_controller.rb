@@ -13,6 +13,7 @@ class Shop::RegionsController < Shop::BaseController
 
     @user_region = region
     load_shop_items
+    @wishlisted_item_ids = current_user&.shop_wishlists&.pluck(:shop_item_id) || []
 
     respond_to do |format|
       format.turbo_stream

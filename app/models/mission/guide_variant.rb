@@ -14,7 +14,7 @@
 # Indexes
 #
 #  index_mission_guide_variants_on_mission_id    (mission_id)
-#  index_mission_guide_variants_unique_language  (mission_id, lower((language)::text)) UNIQUE
+#  index_mission_guide_variants_unique_language  (mission_id,language) UNIQUE
 #
 # Foreign Keys
 #

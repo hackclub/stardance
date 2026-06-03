@@ -45,8 +45,15 @@
         <%= hidden_field_tag :inline_project_show, "1" %>
 
         <header class="project-show__hero">
-          <div class="project-show__banner" data-controller="file-upload">
+          <div class="project-show__banner<%= ' project-show__banner--empty' unless @project.banner.attached? %>" data-controller="file-upload" data-file-upload-empty-class-value="project-show__banner--empty" data-file-upload-placeholder-selector-value=".project-show__banner-placeholder">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
+            <% unless @project.banner.attached? %>
+              <label class="project-show__banner-placeholder">
+                <span class="project-show__banner-placeholder-text">Upload screenshot</span>
+                <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                      data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
+              </label>
+            <% end %>
             <%= link_to back_path,
                         class: "project-show__back",
                         "aria-label": "Back",
@@ -56,11 +63,13 @@
               </svg>
             <% end %>
 
-            <label class="project-show__banner-upload">
-              <span>Change screenshot</span>
-              <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
-                    data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
-            </label>
+            <% if @project.banner.attached? %>
+              <label class="project-show__banner-upload">
+                <span>Change screenshot</span>
+                <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                      data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
+              </label>
+            <% end %>
           </div>
 
           <div class="project-show__panel">
@@ -128,13 +137,11 @@
               <div class="project-show__field project-show__field--inline project-show__field--hackatime">
                 <span>Hackatime projects</span>
                 <% if !@hackatime_linked %>
-                  <%= button_to "/auth/hackatime",
-                                method: :post,
-                                params: { origin: request.fullpath },
-                                class: "project-show__hackatime-connect",
-                                form: { class: "project-show__hackatime-connect-form" } do %>
+                  <button type="submit"
+                          form="hackatime-connect-form"
+                          class="project-show__hackatime-connect">
                     Connect Hackatime to link projects →
-                  <% end %>
+                  </button>
                 <% elsif @hackatime_dropdown_items.blank? %>
                   <span class="project-show__hackatime-empty">
                     No Hackatime projects yet — start coding with Hackatime installed to see them here.
@@ -142,10 +149,10 @@
                 <% else %>
                   <div data-controller="hackatime-link">
                     <div class="project-show__hackatime-picker">
-                      <div class="project-show__hackatime-box" data-hackatime-link-target="box">
-                        <button type="button" class="project-show__hackatime-add" data-action="hackatime-link#toggle" data-hackatime-link-target="addBtn" aria-label="Add Hackatime project">
+                      <div class="project-show__hackatime-box" role="button" tabindex="0" aria-pressed="false" data-contoller="addBtn" data-action="click->hackatime-link#toggle keydown.enter->hackatime-link#toggle">
+                        <div class="project-show__hackatime-add" aria-label="Add Hackatime project">
                           <%= inline_svg_tag "icons/plus.svg", class: "project-show__hackatime-add-icon" %>
-                        </button>
+                        </div>
                         <div class="project-show__hackatime-tags" data-hackatime-link-target="tags">
                           <span class="project-show__hackatime-placeholder"
                                 data-hackatime-link-target="placeholder"
@@ -188,7 +195,7 @@
               </div>
 
               <label class="project-show__field project-show__field--inline">
-                <span>AI usage declaration</span>
+                <span>AI usage declaration <%= render "projects/help_tooltip", text: "Describe how you used AI in this project (e.g. \"Used ChatGPT for debugging\", \"GitHub Copilot for code completion\"). AI use is OK, but it should feel like your own work! If you didn't use AI, you can state that." %></span>
                 <%= form.text_area :ai_declaration,
                                    rows: 2,
                                    maxlength: 1000,
@@ -197,8 +204,26 @@
               </label>
 
               <label class="project-show__started-check">
-                <input class="project-show__started-check-input" type="checkbox" aria-label="This project was started before June 1 2026, or was previously shipped to a Hack Club event.">
+                <input class="project-show__started-check-input"
+                       type="checkbox"
+                       data-project-form-target="updateDeclaration"
+                       data-action="change->project-form#toggleUpdateDescription"
+                       <%= "checked" if @project.update_description.present? %>
+                       aria-label="This project was started before June 1 2026, or was previously shipped to a Hack Club event.">
                 <span>This project was started <strong>before June 1 2026</strong>, or was <strong>previously shipped</strong> to a Hack Club event.</span>
+              </label>
+
+              <label class="project-show__field project-show__field--inline"
+                     data-project-form-target="updateDescriptionContainer"
+                     <%= "hidden" if @project.update_description.blank? %>>
+                <span>Update Description <%= render "projects/help_tooltip", text: "Describe the features you've added or updated, and the impact these changes have had on your project overall. Please be specific." %></span>
+                <%= form.text_area :update_description,
+                                   rows: 3,
+                                   maxlength: 1000,
+                                   class: "project-show__control project-show__textarea",
+                                   placeholder: "What did you update and why?",
+                                   aria: { label: "Update description" },
+                                   data: { "project-form-target": "updateDescriptionField" } %>
               </label>
 
               <div class="project-show__sparkle" aria-hidden="true"></div>
@@ -251,6 +276,12 @@
             </div>
           </div>
         </header>
+      <% end %>
+      <% unless @hackatime_linked %>
+        <form id="hackatime-connect-form" method="post" action="/auth/hackatime" hidden>
+          <input type="hidden" name="origin" value="<%= request.fullpath %>">
+          <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+        </form>
       <% end %>
     <% else %>
       <article class="project-show">
@@ -384,7 +415,12 @@
                     text: "Complete project info",
                     variant: :primary,
                     href: project_path(@project, editing: true, complete: true),
-                    data: { turbo_frame: "project_hero" }
+                    data: {
+                      turbo_frame: "project_hero",
+                      controller: "tooltip",
+                      tooltip_message_value: @project.info_blocker_message,
+                      tooltip_position_value: "top"
+                    }
                   ) %>
             <% else %>
               <%= render ActionButtonComponent.new(
@@ -540,18 +576,25 @@
     <% if @show_project_onboarding %>
       <section class="project-show__onboarding" aria-labelledby="project-show-onboarding-title">
         <header class="project-show__onboarding-header">
-          <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
           <% if !@hackatime_linked %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
             <p class="project-show__onboarding-header-body">
-              Link Hackatime to start tracking your time. Once you do, you'll unlock free stickers in the shop!
+              Link Hackatime to start tracking your time. Once you do and post a devlog, you'll unlock free stickers in the shop!
             </p>
-          <% elsif current_user && !current_user.shop_tutorial_completed? %>
+          <% elsif @project.hackatime_keys.present? %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
             <p class="project-show__onboarding-header-body">
-              Hackatime is linked! Head to the <a href="/shop" class="project-show__onboarding-header-link">shop tab</a> to claim your free stickers.
+              Once you have 15 minutes of coding time, come back and write your first devlog!
+            </p>
+          <% elsif @all_hackatime_projects.present? %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
+            <p class="project-show__onboarding-header-body">
+              We found Hackatime projects on your account — <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link one. Once you have 15 minutes of coding time, write your first devlog!
             </p>
           <% else %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
             <p class="project-show__onboarding-header-body">
-              Your devlogs will appear here. Start coding and post your first devlog!
+              Start coding with Hackatime running. Once you have 15 minutes, <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link your Hackatime project, then write your first devlog!
             </p>
           <% end %>
         </header>

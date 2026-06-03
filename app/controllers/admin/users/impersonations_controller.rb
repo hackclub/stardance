@@ -7,7 +7,7 @@ class Admin::Users::ImpersonationsController < Admin::ApplicationController
 
     admin_user = current_user
     session[:impersonator_user_id] = admin_user.id
-    session[:user_id] = @user.id
+    sign_in_user(@user, auth_level: @user.hca_linked? ? "hca" : "guest")
     pundit_reset!
     authorize @user, :impersonate?
 
@@ -44,7 +44,7 @@ class Admin::Users::ImpersonationsController < Admin::ApplicationController
       )
     end
 
-    session[:user_id] = admin_user.id
+    sign_in_user(admin_user, auth_level: "hca")
     session.delete(:impersonator_user_id)
     @current_user = admin_user
     pundit_reset!

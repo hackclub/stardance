@@ -23,8 +23,10 @@ class Projects::SetupController < ApplicationController
 
     case params[:idea].to_s
     when "yes"
+      track_event "project_setup_started", { has_idea: true }
       redirect_to projects_setup_name_path
     when "no"
+      track_event "project_setup_started", { has_idea: false }
       redirect_to projects_setup_missions_path
     else
       redirect_to projects_setup_path, alert: "Please pick one."
@@ -56,6 +58,7 @@ class Projects::SetupController < ApplicationController
 
     project = find_or_create_setup_project!
     project.update!(title: title, description: description.presence)
+    track_event "project_created", { project_id: project.id, source: "setup" }
     redirect_to next_gate_after_details_path
   end
 
@@ -106,6 +109,7 @@ class Projects::SetupController < ApplicationController
       project.update!(attrs) if attrs.any?
     end
 
+    track_event "mission_attached", { project_id: project.id, mission_slug: slug }
     redirect_to next_gate_after_details_path
   end
 

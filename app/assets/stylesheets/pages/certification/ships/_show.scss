@@ -119,6 +119,12 @@
     overflow-wrap: anywhere;
   }
 
+  &__no-declaration {
+    margin: 0;
+    font-style: italic;
+    color: var(--muted);
+  }
+
   &__links,
   &__meta {
     display: grid;

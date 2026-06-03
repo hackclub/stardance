@@ -35,11 +35,12 @@
               <%= f.hidden_field :type, value: shop_item.type %>
               <code><%= shop_item.type %></code>
             <% else %>
-              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <% @shop_item_types.each do |type_name| %>
-                  <%= link_to type_name.demodulize.titleize, new_admin_shop_item_path(type: type_name), class: "btn-secondary", style: "text-align: center; text-decoration: none; padding: 0.4rem 0.75rem;" %>
-                <% end %>
-              </div>
+              <%= select_tag :type,
+                    options_for_select(@shop_item_types.map { |t| [t.demodulize.titleize, t] }),
+                    include_blank: "Select a type…",
+                    class: "form-control",
+                    data: { path: new_admin_shop_item_path },
+                    onchange: "if(this.value) window.location = this.dataset.path + '?type=' + encodeURIComponent(this.value)" %>
             <% end %>
           </div>
 
@@ -76,6 +77,17 @@
                 <%= image_tag shop_item.image.variant(:carousel_sm), class: "shop-item-form__image-preview" %>
               </div>
             <% end %>
+          </div>
+
+          <div class="shop-item-form__field">
+            <label class="shop-item-form__label">Categories</label>
+            <%= f.collection_check_boxes :shop_category_ids, @shop_categories, :id, :title do |b| %>
+              <label class="shop-item-form__checkbox-label">
+                <%= b.check_box(class: "shop-item-form__checkbox") %>
+                <%= b.text %>
+              </label>
+            <% end %>
+            <span class="shop-item-form__hint">Assign this item to one or more shop categories</span>
           </div>
         </div>
 

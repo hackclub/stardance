@@ -1,0 +1,151 @@
+# Gorse recommender configuration for Stardance.
+#
+# Apply to a gorse-in-one container with:
+#   docker exec <cid> mkdir -p /etc/gorse
+#   docker cp config/gorse/config.toml <cid>:/etc/gorse/config.toml
+#   docker restart <cid>
+#
+# Connection strings should be supplied by environment in real deployments
+# (these override the [database] values below):
+#   GORSE_CACHE_STORE, GORSE_DATA_STORE
+#
+# For local dev WITHOUT Postgres/Redis, run the container with sqlite overrides:
+#   -e GORSE_CACHE_STORE="sqlite:///var/lib/gorse/cache.sqlite"
+#   -e GORSE_DATA_STORE="sqlite:///var/lib/gorse/data.sqlite"
+#
+# App-specific decisions (vs. stock Gorse defaults) are called out inline.
+
+[database]
+
+# Cache store (hot path). Postgres is used so we don't add a Redis dependency;
+# set GORSE_CACHE_STORE="redis://host:6379/0" in prod if you'd rather use Redis.
+cache_store = "postgres://gorse:gorse_pass@localhost:5432/gorse?sslmode=disable"
+
+# Persistent data store. Postgres (NOT sqlite) — this is what we run in prod.
+# Override with GORSE_DATA_STORE in deployed environments.
+data_store = "postgres://gorse:gorse_pass@localhost:5432/gorse?sslmode=disable"
+
+table_prefix = ""
+cache_table_prefix = ""
+data_table_prefix = ""
+
+[database.postgres]
+max_open_conns = 64
+max_idle_conns = 64
+conn_max_lifetime = "1m"
+
+[database.redis]
+# Only used if cache_store is a redis:// URL.
+max_search_results = 10000
+
+[master]
+port = 8086
+host = "0.0.0.0"
+http_port = 8088
+http_host = "0.0.0.0"
+n_jobs = 1
+meta_timeout = "10s"
+
+[server]
+default_n = 10
+clock_error = "5s"
+# Auto-create users/items referenced by feedback we haven't synced yet.
+auto_insert_user = true
+auto_insert_item = true
+cache_expire = "10s"
+
+[recommend]
+# Cache size for recommended/popular/latest item lists.
+cache_size = 100
+cache_expire = "72h"
+# Online recs only consider the latest N feedbacks per user, for efficiency.
+context_size = 100
+active_user_ttl = 0
+
+# we need to improve this
+[recommend.data_source]
+# Only genuine-intent actions train "what you like". The passive, auto-fired
+# tracking signals (read/dwell/watch) are deliberately NOT positive, so scrolling
+# past a post is never read as an endorsement.
+#
+# `vote` is excluded for now: it is sent as a single type for both up- and
+# down-votes, so a downvote would wrongly count as positive. Re-add once up/down
+# are split into separate types — or use Gorse's value-threshold syntax, e.g.
+# "vote>=1" to count only positive scores (same trick works for "dwell>=30" if we
+# ever want long dwells to count as a weak positive).
+positive_feedback_types = ["like", "comment", "repost", "follow_project"]
+
+# "Seen" signals: used to exclude already-viewed items from recommendations.
+read_feedback_types = ["read", "open", "dwell", "watch"]
+
+# Explicit dismissals — trained against.
+negative_feedback_types = ["hide", "not_interested", "skip"]
+
+positive_feedback_ttl = 0
+item_ttl = 0
+
+# Non-personalized recommender for cold-start users and as a ranker candidate.
+# Scores items by OUR engagement (likes + reposts) in the last week, rather than
+# the stock "star" example.
+[[recommend.non-personalized]]
+name = "popular_weekly"
+score = "count(feedback, .FeedbackType == 'like') + count(feedback, .FeedbackType == 'repost')"
+filter = "(now() - item.Timestamp).Hours() < 168"
+
+[recommend.collaborative]
+# Matrix factorization — the personalization model. "none" (the stock default)
+# disables personalization entirely, which leaves recs as "latest items" for
+# everyone. This is the single most important setting for recommendation quality.
+type = "mf"
+fit_period = "60m"      # dev: lower to "10m" to see retraining sooner
+fit_epoch = 100
+optimize_period = "360m"
+optimize_trials = 10
+
+[recommend.collaborative.early_stopping]
+patience = 10
+
+[recommend.replacement]
+# Don't recycle already-seen items back into recommendations.
+enable_replacement = false
+positive_replacement_decay = 0.8
+read_replacement_decay = 0.6
+
+[recommend.ranker]
+# Factorization-machine reranker over the candidate recommenders below. Set to
+# "none" to skip learned reranking and just merge candidates by their scores.
+type = "fm"
+cache_expire = "120h"
+recommenders = ["collaborative", "non-personalized/popular_weekly", "latest"]
+fit_period = "60m"
+fit_epoch = 100
+optimize_period = "360m"
+optimize_trials = 10
+
+[recommend.ranker.early_stopping]
+patience = 10
+
+[recommend.fallback]
+# Used when a user's cached recommendation list drains out.
+recommenders = ["non-personalized/popular_weekly", "latest"]
+
+[blob]
+# Local storage for trained model artifacts. Use s3://, gs:// or az:// in prod.
+uri = "/var/lib/gorse/blob"
+
+# --- Future: content-based & embedding recommenders -------------------------
+# We don't generate item/user embeddings yet (see app/models/gorse/labels.rb —
+# "embedding eventually"). When we do, enable richer recommenders here:
+#
+#   [[recommend.item-to-item]]
+#   name = "neighbors"
+#   type = "tags"     # by common Labels (project_categories, type, …); or
+#   # type = "embedding"  # by Euclidean distance of item embeddings
+#   # column = "item.Labels.embedding"
+#
+#   [[recommend.user-to-user]]
+#   name = "neighbors"
+#   type = "items"    # users who engaged with common items
+#
+# and add them to [recommend.ranker].recommenders. Embedding types additionally
+# require an [openai] block for generating the vectors.

@@ -40,6 +40,18 @@ export default class extends Controller {
     dialog.close?.() || dialog.removeAttribute("open");
   }
 
+  backdropClose(event) {
+    const dialog = this._dialog();
+    if (!dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const clickedInside =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!clickedInside) this.close();
+  }
+
   _dialog() {
     if (this.hasDialogTarget) return this.dialogTarget;
     return document.getElementById("followers-modal");

@@ -44,6 +44,8 @@ class Projects::ShipsController < ApplicationController
       end
     end
 
+    track_event "project_shipped", { project_id: @project.id, reship: reship }
+
     if !reship
       redirect_to project_path(@project, just_shipped: 1), notice: "Congratulations! Your project has been submitted for review! While you wait, rate other projects at the voting booth."
     elsif probe_result.ok?

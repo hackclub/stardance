@@ -79,6 +79,12 @@ application.register("customs-warning", CustomsWarningController);
 import DecisionTreeController from "./decision_tree_controller";
 application.register("decision-tree", DecisionTreeController);
 
+import DevlogEditController from "./devlog_edit_controller";
+application.register("devlog-edit", DevlogEditController);
+
+import DiscoverRailSearchController from "./discover_rail_search_controller";
+application.register("discover-rail-search", DiscoverRailSearchController);
+
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
 
@@ -87,6 +93,9 @@ application.register("emoji-picker", EmojiPickerController);
 
 import FallingStarController from "./falling_star_controller";
 application.register("falling-star", FallingStarController);
+
+import FeedEngagementController from "./feed_engagement_controller";
+application.register("feed-engagement", FeedEngagementController);
 
 import HorizontalScrollController from "./horizontal_scroll_controller";
 application.register("horizontal-scroll", HorizontalScrollController);
@@ -193,8 +202,8 @@ application.register("searchable-select", SearchableSelectController);
 import ShopController from "./shop_controller";
 application.register("shop", ShopController);
 
-import ShopGoalsController from "./shop_goals_controller";
-application.register("shop-goals", ShopGoalsController);
+import SlackDoodleController from "./slack_doodle_controller";
+application.register("slack-doodle", SlackDoodleController);
 
 import ShopWishlistController from "./shop_wishlist_controller";
 application.register("shop-wishlist", ShopWishlistController);

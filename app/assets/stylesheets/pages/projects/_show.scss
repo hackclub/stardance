@@ -49,8 +49,8 @@ turbo-frame#project_hero {
 // Red "still to complete" highlight for the banner — drawn inside the rounded
 // corners so it isn't clipped by `overflow: hidden`.
 .project-show__banner--incomplete {
-  outline: 2px solid var(--color-brand-salmon);
-  outline-offset: -2px;
+  outline: 4px solid var(--color-brand-salmon);
+  outline-offset: -4px;
 }
 
 .project-show__banner-image {
@@ -85,6 +85,27 @@ turbo-frame#project_hero {
 .project-show__back-icon {
   width: 30px;
   height: 30px;
+}
+
+.project-show__banner--empty .project-show__banner-image {
+  opacity: 0;
+}
+
+.project-show__banner-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px dashed var(--color-space-border);
+  border-radius: var(--profile-radius);
+}
+
+.project-show__banner-placeholder-text {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-l);
+  font-weight: 600;
 }
 
 .project-show__banner-upload {
@@ -1523,6 +1544,7 @@ turbo-frame#project_hero {
 }
 
 .project-show__hackatime-connect {
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-yellow-200);

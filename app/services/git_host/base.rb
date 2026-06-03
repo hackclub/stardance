@@ -22,7 +22,11 @@ module GitHost
       raise NotImplementedError
     end
 
-    def fetch_commits(since: nil, per_page: 100)
+    def fetch_commits(since: nil, before: nil, per_page: 100)
+      raise NotImplementedError
+    end
+
+    def fetch_commit(sha)
       raise NotImplementedError
     end
 

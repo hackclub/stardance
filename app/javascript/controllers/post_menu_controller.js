@@ -2,7 +2,13 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["menu"];
-  static values = { url: String };
+  static values = {
+    url: String,
+    postId: Number,
+    projectId: Number,
+    source: String,
+    feedRequestId: String,
+  };
 
   connect() {
     this._onClickOutside = this._onClickOutside.bind(this);
@@ -40,7 +46,48 @@ export default class extends Controller {
     this._close();
   }
 
+  notInterested(event) {
+    event.preventDefault();
+
+    this._sendFeedback("not_interested");
+    this._close();
+    this.element.closest(".feed-post-card")?.remove();
+  }
+
   // private
+
+  _sendFeedback(eventType) {
+    const body = JSON.stringify({
+      events: [
+        {
+          event_type: eventType,
+          item_type: "post",
+          post_id: this.postIdValue,
+          project_id: this.hasProjectIdValue ? this.projectIdValue : null,
+          source: this.sourceValue || "post_menu",
+          feed_request_id: this.feedRequestIdValue,
+        },
+      ],
+    });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(
+        "/feed_events",
+        new Blob([body], { type: "application/json" }),
+      );
+    } else {
+      fetch("/feed_events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")
+            ?.content,
+        },
+        body,
+        keepalive: true,
+      });
+    }
+  }
 
   _open() {
     this.menuTarget.hidden = false;

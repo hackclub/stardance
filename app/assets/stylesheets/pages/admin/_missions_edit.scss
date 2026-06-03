@@ -346,6 +346,45 @@
   }
 }
 
+.admin-mission-edit__lang-rename {
+  margin-bottom: var(--space-s);
+}
+
+.admin-mission-edit__lang-rename-toggle {
+  font-size: var(--font-size-s);
+  color: var(--color-fg-muted);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-brand-mint);
+  }
+}
+
+.admin-mission-edit__lang-rename-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  margin-top: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.admin-mission-edit__lang-rename-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.admin-mission-edit__lang-rename-input {
+  padding: 4px var(--space-xs);
+  border-radius: 6px;
+  border: 1px solid var(--color-space-border);
+  background: var(--color-space-bg);
+  color: var(--color-brand-off-white);
+  font-family: inherit;
+  font-size: var(--font-size-s);
+  width: 160px;
+}
+
 .admin-mission-edit__paste-label {
   display: flex;
   flex-direction: column;

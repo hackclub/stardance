@@ -1,0 +1,35 @@
+<turbo-frame id="discover-rail-results" data-discover-rail-search-target="results">
+  <% items = results[:projects] + results[:posts] + results[:users] %>
+
+  <% if items.any? %>
+    <section class="discover-rail__search-panel" aria-label="Search results">
+      <p class="discover-rail__search-action">Search for "<%= results[:query] %>"</p>
+      <ul class="discover-rail__results-list">
+        <% items.each do |item| %>
+          <li>
+            <%= link_to item[:path], class: "discover-rail__result", data: { turbo_frame: "_top" } do %>
+              <% if item[:avatar].present? %>
+                <%= image_tag item[:avatar], alt: "", class: "discover-rail__result-avatar" %>
+              <% else %>
+                <span class="discover-rail__result-avatar discover-rail__result-avatar--placeholder" aria-hidden="true">
+                  <%= item[:type].to_s.first&.upcase || "S" %>
+                </span>
+              <% end %>
+              <span class="discover-rail__result-copy">
+                <span class="discover-rail__result-title">
+                  <%= item[:title] %>
+                </span>
+                <span class="discover-rail__result-meta"><%= item[:subtitle].presence || item[:preview] %></span>
+              </span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% else %>
+    <section class="discover-rail__search-panel" aria-label="Search results">
+      <p class="discover-rail__search-action">Search for "<%= results[:query] %>"</p>
+      <p class="discover-rail__placeholder-text">No results found.</p>
+    </section>
+  <% end %>
+</turbo-frame>

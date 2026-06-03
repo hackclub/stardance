@@ -1,0 +1,104 @@
+.what-is-hc {
+  overflow: hidden;
+  padding: var(--space-xxl) 0;
+
+  &__marquee {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  &__track {
+    display: flex;
+    gap: 0.75rem;
+    width: max-content;
+    animation: marquee-scroll 30s linear infinite;
+  }
+
+  &__track--reverse {
+    animation-name: marquee-scroll-reverse;
+  }
+
+  &__photo {
+    height: 180px;
+    width: auto;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    position: relative;
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: var(--space-xxl) var(--space-l);
+    text-align: center;
+  }
+
+  &__title {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: var(--font-h2);
+    color: white;
+    margin: 0 0 var(--space-l);
+    text-shadow: none;
+  }
+
+  &__title--italic {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-weight: 700;
+  }
+
+  &__text {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 400;
+    font-size: var(--font-body);
+    color: var(--color-body-text);
+    line-height: 1.6;
+    margin: 0 0 var(--space-m);
+  }
+
+  &__text--highlight {
+    color: white;
+  }
+
+  &__links {
+    font-family: "Exo 2", sans-serif;
+    font-size: var(--font-subtitle);
+    color: var(--color-body-text);
+    margin: var(--space-l) 0 0;
+
+    a {
+      color: var(--color-body-text);
+      text-decoration: underline;
+
+      &:hover {
+        color: white;
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    &__photo {
+      height: 120px;
+    }
+  }
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-scroll-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

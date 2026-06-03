@@ -1,11 +1,27 @@
 import { Controller } from "@hotwired/stimulus";
 
-// Intercepts the Turbo Stream replace targeting #rsvp_counter and crossfades
-// the number: the old number slides up and fades out, the new one slides in
-// from below and fades in. The exiting number stays in normal flow so the
-// counter's box keeps its size and baseline — the entering number is
-// absolutely stacked on top, so it doesn't disturb surrounding text.
+// Odometer-style counter with polling backoff. Each digit animates
+// independently. Big jumps are broken into intermediate ticks so
+// bursts of signups look organic.
+//
+// Backoff schedule:
+//   0–15s:   poll every 500ms
+//   15s–1m:  poll every 1s
+//   1m–10m:  poll every 5s
+//   10m–1h:  poll every 10s
+//   1h+:     poll every 60s
+
+const BACKOFF_TIERS = [
+  { until: 15_000, interval: 500 },
+  { until: 60_000, interval: 1_000 },
+  { until: 600_000, interval: 5_000 },
+  { until: 3_600_000, interval: 10_000 },
+  { until: Infinity, interval: 60_000 },
+];
+
 export default class extends Controller {
+  static values = { pollUrl: String };
+
   connect() {
     this.prefersReducedMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -13,101 +29,203 @@ export default class extends Controller {
     this.span = this.element.querySelector("#rsvp_counter");
     if (!this.span) return;
 
-    this.lastCount = parseInt(this.span.dataset.count, 10) || 0;
+    this.currentCount = parseInt(this.span.dataset.count, 10) || 0;
     this.animating = false;
     this.queue = [];
-    this.build(this.span.textContent.trim());
+    this.tickDuration = null;
+    this.startedAt = Date.now();
 
-    this._onStream = this.onStream.bind(this);
-    document.addEventListener("turbo:before-stream-render", this._onStream);
+    this.buildDigits(this.currentCount);
+    this.schedulePoll();
   }
 
   disconnect() {
-    document.removeEventListener("turbo:before-stream-render", this._onStream);
+    clearTimeout(this._pollTimer);
   }
 
-  build(text) {
-    this.span.textContent = "";
-    this.span.setAttribute("aria-label", text);
-    const inner = document.createElement("span");
-    inner.className = "rsvp-counter__inner";
-    inner.textContent = text;
-    this.span.appendChild(inner);
-    this.currentInner = inner;
+  getInterval() {
+    const elapsed = Date.now() - this.startedAt;
+    for (const tier of BACKOFF_TIERS) {
+      if (elapsed < tier.until) return tier.interval;
+    }
+    return 60_000;
   }
 
-  onStream(event) {
-    const stream = event.target;
-    if (stream?.getAttribute?.("target") !== "rsvp_counter") return;
+  schedulePoll() {
+    this._pollTimer = setTimeout(() => this.poll(), this.getInterval());
+  }
 
-    const template = stream.querySelector("template");
-    const incoming = template?.content.querySelector("#rsvp_counter");
-    if (!incoming) return;
-
-    const newCount = parseInt(incoming.dataset.count, 10);
-    if (Number.isNaN(newCount)) return;
-    const newText = incoming.textContent.trim();
-
-    event.preventDefault();
-
-    if (newCount === this.lastCount) return;
-
-    if (newCount < this.lastCount) {
-      this.lastCount = newCount;
-      this.build(newText);
+  async poll() {
+    if (!this.pollUrlValue) {
+      this.schedulePoll();
       return;
     }
 
-    this.lastCount = newCount;
-    this.enqueue(newText);
+    try {
+      const resp = await fetch(this.pollUrlValue, {
+        headers: { Accept: "application/json" },
+      });
+      if (resp.ok) {
+        const { count } = await resp.json();
+        if (typeof count === "number" && count !== this.currentCount) {
+          this.applyNewCount(count);
+        }
+      }
+    } catch {
+      // retry on next poll
+    }
+
+    this.schedulePoll();
   }
 
-  enqueue(newText) {
-    if (this.animating) {
-      this.queue.push(newText);
+  applyNewCount(newCount) {
+    const oldCount = this.currentCount;
+    this.currentCount = newCount;
+
+    if (newCount < oldCount) {
+      this.buildDigits(newCount);
+      return;
+    }
+
+    const delta = newCount - oldCount;
+    if (delta <= 1) {
+      this.tickDuration = null;
+      this.enqueue(newCount);
     } else {
-      this.animate(newText);
+      const maxTicks = Math.min(delta, 20);
+      this.tickDuration = Math.max(80, Math.floor(1000 / maxTicks));
+      const step = delta / maxTicks;
+      for (let i = 1; i <= maxTicks; i++) {
+        this.enqueue(Math.round(oldCount + step * i));
+      }
     }
   }
 
-  animate(newText) {
-    this.animating = true;
-    this.pulse();
+  formatNumber(n) {
+    return n.toLocaleString();
+  }
 
-    if (this.prefersReducedMotion) {
-      this.build(newText);
+  buildDigits(count) {
+    const text = this.formatNumber(count);
+    this.span.textContent = "";
+    this.span.setAttribute("aria-label", text);
+    this.span.dataset.count = count;
+    this.digitEls = [];
+
+    for (const ch of text) {
+      const wrapper = document.createElement("span");
+      wrapper.className = /\d/.test(ch)
+        ? "rsvp-counter__digit"
+        : "rsvp-counter__sep";
+
+      const inner = document.createElement("span");
+      inner.className = "rsvp-counter__digit-inner";
+      inner.textContent = ch;
+      wrapper.appendChild(inner);
+
+      this.span.appendChild(wrapper);
+      this.digitEls.push({ wrapper, inner, value: ch });
+    }
+  }
+
+  enqueue(count) {
+    if (this.animating) {
+      this.queue.push(count);
+    } else {
+      this.animateToCount(count);
+    }
+  }
+
+  animateToCount(count) {
+    this.animating = true;
+
+    const newText = this.formatNumber(count);
+    const oldText = this.digitEls.map((d) => d.value).join("");
+
+    if (newText.length !== oldText.length) {
+      this.buildDigits(count);
+      this.pulse();
       this.animating = false;
       this.drain();
       return;
     }
 
-    const oldInner = this.currentInner;
-    oldInner.classList.add("rsvp-counter__inner--exiting");
+    const base = this.tickDuration || 680;
+    const jitter = this.tickDuration ? base * (0.5 + Math.random()) : base;
+    const duration = Math.round(jitter);
 
-    const newInner = document.createElement("span");
-    newInner.className = "rsvp-counter__inner rsvp-counter__inner--entering";
-    newInner.textContent = newText;
-    this.span.appendChild(newInner);
+    const animations = [];
+    for (let i = 0; i < newText.length; i++) {
+      if (newText[i] !== this.digitEls[i].value) {
+        animations.push(
+          this.animateDigit(this.digitEls[i], newText[i], duration),
+        );
+      }
+    }
 
-    // Wait for the entering animation to finish; the exiting one has the
-    // same duration so its cleanup rides along.
-    newInner.addEventListener(
-      "animationend",
-      () => {
-        oldInner.remove();
-        newInner.classList.remove("rsvp-counter__inner--entering");
-        this.span.setAttribute("aria-label", newText);
-        this.currentInner = newInner;
-        this.animating = false;
-        this.drain();
-      },
-      { once: true },
-    );
+    if (animations.length === 0) {
+      this.animating = false;
+      this.drain();
+      return;
+    }
+
+    this.pulse();
+
+    if (this.prefersReducedMotion) {
+      this.span.setAttribute("aria-label", newText);
+      this.span.dataset.count = count;
+      this.animating = false;
+      if (this.queue.length === 0) this.tickDuration = null;
+      this.drain();
+      return;
+    }
+
+    Promise.all(animations).then(() => {
+      this.span.setAttribute("aria-label", newText);
+      this.span.dataset.count = count;
+      this.animating = false;
+      if (this.queue.length === 0) this.tickDuration = null;
+      this.drain();
+    });
+  }
+
+  animateDigit(digitObj, newValue, duration) {
+    if (this.prefersReducedMotion) {
+      digitObj.inner.textContent = newValue;
+      digitObj.value = newValue;
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const oldInner = digitObj.inner;
+      oldInner.classList.add("rsvp-counter__digit-inner--exiting");
+      oldInner.style.animationDuration = `${duration}ms`;
+
+      const newInner = document.createElement("span");
+      newInner.className =
+        "rsvp-counter__digit-inner rsvp-counter__digit-inner--entering";
+      newInner.textContent = newValue;
+      newInner.style.animationDuration = `${duration}ms`;
+      digitObj.wrapper.appendChild(newInner);
+
+      newInner.addEventListener(
+        "animationend",
+        () => {
+          oldInner.remove();
+          newInner.classList.remove("rsvp-counter__digit-inner--entering");
+          newInner.style.animationDuration = "";
+          digitObj.inner = newInner;
+          digitObj.value = newValue;
+          resolve();
+        },
+        { once: true },
+      );
+    });
   }
 
   drain() {
     if (this.queue.length > 0) {
-      this.animate(this.queue.shift());
+      this.animateToCount(this.queue.shift());
     }
   }
 

@@ -1,0 +1,33 @@
+<turbo-frame id="command-palette-results"
+             class="command-palette__results"
+             role="listbox"
+             data-command-palette-target="results">
+  <% groups = [
+    [ "Commands", results[:commands] ],
+    [ "Projects", results[:projects] ],
+    [ "Posts", results[:posts] ],
+    [ "Users", results[:users] ]
+  ].select { |_label, items| items.any? } %>
+
+  <% if groups.any? %>
+    <% groups.each do |label, items| %>
+      <p class="command-palette__section-label"><%= label %></p>
+      <ul class="command-palette__list">
+        <% items.each_with_index do |item, index| %>
+          <li class="command-palette__item"
+              role="option"
+              id="cp-result-<%= label.parameterize %>-<%= index %>"
+              data-command-palette-target="item"
+              data-action="click->command-palette#select mouseenter->command-palette#highlight"
+              data-path="<%= item[:path] %>"
+              <% if item[:method] == "post" %> data-method="post"<% end %>>
+            <span class="command-palette__item-title"><%= item[:title] %></span>
+            <span class="command-palette__item-meta"><%= item[:subtitle].presence || item[:type] %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% else %>
+    <p class="command-palette__empty">No results found.</p>
+  <% end %>
+</turbo-frame>
