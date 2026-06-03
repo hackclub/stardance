@@ -94,24 +94,37 @@ h1 {
   &--rank-1 {
     background: linear-gradient(135deg, #ffd700, #ff8c00);
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-    .content { background-color: #4a3b00; }
-    .rank { color: #ffd700; font-weight: 900; }
+    .content {
+      background-color: #4a3b00;
+    }
+    .rank {
+      color: #ffd700;
+      font-weight: 900;
+    }
   }
 
   // Rank 2: Silver
   &--rank-2 {
     background: linear-gradient(135deg, #e0e0e0, #a0a0a0);
     box-shadow: 0 0 10px rgba(192, 192, 192, 0.3);
-    .content { background-color: #333; }
-    .rank { color: #e0e0e0; }
+    .content {
+      background-color: #333;
+    }
+    .rank {
+      color: #e0e0e0;
+    }
   }
 
   // Rank 3: Bronze
   &--rank-3 {
     background: linear-gradient(135deg, #cd7f32, #8b4513);
     box-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
-    .content { background-color: #3d2110; }
-    .rank { color: #cd7f32; }
+    .content {
+      background-color: #3d2110;
+    }
+    .rank {
+      color: #cd7f32;
+    }
   }
 
   .content {
