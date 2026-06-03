@@ -8,26 +8,47 @@
 
 <main>
     <h1>Leaderboard</h1>
-    <p class="subtitle"><%= @pagy.count %> users opted in to the leaderboard :D, you can opt in through settings</p>
+    <p class="subtitle"><%= @total_count %> users opted in to the leaderboard :D, you can opt in through settings</p>
 
-    <div class="users">
-        <% @users.each_with_index do |user, index| %>
-            <div class="user">
-                <div class="content">
-                    <h2>#<%= @pagy.offset + index + 1 %></h2>
+    <div class="leaderboard-grid">
+        <section class="leaderboard-section">
+            <h2 class="section-title">✨ Current Balance</h2>
+            <div class="users">
+                <% @current_users.each_with_index do |user, index| %>
+                    <div class="user">
+                        <div class="content">
+                            <h2 class="rank">#<%= index + 1 %></h2>
 
-                    <%= image_tag user.avatar %>
-                    <h2>
-                        <%= link_to user.display_name, profile_path(user.display_name) %>
-                    </h2>
+                            <%= image_tag user.avatar %>
+                            <h2>
+                                <%= link_to user.display_name, profile_path(user.display_name) %>
+                            </h2>
 
-                    <p><%= user.cached_balance %> <%= stardust_icon %></p>
-                </div>
+                            <p><%= user.cached_balance %> <%= stardust_icon %></p>
+                        </div>
+                    </div>
+                <% end %>
             </div>
-        <% end %>
-    </div>
+        </section>
 
-    <% if @pagy.pages > 1 %>
-        <div class="pagination"><%== @pagy.series_nav %></div>
-    <% end %>
+        <section class="leaderboard-section">
+            <h2 class="section-title">🏆 All-Time Highest</h2>
+            <div class="users">
+                <% @all_time_users.each_with_index do |user, index| %>
+                    <div class="user">
+                        <div class="content">
+                            <h2 class="rank">#<%= index + 1 %></h2>
+
+                            <%= image_tag user.avatar %>
+                            <h2>
+                                <%= link_to user.display_name, profile_path(user.display_name) %>
+                            </h2>
+
+                            <p><%= user.cached_total_earned %> <%= stardust_icon %></p>
+                        </div>
+                    </div>
+                <% end %>
+            </div>
+        </section>
+    </div>
 </main>
