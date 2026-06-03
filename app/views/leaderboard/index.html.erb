@@ -6,51 +6,48 @@
   <%= stylesheet_link_tag "leaderboard", "data-turbo-track": "reload" %>
 <% end %>
 
-<main>
-    <h1>Leaderboard</h1>
-    <p class="subtitle"><%= @total_count %> users opted in to the leaderboard :D, you can opt in through settings</p>
+<main class="leaderboard">
+    <header class="leaderboard__hero">
+        <p class="leaderboard__eyebrow">Stardust rankings</p>
+        <h1 class="leaderboard__title">
+            <span class="leaderboard__title-line">Who's catching the most</span>
+            <span class="leaderboard__title-em">stardust</span>
+        </h1>
+       <div class="leaderboard__subtitle">
+        <strong><%= number_with_delimiter(@total_count) %></strong> stargazers opted in
 
-    <div class="leaderboard-grid">
-        <section class="leaderboard-section">
-            <h2 class="section-title">✨ Current Balance</h2>
-            <div class="users">
-                <% @current_users.each_with_index do |user, index| %>
-                    <% rank = index + 1 %>
-                    <div class="user user--rank-<%= rank %>">
-                        <div class="content">
-                            <h2 class="rank">#<%= rank %></h2>
+        <% if current_user %>
+          <span aria-hidden="true">·</span>
 
-                            <%= image_tag user.avatar %>
-                            <h2>
-                                <%= link_to user.display_name, profile_path(user.display_name) %>
-                            </h2>
+          <% opted_in = current_user.preference&.leaderboard_optin %>
 
-                            <p><%= user.cached_balance %> <%= stardust_icon %></p>
-                        </div>
-                    </div>
-                <% end %>
-            </div>
-        </section>
+          <%= form_with url: my_settings_path,
+                        method: :patch,
+                        local: true,
+                        class: "leaderboard__inline-form" do %>
+            <%= hidden_field_tag :leaderboard_optin, opted_in ? "0" : "1" %>
 
-        <section class="leaderboard-section">
-            <h2 class="section-title">🏆 All-Time Highest</h2>
-            <div class="users">
-                <% @all_time_users.each_with_index do |user, index| %>
-                    <% rank = index + 1 %>
-                    <div class="user user--rank-<%= rank %>">
-                        <div class="content">
-                            <h2 class="rank">#<%= rank %></h2>
+            <%= submit_tag(
+                  opted_in ? "opt out of leaderboard" : "opt in to leaderboard",
+                  class: "leaderboard__subtitle-link--button"
+                ) %>
+          <% end %>
+        <% end %>
+       </div>
+    </p>
+    </header>
 
-                            <%= image_tag user.avatar %>
-                            <h2>
-                                <%= link_to user.display_name, profile_path(user.display_name) %>
-                            </h2>
+    <div class="leaderboard__boards">
+        <%= render "leaderboard/section",
+                   title: "Current Balance",
+                   emoji: "✨",
+                   users: @current_users,
+                   value_method: :cached_balance %>
 
-                            <p><%= user.cached_total_earned %> <%= stardust_icon %></p>
-                        </div>
-                    </div>
-                <% end %>
-            </div>
-        </section>
+        <%= render "leaderboard/section",
+                   title: "All-Time Highest",
+                   emoji: "🏆",
+                   users: @all_time_users,
+                   value_method: :cached_total_earned %>
     </div>
 </main>

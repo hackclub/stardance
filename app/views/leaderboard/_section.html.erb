@@ -1,0 +1,38 @@
+<%# locals: title:, emoji:, users:, value_method: %>
+<section class="leaderboard-section">
+  <header class="leaderboard-section__header">
+    <h2 class="leaderboard-section__title"><span aria-hidden="true"><%= emoji %></span> <%= title %></h2>
+    <p class="leaderboard-section__meta"><%= pluralize(users.size, "stargazer") %></p>
+  </header>
+
+  <ol class="leaderboard-section__list">
+    <% users.each_with_index do |user, index| %>
+      <% rank = index + 1 %>
+      <li class="leaderboard-row leaderboard-row--rank-<%= rank %>">
+        <span class="leaderboard-row__rank" aria-label="Rank <%= rank %>">#<%= rank %></span>
+
+        <%= image_tag user.avatar,
+                      alt: "",
+                      class: "leaderboard-row__avatar" %>
+
+        <div class="leaderboard-row__identity">
+          <p class="leaderboard-row__name">
+            <%= link_to user.display_name, profile_path(user.display_name),
+                        class: "leaderboard-row__name-link" %>
+          </p>
+          <p class="leaderboard-row__handle">@@<%= user.display_name %></p>
+        </div>
+
+        <p class="leaderboard-row__score">
+          <span class="leaderboard-row__score-value">
+            <%= number_with_delimiter(user.public_send(value_method)) %>
+          </span>
+          <span class="leaderboard-row__score-icon" aria-hidden="true">
+            <%= stardust_icon %>
+          </span>
+          <span class="leaderboard-row__score-label">Stardust</span>
+        </p>
+      </li>
+    <% end %>
+  </ol>
+</section>
