@@ -146,7 +146,7 @@ class Post::ShipEvent < ApplicationRecord
 
   def schedule_type_check
     project = post&.project
-    Project::TypeCheckJob.perform_later(project) if project
+    Project::TypeCheckJob.perform_later(project) if project && project.project_type.nil?
   end
 
   # Drives the Mission::Submission state machine off ship cert transitions.

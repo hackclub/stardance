@@ -28,6 +28,8 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
                               .order(created_at: @sort == "newest" ? :desc : :asc),
                          limit: 25)
 
+    @own_project_ids = current_user.memberships.pluck(:project_id).to_set
+
     @stats = ::Certification::Ship.dashboard_stats
     @lb_period = params[:lb].presence_in(%w[daily weekly alltime]) || "daily"
     @leaderboards = {

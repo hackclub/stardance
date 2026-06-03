@@ -230,7 +230,7 @@
           <tbody>
             <% @ships.each do |ship| %>
               <% owner = ship.project.memberships.find(&:owner?)&.user %>
-              <% own_project = current_user.memberships.any? { |m| m.project_id == ship.project_id } %>
+              <% own_project = @own_project_ids.include?(ship.project_id) %>
               <tr>
                 <td class="ship-queue__cell-project">
                   <div class="ship-queue__project-head">
@@ -273,8 +273,11 @@
       <div class="ship-queue__cards">
         <% @ships.each do |ship| %>
           <% owner = ship.project.memberships.find(&:owner?)&.user %>
-          <% own_project = current_user.memberships.any? { |m| m.project_id == ship.project_id } %>
-          <%= link_to (own_project ? "#" : admin_certification_ship_path(ship)), class: "ship-queue__card" do %>
+          <% own_project = @own_project_ids.include?(ship.project_id) %>
+          <% if own_project %>
+          <div class="ship-queue__card">
+          <% else %>
+          <%= link_to admin_certification_ship_path(ship), class: "ship-queue__card" do %>
             <div class="ship-queue__card-top">
               <span class="ship-queue__project-title"><%= ship.project.title %></span>
               <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
@@ -298,6 +301,9 @@
             <% elsif ship.pending? %>
               <div class="ship-queue__card-claim"><%= render "claim_flag", ship: ship %></div>
             <% end %>
+          <% if own_project %>
+          </div>
+          <% else %>
           <% end %>
         <% end %>
       </div>
