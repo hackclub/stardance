@@ -37,9 +37,6 @@
 #  created_at                 :datetime         not null
 #  updated_at                 :datetime         not null
 #
-#
-# Table name: post_ship_events
-#
 #  id                         :bigint           not null, primary key
 #  base_hours                 :float
 #  body                       :string
@@ -72,7 +69,7 @@
 #  voting_scale_version       :integer          default(2), not null
 #  created_at                 :datetime         not null
 #  updated_at                 :datetime         not null
-#
+
 one:
   body: MyString
 
