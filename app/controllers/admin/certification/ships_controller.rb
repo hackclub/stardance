@@ -6,21 +6,26 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   def index
     authorize ::Certification::Ship
 
-    @status = params[:status].presence_in(%w[pending approved returned all]) || "pending"
-    @sort = params[:sort] == "newest" ? "newest" : "oldest"
-    @search = params[:search].to_s.strip
-    @from = parse_date(params[:from])
-    @to = parse_date(params[:to])
+    @status       = params[:status].presence_in(%w[pending approved returned all]) || "pending"
+    @sort         = params[:sort] == "newest" ? "newest" : "oldest"
+    @search       = params[:search].to_s.strip
+    @from         = parse_date(params[:from])
+    @to           = parse_date(params[:to])
+    @project_type = params[:project_type].presence
 
     scope = policy_scope(::Certification::Ship)
-              .includes(:reviewer, project: { memberships: :user })
     scope = scope.where(status: @status) unless @status == "all"
     scope = scope.where("certification_ship_reviews.created_at >= ?", @from.beginning_of_day) if @from
     scope = scope.where("certification_ship_reviews.created_at <= ?", @to.end_of_day) if @to
     scope = apply_search(scope) if @search.present?
 
+    @type_counts = scope.joins(:project).group("projects.project_type").count
+
+    scope = scope.by_project_type(@project_type) if @project_type.present?
+
     @pagy, @ships = pagy(:offset,
-                         scope.order(created_at: @sort == "newest" ? :desc : :asc),
+                         scope.includes(:reviewer, project: { memberships: :user })
+                              .order(created_at: @sort == "newest" ? :desc : :asc),
                          limit: 25)
 
     @stats = ::Certification::Ship.dashboard_stats

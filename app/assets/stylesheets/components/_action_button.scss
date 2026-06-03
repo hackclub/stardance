@@ -141,6 +141,7 @@
   &--disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: none;
   }
 
   // Natively-disabled controls block all pointer events. Soft-disabled

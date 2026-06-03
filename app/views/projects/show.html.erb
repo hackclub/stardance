@@ -510,13 +510,14 @@
         </nav>
       <% end %>
 
-      <% if Flipper.enabled?(:test_time, current_user) %>
-        <%= button_to "Add 15min (test)",
-                      add_test_time_project_path(@project),
-                      method: :post,
-                      class: "action-btn action-btn--large action-btn--secondary project-show__test-time",
-                      form: { class: "project-show__test-time-form" } %>
-      <% end %>
+    <% end %>
+
+    <% if is_member && Flipper.enabled?(:test_time, current_user) %>
+      <%= button_to "Add 15min (test)",
+                    add_test_time_project_path(@project),
+                    method: :post,
+                    class: "action-btn action-btn--large action-btn--secondary project-show__test-time",
+                    form: { class: "project-show__test-time-form" } %>
     <% end %>
 
     <% if is_member && params[:just_shipped].present? %>

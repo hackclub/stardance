@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_03_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -634,7 +634,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
     t.datetime "marked_fire_at"
     t.bigint "marked_fire_by_id"
     t.integer "memberships_count", default: 0, null: false
-    t.string "project_categories", default: [], array: true
     t.string "project_type"
     t.text "readme_url"
     t.text "repo_url"

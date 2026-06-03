@@ -186,11 +186,7 @@
           <div class="detail-item">
             <span class="detail-key">Type:</span>
             <span class="detail-value">
-              <% if @review.project.project_categories.present? %>
-                <%= @review.project.project_categories.join(", ") %>
-              <% else %>
-                unknown
-              <% end %>
+              <%= @review.project.project_type.presence || "unknown" %>
             </span>
           </div>
 

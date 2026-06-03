@@ -11,7 +11,6 @@
 #  duration_seconds   :integer          default(0), not null
 #  marked_fire_at     :datetime
 #  memberships_count  :integer          default(0), not null
-#  project_categories :string           default([]), is an Array
 #  project_type       :string
 #  readme_url         :text
 #  repo_url           :text
@@ -155,16 +154,6 @@ class Project < ApplicationRecord
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
             size: { less_than: MAX_BANNER_SIZE, message: "is too large (max 10 MB)" },
             processable_file: true
-  validate :validate_project_categories
-
-  def validate_project_categories
-    return if project_categories.blank?
-
-    invalid_types = project_categories - AVAILABLE_CATEGORIES
-    if invalid_types.any?
-      errors.add(:project_categories, "contains invalid types: #{invalid_types.join(', ')}")
-    end
-  end
 
   def validate_repo_cloneable
     return false if repo_url.blank?

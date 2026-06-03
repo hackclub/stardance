@@ -29,11 +29,7 @@
             <tr>
               <td>#<%= review.id %></td>
               <td>
-                <% if review.project.project_categories.present? %>
-                  <%= review.project.project_categories.join(", ") %>
-                <% else %>
-                  <span style="opacity: 0.5;">—</span>
-                <% end %>
+                <%= review.project.project_type.presence || '<span style="opacity: 0.5;">—</span>'.html_safe %>
               </td>
               <td>
                 <%= link_to review.project.title, admin_project_path(review.project), class: "btn-primary slim" %>

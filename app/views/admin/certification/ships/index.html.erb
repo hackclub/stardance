@@ -129,6 +129,32 @@
             <% end %>
           </ol>
         <% end %>
+      <% if @type_counts.any? %>
+        <div class="ship-queue__types">
+          <span class="ship-queue__label">Type breakdown</span>
+          <div class="ship-queue__type-chips">
+            <% @type_counts.sort_by { |_, count| -count }.each do |type, count| %>
+              <% label      = type.present? ? type : "Unclassified" %>
+              <% filter_val = type.present? ? type : "unclassified" %>
+              <% is_active  = @project_type == filter_val %>
+              <%= link_to admin_certification_ships_path(
+                    status: @status, sort: @sort, search: @search.presence,
+                    from: @from&.iso8601, to: @to&.iso8601, project_type: filter_val
+                  ),
+                  class: "ship-queue__type-chip #{"is-active" if is_active}",
+                  aria: { pressed: is_active } do %>
+                <%= label %><span class="ship-queue__type-chip-count"><%= count %></span>
+              <% end %>
+            <% end %>
+            <% if @project_type.present? %>
+              <%= link_to "clear", admin_certification_ships_path(
+                    status: @status, sort: @sort, search: @search.presence,
+                    from: @from&.iso8601, to: @to&.iso8601
+                  ), class: "ship-queue__type-clear" %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
       </div>
     </section>
 
@@ -158,6 +184,20 @@
         <%= date_field_tag :to, @to&.iso8601, id: "filter-to", class: "ship-queue__input",
               autocomplete: "off", data: { action: "change->certification--queue#submit" } %>
       </div>
+      <div class="ship-queue__filter">
+        <label for="filter-type">Type</label>
+        <%
+          type_total        = @type_counts.values.sum
+          unclassified_count = @type_counts[nil].to_i
+          type_options = [["All (#{type_total})", ""]] +
+            ::Project::AVAILABLE_CATEGORIES.map { |t| ["#{t} (#{@type_counts[t].to_i})", t] } +
+            [["Unclassified (#{unclassified_count})", "unclassified"]]
+        %>
+        <%= select_tag :project_type,
+              options_for_select(type_options, @project_type.to_s),
+              id: "filter-type", class: "ship-queue__select",
+              data: { action: "change->certification--queue#submit" } %>
+      </div>
       <div class="ship-queue__filter ship-queue__filter--search">
         <label for="filter-search">Search</label>
         <%= text_field_tag :search, @search, id: "filter-search", placeholder: "review id or project title",
@@ -186,17 +226,24 @@
           <tbody>
             <% @ships.each do |ship| %>
               <% owner = ship.project.memberships.find(&:owner?)&.user %>
+              <% own_project = current_user.memberships.any? { |m| m.project_id == ship.project_id } %>
               <tr>
                 <td class="ship-queue__cell-project">
                   <div class="ship-queue__project-head">
-                    <%= link_to ship.project.title, admin_certification_ship_path(ship), class: "ship-queue__project-title" %>
+                    <span class="ship-queue__project-title"><%= ship.project.title %></span>
                     <span class="ship-queue__project-id">#<%= ship.id %></span>
+                    <% if ship.project.project_type.present? %>
+                      <span class="ship-queue__type-tag"><%= ship.project.project_type %></span>
+                    <% end %>
                   </div>
                   <div class="ship-queue__project-meta">
                     <span>by <%= owner&.display_name || "—" %></span>
                     <span class="ship-queue__dot" aria-hidden="true">·</span>
                     <span><%= time_ago_in_words(ship.created_at) %> old</span>
-                    <% if ship.pending? %>
+                    <% if own_project %>
+                      <span class="ship-queue__dot" aria-hidden="true">·</span>
+                      <span class="ship-queue__type-tag ship-queue__type-tag--own">Your Project</span>
+                    <% elsif ship.pending? %>
                       <span class="ship-queue__dot" aria-hidden="true">·</span>
                       <%= render "claim_flag", ship: ship %>
                     <% end %>
@@ -206,8 +253,12 @@
                   <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
                 </td>
                 <td class="ship-queue__cell-action">
-                  <%= link_to "Open", admin_certification_ship_path(ship),
-                        class: "action-btn action-btn--small action-btn--secondary" %>
+                  <% if own_project %>
+                    <span class="action-btn action-btn--small action-btn--secondary action-btn--disabled">Your Ship</span>
+                  <% else %>
+                    <%= link_to "Open", admin_certification_ship_path(ship),
+                          class: "action-btn action-btn--small action-btn--secondary" %>
+                  <% end %>
                 </td>
               </tr>
             <% end %>
@@ -218,7 +269,8 @@
       <div class="ship-queue__cards">
         <% @ships.each do |ship| %>
           <% owner = ship.project.memberships.find(&:owner?)&.user %>
-          <%= link_to admin_certification_ship_path(ship), class: "ship-queue__card" do %>
+          <% own_project = current_user.memberships.any? { |m| m.project_id == ship.project_id } %>
+          <%= link_to (own_project ? "#" : admin_certification_ship_path(ship)), class: "ship-queue__card" do %>
             <div class="ship-queue__card-top">
               <span class="ship-queue__project-title"><%= ship.project.title %></span>
               <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
@@ -227,10 +279,19 @@
               <span>#<%= ship.id %></span>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
               <span>by <%= owner&.display_name || "—" %></span>
+              <% if ship.project.project_type.present? %>
+                <span class="ship-queue__dot" aria-hidden="true">·</span>
+                <span class="ship-queue__type-tag"><%= ship.project.project_type %></span>
+              <% end %>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
               <span><%= time_ago_in_words(ship.created_at) %> old</span>
             </div>
-            <% if ship.pending? %>
+            <% if own_project %>
+              <div class="ship-queue__card-claim">
+                <span class="ship-queue__type-tag ship-queue__type-tag--own">Your Project</span>
+                <span class="action-btn action-btn--small action-btn--secondary action-btn--disabled">Your Ship</span>
+              </div>
+            <% elsif ship.pending? %>
               <div class="ship-queue__card-claim"><%= render "claim_flag", ship: ship %></div>
             <% end %>
           <% end %>

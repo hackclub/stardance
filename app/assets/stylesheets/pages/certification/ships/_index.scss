@@ -598,6 +598,88 @@
     margin-top: var(--space-xs);
   }
 
+  // --- Type breakdown + filter chips ------------------------------------
+  &__types {
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--card-border);
+  }
+
+  &__type-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+  }
+
+  &__type-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--card-border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      border-color 150ms ease,
+      color 150ms ease,
+      background 150ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent);
+      color: var(--color-space-text);
+    }
+
+    &.is-active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--color-set-1-bg, #1a1633);
+    }
+  }
+
+  &__type-chip-count {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
+
+  &__type-clear {
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-decoration: none;
+    margin-left: var(--space-xs);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+  }
+
+  // Inline type tag in table rows and mobile cards
+  &__type-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+
+    &--own {
+      background: rgba(251, 146, 60, 0.2);
+      color: #fb923c;
+    }
+  }
+
   // --- Empty state -------------------------------------------------------
   &__empty {
     padding: var(--space-xl);

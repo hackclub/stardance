@@ -62,6 +62,7 @@ prod.dump
 
 # Ferret vector search sidecar database
 /db/ferret.sqlite3*
+/db/ferret/
 vendor
 
 .venv

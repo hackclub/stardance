@@ -19,7 +19,6 @@
         <button type="button" onclick="document.getElementById('change-ship-status-modal').showModal()">Change</button>
       </div>
       <div><b>Type:</b> <%= @project.project_type.presence || "Not set" %></div>
-      <div><b>Categories:</b> <%= @project.project_categories.any? ? @project.project_categories.join(", ") : "None" %></div>
       <div><b>Created:</b> <%= @project.created_at.strftime("%Y-%m-%d %H:%M") %></div>
       <div><b>Updated:</b> <%= @project.updated_at.strftime("%Y-%m-%d %H:%M") %></div>
       <div><b>Shipped:</b> <%= @project.shipped_at&.strftime("%Y-%m-%d %H:%M") || "Not shipped" %></div>

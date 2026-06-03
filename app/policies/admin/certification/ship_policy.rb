@@ -3,7 +3,7 @@
 class Admin::Certification::ShipPolicy < ApplicationPolicy
   def index? = user&.can_review?
 
-  def show? = user&.can_review? && not_own_project?
+  def show? = user&.can_review?
 
   def update?
     return false unless user&.can_review? && not_own_project?
@@ -17,7 +17,7 @@ class Admin::Certification::ShipPolicy < ApplicationPolicy
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless user&.can_review?
-      scope.for_reviewer(user)
+      scope.joins(:project).where(projects: { deleted_at: nil })
     end
   end
 

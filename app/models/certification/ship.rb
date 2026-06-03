@@ -61,6 +61,12 @@ module Certification
         .where.not(project_id: user.memberships.select(:project_id))
     }
 
+    scope :by_project_type, ->(type) {
+      type == "unclassified" \
+        ? joins(:project).where(projects: { project_type: nil })
+        : joins(:project).where(projects: { project_type: type })
+    }
+
     def self.available_for(user)
       super.merge(for_reviewer(user))
     end
