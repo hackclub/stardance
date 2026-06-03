@@ -84,7 +84,8 @@ class UsersController < ApplicationController
   def profile_projects
     @user.projects
          .select(:id, :title, :description, :created_at, :updated_at,
-                 :ship_status, :shipped_at, :devlogs_count, :duration_seconds)
+                 :ship_status, :shipped_at, :devlogs_count, :duration_seconds,
+                 :hardware_stage)
          .includes(:users, banner_attachment: :blob, mission_attachments: { mission: { banner_attachment: :blob } })
          .order(created_at: :desc)
   end
