@@ -29,7 +29,7 @@
             <tr>
               <td>#<%= review.id %></td>
               <td>
-                <%= review.project.project_type.presence || '<span style="opacity: 0.5;">—</span>'.html_safe %>
+                <%= review.project.project_type.presence || tag.span("—", style: "opacity: 0.5;") %>
               </td>
               <td>
                 <%= link_to review.project.title, admin_project_path(review.project), class: "btn-primary slim" %>

@@ -24,6 +24,29 @@
 #  fk_rails_...  (project_id => projects.id)
 #  fk_rails_...  (user_id => users.id)
 #
+#
+# Table name: posts
+#
+#  id            :bigint           not null, primary key
+#  postable_type :string
+#  reposts_count :integer          default(0), not null
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  postable_id   :bigint
+#  project_id    :bigint
+#  user_id       :bigint
+#
+# Indexes
+#
+#  index_posts_on_postable_type_and_postable_id  (postable_type,postable_id) UNIQUE
+#  index_posts_on_project_id                     (project_id)
+#  index_posts_on_user_id                        (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (project_id => projects.id)
+#  fk_rails_...  (user_id => users.id)
+#
 one:
   project: one
   user: one

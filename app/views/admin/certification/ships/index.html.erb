@@ -274,10 +274,7 @@
         <% @ships.each do |ship| %>
           <% owner = ship.project.memberships.find(&:owner?)&.user %>
           <% own_project = @own_project_ids.include?(ship.project_id) %>
-          <% if own_project %>
-          <div class="ship-queue__card">
-          <% else %>
-          <%= link_to admin_certification_ship_path(ship), class: "ship-queue__card" do %>
+          <% card_body = capture do %>
             <div class="ship-queue__card-top">
               <span class="ship-queue__project-title"><%= ship.project.title %></span>
               <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
@@ -301,9 +298,13 @@
             <% elsif ship.pending? %>
               <div class="ship-queue__card-claim"><%= render "claim_flag", ship: ship %></div>
             <% end %>
+          <% end %>
           <% if own_project %>
-          </div>
+            <div class="ship-queue__card"><%= card_body %></div>
           <% else %>
+            <%= link_to admin_certification_ship_path(ship), class: "ship-queue__card" do %>
+              <%= card_body %>
+            <% end %>
           <% end %>
         <% end %>
       </div>
