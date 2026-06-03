@@ -1,6 +1,10 @@
 class Shop::BaseController < ApplicationController
   private
 
+  def require_login
+    redirect_to shop_path, alert: "You must be logged in to do that." unless current_user
+  end
+
   def user_region
     if current_user
       return current_user.shop_region if current_user.shop_region.present?

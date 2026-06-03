@@ -1,5 +1,6 @@
 class Shop::ItemsController < Shop::BaseController
   skip_before_action :refresh_identity_on_portal_return, only: [ :index, :category ]
+  before_action :require_login, only: [ :show ]
 
   discover_rail_widgets :shop_orders, :shop_updates, :shop_wishlist,
     context: -> { { sidebar_orders: @sidebar_orders || [], user_balance: @user_balance || 0 } }
