@@ -1,5 +1,5 @@
 Rails.application.config.after_initialize do
-  next unless defined?(Rails::Server) || ENV["SYNC_AMBASSADOR_COST_STATS"] == "true"
+  next unless defined?(Rails::Server)
   next unless AmbassadorCostStatsService.enabled?
 
   Rails.logger.info "Syncing ambassador cost stats on startup..."
