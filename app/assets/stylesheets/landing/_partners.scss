@@ -1,0 +1,93 @@
+.partners {
+  text-align: center;
+  padding: var(--space-l) var(--space-l) calc(var(--space-xxxxl) * 2);
+  margin-bottom: var(--space-xxxxl);
+
+  &__title {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+    font-size: var(--font-h2);
+    color: white;
+    margin: 0 0 var(--space-xl);
+  }
+
+  &__title--italic {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-weight: 700;
+  }
+
+  &__logos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-l);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+  }
+
+  &__logo {
+    height: auto;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  &__logo--nasa {
+    width: 160px;
+  }
+
+  &__logo--amd {
+    width: 160px;
+  }
+
+  &__logo--github {
+    width: 180px;
+  }
+
+  &__logo--ksc {
+    width: 180px;
+    filter: none;
+  }
+
+  &__logo--challenger {
+    width: 180px;
+    filter: none;
+  }
+
+  &__logo--codeorg {
+    width: 160px;
+  }
+
+  @media (max-width: 600px) {
+    &__row {
+      gap: var(--space-l);
+    }
+
+    &__logo--nasa,
+    &__logo--amd {
+      width: 120px;
+    }
+
+    &__logo--github {
+      width: 140px;
+    }
+
+    &__logo--ksc {
+      width: 140px;
+    }
+
+    &__logo--challenger {
+      width: 140px;
+    }
+
+    &__logo--codeorg {
+      width: 120px;
+    }
+  }
+}

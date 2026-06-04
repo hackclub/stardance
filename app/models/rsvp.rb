@@ -27,12 +27,12 @@
 class Rsvp < ApplicationRecord
   AMBASSADOR_REFERRAL_PREFIX = "a-".freeze
   USER_REF_OPTIONS = [
-    "Teacher",
+    "HackClub",
     "NASA",
     "AMD",
-    "Linus Tech Tips",
     "GitHub",
-    "HackClub",
+    "Linus Tech Tips",
+    "Teacher",
     "Friend"
   ].freeze
 
@@ -49,6 +49,7 @@ class Rsvp < ApplicationRecord
   before_validation :downcase_email
   after_commit :deliver_signup_confirmation, on: :create
   after_commit :enqueue_geocode_job, on: :create
+  after_commit :increment_signup_counter, on: :create, if: -> { Flipper.enabled?(:new_onboarding) }
 
   class << self
     def ambassador_referrals
@@ -98,4 +99,8 @@ class Rsvp < ApplicationRecord
   end
 
   def enqueue_geocode_job = RsvpGeocodeJob.perform_later(id)
+
+  def increment_signup_counter
+    Rails.cache.increment("landing/signup_count", 1, expires_in: 30.seconds)
+  end
 end

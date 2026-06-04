@@ -1,24 +1,19 @@
 class MissionsController < ApplicationController
   before_action :set_body_class
   before_action :set_mission, only: [ :show, :guide ]
-  before_action -> { @active_nav_slug = "events" }
+  before_action -> { @active_nav_slug = "missions" }
 
   def index
     authorize Mission
 
-    @available_missions = Mission.available
-                                 .includes(:icon_attachment)
-                                 .order(featured_at: :desc, name: :asc)
-    @upcoming_missions = Mission.enabled
-                                .where("start_at IS NOT NULL AND start_at > ?", Time.current)
-                                .includes(:icon_attachment)
-                                .order(:start_at)
-                                .limit(8)
-    @ended_missions = Mission.enabled
-                             .where("end_at IS NOT NULL AND end_at <= ?", Time.current)
-                             .includes(:icon_attachment)
-                             .order(end_at: :desc)
-                             .limit(8)
+    buckets = Mission.visible_for(current_user).with_attached_icon
+                     .order(featured_at: :desc, name: :asc)
+                     .group_by(&:index_bucket)
+
+    @available_missions = buckets[:available] || []
+    @upcoming_missions  = (buckets[:upcoming] || []).sort_by(&:start_at).first(8)
+    @ended_missions     = (buckets[:ended] || []).sort_by { |m| -m.end_at.to_f }.first(8)
+    @draft_missions     = (buckets[:draft] || []).sort_by { |m| -m.updated_at.to_f }
   end
 
   def show
@@ -31,6 +26,19 @@ class MissionsController < ApplicationController
     @estimated_label      = @mission.estimated_completion_label
     @active_project       = current_user&.active_project_for_mission(@mission)
     @progress_state       = compute_progress_state(@mission, @active_project, @guide_outline)
+
+    if current_user && @active_project.nil?
+      @attachable_projects = current_user.projects
+                                         .where(deleted_at: nil, ship_status: "draft")
+                                         .where.not(
+                                           id: current_user.projects
+                                                           .joins(:mission_attachments)
+                                                           .where(project_mission_attachments: { detached_at: nil, deleted_at: nil })
+                                                           .select(:id)
+                                         )
+                                         .order(updated_at: :desc)
+                                         .to_a
+    end
   end
 
   def guide

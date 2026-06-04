@@ -38,6 +38,7 @@ module OnboardingResumable
 
   # The first wizard step the user hasn't answered yet.
   def onboarding_resume_path(user)
+    return onboarding_age_gate_path   if user.age_blocked?
     return onboarding_birthday_path   if user.age_attestation.blank?
     return onboarding_experience_path if user.experience_level.blank?
     return onboarding_interests_path  if user.interests.blank?

@@ -13,7 +13,7 @@ module User::HackatimeSync
     return @hackatime_data if @hackatime_data && !force
     return nil unless hackatime_identity
 
-    result = HackatimeService.fetch_stats(hackatime_identity.uid)
+    result = HackatimeService.fetch_stats(hackatime_identity.uid, access_token: hackatime_identity.access_token)
     return nil unless result
 
     if result[:banned] && !banned?

@@ -1,0 +1,887 @@
+<% content_for :title, @project.title %>
+<% content_for :og_title, @project.title %>
+<% content_for :og_description, truncate(@project.display_description.to_s, length: 200) %>
+<% content_for :og_image, project_og_image_url(@project, format: :png) %>
+<% content_for :twitter_card, "summary_large_image" %>
+<% content_for :og_author, @project.memberships.find_by(role: :owner)&.user&.display_name %>
+
+<% owner = @project.memberships.find_by(role: :owner)&.user %>
+<% if owner&.preference&.search_engine_indexing_off? %>
+  <% content_for :head do %>
+    <meta name="robots" content="noindex, nofollow">
+  <% end %>
+<% end %>
+
+<%
+  banner_url = @project.banner.attached? ? url_for(@project.banner) : image_path("profile/default-banner.png")
+  members = @members || @project.users.to_a
+  is_member = @is_member
+  follower_count = @follower_count || @project.project_follows.size
+  viewer_follow = @viewer_follow
+  total_hours = @total_hours || (@project.duration_seconds / 3600.0).round
+  can_edit_project = @can_edit_project
+  # Only highlight the unfinished sections when the user arrived via the
+  # "Complete project info" button (which adds ?complete=1).
+  highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
+%>
+
+<div class="app-layout" data-controller="profile-modal">
+  <div class="app-layout__main">
+
+    <%= turbo_frame_tag "project_hero" do %>
+    <% if can_edit_project && (params[:editing].present? || @project.errors.any?) %>
+      <%= form_with(model: @project,
+                    url: project_path(@project),
+                    method: :patch,
+                    multipart: true,
+                    class: "project-show project-show--editing",
+                    data: {
+                      turbo: false,
+                      controller: "project-form",
+                      action: "submit->project-form#onSubmit",
+                      "project-form-readme-locked-class-value": "project-show__field--locked",
+                      "project-form-incomplete-fields-value": highlight_incomplete_fields.to_json
+                    }) do |form| %>
+        <%= hidden_field_tag :inline_project_show, "1" %>
+
+        <header class="project-show__hero">
+          <div class="project-show__banner" data-controller="file-upload">
+            <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
+            <%= link_to back_path,
+                        class: "project-show__back",
+                        "aria-label": "Back",
+                        data: { turbo_frame: "_top" } do %>
+              <svg class="project-show__back-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 6l-6 6 6 6" />
+              </svg>
+            <% end %>
+
+            <label class="project-show__banner-upload">
+              <span>Change screenshot</span>
+              <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                    data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
+            </label>
+          </div>
+
+          <div class="project-show__panel">
+            <div class="project-show__summary">
+              <div class="project-show__identity">
+                <%= form.text_field :title,
+                                    class: "project-show__title-input",
+                                    maxlength: 120,
+                                    required: true,
+                                    aria: { label: "Project title" },
+                                    data: {
+                                      action: "input->project-form#validateTitle blur->project-form#validateTitle",
+                                      "project-form-target": "title"
+                                    } %>
+
+                <div class="project-show__byline">
+                  <% if members.any? %>
+                    <ul class="project-show__avatars" aria-hidden="true">
+                      <% members.first(4).each do |member| %>
+                        <li class="project-show__avatars-item">
+                          <% if member.slack_id.present? %>
+                            <%= image_tag member.avatar, alt: member.display_name, class: "project-show__avatar" %>
+                          <% else %>
+                            <span class="project-show__avatar project-show__avatar--placeholder">
+                              <%= member.display_name.to_s.first&.upcase %>
+                            </span>
+                          <% end %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% end %>
+                  <p class="project-show__authors">
+                    By
+                    <% members.each_with_index do |m, i| %>
+                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= "," if i < members.length - 2 && members.length > 2 %>
+                    <% end %>
+                  </p>
+                </div>
+              </div>
+
+              <ul class="project-show__stats" aria-label="Project stats">
+                <li class="project-show__stats-item">
+                  <strong class="project-show__stats-num"><%= @project.devlogs_count %></strong>
+                  <span class="project-show__stats-label">Devlogs</span>
+                </li>
+                <li class="project-show__stats-item">
+                  <strong class="project-show__stats-num"><%= total_hours %></strong>
+                  <span class="project-show__stats-label">Total hours</span>
+                </li>
+              </ul>
+            </div>
+
+            <%= form.text_area :description,
+                               class: "project-show__description-input",
+                               rows: 2,
+                               maxlength: 1000,
+                               placeholder: "What are you building?",
+                               aria: { label: "Project description" },
+                               data: {
+                                 action: "input->project-form#validateDescription blur->project-form#validateDescription",
+                                 "project-form-target": "description"
+                               } %>
+
+            <div class="project-show__edit-grid">
+              <div class="project-show__field project-show__field--inline project-show__field--hackatime">
+                <span>Hackatime projects</span>
+                <% if !@hackatime_linked %>
+                  <button type="submit"
+                          form="hackatime-connect-form"
+                          class="project-show__hackatime-connect">
+                    Connect Hackatime to link projects →
+                  </button>
+                <% elsif @hackatime_dropdown_items.blank? %>
+                  <span class="project-show__hackatime-empty">
+                    No Hackatime projects yet — start coding with Hackatime installed to see them here.
+                  </span>
+                <% else %>
+                  <div data-controller="hackatime-link">
+                    <div class="project-show__hackatime-picker">
+                      <div class="project-show__hackatime-box" data-hackatime-link-target="box">
+                        <button type="button" class="project-show__hackatime-add" data-action="hackatime-link#toggle" data-hackatime-link-target="addBtn" aria-label="Add Hackatime project">
+                          <%= inline_svg_tag "icons/plus.svg", class: "project-show__hackatime-add-icon" %>
+                        </button>
+                        <div class="project-show__hackatime-tags" data-hackatime-link-target="tags">
+                          <span class="project-show__hackatime-placeholder"
+                                data-hackatime-link-target="placeholder"
+                                <%= "hidden" if @linked_hackatime_projects.any? %>>
+                            Link a Project
+                          </span>
+                          <% @linked_hackatime_projects.each do |hp| %>
+                            <span class="project-show__hackatime-tag" data-hackatime-id="<%= hp.id %>">
+                              <span class="project-show__hackatime-tag-name"><%= hp.name %></span>
+                              <span class="project-show__hackatime-tag-time"><%= format_seconds(@hackatime_times[hp.name] || 0) %></span>
+                              <button type="button" class="project-show__hackatime-tag-remove" data-action="hackatime-link#remove" data-id="<%= hp.id %>" aria-label="Remove <%= hp.name %>">
+                                <%= inline_svg_tag "icons/close.svg", class: "project-show__hackatime-tag-remove-icon" %>
+                              </button>
+                              <input type="hidden" name="project[hackatime_project_ids][]" value="<%= hp.id %>">
+                            </span>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <div class="project-show__hackatime-dropdown" data-hackatime-link-target="dropdown" hidden>
+                        <% @hackatime_dropdown_items.reject { |i| i[:linked] }.each do |item| %>
+                          <button type="button"
+                                  class="project-show__hackatime-dropdown-item<%= " project-show__hackatime-dropdown-item--taken" if item[:taken] %>"
+                                  data-action="hackatime-link#select"
+                                  data-id="<%= item[:id] %>"
+                                  data-name="<%= item[:name] %>"
+                                  data-hours="<%= item[:hours] %>"
+                                  <%= "disabled" if item[:taken] %>>
+                            <span class="project-show__hackatime-dropdown-name"><%= item[:name] %></span>
+                            <span class="project-show__hackatime-dropdown-time"><%= format_seconds(item[:seconds]) %></span>
+                            <% if item[:taken] %>
+                              <span class="project-show__hackatime-dropdown-taken">linked to <%= item[:taken_by] %></span>
+                            <% end %>
+                          </button>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+
+              <label class="project-show__field project-show__field--inline">
+                <span>AI usage declaration <%= render "projects/help_tooltip", text: "Describe how you used AI in this project (e.g. \"Used ChatGPT for debugging\", \"GitHub Copilot for code completion\"). AI use is OK, but it should feel like your own work! If you didn't use AI, you can state that." %></span>
+                <%= form.text_area :ai_declaration,
+                                   rows: 2,
+                                   maxlength: 1000,
+                                   class: "project-show__control project-show__textarea",
+                                   aria: { label: "AI usage declaration" } %>
+              </label>
+
+              <label class="project-show__started-check">
+                <input class="project-show__started-check-input"
+                       type="checkbox"
+                       data-project-form-target="updateDeclaration"
+                       data-action="change->project-form#toggleUpdateDescription"
+                       <%= "checked" if @project.update_description.present? %>
+                       aria-label="This project was started before June 1 2026, or was previously shipped to a Hack Club event.">
+                <span>This project was started <strong>before June 1 2026</strong>, or was <strong>previously shipped</strong> to a Hack Club event.</span>
+              </label>
+
+              <label class="project-show__field project-show__field--inline"
+                     data-project-form-target="updateDescriptionContainer"
+                     <%= "hidden" if @project.update_description.blank? %>>
+                <span>Update Description <%= render "projects/help_tooltip", text: "Describe the features you've added or updated, and the impact these changes have had on your project overall. Please be specific." %></span>
+                <%= form.text_area :update_description,
+                                   rows: 3,
+                                   maxlength: 1000,
+                                   class: "project-show__control project-show__textarea",
+                                   placeholder: "What did you update and why?",
+                                   aria: { label: "Update description" },
+                                   data: { "project-form-target": "updateDescriptionField" } %>
+              </label>
+
+              <div class="project-show__sparkle" aria-hidden="true"></div>
+
+              <label class="project-show__field project-show__field--inline">
+                <span>Demo URL <%= render "projects/help_tooltip", text: "A live URL where anyone can try your project." %></span>
+                <%= form.url_field :demo_url,
+                                   class: "project-show__control",
+                                   placeholder: "https://example.com",
+                                   inputmode: "url",
+                                   data: {
+                                     action: "input->project-form#validateUrl blur->project-form#validateUrl",
+                                     "project-form-target": "demoUrl"
+                                   } %>
+              </label>
+
+              <label class="project-show__field project-show__field--inline">
+                <span>Github URL <%= render "projects/help_tooltip", text: "A public repository URL." %></span>
+                <%= form.url_field :repo_url,
+                                   class: "project-show__control",
+                                   placeholder: "https://github.com/user/repo",
+                                   inputmode: "url",
+                                   data: {
+                                     action: "input->project-form#onRepoInput blur->project-form#onRepoBlur",
+                                     "project-form-target": "repoUrl"
+                                   } %>
+              </label>
+
+              <label class="project-show__field project-show__field--inline"
+                     data-project-form-target="readmeContainer"
+                     <%= "hidden" if @project.readme_url.blank? %>>
+                <span>Readme URL <%= render "projects/help_tooltip", text: "A raw README URL for your project page." %></span>
+                <%= form.url_field :readme_url,
+                                   class: "project-show__control",
+                                   placeholder: "https://raw.githubusercontent.com/user/repo/main/README.md",
+                                   inputmode: "url",
+                                   data: {
+                                     action: "input->project-form#onReadmeInput input->project-form#validateUrl blur->project-form#validateUrl",
+                                     "project-form-target": "readmeUrl"
+                                   } %>
+              </label>
+            </div>
+
+            <div class="project-show__panel-actions">
+              <% if @project.fire? %>
+                <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
+              <% end %>
+              <%= link_to "Discard changes", project_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "project_hero" } %>
+              <%= form.submit "Save", class: "project-show__pill project-show__pill--save", data: { "project-form-target": "submit" } %>
+            </div>
+          </div>
+        </header>
+      <% end %>
+      <% unless @hackatime_linked %>
+        <form id="hackatime-connect-form" method="post" action="/auth/hackatime" hidden>
+          <input type="hidden" name="origin" value="<%= request.fullpath %>">
+          <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+        </form>
+      <% end %>
+    <% else %>
+      <article class="project-show">
+        <header class="project-show__hero">
+          <div class="project-show__banner">
+            <%= image_tag banner_url, alt: "", class: "project-show__banner-image" %>
+            <%= link_to back_path,
+                        class: "project-show__back",
+                        "aria-label": "Back",
+                        data: { turbo_frame: "_top" } do %>
+              <svg class="project-show__back-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 6l-6 6 6 6" />
+              </svg>
+            <% end %>
+          </div>
+
+          <div class="project-show__panel project-show__panel--read">
+            <div class="project-show__summary">
+              <div class="project-show__identity">
+                <h1 class="project-show__title"><%= @project.title %></h1>
+                <div class="project-show__byline">
+                  <% if members.any? %>
+                    <ul class="project-show__avatars" aria-hidden="true">
+                      <% members.first(4).each do |member| %>
+                        <li class="project-show__avatars-item">
+                          <% if member.slack_id.present? %>
+                            <%= image_tag member.avatar, alt: member.display_name, class: "project-show__avatar" %>
+                          <% else %>
+                            <span class="project-show__avatar project-show__avatar--placeholder">
+                              <%= member.display_name.to_s.first&.upcase %>
+                            </span>
+                          <% end %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% end %>
+                  <p class="project-show__authors">
+                    By
+                    <% members.each_with_index do |m, i| %>
+                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= "," if i < members.length - 2 && members.length > 2 %>
+                    <% end %>
+                  </p>
+                </div>
+              </div>
+
+              <ul class="project-show__stats" aria-label="Project stats">
+                <li class="project-show__stats-item">
+                  <strong class="project-show__stats-num"><%= @project.devlogs_count %></strong>
+                  <span class="project-show__stats-label">Devlogs</span>
+                </li>
+                <li class="project-show__stats-item">
+                  <strong class="project-show__stats-num"><%= total_hours %></strong>
+                  <span class="project-show__stats-label">Total hours</span>
+                </li>
+              </ul>
+            </div>
+
+            <% if @project.description.present? %>
+              <p class="project-show__description"><%= @project.description %></p>
+            <% end %>
+
+            <div class="project-show__read-footer">
+              <%= button_tag type: "button",
+                             class: "project-show__followers",
+                             data: { action: "click->profile-modal#open",
+                                     "profile-modal-url-param": followers_project_path(@project),
+                                     "profile-modal-title-param": "Followers" } do %>
+                <strong><%= follower_count %></strong> <%= "follower".pluralize(follower_count) %>
+              <% end %>
+              <div class="project-show__panel-actions">
+                <%= render "projects/fire_controls", project: @project %>
+
+                <% if can_edit_project %>
+                  <%= link_to "Edit project", project_path(@project, editing: true),
+                              class: "project-show__pill project-show__pill--outline",
+                              data: { turbo_frame: "project_hero" } %>
+                <% end %>
+
+                <% if current_user && !is_member %>
+                  <%= link_to (viewer_follow ? "Following" : "Follow"),
+                              (viewer_follow ? unfollow_project_path(@project) : follow_project_path(@project)),
+                              class: [ "project-show__pill", "project-show__pill--save", ("project-show__pill--following" if viewer_follow) ].compact.join(" "),
+                              data: {
+                                turbo_method: (viewer_follow ? :delete : :post),
+                                turbo_frame: "_top"
+                              } %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </header>
+      </article>
+    <% end %>
+    <% end %>
+
+        <% if @show_project_onboarding %>
+      <section class="project-show__onboarding" aria-labelledby="project-show-onboarding-title">
+        <header class="project-show__onboarding-header">
+          <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Hackpad!</h2>
+        <%= image_tag "https://hackpad.hackclub.com/orpheuspadpic.png",
+                      alt: "Orpheus macropad",
+                      width: 240,
+                      class: "project-show__onboarding-image",
+                      style: "height: auto;" %>
+          <p class="project-show__onboarding-header-body">
+            Open the guide to start designing your macropad!
+          <% if !@hackatime_linked %>
+            <p class="project-show__onboarding-header-body">
+              Link Hackatime to track your software progress! Post a devlog after and unlock free stickers in the shop!
+            </p>
+          <% else current_user && !current_user.shop_tutorial_completed? %>
+            <p class="project-show__onboarding-header-body">
+              Hackatime is linked! Post a devlog and head to the <a href="/shop" class="project-show__onboarding-header-link">shop tab</a> to claim your free stickers.
+            </p>
+          <% end %>
+        </header>
+      </section>
+    <% end %>
+
+    <nav class="project-show__actions" aria-label="Hackpad">
+      <%= link_to "https://hackpad.hackclub.com/guide",
+                  class: "action-btn action-btn--large action-btn--primary project-show__hackatime-cta",
+                  target: "_blank", rel: "noopener",
+                  data: { turbo: false } do %>
+        Open Hackpad Guide!<%= inline_svg_tag "icons/right-arrow.svg", class: "action-btn__icon action-btn__icon--trailing", aria: { hidden: true } %>
+      <% end %>
+    </nav>
+
+    <% if is_member %>
+      <% if @hackatime_linked || @test_time_granted %>
+        <%
+          no_hackatime_project = @project.hackatime_keys.blank? && !@test_time_granted
+          live_seconds = @project.hackatime_keys.sum { |k| @hackatime_times[k].to_i }
+          unposted_seconds = [ live_seconds - @project.duration_seconds, 0 ].max
+          enough_time = !no_hackatime_project && (unposted_seconds >= 15 * 60 || @test_time_granted)
+          devlog_disabled_message = "Edit this project to add a Hackatime project" if no_hackatime_project
+          # Only call it the primary action when devlogging is actually
+          # actionable right now — i.e. you have a Hackatime project AND at
+          # least 15m of unposted time. Otherwise it stays secondary.
+          devlog_primary = @project.next_step_is_devlog? && enough_time
+          devlog_modifier_class = devlog_primary ? "project-show__action--primary" : "project-show__action--secondary"
+        %>
+        <nav class="project-show__actions" aria-label="Project actions">
+          <% devlog_variant = devlog_primary ? :primary : :secondary %>
+          <% if devlog_disabled_message %>
+            <%= render ActionButtonComponent.new(
+                  text: "Post a devlog +",
+                  variant: devlog_variant,
+                  type: :button,
+                  disabled: :soft,
+                  data: {
+                    controller: "tooltip",
+                    tooltip_message_value: devlog_disabled_message,
+                    tooltip_position_value: "top"
+                  }
+                ) %>
+          <% else %>
+            <%= render ActionButtonComponent.new(
+                  text: "Post a devlog +",
+                  variant: devlog_variant,
+                  type: :button,
+                  onclick: "document.getElementById('composer-modal-' + #{@project.id.to_json}).showModal()"
+                ) %>
+          <% end %>
+          <% unless @project.info_complete? %>
+            <% if @project.has_devlog_since_last_ship? %>
+              <%= render ActionButtonComponent.new(
+                    text: "Complete project info",
+                    variant: :primary,
+                    href: project_path(@project, editing: true, complete: true),
+                    data: {
+                      turbo_frame: "project_hero",
+                      controller: "tooltip",
+                      tooltip_message_value: @project.info_blocker_message,
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
+            <% else %>
+              <%= render ActionButtonComponent.new(
+                    text: "Complete project info",
+                    variant: :secondary,
+                    type: :button,
+                    disabled: :soft,
+                    data: {
+                      controller: "tooltip",
+                      tooltip_message_value: "Post at least one devlog first",
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
+            <% end %>
+          <% end %>
+          <% if is_member && current_user && @project.info_complete? %>
+            <% unless current_user.identity_verified? %>
+              <%= render ActionButtonComponent.new(
+                    text: "Verify your identity",
+                    variant: :primary,
+                    type: :button,
+                    onclick: "document.getElementById('idv-verify-modal').showModal()"
+                  ) %>
+            <% else %>
+              <% unless current_user.shop_tutorial_completed? %>
+                <%= render ActionButtonComponent.new(
+                      text: "Complete shop tutorial",
+                      variant: :primary,
+                      href: "/shop"
+                    ) %>
+              <% end %>
+            <% end %>
+          <% end %>
+          <% if @project.shippable? %>
+            <% if unposted_seconds >= 15 * 60 %>
+              <%= render ActionButtonComponent.new(
+                    text: "Ship your project!",
+                    variant: :primary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    onclick: "document.getElementById('ship-warning-modal-' + #{@project.id.to_json}).showModal()"
+                  ) %>
+            <% else %>
+              <%= render ActionButtonComponent.new(
+                    text: "Ship your project!",
+                    variant: :primary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    onclick: "document.getElementById('ship-video-modal-' + #{@project.id.to_json}).showModal()"
+                  ) %>
+            <% end %>
+          <% else %>
+            <%
+              ship_disabled_message =
+                if !@project.has_devlog_since_last_ship?
+                  "Post at least one devlog before shipping!"
+                elsif !@project.info_complete?
+                  "Complete your project info before shipping!"
+                else
+                  # Some other requirement (payout, vote balance, rejection,
+                  # tracked time) isn't met — tell them which one.
+                  @project.ship_blocker_message || "Finish the remaining requirements before shipping."
+                end
+            %>
+            <%= render ActionButtonComponent.new(
+                  text: "Ship your project!",
+                  variant: :secondary,
+                  type: :button,
+                  icon: "icons/rocket.png",
+                  disabled: :soft,
+                  data: {
+                    controller: "tooltip",
+                    tooltip_message_value: ship_disabled_message,
+                    tooltip_position_value: "top"
+                  }
+                ) %>
+          <% end %>
+        </nav>
+      <% else %>
+        <nav class="project-show__actions" aria-label="Project actions">
+          <%= button_to "/auth/hackatime",
+                        method: :post,
+                        params: { origin: request.fullpath },
+                        class: "action-btn action-btn--large action-btn--secondary project-show__hackatime-cta",
+                        form: { class: "project-show__action-form" } do %>
+            Link Hackatime to to track software time<%= inline_svg_tag "icons/right-arrow.svg", class: "action-btn__icon action-btn__icon--trailing", aria: { hidden: true } %>
+          <% end %>
+        </nav>
+      <% end %>
+
+      <% if Flipper.enabled?(:test_time, current_user) %>
+        <%= button_to "Add 15min (test)",
+                      add_test_time_project_path(@project),
+                      method: :post,
+                      class: "action-btn action-btn--large action-btn--secondary project-show__test-time",
+                      form: { class: "project-show__test-time-form" } %>
+      <% end %>
+    <% end %>
+
+    <% if is_member && params[:just_shipped].present? %>
+      <%
+        ship_tour_steps = [
+          {
+            selector: "[data-onboarding-target='rate']",
+            text: "Yay congrats on your first ship! To get your payout, you need to vote at least #{Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT} times on other people's projects.",
+            padding: 12,
+            radius: 12
+          }
+        ]
+      %>
+      <div class="welcome-tour"
+           data-controller="welcome-tour"
+           data-welcome-tour-steps-value="<%= ship_tour_steps.to_json %>"
+           role="dialog"
+           aria-modal="true"
+           aria-label="Post-ship tour">
+        <div class="welcome-tour__overlay" aria-hidden="true"></div>
+        <div class="welcome-tour__spotlight"
+             data-welcome-tour-target="spotlight"
+             aria-hidden="true"></div>
+
+        <div class="welcome-tour__tooltip" data-welcome-tour-target="tooltip">
+          <%= inline_svg_tag "icons/tour-arrow.svg",
+                             class: "welcome-tour__arrow",
+                             aria: { hidden: true },
+                             focusable: false %>
+
+          <p class="welcome-tour__text" data-welcome-tour-target="text"></p>
+          <p class="welcome-tour__subtitle" data-welcome-tour-target="subtitle" hidden></p>
+
+          <div class="welcome-tour__actions">
+            <button type="button"
+                    class="welcome-tour__back"
+                    data-welcome-tour-target="back"
+                    data-action="click->welcome-tour#back"
+                    hidden>
+              Back
+            </button>
+            <button type="button"
+                    class="welcome-tour__next"
+                    data-welcome-tour-target="next"
+                    data-action="click->welcome-tour#next">
+            </button>
+          </div>
+
+          <span class="welcome-tour__counter"
+                data-welcome-tour-target="counter"
+                aria-hidden="true"></span>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @posts.any? %>
+      <section class="project-show__feed" aria-label="Project feed">
+        <% ship_count = @posts.count { |p| p.postable_type == "Post::ShipEvent" } %>
+        <% ship_index = 0 %>
+        <% @posts.each do |post| %>
+          <% if post.postable_type == "Post::ShipEvent" %>
+            <% ship_index += 1 %>
+            <%= render "projects/ship_card",
+                       post: post,
+                       project: @project,
+                       ship_number: ship_count - ship_index + 1 %>
+          <% else %>
+            <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark) %>
+          <% end %>
+        <% end %>
+      </section>
+    <% end %>
+
+    <% if current_user.present? && (!is_member || Rails.env.development?) %>
+      <%= render layout: "shared/modal", locals: { id: "project-report-modal", title: "Report project?" } do %>
+        <h2>We want good, high quality projects in Stardance. If you believe this project violates our community guidelines, please let us know why:</h2>
+
+        <%= form_with model: Project::Report.new, url: project_reports_path(@project), local: true do |f| %>
+          <div class="form-field">
+            <div class="form-checkbox">
+              <%= f.radio_button :reason, "low_effort", id: "project_report_reason_low_effort", required: true %>
+              <%= f.label :reason, "Low-effort project", for: "project_report_reason_low_effort" %>
+            </div>
+            <div class="form-checkbox">
+              <%= f.radio_button :reason, "undeclared_ai", id: "project_report_reason_undeclared_ai" %>
+              <%= f.label :reason, "Uses AI but it's undeclared", for: "project_report_reason_undeclared_ai" %>
+            </div>
+            <div class="form-checkbox">
+              <%= f.radio_button :reason, "demo_broken", id: "project_report_reason_demo_broken" %>
+              <%= f.label :reason, "Demo does not work", for: "project_report_reason_demo_broken" %>
+            </div>
+            <div class="form-checkbox">
+              <%= f.radio_button :reason, "other", id: "project_report_reason_other" %>
+              <%= f.label :reason, "Other", for: "project_report_reason_other" %>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <%= f.text_area :details,
+                  rows: 4,
+                  minlength: 20,
+                  required: true,
+                  class: "form-field",
+                  placeholder: "Share a short explanation (20+ characters)." %>
+            <small>Why are you reporting this project? (20+ characters)</small>
+          </div>
+
+          <div class="modal__actions">
+            <%= f.submit "Submit", class: "modal__actions-close" %>
+            <button type="button" class="modal__actions-close" onclick="document.getElementById('project-report-modal').close()">Cancel</button>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+
+  </div>
+
+  <% if is_member && @composer_devlog && @composer_projects %>
+    <dialog id="composer-modal-<%= @project.id %>"
+            class="composer-modal"
+            data-controller="modal"
+            aria-label="Post a devlog">
+      <%= render Posts::ComposerComponent.new(
+            post: @composer_devlog,
+            current_user: current_user,
+            projects: @composer_projects,
+            selected_project: @project,
+            test_time_granted: @test_time_granted
+          ) %>
+    </dialog>
+  <% end %>
+
+  <% if is_member && @hackatime_linked && @project.has_devlog_since_last_ship? %>
+    <%
+      ship_warn_seconds = [ @project.hackatime_keys.sum { |k| @hackatime_times[k].to_i } - @project.duration_seconds, 0 ].max
+      ship_warn_hours = ship_warn_seconds / 3600
+      ship_warn_minutes = (ship_warn_seconds % 3600) / 60
+      ship_warn_time = ship_warn_hours > 0 ? "#{ship_warn_hours}h #{ship_warn_minutes}m" : "#{ship_warn_minutes}m"
+    %>
+    <dialog id="ship-warning-modal-<%= @project.id %>"
+            class="ship-warning-modal"
+            data-controller="modal"
+            aria-labelledby="ship-warning-modal-<%= @project.id %>-title">
+      <div class="ship-warning-modal__body">
+        <h3 id="ship-warning-modal-<%= @project.id %>-title" class="ship-warning-modal__title">Warning</h3>
+        <p class="ship-warning-modal__text">
+          You have <strong><%= ship_warn_time %></strong> logged that you haven't posted a devlog for. If you ship without posting a devlog, this time will be lost!
+        </p>
+        <div class="ship-warning-modal__actions">
+          <button type="button"
+                  class="ship-warning-modal__btn ship-warning-modal__btn--secondary"
+                  onclick="document.getElementById('ship-warning-modal-' + <%= @project.id.to_json %>).close(); document.getElementById('composer-modal-' + <%= @project.id.to_json %>).showModal()">
+            Post a devlog
+          </button>
+          <button type="button"
+                  class="ship-warning-modal__btn ship-warning-modal__btn--primary"
+                  onclick="document.getElementById('ship-warning-modal-' + <%= @project.id.to_json %>).close(); document.getElementById('ship-video-modal-' + <%= @project.id.to_json %>).showModal()">
+            Ship anyway →
+          </button>
+        </div>
+      </div>
+    </dialog>
+  <% end %>
+
+  <% if is_member && (@hackatime_linked || @test_time_granted) %>
+    <%# Step 1 — "what is a ship" refresher video. %>
+    <dialog id="ship-video-modal-<%= @project.id %>"
+            class="ship-modal"
+            data-controller="modal"
+            aria-label="What is a ship?">
+      <div class="ship-modal__panel">
+        <h3 class="ship-modal__title">Let's ship!</h3>
+        <p class="ship-modal__subtitle">Here's a refresher on what a ship is.</p>
+        <div class="ship-modal__video">
+          <%= render VimeoEmbedComponent.new(video: :what_is_a_ship) %>
+        </div>
+        <div class="ship-modal__actions">
+          <button type="button"
+                  class="ship-modal__btn ship-modal__btn--secondary"
+                  onclick="document.getElementById('ship-video-modal-' + <%= @project.id.to_json %>).close()">
+            Cancel
+          </button>
+          <button type="button"
+                  class="ship-modal__btn ship-modal__btn--primary"
+                  onclick="document.getElementById('ship-video-modal-' + <%= @project.id.to_json %>).close(); document.getElementById('ship-post-modal-' + <%= @project.id.to_json %>).showModal(); document.getElementById('ship-post-modal-' + <%= @project.id.to_json %>).querySelector('.ship-modal__panel').scrollTop = 0">
+            Continue →
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <%# Step 2 — the ship post itself: looks like a ship card, but the body is
+        an editable textarea, and "Ship!" submits straight to ships#create. %>
+    <dialog id="ship-post-modal-<%= @project.id %>"
+            class="ship-modal ship-modal--post"
+            data-controller="modal composer"
+            data-composer-max-files-value="<%= Post::ShipEvent::MAX_ATTACHMENTS %>"
+            data-composer-simple-mode-value="true"
+            data-composer-target="dropZone"
+            data-action="drop->composer#drop dragover->composer#dragover dragleave->composer#dragleave"
+            aria-label="Ship your project">
+      <% ship_mission = @project.current_mission %>
+      <% ship_to_mission = ship_mission && !@project.shipped_to_mission?(ship_mission) %>
+
+      <%= form_with url: project_ships_path(@project),
+                    method: :post,
+                    multipart: true,
+                    data: { turbo: false, action: "paste->composer#paste" },
+                    html: { class: "ship-modal__form" } do |form| %>
+        <% if ship_to_mission %>
+          <div class="ship-modal__mission-card">
+            <p class="ship-modal__mission-heading">
+              Shipping to <strong><%= ship_mission.name %></strong>
+            </p>
+            <%= hidden_field_tag :mission_payout_path, "static_prize" %>
+            <% if ship_mission.submission_guide.present? %>
+              <div class="ship-modal__mission-guide">
+                <%= render MarkdownContentComponent.new(markdown: ship_mission.submission_guide, flavor: :guide) %>
+              </div>
+              <label class="ship-modal__mission-ack">
+                <%= check_box_tag :mission_submission_guide_acknowledged, "1", false, required: true %>
+                <span>I confirm my project meets the mission guidelines above</span>
+              </label>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="ship-modal__panel">
+          <article class="ship-modal__preview">
+            <header class="project-show__latest-ship-label">
+              <%= inline_svg_tag "icons/sticker.svg", class: "project-show__latest-ship-icon" %>
+              <span>Ship</span>
+            </header>
+
+            <div class="ship-modal__preview-body">
+              <div class="project-show__latest-ship-avatar">
+                <%= image_tag current_user.avatar, alt: current_user.display_name, class: "project-show__avatar project-show__avatar--lg" %>
+              </div>
+
+              <div class="ship-modal__preview-content">
+                <p class="project-show__latest-ship-heading">
+                  <span class="project-show__latest-ship-author">@<%= current_user.display_name %></span>
+                  <span class="project-show__latest-ship-on">on</span>
+                  <span class="project-show__latest-ship-project"><%= @project.title %></span>
+                  <span class="project-show__latest-ship-time">· just now</span>
+                </p>
+
+                <%= form.text_area :ship_update,
+                      class: "ship-modal__textarea",
+                      rows: 4,
+                      required: true,
+                      maxlength: Post::ShipEvent::BODY_MAX_LENGTH,
+                      placeholder: "What did you make? What was challenging? What are you proud of? What should people know so they can test your project?",
+                      aria: { label: "Ship update" },
+                      data: { composer_target: "textarea",
+                              action: "input->composer#autogrow input->composer#refreshSubmit" } %>
+
+                <div class="feed-composer__attach-wrap feed-composer__attach-wrap--expanded" data-composer-target="attachWrap">
+                  <label class="feed-composer__attach">
+                    <%= inline_svg_tag "icons/paper.svg", class: "feed-composer__attach-icon" %>
+                    <span class="feed-composer__attach-text">Add a screenshot of your project in action!</span>
+                    <%= file_field_tag "ship_event[attachments][]",
+                          multiple: true,
+                          accept: Post::ShipEvent::ACCEPTED_CONTENT_TYPES.join(","),
+                          class: "feed-composer__file-input",
+                          required: true,
+                          data: { composer_target: "fileInput", action: "change->composer#selectFiles" } %>
+                  </label>
+                </div>
+
+                <div class="feed-composer__grid" data-composer-target="grid" data-count="0" hidden></div>
+
+                <ul class="project-show__latest-ship-stats" aria-label="Project totals">
+                  <li class="profile-project-card__meta-item">
+                    <%= inline_svg_tag "icons/devlogs.svg", class: "profile-project-card__meta-icon" %>
+                    <span><%= pluralize(@project.devlogs_count, "devlog") %></span>
+                  </li>
+                  <li class="profile-project-card__meta-item profile-project-card__meta-item--time">
+                    <%= inline_svg_tag "icons/time.svg", class: "profile-project-card__meta-icon profile-project-card__meta-icon--time" %>
+                    <span><%= total_hours %>h</span>
+                  </li>
+                  <% if ship_to_mission %>
+                    <li class="profile-project-card__meta-item profile-project-card__meta-item--mission">
+                      <%= inline_svg_tag "icons/flag.svg", class: "profile-project-card__meta-icon profile-project-card__meta-icon--mission" %>
+                      <span>
+                        <%= link_to ship_mission.name, mission_path(ship_mission.slug),
+                                    class: "project-show__latest-ship-mission-link",
+                                    data: { turbo_frame: "_top" } %>
+                      </span>
+                    </li>
+                  <% end %>
+                </ul>
+
+                <% if @project.demo_url.present? || @project.repo_url.present? %>
+                  <div class="project-show__latest-ship-cta">
+                    <% if @project.demo_url.present? %>
+                      <%= link_to "Try project →", @project.demo_url,
+                                  target: "_blank", rel: "noopener",
+                                  class: "project-show__latest-ship-btn project-show__latest-ship-btn--primary" %>
+                    <% end %>
+                    <% if @project.repo_url.present? %>
+                      <%= link_to "See source code →", @project.repo_url,
+                                  target: "_blank", rel: "noopener",
+                                  class: "project-show__latest-ship-btn" %>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </article>
+
+          <div class="ship-modal__actions">
+            <button type="button"
+                    class="ship-modal__btn ship-modal__btn--secondary"
+                    onclick="document.getElementById('ship-post-modal-' + <%= @project.id.to_json %>).close()">
+              Cancel
+            </button>
+            <%= form.submit "Ship!", class: "ship-modal__btn ship-modal__btn--primary", data: { disable_with: "Shipping…", composer_target: "submit" } %>
+          </div>
+        </div>
+      <% end %>
+    </dialog>
+  <% end %>
+
+  <%= render DiscoverRailComponent.new %>
+
+  <dialog id="followers-modal"
+          class="followers-modal"
+          data-profile-modal-target="dialog"
+          data-action="click->profile-modal#backdropClose">
+    <header class="followers-modal__header">
+      <h2 class="followers-modal__title" data-profile-modal-target="title">Followers</h2>
+      <button type="button" class="followers-modal__close" data-action="click->profile-modal#close" aria-label="Close">×</button>
+    </header>
+    <div class="followers-modal__body" data-profile-modal-target="body">
+      <p class="followers-modal__loading">Loading…</p>
+    </div>
+  </dialog>
+</div>

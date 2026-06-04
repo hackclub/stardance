@@ -1,4 +1,4 @@
-<article id="<%= dom_id(post) %>" class="<%= card_classes %>">
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: engagement_data) %>>
   <% if card_link_url.present? %>
     <%= link_to card_link_url,
           class: "feed-post-card__overlay-link",
@@ -66,27 +66,7 @@
     </div>
   <% end %>
 
-  <% if attachment_count.positive? %>
-    <div class="feed-post-card__media">
-      <div class="feed-post-card__media-viewport">
-        <div class="feed-post-card__media-track">
-          <% attachments.each_with_index do |attachment, index| %>
-            <figure class="feed-post-card__media-slide" <%= "hidden" if index.positive? %>>
-              <% if attachment.variable? %>
-                <%= image_tag attachment.variant(:large), alt: "", class: "feed-post-card__image" %>
-              <% elsif attachment.content_type.to_s.start_with?("image/") %>
-                <%= image_tag attachment, alt: "", class: "feed-post-card__image" %>
-              <% elsif attachment.content_type.to_s.start_with?("video/") %>
-                <%= video_tag url_for(attachment), controls: true, class: "feed-post-card__video" %>
-              <% else %>
-                <%= link_to attachment.filename.to_s, url_for(attachment), class: "feed-post-card__file" %>
-              <% end %>
-            </figure>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  <% end %>
+  <%= render "shared/post_media", attachments: attachments %>
 
   <% if quote_repost? && original_post.present? %>
     <div class="feed-post-card__repost-preview">
@@ -194,7 +174,7 @@
     <% end %>
 
     <% if show_actions %>
-      <div class="feed-post-card__more-wrap" data-controller="post-menu" data-post-menu-url-value="<%= post_url %>">
+      <div class="feed-post-card__more-wrap" <%= tag.attributes(data: post_menu_data) %>>
         <button type="button" class="feed-post-card__more" aria-label="More actions" data-action="post-menu#toggle">
           <span aria-hidden="true">•••</span>
         </button>
@@ -214,6 +194,12 @@
           <button type="button" class="feed-post-card__menu-item" data-action="post-menu#share">
             Copy link to clipboard
           </button>
+
+          <% if current_user.present? %>
+            <button type="button" class="feed-post-card__menu-item" data-action="post-menu#notInterested">
+              Don&apos;t show me posts like this
+            </button>
+          <% end %>
         </div>
       </div>
     <% end %>

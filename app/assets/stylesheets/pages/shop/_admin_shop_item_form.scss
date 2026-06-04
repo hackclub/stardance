@@ -1,0 +1,47 @@
+@use "admin_shop_shared" as s;
+
+.shop-item-form {
+  @include s.space-token-remaps;
+  @include s.pill-buttons;
+
+  &__errors {
+    background: var(--color-brand-salmon-soft);
+    border: 2px solid var(--color-brand-salmon);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: var(--color-space-text);
+  }
+
+  &__page-title {
+    @include s.page-title;
+  }
+
+  &__back {
+    @include s.back-link;
+  }
+
+  input[type="date"],
+  input[type="datetime-local"] {
+    color-scheme: dark;
+  }
+
+  &__hint,
+  &__toggle-desc,
+  &__calc-label,
+  &__muted {
+    color: s.$set-fg-secondary;
+  }
+
+  &__calc-value {
+    color: var(--color-space-text);
+  }
+
+  &__toggle-content strong {
+    color: var(--color-space-text);
+  }
+
+  .modifier-entry__title {
+    color: var(--color-space-text);
+  }
+}

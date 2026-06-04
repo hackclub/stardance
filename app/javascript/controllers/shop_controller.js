@@ -168,17 +168,9 @@ export default class extends Controller {
   }
 
   extractPrice(element) {
-    // Use the data attribute which has the correct sale price
-    const dataPrice = element.dataset.shopWishlistItemPriceValue;
-    if (dataPrice) return parseFloat(dataPrice) || 0;
-
-    // Fallback to text content - get the last number (sale price if present)
-    const priceText = element.querySelector(
-      ".shop-item-card__price",
-    )?.textContent;
-    if (!priceText) return 0;
-    const numbers = priceText.match(/\d+/g);
-    return numbers ? parseFloat(numbers[numbers.length - 1]) : 0;
+    const dataPrice = element.dataset.price;
+    if (dataPrice !== undefined) return parseFloat(dataPrice) || 0;
+    return 0;
   }
 
   search(event) {

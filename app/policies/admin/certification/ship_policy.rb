@@ -7,12 +7,10 @@ class Admin::Certification::ShipPolicy < ApplicationPolicy
 
   def update?
     return false unless user&.can_review? && not_own_project?
-    record.claim_held_by?(user)
+    record.claim_held_by?(user) || (record.reviewer_id == user.id && record.claim_expired?)
   end
 
   def next? = user&.can_review?
-
-  def claim? = user&.can_review? && not_own_project?
 
   class Scope < ApplicationPolicy::Scope
     def resolve

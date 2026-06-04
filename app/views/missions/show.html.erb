@@ -75,7 +75,8 @@
           </p>
         <% end %>
 
-        <div class="mission-home__hero-actions">
+        <% has_three_actions = !@active_project && @attachable_projects&.any? && @mission.has_guide? %>
+        <div class="mission-home__hero-actions<%= " mission-home__hero-actions--spread" if has_three_actions %>">
           <% if @active_project %>
             <%= link_to "View my project",
                         project_path(@active_project),
@@ -89,15 +90,19 @@
                           data: { turbo: false },
                           form: { class: "mission-home__cta-form" },
                           class: "action-btn action-btn--large action-btn--primary" %>
+            <% if @attachable_projects&.any? %>
+              <button type="button"
+                      class="action-btn action-btn--large action-btn--secondary"
+                      onclick="document.getElementById('attach-mission-modal').showModal()">
+                Attach to project
+              </button>
+            <% end %>
           <% end %>
           <% if @mission.has_guide? %>
-            <%= link_to (@active_project ? "View the guide" : "Preview the guide"),
+            <%= link_to (@active_project ? "View guide" : "Preview guide"),
                         guide_mission_path(@mission.slug),
                         data: { turbo: false },
                         class: "action-btn action-btn--large action-btn--secondary" %>
-          <% end %>
-          <% if @mission.has_guide? && @mission.guide_body_updated_at %>
-            <span class="mission-home__hero-updated">updated <%= time_ago_in_words(@mission.guide_body_updated_at) %> ago</span>
           <% end %>
         </div>
       </section>
@@ -169,6 +174,25 @@
       <% end %>
     </article>
   </div>
+
+  <% if @attachable_projects&.any? %>
+    <%= render layout: "shared/modal", locals: { id: "attach-mission-modal", title: "Attach to project", class_name: "attach-mission-modal" } do %>
+      <p class="attach-mission-modal__desc">Pick a project to attach <strong><%= @mission.name %></strong> to:</p>
+      <ul class="attach-mission-modal__list">
+        <% @attachable_projects.each do |project| %>
+          <li class="attach-mission-modal__item">
+            <span class="attach-mission-modal__project-name"><%= truncate(project.title, length: 50) %></span>
+            <%= button_to "Attach",
+                          project_mission_path(project),
+                          method: :post,
+                          params: { mission_slug: @mission.slug },
+                          data: { turbo: false },
+                          class: "action-btn action-btn--small action-btn--primary" %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
 
   <%= render DiscoverRailComponent.new %>
 </div>

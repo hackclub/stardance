@@ -25,9 +25,8 @@
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
 %>
 
-<div class="app-layout">
+<div class="app-layout" data-controller="profile-modal">
   <div class="app-layout__main">
-
     <%= turbo_frame_tag "project_hero" do %>
     <% if can_edit_project && (params[:editing].present? || @project.errors.any?) %>
       <%= form_with(model: @project,
@@ -45,8 +44,15 @@
         <%= hidden_field_tag :inline_project_show, "1" %>
 
         <header class="project-show__hero">
-          <div class="project-show__banner" data-controller="file-upload">
+          <div class="project-show__banner<%= ' project-show__banner--empty' unless @project.banner.attached? %>" data-controller="file-upload" data-file-upload-empty-class-value="project-show__banner--empty" data-file-upload-placeholder-selector-value=".project-show__banner-placeholder">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
+            <% unless @project.banner.attached? %>
+              <label class="project-show__banner-placeholder">
+                <span class="project-show__banner-placeholder-text">Upload screenshot</span>
+                <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                      data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
+              </label>
+            <% end %>
             <%= link_to back_path,
                         class: "project-show__back",
                         "aria-label": "Back",
@@ -56,11 +62,13 @@
               </svg>
             <% end %>
 
-            <label class="project-show__banner-upload">
-              <span>Change screenshot</span>
-              <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
-                    data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
-            </label>
+            <% if @project.banner.attached? %>
+              <label class="project-show__banner-upload">
+                <span>Change Banner</span>
+                <%= form.file_field :banner, accept: Project::ACCEPTED_CONTENT_TYPES.join(","), class: "project-show__banner-input",
+                      data: { "file-upload-target": "input", action: "change->file-upload#change" } %>
+              </label>
+            <% end %>
           </div>
 
           <div class="project-show__panel">
@@ -128,10 +136,11 @@
               <div class="project-show__field project-show__field--inline project-show__field--hackatime">
                 <span>Hackatime projects</span>
                 <% if !@hackatime_linked %>
-                  <%= link_to "Connect Hackatime to link projects →",
-                              "/auth/hackatime?origin=#{CGI.escape(request.fullpath)}",
-                              class: "project-show__hackatime-connect",
-                              data: { turbo_method: :post } %>
+                  <button type="submit"
+                          form="hackatime-connect-form"
+                          class="project-show__hackatime-connect">
+                    Connect Hackatime to link projects →
+                  </button>
                 <% elsif @hackatime_dropdown_items.blank? %>
                   <span class="project-show__hackatime-empty">
                     No Hackatime projects yet — start coding with Hackatime installed to see them here.
@@ -139,10 +148,10 @@
                 <% else %>
                   <div data-controller="hackatime-link">
                     <div class="project-show__hackatime-picker">
-                      <div class="project-show__hackatime-box" data-hackatime-link-target="box">
-                        <button type="button" class="project-show__hackatime-add" data-action="hackatime-link#toggle" data-hackatime-link-target="addBtn" aria-label="Add Hackatime project">
+                      <div class="project-show__hackatime-box" role="button" tabindex="0" aria-pressed="false" data-contoller="addBtn" data-action="click->hackatime-link#toggle keydown.enter->hackatime-link#toggle">
+                        <div class="project-show__hackatime-add" aria-label="Add Hackatime project">
                           <%= inline_svg_tag "icons/plus.svg", class: "project-show__hackatime-add-icon" %>
-                        </button>
+                        </div>
                         <div class="project-show__hackatime-tags" data-hackatime-link-target="tags">
                           <span class="project-show__hackatime-placeholder"
                                 data-hackatime-link-target="placeholder"
@@ -267,6 +276,12 @@
           </div>
         </header>
       <% end %>
+      <% unless @hackatime_linked %>
+        <form id="hackatime-connect-form" method="post" action="/auth/hackatime" hidden>
+          <input type="hidden" name="origin" value="<%= request.fullpath %>">
+          <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+        </form>
+      <% end %>
     <% else %>
       <article class="project-show">
         <header class="project-show__hero">
@@ -328,11 +343,15 @@
             <% end %>
 
             <div class="project-show__read-footer">
-              <span class="project-show__followers"><strong><%= follower_count %></strong> <%= "follower".pluralize(follower_count) %></span>
+              <%= button_tag type: "button",
+                             class: "project-show__followers",
+                             data: { action: "click->profile-modal#open",
+                                     "profile-modal-url-param": followers_project_path(@project),
+                                     "profile-modal-title-param": "Followers" } do %>
+                <strong><%= follower_count %></strong> <%= "follower".pluralize(follower_count) %>
+              <% end %>
               <div class="project-show__panel-actions">
-                <% if @project.fire? %>
-                  <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
-                <% end %>
+                <%= render "projects/fire_controls", project: @project %>
 
                 <% if can_edit_project %>
                   <%= link_to "Edit project", project_path(@project, editing: true),
@@ -399,7 +418,12 @@
                     text: "Complete project info",
                     variant: :primary,
                     href: project_path(@project, editing: true, complete: true),
-                    data: { turbo_frame: "project_hero" }
+                    data: {
+                      turbo_frame: "project_hero",
+                      controller: "tooltip",
+                      tooltip_message_value: @project.info_blocker_message,
+                      tooltip_position_value: "top"
+                    }
                   ) %>
             <% else %>
               <%= render ActionButtonComponent.new(
@@ -555,18 +579,25 @@
     <% if @show_project_onboarding %>
       <section class="project-show__onboarding" aria-labelledby="project-show-onboarding-title">
         <header class="project-show__onboarding-header">
-          <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
           <% if !@hackatime_linked %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
             <p class="project-show__onboarding-header-body">
               Link Hackatime to start tracking your time. Once you do and post a devlog, you'll unlock free stickers in the shop!
             </p>
-          <% elsif current_user && !current_user.shop_tutorial_completed? %>
+          <% elsif @project.hackatime_keys.present? %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
             <p class="project-show__onboarding-header-body">
-              Hackatime is linked! Post a devlog and head to the <a href="/shop" class="project-show__onboarding-header-link">shop tab</a> to claim your free stickers.
+              Once you have 15 minutes of coding time, come back and write your first devlog!
+            </p>
+          <% elsif @all_hackatime_projects.present? %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
+            <p class="project-show__onboarding-header-body">
+              We found Hackatime projects on your account — <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link one. Once you have 15 minutes of coding time, write your first devlog!
             </p>
           <% else %>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
             <p class="project-show__onboarding-header-body">
-              Your devlogs will appear here. Start coding and post your first devlog!
+              Start coding with Hackatime running. Once you have 15 minutes, <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link your Hackatime project, then write your first devlog!
             </p>
           <% end %>
         </header>
@@ -713,45 +744,51 @@
         an editable textarea, and "Ship!" submits straight to ships#create. %>
     <dialog id="ship-post-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post"
-            data-controller="modal"
+            data-controller="modal composer"
+            data-composer-max-files-value="<%= Post::ShipEvent::MAX_ATTACHMENTS %>"
+            data-composer-simple-mode-value="true"
+            data-composer-target="dropZone"
+            data-action="drop->composer#drop dragover->composer#dragover dragleave->composer#dragleave"
             aria-label="Ship your project">
-      <div class="ship-modal__panel">
-        <%= form_with url: project_ships_path(@project),
-                      method: :post,
-                      data: { turbo: false },
-                      html: { class: "ship-modal__form" } do |form| %>
-          <% ship_mission = @project.current_mission %>
-          <% ship_to_mission = ship_mission && !@project.shipped_to_mission?(ship_mission) %>
-          <% if ship_to_mission %>
-            <div class="ship-modal__mission">
-              <p class="ship-modal__mission-heading">
-                Shipping to <strong><%= ship_mission.name %></strong>
-              </p>
-              <%= hidden_field_tag :mission_payout_path, "static_prize" %>
-              <% if ship_mission.submission_guide.present? %>
-                <div class="ship-modal__mission-guide">
-                  <%= render MarkdownContentComponent.new(markdown: ship_mission.submission_guide, flavor: :guide) %>
-                </div>
-                <label class="ship-modal__mission-ack">
-                  <%= check_box_tag :mission_submission_guide_acknowledged, "1", false, required: true %>
-                  <span>This project meets all of the above mission guidelines</span>
-                </label>
-              <% end %>
-            </div>
-          <% end %>
+      <%= form_with url: project_ships_path(@project),
+                    method: :post,
+                    multipart: true,
+                    data: { turbo: false, action: "paste->composer#paste" },
+                    html: { class: "ship-modal__form" } do |form| %>
+        <% ship_mission = @project.current_mission %>
+        <% ship_to_mission = ship_mission && !@project.shipped_to_mission?(ship_mission) %>
 
-          <article class="project-show__latest-ship ship-modal__preview">
+        <% if ship_to_mission %>
+          <div class="ship-modal__mission-card">
+            <p class="ship-modal__mission-heading">
+              Shipping to <strong><%= ship_mission.name %></strong>
+            </p>
+            <%= hidden_field_tag :mission_payout_path, "static_prize" %>
+            <% if ship_mission.submission_guide.present? %>
+              <div class="ship-modal__mission-guide">
+                <%= render MarkdownContentComponent.new(markdown: ship_mission.submission_guide, flavor: :guide) %>
+              </div>
+              <label class="ship-modal__mission-ack">
+                <%= check_box_tag :mission_submission_guide_acknowledged, "1", false, required: true %>
+                <span>I confirm my project meets the mission guidelines above</span>
+              </label>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="ship-modal__panel">
+          <article class="ship-modal__preview">
             <header class="project-show__latest-ship-label">
               <%= inline_svg_tag "icons/sticker.svg", class: "project-show__latest-ship-icon" %>
               <span>Ship</span>
             </header>
 
-            <div class="project-show__latest-ship-body">
+            <div class="ship-modal__preview-body">
               <div class="project-show__latest-ship-avatar">
                 <%= image_tag current_user.avatar, alt: current_user.display_name, class: "project-show__avatar project-show__avatar--lg" %>
               </div>
 
-              <div class="project-show__latest-ship-content">
+              <div class="ship-modal__preview-content">
                 <p class="project-show__latest-ship-heading">
                   <span class="project-show__latest-ship-author">@<%= current_user.display_name %></span>
                   <span class="project-show__latest-ship-on">on</span>
@@ -765,7 +802,24 @@
                       required: true,
                       maxlength: Post::ShipEvent::BODY_MAX_LENGTH,
                       placeholder: "What did you make? What was challenging? What are you proud of? What should people know so they can test your project?",
-                      aria: { label: "Ship update" } %>
+                      aria: { label: "Ship update" },
+                      data: { composer_target: "textarea",
+                              action: "input->composer#autogrow input->composer#refreshSubmit" } %>
+
+                <div class="feed-composer__attach-wrap feed-composer__attach-wrap--expanded" data-composer-target="attachWrap">
+                  <label class="feed-composer__attach">
+                    <%= inline_svg_tag "icons/paper.svg", class: "feed-composer__attach-icon" %>
+                    <span class="feed-composer__attach-text">Add a screenshot of your project in action!</span>
+                    <%= file_field_tag "ship_event[attachments][]",
+                          multiple: true,
+                          accept: Post::ShipEvent::ACCEPTED_CONTENT_TYPES.join(","),
+                          class: "feed-composer__file-input",
+                          required: true,
+                          data: { composer_target: "fileInput", action: "change->composer#selectFiles" } %>
+                  </label>
+                </div>
+
+                <div class="feed-composer__grid" data-composer-target="grid" data-count="0" hidden></div>
 
                 <ul class="project-show__latest-ship-stats" aria-label="Project totals">
                   <li class="profile-project-card__meta-item">
@@ -812,12 +866,78 @@
                     onclick="document.getElementById('ship-post-modal-' + <%= @project.id.to_json %>).close()">
               Cancel
             </button>
-            <%= form.submit "Ship!", class: "ship-modal__btn ship-modal__btn--primary", data: { disable_with: "Shipping…" } %>
+            <%= form.submit "Ship!", class: "ship-modal__btn ship-modal__btn--primary", data: { disable_with: "Shipping…", composer_target: "submit" } %>
           </div>
-        <% end %>
-      </div>
+        </div>
+      <% end %>
     </dialog>
   <% end %>
 
+  <% if @is_member && @project.current_mission.nil? && !@project.shipped? %>
+    <%= render layout: "shared/modal", locals: { id: "mission-browse-modal", title: "Browse missions", class_name: "mission-browse-modal" } do %>
+      <% if @available_missions.any? %>
+        <ul class="mission-browse-modal__grid">
+          <% @available_missions.each do |mission| %>
+            <li class="mission-browse-modal__card">
+              <div class="mission-browse-modal__card-icon">
+                <% if mission.icon.attached? %>
+                  <%= image_tag mission.icon, alt: "", class: "mission-browse-modal__card-icon-img" %>
+                <% else %>
+                  <span class="mission-browse-modal__card-icon-fallback" aria-hidden="true">&#10022;</span>
+                <% end %>
+              </div>
+
+              <div class="mission-browse-modal__card-body">
+                <h3 class="mission-browse-modal__card-title"><%= mission.name %></h3>
+                <p class="mission-browse-modal__card-desc"><%= truncate(mission.description.to_s, length: 120) %></p>
+
+                <ul class="mission-browse-modal__card-meta">
+                  <% if mission.difficulty.present? %>
+                    <li class="mission-browse-modal__card-chip mission-browse-modal__card-chip--<%= mission.difficulty %>">
+                      <%= mission.difficulty.titleize %>
+                    </li>
+                  <% end %>
+                  <% if mission.steps_count > 0 %>
+                    <li class="mission-browse-modal__card-chip"><%= mission.steps_count %>-step guide</li>
+                  <% end %>
+                </ul>
+              </div>
+
+              <div class="mission-browse-modal__card-actions">
+                <%= link_to "Learn more",
+                            mission_path(mission.slug),
+                            class: "action-btn action-btn--small action-btn--secondary",
+                            data: { turbo: false } %>
+                <%= button_to "Attach",
+                              project_mission_path(@project),
+                              method: :post,
+                              params: { mission_slug: mission.slug },
+                              data: { turbo: false },
+                              class: "action-btn action-btn--small action-btn--primary" %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="mission-browse-modal__empty">
+          You're already on a mission for every available challenge — nice! Check back later for new missions.
+        </p>
+      <% end %>
+    <% end %>
+  <% end %>
+
   <%= render DiscoverRailComponent.new %>
+
+  <dialog id="followers-modal"
+          class="followers-modal"
+          data-profile-modal-target="dialog"
+          data-action="click->profile-modal#backdropClose">
+    <header class="followers-modal__header">
+      <h2 class="followers-modal__title" data-profile-modal-target="title">Followers</h2>
+      <button type="button" class="followers-modal__close" data-action="click->profile-modal#close" aria-label="Close">×</button>
+    </header>
+    <div class="followers-modal__body" data-profile-modal-target="body">
+      <p class="followers-modal__loading">Loading…</p>
+    </div>
+  </dialog>
 </div>

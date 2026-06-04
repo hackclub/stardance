@@ -8,15 +8,21 @@ export default class extends Controller {
     url: String,
     debounce: { type: Number, default: 350 },
     max: { type: Number, default: 30 },
+    checkOnConnect: { type: Boolean, default: false },
   };
 
   connect() {
     this.lastQuery = null;
     this.abortController = null;
     this.timer = null;
+    this._initialValue = this.checkOnConnectValue
+      ? null
+      : this.inputTarget.value;
     this._setSubmitDisabled(true);
     this._updateCounter();
-    this.check();
+    if (this.checkOnConnectValue && this.inputTarget.value.trim() !== "") {
+      this.check();
+    }
   }
 
   disconnect() {
@@ -27,6 +33,12 @@ export default class extends Controller {
   onInput() {
     if (this.timer) clearTimeout(this.timer);
     this._updateCounter();
+
+    if (this.inputTarget.value === this._initialValue) {
+      this._setState("available", "");
+      return;
+    }
+
     this._setState("checking", "Checking\u2026");
     this.timer = setTimeout(() => this.check(), this.debounceValue);
   }

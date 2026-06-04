@@ -41,6 +41,9 @@ module OgImage
     STARDANCE_LOGO_PATH = Rails.root.join("app", "assets", "images", "landing", "header", "stardance-logo.png").to_s
     STAR_CHARACTER_PATH = Rails.root.join("app", "assets", "images", "landing", "hero", "star-character.png").to_s
 
+    FONT_PATH = Rails.root.join("app", "assets", "fonts", "Exo2.ttf").to_s
+    TITLE_FONT_PATH = Rails.root.join("app", "assets", "fonts", "PlayfairDisplay-Italic.ttf").to_s
+
     attr_reader :image
 
     def initialize
@@ -115,7 +118,7 @@ module OgImage
     def draw_text(text, x:, y:, size: 48, color: "#ffffff", gravity: "NorthWest", font: nil)
       r, g, b = hex_to_rgb(color)
       face = font || font_name
-      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", dpi: 72)
+      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
       w, h = text_img.width, text_img.height
       colored = solid_rgba(w, h, r, g, b).extract_band(0, n: 3)
       overlay = colored.bandjoin(text_img).copy(interpretation: :srgb)
@@ -192,7 +195,7 @@ module OgImage
 
     def draw_soft_shadow(text, x:, y:, size: 48, gravity: "NorthWest", font: nil, radius: 6, opacity: 0.6, offset: 2)
       face = font || font_name
-      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", dpi: 72)
+      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
       w, h = text_img.width, text_img.height
 
       pad = radius * 3
@@ -215,7 +218,7 @@ module OgImage
       gr, gg, gb = hex_to_rgb(glow_color)
       face = font || font_name
 
-      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", dpi: 72)
+      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
       w, h = text_img.width, text_img.height
 
       pad = glow_radius * 3
@@ -247,16 +250,23 @@ module OgImage
     end
 
     def font_name
-      @font_name ||= begin
-        source = Rails.root.join("app", "assets", "fonts", "Roboto.ttf").to_s
-        Vips::Operation.call("fontname", [ source ]).split(",").first
-      rescue StandardError
-        "Roboto"
-      end
+      "Exo 2"
+    end
+
+    def heading_font_name
+      "Exo 2 Bold"
     end
 
     def title_font_name
-      "Didot Italic"
+      "Playfair Display Bold Italic"
+    end
+
+    def fontfile_for(face)
+      if face == title_font_name
+        TITLE_FONT_PATH
+      else
+        FONT_PATH
+      end
     end
 
     def place_stardance_logo(x: 70, y: 60, width: 280, height: 80, gravity: "NorthWest")

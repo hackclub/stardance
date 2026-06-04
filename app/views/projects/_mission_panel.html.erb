@@ -8,16 +8,7 @@
   is_member = viewer && project.users.exists?(id: viewer.id)
 %>
 
-<% if mission.nil? %>
-  <% if is_member %>
-    <section class="mission-panel mission-panel--empty" aria-label="Mission attachment">
-      <p class="mission-panel__empty-text">
-        Want a themed track for this project?
-        <%= link_to "Browse missions", missions_path %>.
-      </p>
-    </section>
-  <% end %>
-<% else %>
+<% if mission.present? %>
   <%
     shipped = project.shipped_to_mission?(mission)
     # Guide progress only matters before the first ship; afterwards the mission

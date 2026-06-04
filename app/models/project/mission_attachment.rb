@@ -38,6 +38,7 @@ class Project::MissionAttachment < ApplicationRecord
   validates :attached_at, presence: true
 
   validate :no_other_active_attachment, on: :create
+  validate :project_has_no_ships, on: :create
 
   before_validation :default_attached_at, on: :create
 
@@ -61,5 +62,12 @@ class Project::MissionAttachment < ApplicationRecord
     return unless other.exists?
 
     errors.add(:base, "Detach the current mission before attaching another")
+  end
+
+  def project_has_no_ships
+    return unless project_id
+    return unless project&.shipped?
+
+    errors.add(:base, "Can't attach a mission to a project that has already shipped")
   end
 end

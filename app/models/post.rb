@@ -23,6 +23,8 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class Post < ApplicationRecord
+    include Gorse::SyncablePost
+
     has_paper_trail
 
     # Eager load all Post::* classes so Postable.types is populated

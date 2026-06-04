@@ -19,7 +19,7 @@ module OgImage
         draw_glowing_text(
           line,
           x: 70, y: 220 + (i * 90), size: 72,
-          color: "#fffcf4", glow_color: "#95dbff",
+          color: "#fffcf4", glow_color: "#ebb7ff",
           glow_radius: 8, glow_opacity: 0.35,
           font: title_font_name
         )
@@ -27,7 +27,7 @@ module OgImage
     end
 
     def draw_subtitle
-      draw_text("Tools built by teens, for teens.", x: 70, y: 420, size: 30, color: "#ebb7ff")
+      draw_text("Tools built by teens, for teens.", x: 70, y: 420, size: 30, color: "#c9c9c9")
     end
   end
 end

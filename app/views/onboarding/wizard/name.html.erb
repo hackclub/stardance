@@ -12,7 +12,8 @@
                    data: {
                      controller: "username-availability",
                      username_availability_url_value: username_availability_path,
-                     username_availability_max_value: User::MAX_DISPLAY_NAME_LENGTH
+                     username_availability_max_value: User::MAX_DISPLAY_NAME_LENGTH,
+                     username_availability_check_on_connect_value: true
                    } do |f| %>
       <% max_len = User::MAX_DISPLAY_NAME_LENGTH %>
       <div class="onboarding-name__field">

@@ -97,6 +97,7 @@ class UsersController < ApplicationController
     scope = hide_rejected_ships(scope)
 
     @pagy, posts = pagy(:offset, scope, limit: ACTIVITY_LIMIT)
+    preload_postable_attachments(posts)
     posts.select { |post| !post.repost? || post.visible_repost_original_for?(current_user) }
   end
 
@@ -123,6 +124,19 @@ class UsersController < ApplicationController
       votes_count:    @user.votes_count || @user.votes.count,
       projects_count: @projects.size
     }
+  end
+
+  def preload_postable_attachments(posts)
+    grouped = posts.group_by(&:postable_type)
+    preloader = ->(records, assocs) { ActiveRecord::Associations::Preloader.new(records: records, associations: assocs).call }
+
+    if (devlogs = grouped["Post::Devlog"])
+      preloader.call(devlogs, postable: :attachments_attachments)
+    end
+
+    if (ships = grouped["Post::ShipEvent"])
+      preloader.call(ships, postable: :attachments_attachments)
+    end
   end
 
   def user_params

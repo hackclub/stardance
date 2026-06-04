@@ -1,13 +1,12 @@
-<div class="shop-item-card<%= ' shop-item-card--achievement-locked' if locked_by_achievement %><%= ' shop-item-card--mission-locked' if mission_locked %><%= ' shop-item-card--out-of-stock' if out_of_stock? %><%= ' shop-item-card--on-sale' if on_sale %><%= ' shop-item-card--with-bow' if show_bow %><%= ' shop-item-card--spotlight' if tutorial_spotlight %>"
+<div class="shop-item-card<%= ' shop-item-card--achievement-locked' if locked_by_achievement %><%= ' shop-item-card--mission-locked' if mission_locked %><%= ' shop-item-card--out-of-stock' if out_of_stock? %><%= ' shop-item-card--on-sale' if on_sale %><%= ' shop-item-card--with-bow' if show_bow %><%= ' shop-item-card--spotlight' if tutorial_spotlight %><%= ' shop-item-card--wishlisted' if wishlisted %>"
      data-categories="<%= categories.join(',') %>"
      data-regions="<%= enabled_regions.join(',') %>"
      data-achievement-locked="<%= locked_by_achievement %>"
+     data-price="<%= display_price %>"
      data-shop-id="<%= item_id %>"
      data-controller="shop-wishlist"
      data-shop-wishlist-item-id-value="<%= item_id %>"
-     data-shop-wishlist-item-name-value="<%= name %>"
-     data-shop-wishlist-item-price-value="<%= display_price %>"
-     data-shop-wishlist-item-image-value="<%= url_for(image_url) %>">
+     data-shop-wishlist-wishlisted-value="<%= wishlisted %>">
 
   <%
     if cta_mode == :tutorial_verify
@@ -53,11 +52,8 @@
   <% if logged_in %>
     <button type="button"
             class="shop-item-card__star"
-            data-shop-wishlist-target="starButton"
             data-action="click->shop-wishlist#toggle"
-            aria-label="Add to wishlist"
-            aria-pressed="false"
-            title="Add to wishlist to track progress">
+            aria-label="Toggle wishlist">
       <%= helpers.inline_svg_tag "icons/star_fill.svg" %>
     </button>
   <% end %>
@@ -74,7 +70,12 @@
     <% end %>
 
     <div class="shop-item-card__details">
-      <span class="shop-item-card__hours">> <%= hours %> hours</span>
+      <% if hours.present? %>
+        <span class="shop-item-card__hours"
+              data-controller="tooltip"
+              data-tooltip-message-value="Stardust payout varies based on how your project is rated, so your actual hours may be higher or lower than this estimate."
+              data-tooltip-position-value="top"><%= hours %> hours</span>
+      <% end %>
       <% if on_sale && original_price %>
         <span class="shop-item-card__price shop-item-card__price--strike">
           <%= helpers.stardust_icon %>

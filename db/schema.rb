@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -176,6 +176,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.integer "lock_version", default: 0, null: false
     t.bigint "project_id", null: false
     t.bigint "reviewer_id"
+    t.integer "stardust_earned"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
@@ -354,7 +355,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.bigint "mission_id", null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index "mission_id, lower((language)::text)", name: "index_mission_guide_variants_unique_language", unique: true
+    t.index ["mission_id", "language"], name: "index_mission_guide_variants_unique_language", unique: true
     t.index ["mission_id"], name: "index_mission_guide_variants_on_mission_id"
   end
 
@@ -412,7 +413,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.string "language", null: false
     t.bigint "mission_step_id", null: false
     t.datetime "updated_at", null: false
-    t.index "mission_step_id, lower((language)::text)", name: "index_mission_step_bodies_unique_language", unique: true
+    t.index ["mission_step_id", "language"], name: "index_mission_step_bodies_unique_language", unique: true
     t.index ["mission_step_id"], name: "index_mission_step_bodies_on_mission_step_id"
   end
 
@@ -647,6 +648,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.datetime "marked_fire_at"
     t.bigint "marked_fire_by_id"
     t.integer "memberships_count", default: 0, null: false
+    t.datetime "nominated_fire_at"
+    t.bigint "nominated_fire_by_id"
     t.string "project_categories", default: [], array: true
     t.string "project_type"
     t.text "readme_url"
@@ -660,6 +663,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_projects_on_deleted_at"
     t.index ["marked_fire_by_id"], name: "index_projects_on_marked_fire_by_id"
+    t.index ["nominated_fire_by_id"], name: "index_projects_on_nominated_fire_by_id"
   end
 
   create_table "report_review_tokens", force: :cascade do |t|
@@ -673,6 +677,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.index ["report_id", "action"], name: "index_report_review_tokens_on_report_id_and_action", unique: true
     t.index ["report_id"], name: "index_report_review_tokens_on_report_id"
     t.index ["token"], name: "index_report_review_tokens_on_token", unique: true
+  end
+
+  create_table "reviewer_payout_requests", force: :cascade do |t|
+    t.string "aasm_state", default: "pending", null: false
+    t.text "adjust_reason"
+    t.integer "adjusted_amount"
+    t.bigint "admin_id"
+    t.integer "amount", null: false
+    t.datetime "created_at", null: false
+    t.integer "paid_amount"
+    t.datetime "paid_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["admin_id"], name: "index_reviewer_payout_requests_on_admin_id"
+    t.index ["user_id"], name: "index_reviewer_payout_requests_on_user_id"
+    t.index ["user_id"], name: "index_reviewer_payout_requests_on_user_id_pending", unique: true, where: "((aasm_state)::text = 'pending'::text)"
   end
 
   create_table "rsvp_games", force: :cascade do |t|
@@ -970,6 +990,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.index ["user_id"], name: "index_shop_warehouse_packages_on_user_id"
   end
 
+  create_table "shop_wishlists", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "shop_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["shop_item_id"], name: "index_shop_wishlists_on_shop_item_id"
+    t.index ["user_id", "shop_item_id"], name: "index_shop_wishlists_on_user_id_and_shop_item_id", unique: true
+    t.index ["user_id"], name: "index_shop_wishlists_on_user_id"
+  end
+
   create_table "show_and_tell_attendances", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "date"
@@ -1127,7 +1157,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
     t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["email"], name: "index_users_on_email"
-    t.index ["guest_email"], name: "index_users_on_guest_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
     t.index ["slack_id"], name: "index_users_on_slack_id", unique: true
@@ -1244,7 +1273,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
   add_foreign_key "project_skips", "projects"
   add_foreign_key "project_skips", "users"
   add_foreign_key "projects", "users", column: "marked_fire_by_id"
+  add_foreign_key "projects", "users", column: "nominated_fire_by_id"
   add_foreign_key "report_review_tokens", "project_reports", column: "report_id"
+  add_foreign_key "reviewer_payout_requests", "users"
+  add_foreign_key "reviewer_payout_requests", "users", column: "admin_id"
   add_foreign_key "rsvp_games", "rsvps"
   add_foreign_key "rsvp_replies", "rsvps"
   add_foreign_key "shop_card_grants", "shop_items"
@@ -1271,6 +1303,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_184504) do
   add_foreign_key "shop_orders", "users", column: "assigned_to_user_id", on_delete: :nullify
   add_foreign_key "shop_suggestions", "users"
   add_foreign_key "shop_warehouse_packages", "users"
+  add_foreign_key "shop_wishlists", "shop_items"
+  add_foreign_key "shop_wishlists", "users"
   add_foreign_key "show_and_tell_attendances", "projects"
   add_foreign_key "show_and_tell_attendances", "users"
   add_foreign_key "show_and_tell_attendances", "users", column: "payout_given_by_id"

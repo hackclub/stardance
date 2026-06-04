@@ -17,7 +17,7 @@
           item_id: item.id,
           name: item.name,
           description: item.description,
-          hours: item.fixed_estimate(sale_price).to_i,
+          hours: item.hours_estimate_label(sale_price),
           price: item.ticket_cost,
           image_url: item.image.variant(:carousel_lg),
           item_type: item.type,

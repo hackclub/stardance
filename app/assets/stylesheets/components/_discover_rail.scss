@@ -16,6 +16,12 @@
   }
 }
 
+.discover-rail__widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .discover-rail__search {
   position: relative;
 }

@@ -31,16 +31,6 @@ class Post::Devlog < ApplicationRecord
 
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
-
-  # flag for tracking if attachments are being uploaded during an update
-  attr_accessor :uploading_attachments
-
-  # Version history
-  has_many :versions, class_name: "DevlogVersion", foreign_key: :devlog_id, dependent: :destroy
-
-  # Review association
-  has_one :devlog_review, class_name: "Certification::Devlog", foreign_key: :post_devlog_id, dependent: :destroy
-
   ACCEPTED_CONTENT_TYPES = %w[
     image/jpeg
     image/png
@@ -54,36 +44,16 @@ class Post::Devlog < ApplicationRecord
     video/x-matroska
   ].freeze
 
+  include HasPostAttachments
+
+  # Version history
+  has_many :versions, class_name: "DevlogVersion", foreign_key: :devlog_id, dependent: :destroy
+
+  # Review association
+  has_one :devlog_review, class_name: "Certification::Devlog", foreign_key: :post_devlog_id, dependent: :destroy
+
   has_many :likes, as: :likeable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
-
-  # only for images – not for videos or gif!
-  has_many_attached :attachments do |attachable|
-    attachable.variant :large,
-                       resize_to_limit: [ 1600, 900 ],
-                       format: :webp,
-                       preprocessed: true,
-                       saver: { strip: true, quality: 75 }
-
-    attachable.variant :medium,
-                       resize_to_limit: [ 800, 800 ],
-                       format: :webp,
-                       preprocessed: false,
-                       saver: { strip: true, quality: 75 }
-
-    attachable.variant :thumb,
-                       resize_to_limit: [ 400, 400 ],
-                       format: :webp,
-                       preprocessed: false,
-                       saver: { strip: true, quality: 75 }
-  end
-
-  validates :attachments,
-            content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
-            size: { less_than: 50.megabytes, message: "is too large (max 50 MB)" },
-            processable_file: true
-  validate :at_least_one_attachment
-  validate :at_most_max_attachments
   validates :duration_seconds,
             numericality: {
               greater_than_or_equal_to: 15.minutes,
@@ -123,18 +93,6 @@ class Post::Devlog < ApplicationRecord
 
   private
 
-  def at_least_one_attachment
-    return if uploading_attachments
-
-    errors.add(:attachments, "must include at least one image or video") unless attachments.attached?
-  end
-
-  def at_most_max_attachments
-    if attachments.size > MAX_ATTACHMENTS
-      errors.add(:attachments, "can't exceed #{MAX_ATTACHMENTS} files")
-    end
-  end
-
   def handle_post_creation
     PostCreationToSlackJob.perform_later(self)
   end
@@ -153,5 +111,8 @@ class Post::Devlog < ApplicationRecord
 
     delta = deleted_at.present? ? -1 : 1
     Project.unscoped.where(id: project_id).update_counters(devlogs_count: delta)
+
+    # Keep cached duration_seconds accurate when devlogs are soft-deleted/restored.
+    Project.unscoped.find_by(id: project_id)&.recalculate_duration_seconds!
   end
 end

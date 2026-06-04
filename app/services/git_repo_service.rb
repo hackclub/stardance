@@ -20,7 +20,7 @@ class GitRepoService
     Rails.cache.fetch(cache_key, expires_in: 1.minute) do
       _output, status = Open3.capture2e(
         {
-          "GIT_TERMINAL_PROMPT" => "1",
+          "GIT_TERMINAL_PROMPT" => "0",
           "GIT_ASKPASS" => "/bin/true",
           "GIT_CONFIG_GLOBAL" => "/dev/null",
           "GIT_CONFIG_SYSTEM" => "/dev/null"

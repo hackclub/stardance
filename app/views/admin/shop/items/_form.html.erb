@@ -35,11 +35,12 @@
               <%= f.hidden_field :type, value: shop_item.type %>
               <code><%= shop_item.type %></code>
             <% else %>
-              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <% @shop_item_types.each do |type_name| %>
-                  <%= link_to type_name.demodulize.titleize, new_admin_shop_item_path(type: type_name), class: "btn-secondary", style: "text-align: center; text-decoration: none; padding: 0.4rem 0.75rem;" %>
-                <% end %>
-              </div>
+              <%= select_tag :type,
+                    options_for_select(@shop_item_types.map { |t| [t.demodulize.titleize, t] }),
+                    include_blank: "Select a type…",
+                    class: "form-control",
+                    data: { path: new_admin_shop_item_path },
+                    onchange: "if(this.value) window.location = this.dataset.path + '?type=' + encodeURIComponent(this.value)" %>
             <% end %>
           </div>
 

@@ -53,7 +53,6 @@
 #
 #  index_users_on_api_key                    (api_key) UNIQUE
 #  index_users_on_email                      (email)
-#  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
 #  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
 #  index_users_on_onboarded_at               (onboarded_at)
@@ -62,6 +61,7 @@
 #
 class User < ApplicationRecord
   include SemanticSearchIndexable
+  include Gorse::SyncableUser
 
   has_paper_trail ignore: [ :votes_count, :updated_at, :shop_region, :ip_address, :user_agent ], on: [ :update, :destroy ]
   semantic_search_indexable type: "user"
@@ -102,6 +102,8 @@ class User < ApplicationRecord
   has_many :reviewed_mission_submissions, class_name: "Mission::Submission",
            foreign_key: :reviewed_by_id, dependent: :nullify
   has_many :shop_suggestions, dependent: :destroy
+  has_many :shop_wishlists, dependent: :destroy
+  has_many :wishlisted_shop_items, through: :shop_wishlists, source: :shop_item
   has_many :sold_items, class_name: "ShopItem::HackClubberItem", foreign_key: :user_id
 
   has_one_attached :banner
@@ -130,6 +132,10 @@ class User < ApplicationRecord
     teen_13_18: "teen_13_18",
     ineligible: "ineligible"
   }, prefix: :age_attestation
+
+  def age_blocked?
+    age_attestation_ineligible? && manual_ysws_override != true
+  end
 
   enum :experience_level, {
     none: "none",
@@ -237,7 +243,7 @@ class User < ApplicationRecord
   private
 
   def increment_signup_counter
-    Rails.cache.increment("landing/signup_count")
+    Rails.cache.increment("landing/signup_count", 1, expires_in: 30.seconds)
   end
 
   def enqueue_geocode_job

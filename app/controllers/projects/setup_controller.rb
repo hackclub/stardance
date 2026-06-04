@@ -2,6 +2,7 @@ class Projects::SetupController < ApplicationController
   layout "onboarding"
 
   before_action :require_signed_in!
+  before_action :redirect_if_setup_complete, except: %i[welcome]
   before_action :load_setup_project_for_prefill, only: %i[name missions]
   before_action :load_setup_project, only: %i[link_account welcome]
 
@@ -58,7 +59,6 @@ class Projects::SetupController < ApplicationController
 
     project = find_or_create_setup_project!
     project.update!(title: title, description: description.presence)
-    track_event "project_created", { project_id: project.id, source: "setup" }
     redirect_to next_gate_after_details_path
   end
 
@@ -93,6 +93,7 @@ class Projects::SetupController < ApplicationController
     if existing
       existing.update!(detached_at: nil, attached_at: Time.current)
     else
+      project.current_mission_attachment&.detach!
       project.mission_attachments.create!(mission: mission, attached_at: Time.current)
     end
 
@@ -136,6 +137,14 @@ class Projects::SetupController < ApplicationController
     redirect_to root_path, alert: "Please sign in to start a project."
   end
 
+  def redirect_if_setup_complete
+    return unless current_user&.hca_linked?
+    return unless current_user.projects.exists?
+
+    project = find_setup_project
+    redirect_to project ? project_path(project) : root_path
+  end
+
   def load_setup_project
     @setup_project = find_setup_project
     return if @setup_project
@@ -175,6 +184,7 @@ class Projects::SetupController < ApplicationController
       project.memberships.create!(user: current_user, role: :owner)
     end
     session[:setup_project_id] = project.id
+    track_event "project_created", { project_id: project.id, source: "setup" }
     project
   end
 

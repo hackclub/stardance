@@ -77,13 +77,13 @@ module OgImage
         x: 80,
         y: 130,
         size: 82,
-        color: "#ffe564",
-        glow_color: "#ffe564",
+        color: "#fffcf4",
+        glow_color: "#ebb7ff",
         max_chars: 14,
         max_lines: 2,
         glow_radius: 8,
         glow_opacity: 0.35,
-        font: title_font_name
+        font: heading_font_name
       )
       @title_end_y = 130 + (lines_drawn * 82 * 1.3).to_i
     end
@@ -92,7 +92,6 @@ module OgImage
       stats = build_stats
       return if stats.empty?
 
-      colors = [ "#81ffff", "#ebb7ff", "#95dbff", "#ffd598" ]
       start_y = @title_end_y + 10
       stats.each_with_index do |stat, index|
         draw_text(
@@ -100,7 +99,7 @@ module OgImage
           x: 80,
           y: start_y + (index * 44),
           size: 34,
-          color: colors[index % colors.length]
+          color: "#c9c9c9"
         )
       end
     end

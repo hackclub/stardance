@@ -4,9 +4,9 @@ module Posts
   class CardComponent < ViewComponent::Base
     delegate :inline_svg_tag, to: :helpers
 
-    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions
+    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :source, :position, :page, :feed_request_id
 
-    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true)
+    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, source: nil, position: nil, page: nil, feed_request_id: nil)
       @post = post
       @current_user = current_user
       @theme = theme
@@ -15,6 +15,10 @@ module Posts
       @show_comments = show_comments
       @show_reposts = show_reposts
       @show_actions = show_actions
+      @source = source
+      @position = position
+      @page = page
+      @feed_request_id = feed_request_id
     end
 
     def render?
@@ -45,6 +49,20 @@ module Posts
         "feed-post-card--quote-repost": quote_repost?,
         "feed-post-card--#{theme}": theme.present?
       )
+    end
+
+    def engagement_data
+      {
+        controller: "feed-engagement",
+        feed_engagement_item_type_value: "post",
+        feed_engagement_post_id_value: post.id,
+        feed_engagement_project_id_value: project&.id,
+        feed_engagement_post_type_value: display_post&.postable_type,
+        feed_engagement_source_value: source,
+        feed_engagement_position_value: position,
+        feed_engagement_page_value: page,
+        feed_engagement_feed_request_id_value: feed_request_id
+      }.compact
     end
 
     def card_link_url
@@ -189,6 +207,17 @@ module Posts
       if devlog? && project.present?
         helpers.project_devlog_path(project, postable)
       end
+    end
+
+    def post_menu_data
+      {
+        controller: "post-menu",
+        post_menu_url_value: post_url,
+        post_menu_post_id_value: display_post&.id,
+        post_menu_project_id_value: project&.id,
+        post_menu_source_value: source,
+        post_menu_feed_request_id_value: feed_request_id
+      }.compact
     end
 
     def action_allowed?(action)

@@ -788,8 +788,7 @@
     cursor: pointer;
   }
 
-  &__action-icon,
-  .like-button__icon {
+  &__action-icon {
     width: 25px;
     height: 25px;
     fill: currentColor;
@@ -907,11 +906,44 @@
   .like-button,
   &__like {
     display: flex;
+    align-items: center;
+  }
+
+  [data-controller="like-button"] {
+    display: flex;
+    align-items: center;
   }
 
   .like-button__btn {
     padding: 0;
     border-radius: 0;
+    background: transparent;
+    border: 0;
+    max-height: 32px;
+    overflow: visible;
+  }
+
+  .like-button__sprite {
+    width: 50px;
+    height: 50px;
+    margin-right: -12px;
+    -webkit-mask-size: auto 50px;
+    mask-size: auto 50px;
+    transition:
+      -webkit-mask-position 1s steps(28),
+      mask-position 1s steps(28);
+    transition-duration: 0s;
+
+    &.is-liked {
+      -webkit-mask-position: -1400px 0;
+      mask-position: -1400px 0;
+    }
+
+    &.is-animating {
+      transition-duration: 1s;
+      -webkit-mask-position: -1400px 0;
+      mask-position: -1400px 0;
+    }
   }
 
   .like-button__btn--liked {
@@ -1313,5 +1345,153 @@
         margin-bottom: 0;
       }
     }
+  }
+}
+
+.devlog-edit {
+  &__back {
+    margin-bottom: 14px;
+  }
+
+  &__back-link {
+    align-items: center;
+    color: var(--color-space-text-muted);
+    display: inline-flex;
+    font-size: calc(var(--font-size-s) * 1.15);
+    gap: 0.35rem;
+    text-decoration: none;
+    transition: color 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__back-arrow {
+    height: 14px;
+    transform: rotate(90deg);
+    width: 14px;
+  }
+
+  &__card {
+    background: rgba(5, 4, 24, 0.35);
+    border: 2px solid var(--color-space-border);
+    border-radius: var(--profile-radius, var(--border-radius));
+    padding: 24px;
+  }
+
+  &__heading {
+    color: var(--color-space-text);
+    font-family: "Exo 2", sans-serif;
+    font-size: calc(var(--font-size-s) * 1.4);
+    font-weight: 700;
+    margin: 0 0 20px;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__label {
+    color: var(--color-space-text-muted);
+    font-size: calc(var(--font-size-s) * 1.05);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__textarea {
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid var(--color-space-border);
+    border-radius: var(--profile-radius, var(--border-radius));
+    color: var(--color-space-text);
+    font-family: inherit;
+    font-size: calc(var(--font-size-s) * 1.1);
+    min-height: 100px;
+    padding: 0.65rem 0.75rem;
+    resize: vertical;
+    transition: border-color 120ms ease;
+    width: 100%;
+
+    &::placeholder {
+      color: var(--color-space-text-muted);
+    }
+
+    &:focus {
+      border-color: var(--color-brand-highlight);
+      outline: none;
+    }
+  }
+
+  &__attachment-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  &__attachment {
+    border: 2px solid var(--color-space-border);
+    border-radius: var(--profile-radius, var(--border-radius));
+    overflow: hidden;
+
+    &--replaced {
+      border-color: var(--color-brand-mint);
+    }
+  }
+
+  &__attachment-preview {
+    position: relative;
+  }
+
+  &__attachment-media {
+    aspect-ratio: 16 / 10;
+    display: block;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  &__attachment-replace {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    position: relative;
+  }
+
+  &__attachment-file-input {
+    cursor: pointer;
+    height: 100%;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+
+  &__attachment-replace-label {
+    color: var(--color-space-text-muted);
+    font-size: calc(var(--font-size-s) * 0.95);
+    pointer-events: none;
+    transition: color 120ms ease;
+
+    .devlog-edit__attachment--replaced & {
+      color: var(--color-brand-mint);
+    }
+  }
+
+  &__actions {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    padding-top: 4px;
   }
 }

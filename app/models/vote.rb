@@ -56,6 +56,7 @@ class Vote < ApplicationRecord
   has_paper_trail on: [ :create, :update, :destroy ]
 
   after_commit :increment_user_vote_balance, on: :create
+  after_create_commit :send_gorse_vote_later
 
   scope :payout_countable, -> { all }
 
@@ -95,5 +96,26 @@ class Vote < ApplicationRecord
 
   def increment_user_vote_balance
     user.increment!(:vote_balance, 1)
+  end
+
+  def send_gorse_vote_later
+    if ship_event&.post.present?
+      send_gorse_feedback_later(
+        user: user,
+        item: ship_event.post,
+        feedback_type: :vote,
+        value: score_average,
+        timestamp: created_at
+      )
+    end
+  end
+
+  def score_average
+    scores = self.class.score_columns.filter_map { |column| public_send(column) }
+    if scores.any?
+      scores.sum.to_f / scores.size
+    else
+      1
+    end
   end
 end

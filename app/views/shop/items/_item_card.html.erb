@@ -5,11 +5,13 @@
     region            - region code for pricing
     balance           - viewer's Stardust balance
     tutorial_item_ids - ids of the two tutorial picks (default [])
+    wishlisted_item_ids - ids of user's wishlisted items (default [])
     spotlight         - force the glow/badge on or off (default: on for a
                         tutorial pick in :tutorial mode)
 %>
 <% mode ||= :normal %>
 <% tutorial_item_ids ||= [] %>
+<% wishlisted_item_ids ||= [] %>
 <% sale_price = item.price_for_region(region) %>
 <% item_achievement_infos = item.required_achievement_objects %>
 <% item_achievement_locked = item.achievement_locked_for?(current_user) %>
@@ -25,7 +27,7 @@
   item_id: item.id,
   name: item.name,
   description: item.description,
-  hours: item.fixed_estimate(sale_price).to_i,
+  hours: item.hours_estimate_label(sale_price),
   price: item.ticket_cost,
   image_url: item.image.variant(:carousel_lg),
   item_type: item.type,
@@ -45,5 +47,6 @@
   enabled_until: item.enabled_until,
   locked_by_achievement: item_achievement_locked,
   required_achievement_names: item_achievement_infos.map(&:name),
-  required_achievement_hints: item_achievement_infos.map(&:description)
+  required_achievement_hints: item_achievement_infos.map(&:description),
+  wishlisted: wishlisted_item_ids.include?(item.id)
 ) %>

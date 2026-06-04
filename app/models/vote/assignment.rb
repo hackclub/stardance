@@ -67,7 +67,10 @@ class Vote::Assignment < ApplicationRecord
   end
 
   def skip
-    update!(status: :skipped)
+    transaction do
+      update!(status: :skipped)
+      send_gorse_skip_later
+    end
   end
 
   private
@@ -96,6 +99,12 @@ class Vote::Assignment < ApplicationRecord
     def ship_event_can_be_assigned
       unless ship_event&.certification_status.in?(%w[pending approved])
         errors.add(:ship_event, "must be pending or approved")
+      end
+    end
+
+    def send_gorse_skip_later
+      if ship_event&.post.present?
+        send_gorse_feedback_later(user: user, item: ship_event.post, feedback_type: :skip)
       end
     end
 end

@@ -63,6 +63,7 @@
                     region: @user_region,
                     balance: @user_balance,
                     tutorial_item_ids: pick_ids,
+                    wishlisted_item_ids: @wishlisted_item_ids,
                     spotlight: false %>
             </li>
           <% end %>
@@ -153,12 +154,16 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="15 18 9 12 15 6" /> </svg>
             </button>
             <ul class="shop-hub__items-grid" data-horizontal-scroll-target="track">
+              <li class="shop-hub__items-card">
+                <%= render "shop/items/hardware_build_fund" %>
+              </li>
               <% @new_items.each do |item| %>
                 <li class="shop-hub__items-card">
                   <%= render "shop/items/item_card",
                         item: item,
                         region: @user_region,
-                        balance: @user_balance %>
+                        balance: @user_balance,
+                        wishlisted_item_ids: @wishlisted_item_ids %>
                 </li>
               <% end %>
             </ul>
@@ -191,7 +196,8 @@
                   <%= render "shop/items/item_card",
                         item: item,
                         region: @user_region,
-                        balance: @user_balance %>
+                        balance: @user_balance,
+                        wishlisted_item_ids: @wishlisted_item_ids %>
                 </li>
               <% end %>
             </ul>

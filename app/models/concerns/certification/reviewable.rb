@@ -2,7 +2,7 @@ module Certification
   module Reviewable
     extend ActiveSupport::Concern
 
-    CLAIM_TTL = 5.minutes
+    CLAIM_TTL = 30.minutes
 
     class_methods do
       def available_for(user)
@@ -38,7 +38,10 @@ module Certification
 
     def release_claim!
       return unless pending? && reviewer_id.present?
-      update_columns(reviewer_id: nil, claim_expires_at: nil, updated_at: Time.current)
+
+      self.class
+        .where(id: id, status: self.class.statuses[:pending])
+        .update_all(reviewer_id: nil, claim_expires_at: nil, updated_at: Time.current)
     end
 
     def claim_held_by?(user)

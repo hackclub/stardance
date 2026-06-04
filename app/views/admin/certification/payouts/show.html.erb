@@ -1,0 +1,139 @@
+<% content_for :title, "Payout Request ##{@payout_request.id}" %>
+
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide sw-payouts">
+    <%= link_to "← back to payouts", admin_certification_payouts_path, class: "sw-payouts__back" %>
+
+    <header class="sw-payouts__header">
+      <h1>Payout Request #<%= @payout_request.id %></h1>
+      <span class="status-pill status-pill--<%= @payout_request.aasm_state %>">
+        <%= @payout_request.aasm_state.capitalize %>
+      </span>
+    </header>
+
+    <section class="sw-payouts__detail">
+      <div class="sw-payouts__detail-card">
+        <div class="sw-payouts__detail-row">
+          <span class="sw-payouts__label">Reviewer</span>
+          <span><%= @payout_request.user.display_name %></span>
+        </div>
+        <div class="sw-payouts__detail-row">
+          <span class="sw-payouts__label">Requested Amount</span>
+          <span><%= @payout_request.amount %> ✦</span>
+        </div>
+        <div class="sw-payouts__detail-row">
+          <span class="sw-payouts__label">Unclaimed Balance</span>
+          <span><%= ReviewerPayoutRequest.unclaimed_for(@payout_request.user) %> ✦</span>
+        </div>
+        <div class="sw-payouts__detail-row">
+          <span class="sw-payouts__label">Total Reviews</span>
+          <span>
+            <%= Certification::Ship.where(reviewer_id: @payout_request.user_id).where.not(status: :pending).count %>
+          </span>
+        </div>
+        <div class="sw-payouts__detail-row">
+          <span class="sw-payouts__label">Submitted</span>
+          <span><%= @payout_request.created_at.strftime('%b %d, %Y at %H:%M') %></span>
+        </div>
+
+        <% if @payout_request.paid? %>
+          <div class="sw-payouts__detail-row">
+            <span class="sw-payouts__label">Paid Amount</span>
+            <strong><%= @payout_request.paid_amount %> ✦</strong>
+          </div>
+          <div class="sw-payouts__detail-row">
+            <span class="sw-payouts__label">Paid By</span>
+            <span><%= @payout_request.admin&.display_name %></span>
+          </div>
+          <div class="sw-payouts__detail-row">
+            <span class="sw-payouts__label">Paid At</span>
+            <span><%= @payout_request.paid_at&.strftime('%b %d, %Y at %H:%M') %></span>
+          </div>
+          <% if @payout_request.adjusted_amount.present? && @payout_request.adjusted_amount != @payout_request.amount %>
+            <div class="sw-payouts__detail-row">
+              <span class="sw-payouts__label">Adjustment Reason</span>
+              <span><%= @payout_request.adjust_reason %></span>
+            </div>
+          <% end %>
+        <% elsif @payout_request.rejected? %>
+          <div class="sw-payouts__detail-row">
+            <span class="sw-payouts__label">Rejected By</span>
+            <span><%= @payout_request.admin&.display_name %></span>
+          </div>
+          <div class="sw-payouts__detail-row">
+            <span class="sw-payouts__label">Last Updated</span>
+            <span><%= @payout_request.updated_at.strftime('%b %d, %Y at %H:%M') %></span>
+          </div>
+          <% if @payout_request.adjust_reason.present? %>
+            <div class="sw-payouts__detail-row">
+              <span class="sw-payouts__label">Rejection Reason</span>
+              <span><%= @payout_request.adjust_reason %></span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <% if @payout_request.pending? %>
+        <div class="sw-payouts__actions-card">
+          <h2>Approve & Pay</h2>
+          <%
+            pay_confirmation = [
+              "var amount = this.querySelector('#adjusted-amount').value || #{@payout_request.amount.to_json}",
+              "return confirm('Pay ' + amount + ' ✦ to ' + #{@payout_request.user.display_name.to_json} + '?')"
+            ].join("; ")
+          %>
+          <%= form_with url: pay_admin_certification_payout_path(@payout_request),
+                method: :post, class: "sw-payouts__pay-form", onsubmit: pay_confirmation do %>
+            <div class="sw-payouts__form-group">
+              <label for="adjusted-amount" class="sw-payouts__label">
+                Amount to pay (leave blank to use requested amount of <%= @payout_request.amount %> ✦)
+              </label>
+              <%= number_field_tag :adjusted_amount, nil,
+                    id: "adjusted-amount",
+                    min: 1,
+                    placeholder: @payout_request.amount,
+                    class: "sw-payouts__input",
+                    autocomplete: "off" %>
+            </div>
+            <div class="sw-payouts__form-group">
+              <label for="adjust-reason" class="sw-payouts__label">
+                Reason for adjustment (required if amount changed)
+              </label>
+              <%= text_area_tag :adjust_reason, nil,
+                    id: "adjust-reason",
+                    rows: 2,
+                    placeholder: "e.g. 2 reviews were low-effort",
+                    class: "sw-payouts__input sw-payouts__input--textarea" %>
+            </div>
+            <button type="submit" class="action-btn action-btn--primary">
+              Pay
+            </button>
+          <% end %>
+
+          <div class="sw-payouts__reject-section">
+            <h2>Reject Request</h2>
+            <%= form_with url: reject_admin_certification_payout_path(@payout_request),
+                  method: :post,
+                  class: "sw-payouts__pay-form",
+                  onsubmit: "return confirm('Reject this payout request?')" do %>
+              <div class="sw-payouts__form-group">
+                <label for="reject-reason" class="sw-payouts__label">
+                  Reason for rejection (required)
+                </label>
+                <%= text_area_tag :reject_reason, nil,
+                      id: "reject-reason",
+                      rows: 2,
+                      required: true,
+                      placeholder: "e.g. invalid review submissions",
+                      class: "sw-payouts__input sw-payouts__input--textarea" %>
+              </div>
+              <button type="submit" class="action-btn action-btn--destructive">
+                Reject Request
+              </button>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,86 @@
+<% content_for :title, "Edit Devlog" %>
+
+<div class="app-layout">
+  <main class="app-layout__main devlog-edit" aria-label="Edit devlog">
+    <nav class="devlog-edit__back" aria-label="Back">
+      <%= link_to project_path(@project), class: "devlog-edit__back-link" do %>
+        <%= inline_svg_tag "icons/chevron-down.svg", class: "devlog-edit__back-arrow", aria: { hidden: true } %>
+        <span>Back to <%= @project.title %></span>
+      <% end %>
+    </nav>
+
+    <div class="devlog-edit__card">
+      <h2 class="devlog-edit__heading">Edit devlog</h2>
+
+      <%= form_with model: [@project, @devlog],
+            url: project_devlog_path(@project, @devlog),
+            method: :patch,
+            html: { multipart: true },
+            class: "devlog-edit__form",
+            data: { controller: "devlog-edit" },
+            local: true do |f| %>
+
+        <div class="devlog-edit__field">
+          <%= f.label :body, "What are you working on?", class: "devlog-edit__label" %>
+          <%= f.text_area :body,
+                class: "devlog-edit__textarea",
+                rows: 4,
+                maxlength: Post::Devlog::BODY_MAX_LENGTH,
+                placeholder: "What are you working on?" %>
+        </div>
+
+        <% if @devlog.attachments.attached? %>
+          <div class="devlog-edit__attachments">
+            <p class="devlog-edit__label">Screenshot</p>
+            <div class="devlog-edit__attachment-grid">
+              <% @devlog.attachments.each do |attachment| %>
+                <div class="devlog-edit__attachment" data-devlog-edit-target="slot">
+                  <div class="devlog-edit__attachment-preview" data-devlog-edit-target="preview">
+                    <% if attachment.content_type.to_s.start_with?("video/") %>
+                      <%= video_tag url_for(attachment), controls: true, class: "devlog-edit__attachment-media" %>
+                    <% elsif attachment.variable? %>
+                      <%= image_tag attachment.variant(:medium), alt: "", class: "devlog-edit__attachment-media" %>
+                    <% else %>
+                      <%= image_tag attachment, alt: "", class: "devlog-edit__attachment-media" %>
+                    <% end %>
+                  </div>
+                  <label class="devlog-edit__attachment-replace">
+                    <input type="hidden"
+                           name="remove_attachment_ids[]"
+                           value="<%= attachment.id %>"
+                           disabled
+                           data-devlog-edit-target="removeFlag">
+                    <input type="file"
+                           name="post_devlog[attachments][]"
+                           accept="<%= Post::Devlog::ACCEPTED_CONTENT_TYPES.join(",") %>"
+                           class="devlog-edit__attachment-file-input"
+                           data-action="change->devlog-edit#replacePreview">
+                    <span class="devlog-edit__attachment-replace-label">Replace</span>
+                  </label>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <div class="devlog-edit__actions">
+          <%= render ActionButtonComponent.new(
+                text: "Save changes",
+                size: :small,
+                type: :submit,
+                variant: :primary,
+                disable_with: "Saving..."
+              ) %>
+          <%= render ActionButtonComponent.new(
+                text: "Cancel",
+                href: project_path(@project),
+                size: :small,
+                variant: :secondary
+              ) %>
+        </div>
+      <% end %>
+    </div>
+  </main>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

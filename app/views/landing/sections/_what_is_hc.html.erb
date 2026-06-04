@@ -1,0 +1,53 @@
+<%
+  top_photos = %w[sleepover assemble busan coding library]
+  bottom_photos = %w[hardware unicorn beach-group team-jackets beach-sunset]
+%>
+<section class="what-is-hc">
+  <div class="what-is-hc__marquee what-is-hc__marquee--top">
+    <div class="what-is-hc__track">
+      <% 2.times do %>
+        <% top_photos.each do |photo| %>
+          <%= image_tag image_url("landing/what-is-hc/top/#{photo}.png"), class: "what-is-hc__photo", alt: "", loading: "lazy" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="what-is-hc__body">
+    <h2 class="what-is-hc__title">What is <span class="what-is-hc__title--italic">Hack Club?</span></h2>
+
+    <p class="what-is-hc__text">
+      Hack Club is a 501(c)(3) nonprofit that provides in-person experiences and physical
+      rewards to encourage more students to build and publish engineering projects.
+    </p>
+
+    <p class="what-is-hc__text">
+      We&rsquo;re a network of 100,000+ high schoolers in 119 countries, and a global
+      community of teenage makers who learn to code by actually building things. You
+      learn by shipping real projects, getting stuck, asking for help, and figuring it out
+      together.
+    </p>
+
+    <p class="what-is-hc__text what-is-hc__text--highlight">
+      Artists, engineers, hardware enthusiasts, game devs: everyone&rsquo;s welcome, and
+      nobody needs experience to start.
+    </p>
+
+    <p class="what-is-hc__links">
+      Curious about Hack Club? Learn more about our
+      <a href="https://hackclub.com/philosophy/">philosophy</a>,
+      <a href="https://hackclub.com/philanthropy/">donors</a> or
+      <a href="https://hackclub.com/">other programs</a>.
+    </p>
+  </div>
+
+  <div class="what-is-hc__marquee what-is-hc__marquee--bottom">
+    <div class="what-is-hc__track what-is-hc__track--reverse">
+      <% 2.times do %>
+        <% bottom_photos.each do |photo| %>
+          <%= image_tag image_url("landing/what-is-hc/bottom/#{photo}.png"), class: "what-is-hc__photo", alt: "", loading: "lazy" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</section>

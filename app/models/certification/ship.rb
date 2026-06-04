@@ -9,6 +9,7 @@
 #  feedback         :text
 #  internal_reason  :text
 #  lock_version     :integer          default(0), not null
+#  stardust_earned  :integer
 #  status           :integer          default("pending"), not null
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
@@ -126,12 +127,20 @@ module Certification
         .count
     end
 
+    # Stardust earned per completed review
+    REVIEW_BOUNTY = 1 # This will be updated once we add the project types.
+
     before_save :stamp_claimed_at, if: -> { will_save_change_to_reviewer_id? && reviewer_id.present? && claimed_at.nil? }
     before_save :stamp_decided_at, if: -> { will_save_change_to_status? && status_change&.last != "pending" && decided_at.nil? }
+    before_save :assign_stardust_earned, if: -> { will_save_change_to_status? && status_change&.last != "pending" && reviewer_id.present? }
     after_save :apply_verdict_to_project!, if: :saved_change_to_status?
     after_save_commit :notify_owner!, if: -> { saved_change_to_status? && !pending? }
 
     private
+
+    def assign_stardust_earned
+      self.stardust_earned = REVIEW_BOUNTY
+    end
 
     def stamp_claimed_at
       self.claimed_at = Time.current

@@ -1,4 +1,7 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
+<% content_for :stylesheets do %>
+  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
+<% end %>
 
 <main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>">
   <!-- Header Section -->
@@ -80,9 +83,14 @@
       <!-- Ship Cert Video Section -->
       <section class="review-card video-card">
         <h3>Ship Cert Video</h3>
-        <div class="video-placeholder">
-          <div class="placeholder-text">Placeholder for ship cert video</div>
-        </div>
+        <% if @review.ship_cert&.verdict_video&.attached? %>
+          <video class="video-card__player" src="<%= url_for(@review.ship_cert.verdict_video) %>"
+                 controls playsinline preload="metadata" style="width:100%;border-radius:var(--profile-radius)"></video>
+        <% else %>
+          <div class="video-placeholder">
+            <div class="placeholder-text">No review video recorded</div>
+          </div>
+        <% end %>
       </section>
 
       <!-- Time Stats Section -->
@@ -330,10 +338,28 @@
               </div>
 
               <div class="devlog-git-section">
-                <div class="git-label">Git Activity</div>
-                <div class="chart-placeholder small">
-                  <div class="placeholder-text">Placeholder for Commit Chart</div>
+                <%
+                  dl_commits = @devlog_commits[devlog_review.post_devlog_id] || []
+                  first_commit, last_commit = dl_commits.minmax_by { |c| c[:authored_at] || Time.at(0) }
+                  compare_url = if first_commit && last_commit && first_commit != last_commit
+                    first_sha = first_commit[:sha]
+                    last_sha  = last_commit[:sha]
+                    repo_base = @review.project.repo_url.to_s.chomp("/")
+                    if @repo_info&.dig(:platform) == "github"
+                      "#{repo_base}/compare/#{first_sha}...#{last_sha}"
+                    elsif @repo_info&.dig(:platform)&.include?("gitlab")
+                      "#{repo_base}/-/compare/#{first_sha}...#{last_sha}"
+                    end
+                  end
+                %>
+                <div class="git-label">
+                  <% if compare_url %>
+                    <%= link_to "Git Activity", compare_url, target: "_blank", rel: "noopener noreferrer" %>
+                  <% else %>
+                    Git Activity
+                  <% end %>
                 </div>
+                <%= Certification::CommitGraphBuilder.new(dl_commits).svg %>
               </div>
             </div>
 
@@ -369,6 +395,9 @@
                          min="0"
                          autocomplete="off">
                   <span class="minutes-label">minutes</span>
+                  <span class="hours-display" data-certification--ysws--devlog-review-target="hoursDisplay">
+                    (<%= ((devlog_review.approved_minutes || devlog_review.original_minutes || 0) / 60.0).round(1) %>h)
+                  </span>
                 </div>
                 <div class="quick-adjust-buttons">
                   <button class="adjust-btn"

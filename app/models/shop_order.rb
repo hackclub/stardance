@@ -400,6 +400,7 @@ class ShopOrder < ApplicationRecord
     ShopItem::ThirdPartyDigital
     ShopItem::SillyItemType
     ShopItem::SpecialFulfillmentItem
+    ShopItem::TutorialNothing
   ].freeze
 
   def check_regional_availability

@@ -93,6 +93,7 @@ class Shop::ItemsController < Shop::BaseController
     end
 
     @categories = Shop::Categorization.all
+    @wishlisted_item_ids = current_user&.shop_wishlists&.pluck(:shop_item_id) || []
   end
 
   def load_hub_sections

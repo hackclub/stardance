@@ -42,12 +42,12 @@ module OgImage
         y: 170,
         size: 72,
         color: "#fffcf4",
-        glow_color: "#81ffff",
+        glow_color: "#ebb7ff",
         max_chars: 18,
         max_lines: 3,
         glow_radius: 6,
         glow_opacity: 0.3,
-        font: title_font_name
+        font: heading_font_name
       )
       @title_end_y = 170 + (lines_drawn * 72 * 1.3).to_i
     end
@@ -65,7 +65,7 @@ module OgImage
           x: 80,
           y: start_y,
           size: 42,
-          color: "#ebb7ff"
+          color: "#c9c9c9"
         )
       end
 
@@ -91,7 +91,7 @@ module OgImage
           x: text_x,
           y: stats_start_y + (index * 52),
           size: 42,
-          color: "#95dbff"
+          color: "#c9c9c9"
         )
       end
     end
@@ -116,7 +116,7 @@ module OgImage
     end
 
     def logo_path
-      Rails.root.join("app", "assets", "images", "flavortown_logo.png").to_s
+      STAR_CHARACTER_PATH
     end
 
     def build_stats

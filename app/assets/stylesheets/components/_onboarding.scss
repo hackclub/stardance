@@ -197,9 +197,36 @@ $onboarding-card-border: rgba(255, 255, 255, 0.5);
   position: sticky;
   top: 0;
   z-index: 50;
+  body.signed-in:not(.app-layout-page) & {
+    margin-left: calc(-1 * var(--sidebar-reserved));
+    margin-right: -88px;
+
+    @media (max-width: 1500px) {
+      margin-right: -29px;
+    }
+
+    @media (max-width: 960px) {
+      margin-left: -20px;
+      margin-right: -20px;
+    }
+  }
+
+  body.shop-page.signed-in & {
+    margin-right: 0;
+  }
 
   &__copy {
     margin: 0;
+  }
+
+  &__link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      opacity: 0.8;
+    }
   }
 
   &__cta {

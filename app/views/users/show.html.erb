@@ -24,9 +24,18 @@
                   } do |f| %>
 
   <header class="profile__header">
-    <div class="profile__banner">
+    <div class="profile__banner<%= ' profile__banner--empty' unless @user.banner.attached? %>">
       <%= image_tag banner_url, alt: "", class: "profile__banner-image",
                     data: { "profile-edit-target": "banner" } %>
+      <% if own_profile && !@user.banner.attached? %>
+        <label class="profile__banner-placeholder" data-profile-edit-target="placeholder">
+          <span class="profile__banner-placeholder-text">Upload banner</span>
+          <%= f.file_field :banner, accept: "image/*",
+                           class: "profile__banner-input",
+                           data: { action: "change->profile-edit#previewBanner",
+                                   "profile-edit-target": "bannerInput" } %>
+        </label>
+      <% end %>
       <%= link_to back_path,
                   class: "profile__back",
                   "aria-label": "Back",
@@ -36,7 +45,7 @@
         </svg>
       <% end %>
 
-      <% if own_profile %>
+      <% if own_profile && @user.banner.attached? %>
         <label class="profile__banner-upload" data-profile-edit-target="bannerLabel">
           <span class="profile__banner-upload-text">Change banner</span>
           <%= f.file_field :banner, accept: "image/*",
@@ -77,7 +86,7 @@
                       aria-live="polite"></span>
               </div>
             <% end %>
-            <p class="profile__joined">Joined <%= @user.created_at.to_date.strftime("%-d %b %Y") %></p>
+            <p class="profile__joined">Joined <%= "#{@user.created_at.strftime("%B")} #{@user.created_at.day.ordinalize}, #{@user.created_at.year}" %></p>
           </div>
         </div>
 
@@ -260,7 +269,7 @@
         <% if own_profile %>
           <li class="project-list__item">
             <%= link_to new_project_path, class: "profile-project-card profile-project-card--new" do %>
-              <span>Create a new Project</span>
+              <span>+ Create a new Project</span>
             <% end %>
           </li>
         <% end %>

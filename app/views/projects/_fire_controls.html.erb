@@ -1,0 +1,33 @@
+<% if project.fire? %>
+  <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
+  <% if current_user&.admin? %>
+    <%= button_to "Remove Super Star", project_magic_path(project),
+                  method: :delete,
+                  form_class: "project-show__pill-form",
+                  class: "project-show__pill project-show__pill--outline" %>
+  <% end %>
+<% elsif project.fire_nomination_pending? && current_user&.can_nominate_super_star? %>
+  <span class="project-show__badge project-show__badge--nominated">⭐ Nominated by <%= project.nominated_fire_by&.display_name %></span>
+  <% if current_user.admin? %>
+    <%= button_to "Approve Super Star", project_magic_path(project),
+                  form_class: "project-show__pill-form",
+                  class: "project-show__pill project-show__pill--save" %>
+    <%= button_to "Reject", project_fire_nomination_path(project),
+                  method: :delete,
+                  form_class: "project-show__pill-form",
+                  class: "project-show__pill project-show__pill--outline" %>
+  <% else %>
+    <%= button_to "Withdraw nomination", project_fire_nomination_path(project),
+                  method: :delete,
+                  form_class: "project-show__pill-form",
+                  class: "project-show__pill project-show__pill--outline" %>
+  <% end %>
+<% elsif current_user&.admin? %>
+  <%= button_to "Mark as Super Star", project_magic_path(project),
+                form_class: "project-show__pill-form",
+                class: "project-show__pill project-show__pill--save" %>
+<% elsif current_user&.can_nominate_super_star? %>
+  <%= button_to "Nominate for Super Star", project_fire_nomination_path(project),
+                form_class: "project-show__pill-form",
+                class: "project-show__pill project-show__pill--save" %>
+<% end %>

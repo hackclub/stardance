@@ -1,12 +1,13 @@
 <% content_for :title, current_user.shop_manager? && !current_user.admin? ? "New Draft Item" : "New Shop Item" %>
-<div>
-  <div>
-    <h1><%= current_user.shop_manager? && !current_user.admin? ? "New Draft Item" : "New Shop Item" %></h1>
-  </div>
+<% content_for :stylesheets do %>
+  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
+<% end %>
+<div class="shop-item-form__page" style="padding: 0 clamp(1.5rem, 4vw, 3rem) 4rem;">
+  <h1 class="shop-item-form__page-title"><%= current_user.shop_manager? && !current_user.admin? ? "New Draft Item" : "New Shop Item" %></h1>
 
   <%= render 'form', shop_item: @shop_item %>
 
-  <div>
+  <div class="shop-item-form__back" style="margin-top: var(--space-m);">
     <%= link_to "← Back to Shop", admin_shop_path %>
   </div>
 </div>

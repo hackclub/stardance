@@ -34,6 +34,9 @@ Rails.application.config.after_initialize do
         show_and_tell_live
         missions
         new_onboarding
+        gorse_recommendations
+        gorse_personalized_feed
+        gorse_project_recommendations
       ].each { |flag| Flipper.add(flag) }
     end
   rescue StandardError => e

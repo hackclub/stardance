@@ -14,4 +14,8 @@ class ShopPolicy < ApplicationPolicy
   def cancel?
     signed_in_any?
   end
+
+  def destroy?
+    signed_in_any?
+  end
 end
