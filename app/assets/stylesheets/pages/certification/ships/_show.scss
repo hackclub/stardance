@@ -185,7 +185,8 @@
     overflow-wrap: anywhere;
   }
 
-  &__claim {
+  &__claim,
+  &__complete-actions {
     display: flex;
     flex-direction: column;
     gap: var(--space-s);
@@ -199,6 +200,114 @@
       margin: 0;
       color: var(--muted);
     }
+  }
+
+  &__verdict-history {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-m);
+    padding: var(--space-l);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+  }
+
+  &__verdict-history-kicker {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__verdict-history-title {
+    margin: calc(var(--space-xs) * -1) 0 0;
+    font-size: 1.4rem;
+    line-height: var(--line-height-headers);
+  }
+
+  &__verdict-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__verdict-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--card-border);
+  }
+
+  &__verdict-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    width: 100%;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  &__verdict-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-xs) var(--space-s);
+    width: 100%;
+    margin: 0;
+
+    dt {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    dd {
+      margin: 0;
+      color: var(--color-space-text);
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__verdict-feedback,
+  &__verdict-video {
+    width: 100%;
+
+    h3 {
+      margin: 0 0 var(--space-xs);
+      color: var(--color-brand-blue);
+      font-size: 0.9rem;
+    }
+  }
+
+  &__verdict-feedback-body {
+    color: var(--color-space-text);
+    font-size: 0.95rem;
+    line-height: var(--line-height-body);
+    overflow-wrap: anywhere;
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: var(--space-xs);
+    }
+  }
+
+  &__verdict-video-link {
+    color: var(--color-space-text);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 }
 

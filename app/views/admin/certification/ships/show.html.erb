@@ -91,13 +91,69 @@
       </section>
 
       <aside class="ship-review__sidebar">
+        <% if @verdict_history.any? %>
+          <section class="ship-review__verdict-history" aria-labelledby="ship-review-verdict-history-title">
+            <p class="ship-review__verdict-history-kicker">Verdict history</p>
+            <h2 class="ship-review__verdict-history-title" id="ship-review-verdict-history-title">Past verdicts</h2>
+
+            <ol class="ship-review__verdict-list">
+              <% @verdict_history.each do |verdict| %>
+                <% reviewed_at = verdict.decided_at || verdict.updated_at %>
+                <li class="ship-review__verdict-item ship-review__verdict-item--<%= verdict.status %>">
+                  <div class="ship-review__verdict-head">
+                    <span class="status-pill status-pill--<%= verdict.status %>"><%= verdict.status.capitalize %></span>
+                    <% if reviewed_at.present? %>
+                      <time datetime="<%= reviewed_at.iso8601 %>" title="<%= l(reviewed_at, format: :long) %>">
+                        <%= time_ago_in_words(reviewed_at) %> ago
+                      </time>
+                    <% end %>
+                  </div>
+
+                  <dl class="ship-review__verdict-meta">
+                    <dt>Reviewed by</dt>
+                    <dd><%= verdict.reviewer&.display_name || "—" %></dd>
+                  </dl>
+
+                  <% if verdict.feedback.present? %>
+                    <section class="ship-review__verdict-feedback" aria-label="Feedback">
+                      <h3>Feedback</h3>
+                      <div class="ship-review__verdict-feedback-body">
+                        <%= simple_format(verdict.feedback, {}, sanitize: true) %>
+                      </div>
+                    </section>
+                  <% end %>
+
+                  <% if verdict.verdict_video.attached? %>
+                    <section class="ship-review__verdict-video" aria-label="Review video">
+                      <h3>Review video</h3>
+                      <%= link_to verdict.verdict_video.filename,
+                            verdict.verdict_video,
+                            target: "_blank",
+                            rel: "noopener",
+                            class: "ship-review__verdict-video-link" %>
+                    </section>
+                  <% end %>
+                </li>
+              <% end %>
+            </ol>
+          </section>
+        <% end %>
+
         <% if can_review %>
           <%= render "form", ship: @ship %>
-        <% else %>
+        <% elsif @ship.pending? %>
           <div class="ship-review__claim">
             <p>You don't currently hold the claim on this review.</p>
             <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
                   class: "action-btn action-btn--large action-btn--primary" %>
+            <%= link_to "Back to queue", admin_certification_ships_path,
+                  class: "action-btn action-btn--small action-btn--secondary" %>
+          </div>
+        <% else %>
+          <div class="ship-review__complete-actions">
+            <% if @verdict_history.empty? %>
+              <p>This review is no longer pending.</p>
+            <% end %>
             <%= link_to "Back to queue", admin_certification_ships_path,
                   class: "action-btn action-btn--small action-btn--secondary" %>
           </div>

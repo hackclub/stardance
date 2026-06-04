@@ -34,7 +34,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def show
     authorize @ship
-    @reviewed_today = ::Certification::Ship.reviewed_today(current_user)
+    load_review_context
   end
 
   def update
@@ -45,6 +45,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
       redirect_to next_admin_certification_ships_path,
                   notice: "#{verb} “#{@ship.project.title}.” That's #{count} reviewed today. Keep going!"
     else
+      load_review_context
       render :show, status: :unprocessable_entity
     end
   end
@@ -79,6 +80,17 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def release_other_claims
     ::Certification::Ship.release_all_for(current_user) if current_user.present?
+  end
+
+  def load_review_context
+    @reviewed_today = ::Certification::Ship.reviewed_today(current_user)
+    @verdict_history = @ship.project.ship_reviews
+                            .where.not(status: :pending)
+                            .includes(:reviewer, verdict_video_attachment: :blob)
+                            .order(
+                              Arel.sql("COALESCE(certification_ship_reviews.decided_at, certification_ship_reviews.updated_at) DESC"),
+                              id: :desc
+                            )
   end
 
   def parse_skip_ids
