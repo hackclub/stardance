@@ -468,7 +468,9 @@ Rails.application.routes.draw do
         resources :comments, only: [ :index, :create, :destroy ], module: :posts
       end
       resources :shop_items, only: [ :index, :show ]
-      resources :missions, only: [ :index, :show ], param: :slug
+      resources :missions, only: [ :index, :show ], param: :slug do
+        resources :projects, only: [ :index ], module: :missions
+      end
       resources :resources, only: [ :index, :show ], controller: "resources"
     end
   end

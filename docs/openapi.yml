@@ -22,7 +22,7 @@ info:
 
     ## Rate limiting
 
-    30 requests per 1 minute, enforced per IP address and per API key. Exceeding either limit returns `429 Too Many Requests` with body `{ "error": "rate_limited" }`.
+    50 requests per 1 minute, enforced per IP address and per API key. Exceeding either limit returns `429 Too Many Requests` with body `{ "error": "rate_limited" }`.
 
     ---
 
@@ -1237,6 +1237,43 @@ paths:
                         type: array
                         items:
                           $ref: "#/components/schemas/MissionPrize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /missions/{slug}/projects:
+    get:
+      summary: List a mission's projects
+      description: Projects currently attached to the mission.
+      tags: [Missions]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of the mission's projects.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
