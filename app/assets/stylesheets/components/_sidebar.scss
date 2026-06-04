@@ -226,7 +226,6 @@ button.sidebar__nav-link {
   align-self: center;
   width: 0.6rem;
   height: 0.6rem;
-  margin-left: calc(var(--space-s) * -0.4);
   border-radius: 50%;
   background: var(--color-brand-salmon);
   flex-shrink: 0;
@@ -240,7 +239,6 @@ button.sidebar__nav-link {
   min-inline-size: 1.4rem;
   height: 1.4rem;
   padding: 0 0.38rem;
-  margin-left: calc(var(--space-s) * -0.35);
   border-radius: 999px;
   background: var(--color-brand-salmon);
   color: var(--color-space-bg);
@@ -250,6 +248,26 @@ button.sidebar__nav-link {
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
   pointer-events: none;
+}
+
+.sidebar__nav-icon-badge {
+  display: none;
+  place-items: center;
+  position: absolute;
+  top: -0.2rem;
+  right: -0.42rem;
+  min-inline-size: 1.12rem;
+  height: 1.12rem;
+  padding: 0 0.26rem;
+  border-radius: 999px;
+  background: var(--color-brand-salmon);
+  color: var(--color-space-bg);
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  z-index: 1;
 }
 
 // PNG icon pair (illustrative nav icons): stack idle + active on top of each
@@ -295,6 +313,12 @@ button.sidebar__nav-link {
   white-space: nowrap;
   flex-shrink: 0;
   margin-left: var(--space-xs);
+}
+
+.sidebar__nav-label-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .sidebar__user {
@@ -485,12 +509,16 @@ button.sidebar__nav-link {
     display: none;
   }
 
+  .sidebar__nav-label-group {
+    display: none;
+  }
+
   .sidebar__nav-badge {
-    min-inline-size: 1.05rem;
-    height: 1.05rem;
-    padding: 0 0.26rem;
-    margin-left: calc(var(--space-xs) * -1);
-    font-size: 0.58rem;
+    display: none;
+  }
+
+  .sidebar__nav-icon-badge {
+    display: inline-grid;
   }
 
   .sidebar__user {

@@ -25,18 +25,25 @@
               <% else %>
                 <%= inline_svg_tag "icons/#{item[:icon]}.svg", class: "sidebar__nav-icon" %>
               <% end %>
+              <% if item[:badge_count].to_i.positive? %>
+                <span class="sidebar__nav-icon-badge" aria-hidden="true">
+                  <%= item[:badge_count] > 99 ? "99+" : item[:badge_count] %>
+                </span>
+              <% end %>
             </span>
           <% end %>
 
           <% label_block = capture do %>
-            <span class="sidebar__nav-label"><%= item[:label] %></span>
-            <% if item[:badge_count].to_i.positive? %>
-              <span class="sidebar__nav-badge" title="<%= pluralize(item[:badge_count], "project") %> in queue">
-                <%= item[:badge_count] > 99 ? "99+" : item[:badge_count] %>
-              </span>
-            <% elsif item[:notify] %>
-              <span class="sidebar__nav-notify-dot" aria-hidden="true"></span>
-            <% end %>
+            <span class="sidebar__nav-label-group">
+              <span class="sidebar__nav-label"><%= item[:label] %></span>
+              <% if item[:badge_count].to_i.positive? %>
+                <span class="sidebar__nav-badge" title="<%= pluralize(item[:badge_count], "project") %> in queue">
+                  <%= item[:badge_count] > 99 ? "99+" : item[:badge_count] %>
+                </span>
+              <% elsif item[:notify] %>
+                <span class="sidebar__nav-notify-dot" aria-hidden="true"></span>
+              <% end %>
+            </span>
           <% end %>
 
           <% if item[:path] == "#" %>

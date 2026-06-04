@@ -48,7 +48,7 @@ class SidebarComponent < ViewComponent::Base
     ])
 
     if signed_in? && user.can_review?
-      items << { slug: "shipwrights", label: "shipwrights", path: helpers.admin_certification_ships_path,
+      items << { slug: "shipwrights", label: "queue", path: helpers.admin_certification_ships_path,
         icon: { idle: "shipwright", active: "shipwright" }, badge_count: ship_queue_badge_count }
     end
 
