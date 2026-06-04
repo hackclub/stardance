@@ -3,12 +3,19 @@
 class AmbassadorCostStatsService
   COST_FIELDS = {
     poster_cost_cents: "posterCost",
+    poster_cost_us_cents: "posterCostUS",
     referral_cost_cents: "referralCost",
+    referral_cost_us_cents: "referralCostUS",
     shirt_cost_cents: "shirtCost",
+    shirt_cost_us_cents: "shirtCostUS",
     admin_cost_cents: "adminCost",
+    admin_cost_us_cents: "adminCostUS",
     office_grant_cost_cents: "officeGrantCost",
+    office_grant_cost_us_cents: "officeGrantCostUS",
     total_cost_cents: "total",
-    average_cost_per_ambassador_cents: "averageCostPerAmbassador"
+    total_cost_us_cents: "totalCostUS",
+    average_cost_per_ambassador_cents: "averageCostPerAmbassador",
+    average_cost_us_cents: "averageCostUS"
   }.freeze
 
   REGION_BREAKDOWN_FIELD = "ambassadorRegionBreakdown"
