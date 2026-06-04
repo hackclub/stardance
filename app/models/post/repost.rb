@@ -46,6 +46,8 @@ class Post::Repost < ApplicationRecord
     if original_post.present? && user.present?
       if original_post.postable_type != "Post::Devlog"
         errors.add(:original_post, "must be a devlog")
+      elsif original_post.user_id == user_id
+        errors.add(:original_post, "cannot be your own devlog")
       elsif original_post.postable.blank? || original_post.postable.deleted?
         errors.add(:original_post, "must be available")
       elsif !Post.visible_to(user).where(id: original_post.id).exists?

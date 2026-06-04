@@ -153,6 +153,10 @@ module Posts
       repost_target&.postable_type == "Post::Devlog"
     end
 
+    def own_post?
+      current_user.present? && repost_target&.user_id == current_user.id
+    end
+
     def repost_count
       repost_target&.reposts_count.to_i
     end

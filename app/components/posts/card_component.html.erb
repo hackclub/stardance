@@ -97,7 +97,12 @@
     <% if show_reposts %>
       <% if repostable? %>
         <div class="feed-post-card__repost">
-          <% if reposted_by_current_user? %>
+          <% if own_post? %>
+            <span class="feed-post-card__action feed-post-card__action--disabled" aria-label="You cannot repost your own devlog">
+              <%= inline_svg_tag "icons/repost.svg", class: "feed-post-card__action-icon" %>
+              <span><%= repost_count %></span>
+            </span>
+          <% elsif reposted_by_current_user? %>
             <%= button_to post_repost_path(repost_target),
                   method: :delete,
                   class: "feed-post-card__action feed-post-card__action--active",

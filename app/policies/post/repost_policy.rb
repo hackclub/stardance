@@ -1,6 +1,6 @@
 class Post::RepostPolicy < ApplicationPolicy
   def create?
-    logged_in?
+    logged_in? && record.original_post&.user_id != user.id
   end
 
   def destroy?
