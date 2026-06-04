@@ -47,6 +47,11 @@ class SidebarComponent < ViewComponent::Base
         icon: { idle: "book", active: "book_active" } }
     ])
 
+    if signed_in? && user.can_review?
+      items << { slug: "shipwrights", label: "shipwrights", path: helpers.admin_certification_ships_path,
+        icon: "ship" }
+    end
+
     if signed_in?
       items << { slug: "projects", label: "my projects",   path: helpers.profile_projects_path(user.display_name),
         icon: :avatar, active_prefix: "/@" }
