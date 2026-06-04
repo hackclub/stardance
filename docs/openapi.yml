@@ -71,6 +71,10 @@ tags:
     description: Endpoints for interacting with posts -- likes and reposts.
   - name: Shop
     description: Endpoints for browsing shop items and viewing orders.
+  - name: Missions
+    description: Endpoints for browsing missions, their steps, and prizes.
+  - name: Resources
+    description: Endpoints for browsing the learning resources (guides) catalog.
 
 paths:
   /search:
@@ -1171,6 +1175,139 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /missions:
+    get:
+      summary: List missions
+      description: Returns all enabled missions, featured first. Each mission includes a `status` (`available`, `upcoming`, or `ended`).
+      tags: [Missions]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of missions.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  missions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Mission"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /missions/{slug}:
+    get:
+      summary: Get a mission by slug
+      description: Includes the mission's ordered steps and prizes.
+      tags: [Missions]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The mission with steps and prizes.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Mission"
+                  - type: object
+                    properties:
+                      steps:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/MissionStep"
+                      prizes:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/MissionPrize"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /resources:
+    get:
+      summary: List resources
+      description: Returns the full learning resources (guides) catalog and the category list. Not paginated.
+      tags: [Resources]
+      responses:
+        "200":
+          description: All resources, grouped by the category list.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resources:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Resource"
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        slug:
+                          type: string
+                        label:
+                          type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /resources/{id}:
+    get:
+      summary: Get a resource by slug
+      description: Includes the fully-expanded related resources.
+      tags: [Resources]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The resource slug.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The resource with its related resources.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Resource"
+                  - type: object
+                    properties:
+                      related_resources:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Resource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 
 components:
   securitySchemes:
@@ -1592,6 +1729,116 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    Mission:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          nullable: true
+          enum: [beginner, intermediate, advanced]
+        estimated_completion_minutes:
+          type: integer
+          nullable: true
+        steps_count:
+          type: integer
+        prizes_count:
+          type: integer
+        start_at:
+          type: string
+          format: date-time
+          nullable: true
+        end_at:
+          type: string
+          format: date-time
+          nullable: true
+        featured_at:
+          type: string
+          format: date-time
+          nullable: true
+        achievement_name:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [available, upcoming, ended, draft]
+          description: Which bucket the mission falls into right now.
+        available:
+          type: boolean
+          description: Whether the mission can be started right now (started and not ended).
+        icon_url:
+          type: string
+          nullable: true
+          description: Relative path to the mission icon.
+        banner_url:
+          type: string
+          nullable: true
+          description: Relative path to the mission banner.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MissionStep:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        position:
+          type: integer
+
+    MissionPrize:
+      type: object
+      properties:
+        id:
+          type: integer
+        position:
+          type: integer
+        shop_item:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            image_url:
+              type: string
+              nullable: true
+
+    Resource:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        category_label:
+          type: string
+        icon:
+          type: string
+        reading_minutes:
+          type: integer
+        related:
+          type: array
+          items:
+            type: string
+          description: Slugs of related resources.
 
   parameters:
     Limit:
