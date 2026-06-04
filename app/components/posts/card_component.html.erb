@@ -98,7 +98,11 @@
       <% if repostable? %>
         <div class="feed-post-card__repost">
           <% if own_post? %>
-            <span class="feed-post-card__action feed-post-card__action--disabled" aria-label="You cannot repost your own devlog">
+            <span class="feed-post-card__action feed-post-card__action--disabled"
+                  aria-label="You cannot repost your own devlog"
+                  title="You cannot repost your own devlog"
+                  data-controller="tooltip"
+                  data-tooltip-message-value="You cannot repost your own devlog">
               <%= inline_svg_tag "icons/repost.svg", class: "feed-post-card__action-icon" %>
               <span><%= repost_count %></span>
             </span>
