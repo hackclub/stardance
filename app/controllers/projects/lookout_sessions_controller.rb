@@ -60,6 +60,11 @@ class Projects::LookoutSessionsController < ApplicationController
                                            .where.not(name: User::HackatimeProject::EXCLUDED_NAMES)
                                            .order(:name)
                                            .pluck(:name)
+    # A project can have several linked Hackatime projects. Surface them all
+    # (grouped first in the destination chooser) and default-select one, so
+    # recording from a project files the time back under one of its own by default.
+    @linked_hackatime_names = @hackatime_project_names & @project.hackatime_keys
+    @default_existing_hackatime_name = @linked_hackatime_names.first
     @default_hackatime_name = @project.hackatime_recorder_name
     render :record, layout: "lookout_recorder"
   end

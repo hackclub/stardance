@@ -23,7 +23,7 @@
                       composer_edit_url_param: project_path(project, editing: true),
                       composer_hackatime_linked_param: project.hackatime_keys.present? || (project == selected_project && test_time_granted),
                       composer_hardware_param: project.hardware?,
-                      composer_record_url_param: (project.hardware? ? project_lookout_sessions_path(project) : "") } %>
+                      composer_record_url_param: (show_record? && project.hardware? ? project_lookout_sessions_path(project) : "") } %>
       <% end %>
       </div>
     <% end %>
@@ -108,10 +108,10 @@
         </div>
 
         <div class="feed-composer__submit-group">
-          <% unless simple_mode? %>
-            <%# Record a timelapse — only shown while a hardware project is the
-                selected one; selectProject() in the composer controller toggles
-                it and re-points its create URL as you switch project chips. %>
+          <% if show_record? %>
+            <%# Record a timelapse — /home composer only, shown while a hardware
+                project is the selected chip. selectProject() in the composer
+                controller toggles it and re-points its create URL on chip switch. %>
             <button type="button"
                     class="feed-composer__record"
                     data-controller="lookout-recorder"

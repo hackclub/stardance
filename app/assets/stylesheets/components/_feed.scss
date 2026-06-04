@@ -223,6 +223,12 @@
       color 150ms ease,
       background 150ms ease;
 
+    // `display: inline-flex` above overrides the `[hidden]` UA rule, so hiding
+    // the button (non-hardware project / chip switch) needs this explicit reset.
+    &[hidden] {
+      display: none;
+    }
+
     &:hover,
     &:focus-visible {
       color: var(--color-set-1-bg);

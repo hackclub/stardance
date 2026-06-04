@@ -13,7 +13,6 @@ class ForwardLookoutHeartbeatsJobTest < ActiveJob::TestCase
   end
 
   test "forwards capture timestamps to the chosen Hackatime project as Lookout heartbeats" do
-    @session.update!(mode: "camera")
     captured = nil
     push = ->(api_key:, heartbeats:) { captured = { key: api_key, beats: heartbeats }; true }
 
@@ -30,8 +29,9 @@ class ForwardLookoutHeartbeatsJobTest < ActiveJob::TestCase
     assert_equal 2, captured[:beats].size
     beat = captured[:beats].first
     assert_equal "Chosen Project", beat[:project]
-    assert_equal "Lookout-Camera", beat[:editor]
-    assert_equal "timelapse", beat[:entity]
+    assert_equal "Lookout", beat[:editor]
+    assert_equal "Lookout", beat[:language]
+    assert_equal @session.token, beat[:entity]
     assert_equal Time.utc(2026, 6, 3, 10, 0, 0).to_i, beat[:time]
 
     # The chosen Hackatime project is auto-linked to the Stardance project.

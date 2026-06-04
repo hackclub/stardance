@@ -29,7 +29,7 @@
 #
 class LookoutSession < ApplicationRecord
   STATUSES = %w[pending active paused stopped compiling complete failed].freeze
-  # How the session was recorded — drives the Hackatime editor name.
+  # How the session was recorded (desktop / web / camera).
   MODES = %w[desktop web camera].freeze
 
   belongs_to :user
@@ -44,10 +44,4 @@ class LookoutSession < ApplicationRecord
 
   scope :for_project, ->(project) { where(project: project) }
   scope :attachable, -> { where(status: %w[stopped complete]) }
-
-  # The Hackatime "editor" forwarded heartbeats are tagged with, reflecting how
-  # the session was recorded: Lookout-Desktop / Lookout-Web / Lookout-Camera.
-  def hackatime_editor
-    "Lookout-#{(mode.presence || 'web').capitalize}"
-  end
 end

@@ -83,7 +83,7 @@
         <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
           <%= hidden_field_tag "project[title]", "Untitled" %>
           <%= f.button type: :submit, class: "project-creation__blank-btn" do %>
-            Blank new project +
+            New software project +
           <% end %>
         <% end %>
 
@@ -93,7 +93,7 @@
                 data-project-builder-target="hardwareBtn"
                 aria-expanded="false"
                 aria-controls="project-creation-stage-chooser">
-          Blank new hardware project +
+          New hardware project +
         </button>
       </div>
 

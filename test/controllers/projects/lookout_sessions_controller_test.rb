@@ -206,6 +206,27 @@ class Projects::LookoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".lookout-rec__dest-input[value=?]", @project.hackatime_recorder_name
   end
 
+  test "record groups the project's linked Hackatime projects first and defaults to one" do
+    @owner.hackatime_projects.create!(name: "Unrelated HT Project")
+    @owner.hackatime_projects.create!(name: "Arm firmware", project: @project)
+    @owner.hackatime_projects.create!(name: "Arm enclosure", project: @project)
+    session = @project.lookout_sessions.create!(user: @owner, token: "tok-linked", status: "pending")
+    sign_in @owner
+
+    get record_project_lookout_session_path(@project, session)
+
+    assert_response :success
+    # Both linked projects are grouped first under "Linked to this project".
+    assert_select "optgroup[label='Linked to this project'] option", count: 2
+    assert_select "optgroup[label='Linked to this project'] option", text: "Arm firmware"
+    assert_select "optgroup[label='Linked to this project'] option", text: "Arm enclosure"
+    # The unrelated one sits under the other group.
+    assert_select "optgroup[label='Your other Hackatime projects'] option", text: "Unrelated HT Project"
+    # Exactly one option is pre-selected, and it's one of the linked ones.
+    assert_select ".lookout-rec__dest-select option[selected]", 1
+    assert_select "option[selected][value=?]", "Arm enclosure"
+  end
+
   test "stop marks the session stopped" do
     session = @project.lookout_sessions.create!(user: @owner, token: "tok-stop", status: "active")
     sign_in @owner

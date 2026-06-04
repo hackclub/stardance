@@ -246,11 +246,10 @@ class Project < ApplicationRecord
   end
 
   # Name of the Hackatime project that Lookout timelapse heartbeats are filed
-  # under (and auto-linked to this project). Suffixed "- Lookout" so it's the
-  # only destination for a recording and stays distinct from any code-based
-  # Hackatime project of the same name.
+  # under (and auto-linked to this project) — the project title, so recorded
+  # time lands under the same Hackatime project as any code-based time.
   def hackatime_recorder_name
-    "#{title} - Lookout"
+    title
   end
 
   def display_description

@@ -56,6 +56,11 @@
       If nothing happened, <a href="#" class="lookout-rec__link" data-lookout-capture-target="deepLink">click here to open it</a>, or copy this link:
     </p>
     <code class="lookout-rec__code" data-lookout-capture-target="deepLinkText"></code>
+    <p class="lookout-rec__hint">
+      Don't have the desktop app yet?
+      <%= link_to "Download Lookout", "https://lookout.hackclub.com/",
+                  class: "lookout-rec__link", target: "_blank", rel: "noopener" %>
+    </p>
   </section>
 
   <%# ── Browser / camera capture ─────────────────────────────────────── %>
@@ -102,8 +107,25 @@
           <span class="lookout-rec__dest-name">Add to an existing Hackatime project</span>
           <% if hackatime_project_names.any? %>
             <select class="lookout-rec__dest-select" data-lookout-capture-target="existingSelect">
-              <% hackatime_project_names.each do |name| %>
-                <option value="<%= name %>"><%= name %></option>
+              <% linked_names = Array(@linked_hackatime_names) %>
+              <% if linked_names.any? %>
+                <optgroup label="Linked to this project">
+                  <% linked_names.each do |name| %>
+                    <option value="<%= name %>" <%= "selected" if name == @default_existing_hackatime_name %>><%= name %></option>
+                  <% end %>
+                </optgroup>
+                <% other_names = hackatime_project_names - linked_names %>
+                <% if other_names.any? %>
+                  <optgroup label="Your other Hackatime projects">
+                    <% other_names.each do |name| %>
+                      <option value="<%= name %>"><%= name %></option>
+                    <% end %>
+                  </optgroup>
+                <% end %>
+              <% else %>
+                <% hackatime_project_names.each do |name| %>
+                  <option value="<%= name %>"><%= name %></option>
+                <% end %>
               <% end %>
             </select>
           <% else %>

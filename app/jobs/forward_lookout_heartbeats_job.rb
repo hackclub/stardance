@@ -26,16 +26,16 @@ class ForwardLookoutHeartbeatsJob < ApplicationJob
     # Use the chosen Hackatime project, or this project's recorder name if none
     # was passed (e.g. an older 1-arg enqueue).
     project_name = project_name.presence || session.project.hackatime_recorder_name
-    editor = session.hackatime_editor
     heartbeats = Array(timestamps).filter_map do |value|
       epoch = parse_epoch(value)
       next unless epoch
 
       {
         type: "file",
-        entity: "timelapse",
+        entity: session.token,
+        language: "Lookout",
         category: "coding",
-        editor: editor,
+        editor: "Lookout",
         project: project_name,
         time: epoch
       }

@@ -273,7 +273,7 @@
               <div class="project-show__sparkle" aria-hidden="true"></div>
 
               <label class="project-show__field project-show__field--inline">
-                <span>Demo URL <%= render "projects/help_tooltip", text: "A live URL where anyone can try your project." %></span>
+                <span>Demo URL <%= render "projects/help_tooltip", text: @project.hardware? ? "An IRL video of your project working." : "A live URL where anyone can try your project." %></span>
                 <%= form.url_field :demo_url,
                                    class: "project-show__control",
                                    placeholder: "https://example.com",
@@ -653,23 +653,25 @@
     <% if @show_project_onboarding %>
       <section class="project-show__onboarding" aria-labelledby="project-show-onboarding-title">
         <header class="project-show__onboarding-header">
+          <% verb = @project.hardware? ? "build" : "code" %>
+          <% time_kind = @project.hardware? ? "timelapse" : "coding" %>
           <% if !@hackatime_linked %>
             <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">Welcome to your new project!</h2>
             <p class="project-show__onboarding-header-body">
               Link Hackatime to start tracking your time. Once you do and post a devlog, you'll unlock free stickers in the shop!
             </p>
           <% elsif @project.hackatime_keys.present? %>
-            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go <%= verb %>!</h2>
             <p class="project-show__onboarding-header-body">
-              Once you have 15 minutes of coding time, come back and write your first devlog!
+              Once you have 15 minutes of <%= time_kind %> time, come back and write your first devlog!
             </p>
           <% elsif @all_hackatime_projects.present? %>
-            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go <%= verb %>!</h2>
             <p class="project-show__onboarding-header-body">
-              We found Hackatime projects on your account — <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link one. Once you have 15 minutes of coding time, write your first devlog!
+              We found Hackatime projects on your account — <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link one. Once you have 15 minutes of <%= time_kind %> time, write your first devlog!
             </p>
           <% else %>
-            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go code!</h2>
+            <h2 class="project-show__onboarding-header-title" id="project-show-onboarding-title">You're all set — go <%= verb %>!</h2>
             <p class="project-show__onboarding-header-body">
               Start coding with Hackatime running. Once you have 15 minutes, <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link your Hackatime project, then write your first devlog!
             </p>

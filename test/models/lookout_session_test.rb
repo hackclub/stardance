@@ -1,3 +1,32 @@
+# == Schema Information
+#
+# Table name: lookout_sessions
+#
+#  id               :bigint           not null, primary key
+#  duration_seconds :integer          default(0)
+#  mode             :string
+#  recording_url    :string
+#  started_at       :datetime
+#  status           :string           default("pending")
+#  stopped_at       :datetime
+#  token            :string           not null
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  project_id       :bigint           not null
+#  user_id          :bigint           not null
+#
+# Indexes
+#
+#  index_lookout_sessions_on_project_id             (project_id)
+#  index_lookout_sessions_on_project_id_and_status  (project_id,status)
+#  index_lookout_sessions_on_token                  (token) UNIQUE
+#  index_lookout_sessions_on_user_id                (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (project_id => projects.id)
+#  fk_rails_...  (user_id => users.id)
+#
 require "test_helper"
 
 class LookoutSessionTest < ActiveSupport::TestCase
@@ -39,17 +68,5 @@ class LookoutSessionTest < ActiveSupport::TestCase
     stopped = LookoutSession.create!(user: @user, project: @project, token: "s", status: "stopped")
 
     assert_equal [ complete.id, stopped.id ].sort, LookoutSession.attachable.pluck(:id).sort
-  end
-
-  test "hackatime_editor reflects the recording mode" do
-    session = LookoutSession.new
-    assert_equal "Lookout-Web", session.hackatime_editor # default when unset
-
-    session.mode = "desktop"
-    assert_equal "Lookout-Desktop", session.hackatime_editor
-    session.mode = "web"
-    assert_equal "Lookout-Web", session.hackatime_editor
-    session.mode = "camera"
-    assert_equal "Lookout-Camera", session.hackatime_editor
   end
 end
