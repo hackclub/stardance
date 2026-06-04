@@ -233,6 +233,25 @@ button.sidebar__nav-link {
   pointer-events: none;
 }
 
+.sidebar__nav-badge {
+  display: inline-grid;
+  place-items: center;
+  align-self: center;
+  min-inline-size: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.38rem;
+  margin-left: calc(var(--space-s) * -0.35);
+  border-radius: 999px;
+  background: var(--color-brand-salmon);
+  color: var(--color-space-bg);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
 // PNG icon pair (illustrative nav icons): stack idle + active on top of each
 // other inside the wrapper, then fade between them based on whether the parent
 // nav link carries the --active modifier.
@@ -464,6 +483,14 @@ button.sidebar__nav-link {
 
   .sidebar__nav-label {
     display: none;
+  }
+
+  .sidebar__nav-badge {
+    min-inline-size: 1.05rem;
+    height: 1.05rem;
+    padding: 0 0.26rem;
+    margin-left: calc(var(--space-xs) * -1);
+    font-size: 0.58rem;
   }
 
   .sidebar__user {

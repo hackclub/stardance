@@ -30,7 +30,11 @@
 
           <% label_block = capture do %>
             <span class="sidebar__nav-label"><%= item[:label] %></span>
-            <% if item[:notify] %>
+            <% if item[:badge_count].to_i.positive? %>
+              <span class="sidebar__nav-badge" title="<%= pluralize(item[:badge_count], "project") %> in queue">
+                <%= item[:badge_count] > 99 ? "99+" : item[:badge_count] %>
+              </span>
+            <% elsif item[:notify] %>
               <span class="sidebar__nav-notify-dot" aria-hidden="true"></span>
             <% end %>
           <% end %>
