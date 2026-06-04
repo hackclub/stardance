@@ -67,12 +67,14 @@ one:
   display_name: fixture_one
   slack_id: U_FIXTURE_ONE
   votes_count: 1
+  api_key: sd_test_api_key_one
 
 two:
   email: two@example.test
   display_name: fixture_two
   slack_id: U_FIXTURE_TWO
   votes_count: 1
+  api_key: sd_test_api_key_two
 
 three:
   email: three@example.test
