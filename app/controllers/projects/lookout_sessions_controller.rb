@@ -94,6 +94,11 @@ class Projects::LookoutSessionsController < ApplicationController
   # user chose on the recorder's "where should this time go?" step (server-side,
   # with the user's token). The recorder skips this call entirely when the user
   # picks "don't send to Hackatime".
+  #
+  # Runs synchronously and reports the outcome so the recorder can tell the user
+  # if the time didn't make it (it's a handful of HTTP calls behind a "Sending
+  # your time…" spinner). A background job that silently swallowed every failure
+  # is exactly how a broken push went unnoticed before.
   def forward_heartbeats
     authorize @project, :create_devlog?
 
@@ -102,8 +107,12 @@ class Projects::LookoutSessionsController < ApplicationController
       return render json: { error: "Choose a Hackatime project to send your time to." }, status: :unprocessable_entity
     end
 
-    ForwardLookoutHeartbeatsJob.perform_later(@lookout_session.id, project_name)
-    head :accepted
+    result = LookoutHeartbeatForwarder.call(@lookout_session, project_name: project_name)
+    if result.ok?
+      render json: { ok: true, project: project_name, heartbeats: result.count }
+    else
+      render json: { error: result.error }, status: :unprocessable_entity
+    end
   end
 
   def status

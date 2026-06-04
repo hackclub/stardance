@@ -45,12 +45,12 @@ class Projects::DevlogsController < ApplicationController
     authorize @project, :create_devlog?
     load_preview_time
     respond_to do |format|
-      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds } }
+      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds, hardware: @project.hardware? } }
       format.json { render json: { preview_time: @preview_time } }
     end
   rescue Pundit::NotAuthorizedError
     respond_to do |format|
-      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: nil, preview_seconds: 0 }, status: :forbidden }
+      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: nil, preview_seconds: 0, hardware: @project.hardware? }, status: :forbidden }
       format.json { render json: { error: "Not authorized" }, status: :forbidden }
     end
   end

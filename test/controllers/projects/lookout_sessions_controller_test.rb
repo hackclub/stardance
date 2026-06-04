@@ -116,43 +116,71 @@ class Projects::LookoutSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "https://lookout.test/v/y", session.recording_url
   end
 
-  test "forward_heartbeats forwards to the chosen Hackatime project for the owner" do
+  test "forward_heartbeats sends to the chosen Hackatime project and reports success" do
     session = @project.lookout_sessions.create!(user: @owner, token: "tok-fwd", status: "stopped")
     sign_in @owner
 
-    enqueued = []
-    ForwardLookoutHeartbeatsJob.stub(:perform_later, ->(*args) { enqueued << args }) do
+    received = []
+    forward = lambda do |sess, project_name:|
+      received << [ sess.id, project_name ]
+      LookoutHeartbeatForwarder::Result.new(ok: true, error: nil, count: 3)
+    end
+
+    LookoutHeartbeatForwarder.stub(:call, forward) do
       post forward_heartbeats_project_lookout_session_path(@project, session), params: { project_name: "My HT Project" }
     end
 
-    assert_response :accepted
-    assert_equal [ [ session.id, "My HT Project" ] ], enqueued
+    assert_response :success
+    assert_equal [ [ session.id, "My HT Project" ] ], received
+    body = JSON.parse(response.body)
+    assert_equal true, body["ok"]
+    assert_equal "My HT Project", body["project"]
+    assert_equal 3, body["heartbeats"]
   end
 
-  test "forward_heartbeats rejects a blank project name" do
+  test "forward_heartbeats returns the failure reason when the send doesn't go through" do
+    session = @project.lookout_sessions.create!(user: @owner, token: "tok-fwd-fail", status: "stopped")
+    sign_in @owner
+
+    failure = LookoutHeartbeatForwarder::Result.new(
+      ok: false,
+      error: "Hackatime didn't accept your time. Please try again in a moment.",
+      count: 0
+    )
+
+    LookoutHeartbeatForwarder.stub(:call, failure) do
+      post forward_heartbeats_project_lookout_session_path(@project, session), params: { project_name: "My HT Project" }
+    end
+
+    assert_response :unprocessable_entity
+    assert_equal "Hackatime didn't accept your time. Please try again in a moment.",
+                 JSON.parse(response.body)["error"]
+  end
+
+  test "forward_heartbeats rejects a blank project name without trying to send" do
     session = @project.lookout_sessions.create!(user: @owner, token: "tok-fwd-blank", status: "stopped")
     sign_in @owner
 
-    enqueued = []
-    ForwardLookoutHeartbeatsJob.stub(:perform_later, ->(*args) { enqueued << args }) do
+    called = false
+    LookoutHeartbeatForwarder.stub(:call, ->(*args, **kwargs) { called = true }) do
       post forward_heartbeats_project_lookout_session_path(@project, session), params: { project_name: "  " }
     end
 
     assert_response :unprocessable_entity
-    assert_empty enqueued
+    assert_not called
   end
 
-  test "forward_heartbeats rejects an excluded project name" do
+  test "forward_heartbeats rejects an excluded project name without trying to send" do
     session = @project.lookout_sessions.create!(user: @owner, token: "tok-fwd-excl", status: "stopped")
     sign_in @owner
 
-    enqueued = []
-    ForwardLookoutHeartbeatsJob.stub(:perform_later, ->(*args) { enqueued << args }) do
+    called = false
+    LookoutHeartbeatForwarder.stub(:call, ->(*args, **kwargs) { called = true }) do
       post forward_heartbeats_project_lookout_session_path(@project, session), params: { project_name: User::HackatimeProject::EXCLUDED_NAMES.first }
     end
 
     assert_response :unprocessable_entity
-    assert_empty enqueued
+    assert_not called
   end
 
   test "set_mode stores a valid recording mode" do

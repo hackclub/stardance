@@ -304,11 +304,17 @@ export default class extends Controller {
           this.doneStatusTarget,
           `Time sent to “${projectName}” — it'll show up in Hackatime shortly.`,
         );
-      } catch (_) {
-        this.setText(
-          this.doneStatusTarget,
-          "We couldn't send your time to Hackatime — your recording is still saved.",
+      } catch (error) {
+        // Surface the real reason next to the button and let the user retry,
+        // instead of advancing as though the time was sent.
+        console.error("Lookout forward error", error);
+        this.setText(this.doneStatusTarget, "Your timelapse is saved.");
+        this.showDestError(
+          error.message ||
+            "We couldn't send your time to Hackatime — please try again.",
         );
+        if (this.hasFinishBtnTarget) this.finishBtnTarget.disabled = false;
+        return;
       }
     } else {
       this.setText(
@@ -345,7 +351,19 @@ export default class extends Controller {
       },
       body: JSON.stringify({ project_name: projectName }),
     });
-    if (!res.ok) throw new Error(`forward -> ${res.status}`);
+    if (!res.ok) throw new Error(await this.forwardError(res));
+  }
+
+  // Pull the server's user-facing explanation out of the error response so the
+  // recorder shows *why* the send failed, not just a status code.
+  async forwardError(res) {
+    try {
+      const body = await res.json();
+      if (body && body.error) return body.error;
+    } catch (_) {
+      // non-JSON response
+    }
+    return `We couldn't send your time to Hackatime (error ${res.status}).`;
   }
 
   csrfToken() {

@@ -72,6 +72,12 @@ class HackatimeService
     # Exchange a user's OAuth access token for their Hackatime API key (the
     # credential the heartbeat-ingestion endpoint requires). The endpoint
     # returns an existing key or creates one. Returns the key string or nil.
+    #
+    # MUST stay public: it's called both internally (resolve_api_key) and with an
+    # explicit receiver by LookoutHeartbeatForwarder. Do NOT add a second
+    # definition below the `private` keyword — a later same-name def shadows this
+    # one and makes it private, which silently breaks every external caller with
+    # `NoMethodError (private method 'fetch_api_key')`.
     def fetch_api_key(access_token)
       return nil if access_token.blank?
 
@@ -146,22 +152,6 @@ class HackatimeService
         key = fetch_api_key(access_token)
         Rails.cache.write(cache_key, key, expires_in: 1.week) if key.present?
         key
-      end
-
-      def fetch_api_key(access_token)
-        response = connection.get("authenticated/api_keys") do |req|
-          req.headers["Authorization"] = "Bearer #{access_token}"
-        end
-
-        if response.success?
-          JSON.parse(response.body)["token"]
-        else
-          Rails.logger.error "HackatimeService.fetch_api_key error: #{response.status}"
-          nil
-        end
-      rescue => e
-        Rails.logger.error "HackatimeService.fetch_api_key exception: #{e.message}"
-        nil
       end
 
       def connection
