@@ -17,6 +17,9 @@ class My::SettingsController < ApplicationController
   end
 
   def roll_api_key
+    unless current_user&.hack_club_identity.present?
+      return redirect_back fallback_location: root_path, alert: "Connect a Hack Club account to generate an API key"
+    end
     authorize :my, :update_settings?
     current_user.reroll_api_key!
 

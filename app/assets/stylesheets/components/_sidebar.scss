@@ -487,6 +487,10 @@ button.sidebar__nav-link {
   &__hint {
     margin-left: 0;
   }
+
+  &__hca-not-connected {
+    margin-top: var(--space-xxs);
+  }
 }
 
 .api-key-container {
