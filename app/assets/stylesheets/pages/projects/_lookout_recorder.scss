@@ -253,7 +253,11 @@
   // Selected: mint outline + a faint mint wash so the choice is unmistakable.
   &:has(.lookout-rec__dest-radio:checked) {
     border-color: var(--color-brand-mint);
-    background: color-mix(in srgb, var(--color-brand-mint) 12%, var(--color-set-2-bg, #343651));
+    background: color-mix(
+      in srgb,
+      var(--color-brand-mint) 12%,
+      var(--color-set-2-bg, #343651)
+    );
   }
 
   &--danger {
@@ -262,12 +266,20 @@
     &:hover,
     &:focus-within {
       border-color: var(--color-danger, #e53e3e);
-      background: color-mix(in srgb, var(--color-danger, #e53e3e) 15%, var(--color-set-2-bg, #343651));
+      background: color-mix(
+        in srgb,
+        var(--color-danger, #e53e3e) 15%,
+        var(--color-set-2-bg, #343651)
+      );
     }
 
     &:has(.lookout-rec__dest-radio:checked) {
       border-color: var(--color-danger, #e53e3e);
-      background: color-mix(in srgb, var(--color-danger, #e53e3e) 12%, var(--color-set-2-bg, #343651));
+      background: color-mix(
+        in srgb,
+        var(--color-danger, #e53e3e) 12%,
+        var(--color-set-2-bg, #343651)
+      );
     }
 
     .lookout-rec__dest-name {

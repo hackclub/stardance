@@ -14,6 +14,6 @@ class CreateLookoutSessions < ActiveRecord::Migration[8.1]
     end
 
     add_index :lookout_sessions, :token, unique: true
-    add_index :lookout_sessions, [:project_id, :status]
+    add_index :lookout_sessions, [ :project_id, :status ]
   end
 end

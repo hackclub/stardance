@@ -7,6 +7,6 @@ class CreateDevlogLookoutSessions < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :devlog_lookout_sessions, [:devlog_id, :lookout_session_id], unique: true, name: "idx_devlog_lookout_sessions_unique"
+    add_index :devlog_lookout_sessions, [ :devlog_id, :lookout_session_id ], unique: true, name: "idx_devlog_lookout_sessions_unique"
   end
 end

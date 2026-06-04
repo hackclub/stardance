@@ -354,7 +354,10 @@ export default class extends Controller {
 
   // ── status polling / completion ───────────────────────────────────────
 
-  async pollStatus(statusEl, { showVideo = false, doneOnComplete = false } = {}) {
+  async pollStatus(
+    statusEl,
+    { showVideo = false, doneOnComplete = false } = {},
+  ) {
     this.clearTimer("statusTimer");
     let data;
     try {
