@@ -109,7 +109,7 @@ GEM
     annotaterb (4.22.0)
       activerecord (>= 6.0.0)
       activesupport (>= 6.0.0)
-    appsignal (4.8.4)
+    appsignal (4.8.5)
       logger
       rack (>= 2.0.0)
     argon2-kdf (1.0.0)
