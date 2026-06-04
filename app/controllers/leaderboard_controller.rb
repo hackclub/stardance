@@ -1,10 +1,14 @@
 class LeaderboardController < ApplicationController
   def index
-    scope = User.discoverable
-                .joins(:preference)
-                .where(user_preferences: { leaderboard_optin: true }, banned: false)
+   scope = User
+          .joins(:hack_club_identity)
+          .joins(:preference)
+          .left_joins(:ledger_entries)
+          .where(user_preferences: { leaderboard_optin: true }, banned: false)
+          .group("users.id")
+          .select("users.*, COALESCE(SUM(ledger_entries.amount), 0) AS leaderboard_balance")
+          .order(Arel.sql("COALESCE(SUM(ledger_entries.amount), 0) DESC"))
 
-    sorted_users = scope.sort_by { |u| -u.cached_balance }
-    @pagy, @users = pagy(:offset, sorted_users, limit: 10)
+    @pagy, @users = pagy(:offset, scope, limit: 10)
   end
 end
