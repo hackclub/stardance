@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_185220) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -94,6 +94,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "ambassador_cost_stats", force: :cascade do |t|
+    t.integer "admin_cost_cents", default: 0, null: false
+    t.jsonb "ambassador_region_breakdown", default: {}, null: false
+    t.integer "approved_ambassadors_count", default: 0, null: false
+    t.integer "average_cost_per_ambassador_cents", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "office_grant_cost_cents", default: 0, null: false
+    t.integer "poster_cost_cents", default: 0, null: false
+    t.integer "referral_cost_cents", default: 0, null: false
+    t.integer "shirt_cost_cents", default: 0, null: false
+    t.datetime "synced_at", null: false
+    t.integer "total_cost_cents", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["synced_at"], name: "index_ambassador_cost_stats_on_synced_at"
   end
 
   create_table "blazer_audits", force: :cascade do |t|
