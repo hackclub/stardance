@@ -16,6 +16,8 @@ info:
 
     Open **Settings** from the sidebar to generate or rotate your key and replace `YOUR_API_KEY` with your generated one.
 
+    **For endpoints that accept a request body, set `Content-Type: application/json`! Otherwise the body won't be parsed.**
+
     ---
 
     ## Rate limiting
@@ -65,6 +67,8 @@ tags:
     description: Endpoints for viewing other users' profiles and content.
   - name: Projects
     description: Endpoints for viewing and managing projects and their posts.
+  - name: Posts
+    description: Endpoints for interacting with posts -- likes and reposts.
   - name: Shop
     description: Endpoints for browsing shop items and viewing orders.
 
@@ -157,7 +161,7 @@ paths:
                         $ref: "#/components/schemas/Pagination"
                   - type: object
                     properties:
-                      items:
+                      shop_items:
                         type: array
                         items:
                           $ref: "#/components/schemas/ShopItem"
@@ -292,7 +296,7 @@ paths:
 
   /users/{id}/posts:
     get:
-      summary: List a user's devlogs and ships
+      summary: List a user's posts (devlogs, ships, and reposts)
       tags: [Users]
       parameters:
         - name: id
@@ -316,7 +320,7 @@ paths:
                   posts:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Devlog"
+                      $ref: "#/components/schemas/Post"
                   pagination:
                     $ref: "#/components/schemas/Pagination"
         "400":
@@ -459,14 +463,12 @@ paths:
   /users/me/recommended_projects:
     get:
       summary: Get recommended projects
-      description: Paginated list of projects recommended for the user. The same as you can find on `/home` of the website!
+      description: >-
+        Up to 6 projects recommended for the user.
       tags: [Me]
-      parameters:
-        - $ref: "#/components/parameters/Limit"
-        - $ref: "#/components/parameters/Page"
       responses:
         "200":
-          description: Paginated list of projects recommended for the user.
+          description: List of recommended projects (up to 6, no pagination).
           headers:
             X-Request-ID:
               $ref: "#/components/headers/X-Request-ID"
@@ -479,22 +481,22 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Project"
-        "400":
-          $ref: "#/components/responses/InvalidLimit"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
   /users/me/feed:
     get:
-      summary: Get devlog feed
-      description: Paginated list of recent devlogs in the user's feed. The same as you can find on `/home` of the website!
+      summary: Get feed
+      description: >-
+        Paginated feed of recent posts (devlogs, ship events, and reposts). Mirrors what you see on `/home`.
+        Personalized via Gorse recommendations when available, with a quality-ranked SQL fallback.
       tags: [Me]
       parameters:
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Page"
       responses:
         "200":
-          description: Paginated list of recent devlogs recommended for the user.
+          description: Paginated list of posts.
           headers:
             X-Request-ID:
               $ref: "#/components/headers/X-Request-ID"
@@ -503,10 +505,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  devlogs:
+                  posts:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Devlog"
+                      $ref: "#/components/schemas/Post"
                   pagination:
                     $ref: "#/components/schemas/Pagination"
         "400":
@@ -750,6 +752,15 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          description: Validation failed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
 
   /shop_items:
     get:
@@ -823,6 +834,203 @@ paths:
                               type: string
                             ticket_cost:
                               type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{id}/follow:
+    post:
+      summary: Toggle follow on a user
+      description: Follows the user if not already following, unfollows if already following.
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: New follow state.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  following:
+                    type: boolean
+                  followers_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Cannot follow yourself.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /projects/{id}/follow:
+    post:
+      summary: Toggle follow on a project
+      description: Follows the project if not already following, unfollows if already following.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: New follow state.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  following:
+                    type: boolean
+                  followers_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Cannot follow your own project.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /posts/{id}/like:
+    post:
+      summary: Toggle like on a post
+      description: Likes the post if not already liked, unlikes if already liked. Only devlog posts can be liked.
+      tags: [Posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: New like state.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  liked:
+                    type: boolean
+                  likes_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Post is not a devlog.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /posts/{id}/repost:
+    post:
+      summary: Repost a devlog
+      description: Only devlog posts can be reposted. An optional `body` comment can be added.
+      tags: [Posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  description: Optional comment to add to the repost.
+      responses:
+        "201":
+          description: Repost created.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reposted:
+                    type: boolean
+                  reposts_count:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Already reposted or validation failed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete a repost
+      tags: [Posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Repost removed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reposted:
+                    type: boolean
+                  reposts_count:
+                    type: integer
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -918,6 +1126,9 @@ components:
         created_at:
           type: string
           format: date-time
+        viewer_follows:
+          type: boolean
+          description: Whether the authenticated user follows this user.
 
     Project:
       type: object
@@ -997,6 +1208,9 @@ components:
         updated_at:
           type: string
           format: date-time
+        viewer_follows:
+          type: boolean
+          description: Whether the authenticated user follows this project.
 
     Devlog:
       type: object
@@ -1022,7 +1236,7 @@ components:
         media:
           type: array
           description: >-
-            Attached images/files. `url` is a relative path — prepend
+            Attached images/files. `url` is a relative path. Prepend
             `https://stardance.hackclub.com` for a full URL.
           items:
             type: object
@@ -1040,13 +1254,13 @@ components:
 
     Post:
       type: object
-      description: A post can be either a devlog a ship event, or a re-post.
+      description: A post can be either a devlog, a ship event, or a repost.
       properties:
         id:
           type: integer
         type:
           type: string
-          enum: [devlog, ship_event]
+          enum: [devlog, ship_event, repost]
           description: The type of post.
         project_id:
           type: integer
@@ -1058,6 +1272,7 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Post_Devlog_Content"
             - $ref: "#/components/schemas/Post_ShipEvent_Content"
+            - $ref: "#/components/schemas/Post_Repost_Content"
         created_at:
           type: string
           format: date-time
@@ -1080,6 +1295,9 @@ components:
           type: integer
         tutorial:
           type: boolean
+        viewer_has_liked:
+          type: boolean
+          description: Whether the authenticated user has liked this post.
         media:
           type: array
           items:
@@ -1107,6 +1325,17 @@ components:
         payout:
           type: integer
           nullable: true
+
+    Post_Repost_Content:
+      type: object
+      properties:
+        body:
+          type: string
+          nullable: true
+          description: Optional comment added by the reposter.
+        original_post_id:
+          type: integer
+          description: ID of the original Post that was reposted.
 
     ShopItem:
       type: object
@@ -1239,7 +1468,7 @@ components:
             request_id: "abc123"
 
     Forbidden:
-      description: Authenticated user is not a member of this project.
+      description: You do not have permission to perform this action.
       headers:
         X-Request-ID:
           $ref: "#/components/headers/X-Request-ID"

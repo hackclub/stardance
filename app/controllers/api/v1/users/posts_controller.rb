@@ -15,6 +15,10 @@ class Api::V1::Users::PostsController < Api::BaseController
         Post.of_ship_events(join: true)
             .where.not(post_ship_events: { certification_status: "rejected" })
             .where(user_id: user.id)
+            .select("posts.*"),
+        Post.of_reposts(join: true)
+            .where(post_reposts: { deleted_at: nil })
+            .where(user_id: user.id)
             .select("posts.*")
       ]
     )
@@ -31,6 +35,16 @@ class Api::V1::Users::PostsController < Api::BaseController
         associations: { attachments_attachments: :blob }
       ).call
     end
+
+    repost_postables = @posts.select { |p| p.postable_type == "Post::Repost" }.map(&:postable).compact
+    if repost_postables.any?
+      ActiveRecord::Associations::Preloader.new(
+        records: repost_postables,
+        associations: { original_post: :postable }
+      ).call
+    end
+
+    @posts = @posts.reject { |p| p.repost? && !p.visible_repost_original_for?(current_api_user) }
 
     render "api/v1/posts/index"
   end

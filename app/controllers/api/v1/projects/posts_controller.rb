@@ -39,7 +39,7 @@ class Api::V1::Projects::PostsController < Api::BaseController
 
   def create
     unless @project.memberships.exists?(user: current_api_user)
-      return render json: { error: "You dont have permission to post to this project", request_id: request.request_id }, status: :forbidden
+      return render json: { error: "You don't have permission to post to this project", request_id: request.request_id }, status: :forbidden
     end
 
     if @project.hackatime_keys.blank?
@@ -68,11 +68,11 @@ class Api::V1::Projects::PostsController < Api::BaseController
     @post = find_post
 
     unless @post.postable_type == "Post::Devlog"
-      return render json: { error: "Only devlog posts can be edited", request_id: request.request_id }, status: :unprocessable_entity
+      return render json: { error: "Only devlog posts can be edited", request_id: request.request_id }, status: :forbidden
     end
 
     unless @post.user_id == current_api_user.id
-      return render json: { error: "You dont have permission to edit this post!", request_id: request.request_id }, status: :forbidden
+      return render json: { error: "You don't have permission to edit this post", request_id: request.request_id }, status: :forbidden
     end
 
     @post.postable.update!(post_params)

@@ -4,15 +4,20 @@ class Api::V1::Users::Me::FeedController < Api::BaseController
   def index
     return unless (limit = api_limit)
 
-    posts = Post.of_devlogs(join: true)
-                .where(post_devlogs: { deleted_at: nil })
-                .where(project_id: Project.not_deleted)
-                .visible_to(current_api_user)
-                .order(created_at: :desc)
-                .includes(postable: [ :post, { attachments_attachments: :blob } ])
+    posts = Gorse::PostPayload.feed_scope(current_api_user)
+                              .order(created_at: :desc)
+                              .includes(:postable)
 
-    @pagy, paged = pagy(posts, limit: limit)
-    @devlogs = paged.map(&:postable)
-    render "api/v1/devlogs/index"
+    @pagy, @posts = pagy(posts, limit: limit)
+
+    devlog_postables = @posts.select { |p| p.postable_type == "Post::Devlog" }.map(&:postable).compact
+    if devlog_postables.any?
+      ActiveRecord::Associations::Preloader.new(
+        records: devlog_postables,
+        associations: { attachments_attachments: :blob }
+      ).call
+    end
+
+    render "api/v1/posts/index"
   end
 end

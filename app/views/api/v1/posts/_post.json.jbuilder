@@ -14,6 +14,7 @@ when "Post::Devlog"
     json.likes_count devlog.likes_count
     json.comments_count devlog.comments_count
     json.tutorial devlog.tutorial
+    json.viewer_has_liked devlog.likes.exists?(user: @current_api_user)
     json.media devlog.attachments.map { |a|
       { url: rails_blob_path(a, only_path: true), content_type: a.content_type }
     }
@@ -26,6 +27,12 @@ when "Post::ShipEvent"
     json.feedback_reason ship.feedback_reason
     json.hours ship.hours
     json.payout ship.payout
+  end
+when "Post::Repost"
+  repost = post.postable
+  json.content do
+    json.body repost.body
+    json.original_post_id repost.original_post_id
   end
 else
   ""

@@ -355,7 +355,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
     t.bigint "mission_id", null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index ["mission_id", "language"], name: "index_mission_guide_variants_unique_language", unique: true
+    t.index "mission_id, lower((language)::text)", name: "index_mission_guide_variants_unique_language", unique: true
     t.index ["mission_id"], name: "index_mission_guide_variants_on_mission_id"
   end
 
@@ -413,7 +413,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
     t.string "language", null: false
     t.bigint "mission_step_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["mission_step_id", "language"], name: "index_mission_step_bodies_unique_language", unique: true
+    t.index "mission_step_id, lower((language)::text)", name: "index_mission_step_bodies_unique_language", unique: true
     t.index ["mission_step_id"], name: "index_mission_step_bodies_on_mission_step_id"
   end
 
@@ -1157,6 +1157,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_142640) do
     t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["email"], name: "index_users_on_email"
+    t.index ["guest_email"], name: "index_users_on_guest_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
     t.index ["slack_id"], name: "index_users_on_slack_id", unique: true

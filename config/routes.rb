@@ -456,9 +456,15 @@ Rails.application.routes.draw do
       resources :users, only: [ :show ], constraints: { id: /\d+/ } do
         resources :projects, only: [ :index ], module: :users
         resources :posts, only: [ :index ], module: :users
+        resource :follow, only: [ :create ], module: :users
       end
       resources :projects, only: [ :show, :update ] do
         resources :posts, only: [ :index, :show, :create, :update ], module: :projects
+        resource :follow, only: [ :create ], module: :projects
+      end
+      resources :posts, only: [] do
+        resource :like, only: [ :create ], module: :posts
+        resource :repost, only: [ :create, :destroy ], module: :posts
       end
       resources :shop_items, only: [ :index, :show ]
     end
