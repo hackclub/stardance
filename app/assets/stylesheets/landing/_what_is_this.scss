@@ -1,19 +1,4 @@
 // Sir, we pulse & I love Pulse candy. It kinda tastes like aam panna
-@keyframes what-is-this-border-pulse {
-  0%,
-  14%,
-  100% {
-    border-color: var(--border-resting-color);
-    box-shadow: none;
-  }
-
-  7% {
-    border-color: rgba(238, 231, 187, 0.95);
-    box-shadow:
-      0 0 22px 5px rgba(238, 231, 187, 0.55),
-      inset 0 0 12px rgba(238, 231, 187, 0.18);
-  }
-}
 
 // "What is this?" section — nested layered borders.
 .what-is-this {
@@ -241,5 +226,28 @@
     &__footnote {
       max-width: calc(100vw - 2 * var(--space-l));
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .what-is-this__border,
+  .what-is-this__inner {
+    animation: none;
+  }
+}
+
+@keyframes what-is-this-border-pulse {
+  0%,
+  14%,
+  100% {
+    border-color: var(--border-resting-color);
+    box-shadow: none;
+  }
+
+  7% {
+    border-color: rgba(238, 231, 187, 0.95);
+    box-shadow:
+      0 0 22px 5px rgba(238, 231, 187, 0.55),
+      inset 0 0 12px rgba(238, 231, 187, 0.18);
   }
 }

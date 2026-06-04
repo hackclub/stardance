@@ -49,8 +49,8 @@ turbo-frame#project_hero {
 // Red "still to complete" highlight for the banner — drawn inside the rounded
 // corners so it isn't clipped by `overflow: hidden`.
 .project-show__banner--incomplete {
-  outline: 2px solid var(--color-brand-salmon);
-  outline-offset: -2px;
+  outline: 4px solid var(--color-brand-salmon);
+  outline-offset: -4px;
 }
 
 .project-show__banner-image {
@@ -85,6 +85,27 @@ turbo-frame#project_hero {
 .project-show__back-icon {
   width: 30px;
   height: 30px;
+}
+
+.project-show__banner--empty .project-show__banner-image {
+  opacity: 0;
+}
+
+.project-show__banner-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px dashed var(--color-space-border);
+  border-radius: var(--profile-radius);
+}
+
+.project-show__banner-placeholder-text {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-l);
+  font-weight: 600;
 }
 
 .project-show__banner-upload {
@@ -578,6 +599,17 @@ turbo-frame#project_hero {
 
 .project-show__followers {
   font-size: 1rem;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 // Author avatars stack horizontally with a slight overlap, like a multi-user
@@ -661,6 +693,20 @@ turbo-frame#project_hero {
     background: var(--gradient-extra-highlight) center / cover no-repeat;
     color: var(--color-set-1-bg);
   }
+
+  // A pending nomination is reviewer-only and not yet the real thing, so it
+  // gets a subdued tint rather than the reserved highlight gradient above.
+  &--nominated {
+    background: color-mix(in srgb, var(--color-brand-yellow) 16%, transparent);
+    color: var(--color-brand-yellow);
+  }
+}
+
+// The fire controls use button_to (Turbo Drive is off app-wide, so these must
+// be real form submits). Collapse the wrapping form so each button still lines
+// up as a flex sibling of the surrounding pills.
+.project-show__pill-form {
+  display: contents;
 }
 
 // Action row sits between the header and the latest-ship card.
@@ -677,6 +723,7 @@ turbo-frame#project_hero {
 
   .action-btn {
     flex: 1;
+    text-align: center;
   }
 
   // Some buttons in this row use button_to (Hackatime + test) because Turbo
@@ -1333,6 +1380,8 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
+  max-height: 90vh;
+  overflow-y: auto;
   color: var(--color-space-text);
 
   &::backdrop {
@@ -1350,11 +1399,9 @@ turbo-frame#project_hero {
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: var(--space-l);
-  background: var(--color-space-bg-2, #0d0b2e);
-  border: 1px solid var(--color-space-border);
+  padding: var(--space-l) var(--space-l) calc(var(--space-l) + 4px);
+  background: #847f78;
+  border: 1px solid var(--color-brand-highlight);
   border-radius: var(--border-radius);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
@@ -1384,10 +1431,21 @@ turbo-frame#project_hero {
   gap: var(--space-m);
 }
 
-.ship-modal__mission {
+.ship-modal__mission-card {
   padding: var(--space-m) var(--space-l);
-  background: var(--color-set-2-bg);
+  background: var(--color-set-1-bg);
+  border: 1px solid var(--color-space-border);
   border-radius: var(--border-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  color: var(--color-space-text);
+}
+
+.ship-modal__mission-ack {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: flex-start;
+  font-size: var(--font-body);
+  cursor: pointer;
 }
 
 .ship-modal__mission-heading {
@@ -1406,23 +1464,14 @@ turbo-frame#project_hero {
   color: var(--color-space-text-muted);
 }
 
-.ship-modal__mission-ack {
-  display: flex;
-  gap: var(--space-xs);
-  align-items: flex-start;
-  margin-top: var(--space-s);
-  font-size: var(--font-body);
-  cursor: pointer;
-}
-
 // Editable body inside the ship-card preview — matches the card's other text.
 .ship-modal__textarea {
   width: 100%;
   min-height: 96px;
   padding: 8px 12px;
-  border: 2px solid var(--color-border-input);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--profile-radius);
-  background: transparent;
+  background: rgba(0, 0, 0, 0.15);
   color: var(--color-space-text);
   font: inherit;
   font-size: 1.1875rem;
@@ -1431,11 +1480,11 @@ turbo-frame#project_hero {
   outline: none;
 
   &::placeholder {
-    color: hsla(0, 0%, 100%, 0.5);
+    color: rgba(255, 255, 255, 0.45);
   }
 
   &:focus {
-    border-color: var(--color-border-input-focus);
+    border-color: var(--color-brand-highlight);
   }
 }
 
@@ -1451,8 +1500,8 @@ turbo-frame#project_hero {
   justify-content: center;
   padding: 8px 18px;
   border-radius: 999px;
-  border: 2px solid var(--color-set-3-bg);
-  background: var(--color-set-2-bg);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--color-space-text);
   font-family: inherit;
   font-size: var(--font-size-base);
@@ -1482,6 +1531,38 @@ turbo-frame#project_hero {
     filter: brightness(1.05);
     outline: none;
   }
+}
+
+// Feed-composer overrides scoped to ship modal — the modal reuses the
+// composer's markup (data-composer-target) but needs tighter spacing.
+.ship-modal .feed-composer__attach {
+  margin: 0;
+  border-color: rgba(255, 255, 255, 0.15);
+  background: transparent;
+}
+
+.ship-modal .feed-composer__grid {
+  padding-left: 0;
+}
+
+.ship-modal__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ship-modal__preview-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.ship-modal__preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
 .project-show__hackatime-picker {
@@ -1523,6 +1604,7 @@ turbo-frame#project_hero {
 }
 
 .project-show__hackatime-connect {
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-yellow-200);
@@ -1678,4 +1760,182 @@ turbo-frame#project_hero {
   font-size: 13px;
   font-style: italic;
   opacity: 0.7;
+}
+
+// -- Mission browse widget (discover rail) --
+
+.mission-browse-widget {
+  background: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
+  border-radius: 14px;
+  color: var(--color-space-text);
+  padding: var(--space-m);
+}
+
+.mission-browse-widget__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 var(--space-xs);
+}
+
+.mission-browse-widget__body {
+  color: var(--color-brand-off-white);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0 0 var(--space-s);
+  opacity: 0.8;
+}
+
+.mission-browse-widget__btn {
+  width: 100%;
+}
+
+// -- Mission browse modal --
+
+.mission-browse-modal {
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--profile-radius);
+  box-shadow: 0 24px 60px var(--color-shadow-deep);
+  color: var(--color-space-text);
+  max-height: 85vh;
+  max-width: 620px;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+
+  &::backdrop {
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal__title {
+    margin: 0 0 var(--space-l);
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--font-size-xxxl);
+    line-height: var(--line-height-headers);
+    color: var(--color-space-text);
+    background-color: transparent;
+  }
+}
+
+.mission-browse-modal__grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mission-browse-modal__card {
+  align-items: flex-start;
+  background: var(--color-set-2-bg);
+  border: 2px solid rgba(131, 130, 141, 0.3);
+  border-radius: var(--profile-radius);
+  display: flex;
+  gap: var(--space-s);
+  padding: var(--space-m);
+  transition: border-color 0.15s ease;
+}
+
+.mission-browse-modal__card-icon {
+  flex: 0 0 44px;
+  height: 44px;
+  width: 44px;
+}
+
+.mission-browse-modal__card-icon-img {
+  border-radius: 8px;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.mission-browse-modal__card-icon-fallback {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--color-brand-yellow);
+  display: flex;
+  font-size: 1.25rem;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+.mission-browse-modal__card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mission-browse-modal__card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.mission-browse-modal__card-desc {
+  color: var(--color-brand-off-white);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0 0 var(--space-xs);
+  opacity: 0.75;
+}
+
+.mission-browse-modal__card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mission-browse-modal__card-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  text-transform: capitalize;
+
+  &--beginner {
+    background: rgba(129, 255, 255, 0.12);
+    color: var(--color-brand-mint);
+  }
+
+  &--intermediate {
+    background: rgba(255, 229, 100, 0.12);
+    color: var(--color-brand-yellow);
+  }
+
+  &--advanced {
+    background: rgba(255, 141, 157, 0.12);
+    color: var(--color-brand-salmon);
+  }
+}
+
+.mission-browse-modal__card-actions {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.mission-browse-modal__empty {
+  color: var(--color-space-text-muted, var(--color-space-text));
+  font-size: var(--font-size-m);
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+  padding: var(--space-l) 0;
 }

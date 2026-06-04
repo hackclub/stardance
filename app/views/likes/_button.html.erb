@@ -6,7 +6,11 @@
   end
 
   icon = liked ? "icons/like-fill.svg" : "icons/like.svg"
-  button_classes = [ "like-button__btn", ("like-button__btn--liked" if liked) ].compact
+  button_classes = [
+    "like-button__btn",
+    ("like-button__btn--liked" if liked),
+    ("like-button__btn--animate" if liked && local_assigns[:animate_liked])
+  ].compact
 %>
 
 <div id="<%= dom_id(likeable, :like_button) %>" class="like-button">

@@ -142,7 +142,14 @@ class Shop::OrdersController < Shop::BaseController
         end
       end
 
+      track_event "order_placed", { order_id: @order.id, shop_item_id: @shop_item.id, total_cost: total_cost }
       current_user.mark_shop_tutorial_completed! if tutorial_item?(@shop_item)
+
+      if @shop_item.is_a?(ShopItem::TutorialNothing)
+        @shop_item.fulfill!(@order)
+        redirect_to shop_orders_path, notice: "Nice — that's your first order in! You're ready to ship your first project."
+        return
+      end
 
       unless current_user.eligible_for_shop?
         @order.queue_for_verification!
@@ -152,12 +159,6 @@ class Shop::OrdersController < Shop::BaseController
       end
 
       return if @shop_item.is_a?(ShopItem::FreeStickers) && !fulfill_free_stickers!
-
-      if @shop_item.is_a?(ShopItem::TutorialNothing)
-        @shop_item.fulfill!(@order)
-        redirect_to shop_orders_path, notice: "Nice — that's your first order in! You're ready to ship your first project."
-        return
-      end
 
       if @shop_item.is_a?(ShopItem::SillyItemType)
         @order.approve!
@@ -175,6 +176,10 @@ class Shop::OrdersController < Shop::BaseController
     authorize :shop
 
     @order = current_user.shop_orders.find(params[:id])
+    if @order.shop_item.is_a?(ShopItem::FreeStickers)
+      redirect_to shop_orders_path, alert: "Free sticker orders cannot be cancelled."
+      return
+    end
     if @order.aasm_state == "fulfilled"
       redirect_to shop_orders_path, alert: "You cannot cancel an already fulfilled order."
       return

@@ -4,7 +4,7 @@ class RsvpsController < ApplicationController
     rsvp = Rsvp.find_or_create_by!(email: params[:rsvp][:email].to_s.downcase.strip) do |r|
       r.ref        = params[:ref].presence || cookies[:referral_code]
       r.user_agent = request.user_agent
-      r.ip_address = request.headers["CF-Connecting-IP"] || request.remote_ip
+      r.ip_address = client_ip_address
       was_new = true
     end
     if was_new && rsvp.user_ref.blank?

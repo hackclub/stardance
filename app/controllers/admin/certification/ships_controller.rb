@@ -1,6 +1,6 @@
 class Admin::Certification::ShipsController < Admin::Certification::ApplicationController
-  before_action :release_other_claims, only: [ :next, :claim ]
-  before_action :set_ship, only: [ :show, :update, :claim ]
+  before_action :release_other_claims, only: [ :next ]
+  before_action :set_ship, only: [ :show, :update ]
   before_action :set_body_class, only: [ :index, :show, :update ]
 
   def index
@@ -62,16 +62,6 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     else
       new_skip = (skip_ids + [ candidate.id ]).uniq
       redirect_to next_admin_certification_ships_path(skip: new_skip.join(","))
-    end
-  end
-
-  def claim
-    authorize @ship, :claim?
-    claimed = ::Certification::Ship.atomic_claim!(@ship.id, current_user)
-    if claimed
-      redirect_to admin_certification_ship_path(claimed)
-    else
-      redirect_to admin_certification_ships_path, alert: "Couldn't claim that review — someone else got it."
     end
   end
 

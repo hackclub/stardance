@@ -1,0 +1,118 @@
+.slack-doodle {
+  position: fixed;
+  bottom: 0;
+  right: 2rem;
+  z-index: 90;
+  width: 220px;
+  cursor: pointer;
+
+  &__art {
+    position: relative;
+    transition: opacity 200ms ease;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -30% -20%;
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse at center,
+        var(--color-space-bg) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+  }
+
+  &__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    position: relative;
+    animation: slack-doodle-nudge 3s ease-in-out infinite;
+  }
+
+  @keyframes slack-doodle-nudge {
+    0%,
+    65% {
+      transform: translateY(0);
+    }
+    72% {
+      transform: translateY(-8px);
+    }
+    79% {
+      transform: translateY(0);
+    }
+    86% {
+      transform: translateY(-4px);
+    }
+    93% {
+      transform: translateY(0);
+    }
+  }
+
+  &__card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-m);
+    padding: var(--space-l);
+    background: var(--color-space-surface-strong);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease;
+    transform: translateY(4px);
+  }
+
+  &:hover &__card,
+  &:focus-within &__card {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  &:hover &__art {
+    opacity: 0.15;
+  }
+
+  &__text {
+    color: var(--color-space-text);
+    font-size: var(--font-size-s);
+    line-height: 1.5;
+    text-align: center;
+    margin: 0;
+
+    strong {
+      color: var(--color-brand-highlight);
+    }
+  }
+
+  &__dismiss {
+    appearance: none;
+    border: 1px solid var(--color-space-border);
+    background: var(--color-space-surface-soft);
+    color: var(--color-space-text);
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    padding: 0.35rem 1rem;
+    border-radius: var(--profile-radius);
+    cursor: pointer;
+    transition: background 150ms ease;
+
+    &:hover {
+      background: var(--color-space-surface);
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 160px;
+    right: 1rem;
+  }
+}

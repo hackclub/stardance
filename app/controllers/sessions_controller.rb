@@ -5,7 +5,9 @@ class SessionsController < ApplicationController
     result = Sessions::HCALoginService.new(
       auth: request.env["omniauth.auth"],
       current_user: current_user,
-      referral_code: cookies[:referral_code]
+      referral_code: cookies[:referral_code],
+      ip_address: client_ip_address,
+      user_agent: request.user_agent
     ).call
 
     unless result.ok?
@@ -17,7 +19,7 @@ class SessionsController < ApplicationController
     end
 
     reset_session if result.guest_collision
-    session[:user_id] = result.user.id
+    sign_in_user(result.user, auth_level: "hca")
 
     return_to = safe_return_to(session.delete(:return_to))
 
@@ -25,7 +27,7 @@ class SessionsController < ApplicationController
       UserMailer.onboarding_start(result.user).deliver_later
     end
 
-    destination = if result.user.onboarded_at.nil? && result.user.age_attestation_ineligible?
+    destination = if result.user.onboarded_at.nil? && result.user.age_blocked?
       onboarding_age_gate_path
     elsif result.user.onboarded_at.nil? && result.is_new_user
       onboarding_welcome_path
@@ -39,6 +41,8 @@ class SessionsController < ApplicationController
       home_path
     end
 
+    track_event "signed_up", { user_id: result.user.id } if result.is_new_user
+    track_event "hca_linked", { user_id: result.user.id } if result.is_new_user || result.guest_collision
     redirect_to destination, notice: "Signed in with Hack Club"
   end
 
@@ -64,7 +68,9 @@ class SessionsController < ApplicationController
       return redirect_to(root_path, alert: "No users found for dev login. Create a user first.")
     end
 
-    session[:user_id] = user.id
+    ensure_dev_hca_identity(user) unless params[:id].present?
+
+    sign_in_user(user, auth_level: user.hca_linked? ? "hca" : "guest")
     if Rails.env.test?
       head :ok
     else
@@ -73,6 +79,12 @@ class SessionsController < ApplicationController
   end
 
   private
+
+  def ensure_dev_hca_identity(user)
+    return if user.hca_linked?
+
+    user.create_hack_club_identity!(provider: "hack_club", uid: "dev-#{user.id}", access_token: "dev-access-token")
+  end
 
   def safe_return_to(path)
     return nil if path.blank?

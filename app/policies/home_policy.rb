@@ -1,9 +1,9 @@
 class HomePolicy < ApplicationPolicy
   def index?
-    signed_in_any?
+    true
   end
 
   def feed?
-    index?
+    true
   end
 end

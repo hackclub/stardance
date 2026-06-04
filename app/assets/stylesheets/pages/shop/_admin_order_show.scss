@@ -474,7 +474,7 @@
     float: right;
     width: 72px;
     height: 72px;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 8px;
     margin-left: var(--space-l);
     margin-bottom: var(--space-s);
@@ -497,7 +497,7 @@
   &__accessory-img {
     width: 36px;
     height: 36px;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 5px;
     flex-shrink: 0;
     border: 1px solid var(--color-space-border);

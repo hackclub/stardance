@@ -73,3 +73,9 @@
     transform: rotate(5deg);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .not-authorized-page__img {
+    animation: none;
+  }
+}

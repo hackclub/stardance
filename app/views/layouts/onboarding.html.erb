@@ -27,6 +27,7 @@
         <span class="onboarding-escape__email"><%= current_user.email %></span>
         <span class="onboarding-escape__sep">&middot;</span>
         <%= link_to "Log out", logout_path, data: { turbo_method: :delete }, class: "onboarding-escape__link" %>
+        <%= yield :escape_extras %>
       </div>
     <% end %>
   </body>

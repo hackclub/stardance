@@ -1,7 +1,12 @@
 class VotesController < ApplicationController
+  before_action :set_voting_state
+
   def new
     authorize Vote
-    load_assignment
+
+    if @voting_open && current_user && @has_shipped
+      load_assignment
+    end
   end
 
   def create
@@ -21,6 +26,11 @@ class VotesController < ApplicationController
   end
 
   private
+    def set_voting_state
+      @has_shipped = current_user&.shipped_projects&.exists? || false
+      @voting_open = Flipper.enabled?(:voting, current_user)
+    end
+
     def load_assignment
       @assignment = Vote::Assignment.assign_to(current_user)
       if @assignment

@@ -14,13 +14,15 @@
           A bunch of other teens like that too!
         <% end %>
       </h1>
-      <p class="onboarding-screen__subhead">
-        <% if @beginner_peer_count >= 10 %>
-          and <%= onboarding_count_up(@beginner_peer_count) %> of them are also beginners!
-        <% else %>
-          and plenty of them are also beginners!
-        <% end %>
-      </p>
+      <% if @beginner_peer_count %>
+        <p class="onboarding-screen__subhead">
+          <% if @beginner_peer_count >= 10 %>
+            and <%= onboarding_count_up(@beginner_peer_count) %> of them are also beginners!
+          <% else %>
+            and plenty of them are also beginners!
+          <% end %>
+        </p>
+      <% end %>
 
       <% if @featured_projects.present? %>
         <div class="onboarding-interests-result__featured" aria-label="Featured projects">

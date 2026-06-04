@@ -41,11 +41,13 @@ class Post::ShipEventTest < ActiveSupport::TestCase
   test "legacy voting scale ship events are never payout eligible" do
     owner = User.create!(email: "owner-#{SecureRandom.hex(6)}@example.com", display_name: "Owner", slack_id: "U#{SecureRandom.hex(8)}", vote_balance: 10)
     project = Project.create!(title: "Legacy Eligibility #{SecureRandom.hex(4)}")
-    ship_event = Post::ShipEvent.create!(
+    ship_event = Post::ShipEvent.new(
       body: "Legacy Ship Event",
       certification_status: "approved",
       voting_scale_version: Post::ShipEvent::LEGACY_VOTING_SCALE_VERSION
     )
+    ship_event.uploading_attachments = true
+    ship_event.save!
     Post.create!(project: project, user: owner, postable: ship_event)
 
     add_legitimate_votes(ship_event: ship_event, project: project, count: Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT)
@@ -54,25 +56,25 @@ class Post::ShipEventTest < ActiveSupport::TestCase
   end
 
   test "review_instructions allows nil" do
-    ship_event = Post::ShipEvent.new(body: "test", review_instructions: nil)
+    ship_event = Post::ShipEvent.new(body: "test", review_instructions: nil, uploading_attachments: true)
     ship_event.valid?
     assert_empty ship_event.errors[:review_instructions]
   end
 
   test "review_instructions allows blank" do
-    ship_event = Post::ShipEvent.new(body: "test", review_instructions: "")
+    ship_event = Post::ShipEvent.new(body: "test", review_instructions: "", uploading_attachments: true)
     ship_event.valid?
     assert_empty ship_event.errors[:review_instructions]
   end
 
   test "review_instructions allows up to 2000 characters" do
-    ship_event = Post::ShipEvent.new(body: "test", review_instructions: "x" * 2000)
+    ship_event = Post::ShipEvent.new(body: "test", review_instructions: "x" * 2000, uploading_attachments: true)
     ship_event.valid?
     assert_empty ship_event.errors[:review_instructions]
   end
 
   test "review_instructions rejects over 2000 characters" do
-    ship_event = Post::ShipEvent.new(body: "test", review_instructions: "x" * 2001)
+    ship_event = Post::ShipEvent.new(body: "test", review_instructions: "x" * 2001, uploading_attachments: true)
     ship_event.valid?
     assert_not_empty ship_event.errors[:review_instructions]
   end

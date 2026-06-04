@@ -1,0 +1,21 @@
+<% if attachments.any? %>
+  <div class="feed-post-card__media">
+    <div class="feed-post-card__media-viewport">
+      <div class="feed-post-card__media-track">
+        <% attachments.each_with_index do |attachment, index| %>
+          <figure class="feed-post-card__media-slide" <%= "hidden" if index.positive? %>>
+            <% if attachment.variable? %>
+              <%= image_tag attachment.variant(:large), alt: "", class: "feed-post-card__image" %>
+            <% elsif attachment.content_type.to_s.start_with?("image/") %>
+              <%= image_tag attachment, alt: "", class: "feed-post-card__image" %>
+            <% elsif attachment.content_type.to_s.start_with?("video/") %>
+              <%= video_tag url_for(attachment), controls: true, class: "feed-post-card__video" %>
+            <% else %>
+              <%= link_to attachment.filename.to_s, url_for(attachment), class: "feed-post-card__file" %>
+            <% end %>
+          </figure>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

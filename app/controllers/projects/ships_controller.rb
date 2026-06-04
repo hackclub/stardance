@@ -22,9 +22,13 @@ class Projects::ShipsController < ApplicationController
 
     @project.with_lock do
       @project.submit_for_review!
-      ship_event = Post::ShipEvent.create!(
-        body: params[:ship_update].to_s.strip
-      )
+      ship_event = Post::ShipEvent.new(body: params[:ship_update].to_s.strip)
+      ship_event.uploading_attachments = params.dig(:ship_event, :attachments).present?
+      ship_event.save!
+      if ship_event.uploading_attachments
+        ship_event.attachments.attach(params[:ship_event][:attachments])
+        raise ActiveRecord::RecordInvalid, ship_event unless ship_event.valid?
+      end
       @post = @project.posts.create!(user: current_user, postable: ship_event)
       maybe_create_mission_submission(ship_event, mission_payout_path, submission_guide_ack)
 
@@ -43,6 +47,8 @@ class Projects::ShipsController < ApplicationController
         )
       end
     end
+
+    track_event "project_shipped", { project_id: @project.id, reship: reship }
 
     if !reship
       redirect_to project_path(@project, just_shipped: 1), notice: "Congratulations! Your project has been submitted for review! While you wait, rate other projects at the voting booth."

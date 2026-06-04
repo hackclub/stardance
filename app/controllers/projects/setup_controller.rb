@@ -2,6 +2,7 @@ class Projects::SetupController < ApplicationController
   layout "onboarding"
 
   before_action :require_signed_in!
+  before_action :redirect_if_setup_complete, except: %i[welcome]
   before_action :load_setup_project_for_prefill, only: %i[name missions]
   before_action :load_setup_project, only: %i[link_account welcome]
 
@@ -23,8 +24,10 @@ class Projects::SetupController < ApplicationController
 
     case params[:idea].to_s
     when "yes"
+      track_event "project_setup_started", { has_idea: true }
       redirect_to projects_setup_name_path
     when "no"
+      track_event "project_setup_started", { has_idea: false }
       redirect_to projects_setup_missions_path
     else
       redirect_to projects_setup_path, alert: "Please pick one."
@@ -90,6 +93,7 @@ class Projects::SetupController < ApplicationController
     if existing
       existing.update!(detached_at: nil, attached_at: Time.current)
     else
+      project.current_mission_attachment&.detach!
       project.mission_attachments.create!(mission: mission, attached_at: Time.current)
     end
 
@@ -106,6 +110,7 @@ class Projects::SetupController < ApplicationController
       project.update!(attrs) if attrs.any?
     end
 
+    track_event "mission_attached", { project_id: project.id, mission_slug: slug }
     redirect_to next_gate_after_details_path
   end
 
@@ -130,6 +135,14 @@ class Projects::SetupController < ApplicationController
   def require_signed_in!
     return if current_user.present?
     redirect_to root_path, alert: "Please sign in to start a project."
+  end
+
+  def redirect_if_setup_complete
+    return unless current_user&.hca_linked?
+    return unless current_user.projects.exists?
+
+    project = find_setup_project
+    redirect_to project ? project_path(project) : root_path
   end
 
   def load_setup_project
@@ -171,6 +184,7 @@ class Projects::SetupController < ApplicationController
       project.memberships.create!(user: current_user, role: :owner)
     end
     session[:setup_project_id] = project.id
+    track_event "project_created", { project_id: project.id, source: "setup" }
     project
   end
 

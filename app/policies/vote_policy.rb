@@ -4,7 +4,7 @@ class VotePolicy < ApplicationPolicy
   end
 
   def new?
-    user_can_vote?
+    true
   end
 
   def create?

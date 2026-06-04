@@ -73,15 +73,34 @@ class Mission < ApplicationRecord
   scope :enabled,  -> { where(enabled: true) }
   scope :featured, -> { where.not(featured_at: nil) }
 
+  scope :visible_for, ->(user) {
+    if user&.admin?
+      all
+    elsif user
+      owned_ids = Mission::Membership.where(user_id: user.id, role: :owner).select(:mission_id)
+      where(enabled: true).or(where(id: owned_ids))
+    else
+      enabled
+    end
+  }
+
   scope :available, -> {
     enabled
       .where("start_at IS NULL OR start_at <= ?", Time.current)
       .where("end_at   IS NULL OR end_at   > ?", Time.current)
   }
 
-  def started? = start_at.nil? || start_at <= Time.current
-  def ended?   = end_at.present? && end_at <= Time.current
-  def coming_soon? = !started?
+  def started?(at = Time.current) = start_at.nil? || start_at <= at
+  def ended?(at = Time.current)   = end_at.present? && end_at <= at
+  def coming_soon?(at = Time.current) = !started?(at)
+  def available_at?(at = Time.current) = started?(at) && !ended?(at)
+
+  def index_bucket
+    return :draft unless enabled?
+    return :upcoming if coming_soon?
+    return :ended if ended?
+    :available
+  end
 
   def available_to_builders?
     enabled? && started? && !ended?
@@ -113,7 +132,7 @@ class Mission < ApplicationRecord
 
   def resolve_storage_language(requested)
     label = requested.to_s.strip
-    return default_guide&.language if label.blank?
+    return default_guide&.language || "Default" if label.blank?
     existing = guide_variants.find_by("LOWER(language) = ?", label.downcase)&.language
     existing || label
   end
@@ -132,16 +151,6 @@ class Mission < ApplicationRecord
 
   def guide_body_updated_at = default_guide&.body_updated_at
 
-  # `parse_h2_sections` discards lines before the first ##; surface them so
-  # authors don't silently lose an intro paragraph on paste.
-  def self.guide_paste_preamble(text)
-    preamble = []
-    text.to_s.split(/\r?\n/).each do |line|
-      break if line.match?(/\A##\s+/)
-      preamble << line
-    end
-    preamble.join("\n").strip.presence
-  end
 
   def self.parse_h2_sections(text)
     return [] if text.to_s.strip.empty?

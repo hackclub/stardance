@@ -21,17 +21,13 @@
       <h1 class="shop-checkout__item-name"><%= @shop_item.name %></h1>
       <p class="shop-checkout__item-description"><%= @shop_item.description %></p>
 
-      <% if @shop_item.is_a?(ShopItem::TutorialNothing) %>
-        <p class="shop-checkout__item-note">No shipment, no Stardust spent — this just shows you how checkout works.</p>
-      <% else %>
-        <div class="shop-checkout__item-meta">
-          <span class="shop-checkout__item-meta-key">Price</span>
-          <span class="shop-checkout__item-meta-value">
-            <%= stardust_icon %>
-            <%= number_to_currency(@shop_item.price_for_region(@user_region), precision: 0).delete('$') %>
-          </span>
-        </div>
-      <% end %>
+      <div class="shop-checkout__item-meta">
+        <span class="shop-checkout__item-meta-key">Price</span>
+        <span class="shop-checkout__item-meta-value">
+          <%= stardust_icon %>
+          <%= number_to_currency(@shop_item.price_for_region(@user_region), precision: 0).delete('$') %>
+        </span>
+      </div>
     </section>
 
     <section class="shop-checkout__panel" aria-label="Shipping address">

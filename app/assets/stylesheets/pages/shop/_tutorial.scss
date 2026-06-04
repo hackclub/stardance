@@ -89,12 +89,3 @@
     font-weight: 700;
   }
 }
-
-// Non-interactive shop item cards (preview mode + tutorial-locked items)
-// stay visible so users can browse but lose their click affordance.
-.shop-item-card--non-interactive {
-  filter: saturate(0.5);
-  opacity: 0.55;
-  pointer-events: none;
-  user-select: none;
-}

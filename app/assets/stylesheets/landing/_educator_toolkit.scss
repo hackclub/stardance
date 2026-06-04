@@ -405,6 +405,13 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .educator-toolkit__hero-patch-frame,
+  .educator-toolkit__hero-patch-image {
+    animation: none;
+  }
+}
+
 @keyframes educator-patch-float {
   0%,
   100% {

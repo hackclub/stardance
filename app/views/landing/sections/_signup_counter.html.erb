@@ -1,0 +1,2 @@
+<% count = local_assigns.fetch(:count) { Rails.cache.fetch("landing/signup_count", raw: true, expires_in: 30.seconds) { LandingController.deduplicated_signup_count }.to_i } %>
+<span id="rsvp_counter" class="rsvp-counter" data-count="<%= count %>"><%= number_with_delimiter(count) %></span>

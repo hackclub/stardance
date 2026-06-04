@@ -1,8 +1,22 @@
 <% @feed_posts.each_with_index do |post, index| %>
+  <% source = @feed_post_sources&.fetch(post, "quality_latest") || "quality_latest" %>
   <% if post.postable_type == "Post::ShipEvent" %>
-    <%= render "projects/ship_card", post: post, project: post.project %>
+    <%= render "projects/ship_card",
+          post: post,
+          project: post.project,
+          source: source,
+          position: index + 1,
+          page: @pagy.page,
+          feed_request_id: @feed_request_id %>
   <% else %>
-    <%= render Posts::CardComponent.new(post: post, current_user: current_user) %>
+    <%= render Posts::CardComponent.new(
+          post: post,
+          current_user: current_user,
+          source: source,
+          position: index + 1,
+          page: @pagy.page,
+          feed_request_id: @feed_request_id
+        ) %>
   <% end %>
 
   <% if @pagy.page == 1 && index.zero? && @recommended_projects&.any? %>
@@ -12,7 +26,12 @@
         ) do |shelf| %>
       <% @recommended_projects.each do |project| %>
         <% shelf.with_item do %>
-          <%= render Projects::ShelfCardComponent.new(project: project) %>
+          <%= render Projects::ShelfCardComponent.new(
+                project: project,
+                source: "recommended_projects",
+                position: @recommended_projects.index(project).to_i + 1,
+                feed_request_id: @feed_request_id
+              ) %>
         <% end %>
       <% end %>
     <% end %>
@@ -27,13 +46,24 @@
         ) do |shelf| %>
       <% @recommended_projects.each do |project| %>
         <% shelf.with_item do %>
-          <%= render Projects::ShelfCardComponent.new(project: project) %>
+          <%= render Projects::ShelfCardComponent.new(
+                project: project,
+                source: "recommended_projects",
+                position: @recommended_projects.index(project).to_i + 1,
+                feed_request_id: @feed_request_id
+              ) %>
         <% end %>
       <% end %>
     <% end %>
   <% end %>
 
-  <p class="feed-home__empty">Nothing here yet. Post a devlog or ship your project to start the feed.</p>
+  <p class="feed-home__empty">
+    <% if current_user.present? %>
+      Nothing here yet. Post a devlog or ship your project to start the feed.
+    <% else %>
+      Nothing here yet. Sign up to start building and see the feed come alive!
+    <% end %>
+  </p>
 <% end %>
 
 <% if @pagy.next %>

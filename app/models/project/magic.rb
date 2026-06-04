@@ -7,6 +7,25 @@ class Project::Magic
     @project = project
   end
 
+  # A Shipwright proposes the project for Super Star. It stays a proposal until
+  # an admin grants it, so this records who nominated it and nothing more.
+  def nominate(reviewer)
+    return false unless ensure_open_for_nomination
+    perform(reviewer, "nominate_fire") do
+      project.update!(nominated_fire_at: Time.current, nominated_fire_by: reviewer)
+    end
+  end
+
+  def withdraw_nomination(reviewer)
+    return false unless ensure_nominated
+    # Once granted, the nomination is settled — clearing it here would strip the
+    # nominator while leaving the project a Super Star. Un-fire via revoke first.
+    return false unless ensure_not_fire
+    perform(reviewer, "withdraw_fire_nomination") do
+      project.update!(nominated_fire_at: nil, nominated_fire_by: nil)
+    end
+  end
+
   def grant(user)
     return false unless ensure_not_fire
     return false unless perform(user, "mark_fire") do
@@ -26,6 +45,24 @@ class Project::Magic
   end
 
   private
+
+  def ensure_open_for_nomination
+    if project.fire?
+      errors.add(:base, "Project is already marked as Super Star.")
+      return false
+    end
+    if project.nominated_fire_at?
+      errors.add(:base, "Project has already been nominated.")
+      return false
+    end
+    true
+  end
+
+  def ensure_nominated
+    return true if project.nominated_fire_at?
+    errors.add(:base, "Project hasn't been nominated.")
+    false
+  end
 
   def ensure_not_fire
     return true unless project.fire?

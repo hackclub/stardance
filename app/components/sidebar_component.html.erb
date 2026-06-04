@@ -35,23 +35,7 @@
             <% end %>
           <% end %>
 
-          <% if item[:locked] %>
-            <button type="button"
-                    class="<%= link_classes %> sidebar__nav-link--locked"
-                    data-controller="tooltip"
-                    data-tooltip-message-value="<%= item[:locked_message] %>"
-                    data-tooltip-position-value="right"
-                    data-slug="<%= item[:slug] %>"
-                    aria-disabled="true"
-                    aria-haspopup="dialog"
-                    aria-label="<%= item[:label] %> (locked) — click for details">
-              <%= icon_block %>
-              <%= label_block %>
-              <span class="sidebar__nav-lock" aria-hidden="true">
-                <%= inline_svg_tag "icons/lock.svg", class: "sidebar__nav-lock-icon" %>
-              </span>
-            </button>
-          <% elsif item[:path] == "#" %>
+          <% if item[:path] == "#" %>
             <span class="<%= link_classes %> sidebar__nav-link--inert" data-slug="<%= item[:slug] %>" aria-disabled="true">
               <%= icon_block %>
               <%= label_block %>
@@ -68,33 +52,40 @@
   </nav>
 
   <div class="sidebar__user" aria-live="polite">
-    <div class="sidebar__user-card">
-      <div class="sidebar__user-meta">
-        <div class="sidebar__user-balance">
-          <%= helpers.stardust_icon(extra_class: "sidebar__user-balance-icon") %>
-          <span class="sidebar__user-balance-amount"><%= number_with_delimiter(user.cached_balance) %></span>
+    <% if signed_in? %>
+      <div class="sidebar__user-card">
+        <div class="sidebar__user-meta">
+          <div class="sidebar__user-balance">
+            <%= helpers.stardust_icon(extra_class: "sidebar__user-balance-icon") %>
+            <span class="sidebar__user-balance-amount"><%= number_with_delimiter(user.cached_balance) %></span>
+          </div>
+          <%= link_to profile_path(user.display_name), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
+            @<%= user.display_name %>
+          <% end %>
         </div>
-        <%= link_to profile_path(user.display_name), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
-          @<%= user.display_name %>
-        <% end %>
-      </div>
 
-      <div class="sidebar__user-actions">
-        <button type="button" class="sidebar__user-settings" onclick="document.getElementById('settings-modal').showModal()" aria-label="Settings">
-          <%= inline_svg_tag "icons/gear.svg", class: "sidebar__user-settings-icon" %>
-        </button>
+        <div class="sidebar__user-actions">
+          <button type="button" class="sidebar__user-settings" onclick="document.getElementById('settings-modal').showModal()" aria-label="Settings">
+            <%= inline_svg_tag "icons/gear.svg", class: "sidebar__user-settings-icon" %>
+          </button>
 
-        <%= button_to logout_path,
-                      method: :delete,
-                      class: "sidebar__user-logout",
-                      aria: { label: "Logout" },
-                      form: { class: "sidebar__user-logout-form", data: { turbo: false } } do %>
-          <%= inline_svg_tag "icons/logout.svg", class: "sidebar__user-logout-icon" %>
-        <% end %>
+          <%= button_to logout_path,
+                        method: :delete,
+                        class: "sidebar__user-logout",
+                        aria: { label: "Logout" },
+                        form: { class: "sidebar__user-logout-form", data: { turbo: false } } do %>
+            <%= inline_svg_tag "icons/logout.svg", class: "sidebar__user-logout-icon" %>
+          <% end %>
+        </div>
       </div>
-    </div>
+    <% else %>
+      <div class="sidebar__guest-cta">
+        <%= link_to "Sign up", root_path, class: "sidebar__guest-cta-btn" %>
+      </div>
+    <% end %>
   </div>
 
+  <% if signed_in? %>
   <%= render layout: "shared/modal", locals: { id: "settings-modal", title: "Settings" } do %>
     <% preference = user.preference %>
     <%= form_with url: my_settings_path, method: :patch, local: true, class: "settings-form", id: "settings-form", data: { turbo: false } do |f| %>
@@ -167,5 +158,6 @@
       </div>
     <% end %>
 
+  <% end %>
   <% end %>
 </aside>

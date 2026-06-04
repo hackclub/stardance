@@ -16,7 +16,7 @@
 
     <% og_title = content_for?(:og_title) ? yield(:og_title) : (content_for?(:title) ? "#{yield(:title)} - Stardance" : "Stardance - Hack Club") %>
     <% og_description = content_for?(:og_description) ? yield(:og_description) : "The largest STEM event of the summer: make anything you want and earn free prizes." %>
-    <% og_image = content_for?(:og_image) ? yield(:og_image) : image_url("landing/space/moon.png") %>
+    <% og_image = content_for?(:og_image) ? yield(:og_image) : image_url("landing/space/og-default.png") %>
     <% og_url = content_for?(:og_url) ? yield(:og_url) : request.original_url %>
     <% twitter_card = content_for?(:twitter_card) ? yield(:twitter_card) : "summary" %>
 
@@ -66,7 +66,7 @@
     <%= Sentry.get_trace_propagation_meta.html_safe %> <%# erb_lint:disable ErbSafety %>
   </head>
 
-  <body class="<%= current_user.present? && !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'streamer-mode' if session[:streamer_mode] %>">
+  <body class="<%= !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'streamer-mode' if session[:streamer_mode] %>">
     <% if @show_boot_splash %>
       <div class="app-loading" aria-hidden="true">
         <div class="app-loading__inner">
@@ -97,13 +97,16 @@
         </div>
       <% end %>
     </div>
-    <% if current_user.present? && !current_user.banned? && !@hide_sidebar %>
+    <% unless @hide_sidebar || current_user&.banned? %>
       <%= render SidebarComponent.new(user: current_user, active_slug_override: @active_nav_slug) %>
-      <%= render CommandPaletteComponent.new(current_user: current_user) %>
+      <% if current_user.present? %>
+        <%= render CommandPaletteComponent.new(current_user: current_user) %>
+      <% end %>
     <% end %>
     <div id="flash-region"><%= render "shared/flash" %></div>
-    <%= render Onboarding::GuestBannerComponent.new %>
+    <%= render Onboarding::GuestBannerComponent.new unless @hide_sidebar %>
     <%= yield %>
+    <%= render "shared/slack_doodle" %>
     <%= render "shared/idv_verify_modal" %>
     <% unless @hide_footer %>
       <footer class="dev-footer">

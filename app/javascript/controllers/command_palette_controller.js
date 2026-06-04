@@ -1,16 +1,20 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["input", "item"];
+  static targets = ["input", "item", "results"];
+  static values = { searchUrl: String };
 
   connect() {
     this._activeIndex = -1;
+    this._searchTimer = null;
+    this._initialResults = this.resultsTarget.innerHTML;
     this._boundGlobalKey = this._globalKey.bind(this);
     document.addEventListener("keydown", this._boundGlobalKey);
   }
 
   disconnect() {
     document.removeEventListener("keydown", this._boundGlobalKey);
+    clearTimeout(this._searchTimer);
   }
 
   _globalKey(event) {
@@ -27,7 +31,7 @@ export default class extends Controller {
   close() {
     this.element.close();
     this.inputTarget.value = "";
-    this.filter();
+    this._restoreInitialResults();
   }
 
   handleCancel(event) {
@@ -47,6 +51,17 @@ export default class extends Controller {
 
   filter() {
     const query = this.inputTarget.value.toLowerCase().trim();
+    clearTimeout(this._searchTimer);
+
+    if (query.length > 0 && this.hasSearchUrlValue) {
+      this.resultsTarget.innerHTML =
+        '<p class="command-palette__empty">Searching...</p>';
+      this._searchTimer = setTimeout(() => this._loadResults(query), 180);
+      return;
+    }
+
+    this._restoreInitialResults();
+
     const list = this.itemTargets[0]?.parentElement;
     if (!list) return;
 
@@ -108,15 +123,12 @@ export default class extends Controller {
 
   select(event) {
     const item = event.currentTarget;
-    const path = item.dataset.path;
-    if (!path) return;
+    this._visitItem(item);
+  }
 
-    this.close();
-    if (item.dataset.method === "post") {
-      this._postAction(path);
-    } else {
-      window.Turbo.visit(path);
-    }
+  resultsLoaded() {
+    this._activeIndex = -1;
+    this._clearActive();
   }
 
   _move(dir) {
@@ -133,6 +145,10 @@ export default class extends Controller {
 
   _activate() {
     const item = this.itemTargets[this._activeIndex];
+    this._visitItem(item);
+  }
+
+  _visitItem(item) {
     if (!item?.dataset.path) return;
 
     this.close();
@@ -141,6 +157,20 @@ export default class extends Controller {
     } else {
       window.Turbo.visit(item.dataset.path);
     }
+  }
+
+  _loadResults(query) {
+    const url = new URL(this.searchUrlValue, window.location.origin);
+    url.searchParams.set("q", query);
+    url.searchParams.set("surface", "command_palette");
+    this.resultsTarget.src = url.toString();
+  }
+
+  _restoreInitialResults() {
+    this.resultsTarget.removeAttribute("src");
+    this.resultsTarget.innerHTML = this._initialResults;
+    this._activeIndex = -1;
+    this._clearActive();
   }
 
   _postAction(path) {

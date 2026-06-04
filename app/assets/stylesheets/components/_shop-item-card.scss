@@ -30,7 +30,7 @@
   &__image {
     display: block;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     width: 100%;
   }
 
@@ -90,15 +90,15 @@
       width: 100%;
     }
 
-    &[aria-pressed="true"] {
-      background: var(--color-brand-yellow);
-    }
-
     &:hover,
     &:focus-visible {
       filter: brightness(1.05);
       outline: none;
     }
+  }
+
+  &--wishlisted &__star {
+    background: var(--color-brand-yellow);
   }
 
   &__body {
@@ -272,13 +272,6 @@
       bottom: 6px;
       right: 6px;
     }
-  }
-
-  &--non-interactive {
-    filter: saturate(0.5);
-    opacity: 0.55;
-    pointer-events: none;
-    user-select: none;
   }
 
   &--out-of-stock {

@@ -23,6 +23,8 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class Post < ApplicationRecord
+    include Gorse::SyncablePost
+
     has_paper_trail
 
     # Eager load all Post::* classes so Postable.types is populated
@@ -42,6 +44,8 @@ class Post < ApplicationRecord
     after_commit :increment_devlogs_count, on: :create
     after_commit :decrement_devlogs_count, on: :destroy
     after_commit :update_project_duration_seconds, on: [ :create, :destroy ]
+    after_commit :enqueue_postable_semantic_search_index, on: %i[create update]
+    after_commit :enqueue_postable_semantic_search_delete, on: :destroy
 
     Postable.types.each do |type_class|
       # These are automatically generated scopes for each postable type:
@@ -139,5 +143,19 @@ class Post < ApplicationRecord
       return unless postable_type == "Post::Devlog"
 
       project&.recalculate_duration_seconds!
+    end
+
+    def enqueue_postable_semantic_search_index
+      return unless %w[Post::Devlog Post::ShipEvent].include?(postable_type)
+      return unless postable_id
+
+      SemanticSearch::IndexRecordJob.perform_later(postable_type, postable_id)
+    end
+
+    def enqueue_postable_semantic_search_delete
+      type = { "Post::Devlog" => "devlog", "Post::ShipEvent" => "ship" }[postable_type]
+      return unless type && postable_id
+
+      SemanticSearch::DeleteRecordJob.perform_later(type, postable_id)
     end
 end

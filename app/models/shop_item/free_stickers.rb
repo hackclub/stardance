@@ -85,7 +85,7 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class ShopItem::FreeStickers < ShopItem
-  QUEUE_ID = "stardance-tutorial-stickers"
+  QUEUE_ID = "stardance-free-stickers"
 
   def fulfill!(shop_order)
     email   = shop_order.user&.email
@@ -93,12 +93,8 @@ class ShopItem::FreeStickers < ShopItem
 
     if email.blank? || address.blank?
       Rails.logger.warn(
-        "FreeStickers order #{shop_order.id} missing email or address — re-enqueuing"
+        "FreeStickers order #{shop_order.id} missing email or address — will retry via daily job"
       )
-
-      # push to end of queue (new job)
-      FulfillShopOrderJob.perform_later(shop_order.id)
-
       return
     end
 

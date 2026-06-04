@@ -46,7 +46,7 @@ module ShipDecisionTree
       demo_options: [
         "<strong>Vercel, Netlify, or Cloudflare Pages</strong> for anything modern — Next.js, SvelteKit, Astro, plain static.",
         "<strong>GitHub Pages</strong> for static sites — fine for vanilla HTML/CSS/JS or built SPAs.",
-        "<strong>Render, Railway, or Fly.io</strong> for projects with a backend or database.",
+        "<strong><a href='https://nest.hackclub.com/' target='_blank' rel='noopener'>Nest</a></strong> is recommended for projects with a backend or database. Paid tiers on Render or Railway are also good, but avoid their free tiers since they suffer from slow cold starts and aren't guaranteed to keep your app online indefinitely.",
         "A custom domain is a nice touch but not required."
       ],
       readme_must_haves: [

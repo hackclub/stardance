@@ -6,6 +6,7 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
   include Pagy::Method
   include Achievementable
+  include Trackable
 
   before_action :store_referral_code
   before_action :remember_page
@@ -64,7 +65,14 @@ class ApplicationController < ActionController::Base
     if session[:user_id]
       scope = User.where(id: session[:user_id])
       scope = scope.eager_load(*Array(preloads)) if preloads.present?
-      @current_user = scope.to_a.first
+      user = scope.to_a.first
+
+      if user && session[:auth_level] != "hca" && user.hca_linked?
+        reset_session
+        return @current_user = nil
+      end
+
+      @current_user = user
     end
   end
   helper_method :current_user
@@ -91,6 +99,11 @@ class ApplicationController < ActionController::Base
 
   private
 
+  def sign_in_user(user, auth_level: "guest")
+    session[:user_id] = user.id
+    session[:auth_level] = auth_level
+  end
+
   # https://stackoverflow.com/questions/70960161/ruby-on-rails-back-button-that-will-take-you-back-to-the-previous-page
   # improvised a bit. a linked list sorta..
   def remember_page
@@ -106,6 +119,10 @@ class ApplicationController < ActionController::Base
       pages << current_path
       session[:previous_pages] = pages.last(10)
     end
+  end
+
+  def client_ip_address
+    request.headers["CF-Connecting-IP"].presence || request.remote_ip
   end
 
   def prepare_boot_splash

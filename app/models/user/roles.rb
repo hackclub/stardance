@@ -17,6 +17,8 @@ module User::Roles
 
   def can_review? = admin? || has_role?(:project_certifier)
 
+  def can_nominate_super_star? = can_review? || has_role?(:guardian_of_integrity)
+
   def can_see_deleted_devlogs? = admin? || has_role?(:fraud_dept)
 
   def highest_role

@@ -1,0 +1,128 @@
+.highlights {
+  padding: calc(var(--space-xxxxl) * 2) var(--space-l) var(--space-xxl);
+  text-align: center;
+  color: var(--color-body-text);
+  font-family: "Exo 2", sans-serif;
+
+  &__title {
+    font-weight: 700;
+    font-size: var(--font-h2);
+    color: white;
+    margin: 0 0 var(--space-s);
+  }
+
+  &__title--italic {
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-weight: 700;
+  }
+
+  &__subtitle {
+    font-weight: 400;
+    font-size: var(--font-body);
+    max-width: 42em;
+    margin: 0 auto var(--space-xl);
+  }
+
+  &__cards {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-l);
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+
+  &__card {
+    flex: 1;
+    max-width: 22rem;
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-3-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__card-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__card-thumb-img--magazine {
+    object-fit: contain;
+    object-position: top;
+  }
+
+  &__card-body {
+    padding: var(--space-m);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    text-align: left;
+  }
+
+  &__card-logo {
+    margin-bottom: var(--space-s);
+    align-self: center;
+  }
+
+  &__card-logo--daydream {
+    height: 52px;
+    width: auto;
+  }
+
+  &__card-logo--prototype {
+    height: 56px;
+    width: auto;
+  }
+
+  &__card-logo--magazine {
+    height: 36px;
+    width: auto;
+  }
+
+  &__card-desc {
+    font-size: var(--font-subtitle);
+    line-height: 1.5;
+    margin: 0;
+    flex: 1;
+    align-self: stretch;
+  }
+
+  &__card-cta {
+    align-self: stretch;
+    margin-top: var(--space-m);
+    font-style: normal;
+  }
+
+  &__footer {
+    font-size: var(--font-body);
+    margin: var(--space-xl) auto var(--space-xxl);
+
+    a {
+      color: white;
+      text-decoration: underline;
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__cards {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &__card {
+      max-width: 100%;
+    }
+  }
+}

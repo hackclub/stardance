@@ -8,7 +8,10 @@ class CommentsController < ApplicationController
     authorize @comment
 
     if @comment.save
-      redirect_back fallback_location: fallback_path
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_back fallback_location: fallback_path }
+      end
     else
       redirect_back fallback_location: fallback_path, alert: @comment.errors.full_messages.to_sentence
     end
@@ -19,7 +22,10 @@ class CommentsController < ApplicationController
 
     @comment.soft_delete!
 
-    redirect_back fallback_location: fallback_path
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_back fallback_location: fallback_path }
+    end
   end
 
   private

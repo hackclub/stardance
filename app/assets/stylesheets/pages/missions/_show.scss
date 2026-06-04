@@ -225,16 +225,16 @@
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
+
+  &--spread {
+    justify-content: space-between;
+    gap: 0;
+  }
 }
 
 .mission-home__cta-form {
   margin: 0;
   display: inline-block;
-}
-
-.mission-home__hero-updated {
-  color: var(--color-fg-muted);
-  font-size: 14px;
 }
 
 .mission-home__columns {
@@ -594,4 +594,73 @@
   .mission-home__hero-title {
     font-size: clamp(32px, 9vw, 48px);
   }
+}
+
+.attach-mission-modal {
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--profile-radius);
+  box-shadow: 0 24px 60px var(--color-shadow-deep);
+  color: var(--color-space-text);
+  max-height: 85vh;
+  max-width: 440px;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+
+  &::backdrop {
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal__title {
+    margin: 0 0 var(--space-l);
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--font-size-xxxl);
+    line-height: var(--line-height-headers);
+    color: var(--color-space-text);
+    background-color: transparent;
+  }
+}
+
+.attach-mission-modal__desc {
+  color: var(--color-space-text-muted, var(--color-space-text));
+  font-size: var(--font-size-s);
+  line-height: 1.45;
+  margin: 0 0 var(--space-m);
+}
+
+.attach-mission-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.attach-mission-modal__item {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  display: flex;
+  gap: var(--space-s);
+  justify-content: space-between;
+  padding: var(--space-s) var(--space-m);
+}
+
+.attach-mission-modal__project-name {
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

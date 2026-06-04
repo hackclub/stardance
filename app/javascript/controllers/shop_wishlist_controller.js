@@ -1,93 +1,35 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["starButton", "goalSection", "goalItems"];
-  static values = {
-    itemId: String,
-    itemName: String,
-    itemPrice: Number,
-    itemImage: String,
-    balance: Number,
-  };
-
-  static STORAGE_KEY = "shop_wishlist";
-
-  connect() {
-    this.refreshStoredPrice();
-    this.updateStarState();
-  }
-
-  getWishlist() {
-    try {
-      const data = localStorage.getItem(this.constructor.STORAGE_KEY);
-      return data ? JSON.parse(data) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  saveWishlist(wishlist) {
-    localStorage.setItem(
-      this.constructor.STORAGE_KEY,
-      JSON.stringify(wishlist),
-    );
-    this.dispatch("updated", { detail: { wishlist } });
-  }
-
-  isStarred() {
-    const wishlist = this.getWishlist();
-    return !!wishlist[this.itemIdValue];
-  }
+  static values = { itemId: String, wishlisted: Boolean };
 
   toggle(event) {
     event.preventDefault();
     event.stopPropagation();
 
-    const wishlist = this.getWishlist();
+    const wasWishlisted = this.wishlistedValue;
+    this.wishlistedValue = !wasWishlisted;
 
-    if (wishlist[this.itemIdValue]) {
-      delete wishlist[this.itemIdValue];
-    } else {
-      wishlist[this.itemIdValue] = {
-        id: this.itemIdValue,
-        name: this.itemNameValue,
-        price: this.itemPriceValue,
-        image: this.itemImageValue,
-        addedAt: new Date().toISOString(),
-      };
-    }
+    const method = wasWishlisted ? "DELETE" : "POST";
+    const csrfToken = document.querySelector(
+      'meta[name="csrf-token"]',
+    )?.content;
 
-    this.saveWishlist(wishlist);
-    this.updateStarState();
+    fetch(`/shop/wishlists/${this.itemIdValue}`, {
+      method,
+      headers: {
+        "X-CSRF-Token": csrfToken,
+        Accept: "application/json",
+      },
+    }).then((r) => {
+      if (!r.ok) this.wishlistedValue = wasWishlisted;
+    });
   }
 
-  refreshStoredPrice() {
-    const wishlist = this.getWishlist();
-    const entry = wishlist[this.itemIdValue];
-    if (!entry) return;
-
-    const currentPrice = this.itemPriceValue;
-    if (entry.price !== currentPrice) {
-      entry.price = currentPrice;
-      this.saveWishlist(wishlist);
-    }
-  }
-
-  updateStarState() {
-    if (!this.hasStarButtonTarget) return;
-
-    const isStarred = this.isStarred();
-    this.starButtonTarget.classList.toggle(
-      "shop-item-card__star--active",
-      isStarred,
-    );
-    this.starButtonTarget.setAttribute(
-      "aria-pressed",
-      isStarred ? "true" : "false",
-    );
-    this.starButtonTarget.setAttribute(
-      "title",
-      isStarred ? "Remove from goals" : "Add to goals",
+  wishlistedValueChanged() {
+    this.element.classList.toggle(
+      "shop-item-card--wishlisted",
+      this.wishlistedValue,
     );
   }
 }

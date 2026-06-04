@@ -21,6 +21,6 @@ class Admin::Shop::DashboardController < Admin::ApplicationController
     end
 
     @item_types = ShopItem.distinct.pluck(:type).compact.sort
-    @pagy, @shop_items = pagy(@shop_items)
+    @pagy, @shop_items = pagy(@shop_items.includes(:shop_categories))
   end
 end

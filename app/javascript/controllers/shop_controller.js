@@ -10,8 +10,12 @@ export default class extends Controller {
     this.categoryFilter = "All";
     this.priceRange = "none";
     this.regionFilter = this.userRegionValue;
-    this.searchQuery = "";
     this.accessFilter = "All";
+
+    const searchInput = this.element.querySelector(
+      '[data-action*="shop#search"]',
+    );
+    this.searchQuery = (searchInput?.value || "").toLowerCase();
 
     this.setupSortButton();
     this.applyFiltersAndSort();
@@ -55,7 +59,9 @@ export default class extends Controller {
   }
 
   applyFiltersAndSort() {
-    const itemsContainer = document.querySelector(".shop__items");
+    const itemsContainer =
+      document.querySelector(".shop-category__items") ||
+      document.querySelector(".shop__items");
     if (!itemsContainer) return;
 
     const items = Array.from(
@@ -131,7 +137,9 @@ export default class extends Controller {
   }
 
   sortItems() {
-    const itemsContainer = document.querySelector(".shop__items");
+    const itemsContainer =
+      document.querySelector(".shop-category__items") ||
+      document.querySelector(".shop__items");
     if (!itemsContainer) return;
 
     const items = Array.from(
@@ -160,17 +168,9 @@ export default class extends Controller {
   }
 
   extractPrice(element) {
-    // Use the data attribute which has the correct sale price
-    const dataPrice = element.dataset.shopWishlistItemPriceValue;
-    if (dataPrice) return parseFloat(dataPrice) || 0;
-
-    // Fallback to text content - get the last number (sale price if present)
-    const priceText = element.querySelector(
-      ".shop-item-card__price",
-    )?.textContent;
-    if (!priceText) return 0;
-    const numbers = priceText.match(/\d+/g);
-    return numbers ? parseFloat(numbers[numbers.length - 1]) : 0;
+    const dataPrice = element.dataset.price;
+    if (dataPrice !== undefined) return parseFloat(dataPrice) || 0;
+    return 0;
   }
 
   search(event) {

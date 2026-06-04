@@ -1,6 +1,14 @@
 <div class="guest-banner" role="status">
-  <p class="guest-banner__copy">
-    you're browsing as a guest — sign in with Hack Club to like, comment, and create projects
-  </p>
-  <%= button_to "Sign in with Hack Club", helpers.hack_club_auth_path, method: :post, class: "guest-banner__cta", form: { class: "guest-banner__form" }, data: { turbo: false } %>
+  <% if visitor? %>
+    <p class="guest-banner__copy">
+      You are browsing as a guest.
+      <%= link_to "Sign up", helpers.root_path, class: "guest-banner__link" %>
+      (or <%= link_to "log in", helpers.root_path, class: "guest-banner__link" %>) to start making projects!
+    </p>
+  <% else %>
+    <p class="guest-banner__copy">
+      you're browsing as a guest — sign in with Hack Club to like, comment, and create projects
+    </p>
+    <%= button_to "Sign in with Hack Club", helpers.hack_club_auth_path, method: :post, class: "guest-banner__cta", form: { class: "guest-banner__form" }, data: { turbo: false } %>
+  <% end %>
 </div>

@@ -29,6 +29,7 @@ class Projects::DevlogsController < ApplicationController
       if @devlog.save
         Post.create!(project: @project, user: current_user, postable: @devlog)
         session.delete(test_time_session_key) if test_time_granted?
+        track_event "devlog_posted", { project_id: @project.id, devlog_id: @devlog.id, duration_seconds: @devlog.duration_seconds }
         flash[:notice] = "Devlog created successfully"
 
         return redirect_to project_path(@project)
@@ -45,6 +46,11 @@ class Projects::DevlogsController < ApplicationController
     respond_to do |format|
       format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds } }
       format.json { render json: { preview_time: @preview_time } }
+    end
+  rescue Pundit::NotAuthorizedError
+    respond_to do |format|
+      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: nil, preview_seconds: 0 }, status: :forbidden }
+      format.json { render json: { error: "Not authorized" }, status: :forbidden }
     end
   end
 
@@ -181,7 +187,7 @@ class Projects::DevlogsController < ApplicationController
     return apply_test_time_preview if test_time_granted? && hackatime_keys.blank?
     return @preview_time = nil unless hackatime_keys.present?
 
-    seconds = @project.seconds_coded_in_devlog_window(current_user.hackatime_identity&.uid)
+    seconds = @project.seconds_coded_in_devlog_window(current_user.hackatime_identity&.uid, access_token: current_user.hackatime_identity&.access_token)
     return apply_test_time_preview if test_time_granted? && seconds.nil?
     return @preview_time = nil if seconds.nil?
 

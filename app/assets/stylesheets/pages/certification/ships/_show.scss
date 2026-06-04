@@ -119,6 +119,12 @@
     overflow-wrap: anywhere;
   }
 
+  &__no-declaration {
+    margin: 0;
+    font-style: italic;
+    color: var(--muted);
+  }
+
   &__links,
   &__meta {
     display: grid;
@@ -149,6 +155,34 @@
     @media (max-width: 900px) {
       position: static;
     }
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 999px;
+
+    &--yes {
+      color: #08061e;
+      background: var(--color-brand-mint);
+    }
+
+    &--no {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  &__update-desc {
+    margin: var(--space-xs) 0 0;
+    font-size: 0.875rem;
+    line-height: var(--line-height-body);
+    color: var(--muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   &__claim {
@@ -204,6 +238,28 @@
     ul {
       padding-left: var(--space-l);
       margin: 0;
+    }
+  }
+
+  &__claim-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-xs) var(--space-s);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-brand-mint);
+    background: rgba(129, 255, 255, 0.08);
+    border: 1px solid rgba(129, 255, 255, 0.2);
+    border-radius: 8px;
+
+    &__countdown {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+
+      &.is-expired {
+        color: var(--color-brand-salmon);
+      }
     }
   }
 

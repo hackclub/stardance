@@ -40,6 +40,10 @@ export default class extends Controller {
         .map((t) => t.trim());
     }
     this.element.addEventListener("turbo:frame-load", this.#onTimeFrameLoad);
+    // Auto-open composer in simple mode (e.g. ship modal)
+    if (this.simpleModeValue) {
+      this.#composerOpen = true;
+    }
     this.#resizeTextarea();
     this.#updateSubmit();
     this.#loadPreviewTime();
@@ -117,8 +121,7 @@ export default class extends Controller {
       return;
     }
 
-    // The form uses local:true (non-Turbo), so data-turbo-submits-with won't
-    // fire. Manually swap the button text and disable it to give feedback and
+    // Manually swap the button text and disable it to give feedback and
     // prevent double-clicks.
     if (this.hasSubmitTarget) {
       const label = this.submitTarget.querySelector(".action-btn__label");
@@ -202,7 +205,16 @@ export default class extends Controller {
     chip.classList.add("feed-composer__chip--active");
     chip.setAttribute("aria-current", "true");
 
-    if (this.hasFormTarget) this.formTarget.action = postUrl;
+    if (this.hasFormTarget) {
+      this.formTarget.action = postUrl;
+      const csrfToken = document.querySelector(
+        "meta[name='csrf-token']",
+      )?.content;
+      const tokenField = this.formTarget.querySelector(
+        "input[name='authenticity_token']",
+      );
+      if (csrfToken && tokenField) tokenField.value = csrfToken;
+    }
     this.previewTimeUrlValue = previewUrl;
     this.hackatimeLinkedValue = linked;
 

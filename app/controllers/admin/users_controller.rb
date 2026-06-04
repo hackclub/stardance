@@ -13,14 +13,24 @@ class Admin::UsersController < Admin::ApplicationController
   end
 
   def show
-    @user = User.includes(:identities).find(params[:id])
+    if params[:id].starts_with?("@")
+      @user = User.find_by!("LOWER(display_name) = ?", params[:id][1..].downcase)
+    else
+      @user = User.includes(:identities).find(params[:id])
+    end
+
     authorize @user
 
     @all_projects = @user.projects.with_deleted.order(deleted_at: :desc)
   end
 
   def update
-    @user = User.find(params[:id])
+    if params[:id].starts_with?("@")
+      @user = User.find_by!("LOWER(display_name) = ?", params[:id][1..].downcase)
+    else
+      @user = User.find(params[:id])
+    end
+
     authorize @user
 
     old_regions = @user.regions.dup

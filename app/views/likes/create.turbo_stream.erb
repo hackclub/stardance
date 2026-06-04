@@ -1,3 +1,3 @@
 <%= turbo_stream.replace dom_id(@likeable, :like_button) do %>
-  <%= render "likes/button", likeable: @likeable %>
+  <%= render "likes/button", likeable: @likeable, animate_liked: @like&.persisted? %>
 <% end %>

@@ -25,16 +25,6 @@
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
-  }
-  50% {
-    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.8);
-  }
-}
-
 .top-banner__content {
   display: flex;
   align-items: center;
@@ -79,5 +69,21 @@
   &:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-banner--impersonation {
+    animation: none;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.8);
   }
 }

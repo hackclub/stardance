@@ -11,6 +11,9 @@ export default class extends Controller {
     "readmeContainer",
     "submit",
     "requirementsContainer",
+    "updateDeclaration",
+    "updateDescriptionContainer",
+    "updateDescriptionField",
   ];
 
   // Maps form-field keys → the requirement keys they satisfy. Reachability
@@ -60,6 +63,7 @@ export default class extends Controller {
 
     this.restoreReadmeState();
     this.recheckRequirements();
+    this.toggleUpdateDescription();
 
     if (
       this.hasRepoUrlTarget &&
@@ -455,5 +459,18 @@ export default class extends Controller {
     wrapper.offsetWidth;
     wrapper.classList.add("project-form--shake");
     setTimeout(() => wrapper.classList.remove("project-form--shake"), 400);
+  }
+
+  toggleUpdateDescription() {
+    if (!this.hasUpdateDescriptionContainerTarget) return;
+
+    const checked =
+      this.hasUpdateDeclarationTarget && this.updateDeclarationTarget.checked;
+    this.updateDescriptionContainerTarget.hidden = !checked;
+
+    if (this.hasUpdateDescriptionFieldTarget) {
+      this.updateDescriptionFieldTarget.required = checked;
+      if (!checked) this.updateDescriptionFieldTarget.value = "";
+    }
   }
 }

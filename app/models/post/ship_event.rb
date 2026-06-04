@@ -38,6 +38,8 @@
 class Post::ShipEvent < ApplicationRecord
   include Postable
   include Ledgerable
+  include SemanticSearchIndexable
+  semantic_search_indexable type: "ship"
 
   LEGACY_VOTING_SCALE_VERSION = 1
   CURRENT_VOTING_SCALE_VERSION = 2
@@ -46,6 +48,10 @@ class Post::ShipEvent < ApplicationRecord
   VOTE_COST_PER_SHIP = 15
   BODY_MAX_LENGTH = Post::Devlog::BODY_MAX_LENGTH
   REVIEW_INSTRUCTIONS_MAX_LENGTH = 2_000
+  MAX_ATTACHMENTS = 2
+  ACCEPTED_CONTENT_TYPES = %w[image/jpeg image/png image/webp image/heic image/heif image/gif].freeze
+
+  include HasPostAttachments
 
   has_one :project, through: :post
   has_many :project_memberships, through: :project, source: :memberships

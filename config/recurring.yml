@@ -111,6 +111,12 @@ production:
     concurrency: 1
     description: "Send daily shop order summary to Slack with backlog, assignments, and hang times"
 
+  shop_retry_free_sticker_orders:
+    class: Shop::RetryFreeStickerOrdersJob
+    schedule: every day at 6am UTC
+    concurrency: 1
+    description: "Retry fulfillment for free sticker orders stuck in pending"
+
   shop_calculate_fulfillment_payouts:
     class: Shop::CalculateFulfillmentPayoutsJob
     schedule: every Friday at 12pm Europe/London
@@ -134,3 +140,9 @@ production:
     schedule: every day at 4am America/New_York
     concurrency: 1
     description: "Hard-delete guest users (no HCA identity) older than 30 days"
+
+  ahoy_backfill_project_created_ahoy_events:
+    class: AhoyBackfillProjectCreatedJob
+    schedule: every day at 5am America/New_York
+    concurrency: 1
+    description: "Backfill missing ahoy events from DB tables for funnel tracking"

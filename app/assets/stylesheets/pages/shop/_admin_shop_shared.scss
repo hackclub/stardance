@@ -1,0 +1,99 @@
+// Shared tokens & mixins for all admin shop pages.
+// Import this with @use before defining page-specific blocks.
+
+$set-fg-secondary: #83828d;
+
+// Remap tan/brown tokens so existing .card, .table-data, .form-control
+// resolve to the space theme without touching each callsite.
+@mixin space-token-remaps {
+  --color-tan-300: var(--color-set-2-bg);
+  --color-tan-400: var(--color-set-1-bg);
+  --color-tan-500: #1e1d36;
+  --color-brown-500: #{$set-fg-secondary};
+  --color-brown-700: var(--color-space-text);
+  --color-text-muted: #{$set-fg-secondary};
+  --color-text-body: var(--color-space-text);
+  --color-text-header: var(--color-space-text);
+}
+
+@mixin page-shell {
+  padding: 0 clamp(1.5rem, 4vw, 3rem) 4rem;
+}
+
+@mixin page-title {
+  margin: var(--space-xxl) 0 var(--space-l);
+  font-size: 2.5rem; // Heading role — 40px bold (branding §2.1)
+  font-weight: 700;
+  color: var(--color-space-text);
+}
+
+@mixin back-link {
+  margin-top: var(--space-m);
+
+  a {
+    color: $set-fg-secondary;
+    font-size: 0.875rem;
+    text-decoration: none;
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+}
+
+// Set-2 card with space-theme h3 (small heading, all-caps per branding §2.1)
+@mixin space-card {
+  background: var(--color-set-2-bg);
+  border: 2px solid $set-fg-secondary;
+  border-radius: 8px;
+
+  h3 {
+    font-size: 1.1875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-space-text);
+    margin: 0 0 var(--space-s);
+  }
+}
+
+// .table-data space-theme overrides
+@mixin space-table {
+  border-color: $set-fg-secondary;
+
+  thead {
+    background: var(--color-set-1-bg);
+  }
+
+  th {
+    color: $set-fg-secondary;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    color: var(--color-space-text);
+  }
+  tbody tr {
+    background: var(--color-set-2-bg);
+  }
+
+  tbody tr:nth-child(odd) {
+    background: color-mix(
+      in srgb,
+      var(--color-set-2-bg),
+      var(--color-set-1-bg) 40%
+    );
+  }
+}
+
+// Pill buttons (branding §4)
+@mixin pill-buttons {
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  input[type="submit"],
+  button {
+    border-radius: 9999px;
+  }
+}

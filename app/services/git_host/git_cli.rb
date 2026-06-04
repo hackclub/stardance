@@ -26,7 +26,7 @@ module GitHost
       end
     end
 
-    def fetch_commits(since: nil, per_page: nil)
+    def fetch_commits(since: nil, before: nil, per_page: nil)
       return [] unless repo_url.present?
 
       Dir.mktmpdir("git_sync") do |tmpdir|
@@ -37,8 +37,12 @@ module GitHost
           return []
         end
 
-        parse_git_log(clone_path, since: since)
+        parse_git_log(clone_path, since: since, before: before)
       end
+    end
+
+    def fetch_commit(_sha)
+      nil  # Stats not available via CLI; caller falls back to the list commit
     end
 
     protected
@@ -76,10 +80,11 @@ module GitHost
       result
     end
 
-    def parse_git_log(clone_path, since: nil)
+    def parse_git_log(clone_path, since: nil, before: nil)
       format = "%H%n%s%n%b%n%an%n%ae%n%aI%n---COMMIT_END---"
       cmd = [ "git", "-C", clone_path, "log", "--format=#{format}" ]
       cmd += [ "--since=#{since.iso8601}" ] if since
+      cmd += [ "--until=#{before.iso8601}" ] if before
 
       output, status = Open3.capture2(*cmd)
       return [] unless status.success?

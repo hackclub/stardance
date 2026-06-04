@@ -9,8 +9,11 @@
         <div class="shop__banner-item-desc">
           <h4><%= featured_item.name %></h4>
           <div class="shop__banner-item-description"><%= md(featured_item.description) %></div>
-          <% if featured_item.hours_estimated > 0 %>
-              <h6>~<%= featured_item.hours_estimated %> hours</h6>
+          <% hours_label = featured_item.hours_estimate_label(featured_item.price_for_region(user_region)) %>
+          <% if hours_label.present? %>
+            <h6 data-controller="tooltip"
+                data-tooltip-message-value="Stardust payout varies based on how your project is rated, so your actual hours may be higher or lower than this estimate."
+                data-tooltip-position-value="top"><%= hours_label %> hours</h6>
           <% end %>
 
           <%= render ActionButtonComponent.new(

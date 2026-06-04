@@ -1,7 +1,7 @@
 class HomeController < ApplicationController
   include OnboardingResumable
 
-  before_action :resume_or_expire_onboarding!, only: :index
+  before_action :resume_or_expire_onboarding!, only: :index, if: -> { current_user.present? }
 
   def index
     authorize :home
@@ -9,7 +9,7 @@ class HomeController < ApplicationController
     @welcoming = params[:welcome] == "1" && current_user.present? && !current_user.has_dismissed?("home_intro")
     @body_class += " home-welcoming" if @welcoming
 
-    load_composer
+    load_composer if current_user.present?
   end
 
   private

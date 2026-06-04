@@ -13,6 +13,10 @@
 #  enriched_ref                 :string
 #  experience_level             :string
 #  first_name                   :string
+#  geocoded_country             :string
+#  geocoded_lat                 :float
+#  geocoded_lon                 :float
+#  geocoded_subdivision         :string
 #  granted_roles                :string           default([]), not null, is an Array
 #  guest_email                  :string
 #  has_gotten_free_stickers     :boolean          default(FALSE)
@@ -20,6 +24,7 @@
 #  hcb_email                    :string
 #  interests                    :string           default([]), is an Array
 #  internal_notes               :text
+#  ip_address                   :string
 #  last_name                    :string
 #  manual_ysws_override         :boolean
 #  mission_review_notifications :boolean          default(TRUE), not null
@@ -32,6 +37,7 @@
 #  shop_tutorial_started_at     :datetime
 #  synced_at                    :datetime
 #  things_dismissed             :string           default([]), not null, is an Array
+#  user_agent                   :string
 #  user_ref                     :string
 #  verification_checked_at      :datetime
 #  verification_status          :string           default("needs_submission"), not null
@@ -45,7 +51,6 @@
 # Indexes
 #
 #  index_users_on_email                      (email)
-#  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
 #  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
 #  index_users_on_onboarded_at               (onboarded_at)
@@ -53,7 +58,11 @@
 #  index_users_on_slack_id                   (slack_id) UNIQUE
 #
 class User < ApplicationRecord
-  has_paper_trail ignore: [ :votes_count, :updated_at, :shop_region ], on: [ :update, :destroy ]
+  include SemanticSearchIndexable
+  include Gorse::SyncableUser
+
+  has_paper_trail ignore: [ :votes_count, :updated_at, :shop_region, :ip_address, :user_agent ], on: [ :update, :destroy ]
+  semantic_search_indexable type: "user"
 
   has_many :identities, class_name: "User::Identity", dependent: :destroy
   has_one :hackatime_identity, -> { hackatime }, class_name: "User::Identity"
@@ -91,6 +100,8 @@ class User < ApplicationRecord
   has_many :reviewed_mission_submissions, class_name: "Mission::Submission",
            foreign_key: :reviewed_by_id, dependent: :nullify
   has_many :shop_suggestions, dependent: :destroy
+  has_many :shop_wishlists, dependent: :destroy
+  has_many :wishlisted_shop_items, through: :shop_wishlists, source: :shop_item
   has_many :sold_items, class_name: "ShopItem::HackClubberItem", foreign_key: :user_id
 
   has_one_attached :banner
@@ -120,6 +131,10 @@ class User < ApplicationRecord
     ineligible: "ineligible"
   }, prefix: :age_attestation
 
+  def age_blocked?
+    age_attestation_ineligible? && manual_ysws_override != true
+  end
+
   enum :experience_level, {
     none: "none",
     little: "little",
@@ -141,6 +156,7 @@ class User < ApplicationRecord
   INTERESTS_UNKNOWN = "dont_know".freeze
 
   validate :interests_must_be_allowed
+  after_commit :enqueue_geocode_job, on: :create
 
   scope :discoverable, -> { joins(:hack_club_identity).distinct }
 
@@ -181,6 +197,8 @@ class User < ApplicationRecord
   include User::Preferences
   include User::UsernameBloomSync
 
+  after_create_commit :increment_signup_counter, if: -> { Flipper.enabled?(:new_onboarding) }
+
   KERBAL_FIRST_NAMES = %w[
     Jebediah Bill Bob Valentina Lodwig Shepard Gus Wernher Gene
     Mortimer Linus Genekin Bobnik Billard Valentik Aldler Orlas
@@ -217,6 +235,14 @@ class User < ApplicationRecord
   end
 
   private
+
+  def increment_signup_counter
+    Rails.cache.increment("landing/signup_count", 1, expires_in: 30.seconds)
+  end
+
+  def enqueue_geocode_job
+    UserGeocodeJob.perform_later(id) if ip_address.present?
+  end
 
   def interests_must_be_allowed
     return if interests.blank?
