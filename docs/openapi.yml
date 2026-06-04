@@ -761,6 +761,141 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationError"
+    delete:
+      summary: Delete a devlog post
+      description: Soft-deletes a devlog. Only the original author can delete. Cannot delete from a shipped project.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Post deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Cannot delete a devlog from a shipped project.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /posts/{id}/comments:
+    get:
+      summary: List comments on a devlog post
+      tags: [Posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of comments, ordered oldest first.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Comment"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      summary: Create a comment on a devlog post
+      tags: [Posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+              required: [body]
+      responses:
+        "201":
+          description: Comment created.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Validation failed (body missing or too long).
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /posts/{id}/comments/{comment_id}:
+    delete:
+      summary: Delete a comment
+      description: Soft-deletes a comment. Only the comment author can delete.
+      tags: [Posts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Comment deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /shop_items:
     get:
@@ -1126,7 +1261,7 @@ components:
         created_at:
           type: string
           format: date-time
-        viewer_follows:
+        i_follow:
           type: boolean
           description: Whether the authenticated user follows this user.
 
@@ -1208,7 +1343,7 @@ components:
         updated_at:
           type: string
           format: date-time
-        viewer_follows:
+        i_follow:
           type: boolean
           description: Whether the authenticated user follows this project.
 
@@ -1295,7 +1430,7 @@ components:
           type: integer
         tutorial:
           type: boolean
-        viewer_has_liked:
+        i_liked:
           type: boolean
           description: Whether the authenticated user has liked this post.
         media:
@@ -1332,10 +1467,49 @@ components:
         body:
           type: string
           nullable: true
-          description: Optional comment added by the reposter.
+          description: Optional quote comment added by the reposter.
         original_post_id:
           type: integer
           description: ID of the original Post that was reposted.
+        original_post:
+          type: object
+          nullable: true
+          description: Embedded original post data for rendering quote cards without a second request.
+          properties:
+            id:
+              type: integer
+            type:
+              type: string
+              enum: [devlog]
+            user_id:
+              type: integer
+            created_at:
+              type: string
+              format: date-time
+            content:
+              type: object
+              properties:
+                body:
+                  type: string
+                likes_count:
+                  type: integer
+                comments_count:
+                  type: integer
+                duration_seconds:
+                  type: integer
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
 
     ShopItem:
       type: object

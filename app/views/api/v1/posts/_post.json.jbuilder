@@ -14,7 +14,7 @@ when "Post::Devlog"
     json.likes_count devlog.likes_count
     json.comments_count devlog.comments_count
     json.tutorial devlog.tutorial
-    json.viewer_has_liked devlog.likes.exists?(user: @current_api_user)
+    json.i_liked devlog.likes.exists?(user: @current_api_user)
     json.media devlog.attachments.map { |a|
       { url: rails_blob_path(a, only_path: true), content_type: a.content_type }
     }
@@ -33,6 +33,23 @@ when "Post::Repost"
   json.content do
     json.body repost.body
     json.original_post_id repost.original_post_id
+    orig = repost.original_post
+    if orig
+      json.original_post do
+        json.id orig.id
+        json.type orig.postable_type.demodulize.underscore
+        json.user_id orig.user_id
+        json.created_at orig.created_at
+        if orig.postable_type == "Post::Devlog" && orig.postable.present?
+          json.content do
+            json.body orig.postable.body
+            json.likes_count orig.postable.likes_count
+            json.comments_count orig.postable.comments_count
+            json.duration_seconds orig.postable.duration_seconds
+          end
+        end
+      end
+    end
   end
 else
   ""

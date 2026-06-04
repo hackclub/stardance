@@ -18,6 +18,14 @@ class Api::V1::Users::Me::FeedController < Api::BaseController
       ).call
     end
 
+    repost_postables = @posts.select { |p| p.postable_type == "Post::Repost" }.map(&:postable).compact
+    if repost_postables.any?
+      ActiveRecord::Associations::Preloader.new(
+        records: repost_postables,
+        associations: { original_post: :postable }
+      ).call
+    end
+
     render "api/v1/posts/index"
   end
 end
