@@ -1409,9 +1409,11 @@ components:
         first_name:
           type: string
           nullable: true
+          description: Only returned on `/users/me` (the key owner's own profile).
         last_name:
           type: string
           nullable: true
+          description: Only returned on `/users/me` (the key owner's own profile).
         bio:
           type: string
           nullable: true
@@ -1427,11 +1429,11 @@ components:
           nullable: true
         balance:
           type: integer
-          description: The user's current stardust balance.
+          description: The user's current stardust balance. Only returned on `/users/me`.
         shop_region:
           type: string
           nullable: true
-          description: Two-letter region code for shop availability and pricing.
+          description: Two-letter region code for shop availability and pricing. Only returned on `/users/me`.
         created_at:
           type: string
           format: date-time
