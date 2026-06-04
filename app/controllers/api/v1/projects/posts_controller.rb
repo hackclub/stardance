@@ -76,6 +76,7 @@ class Api::V1::Projects::PostsController < Api::BaseController
     end
 
     @post.postable.update!(post_params)
+    render :show
   end
 
   def destroy

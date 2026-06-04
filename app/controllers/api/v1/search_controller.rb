@@ -70,11 +70,10 @@ class Api::V1::SearchController < Api::BaseController
     posts = posts.where(project_id: params[:project_id]) if params[:project_id].present?
     posts = posts.where(user_id: params[:author_id]) if params[:author_id].present?
 
-    posts = posts.includes(postable: [ :post, { attachments_attachments: :blob } ])
+    posts = posts.includes(postable: { attachments_attachments: :blob })
                  .order(created_at: :desc)
 
-    @pagy, paged = pagy(posts, limit: limit)
-    @devlogs = paged.map(&:postable)
+    @pagy, @posts = pagy(posts, limit: limit)
     render "api/v1/search/posts"
   end
 

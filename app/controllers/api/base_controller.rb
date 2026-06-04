@@ -46,11 +46,11 @@ class Api::BaseController < ActionController::Base
   end
 
   def handle_404
-    render json: { error: "Resource not found" }, status: :not_found
+    render json: { error: "Resource not found", request_id: request.request_id }, status: :not_found
   end
 
   def handle_bad(exception)
-    render json: { errors: exception.record.errors.full_messages }, status: :unprocessable_entity
+    render json: { errors: exception.record.errors.full_messages, request_id: request.request_id }, status: :unprocessable_entity
   end
 
   def set_performance_headers
