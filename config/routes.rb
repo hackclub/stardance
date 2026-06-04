@@ -459,12 +459,13 @@ Rails.application.routes.draw do
         resource :follow, only: [ :create ], module: :users
       end
       resources :projects, only: [ :show, :update ] do
-        resources :posts, only: [ :index, :show, :create, :update ], module: :projects
+        resources :posts, only: [ :index, :show, :create, :update, :destroy ], module: :projects
         resource :follow, only: [ :create ], module: :projects
       end
       resources :posts, only: [] do
         resource :like, only: [ :create ], module: :posts
         resource :repost, only: [ :create, :destroy ], module: :posts
+        resources :comments, only: [ :index, :create, :destroy ], module: :posts
       end
       resources :shop_items, only: [ :index, :show ]
     end

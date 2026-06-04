@@ -4,8 +4,8 @@ info:
   title: Stardance API
   version: v1
   description: |
-    this built-in scalar theme looks cool, doesnt it? like... kind space y.... 
-    
+    this built-in scalar theme looks cool, doesnt it? like... kind space y....
+
     ## Authentication
 
     Every endpoint requires an API key. Send it as a Bearer token:
@@ -25,7 +25,7 @@ info:
     30 requests per 1 minute, enforced per IP address and per API key. Exceeding either limit returns `429 Too Many Requests` with body `{ "error": "rate_limited" }`.
 
     ---
-    
+
     ## Pagination
 
     Paginated endpoints (eg. projects and devlogs) accept `?page` (1-based, default 1) and `?limit` (1–100, default 100). A `400` is returned if `limit` is out of that range. Responses include a `pagination` object:
@@ -42,7 +42,7 @@ info:
     `next_page` is `null` on the last page.
 
     ---
-    
+
     ## Media URLs
 
     `media[].url` and `banner_url` are **relative paths** (e.g. `/rails/active_storage/blobs/…`). Prepend the server base URL (`https://stardance.hackclub.com`) to get a working url.
@@ -1116,7 +1116,7 @@ components:
         avatar_url:
           type: string
           nullable: true
-        ticket_balance:
+        balance:
           type: integer
           description: The user's current stardust balance.
         shop_region:
