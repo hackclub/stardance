@@ -230,8 +230,6 @@ class User < ApplicationRecord
       .first
   end
 
-  before_create :generate_api_key
-
   def reroll_api_key!
     update!(api_key: unique_api_key)
   end

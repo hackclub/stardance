@@ -43,17 +43,791 @@ info:
     
     ## Media URLs
 
-    `media[].url` and `banner_url` are **relative paths** (e.g.
-    `/rails/active_storage/blobs/…`). Prepend the server base URL
-    (`https://stardance.hackclub.com`) to get a fully qualified URL.
+    `media[].url` and `banner_url` are **relative paths** (e.g. `/rails/active_storage/blobs/…`). Prepend the server base URL (`https://stardance.hackclub.com`) to get a working url.
 
 servers:
   - url: https://stardance.hackclub.com/api/v1
-    description: Production server
+    description: Production server.
   - url: http://sd.67.pl.eu.org/api/v1
-    description: Playground server for testing
+    description: Playground server for testing.
+  - url: http://6767.67.pl.eu.org/api/v1
+    description: Second playground server for testing; might not always be available.
+
 security:
   - bearerAuth: []
+
+tags:
+  - name: Search
+    description: Endpoints for searching users, projects, posts, and shop items with filters.
+  - name: Me
+    description: Endpoints for the authenticated user's profile, projects, feed, and orders.
+  - name: Users
+    description: Endpoints for viewing other users' profiles and content.
+  - name: Projects
+    description: Endpoints for viewing and managing projects and their posts.
+  - name: Shop
+    description: Endpoints for browsing shop items and viewing orders.
+
+paths:
+  /search:
+    get:
+      summary: Search
+      description: Search for users, projects, devlogs/ships, or shop items. The `type` parameter controls which resource is searched for and the format of the results.
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          description: Search query string.
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Resource type to search for.
+          required: true
+          schema:
+            type: string
+            enum: [user, project, post, shop_item]
+        - name: project_id
+          in: query
+          description: Filter posts by project (only for type=post).
+          required: false
+          schema:
+            type: integer
+        - name: author_id
+          in: query
+          description: Filter by author user ID (for type=project or type=post).
+          required: false
+          schema:
+            type: integer
+        - name: ship_status
+          in: query
+          description: Filter projects by ship status (only for type=project).
+          required: false
+          schema:
+            type: string
+            enum: [draft, submitted, under_review, approved, rejected]
+        - name: project_type
+          in: query
+          description: Filter projects by project type (only for type=project).
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Filter by category (for type=project or type=shop_item).
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Search results (format depends on type parameter).
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/User"
+                      pagination:
+                        $ref: "#/components/schemas/Pagination"
+                  - type: object
+                    properties:
+                      projects:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Project"
+                      pagination:
+                        $ref: "#/components/schemas/Pagination"
+                  - type: object
+                    properties:
+                      posts:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Devlog"
+                      pagination:
+                        $ref: "#/components/schemas/Pagination"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ShopItem"
+                      pagination:
+                        $ref: "#/components/schemas/Pagination"
+        "400":
+          description: Invalid search type or limit parameter.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me:
+    get:
+      summary: Get the authenticated user's profile
+      description: Provides info like display name, bio and avatar. Same as `/users/{id}` but for the profile of the key owner.
+      tags: [Me]
+      responses:
+        "200":
+          description: The current user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      summary: Update the authenticated user's profile
+      tags: [Me]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                bio:
+                  type: string
+      responses:
+        "200":
+          description: The updated user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Validation failed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /users/{id}:
+    get:
+      summary: Get a user's profile
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{id}/projects:
+    get:
+      summary: List a user's projects
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of the user's projects.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/{id}/posts:
+    get:
+      summary: List a user's devlogs and ships
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of the user's posts.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Devlog"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/projects:
+    get:
+      summary: List the authenticated user's projects
+      tags: [Me]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of the current user's projects.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create a new project
+      tags: [Me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                  nullable: true
+                repo_url:
+                  type: string
+                  nullable: true
+                demo_url:
+                  type: string
+                  nullable: true
+                readme_url:
+                  type: string
+                  nullable: true
+                ai_declaration:
+                  type: string
+                  nullable: true
+              required: [title]
+      responses:
+        "201":
+          description: The newly created project.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Validation failed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /users/me/orders:
+    get:
+      summary: List current user's shop orders
+      tags: [Me]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of the user's shop orders.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ShopOrder"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/orders/{id}:
+    get:
+      summary: Get a specific shop order
+      tags: [Me]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The shop order.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopOrder"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/me/recommended_projects:
+    get:
+      summary: Get recommended projects
+      description: Paginated list of projects recommended for the user. The same as you can find on `/home` of the website!
+      tags: [Me]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of projects recommended for the user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/feed:
+    get:
+      summary: Get devlog feed
+      description: Paginated list of recent devlogs in the user's feed. The same as you can find on `/home` of the website!
+      tags: [Me]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of recent devlogs recommended for the user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devlogs:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Devlog"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /projects/{id}:
+    get:
+      summary: Get a project by ID
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The project.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update a project
+      description: Only project members can update a project.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                repo_url:
+                  type: string
+                demo_url:
+                  type: string
+                readme_url:
+                  type: string
+                ai_declaration:
+                  type: string
+      responses:
+        "200":
+          description: The updated project.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Validation failed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /projects/{id}/posts:
+    get:
+      summary: List posts for a project
+      description: Returns both devlogs and ship events.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of posts for the project.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Post"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      summary: Create a devlog post for a project
+      description: Creating a post requires membership in the project and at least one linked Hackatime project.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  description: Markdown content for the devlog.
+                attachments:
+                  type: array
+                  description: Array of file IDs to attach.
+                  items:
+                    type: integer
+              required: [body]
+      responses:
+        "201":
+          description: The newly created post.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Validation failed (e.g., no Hackatime projects linked).
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /projects/{id}/posts/{post_id}:
+    get:
+      summary: Get a specific post from a project
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The post.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update a devlog post
+      description: Only devlog posts can be edited, and only by the original author.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+              required: [body]
+      responses:
+        "200":
+          description: The updated post.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /shop_items:
+    get:
+      summary: List shop items
+      tags: [Shop]
+      parameters:
+        - name: category
+          in: query
+          description: Filter by category slug.
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of shop items.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ShopItem"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /shop_items/{id}:
+    get:
+      summary: Get a shop item by ID
+      description: Includes available modifiers for the user's region.
+      tags: [Shop]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The shop item with modifiers.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ShopItem"
+                  - type: object
+                    properties:
+                      modifiers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                            group_name:
+                              type: string
+                            ticket_cost:
+                              type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 
 components:
   securitySchemes:
@@ -134,6 +908,13 @@ components:
         avatar_url:
           type: string
           nullable: true
+        ticket_balance:
+          type: integer
+          description: The user's current stardust balance.
+        shop_region:
+          type: string
+          nullable: true
+          description: Two-letter region code for shop availability and pricing.
         created_at:
           type: string
           format: date-time
@@ -257,6 +1038,158 @@ components:
           type: string
           format: date-time
 
+    Post:
+      type: object
+      description: A post can be either a devlog a ship event, or a re-post.
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [devlog, ship_event]
+          description: The type of post.
+        project_id:
+          type: integer
+        user_id:
+          type: integer
+        content:
+          type: object
+          description: Content varies by post type.
+          oneOf:
+            - $ref: "#/components/schemas/Post_Devlog_Content"
+            - $ref: "#/components/schemas/Post_ShipEvent_Content"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Post_Devlog_Content:
+      type: object
+      properties:
+        body:
+          type: string
+          description: Markdown content of the devlog.
+        duration_seconds:
+          type: integer
+          nullable: true
+        likes_count:
+          type: integer
+        comments_count:
+          type: integer
+        tutorial:
+          type: boolean
+        media:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              content_type:
+                type: string
+
+    Post_ShipEvent_Content:
+      type: object
+      properties:
+        certification_status:
+          type: string
+          enum: [pending, approved, rejected]
+        body:
+          type: string
+          nullable: true
+        feedback_reason:
+          type: string
+          nullable: true
+        hours:
+          type: number
+        payout:
+          type: integer
+          nullable: true
+
+    ShopItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        ticket_cost:
+          type: integer
+          description: Cost in stardust.
+        one_per_person_ever:
+          type: boolean
+          description: If true, can only be purchased once per user.
+        limited:
+          type: boolean
+          description: If true, item has limited stock.
+        available:
+          type: boolean
+          description: Whether this item is available in the user's region.
+        available_regions:
+          type: array
+          items:
+            type: string
+          description: List of region codes where item is available.
+        categories:
+          type: array
+          items:
+            type: string
+          description: Category slugs this item belongs to.
+        image_url:
+          type: string
+          nullable: true
+          description: Relative path to item image.
+        created_at:
+          type: string
+          format: date-time
+
+    ShopOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        aasm_state:
+          type: string
+          enum: [pending, approved, rejected, on_hold, fulfilled, cancelled]
+          description: Current state of the order.
+        quantity:
+          type: integer
+        frozen_item_price:
+          type: integer
+          description: Price paid per item.
+        rejection_reason:
+          type: string
+          nullable: true
+          description: Reason if order was rejected.
+        tracking_number:
+          type: string
+          nullable: true
+          description: Shipping tracking number.
+        fulfilled_at:
+          type: string
+          format: date-time
+          nullable: true
+        item:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            image_url:
+              type: string
+              nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
   parameters:
     Limit:
       name: limit
@@ -328,147 +1261,3 @@ components:
           example:
             error: "Limit must be between 1 and 100"
             request_id: "abc123"
-
-paths:
-  /me:
-    get:
-      summary: Get the authenticated user's profile
-      description: Provides info like display name, bio and avatar. Same as `/profile` but for the profile of the key owner.
-      tags: [Me]
-      responses:
-        "200":
-          description: The current user.
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/X-Request-ID"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    patch:
-      summary: Update the authenticated user's profile
-      tags: [Me]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                display_name:
-                  type: string
-                first_name:
-                  type: string
-                last_name:
-                  type: string
-                bio:
-                  type: string
-      responses:
-        "200":
-          description: The updated user.
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/X-Request-ID"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "422":
-          description: Validation failed.
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/X-Request-ID"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationError"
-
-  /me/projects:
-    get:
-      summary: List the authenticated user's projects
-      tags: [Me]
-      parameters:
-        - $ref: "#/components/parameters/Limit"
-        - $ref: "#/components/parameters/Page"
-      responses:
-        "200":
-          description: Paginated list of the current user's projects.
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/X-Request-ID"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  projects:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Project"
-                  pagination:
-                    $ref: "#/components/schemas/Pagination"
-        "400":
-          $ref: "#/components/responses/InvalidLimit"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /me/recommended_projects:
-    get:
-      summary: Get recommended projects
-      description: Paginated list of projects recommended for the user. The same as you can find on `/home` of the website!
-      tags: [Me]
-      parameters:
-        - $ref: "#/components/parameters/Limit"
-        - $ref: "#/components/parameters/Page"
-      responses:
-        "200":
-          description: Paginated list of projects recommended for the user.
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/X-Request-ID"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  projects:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Project"
-                  pagination:
-                    $ref: "#/components/schemas/Pagination"
-        "400":
-          $ref: "#/components/responses/InvalidLimit"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /me/feed:
-    get:
-      summary: Get devlog feed
-      description: Paginated list of recent devlogs in the user's feed. The same as you can find on `/home` of the website!
-      tags: [Me]
-      parameters:
-        - $ref: "#/components/parameters/Limit"
-        - $ref: "#/components/parameters/Page"
-      responses:
-        "200":
-          description: Paginated list of recent devlogs recommended for the user.
-          headers:
-            X-Request-ID:
-              $ref: "#/components/headers/X-Request-ID"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  devlogs:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Devlog"
-                  pagination:
-                    $ref: "#/components/schemas/Pagination"
-        "400":
-          $ref: "#/components/responses/InvalidLimit"
-        "401":
-          $ref: "#/components/responses/Unauthorized"

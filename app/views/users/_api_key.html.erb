@@ -1,6 +1,6 @@
 <div class="api-key-container">
   <% if user.api_key.present? %>
-    <div class="api-key-display api-key-display--copyable <%= 'api-key-display--blurred' unless local_assigns[:just_generated] %>"
+    <div class="api-key-display api-key-display--copyable <%= 'api-key-display--blurred' unless local_assigns[:just_generated] or not session[:streamer_mode] %>"
          data-key="<%= user.api_key %>"
          onmouseenter="this.classList.remove('api-key-display--blurred')"
          onmouseleave="<%= local_assigns[:just_generated] ? '' : "this.classList.add('api-key-display--blurred')" %>"
@@ -9,7 +9,7 @@
       <%= user.api_key %>
     </div>
   <% else %>
-    <div class="api-key-display">No API key yet, to generate one here -></div>
+    <div class="api-key-display">No API key yet, generate one here -></div>
   <% end %>
 
   <%= button_to roll_api_key_my_settings_path,
@@ -19,5 +19,5 @@
   <% end %>
 </div>
 <% if local_assigns[:just_generated] %>
-  <p class="api-key-section__new-key-notice">New key generated — copy it now!</p>
+  <p class="api-key-section__new-key-notice">New key generated!</p>
 <% end %>
