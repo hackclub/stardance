@@ -18,6 +18,13 @@ class AmbassadorCostStatsService
     average_cost_us_cents: "averageCostUS"
   }.freeze
 
+  COUNT_FIELDS = {
+    total_referrals: "totalReferrals",
+    total_referrals_us: "totalReferralsUS",
+    total_completed_referrals: "totalCompletedReferrals",
+    total_completed_referrals_us: "totalCompletedReferralsUS"
+  }.freeze
+
   REGION_BREAKDOWN_FIELD = "ambassadorRegionBreakdown"
 
   class << self
@@ -56,12 +63,17 @@ class AmbassadorCostStatsService
 
     def stat_attributes(payload)
       cost_attributes(payload)
+        .merge(count_attributes(payload))
         .merge(approved_ambassadors_count: payload.fetch("totalApprovedAmbassadors").to_i)
         .merge(ambassador_region_breakdown: region_breakdown(payload))
     end
 
     def cost_attributes(payload)
       COST_FIELDS.to_h { |attribute, key| [ attribute, cents(payload.fetch(key)) ] }
+    end
+
+    def count_attributes(payload)
+      COUNT_FIELDS.to_h { |attribute, key| [ attribute, payload.fetch(key).to_i ] }
     end
 
     def region_breakdown(payload)

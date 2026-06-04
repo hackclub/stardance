@@ -113,8 +113,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_185220) do
     t.integer "shirt_cost_cents", default: 0, null: false
     t.integer "shirt_cost_us_cents", default: 0, null: false
     t.datetime "synced_at", null: false
+    t.integer "total_completed_referrals", default: 0, null: false
+    t.integer "total_completed_referrals_us", default: 0, null: false
     t.integer "total_cost_cents", default: 0, null: false
     t.integer "total_cost_us_cents", default: 0, null: false
+    t.integer "total_referrals", default: 0, null: false
+    t.integer "total_referrals_us", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["synced_at"], name: "index_ambassador_cost_stats_on_synced_at"
   end

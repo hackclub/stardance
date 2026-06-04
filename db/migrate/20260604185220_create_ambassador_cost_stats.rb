@@ -18,6 +18,10 @@ class CreateAmbassadorCostStats < ActiveRecord::Migration[8.1]
       t.integer :average_cost_per_ambassador_cents, null: false, default: 0
       t.integer :average_cost_us_cents, null: false, default: 0
       t.integer :approved_ambassadors_count, null: false, default: 0
+      t.integer :total_referrals, null: false, default: 0
+      t.integer :total_referrals_us, null: false, default: 0
+      t.integer :total_completed_referrals, null: false, default: 0
+      t.integer :total_completed_referrals_us, null: false, default: 0
       t.jsonb :ambassador_region_breakdown, null: false, default: {}
       t.datetime :synced_at, null: false
 

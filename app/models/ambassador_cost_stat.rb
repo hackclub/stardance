@@ -20,8 +20,12 @@
 #  shirt_cost_cents                  :integer          default(0), not null
 #  shirt_cost_us_cents               :integer          default(0), not null
 #  synced_at                         :datetime         not null
+#  total_completed_referrals         :integer          default(0), not null
+#  total_completed_referrals_us      :integer          default(0), not null
 #  total_cost_cents                  :integer          default(0), not null
 #  total_cost_us_cents               :integer          default(0), not null
+#  total_referrals                   :integer          default(0), not null
+#  total_referrals_us                :integer          default(0), not null
 #  created_at                        :datetime         not null
 #  updated_at                        :datetime         not null
 #
