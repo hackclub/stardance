@@ -69,6 +69,12 @@ Rails.application.configure do
   # Raise an error on page load if there are pending migrations.
   config.active_record.migration_error = :page_load
 
+  # The raffle engine is served on its own subdomain. `.localhost` subdomains
+  # are already permitted by the default dev host-authorization allowlist; also
+  # allow the raffle subdomain on `lvh.me` (both resolve to 127.0.0.1).
+  config.hosts << ".lvh.me"
+  config.hosts << "raffle.localhost"
+
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true
 

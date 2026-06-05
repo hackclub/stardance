@@ -52,4 +52,13 @@ Rails.application.config.middleware.use OmniAuth::Builder do
           token_url:     "/oauth/token"
         }
       }
+
+    # GitHub — used by the raffle engine for 19+ adult participants
+    provider :github,
+      ENV["RAFFLE_GITHUB_CLIENT_ID"] || Rails.application.credentials.dig(:github_raffle, :client_id),
+      ENV["RAFFLE_GITHUB_CLIENT_SECRET"] || Rails.application.credentials.dig(:github_raffle, :client_secret),
+      {
+        scope: "read:user",
+        callback_path: "/auth/github/callback"
+      }
 end

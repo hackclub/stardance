@@ -1,6 +1,10 @@
 <% content_for :title, "Users" %>
 <h1>users</h1>
 
+<% if current_user.admin? || current_user.has_role?(:raffle_admin) %>
+  <p><%= link_to "→ Raffle admin", admin_raffles_path %></p>
+<% end %>
+
 <%= form_with url: admin_users_path, method: :get, local: true do %>
   <%= text_field_tag :query, params[:query],
     placeholder: "Search users by name or email...",

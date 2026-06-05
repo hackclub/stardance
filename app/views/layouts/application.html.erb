@@ -105,7 +105,7 @@
     <% end %>
     <div id="flash-region"><%= render "shared/flash" %></div>
     <%= render Onboarding::GuestBannerComponent.new unless @hide_sidebar %>
-    <%= yield %>
+<%= yield %>
     <%= render "shared/slack_doodle" %>
     <%= render "shared/idv_verify_modal" %>
     <% unless @hide_footer %>

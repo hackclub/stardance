@@ -3,7 +3,7 @@
 <% content_for :og_description, "#{@stats[:projects_count]} projects · #{@stats[:ships_count]} ships · #{@stats[:devlogs_count]} devlogs" %>
 <% content_for :og_image, user_og_image_url(@user, format: :png) %>
 
-<% if @user.preference.search_engine_indexing_off? %>
+<% if @user.preference&.search_engine_indexing_off? %>
   <% content_for :head do %>
     <meta name="robots" content="noindex, nofollow">
   <% end %>

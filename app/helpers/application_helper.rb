@@ -1,6 +1,22 @@
 module ApplicationHelper
   def in_beta? = request.host.include?("beta")
 
+  def main_app_base_url
+    host = request.host.sub(/\Araffle\./, "")
+    port = request.port
+    scheme = request.scheme
+    port_suffix = [ 80, 443 ].include?(port) ? "" : ":#{port}"
+    "#{scheme}://#{host}#{port_suffix}"
+  end
+
+  def raffle_base_url
+    host = request.host.sub(/\Araffle\./, "")
+    port = request.port
+    scheme = request.scheme
+    port_suffix = [ 80, 443 ].include?(port) ? "" : ":#{port}"
+    "#{scheme}://raffle.#{host}#{port_suffix}"
+  end
+
   def stardust_icon(extra_class: nil)
     image_tag "icons/stardust.png", alt: "Stardust", class: [ "currency-icon", extra_class ].compact.join(" ")
   end

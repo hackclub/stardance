@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_04_185220) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_201158) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -680,6 +680,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_185220) do
     t.index ["nominated_fire_by_id"], name: "index_projects_on_nominated_fire_by_id"
   end
 
+  create_table "raffle_participants", force: :cascade do |t|
+    t.string "age_group", default: "teen", null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.boolean "eligible", default: true, null: false
+    t.string "github_avatar_url"
+    t.string "github_login"
+    t.string "github_uid"
+    t.bigint "signup_week_id"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["code"], name: "index_raffle_participants_on_code", unique: true
+    t.index ["github_uid"], name: "index_raffle_participants_on_github_uid_unique", unique: true, where: "(github_uid IS NOT NULL)"
+    t.index ["user_id"], name: "index_raffle_participants_on_user_id_unique", unique: true, where: "(user_id IS NOT NULL)"
+  end
+
+  create_table "raffle_referrals", force: :cascade do |t|
+    t.string "channel", default: "web", null: false
+    t.datetime "created_at", null: false
+    t.bigint "credited_week_id"
+    t.bigint "participant_id", null: false
+    t.string "raw_ref"
+    t.bigint "referred_user_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "verified_at"
+    t.index ["credited_week_id", "status", "participant_id"], name: "index_raffle_referrals_on_week_status_participant"
+    t.index ["participant_id", "status", "credited_week_id"], name: "index_raffle_referrals_on_participant_status_week"
+    t.index ["referred_user_id"], name: "index_raffle_referrals_on_referred_user_id", unique: true
+    t.index ["status", "created_at"], name: "index_raffle_referrals_on_status_created_at"
+  end
+
+  create_table "raffle_weeks", force: :cascade do |t|
+    t.datetime "closed_at"
+    t.datetime "created_at", null: false
+    t.datetime "drawn_at"
+    t.integer "number", null: false
+    t.datetime "opened_at"
+    t.string "prize", default: "AMD RX 9060 XT", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "winner_participant_id"
+    t.index ["number"], name: "index_raffle_weeks_on_number", unique: true
+    t.index ["status"], name: "index_raffle_weeks_one_active", unique: true, where: "((status)::text = 'active'::text)"
+  end
+
   create_table "report_review_tokens", force: :cascade do |t|
     t.string "action", null: false
     t.datetime "created_at", null: false
@@ -1286,6 +1332,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_185220) do
   add_foreign_key "project_skips", "users"
   add_foreign_key "projects", "users", column: "marked_fire_by_id"
   add_foreign_key "projects", "users", column: "nominated_fire_by_id"
+  add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
+  add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
+  add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
+  add_foreign_key "raffle_weeks", "raffle_participants", column: "winner_participant_id"
   add_foreign_key "report_review_tokens", "project_reports", column: "report_id"
   add_foreign_key "reviewer_payout_requests", "users"
   add_foreign_key "reviewer_payout_requests", "users", column: "admin_id"

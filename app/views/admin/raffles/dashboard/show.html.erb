@@ -1,0 +1,52 @@
+<% content_for :title, "Raffle admin" %>
+<%= render "admin/raffles/shared/nav" %>
+
+<h1>Raffle, overview</h1>
+
+<ul>
+  <li>Current week:
+    <% if @current_week %>
+      Week <%= @current_week.number %> of 16, <%= @current_week.prize %>
+      <% if @current_week.drawn? %>
+        · Winner: <%= @current_week.winner_participant&.display_name %>
+      <% end %>
+    <% else %>
+      none active
+    <% end %>
+  </li>
+  <li>Participants: <%= @participant_count %></li>
+  <li>Verified referrals (all time): <%= @verified_count %></li>
+  <li>Pending referrals: <%= @pending_count %></li>
+</ul>
+
+<% if @current_week %>
+  <p>
+    <% unless @current_week.drawn? %>
+      <%= button_to "Draw winner for week #{@current_week.number}",
+                    draw_admin_raffles_week_path(@current_week), method: :post,
+                    data: { turbo_confirm: "Draw a winner for week #{@current_week.number}? This cannot be undone." } %>
+    <% end %>
+    <%= button_to "Close week #{@current_week.number} & open next",
+                  close_admin_raffles_week_path(@current_week), method: :post,
+                  data: { turbo_confirm: "Archive week #{@current_week.number} and open the next week?" } %>
+  </p>
+<% end %>
+
+<h2>Leaderboard, this week</h2>
+<% if @leaderboard.any? %>
+  <table>
+    <thead><tr><th>#</th><th>Participant</th><th>Code</th><th>Entries</th></tr></thead>
+    <tbody>
+      <% @leaderboard.each_with_index do |(participant, entries), i| %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><%= link_to participant.display_name, admin_raffles_participant_path(participant) %></td>
+          <td><code><%= participant.code %></code></td>
+          <td><%= entries %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No entries this week yet.</p>
+<% end %>

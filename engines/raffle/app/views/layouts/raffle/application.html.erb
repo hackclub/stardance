@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for?(:title) ? "#{strip_tags(yield(:title))} · Stardance Raffle" : "Stardance Raffle" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex">
+    <%= csrf_meta_tags %>
+    <%= favicon_link_tag "favicon.png", type: "image/png" %>
+    <%= stylesheet_link_tag "application" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
+  </head>
+
+  <body class="raffle">
+    <div class="raffle-bg" aria-hidden="true">
+      <span class="raffle-bg__stars"></span>
+    </div>
+
+    <header class="raffle-nav">
+      <div class="raffle-nav__left">
+        <%= link_to root_path, class: "raffle-nav__brand" do %>
+          <%= image_tag "landing/header/stardance-logo.png", class: "raffle-nav__logo", alt: "Stardance" %>
+        <% end %>
+        <%= image_tag "raffle/branding.png", class: "raffle-nav__partners",
+                      alt: "In partnership with AMD" %>
+      </div>
+
+      <div class="raffle-nav__right">
+        <% if enrolled? %>
+          <span class="raffle-nav__handle"><%= current_participant.display_name %></span>
+          <% if current_participant.age_group_adult? %>
+            <%= button_to "Sign out", logout_path, method: :delete, class: "raffle-nav__signout", form: { class: "raffle-nav__signout-form" } %>
+          <% end %>
+        <% elsif signed_in? %>
+          <span class="raffle-nav__handle"><%= current_user.display_name %></span>
+        <% end %>
+        <a href="<%= main_app_base_url %>/" class="raffle-nav__back">&larr; Stardance</a>
+      </div>
+    </header>
+
+    <main class="raffle-main">
+      <%= yield %>
+    </main>
+
+    <%= render "raffle/shared/footer" %>
+
+    <script>
+//<![CDATA[
+      document.addEventListener("change", function (e) {
+        var el = e.target.closest("[data-auto-submit]");
+        if (!el || !el.form) return;
+        if (typeof el.form.requestSubmit === "function") {
+          el.form.requestSubmit();
+        } else {
+          el.form.submit();
+        }
+      });
+//]]>
+</script>
+  </body>
+</html>

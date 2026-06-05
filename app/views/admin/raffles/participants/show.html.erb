@@ -1,0 +1,42 @@
+<% content_for :title, "Participant, #{@participant.display_name}" %>
+<%= render "admin/raffles/shared/nav" %>
+
+<h1><%= @participant.display_name %> <code><%= @participant.code %></code></h1>
+
+<ul>
+  <li>Type: <%= @participant.age_group %></li>
+  <% if @participant.user %>
+    <li>Platform user: <%= link_to @participant.user.display_name, admin_user_path(@participant.user) %></li>
+    <li>Country: <%= @participant.user.geocoded_country || "—" %></li>
+  <% else %>
+    <li>GitHub: <%= @participant.github_login %></li>
+  <% end %>
+  <li>Eligible: <%= @participant.eligible? ? "Yes" : "No" %></li>
+  <li>Signup week: <%= @participant.signup_week&.number || "—" %></li>
+  <li>Links:
+    <code><%= @participant.referral_url(:web) %></code> ·
+    <code><%= @participant.referral_url(:discord) %></code>
+  </li>
+</ul>
+
+<h2>Referrals</h2>
+<% if @referrals.any? %>
+  <table>
+    <thead>
+      <tr><th>Referred user</th><th>Channel</th><th>Status</th><th>Week</th><th>Verified</th></tr>
+    </thead>
+    <tbody>
+      <% @referrals.each do |referral| %>
+        <tr>
+          <td><%= referral.referred_user&.display_name || "User ##{referral.referred_user_id}" %></td>
+          <td><%= referral.channel %></td>
+          <td><%= referral.status %></td>
+          <td><%= referral.credited_week&.number || "—" %></td>
+          <td><%= referral.verified_at&.to_date || "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No referrals yet.</p>
+<% end %>

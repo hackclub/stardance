@@ -1,0 +1,80 @@
+<%# Development-only preview panel. %>
+<% total = 16 %>
+<% preset = ->(overrides) { "#{request.path}?#{request.query_parameters.merge(overrides).to_query}" } %>
+<details class="raffle-dev" open>
+  <summary class="raffle-dev__bar">DEV · preview data</summary>
+  <form class="raffle-dev__form" id="raffle-dev-form" method="get" action="<%= request.path %>">
+    <label class="raffle-dev__row">
+      <span>Week <output id="raffle-dev-week-val"><%= @week_number || 1 %></output> / <%= total %></span>
+      <input type="range" name="dev_week" min="1" max="<%= total %>" value="<%= @week_number || 1 %>" autocomplete="off">
+    </label>
+
+    <label class="raffle-dev__row">
+      <span>Entries this week</span>
+      <input type="number" name="dev_entries" min="0" value="<%= @entry_count.to_i %>" autocomplete="off">
+    </label>
+
+    <label class="raffle-dev__row">
+      <span>Pool (all entries)</span>
+      <input type="number" name="dev_pool" min="0" value="<%= @week_pool.to_i %>" autocomplete="off">
+    </label>
+
+    <label class="raffle-dev__row">
+      <span>Entrants</span>
+      <input type="number" name="dev_entrants" min="0" value="<%= @week_participants.to_i %>" autocomplete="off">
+    </label>
+
+    <label class="raffle-dev__row">
+      <span>Your rank</span>
+      <input type="number" name="dev_rank" min="1" value="<%= @rank %>" autocomplete="off">
+    </label>
+
+    <div class="raffle-dev__presets">
+      <span class="raffle-dev__presets-label">Entry scenarios</span>
+      <a href="<%= preset.call("dev_entries" => 0, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => nil) %>">none</a>
+      <a href="<%= preset.call("dev_entries" => 6, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => 42) %>">medium</a>
+      <a href="<%= preset.call("dev_entries" => 31, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => 5) %>">high</a>
+      <a href="<%= preset.call("dev_entries" => 100, "dev_pool" => 500, "dev_entrants" => 100, "dev_rank" => 1) %>">max</a>
+    </div>
+
+    <div class="raffle-dev__actions">
+      <a class="raffle-dev__reset" href="<%= request.path %>">reset</a>
+      <button type="submit">apply</button>
+    </div>
+  </form>
+
+  <% if enrolled? %>
+    <div class="raffle-dev__addrefs">
+      <span class="raffle-dev__presets-label">Add demo referrals (to you)</span>
+      <%= form_with url: dev_referrals_path, method: :post, class: "raffle-dev__refform" do %>
+        <%= hidden_field_tag :kind, "pending" %>
+        <%= hidden_field_tag :count, 3 %>
+        <%= hidden_field_tag :lb_week, @board_week&.number %>
+        <button type="submit">+3 pending</button>
+      <% end %>
+      <%= form_with url: dev_referrals_path, method: :post, class: "raffle-dev__refform" do %>
+        <%= hidden_field_tag :kind, "verified" %>
+        <%= hidden_field_tag :count, 3 %>
+        <%= hidden_field_tag :lb_week, @board_week&.number %>
+        <button type="submit">+3 verified</button>
+      <% end %>
+    </div>
+  <% end %>
+
+  <script>
+    //<![CDATA[
+    (function () {
+      var form = document.getElementById("raffle-dev-form");
+      if (!form) return;
+      var range = form.querySelector('[name="dev_week"]');
+      var out = document.getElementById("raffle-dev-week-val");
+      if (range && out) {
+        range.addEventListener("input", function () { out.textContent = range.value; });
+      }
+      form.querySelectorAll("input").forEach(function (el) {
+        el.addEventListener("change", function () { form.submit(); });
+      });
+    })();
+    //]]>
+  </script>
+</details>

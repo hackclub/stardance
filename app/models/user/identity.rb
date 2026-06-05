@@ -43,4 +43,5 @@ class User::Identity < ApplicationRecord
   validates :provider, uniqueness: { scope: :user_id }
 
   after_create_commit -> { user&.try_sync_hackatime_data! }, if: -> { provider == "hackatime" }
+  after_create_commit -> { Raffle::Referrals::Credit.run_safely(user) }, if: -> { provider == "hack_club" }
 end

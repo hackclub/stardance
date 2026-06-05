@@ -1,0 +1,25 @@
+<% if (raffle_referrer = session[:show_raffle_referral_banner]) %>
+  <% referrer_is_adult = session[:raffle_referrer_is_adult] %>
+  <div class="raffle-referral-banner" id="raffle-referral-banner">
+    <div class="raffle-referral-banner__body">
+      <p class="raffle-referral-banner__headline">
+        <% if referrer_is_adult %>
+          Your referrer is closer to a free GPU thanks to you!
+        <% else %>
+          <a href="<%= main_app_base_url %>/@<%= ERB::Util.url_encode(raffle_referrer) %>">@<%= raffle_referrer %></a>
+          is closer to a free GPU thanks to you!
+        <% end %>
+      </p>
+      <p class="raffle-referral-banner__sub">
+        By joining Stardance, you gave them +20 raffle entries for the weekly free GPU.
+        Share your referral link to boost your odds!
+      </p>
+    </div>
+    <div class="raffle-referral-banner__actions">
+      <a href="<%= raffle_base_url %>/" class="raffle-referral-banner__cta">See the GPU raffle &rarr;</a>
+      <%= button_to dismiss_raffle_banner_path, method: :delete,
+            class: "raffle-referral-banner__dismiss",
+            form: { style: "display:inline", "aria-label": "Dismiss" } do %>&times;<% end %>
+    </div>
+  </div>
+<% end %>

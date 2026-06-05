@@ -226,6 +226,9 @@ application.register("submit-on-meta-enter", SubmitOnMetaEnterController);
 import Tilt3dController from "./tilt_3d_controller";
 application.register("tilt-3d", Tilt3dController);
 
+import CopyController from "./copy_controller";
+application.register("copy", CopyController);
+
 import TooltipController from "./tooltip_controller";
 application.register("tooltip", TooltipController);
 
