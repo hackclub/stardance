@@ -16,7 +16,6 @@ module Admin
       def dismiss?
         index?
       end
-
     end
   end
 end

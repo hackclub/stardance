@@ -13,5 +13,4 @@ class ReportReviewsController < ApplicationController
       redirect_to root_path, alert: "Invalid review token action"
     end
   end
-
 end
