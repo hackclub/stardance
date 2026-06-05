@@ -1,8 +1,8 @@
-<%# locals: title:, emoji:, users:, value_method:, current_user_rank: nil %>
+<%# locals: title:, users:, value_method:, current_user_rank: nil %>
 
 <section class="leaderboard-section">
   <header class="leaderboard-section__header">
-    <h2 class="leaderboard-section__title"><span aria-hidden="true"><%= emoji %></span> <%= title %></h2>
+    <h2 class="leaderboard-section__title"><%= title %></h2>
     <p class="leaderboard-section__meta"><%= pluralize(users.size, "stargazer") %></p>
   </header>
 

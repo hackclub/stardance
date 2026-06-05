@@ -44,14 +44,12 @@
     <div class="leaderboard__boards">
         <%= render "leaderboard/section",
                    title: "Current Balance",
-                   emoji: "✨",
                    users: @current_users,
                    current_user_rank: @current_user_rank,
                    value_method: :cached_balance %>
 
         <%= render "leaderboard/section",
                    title: "All-Time Highest",
-                   emoji: "🏆",
                    users: @all_time_users,
                    current_user_rank: @all_time_user_rank,
                    value_method: :cached_total_earned %>
