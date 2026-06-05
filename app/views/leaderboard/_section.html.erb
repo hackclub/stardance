@@ -10,7 +10,5 @@
     <% users.each_with_index do |user, index| %>
       <%= render "leaderboard/row", user: user, rank: index + 1, value_method: value_method %>
     <% end %>
-
-
   </ol>
 </section>
