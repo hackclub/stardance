@@ -1,4 +1,5 @@
-<%# locals: title:, emoji:, users:, value_method: %>
+<%# locals: title:, emoji:, users:, value_method:, current_user_rank: nil %>
+
 <section class="leaderboard-section">
   <header class="leaderboard-section__header">
     <h2 class="leaderboard-section__title"><span aria-hidden="true"><%= emoji %></span> <%= title %></h2>
@@ -7,32 +8,18 @@
 
   <ol class="leaderboard-section__list">
     <% users.each_with_index do |user, index| %>
-      <% rank = index + 1 %>
-      <li class="leaderboard-row leaderboard-row--rank-<%= rank %>">
-        <span class="leaderboard-row__rank" aria-label="Rank <%= rank %>">#<%= rank %></span>
+      <%= render "leaderboard/row", user: user, rank: index + 1, value_method: value_method %>
+    <% end %>
 
-        <%= image_tag user.avatar,
-                      alt: "",
-                      class: "leaderboard-row__avatar" %>
-
-        <div class="leaderboard-row__identity">
-          <p class="leaderboard-row__name">
-            <%= link_to user.display_name, profile_path(user.display_name),
-                        class: "leaderboard-row__name-link" %>
-          </p>
-          <p class="leaderboard-row__handle">@<%= user.display_name %></p>
-        </div>
-
-        <p class="leaderboard-row__score">
-          <span class="leaderboard-row__score-value">
-            <%= number_with_delimiter(user.public_send(value_method)) %>
-          </span>
-          <span class="leaderboard-row__score-icon" aria-hidden="true">
-            <%= stardust_icon %>
-          </span>
-          <span class="leaderboard-row__score-label">Stardust</span>
-        </p>
-      </li>
+    <% if current_user && current_user_rank && users.none? { |u| u.id == current_user.id } %>
+      <% if current_user_rank > 11 %>
+        <li class="leaderboard-section__divider" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </li>
+      <% end %>
+      <%= render "leaderboard/row", user: current_user, rank: current_user_rank, value_method: value_method, is_current_user: true %>
     <% end %>
   </ol>
 </section>

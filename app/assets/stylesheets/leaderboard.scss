@@ -321,6 +321,26 @@
   }
 }
 
+.leaderboard-section__divider {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-s) 0;
+
+  span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-space-border);
+  }
+}
+
+.leaderboard-row--current {
+  border-color: var(--color-brand-lilac);
+  background: var(--color-brand-lilac-soft);
+  box-shadow: 0 0 0 1px var(--color-brand-lilac-soft);
+}
+
 .leaderboard__inline-form {
   display: inline;
 }
