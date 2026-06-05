@@ -2,7 +2,7 @@
   <span hidden data-seconds="<%= preview_seconds.to_i %>"></span>
   <% if preview_time && preview_seconds.to_i < 15 * 60 %>
     <% logged_minutes = preview_seconds.to_i / 60 %>
-    <span class="feed-composer__info-text feed-composer__info-text--warn">Code for at least 15m before devlogging (currently <%= logged_minutes %>m logged)</span>
+    <span class="feed-composer__info-text feed-composer__info-text--warn">Work for at least 15m before devlogging (currently <%= logged_minutes %>m logged)</span>
   <% elsif preview_time %>
     <span class="feed-composer__info-text"><%= preview_time %> will be logged</span>
   <% else %>
