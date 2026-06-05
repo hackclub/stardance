@@ -37,6 +37,10 @@
     </p>
     </header>
 
+    <% if current_user && (@current_user_rank || @all_time_user_rank) %>
+      <%= render "leaderboard/user_rank_box" %>
+    <% end %>
+
     <div class="leaderboard__boards">
         <%= render "leaderboard/section",
                    title: "Current Balance",

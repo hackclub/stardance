@@ -91,6 +91,11 @@
   }
 }
 
+.leaderboard-section--user-rank {
+  margin-bottom: var(--space-xl);
+  width: 100%;
+}
+
 .leaderboard-section__header {
   display: flex;
   align-items: baseline;

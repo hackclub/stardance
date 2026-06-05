@@ -11,6 +11,9 @@ class LeaderboardController < ApplicationController
     if current_user
       @current_user_rank = calculate_rank(:cached_balance)
       @all_time_user_rank = calculate_rank(:cached_total_earned)
+
+      @current_user_in_top_10_current = @current_users.any? { |u| u.id == current_user.id }
+      @current_user_in_top_10_all_time = @all_time_users.any? { |u| u.id == current_user.id }
     end
   end
 

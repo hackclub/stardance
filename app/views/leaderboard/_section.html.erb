@@ -11,15 +11,6 @@
       <%= render "leaderboard/row", user: user, rank: index + 1, value_method: value_method %>
     <% end %>
 
-    <% if current_user && current_user_rank && users.none? { |u| u.id == current_user.id } %>
-      <% if current_user_rank > 11 %>
-        <li class="leaderboard-section__divider" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-        </li>
-      <% end %>
-      <%= render "leaderboard/row", user: current_user, rank: current_user_rank, value_method: value_method, is_current_user: true %>
-    <% end %>
+
   </ol>
 </section>
