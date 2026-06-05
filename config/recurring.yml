@@ -87,12 +87,6 @@ production:
     concurrency: 1
     description: "Get valid referral codes from Pyramid Scheme and update records"
 
-  process_demo_broken_reports:
-    class: ProcessDemoBrokenReportsJob
-    schedule: every 30 minutes
-    concurrency: 1
-    description: "Process demo_broken reports: auto-review and re-certify projects with 5+ pending, notify Slack for 15+ total"
-
   rsvp_daily_summary:
     class: RsvpDailySummaryJob
     schedule: every day at 10am America/New_York

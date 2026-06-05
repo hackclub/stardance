@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_05_203545) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_05_215641) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -699,19 +699,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_203545) do
     t.index ["status"], name: "index_raffle_weeks_one_active", unique: true, where: "((status)::text = 'active'::text)"
   end
 
-  create_table "report_review_tokens", force: :cascade do |t|
-    t.string "action", null: false
-    t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
-    t.bigint "report_id", null: false
-    t.string "token", null: false
-    t.datetime "updated_at", null: false
-    t.datetime "used_at"
-    t.index ["report_id", "action"], name: "index_report_review_tokens_on_report_id_and_action", unique: true
-    t.index ["report_id"], name: "index_report_review_tokens_on_report_id"
-    t.index ["token"], name: "index_report_review_tokens_on_token", unique: true
-  end
-
   create_table "reviewer_payout_requests", force: :cascade do |t|
     t.string "aasm_state", default: "pending", null: false
     t.text "adjust_reason"
@@ -1176,6 +1163,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_203545) do
     t.enum "shop_region", enum_type: "shop_region_type"
     t.datetime "shop_tutorial_completed_at"
     t.datetime "shop_tutorial_started_at"
+    t.datetime "slack_channels_invited_at"
     t.string "slack_id"
     t.datetime "synced_at"
     t.string "things_dismissed", default: [], null: false, array: true
@@ -1310,10 +1298,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_203545) do
   add_foreign_key "projects", "users", column: "marked_fire_by_id"
   add_foreign_key "projects", "users", column: "nominated_fire_by_id"
   add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
+  add_foreign_key "raffle_participants", "users"
   add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
+  add_foreign_key "raffle_referrals", "users", column: "referred_user_id"
   add_foreign_key "raffle_weeks", "raffle_participants", column: "winner_participant_id"
-  add_foreign_key "report_review_tokens", "project_reports", column: "report_id"
   add_foreign_key "reviewer_payout_requests", "users"
   add_foreign_key "reviewer_payout_requests", "users", column: "admin_id"
   add_foreign_key "rsvp_games", "rsvps"

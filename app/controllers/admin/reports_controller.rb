@@ -56,12 +56,6 @@ module Admin
       update_status(:dismissed, "Report dismissed")
     end
 
-    def process_demo_broken
-      authorize ::Project::Report
-      ProcessDemoBrokenReportsJob.perform_later
-      redirect_to admin_reports_path, notice: "Demo broken reports processing job has been queued"
-    end
-
     private
 
     def set_report
