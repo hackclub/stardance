@@ -341,6 +341,20 @@
   box-shadow: 0 0 0 1px var(--color-brand-lilac-soft);
 }
 
+.leaderboard-row__you-badge {
+  display: inline-block;
+  margin-left: var(--space-xs);
+  padding: 2px 8px;
+  background: var(--color-brand-lilac);
+  color: var(--color-set-1-bg);
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
 .leaderboard__inline-form {
   display: inline;
 }

@@ -10,6 +10,11 @@
     <p class="leaderboard-row__name">
       <%= link_to user.display_name, profile_path(user.display_name),
                   class: "leaderboard-row__name-link" %>
+      <% if local_assigns[:is_current_user] %>
+        <span class="leaderboard-row__you-badge">
+          YOU — <%= (user.preference&.leaderboard_optin) ? "opted in" : "opted out" %>
+        </span>
+      <% end %>
     </p>
     <p class="leaderboard-row__handle">@<%= user.display_name %></p>
   </div>
