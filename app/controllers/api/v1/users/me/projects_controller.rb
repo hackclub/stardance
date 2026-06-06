@@ -6,6 +6,7 @@ class Api::V1::Users::Me::ProjectsController < Api::BaseController
 
     projects = current_api_user.projects.where(deleted_at: nil).order(created_at: :desc)
     @pagy, @projects = pagy(projects, limit: limit)
+    preload_devlog_ids_by_project(@projects)
     render "api/v1/projects/index"
   end
 

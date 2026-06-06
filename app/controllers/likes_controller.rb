@@ -44,4 +44,12 @@ class LikesController < ApplicationController
       raise ActiveRecord::RecordNotFound, "Likeable not found"
     end
   end
+
+  def set_liked_devlog_ids
+    if current_user
+      @liked_devlog_ids = Like.where(user: current_user, likeable_type: "Post::Devlog", likeable_id: @likeable.id).pluck(:likeable_id).to_set
+    else
+      @liked_devlog_ids = Set.new
+    end
+  end
 end

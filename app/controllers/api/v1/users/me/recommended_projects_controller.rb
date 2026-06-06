@@ -4,6 +4,7 @@ class Api::V1::Users::Me::RecommendedProjectsController < Api::BaseController
   def index
     @projects = Gorse::Recommendations.new(user: current_api_user).projects(limit: 6)
     @projects = gorse_fallback if @projects.empty?
+    preload_devlog_ids_by_project(@projects)
     render "api/v1/projects/collection"
   end
 

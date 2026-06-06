@@ -17,6 +17,7 @@ class Api::V1::Users::Me::FeedController < Api::BaseController
         associations: { attachments_attachments: :blob }
       ).call
     end
+    preload_liked_devlog_ids(devlog_postables)
 
     repost_postables = @posts.select { |p| p.postable_type == "Post::Repost" }.map(&:postable).compact
     if repost_postables.any?

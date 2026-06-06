@@ -14,7 +14,7 @@ when "Post::Devlog"
     json.likes_count devlog.likes_count
     json.comments_count devlog.comments_count
     json.tutorial devlog.tutorial
-    json.i_liked devlog.likes.exists?(user: @current_api_user)
+    json.i_liked @liked_devlog_ids.include?(devlog.id)
     json.media devlog.attachments.map { |a|
       { url: rails_blob_path(a, only_path: true), content_type: a.content_type }
     }

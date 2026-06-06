@@ -53,6 +53,7 @@ class Api::V1::SearchController < Api::BaseController
     end
 
     @pagy, @projects = pagy(projects.order(created_at: :desc), limit: limit)
+    preload_devlog_ids_by_project(@projects)
     render "api/v1/search/projects"
   end
 
@@ -74,6 +75,7 @@ class Api::V1::SearchController < Api::BaseController
                  .order(created_at: :desc)
 
     @pagy, @posts = pagy(posts, limit: limit)
+    preload_liked_devlog_ids(@posts.map(&:postable).compact)
     render "api/v1/search/posts"
   end
 

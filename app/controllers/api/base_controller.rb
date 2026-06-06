@@ -63,4 +63,22 @@ class Api::BaseController < ActionController::Base
   def set_request_id_headers
     response.set_header("X-Request-ID", request.request_id)
   end
+
+  def preload_liked_devlog_ids(devlogs)
+    @liked_devlog_ids = if devlogs.any?
+      Like.where(likeable_type: "Post::Devlog", likeable_id: devlogs.map(&:id), user_id: current_api_user.id)
+          .pluck(:likeable_id).to_set
+    else
+      Set.new
+    end
+  end
+
+  def preload_devlog_ids_by_project(projects)
+    project_ids = projects.map(&:id)
+    rows = Post.of_devlogs(join: true)
+               .where(post_devlogs: { deleted_at: nil })
+               .where(project_id: project_ids)
+               .pluck(:project_id, "post_devlogs.id")
+    @devlog_ids_by_project = rows.group_by(&:first).transform_values { |r| r.map(&:last) }
+  end
 end
