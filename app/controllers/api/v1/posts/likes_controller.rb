@@ -29,5 +29,6 @@ class Api::V1::Posts::LikesController < Api::BaseController
     end
 
     @devlog = post.postable
+    render json: { error: "Resource not found", request_id: request.request_id }, status: :not_found unless @devlog
   end
 end

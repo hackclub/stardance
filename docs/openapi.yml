@@ -50,10 +50,6 @@ info:
 servers:
   - url: https://stardance.hackclub.com/api/v1
     description: Production server.
-  - url: http://sd.67.pl.eu.org/api/v1
-    description: Playground server for testing.
-  - url: http://6767.67.pl.eu.org/api/v1
-    description: Second playground server for testing; might not always be available.
 
 security:
   - bearerAuth: []

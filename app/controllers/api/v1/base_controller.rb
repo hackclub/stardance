@@ -13,11 +13,7 @@ class Api::V1::BaseController < ActionController::API
     def valid_api_key?
       if bearer_token.present? && api_keys.any?
         api_keys.any? do |api_key|
-          if api_key.bytesize == bearer_token.bytesize
-            ActiveSupport::SecurityUtils.secure_compare(api_key, bearer_token)
-          else
-            false
-          end
+          api_key == bearer_token
         end
       else
         false

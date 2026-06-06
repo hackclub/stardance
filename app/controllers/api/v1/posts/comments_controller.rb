@@ -6,7 +6,7 @@ class Api::V1::Posts::CommentsController < Api::BaseController
   def index
     return unless (limit = api_limit)
 
-    comments = @devlog.comments.order(created_at: :asc).includes(:user)
+    comments = @devlog.comments.order(created_at: :asc)
     @pagy, @comments = pagy(comments, limit: limit)
     render json: {
       comments: @comments.map { |c|
@@ -55,5 +55,6 @@ class Api::V1::Posts::CommentsController < Api::BaseController
       return
     end
     @devlog = post.postable
+    render json: { error: "Resource not found", request_id: request.request_id }, status: :not_found unless @devlog
   end
 end

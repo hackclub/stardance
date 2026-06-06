@@ -13,16 +13,17 @@ class DevlogCreator
   end
 
   def call
-    devlog = Post::Devlog.new(body: @body)
-    devlog.attachments.attach(@attachments) if @attachments.present?
-    devlog.duration_seconds = @duration_seconds || hackatime_duration_seconds
-    devlog.hackatime_projects_key_snapshot = @snapshot || @project.hackatime_keys.join(",")
+    ActiveRecord::Base.transaction do
+      devlog = Post::Devlog.new(body: @body)
+      devlog.attachments.attach(@attachments) if @attachments.present?
+      devlog.duration_seconds = @duration_seconds || hackatime_duration_seconds
+      devlog.hackatime_projects_key_snapshot = @snapshot || @project.hackatime_keys.join(",")
 
-    if devlog.save
+      devlog.save!
       Post.create!(project: @project, user: @user, postable: devlog)
-    end
 
-    devlog
+      devlog
+    end
   end
 
   private

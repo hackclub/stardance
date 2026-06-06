@@ -291,10 +291,6 @@ class User < ApplicationRecord
     UserGeocodeJob.perform_later(id) if ip_address.present?
   end
 
-  def generate_api_key
-    self.api_key = unique_api_key
-  end
-
   def unique_api_key
     loop do
       candidate = "sd_#{SecureRandom.urlsafe_base64(32)}"
