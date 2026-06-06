@@ -788,11 +788,13 @@
     cursor: pointer;
   }
 
-  &__action-icon {
+  &__action-icon,
+  .like-button__icon {
     width: 25px;
     height: 25px;
     fill: currentColor;
     color: currentColor;
+    opacity: 1;
   }
 
   &__action:hover,
@@ -906,52 +908,15 @@
   .like-button,
   &__like {
     display: flex;
-    align-items: center;
-  }
-
-  [data-controller="like-button"] {
-    display: flex;
-    align-items: center;
-  }
-
-  .like-button__btn {
-    padding: 0;
-    border-radius: 0;
-    background: transparent;
-    border: 0;
-    max-height: 32px;
-    overflow: visible;
-  }
-
-  .like-button__sprite {
-    width: 50px;
-    height: 50px;
-    margin-right: -12px;
-    -webkit-mask-size: auto 50px;
-    mask-size: auto 50px;
-    transition:
-      -webkit-mask-position 1s steps(28),
-      mask-position 1s steps(28);
-    transition-duration: 0s;
-
-    &.is-liked {
-      -webkit-mask-position: -1400px 0;
-      mask-position: -1400px 0;
-    }
-
-    &.is-animating {
-      transition-duration: 1s;
-      -webkit-mask-position: -1400px 0;
-      mask-position: -1400px 0;
-    }
   }
 
   .like-button__btn--liked {
-    color: var(--color-space-accent);
+    color: var(--color-space-text);
   }
 
   .like-button__count {
     font-size: calc(var(--font-size-s) * 1.2);
+    opacity: 1;
   }
 
   &__more {
@@ -1345,6 +1310,184 @@
         margin-bottom: 0;
       }
     }
+  }
+}
+
+.comment-modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(600px, 92vw);
+  width: 100%;
+  position: fixed;
+  top: 8vh;
+  left: 50%;
+  translate: -50% 0;
+  margin: 0;
+  max-height: 84vh;
+  overflow: visible;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  &__content {
+    background: var(--color-space-bg-2, #0d0b2e);
+    border: 2px solid var(--color-space-border);
+    border-radius: var(--profile-radius, var(--border-radius));
+    display: flex;
+    flex-direction: column;
+    max-height: 84vh;
+    overflow: hidden;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    flex-shrink: 0;
+  }
+
+  &__close {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0.25rem;
+    transition: color 120ms ease;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 16px;
+  }
+
+  &__thread {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__thread-post {
+    display: flex;
+    gap: 12px;
+  }
+
+  &__thread-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 40px;
+  }
+
+  &__thread-line {
+    flex: 1;
+    width: 2px;
+    min-height: 12px;
+    margin: 6px 0;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 1px;
+  }
+
+  &__thread-right {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 4px;
+  }
+
+  &__post-avatar {
+    border-radius: 50%;
+    height: 40px;
+    width: 40px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__post-author {
+    color: var(--color-space-text);
+    font-size: calc(var(--font-size-s) * 1.1);
+    font-weight: 600;
+  }
+
+  &__post-body {
+    color: var(--color-space-text);
+    font-size: calc(var(--font-size-s) * 1.1);
+    line-height: 1.5;
+    margin-top: 2px;
+
+    p {
+      margin: 0 0 0.4em;
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  &__replying-to {
+    color: var(--color-space-text-muted);
+    font-size: calc(var(--font-size-s) * 1.05);
+    margin: 8px 0 0;
+  }
+
+  &__replying-to-name {
+    color: var(--color-brand-highlight);
+  }
+
+  &__form {
+    display: contents;
+  }
+
+  &__thread-reply {
+    display: flex;
+    gap: 12px;
+    padding-top: 8px;
+  }
+
+  &__reply-avatar {
+    border-radius: 50%;
+    height: 40px;
+    width: 40px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__textarea {
+    background: transparent;
+    border: none;
+    color: var(--color-space-text);
+    flex: 1;
+    font-family: inherit;
+    font-size: 1.2rem;
+    min-height: 120px;
+    padding: 4px 0;
+    resize: none;
+
+    &::placeholder {
+      color: var(--color-space-text-muted);
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 16px;
+    flex-shrink: 0;
   }
 }
 

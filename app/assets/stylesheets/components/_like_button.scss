@@ -1,23 +1,34 @@
 .like-button {
   display: inline-flex;
+  color: var(--color-space-text);
+
+  &__form {
+    display: inline-flex;
+    margin: 0;
+  }
 
   &__btn {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--space-xs);
-    background: var(--bg-brown);
-    border: 2px solid var(--brown);
-    border-radius: var(--radius-md);
-    color: var(--brown);
-    font-weight: 600;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 40px;
+    padding: 0;
+    color: currentColor;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-size: var(--font-size-l);
+    font-weight: 400;
+    line-height: 1;
     cursor: pointer;
-    transition: all 0.15s ease;
     text-decoration: none;
+    transition: color 0.15s ease;
+    overflow: visible;
 
-    &--liked {
-      background: var(--yellow);
-      border-color: var(--brown);
-      color: var(--brown);
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
     }
 
     &--disabled {
@@ -26,41 +37,72 @@
     }
   }
 
-  // Sprite sheet: 29 frames × 100px = 2900px wide, 100px tall.
-  // Scaled to 50px height → each frame is 50px wide, final offset is -1400px (28 × 50).
-  &__sprite {
-    display: block;
-    width: 50px;
-    height: 50px;
-    background: currentColor;
-    -webkit-mask: url("heart-sprite.png") no-repeat 0 0;
-    mask: url("heart-sprite.png") no-repeat 0 0;
-    -webkit-mask-size: auto 50px;
-    mask-size: auto 50px;
-    // Transition is always wired up; duration starts at 0s so snapping back is instant.
-    transition:
-      -webkit-mask-position 1s steps(28),
-      mask-position 1s steps(28);
-    transition-duration: 0s;
+  &__icon {
+    width: 40px;
+    height: 40px;
+    color: currentColor;
+    fill: currentColor;
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
+  }
 
-    &.is-liked {
-      background: linear-gradient(135deg, #ffe564, #ffb3ba, #d4b4fe, #bae6fd);
-      -webkit-mask-position: -1400px 0;
-      mask-position: -1400px 0;
-    }
+  &__btn--liked &__icon {
+    opacity: 1;
+  }
 
-    &.is-animating {
-      background: linear-gradient(135deg, #ffe564, #ffb3ba, #d4b4fe, #bae6fd);
-      transition-duration: 1s;
-      -webkit-mask-position: -1400px 0;
-      mask-position: -1400px 0;
-      will-change: mask-position;
-    }
+  &__btn--animate &__icon {
+    animation: like-button-pop 0.16s ease-out;
+  }
+
+  &__btn--animate::before {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 12px;
+    width: 5px;
+    height: 5px;
+    animation: like-button-particles 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)
+      both;
+    background: var(--color-brand-yellow);
+    border-radius: 999px;
+    box-shadow:
+      -13px -11px 0 -1px var(--color-brand-salmon),
+      10px -14px 0 -1px var(--color-brand-lilac),
+      17px 3px 0 -2px var(--color-brand-blue),
+      6px 15px 0 -2px var(--color-brand-mint),
+      -16px 7px 0 -2px var(--color-brand-peach);
   }
 
   &__count {
-    font-size: 1rem;
-    min-width: 1.5ch;
-    text-align: left;
+    color: currentColor;
+    opacity: 0.5;
+  }
+}
+
+@keyframes like-button-pop {
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes like-button-particles {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+
+  35% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.55) rotate(14deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .like-button__btn--animate .like-button__icon,
+  .like-button__btn--animate::before {
+    animation: none;
   }
 }

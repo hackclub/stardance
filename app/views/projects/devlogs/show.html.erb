@@ -44,14 +44,17 @@
                     class: "devlog-detail__comment-textarea",
                     placeholder: "Add a comment...",
                     rows: 1,
-                    maxlength: Comment::BODY_MAX_LENGTH %>
+                    maxlength: Comment::BODY_MAX_LENGTH,
+                    data: { controller: "submit-on-meta-enter",
+                            action: "keydown->submit-on-meta-enter#submit" } %>
             </div>
             <div class="devlog-detail__comment-actions">
               <%= render ActionButtonComponent.new(
                     text: "Comment",
                     size: :small,
                     type: :submit,
-                    variant: :primary
+                    variant: :primary,
+                    disable_with: "Posting..."
                   ) %>
             </div>
           <% end %>

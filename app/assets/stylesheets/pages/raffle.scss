@@ -1,0 +1,1296 @@
+// Stardance Raffle — participant-facing engine on the raffle. subdomain.
+// Scoped under `.raffle`. Uses the shared design tokens (config/_variables.scss)
+// and follows the branding guide (docs/branding.md).
+
+.raffle {
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-space-text);
+  font-family: var(--font-family-text);
+  background: var(--color-set-1-bg);
+
+  form {
+    margin: 0;
+  }
+}
+
+// ── Atmosphere ────────────────────────────────────────────────────────────────
+.raffle-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.raffle-bg__stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(
+      1.5px 1.5px at 12% 16%,
+      hsla(0, 0%, 100%, 0.8),
+      transparent 60%
+    ),
+    radial-gradient(
+      1px 1px at 24% 64%,
+      hsla(0, 0%, 100%, 0.5),
+      transparent 60%
+    ),
+    radial-gradient(
+      1px 1px at 38% 28%,
+      hsla(0, 0%, 100%, 0.45),
+      transparent 60%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 47% 80%,
+      hsla(0, 0%, 100%, 0.6),
+      transparent 60%
+    ),
+    radial-gradient(
+      1px 1px at 58% 12%,
+      hsla(0, 0%, 100%, 0.4),
+      transparent 60%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 67% 52%,
+      hsla(0, 0%, 100%, 0.55),
+      transparent 60%
+    ),
+    radial-gradient(
+      1px 1px at 74% 86%,
+      hsla(0, 0%, 100%, 0.4),
+      transparent 60%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 83% 34%,
+      hsla(0, 0%, 100%, 0.6),
+      transparent 60%
+    ),
+    radial-gradient(
+      1px 1px at 91% 70%,
+      hsla(0, 0%, 100%, 0.45),
+      transparent 60%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 6% 88%,
+      hsla(0, 0%, 100%, 0.5),
+      transparent 60%
+    );
+  animation: raffle-twinkle 8s ease-in-out infinite alternate;
+}
+
+@keyframes raffle-twinkle {
+  from {
+    opacity: 0.32;
+  }
+  to {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .raffle-bg__stars {
+    animation: none;
+  }
+}
+
+// ── Navbar ──────────────────────────────────────────────────────────────────
+.raffle-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  padding: var(--space-s) var(--space-l);
+  background: var(--color-set-1-bg);
+}
+
+.raffle-nav__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  min-width: 0;
+}
+
+.raffle-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  text-decoration: none;
+  flex: 0 0 auto;
+}
+
+.raffle-nav__logo {
+  height: 30px;
+  width: auto;
+  display: block;
+}
+
+.raffle-nav__partners {
+  height: 20px;
+  width: auto;
+
+  @media (max-width: 720px) {
+    display: none;
+  }
+}
+
+.raffle-nav__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+}
+
+.raffle-nav__handle {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+
+  @media (max-width: 540px) {
+    display: none;
+  }
+}
+
+.raffle-nav__back {
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  color: var(--color-space-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-space-text);
+  }
+}
+
+.raffle-nav__signout-form {
+  display: inline;
+  margin: 0;
+}
+
+.raffle-nav__signout {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-space-text);
+  }
+}
+
+// ── Layout shell ──────────────────────────────────────────────────────────────
+.raffle-main {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-l) var(--space-xxl);
+}
+
+// ── Shared bits ───────────────────────────────────────────────────────────────
+.raffle-pop {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.raffle-empty {
+  margin: 0;
+  color: var(--color-space-text-muted);
+  font-style: italic;
+}
+
+// ── Cards ────────────────────────────────────────────────────────────────────
+.raffle-card {
+  position: relative;
+  margin-bottom: var(--space-xl);
+  padding: var(--space-l);
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-overlay-light);
+  border-radius: var(--profile-radius);
+}
+
+.raffle-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+  margin-bottom: var(--space-m);
+}
+
+.raffle-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  margin: 0 0 var(--space-m);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  .raffle-card__head & {
+    margin: 0;
+  }
+}
+
+// ── Count badges ──────────────────────────────────────────────────────────────
+.raffle-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-family: var(--font-family-text);
+  font-style: normal;
+  font-size: var(--font-size-s);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+
+  &--verified {
+    background: var(--color-brand-mint);
+    color: var(--color-set-1-bg);
+  }
+
+  &--pending {
+    background: var(--color-brand-lilac);
+    color: var(--color-set-1-bg);
+  }
+}
+
+.raffle-card__hint {
+  margin: 0 0 var(--space-m);
+  color: var(--color-space-text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+// ── Page header ──────────────────────────────────────────────────────────────
+.raffle-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-l);
+  margin-bottom: var(--space-l);
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
+}
+
+.raffle-header__title {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.raffle-header__sub {
+  margin: var(--space-xxs) 0 0;
+  font-size: 1rem;
+  color: var(--color-space-text-muted);
+  line-height: 1.4;
+}
+
+.raffle-header__stats {
+  display: flex;
+  gap: var(--space-xl);
+  flex-shrink: 0;
+  padding-top: var(--space-xs);
+}
+
+.raffle-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.raffle-stat__num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.raffle-stat__of {
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--color-space-text-muted);
+}
+
+.raffle-stat__label {
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+}
+
+// ── GPU deck — 16 weekly prizes in a shallow arc ─────────────────────────────
+.raffle-deck {
+  position: relative;
+  height: 210px;
+  margin: var(--space-xl) 0 var(--space-s);
+  padding: 0;
+  list-style: none;
+}
+
+.raffle-deck__card {
+  position: absolute;
+  bottom: var(--space-l);
+  width: clamp(64px, 7.4vw, 92px);
+  margin-left: calc(clamp(64px, 7.4vw, 92px) / -2);
+  transform-origin: center bottom;
+  transform: translateY(calc(var(--arc, 0px) * -1)) rotate(var(--tilt, 0deg));
+  transition:
+    transform 0.3s ease,
+    filter 0.3s ease;
+}
+
+.raffle-deck__gpu {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 6px 14px rgba(8, 6, 30, 0.55));
+}
+
+.raffle-deck__card--done .raffle-deck__gpu {
+  filter: grayscale(0.6) brightness(0.9)
+    drop-shadow(0 4px 10px rgba(8, 6, 30, 0.5));
+}
+
+.raffle-deck__card--current {
+  transform: translateY(calc(var(--arc, 0px) * -1)) rotate(var(--tilt, 0deg))
+    scale(1.22);
+}
+
+.raffle-deck__card--current .raffle-deck__gpu {
+  filter: drop-shadow(0 16px 32px rgba(8, 6, 30, 0.8));
+}
+
+@media (max-width: 620px) {
+  .raffle-deck {
+    height: 150px;
+    transform: scale(0.72);
+    transform-origin: center top;
+  }
+}
+
+// ── Share section ─────────────────────────────────────────────────────────────
+.raffle-share {
+  margin-bottom: var(--space-xl);
+}
+
+.raffle-share__label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: var(--font-size-s);
+  font-weight: 700;
+  color: var(--color-brand-highlight);
+}
+
+.raffle-share__url {
+  display: block;
+  padding: var(--space-xs) var(--space-m);
+  background: var(--color-brand-highlight-faint);
+  border: 2px solid var(--color-brand-highlight);
+  border-radius: var(--profile-radius);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  color: var(--color-space-text);
+  word-break: break-all;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-brand-highlight-secondary);
+    background: var(--color-overlay-light);
+  }
+}
+
+.raffle-share__hint {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+.raffle-board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.raffle-board__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-s) var(--space-xs);
+  border-bottom: 1px solid var(--color-overlay-light-soft);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &.is-you {
+    padding-left: var(--space-s);
+    box-shadow: inset 3px 0 0 var(--color-brand-mint);
+  }
+}
+
+.raffle-board__rank {
+  flex: 0 0 auto;
+  min-width: 30px;
+  padding-right: var(--space-xxs);
+  text-align: right;
+  font-weight: 700;
+  font-size: var(--font-size-s);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-space-text-muted);
+
+  &--1 {
+    color: var(--color-brand-peach);
+  }
+  &--2 {
+    color: var(--color-brand-blue);
+  }
+  &--3 {
+    color: var(--color-brand-lilac);
+  }
+}
+
+.raffle-board__avatar {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-set-2-bg);
+}
+
+.raffle-board__name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raffle-board__youtag {
+  margin-left: 6px;
+  font-size: var(--font-size-s);
+  font-weight: 700;
+  color: var(--color-brand-mint);
+}
+
+.raffle-board__tickets {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 92px;
+  font-size: var(--font-size-l);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-space-text);
+}
+
+.raffle-board__tickets-unit {
+  font-weight: 500;
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+}
+
+.raffle-board__pagerow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-m);
+
+  .raffle-pager {
+    margin-top: 0;
+  }
+}
+
+.raffle-board__search {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--color-overlay-light-soft);
+  border: 1px solid var(--color-overlay-light);
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+
+  &:focus-within {
+    border-color: var(--color-border-input);
+    background: var(--color-overlay-light);
+  }
+}
+
+.raffle-board__search-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--color-space-text-muted);
+  transform: translateY(1px);
+
+  path {
+    fill: currentColor;
+  }
+}
+
+.raffle-board__search-input {
+  width: 220px;
+  max-width: 48vw;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  color: var(--color-space-text);
+  font: inherit;
+  font-size: var(--font-size-s);
+
+  &::placeholder {
+    color: var(--color-space-text-muted);
+  }
+  &:focus {
+    outline: none;
+  }
+  &::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .raffle-board__search-input {
+    width: 132px;
+  }
+}
+
+// ── Week picker ──────────────────────────────────────────────────────────────
+.raffle-weekpick {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  margin: var(--space-l) 0;
+}
+
+.raffle-weekpick__rule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--color-overlay-light-soft);
+}
+
+.raffle-weekpick__form {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+}
+
+.raffle-weekpick__label {
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  color: var(--color-space-text-muted);
+}
+
+.raffle-weekpick__select {
+  appearance: none;
+  margin: 0;
+  border: 0;
+  padding: 2px 16px;
+  background: transparent;
+  color: var(--color-space-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: var(--font-size-s);
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+  transition: color 0.18s ease;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 6px center,
+    right 2px center;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    color: var(--color-brand-mint);
+  }
+
+  option {
+    color: initial;
+  }
+}
+
+.raffle-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// ── Two-column referral lists ─────────────────────────────────────────────────
+.raffle-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+
+  .raffle-card {
+    margin-bottom: 0;
+  }
+}
+
+.raffle-refs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.raffle-ref {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-s) 0;
+  border-bottom: 1px solid var(--color-overlay-light-soft);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.raffle-ref__who {
+  flex: 1;
+  min-width: 0;
+}
+
+.raffle-ref__link {
+  color: var(--color-space-text);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-brand-mint);
+    text-decoration: underline;
+  }
+}
+
+.raffle-ref__channel {
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+
+  &--discord {
+    color: var(--color-brand-lilac);
+  }
+}
+
+.raffle-ref__status {
+  font-weight: 700;
+  font-size: var(--font-size-s);
+
+  &--ok {
+    color: var(--color-brand-mint);
+  }
+  &--pending {
+    color: var(--color-space-text-muted);
+    font-weight: 400;
+  }
+}
+
+// ── Landing ──────────────────────────────────────────────────────────────────
+.raffle-landing__hero {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-xl) 0 var(--space-l);
+}
+
+.raffle-landing__meta {
+  margin: var(--space-m) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+  opacity: 0.7;
+}
+
+.raffle-landing__auth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.raffle-landing__or {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+}
+
+.raffle-landing__ineligible {
+  margin: var(--space-m) auto;
+  max-width: 400px;
+  padding: var(--space-m);
+  background: var(--color-overlay-light-soft);
+  border: 1px solid var(--color-overlay-light);
+  border-radius: var(--profile-radius);
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+  text-align: center;
+}
+
+// ── Buttons ──────────────────────────────────────────────────────────────────
+.raffle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: 3px 16px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    background: var(--color-brand-highlight-secondary);
+  }
+
+  &:active {
+    background: var(--color-space-text);
+  }
+
+  &--sm {
+    padding: 3px 14px;
+    font-size: var(--font-size-xs);
+  }
+
+  &--secondary {
+    background: var(--color-set-2-bg);
+    border-color: var(--color-space-text);
+    color: var(--color-space-text);
+
+    &:hover {
+      background: var(--color-overlay-light);
+      border-color: var(--color-border-input);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    border-color: var(--color-overlay-light);
+    color: var(--color-space-text-muted);
+
+    &:hover {
+      background: var(--color-overlay-light-soft);
+      color: var(--color-space-text);
+    }
+  }
+
+  &--destructive {
+    background: transparent;
+    border-color: var(--color-brand-salmon);
+    color: var(--color-brand-salmon);
+
+    &:hover {
+      background: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  &.is-copied {
+    color: var(--color-set-1-bg);
+    background: var(--color-brand-mint);
+    border-color: var(--color-brand-mint);
+    font-weight: 800;
+  }
+}
+
+.raffle-btn__icon {
+  width: 18px;
+  height: 18px;
+}
+
+.raffle-landing__cta {
+  font-size: 19px;
+  padding: 12px 32px;
+  transition: background 0.15s ease;
+}
+
+// ── Odds ─────────────────────────────────────────────────────────────────────
+.raffle-hca-notice {
+  margin-bottom: var(--space-l);
+  padding: var(--space-m) var(--space-l);
+  background: var(--color-brand-salmon-soft);
+  border: 2px solid var(--color-brand-salmon);
+  border-radius: var(--profile-radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+  }
+}
+
+.raffle-odds {
+  margin: 0 0 var(--space-l);
+}
+
+.raffle-odds__meter {
+  height: 4px;
+  max-width: 100%;
+  margin: 0 0 var(--space-xs);
+  border-radius: 999px;
+  background: var(--color-overlay-light-soft);
+  overflow: hidden;
+}
+
+.raffle-odds__fill {
+  display: block;
+  height: 100%;
+  width: var(--raffle-odds-fill, 0%);
+  border-radius: 999px;
+  background: var(--color-brand-mint);
+}
+
+.raffle-odds__ctx {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}
+
+// ── Your-position pin ─────────────────────────────────────────────────────────
+.raffle-board--you {
+  margin-top: var(--space-s);
+  padding-top: var(--space-s);
+  border-top: 1px dashed var(--color-overlay-light);
+}
+
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+.raffle-faq {
+  margin-top: var(--space-xxl);
+}
+
+.raffle-faq__title {
+  margin: 0 0 var(--space-s);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.raffle-faq__item {
+  border-bottom: 1px solid var(--color-overlay-light-soft);
+}
+
+.raffle-faq__q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  padding: var(--space-m) 0;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  font-size: var(--font-size-l);
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &::after {
+    content: "+";
+    font-weight: 400;
+    font-size: var(--font-size-xxl);
+    line-height: 1;
+    color: var(--color-space-text-muted);
+  }
+}
+
+.raffle-faq__item[open] .raffle-faq__q::after {
+  content: "\2212";
+}
+
+.raffle-faq__a {
+  margin: 0;
+  padding: 0 0 var(--space-m);
+  max-width: 64ch;
+  line-height: 1.6;
+  color: var(--color-space-text-muted);
+}
+
+// ── Referral banner (shown in main app after HCA link) ───────────────────────
+.raffle-referral-banner {
+  margin-bottom: var(--space-m);
+  padding: var(--space-m) var(--space-l);
+  background: var(--color-brand-highlight-faint);
+  border: 1px solid var(--color-brand-highlight-soft);
+  border-radius: var(--profile-radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+}
+
+.raffle-referral-banner__body {
+  min-width: 0;
+}
+
+.raffle-referral-banner__headline {
+  margin: 0;
+  font-size: var(--font-size-s);
+  font-weight: 600;
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.raffle-referral-banner__sub {
+  margin: 2px 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+}
+
+.raffle-referral-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  flex-shrink: 0;
+}
+
+.raffle-referral-banner__cta {
+  padding: 3px 16px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--color-brand-highlight-secondary);
+  }
+}
+
+.raffle-referral-banner__dismiss {
+  background: none;
+  border: none;
+  color: var(--color-space-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+
+  &:hover {
+    color: var(--color-space-text);
+  }
+}
+
+// ── Discover rail widget ─────────────────────────────────────────────────────
+.raffle-widget {
+  background: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
+  border-radius: 14px;
+  color: var(--color-space-text);
+  padding: var(--space-m);
+}
+
+.raffle-widget__title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin: 0 0 var(--space-s);
+}
+
+.raffle-widget__link {
+  margin-bottom: var(--space-s);
+}
+
+.raffle-widget__link-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+  margin-bottom: 4px;
+}
+
+.raffle-widget__link-url {
+  display: block;
+  padding: var(--space-xxs) var(--space-xs);
+  background: var(--color-overlay-light-soft);
+  border: 1px solid var(--color-overlay-light);
+  border-radius: var(--profile-radius);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text);
+  word-break: break-all;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-border-input);
+  }
+}
+
+.raffle-widget__refs {
+  display: flex;
+  gap: var(--space-m);
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+
+  strong {
+    color: var(--color-space-text);
+    font-weight: 700;
+  }
+}
+
+.raffle-widget__raffle-link {
+  margin-top: var(--space-s);
+  padding-top: var(--space-s);
+  border-top: 1px solid var(--color-overlay-light-soft);
+  font-size: var(--font-size-xs);
+  color: var(--color-space-text-muted);
+
+  a {
+    color: var(--color-brand-highlight);
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  span {
+    display: block;
+    margin-top: 2px;
+  }
+}
+
+// ── Compact footer ───────────────────────────────────────────────────────────
+.landing-footer--compact {
+  .landing-footer__scene {
+    aspect-ratio: 795.735 / 380;
+  }
+  .landing-footer__scene-layer--base {
+    object-fit: cover;
+  }
+  .landing-footer__content {
+    padding-bottom: clamp(2rem, 4vw, 4rem);
+  }
+}
+
+// ── Dev panel ────────────────────────────────────────────────────────────────
+.raffle-dev {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  width: 220px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: #e7e2ff;
+  background: rgba(12, 10, 32, 0.92);
+  border: 1px dashed var(--color-brand-orange);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.raffle-dev__bar {
+  cursor: pointer;
+  list-style: none;
+  padding: 7px 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-brand-orange);
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+.raffle-dev__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.raffle-dev__row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  span {
+    opacity: 0.8;
+  }
+}
+
+.raffle-dev__form input[type="number"] {
+  width: 100%;
+  padding: 4px 6px;
+  font: inherit;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+}
+
+.raffle-dev__form input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-brand-mint);
+}
+
+.raffle-dev__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+
+  a {
+    padding: 2px 7px;
+    color: var(--color-set-1-bg);
+    background: var(--color-brand-mint);
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 700;
+  }
+}
+
+.raffle-dev__presets-label {
+  width: 100%;
+  opacity: 0.6;
+}
+
+.raffle-dev__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+
+  button {
+    padding: 4px 12px;
+    font: inherit;
+    font-weight: 700;
+    color: var(--color-set-1-bg);
+    background: var(--color-brand-highlight);
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+}
+
+.raffle-dev__reset {
+  color: var(--color-brand-salmon);
+  text-decoration: underline;
+}
+
+.raffle-dev__addrefs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 10px 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.raffle-dev__refform {
+  margin: 0;
+  display: inline;
+
+  button {
+    padding: 3px 9px;
+    font: inherit;
+    font-weight: 700;
+    color: var(--color-set-1-bg);
+    background: var(--color-brand-mint);
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  &:last-of-type button {
+    background: var(--color-brand-lilac);
+  }
+}
+
+// ── Pager ────────────────────────────────────────────────────────────────────
+.raffle-pager {
+  margin-top: var(--space-m);
+  display: flex;
+  justify-content: center;
+
+  :where(a, span) {
+    display: inline-grid;
+    place-items: center;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: var(--font-size-s);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-space-text-muted);
+    text-decoration: none;
+  }
+
+  a:hover {
+    background: hsla(0, 0%, 100%, 0.05);
+    color: var(--color-space-text);
+  }
+
+  .current,
+  [aria-current] {
+    color: var(--color-set-1-bg);
+    background: var(--color-brand-mint);
+    font-weight: 700;
+  }
+}
+
+// ── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 640px) {
+  .raffle-cols {
+    grid-template-columns: 1fr;
+  }
+}

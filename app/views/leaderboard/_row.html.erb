@@ -1,0 +1,31 @@
+<%# locals: user:, user_counter:, value_method: %>
+<% rank = user_counter %>
+<% is_current_user = current_user&.id == user.id %>
+<li class="leaderboard-row leaderboard-row--rank-<%= rank %> <%= 'leaderboard-row--current' if is_current_user %>">
+  <span class="leaderboard-row__rank" aria-label="Rank <%= rank %>">#<%= rank %></span>
+
+  <%= image_tag user.avatar,
+                alt: "",
+                class: "leaderboard-row__avatar" %>
+
+  <div class="leaderboard-row__identity">
+    <p class="leaderboard-row__name">
+      <%= link_to user.display_name, profile_path(user.display_name),
+                  class: "leaderboard-row__name-link" %>
+      <% if is_current_user %>
+        <span class="leaderboard-row__you-badge">YOU</span>
+      <% end %>
+    </p>
+    <p class="leaderboard-row__handle">@<%= user.display_name %></p>
+  </div>
+
+  <p class="leaderboard-row__score">
+    <span class="leaderboard-row__score-value">
+      <%= number_with_delimiter(user.public_send(value_method)) %>
+    </span>
+    <span class="leaderboard-row__score-icon" aria-hidden="true">
+      <%= stardust_icon %>
+    </span>
+    <span class="leaderboard-row__score-label">Stardust</span>
+  </p>
+</li>

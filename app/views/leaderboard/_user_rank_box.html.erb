@@ -1,0 +1,47 @@
+<section class="leaderboard-section leaderboard-section--user-rank">
+  <header class="leaderboard-section__header">
+    <h2 class="leaderboard-section__title">Your Rank</h2>
+  </header>
+
+  <ul class="leaderboard-section__list">
+    <% if current_user && @current_user_rank %>
+      <li class="leaderboard-row leaderboard-row--rank-<%= @current_user_rank %> leaderboard-row--current">
+        <span class="leaderboard-row__rank" aria-label="Your Current Rank">#<%= @current_user_rank %></span>
+        <%= image_tag current_user.avatar, alt: "", class: "leaderboard-row__avatar" %>
+        <div class="leaderboard-row__identity">
+          <p class="leaderboard-row__name">Current Balance</p>
+          <p class="leaderboard-row__handle">@<%= current_user.display_name %></p>
+        </div>
+        <p class="leaderboard-row__score">
+          <span class="leaderboard-row__score-value">
+            <%= number_with_delimiter(current_user.approx_balance) %>
+          </span>
+          <span class="leaderboard-row__score-icon" aria-hidden="true">
+            <%= stardust_icon %>
+          </span>
+          <span class="leaderboard-row__score-label">Stardust</span>
+        </p>
+      </li>
+    <% end %>
+
+    <% if current_user && @all_time_user_rank %>
+      <li class="leaderboard-row leaderboard-row--rank-<%= @all_time_user_rank %> leaderboard-row--current">
+        <span class="leaderboard-row__rank" aria-label="Your All-Time Rank">#<%= @all_time_user_rank %></span>
+        <%= image_tag current_user.avatar, alt: "", class: "leaderboard-row__avatar" %>
+        <div class="leaderboard-row__identity">
+          <p class="leaderboard-row__name">All-Time Highest</p>
+          <p class="leaderboard-row__handle">@<%= current_user.display_name %></p>
+        </div>
+        <p class="leaderboard-row__score">
+          <span class="leaderboard-row__score-value">
+            <%= number_with_delimiter(current_user.approx_total_earned) %>
+          </span>
+          <span class="leaderboard-row__score-icon" aria-hidden="true">
+            <%= stardust_icon %>
+          </span>
+          <span class="leaderboard-row__score-label">Stardust</span>
+        </p>
+      </li>
+    <% end %>
+  </ul>
+</section>

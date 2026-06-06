@@ -13,7 +13,8 @@ class AdminConstraint
     policy.access_admin_endpoints? ||
       policy.access_fulfillment_view? ||
       policy.access_ship_review? ||
-      policy.access_ysws_review?
+      policy.access_ysws_review? ||
+      policy.access_raffles?
   end
 
   def self.admin_user_for(request)

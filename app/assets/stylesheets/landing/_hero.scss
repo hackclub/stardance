@@ -198,6 +198,28 @@ html.warped .hero__doodle-arrow.is-falling {
   position: relative;
 }
 
+.hero__peek-link {
+  font-family: "Exo 2", sans-serif;
+  font-size: clamp(14px, 1.2vw, 16px);
+  margin: 0.25rem 0 0;
+  align-self: flex-start;
+  text-align: left;
+
+  a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  em {
+    font-style: italic;
+  }
+}
+
 // Odometer-style live counter. Each digit is its own element so only
 // the changing digits animate (slide up/fade) on each tick.
 .rsvp-counter {

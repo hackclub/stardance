@@ -20,7 +20,7 @@ class HackatimeService
     end
 
     def fetch_stats(hackatime_uid, start_date: START_DATE, end_date: nil, access_token: nil)
-      params = { features: "projects", start_date: start_date, test_param: true }
+      params = { features: "projects", start_date: start_date, test_param: true, no_ai_coding: false }
       params[:end_date] = end_date if end_date
 
       response = stats_request(hackatime_uid, params, access_token: access_token)
@@ -50,11 +50,13 @@ class HackatimeService
         start_date: start_date,
         test_param: true,
         total_seconds: true,
+        no_ai_coding: false,
         filter_by_project: Array(project_keys).join(",")
       }
       params[:end_date] = end_date if end_date
 
       response = stats_request(hackatime_uid, params, access_token: access_token)
+      Rails.logger.info(response.env.url)
 
       if response.success?
         JSON.parse(response.body)["total_seconds"].to_i

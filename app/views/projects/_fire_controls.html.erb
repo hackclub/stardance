@@ -26,7 +26,7 @@
   <%= button_to "Mark as Super Star", project_magic_path(project),
                 form_class: "project-show__pill-form",
                 class: "project-show__pill project-show__pill--save" %>
-<% elsif current_user&.can_nominate_super_star? %>
+<% elsif current_user&.can_nominate_super_star? && !project.users.include?(current_user) %>
   <%= button_to "Nominate for Super Star", project_fire_nomination_path(project),
                 form_class: "project-show__pill-form",
                 class: "project-show__pill project-show__pill--save" %>

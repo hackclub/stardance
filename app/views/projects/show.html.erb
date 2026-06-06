@@ -13,7 +13,8 @@
 <% end %>
 
 <%
-  banner_url = @project.banner.attached? ? url_for(@project.banner) : image_path("profile/default-banner.png")
+  display = @project.display_banner
+  banner_url = display ? url_for(display) : image_path("profile/default-banner.png")
   members = @members || @project.users.to_a
   is_member = @is_member
   follower_count = @follower_count || @project.project_follows.size

@@ -80,7 +80,7 @@ class UsersController < ApplicationController
     @user.projects
          .select(:id, :title, :description, :created_at, :updated_at,
                  :ship_status, :shipped_at, :devlogs_count, :duration_seconds)
-         .includes(:users, banner_attachment: :blob)
+         .includes(:users, banner_attachment: :blob, mission_attachments: { mission: { banner_attachment: :blob } })
          .order(created_at: :desc)
   end
 

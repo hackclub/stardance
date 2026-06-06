@@ -1,33 +1,45 @@
 <% content_for :title, "Leaderboard" %>
 <% content_for :og_title, "Stardance Leaderboard" %>
 <% content_for :og_description, "See who's earning the most Stardust on Stardance!" %>
-
 <%= content_for :stylesheets do %>
   <%= stylesheet_link_tag "leaderboard", "data-turbo-track": "reload" %>
 <% end %>
-
-<main>
-    <h1>Leaderboard</h1>
-    <p class="subtitle"><%= @pagy.count %> users opted in to the leaderboard :D, you can opt in through settings</p>
-
-    <div class="users">
-        <% @users.each_with_index do |user, index| %>
-            <div class="user">
-                <div class="content">
-                    <h2>#<%= @pagy.offset + index + 1 %></h2>
-
-                    <%= image_tag user.avatar %>
-                    <h2>
-                        <%= link_to user.display_name, profile_path(user.display_name) %>
-                    </h2>
-
-                    <p><%= user.cached_balance %> <%= stardust_icon %></p>
-                </div>
-            </div>
+<main class="leaderboard">
+  <header class="leaderboard__hero">
+    <p class="leaderboard__eyebrow">Stardust rankings</p>
+    <h1 class="leaderboard__title">
+      <span class="leaderboard__title-line">Who's catching the most</span>
+      <span class="leaderboard__title-em">stardust</span>
+    </h1>
+    <div class="leaderboard__subtitle">
+      <strong><%= number_with_delimiter(@total_count) %></strong> stargazers opted in
+      <% if current_user %>
+        <span aria-hidden="true">·</span>
+        <% opted_in = current_user.preference&.leaderboard_optin %>
+        <%= form_with url: my_settings_path,
+                        method: :patch,
+                        local: true,
+                        class: "leaderboard__inline-form" do %>
+          <%= hidden_field_tag :leaderboard_optin, opted_in ? "0" : "1" %>
+          <%= submit_tag(
+                  opted_in ? "opt out of leaderboard" : "opt in to leaderboard",
+                  class: "leaderboard__subtitle-link--button"
+                ) %>
         <% end %>
+      <% end %>
     </div>
-
-    <% if @pagy.pages > 1 %>
-        <div class="pagination"><%== @pagy.series_nav %></div>
-    <% end %>
+  </header>
+  <% if current_user && (@current_user_rank || @all_time_user_rank) %>
+    <%= render "leaderboard/user_rank_box" %>
+  <% end %>
+  <div class="leaderboard__boards">
+    <%= render "leaderboard/section",
+                   title: "Current Balance",
+                   users: @current_users,
+                   value_method: :approx_balance %>
+    <%= render "leaderboard/section",
+                   title: "All-Time Highest",
+                   users: @all_time_users,
+                   value_method: :approx_total_earned %>
+  </div>
 </main>

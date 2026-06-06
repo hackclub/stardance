@@ -16,7 +16,11 @@
       </header>
 
       <div class="guide-article__body">
-        <%= render @guide.partial_path %>
+        <% if @guide.markdown? %>
+          <%= render MarkdownContentComponent.new(markdown: @guide.markdown_source, flavor: :guide) %>
+        <% else %>
+          <%= render @guide.partial_path %>
+        <% end %>
       </div>
 
       <% if @guide.related_guides.any? %>

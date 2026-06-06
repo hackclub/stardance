@@ -49,7 +49,8 @@
                   aria: { label: body_label },
                   data: { composer_target: "textarea",
                           emoji_picker_target: "textarea",
-                          action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty" } %>
+                          controller: "submit-on-meta-enter",
+                          action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty keydown->submit-on-meta-enter#submit" } %>
           </div>
         </div>
 

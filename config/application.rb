@@ -69,10 +69,11 @@ module Battlemage
 
     # what do we want? sessions! when do we want em? now!
     config.session_store :cookie_store,
-                         key: "_stardance_session_v2",
+                         key: "_stardance_session_v3",
                          expire_after: 2.months,
                          secure: Rails.env.production?,
-                         httponly: true
+                         httponly: true,
+                         domain: Rails.env.production? ? ".stardance.hackclub.com" : ".lvh.me"
 
     config.exceptions_app = self.routes
 

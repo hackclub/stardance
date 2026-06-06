@@ -5,6 +5,8 @@
 #  id                           :bigint           not null, primary key
 #  age_attestation              :string
 #  api_key                      :string
+#  approx_balance               :integer          default(0), not null
+#  approx_total_earned          :integer          default(0), not null
 #  banned                       :boolean          default(FALSE), not null
 #  banned_at                    :datetime
 #  banned_reason                :text
@@ -52,6 +54,8 @@
 # Indexes
 #
 #  index_users_on_api_key                    (api_key) UNIQUE
+#  index_users_on_approx_balance             (approx_balance)
+#  index_users_on_approx_total_earned        (approx_total_earned)
 #  index_users_on_email                      (email)
 #  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
@@ -106,6 +110,9 @@ class User < ApplicationRecord
   has_many :shop_wishlists, dependent: :destroy
   has_many :wishlisted_shop_items, through: :shop_wishlists, source: :shop_item
   has_many :sold_items, class_name: "ShopItem::HackClubberItem", foreign_key: :user_id
+
+  has_one :raffle_participant, class_name: "Raffle::Participant", dependent: :destroy
+  has_one :raffle_referral_as_referred, class_name: "Raffle::Referral", foreign_key: :referred_user_id, dependent: :destroy
 
   has_one_attached :banner
 
@@ -162,6 +169,20 @@ class User < ApplicationRecord
   after_commit :enqueue_geocode_job, on: :create
 
   scope :discoverable, -> { joins(:hack_club_identity).distinct }
+  scope :on_leaderboard, -> {
+    discoverable.joins(:preference).where(user_preferences: { leaderboard_optin: true }, banned: false)
+  }
+  scope :ambassador_referrals, -> {
+    where(arel_table[:ref].lower.matches("#{Rsvp::AMBASSADOR_REFERRAL_PREFIX}%"))
+  }
+  scope :matching_ref, ->(ref) {
+    where(arel_table[:ref].lower.eq(ref.to_s.downcase))
+  }
+  scope :matching_emails, ->(emails) {
+    normalized_emails = Array(emails).map { |email| email.to_s.downcase }.select(&:present?)
+
+    normalized_emails.empty? ? none : where(arel_table[:email].lower.in(normalized_emails))
+  }
 
   validates :banner, content_type: [ "image/png", "image/jpeg", "image/webp", "image/gif" ],
                      size: { less_than: 8.megabytes }
@@ -200,6 +221,10 @@ class User < ApplicationRecord
   include User::Preferences
   include User::UsernameBloomSync
 
+  # Tracks platform signups/verifications for the raffle referral program
+  # (no-ops unless the signup carried a raffle referral code). See the engine.
+  include Raffle::ReferralTrackable
+
   after_create_commit :increment_signup_counter, if: -> { Flipper.enabled?(:new_onboarding) }
 
   KERBAL_FIRST_NAMES = %w[
@@ -225,6 +250,21 @@ class User < ApplicationRecord
     return random_funny_display_name if local.blank?
 
     "#{local.first(MAX_DISPLAY_NAME_LENGTH - 5)}_#{rand(1000..9999)}"
+  end
+
+  def ambassador_referral_payload(hours_logged:, hours_approved:)
+    {
+      id: id,
+      email: email,
+      ref: ref,
+      user_ref: user_ref,
+      verification_status: verification_status,
+      hours_logged: hours_logged,
+      hours_approved: hours_approved,
+      onboarded_at: onboarded_at,
+      created_at: created_at,
+      updated_at: updated_at
+    }
   end
 
   def active_project_for_mission(mission)

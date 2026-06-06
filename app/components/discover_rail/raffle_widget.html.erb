@@ -1,0 +1,23 @@
+<section class="raffle-widget" aria-label="Refer a friend">
+  <h3 class="raffle-widget__title">Refer a friend!</h3>
+
+  <div class="raffle-widget__link">
+    <span class="raffle-widget__link-label">Your referral link</span>
+    <code class="raffle-widget__link-url"
+          data-controller="tooltip copy" data-tooltip-message-value="Click to copy"
+          data-copy-text-value="<%= referral_url %>" data-action="click->copy#copy"
+          tabindex="0" role="button"><%= referral_url %></code>
+  </div>
+
+  <div class="raffle-widget__refs">
+    <span class="raffle-widget__ref-stat"><strong><%= verified_count %></strong> verified</span>
+    <span class="raffle-widget__ref-stat"><strong><%= pending_count %></strong> pending</span>
+  </div>
+
+  <% if week %>
+    <div class="raffle-widget__raffle-link">
+      <a href="<%= helpers.raffle_base_url %>/">GPU Raffle &rarr;</a>
+      <span><%= entry_count %> <%= "entry".pluralize(entry_count) %> · week <%= week.number %>/16</span>
+    </div>
+  <% end %>
+</section>

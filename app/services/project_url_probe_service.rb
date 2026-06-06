@@ -2,7 +2,7 @@
 
 # Reachability probe used by Projects::ShipsController on re-ship to decide
 # whether to auto-approve the ship. Delegates the actual HTTP work to
-# Project#url_reachable? so the SafeUrl guard, HEAD request, redirect handling,
+# Project#url_reachable? so the SafeUrl guard, GET request, redirect handling,
 # and 5-minute cache are shared with the shipping_requirements check.
 class ProjectUrlProbeService
   Result = Data.define(:ok, :failures) do

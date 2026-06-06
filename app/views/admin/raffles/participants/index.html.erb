@@ -1,0 +1,32 @@
+<% content_for :title, "Raffle participants" %>
+<%= render "admin/raffles/shared/nav" %>
+
+<h1>Participants</h1>
+
+<%= form_with url: admin_raffles_participants_path, method: :get do %>
+  <%= text_field_tag :query, @query, placeholder: "display name or code", autocomplete: "off" %>
+  <%= submit_tag "Search" %>
+<% end %>
+
+<table>
+  <thead>
+    <tr><th>User</th><th>Code</th><th>Type</th><th>Country</th><th>Eligible</th><th>Referrals</th><th>Joined</th></tr>
+  </thead>
+  <tbody>
+    <% @participants.each do |participant| %>
+      <tr>
+        <td><%= link_to participant.display_name, admin_raffles_participant_path(participant) %></td>
+        <td><code><%= participant.code %></code></td>
+        <td><%= participant.age_group %></td>
+        <td><%= participant.user&.geocoded_country || "—" %></td>
+        <td><%= participant.eligible? ? "Yes" : "No" %></td>
+        <td><%= @referral_counts[participant.id].to_i %></td>
+        <td><%= participant.created_at.to_date %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @pagy.pages > 1 %>
+  <div><%== @pagy.series_nav %></div>
+<% end %>

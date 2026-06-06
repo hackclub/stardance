@@ -1,0 +1,43 @@
+<% content_for :title, "Raffle referrals" %>
+<%= render "admin/raffles/shared/nav" %>
+
+<h1>Referrals</h1>
+
+<nav>
+  <%= link_to "All", admin_raffles_referrals_path %>
+  <% Raffle::Referral.statuses.keys.each do |state| %>
+    · <%= link_to state.titleize, admin_raffles_referrals_path(status: state) %>
+  <% end %>
+</nav>
+
+<table>
+  <thead>
+    <tr><th>Referrer</th><th>Referred user</th><th>Channel</th><th>Status</th><th>Week</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <% @referrals.each do |referral| %>
+      <tr>
+        <td><%= link_to referral.participant.display_name, admin_raffles_participant_path(referral.participant) %></td>
+        <td><%= referral.referred_user&.display_name || "User ##{referral.referred_user_id}" %></td>
+        <td><%= referral.channel %></td>
+        <td><%= referral.status %></td>
+        <td><%= referral.credited_week&.number || "—" %></td>
+        <td>
+          <% unless referral.status_verified? %>
+            <%= button_to "Verify", admin_raffles_referral_path(referral), method: :patch, params: { status: "verified" } %>
+          <% end %>
+          <% unless referral.status_rejected? %>
+            <%= button_to "Reject", admin_raffles_referral_path(referral), method: :patch, params: { status: "rejected" } %>
+          <% end %>
+          <% unless referral.status_pending? %>
+            <%= button_to "Reset", admin_raffles_referral_path(referral), method: :patch, params: { status: "pending" } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @pagy.pages > 1 %>
+  <div><%== @pagy.series_nav %></div>
+<% end %>

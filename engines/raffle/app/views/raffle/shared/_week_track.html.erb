@@ -1,0 +1,28 @@
+<%# The 16 weekly RX 9060s swept into a shallow arc — evenly spaced, tops %>
+<%# rising to the centre, ends tilted outward like a fanned hand. This week's %>
+<%# card is lifted and lit; past weeks sit back, desaturated. Position, arc %>
+<%# height and tilt are derived per card in the view; the rest is CSS. No JS. %>
+<% total = 16 %>
+<% cur = current.to_i %>
+<ol class="raffle-deck" role="img"
+   aria-label="<%= cur.positive? ? "Week #{cur} of #{total}, the weekly AMD Radeon RX 9060 XT prizes" : "#{total} weekly AMD Radeon RX 9060 XT prizes" %>">
+  <% (1..total).each do |n| %>
+    <%
+      f = total > 1 ? (n - 1).fdiv(total - 1) : 0.5   # 0 → 1 across the row
+      x = (6 + f * 88).round(2)                        # even spread, 6%–94%
+      arc = (Math.sin(f * Math::PI) * 24).round(1)     # px the top rises toward centre
+      tilt = ((f - 0.5) * 22).round(2)                 # -11° … +11°, ends fan outward
+      state = if cur.positive?
+                n == cur ? "current" : (n < cur ? "done" : "future")
+              else
+                "future"
+              end
+      z = state == "current" ? 200 : n + 10            # current on top; rest cascade left→right
+    %>
+    <li class="raffle-deck__card raffle-deck__card--<%= state %>"
+        style="left: <%= x %>%; --arc: <%= arc %>px; --tilt: <%= tilt %>deg; z-index: <%= z %>;"
+        aria-hidden="true">
+      <%= image_tag "raffle/rx_9060.png", class: "raffle-deck__gpu", alt: "", loading: "lazy" %>
+    </li>
+  <% end %>
+</ol>

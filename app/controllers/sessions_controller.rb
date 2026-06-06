@@ -43,12 +43,17 @@ class SessionsController < ApplicationController
 
     track_event "signed_up", { user_id: result.user.id } if result.is_new_user
     track_event "hca_linked", { user_id: result.user.id } if result.is_new_user || result.guest_collision
-    redirect_to destination, notice: "Signed in with Hack Club"
+    redirect_to destination, notice: raffle_referral_notice(result.user) || "Signed in with Hack Club"
   end
 
   def destroy
     reset_session
-    redirect_to root_path, notice: "Signed out"
+    redirect_to root_path
+  end
+
+  def dismiss_raffle_banner
+    session.delete(:show_raffle_referral_banner)
+    redirect_back fallback_location: root_path, allow_other_host: false
   end
 
   def failure
@@ -71,6 +76,7 @@ class SessionsController < ApplicationController
     ensure_dev_hca_identity(user) unless params[:id].present?
 
     sign_in_user(user, auth_level: user.hca_linked? ? "hca" : "guest")
+    session[:show_raffle_referral_banner] = params[:raffle_referrer] if params[:raffle_referrer].present?
     if Rails.env.test?
       head :ok
     else
@@ -84,6 +90,18 @@ class SessionsController < ApplicationController
     return if user.hca_linked?
 
     user.create_hack_club_identity!(provider: "hack_club", uid: "dev-#{user.id}", access_token: "dev-access-token")
+  end
+
+  def raffle_referral_notice(user)
+    referral = Raffle::Referral.includes(:participant).find_by(referred_user_id: user.id, status: :verified)
+    return unless referral
+
+    participant = referral.participant
+    session[:show_raffle_referral_banner] = participant.display_name
+    session[:raffle_referrer_is_adult] = participant.age_group_adult?
+    nil
+  rescue StandardError
+    nil
   end
 
   def safe_return_to(path)

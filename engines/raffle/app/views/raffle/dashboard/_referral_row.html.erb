@@ -1,0 +1,19 @@
+<li class="raffle-ref">
+  <% handle = ref.referred_user&.display_name.presence %>
+  <span class="raffle-ref__who">
+    <% if handle %>
+      <%= link_to handle, "#{main_app_base_url}/@#{ERB::Util.url_encode(handle)}",
+                  class: "raffle-ref__link", target: "_blank", rel: "noopener" %>
+    <% else %>
+      <%= referral_display_name(ref.referred_user) %>
+    <% end %>
+  </span>
+  <span class="raffle-ref__channel raffle-ref__channel--<%= ref.channel %>">
+    <%= ref.channel_discord? ? "Discord" : "Web" %>
+  </span>
+  <% if ref.status_verified? %>
+    <span class="raffle-ref__status raffle-ref__status--ok">+20 entries</span>
+  <% else %>
+    <span class="raffle-ref__status raffle-ref__status--pending">pending</span>
+  <% end %>
+</li>

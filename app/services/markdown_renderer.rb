@@ -6,7 +6,7 @@ class MarkdownRenderer
 
   # Bump on any rendered-output change (sanitizer, shortcodes, Rouge, link
   # hardening) — the cache key uses it to invalidate deployment-wide.
-  RENDERER_VERSION      = "v3".freeze
+  RENDERER_VERSION      = "v4".freeze
   CACHE_NAMESPACE       = "markdown".freeze
   GUIDE_CACHE_NAMESPACE = "guide-markdown".freeze
   CACHE_EXPIRES_IN      = 7.days
@@ -37,7 +37,9 @@ class MarkdownRenderer
     Rails.cache.fetch([ CACHE_NAMESPACE, RENDERER_VERSION, "images-#{allow_images}", Digest::SHA1.hexdigest(text) ],
                       expires_in: CACHE_EXPIRES_IN) do
       raw = get_markdown(text)
-      sanitised = sanitize_html(raw, extra_tags: %w[u], extra_attributes: %w[target rel])
+      doc = Nokogiri::HTML::DocumentFragment.parse(raw)
+      highlight_code_blocks(doc)
+      sanitised = sanitize_html(doc.to_html, extra_tags: %w[u], extra_attributes: %w[target rel class])
       doc = Nokogiri::HTML::DocumentFragment.parse(sanitised)
       remove_images(doc) unless allow_images
       harden_links_and_images(doc)
@@ -47,6 +49,17 @@ class MarkdownRenderer
 
   def self.remove_images(doc)
     doc.css("img").remove
+  end
+
+  def self.highlight_code_blocks(doc)
+    doc.css("pre[lang]").each do |pre|
+      lang = pre["lang"]
+      lexer = Rouge::Lexer.find(lang)&.new || Rouge::Lexers::PlainText.new
+      formatter = Rouge::Formatters::HTML.new
+      code = pre.at_css("code") || pre
+      highlighted = formatter.format(lexer.lex(code.text))
+      pre.replace(%(<pre class="guide-code"><code>#{highlighted}</code></pre>))
+    end
   end
 
   def self.harden_links_and_images(doc)

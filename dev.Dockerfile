@@ -22,16 +22,17 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     ffmpeg \
     gettext-base
 
-# Install Node.js and Yarn
+# Install Node.js and enable Corepack for Yarn Berry
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
-    npm install --global yarn
+    corepack enable
 
 # Set working directory
 WORKDIR /app
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
+COPY engines/raffle/raffle.gemspec ./engines/raffle/
 RUN bundle install
 
 # Add a script to be executed every time the container starts

@@ -58,6 +58,9 @@ application.register(
   Certification__Ysws__ReviewSidebarController,
 );
 
+import CommentModalController from "./comment_modal_controller";
+application.register("comment-modal", CommentModalController);
+
 import CommandPaletteController from "./command_palette_controller";
 application.register("command-palette", CommandPaletteController);
 
@@ -99,9 +102,6 @@ application.register("feed-engagement", FeedEngagementController);
 
 import HorizontalScrollController from "./horizontal_scroll_controller";
 application.register("horizontal-scroll", HorizontalScrollController);
-
-import LikeButtonController from "./like_button_controller";
-application.register("like-button", LikeButtonController);
 
 import FaqAccordionController from "./faq_accordion_controller";
 application.register("faq-accordion", FaqAccordionController);
@@ -220,8 +220,14 @@ application.register("sortable", SortableController);
 import StarImageInputController from "./star_image_input_controller";
 application.register("star-image-input", StarImageInputController);
 
+import SubmitOnMetaEnterController from "./submit_on_meta_enter_controller";
+application.register("submit-on-meta-enter", SubmitOnMetaEnterController);
+
 import Tilt3dController from "./tilt_3d_controller";
 application.register("tilt-3d", Tilt3dController);
+
+import CopyController from "./copy_controller";
+application.register("copy", CopyController);
 
 import TooltipController from "./tooltip_controller";
 application.register("tooltip", TooltipController);

@@ -1,4 +1,5 @@
-source "https://rubygems.org"
+# https://blog.rubygems.org/2026/06/03/cooldown-let-new-gems-be-vetted.html
+source "https://rubygems.org", cooldown: 7
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.3"
@@ -89,6 +90,9 @@ gem "omniauth"
 gem "omniauth-rails_csrf_protection"
 gem "omniauth_openid_connect"
 gem "omniauth-oauth2"
+gem "omniauth-github", "~> 2.0"
+
+gem "raffle", path: "engines/raffle"
 gem "slack-ruby-client"
 gem "blazer"
 gem "flipper"

@@ -141,6 +141,12 @@ production:
     concurrency: 1
     description: "Hard-delete guest users (no HCA identity) older than 30 days"
 
+  refresh_approx_balances:
+    class: RefreshApproxBalancesJob
+    schedule: every day at 5am UTC
+    concurrency: 1
+    description: "Recalculate approx_balance and approx_total_earned from ledger entries"
+
   ahoy_backfill_project_created_ahoy_events:
     class: AhoyBackfillProjectCreatedJob
     schedule: every day at 5am America/New_York

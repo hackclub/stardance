@@ -10,13 +10,14 @@
     </h1>
     <p class="hero__subhead">The largest STEM event of the summer:<br>make anything you want and earn free prizes.
       <br><br>
-      Sign up to get free Stardance stickers mailed to you!</p>
+      Sign up to get free Stardance stickers! <%= link_to "19 or older?", "https://docs.google.com/document/d/e/2PACX-1vQu3H0kYWgFTZ4080k-kqzwLObJ2zJe_QMDO8XQcDf8UH9AwDtG31oURSGBQ9nEJ3kExbSKnDYAx1-E/pub", target: "_blank", rel: "noopener" %></p>
 
     <%= render "landing/sections/rsvp_form",
                new_onboarding: true,
                placeholder: "Enter your email...",
                leading: image_tag(image_url("landing/hero/star-character.png"), class: "hero__doodle-arrow", alt: "", data: { controller: "falling-star", action: "pointerdown->falling-star#fall" }) do %>
       <p class="hero__caption" data-controller="rsvp-counter" data-rsvp-counter-poll-url-value="<%= landing_signup_count_path %>" aria-live="polite">Join <%= render "landing/sections/signup_counter", count: @signup_count %> teens already building!</p>
+      <p class="hero__peek-link"><%= link_to home_path do %>See what teens are making <em>right now</em> &rarr;<% end %></p>
       <% if Rails.env.development? && current_user.blank? %>
         <%= button_to "dev login", dev_login_auto_path, method: :get, form_class: "hero__dev-login", class: "hero__dev-login-btn" %>
       <% end %>

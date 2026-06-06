@@ -1,0 +1,22 @@
+<% weeks = @board_weeks || [] %>
+<% current = @board_week %>
+<% if current %>
+  <div class="raffle-weekpick">
+    <span class="raffle-weekpick__rule"></span>
+    <% if weeks.size > 1 %>
+      <form class="raffle-weekpick__form" method="get" action="<%= request.path %>">
+        <% if @query.present? %><input type="hidden" name="q" value="<%= @query %>"><% end %>
+        <label class="raffle-sr-only" for="lb_week_pick">Viewing week</label>
+        <select id="lb_week_pick" name="lb_week" class="raffle-weekpick__select"
+                data-auto-submit autocomplete="off">
+          <% weeks.each do |w| %>
+            <option value="<%= w.number %>" <%= "selected" if w.number == current.number %>>Week <%= w.number %><%= w.status_active? ? " · current" : "" %></option>
+          <% end %>
+        </select>
+      </form>
+    <% else %>
+      <span class="raffle-weekpick__label">Week <%= current.number %></span>
+    <% end %>
+    <span class="raffle-weekpick__rule"></span>
+  </div>
+<% end %>

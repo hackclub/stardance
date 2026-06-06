@@ -1,0 +1,22 @@
+<%
+  commentable_type = @commentable.class.name.underscore.gsub("/", "_")
+%>
+<%= turbo_stream.replace "comments_count_#{commentable_type}_#{@commentable.id}" do %>
+  <span id="comments_count_<%= commentable_type %>_<%= @commentable.id %>"><%= @commentable.reload.comments_count %></span>
+<% end %>
+
+<%= turbo_stream.prepend "flash-region" do %>
+  <div class="flash-container">
+    <div class="alert alert-success" role="alert" aria-live="assertive" data-controller="flash" data-flash-timeout-value="3000">
+      <%= image_tag "landing/toast-star-left.png", class: "alert__star alert__star--left", alt: "", aria: { hidden: "true" } %>
+      <span class="alert__icon" aria-hidden="true">
+        <%= inline_svg_tag "icons/checked.svg", aria: { hidden: true }, focusable: "false" %>
+      </span>
+      <div class="alert__content">Comment posted!</div>
+      <button type="button" class="alert__close" aria-label="Close" title="Close" data-action="click->flash#close">
+        <%= inline_svg_tag "icons/close.svg", aria: { hidden: true }, focusable: "false" %>
+      </button>
+      <%= image_tag "landing/toast-star-right.png", class: "alert__star alert__star--right", alt: "", aria: { hidden: "true" } %>
+    </div>
+  </div>
+<% end %>

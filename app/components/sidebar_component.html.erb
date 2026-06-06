@@ -87,7 +87,7 @@
 
   <% if signed_in? %>
   <%= render layout: "shared/modal", locals: { id: "settings-modal", title: "Settings" } do %>
-    <% preference = user.preference %>
+    <% preference = user.preference || user.build_preference %>
     <%= form_with url: my_settings_path, method: :patch, local: true, class: "settings-form", id: "settings-form", data: { turbo: false } do |f| %>
       <div class="settings-form__field">
         <label class="settings-form__label" for="hcb_email">HCB Email</label>

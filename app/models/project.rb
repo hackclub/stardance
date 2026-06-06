@@ -113,6 +113,14 @@ class Project < ApplicationRecord
     current_mission_attachment&.mission
   end
 
+  def display_banner
+    if banner.attached?
+      banner
+    elsif current_mission&.banner&.attached?
+      current_mission.banner
+    end
+  end
+
   # True once this project has shipped to the given mission at least once.
   # After that first ship the mission stays attached (for display) but future
   # ships are regular, non-mission ships.
@@ -512,20 +520,48 @@ class Project < ApplicationRecord
     last_ship_at.present? && last_ship_at > last_devlog_at
   end
 
-  # Public so ProjectUrlProbeService can probe demo/repo URLs on re-ship. The
-  # HTTP helpers it leans on stay private below.
-  def url_reachable?(url)
-    cache_key = "url_reachable_#{Digest::MD5.hexdigest(url)}"
-    Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
-      response = SafeUrl.safe_head(url)
-      response.is_a?(Net::HTTPSuccess) || response.is_a?(Net::HTTPRedirection)
+  PROBE_SKIP_DOMAINS = %w[
+    npmjs.com
+    crates.io
+    curseforge.com
+    makerworld.com
+    streamlit.app
+  ].freeze
+
+  # Public so ProjectUrlProbeService and the controller can probe URLs.
+  # Returns the HTTP status code (int), nil for allowlisted domains.
+  def url_probe_status(url, cache: true)
+    uri = URI.parse(url)
+    return nil if PROBE_SKIP_DOMAINS.any? { |d| uri.host&.end_with?(d) }
+
+    if cache
+      Rails.cache.fetch("url_probe_v2_#{Digest::MD5.hexdigest(url)}", expires_in: 5.minutes) do
+        do_url_probe(url)
+      end
+    else
+      do_url_probe(url)
     end
+  end
+
+  def url_reachable?(url)
+    status = url_probe_status(url)
+    status.nil? || (200..299).cover?(status)
   rescue SafeUrl::Error, URI::InvalidURIError, SocketError, Errno::ECONNREFUSED,
          Errno::EHOSTUNREACH, Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError
     false
   end
 
   private
+
+  def do_url_probe(url)
+    response = SafeUrl.safe_get(
+      url,
+      headers: { "User-Agent" => "Stardance project validator (https://stardance.hackclub.com/)" },
+      open_timeout: 5,
+      read_timeout: 5
+    )
+    response.code.to_i
+  end
 
   def devlog_window_start(at)
     previous_devlog = devlogs.where("post_devlogs.created_at < ?", at).order("post_devlogs.created_at desc").first

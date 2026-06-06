@@ -10,8 +10,6 @@ module Onboarding
       helpers.current_user.nil?
     end
 
-    private
-
     def stale_guest?
       user = helpers.current_user
       user&.guest? && user.created_at < GRACE_PERIOD.ago

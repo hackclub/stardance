@@ -54,21 +54,23 @@ RUN apt-get update -qq && \
     liblapack-dev && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Node.js, npm, and Yarn for jsbundling (esbuild)
+# Install Node.js and enable Corepack for Yarn Berry
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y nodejs npm && \
-    npm install -g yarn && \
+    npm install -g corepack && \
+    corepack enable && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
+COPY engines/raffle/raffle.gemspec ./engines/raffle/
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
 
 # Install JavaScript dependencies for jsbundling-rails
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile && yarn cache clean
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
 # Copy application code
 COPY . .

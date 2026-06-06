@@ -19,5 +19,5 @@
       <% end %>
     <% end %>
   </div>
-  <div class="devlog-comment__body"><%= simple_format(comment.body) %></div>
+  <div class="devlog-comment__body"><%= sanitize md(comment.body, allow_images: false), tags: %w[p br strong em b i u s del a], attributes: %w[href target rel] %></div>
 </div>

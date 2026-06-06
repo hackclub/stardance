@@ -51,11 +51,12 @@ class Rsvp < ApplicationRecord
   after_commit :enqueue_geocode_job, on: :create
   after_commit :increment_signup_counter, on: :create, if: -> { Flipper.enabled?(:new_onboarding) }
 
-  class << self
-    def ambassador_referrals
-      where("LOWER(ref) LIKE ?", "#{AMBASSADOR_REFERRAL_PREFIX}%")
-    end
-  end
+  scope :ambassador_referrals, -> {
+    where(arel_table[:ref].lower.matches("#{AMBASSADOR_REFERRAL_PREFIX}%"))
+  }
+  scope :matching_ref, ->(ref) {
+    where(arel_table[:ref].lower.eq(ref.to_s.downcase))
+  }
 
   def ambassador_referral_payload
     {

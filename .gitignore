@@ -48,6 +48,14 @@ db/seeds/shop_items.csv
 /.idea
 /node_modules
 
+# Yarn Berry
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
 wak.toml
 
 /config/*.key

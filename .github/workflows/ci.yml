@@ -36,12 +36,12 @@ jobs:
           - name: Prettier JS/TS
             system_packages: "libblas-dev liblapack-dev"
             needs_node: true
-            command: yarn -s prettier --check "app/javascript/**/*.{js,jsx,ts,tsx}"
+            command: yarn prettier --check "app/javascript/**/*.{js,jsx,ts,tsx}"
 
           - name: Prettier SCSS/CSS
             system_packages: "libblas-dev liblapack-dev"
             needs_node: true
-            command: yarn -s prettier --check "app/assets/stylesheets/**/*.{scss,css}"
+            command: yarn prettier --check "app/assets/stylesheets/**/*.{scss,css}"
 
           - name: Zeitwerk
             system_packages: "libvips-dev libblas-dev liblapack-dev"
@@ -67,11 +67,14 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version-file: package.json
-          cache: yarn
+
+      - name: Enable Corepack
+        if: matrix.needs_node
+        run: corepack enable
 
       - name: Install JS dependencies
         if: matrix.needs_node
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Run check
         env:

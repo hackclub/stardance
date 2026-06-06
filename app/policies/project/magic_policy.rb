@@ -8,7 +8,7 @@ class Project::MagicPolicy < ApplicationPolicy
   end
 
   def nominate?
-    user&.can_nominate_super_star?
+    user&.can_nominate_super_star? && !record.project.users.include?(user)
   end
 
   def withdraw_nomination?

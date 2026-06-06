@@ -30,4 +30,8 @@ class AdminPolicy < ApplicationPolicy
   def access_jobs?
     user.admin?
   end
+
+  def access_raffles?
+    user.admin? || user.has_role?(:raffle_admin)
+  end
 end

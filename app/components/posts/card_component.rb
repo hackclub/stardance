@@ -119,10 +119,6 @@ module Posts
       show_comments || show_reposts || show_likes || show_actions
     end
 
-    def comment_url
-      card_link_url || "#"
-    end
-
     def comments_count_id
       if interaction_postable.present?
         "comments_count_#{interaction_postable.class.name.underscore.tr('/', '_')}_#{interaction_postable.id}"

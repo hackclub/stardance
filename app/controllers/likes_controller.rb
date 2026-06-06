@@ -9,7 +9,6 @@ class LikesController < ApplicationController
       @likeable.reload
 
       respond_to do |format|
-        format.json { render json: { liked: true, likes_count: @likeable.likes_count } }
         format.turbo_stream
         format.html { redirect_back fallback_location: @likeable }
       end
@@ -17,7 +16,6 @@ class LikesController < ApplicationController
       @likeable.reload
 
       respond_to do |format|
-        format.json { render json: { liked: false, likes_count: @likeable.likes_count }, status: :unprocessable_entity }
         format.turbo_stream { render :create, status: :unprocessable_entity }
         format.html { redirect_back fallback_location: @likeable, alert: @like.errors.full_messages.to_sentence }
       end
@@ -32,7 +30,6 @@ class LikesController < ApplicationController
     @likeable.reload
 
     respond_to do |format|
-      format.json { render json: { liked: false, likes_count: @likeable.likes_count } }
       format.turbo_stream
       format.html { redirect_back fallback_location: @likeable }
     end

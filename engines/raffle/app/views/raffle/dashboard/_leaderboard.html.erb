@@ -1,0 +1,58 @@
+<% offset ||= 0 %>
+<% pagy ||= nil %>
+<% you_entries ||= nil %>
+<% query ||= nil %>
+<% selected_week_number ||= nil %>
+<% on_page = current_participant && leaderboard.any? { |(p, _)| p.id == current_participant.id } %>
+<div class="raffle-card raffle-card--board">
+  <div class="raffle-card__head">
+    <h2 class="raffle-card__title">Leaderboard</h2>
+    <form class="raffle-board__search" method="get" action="<%= request.path %>" role="search">
+      <% if selected_week_number.present? %>
+        <input type="hidden" name="lb_week" value="<%= selected_week_number %>">
+      <% end %>
+      <%= inline_svg_tag "icons/search.svg", class: "raffle-board__search-icon", aria_hidden: "true" %>
+      <input type="search" name="q" value="<%= query %>"
+             class="raffle-board__search-input" placeholder="Search participants"
+             aria-label="Search the leaderboard" autocomplete="off">
+    </form>
+  </div>
+
+  <% if leaderboard.any? %>
+    <ol class="raffle-board">
+      <% leaderboard.each_with_index do |(participant, entries), i| %>
+        <% rank_n = offset + i + 1 %>
+        <% you = current_participant && participant.id == current_participant.id %>
+        <li class="raffle-board__row<%= " is-you" if you %>">
+          <span class="raffle-board__rank raffle-board__rank--<%= rank_n %>"><%= rank_n %></span>
+          <span class="raffle-board__name">
+            <%= participant.display_name %><% if you %> <span class="raffle-board__youtag">you</span><% end %>
+          </span>
+          <span class="raffle-board__tickets"><%= entries %> <span class="raffle-board__tickets-unit">entries</span></span>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if pagy && pagy.pages > 1 %>
+      <div class="raffle-board__pagerow">
+        <div class="raffle-pager"><%== pagy.series_nav %></div>
+      </div>
+    <% end %>
+  <% elsif query.present? %>
+    <p class="raffle-empty">No participants match "<%= query %>".</p>
+  <% else %>
+    <p class="raffle-empty">No entries yet this week, be the first on the board.</p>
+  <% end %>
+
+  <% if current_participant && rank && !on_page %>
+    <ol class="raffle-board raffle-board--you">
+      <li class="raffle-board__row is-you">
+        <span class="raffle-board__rank">#<%= rank %></span>
+        <span class="raffle-board__name">
+          <%= current_participant.display_name %> <span class="raffle-board__youtag">you</span>
+        </span>
+        <span class="raffle-board__tickets"><%= you_entries %> <span class="raffle-board__tickets-unit">entries</span></span>
+      </li>
+    </ol>
+  <% end %>
+</div>

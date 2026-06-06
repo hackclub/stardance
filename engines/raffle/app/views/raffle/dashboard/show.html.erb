@@ -1,0 +1,149 @@
+<%= render "raffle/shared/dev_panel" if Rails.env.development? %>
+
+<% if enrolled? %>
+  <% content_for :title, "Dashboard" %>
+  <section class="raffle-dash">
+    <div class="raffle-header">
+      <div class="raffle-header__text">
+        <h1 class="raffle-header__title">GPU Raffle</h1>
+        <p class="raffle-header__sub">Win an AMD Radeon RX 9060 XT every week</p>
+      </div>
+      <% if @week %>
+        <div class="raffle-header__stats">
+          <div class="raffle-stat">
+            <span class="raffle-stat__num"><%= @entry_count %></span>
+            <span class="raffle-stat__label"><%= "entry".pluralize(@entry_count) %></span>
+          </div>
+          <div class="raffle-stat">
+            <span class="raffle-stat__num"><% if @rank %>#<%= @rank %><% else %>-<% end %></span>
+            <span class="raffle-stat__label">rank</span>
+          </div>
+          <div class="raffle-stat">
+            <span class="raffle-stat__num"><%= @week_number %><span class="raffle-stat__of">/16</span></span>
+            <span class="raffle-stat__label">week</span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <% if @week %>
+      <%= render "raffle/shared/week_track", current: @week_number %>
+    <% end %>
+
+    <% if current_participant.age_group_teen? && !current_participant.hca_linked? %>
+      <div class="raffle-hca-notice">
+        <p>
+          <strong>Link your Hack Club account</strong> to activate your raffle entry.
+          Your base entry and referral entries won't count until you do.
+        </p>
+        <a href="<%= main_app_base_url %>/projects/setup" class="raffle-btn raffle-btn--sm">Create a project to link</a>
+      </div>
+    <% end %>
+
+    <% if @week && @entry_count.to_i > 0 %>
+      <div class="raffle-odds">
+        <div class="raffle-odds__meter">
+          <span class="raffle-odds__fill" style="--raffle-odds-fill: <%= [ (@entry_count.to_f / @week_pool * 100).round, 2 ].max %>%"></span>
+        </div>
+        <p class="raffle-odds__ctx">
+          ~1 in <%= [ (@week_pool.to_f / @entry_count).round, 1 ].max %> chance
+          · <%= number_with_delimiter(@week_pool) %> entries from <%= pluralize(@week_participants, "entrant") %>
+        </p>
+      </div>
+    <% end %>
+
+    <div class="raffle-share">
+      <span class="raffle-share__label">Your referral link</span>
+      <code class="raffle-share__url" tabindex="0" role="button" aria-label="Click to copy referral link"
+            data-controller="tooltip copy" data-tooltip-message-value="Click to copy"
+            data-copy-text-value="<%= current_participant.referral_url(:web) %>"
+            data-action="click->copy#copy"><%= current_participant.referral_url(:web) %></code>
+      <p class="raffle-share__hint">
+        <% if current_participant.age_group_adult? %>
+          +20 entries for each teen (13&ndash;18) who joins Stardance through your link
+        <% else %>
+          +20 entries for each friend who joins and links their Hack Club account
+        <% end %>
+      </p>
+    </div>
+
+    <%= render "raffle/shared/week_picker" %>
+
+    <%= render "raffle/dashboard/leaderboard",
+               leaderboard: @leaderboard, week: @board_week,
+               pagy: @pagy, offset: @rank_offset,
+               query: @query, selected_week_number: @board_week&.number,
+               current_participant: current_participant, rank: @board_rank, you_entries: @board_you_entries %>
+
+    <div class="raffle-cols">
+      <div class="raffle-card">
+        <h2 class="raffle-card__title">
+          Verified <span class="raffle-count raffle-count--verified"><%= @verified_this_week_count %></span>
+        </h2>
+        <% if @verified_this_week.any? %>
+          <ul class="raffle-refs">
+            <%= render partial: "raffle/dashboard/referral_row", collection: @verified_this_week, as: :ref %>
+          </ul>
+        <% else %>
+          <p class="raffle-empty">No verified referrals this week.</p>
+        <% end %>
+      </div>
+
+      <div class="raffle-card">
+        <h2 class="raffle-card__title">
+          Pending <span class="raffle-count raffle-count--pending"><%= @pending_count %></span>
+        </h2>
+        <p class="raffle-card__hint">Your friend needs to create a project and link their Hack Club account to count as a referral.</p>
+        <% if @pending.any? %>
+          <ul class="raffle-refs">
+            <%= render partial: "raffle/dashboard/referral_row", collection: @pending, as: :ref %>
+          </ul>
+        <% else %>
+          <p class="raffle-empty">No pending referrals.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <%= render "raffle/shared/faq" %>
+  </section>
+
+<% else %>
+  <% content_for :title, "GPU Raffle" %>
+  <section class="raffle-landing">
+    <%= render "raffle/shared/week_track", current: @week_number || 0 %>
+
+    <div class="raffle-landing__hero">
+      <h1 class="raffle-header__title">GPU Raffle</h1>
+      <p class="raffle-header__sub" style="margin-bottom: var(--space-l)">
+        We're giving away an AMD Radeon RX 9060 XT every week for 16 weeks.
+        Sign up, share your referral link, and earn entries.
+      </p>
+      <% if signed_in? %>
+        <a href="<%= main_app_base_url %>/" class="raffle-btn raffle-landing__cta">
+          Go to Stardance
+        </a>
+      <% else %>
+        <div class="raffle-landing__auth">
+          <a href="<%= main_app_base_url %>/" class="raffle-btn raffle-landing__cta">
+            Sign in on Stardance (13&ndash;18)
+          </a>
+          <p class="raffle-landing__or">or</p>
+          <%= form_tag "/auth/github", method: :post, data: { turbo: false }, style: "display:inline" do %>
+            <button type="submit" class="raffle-btn raffle-btn--secondary raffle-landing__cta">
+              Sign in with GitHub (19+)
+            </button>
+          <% end %>
+        </div>
+      <% end %>
+      <p class="raffle-landing__meta">Ages 13+ · Open worldwide</p>
+    </div>
+
+    <%= render "raffle/dashboard/leaderboard",
+               leaderboard: @leaderboard, week: @board_week,
+               pagy: @pagy, offset: @rank_offset,
+               query: @query, selected_week_number: @board_week&.number,
+               current_participant: nil, rank: nil %>
+
+    <%= render "raffle/shared/faq" %>
+  </section>
+<% end %>

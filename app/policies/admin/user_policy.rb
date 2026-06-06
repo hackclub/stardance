@@ -70,6 +70,10 @@ class Admin::UserPolicy < ApplicationPolicy
     user&.admin? || user&.fraud_dept?
   end
 
+  def unlink_identity?
+    user&.admin?
+  end
+
   private
 
   def protected_role?

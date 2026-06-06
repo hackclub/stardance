@@ -53,7 +53,7 @@
       <% end %>
 
       <% if quote_repost? && body.present? %>
-        <div class="feed-post-card__body feed-post-card__body--inline">
+        <div class="feed-post-card__body feed-post-card__body--inline markdown-content">
           <%= helpers.md(body, allow_images: false) %>
         </div>
       <% end %>
@@ -61,7 +61,7 @@
   </header>
 
   <% if body.present? && !quote_repost? %>
-    <div class="feed-post-card__body">
+    <div class="feed-post-card__body markdown-content">
       <%= helpers.md(body, allow_images: false) %>
     </div>
   <% end %>
@@ -86,12 +86,80 @@
   <% if show_footer? %>
   <footer class="feed-post-card__actions">
     <% if show_comments && interaction_post&.postable_type == "Post::Devlog" %>
-      <%= link_to comment_url,
-            class: "feed-post-card__action",
-            aria: { label: "#{interaction_postable.comments_count} comments" } do %>
-        <%= inline_svg_tag "icons/comment.svg", class: "feed-post-card__action-icon" %>
-        <span id="<%= comments_count_id %>"><%= interaction_postable.comments_count %></span>
-      <% end %>
+      <div class="feed-post-card__comment-action" data-controller="comment-modal">
+        <button type="button"
+                class="feed-post-card__action"
+                aria-label="<%= interaction_postable.comments_count %> comments"
+                data-action="comment-modal#open">
+          <%= inline_svg_tag "icons/comment.svg", class: "feed-post-card__action-icon" %>
+          <span id="<%= comments_count_id %>"><%= interaction_postable.comments_count %></span>
+        </button>
+
+        <dialog class="comment-modal"
+                data-comment-modal-target="dialog"
+                data-action="click->comment-modal#backdropClick turbo:submit-end->comment-modal#formSubmitted"
+                aria-label="Comments">
+          <div class="comment-modal__content">
+            <header class="comment-modal__header">
+              <button type="button" class="comment-modal__close" data-action="comment-modal#close" aria-label="Close">&times;</button>
+            </header>
+
+            <div class="comment-modal__body">
+              <div class="comment-modal__thread">
+                <div class="comment-modal__thread-post">
+                  <div class="comment-modal__thread-left">
+                    <% if author.present? %>
+                      <%= image_tag author.avatar, alt: "", class: "comment-modal__post-avatar" %>
+                    <% end %>
+                    <% if current_user %><div class="comment-modal__thread-line"></div><% end %>
+                  </div>
+                  <div class="comment-modal__thread-right">
+                    <% if author.present? %>
+                      <span class="comment-modal__post-author">@<%= author_name %></span>
+                    <% end %>
+                    <% if body.present? %>
+                      <div class="comment-modal__post-body markdown-content"><%= helpers.md(body, allow_images: false) %></div>
+                    <% end %>
+                    <p class="comment-modal__replying-to">Replying to <span class="comment-modal__replying-to-name">@<%= author_name %></span></p>
+                  </div>
+                </div>
+
+                <% if current_user %>
+                  <%= form_with url: helpers.devlog_comments_path(interaction_postable),
+                                scope: :comment,
+                                class: "comment-modal__form",
+                                data: { turbo_frame: "_top" } do |f| %>
+                    <div class="comment-modal__thread-reply">
+                      <div class="comment-modal__thread-left">
+                        <%= image_tag current_user.avatar, alt: "", class: "comment-modal__reply-avatar" %>
+                      </div>
+                      <div class="comment-modal__thread-right">
+                        <%= f.text_area :body,
+                              class: "comment-modal__textarea",
+                              placeholder: "Post your reply",
+                              rows: 3,
+                              maxlength: Comment::BODY_MAX_LENGTH,
+                              data: { comment_modal_target: "textarea",
+                                      controller: "submit-on-meta-enter",
+                                      action: "keydown->submit-on-meta-enter#submit" } %>
+                      </div>
+                    </div>
+                    <div class="comment-modal__footer">
+                      <%= render ActionButtonComponent.new(
+                            text: "Reply",
+                            size: :small,
+                            type: :submit,
+                            variant: :primary,
+                            disable_with: "Posting..."
+                          ) %>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </dialog>
+      </div>
     <% end %>
 
     <% if show_reposts %>

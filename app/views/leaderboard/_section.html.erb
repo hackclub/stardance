@@ -1,0 +1,13 @@
+<%# locals: title:, users:, value_method: %>
+
+<section class="leaderboard-section">
+  <header class="leaderboard-section__header">
+    <h2 class="leaderboard-section__title"><%= title %></h2>
+    <p class="leaderboard-section__meta"><%= pluralize(users.size, "stargazer") %></p>
+  </header>
+
+  <ol class="leaderboard-section__list">
+    <%= render partial: "leaderboard/row", collection: users, as: :user,
+              locals: { value_method: value_method } %>
+  </ol>
+</section>

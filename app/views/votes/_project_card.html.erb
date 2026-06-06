@@ -2,7 +2,8 @@
     projects/show.html.erb minus edit/follow actions. %>
 <%
   members        = project.users.to_a
-  banner_url     = project.banner.attached? ? url_for(project.banner) : image_path("profile/default-banner.png")
+  display        = project.display_banner
+  banner_url     = display ? url_for(display) : image_path("profile/default-banner.png")
   total_hours    = (project.duration_seconds / 3600.0).round
   follower_count = project.project_follows.size
 %>
