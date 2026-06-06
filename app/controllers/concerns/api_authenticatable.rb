@@ -22,7 +22,7 @@ module ApiAuthenticatable
       return
     end
 
-    @current_api_user = User.where.not(api_key: [nil, "" ]).find_by(api_key: token)
+    @current_api_user = User.where.not(api_key: [ nil, "" ]).find_by(api_key: token)
 
     render json: { error: "Invalid API key", request_id: request.request_id }, status: :unauthorized unless @current_api_user
   end

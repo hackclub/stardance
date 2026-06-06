@@ -11,4 +11,3 @@ module ApiHelper
     @devlog_ids_by_project ? @devlog_ids_by_project.fetch(project.id, []) : project.devlogs.ids
   end
 end
-

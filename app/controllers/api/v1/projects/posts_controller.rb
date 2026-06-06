@@ -36,7 +36,7 @@ class Api::V1::Projects::PostsController < Api::BaseController
 
   def show
     @post = find_post
-    preload_liked_devlog_ids([@post.postable].compact) if @post.postable_type == "Post::Devlog"
+    preload_liked_devlog_ids([ @post.postable ].compact) if @post.postable_type == "Post::Devlog"
   end
 
   def create
@@ -59,7 +59,7 @@ class Api::V1::Projects::PostsController < Api::BaseController
 
     if devlog&.persisted?
       @post = devlog.post
-      preload_liked_devlog_ids([devlog])
+      preload_liked_devlog_ids([ devlog ])
       render :show, status: :created
     else
       errors = devlog ? devlog.errors.full_messages : [ "Could not create post ://" ]
@@ -79,7 +79,7 @@ class Api::V1::Projects::PostsController < Api::BaseController
     end
 
     @post.postable.update!(post_params)
-    preload_liked_devlog_ids([@post.postable])
+    preload_liked_devlog_ids([ @post.postable ])
     render :show
   end
 
