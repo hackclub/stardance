@@ -10,12 +10,15 @@ module Certification
     end
 
     def call
-      hours_worked = ship_event.hours || 0
-      original_minutes = (hours_worked * 60).to_i
-
       ActiveRecord::Base.transaction do
+        devlog_posts = devlogs_since_last_ship.to_a
+        # "Original" reflects ALL logged time across the ship window (every
+        # phase), independent of Post::ShipEvent#hours, which is the build-only
+        # deflated payout basis. Reviewers deflate from this raw baseline.
+        original_minutes = devlog_posts.sum { |post| (post.postable&.duration_seconds || 0) / 60 }
+
         ysws_review = create_ysws_review(original_minutes)
-        create_devlog_reviews(ysws_review)
+        create_devlog_reviews(ysws_review, devlog_posts)
         ysws_review
       end
     end
@@ -35,8 +38,8 @@ module Certification
       )
     end
 
-    def create_devlog_reviews(ysws_review)
-      devlogs_since_last_ship.each do |post|
+    def create_devlog_reviews(ysws_review, devlog_posts)
+      devlog_posts.each do |post|
         devlog = post.postable
         devlog_minutes = (devlog.duration_seconds || 0) / 60
 

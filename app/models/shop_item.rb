@@ -294,6 +294,14 @@ class ShopItem < ApplicationRecord
     sale_percentage.present? && sale_percentage > 0
   end
 
+  # Per-user effective price. Most items ignore the user and just use the
+  # regional price; ShopItem::OutpostTicket overrides this to subtract the
+  # user's accrued discount. This is the price enforced at purchase (see
+  # ShopOrder#freeze_item_price).
+  def price_for_user(_user, region)
+    price_for_region(region)
+  end
+
   def fixed_estimate(price)
     return 0 unless price.present? && price > 0
     price / (Rails.configuration.game_constants.tickets_per_dollar * Rails.configuration.game_constants.dollars_per_mean_hour)

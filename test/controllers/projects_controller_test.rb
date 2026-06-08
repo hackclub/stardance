@@ -53,7 +53,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project-show__title", text: "Forest Odyssey"
   end
 
-  test "owner of empty project sees onboarding and github card" do
+  test "owner of empty project sees the onboarding welcome prompting a Hackatime link" do
     sign_in @owner
 
     get project_path(@project)
@@ -61,17 +61,10 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".project-show__onboarding"
     assert_select "#project-show-onboarding-title", text: "Welcome to your new project!"
-    assert_select "a[href='#{guide_path(:github_repository)}']", text: /Create your GitHub repository/
-  end
-
-  test "owner without hackatime identity sees hackatime setup card" do
-    sign_in @owner
-
-    get project_path(@project)
-
-    assert_response :success
-    assert_select ".project-show__onboarding form[action='/auth/hackatime'][method='post']"
-    assert_select ".project-show__onboarding", text: /Set up hour tracking with Hackatime/
+    # The redesigned onboarding replaced the discrete GitHub/Hackatime setup
+    # cards with a single contextual message; an owner with no Hackatime link is
+    # nudged to connect it.
+    assert_select ".project-show__onboarding-header-body", text: /Link Hackatime to start tracking your time/
   end
 
   test "owner with hackatime identity does not see hackatime setup card" do
@@ -94,7 +87,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project-show__onboarding form[action='/auth/hackatime']", 0
   end
 
-  test "project with attached mission shows gold mission onboarding card" do
+  test "project with an attached mission is not prompted to browse missions" do
     mission = Mission.create!(
       slug: "rusty-frontend",
       name: "Rusty Frontend",
@@ -106,7 +99,10 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     get project_path(@project)
 
     assert_response :success
-    assert_select ".project-show__onboarding-card--mission[href='#{mission_path(mission.slug)}']", text: /Rusty Frontend/
+    # The onboarding mission card was retired in the project-show redesign;
+    # missions now surface via the discover rail. A project that already has a
+    # mission attached should not render the "browse missions" prompt.
+    assert_select "#mission-browse-modal", 0
   end
 
   test "non-owner does not see owner onboarding" do

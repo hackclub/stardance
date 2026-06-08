@@ -97,6 +97,26 @@
       <% end %>
     </div>
   </div>
+  <div>
+    <h2>Hardware</h2>
+    <div>
+      <% if @user.has_presentable_hardware_project? %>
+        <%= button_to admin_user_presentable_hardware_flag_path(@user),
+                      method: :delete,
+                      disabled: !current_user&.admin?,
+                      title: "Remove the presentable hardware project flag" do %>
+          Presentable hardware project ✓
+        <% end %>
+      <% else %>
+        <%= button_to admin_user_presentable_hardware_flag_path(@user),
+                      method: :post,
+                      disabled: !current_user&.admin?,
+                      title: "Mark as having a presentable hardware project (unlocks the Outpost Ticket)" do %>
+          Presentable hardware project
+        <% end %>
+      <% end %>
+    </div>
+  </div>
 </div>
 
 <div>

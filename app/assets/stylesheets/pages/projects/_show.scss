@@ -428,6 +428,24 @@ turbo-frame#project_hero {
   color: var(--color-set-1-bg);
 }
 
+.project-show__stage-toggle--locked {
+  pointer-events: none;
+}
+
+.project-show__stage-choice-label--locked {
+  opacity: 0.65;
+  cursor: not-allowed;
+  font-size: 0.9rem;
+  filter: saturate(0.7);
+}
+
+.project-show__stage-choice-label--locked.project-show__stage-choice-label--selected {
+  background: var(--color-brand-highlight);
+  border-color: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
+  opacity: 0.75;
+}
+
 .project-show__hackatime-picker {
   display: flex;
   min-width: 0;

@@ -85,6 +85,11 @@ class Post::ShipEvent < ApplicationRecord
     MajorityJudgmentService.call(self)
   end
 
+  # Hours that form the voting payout basis. Software projects count every
+  # logged second (unchanged). Hardware projects only pay for build-phase time,
+  # after reviewer deflation: where a Certification::Devlog review exists we use
+  # the reviewer-approved minutes (rejected => 0), otherwise the raw logged time
+  # so voting can begin before review completes. Design-phase time never pays.
   def hours
     project = post&.project
     return 0 unless project && created_at
@@ -98,11 +103,30 @@ class Post::ShipEvent < ApplicationRecord
     # created_at if first otherwise use the last ship_event
     start_time = previous_ship_event_post ? previous_ship_event_post.created_at : project.created_at
 
-    seconds = project.posts.of_devlogs(join: true)
-                     .where("posts.created_at >= ? AND posts.created_at <= ?", start_time, ship_event_post.created_at)
-                     .where(post_devlogs: { deleted_at: nil })
-                     .sum("post_devlogs.duration_seconds")
-    seconds.to_f / 3600
+    devlog_scope = project.posts.of_devlogs(join: true)
+                          .where("posts.created_at >= ? AND posts.created_at <= ?", start_time, ship_event_post.created_at)
+                          .where(post_devlogs: { deleted_at: nil })
+
+    unless project.hardware?
+      seconds = devlog_scope.sum("post_devlogs.duration_seconds")
+      return seconds.to_f / 3600
+    end
+
+    devlogs = Post::Devlog.where(id: devlog_scope.select("posts.postable_id"))
+                          .includes(:devlog_review)
+
+    minutes = devlogs.sum do |devlog|
+      next 0 unless devlog.phase == "build"
+
+      review = devlog.devlog_review
+      if review&.reviewed?
+        review.approved_minutes.to_i
+      else
+        (devlog.duration_seconds || 0).to_f / 60.0
+      end
+    end
+
+    minutes / 60.0
   end
 
   def payout_eligible?

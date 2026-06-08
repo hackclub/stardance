@@ -100,7 +100,7 @@
   <% if project.demo_url.present? || project.repo_url.present? %>
     <div class="feed-post-card__body project-show__latest-ship-cta">
       <% if project.demo_url.present? %>
-        <%= link_to "Try project →",
+        <%= link_to project.hardware? ? "Video of Project →" : "Try project →",
                     project.demo_url,
                     target: "_blank",
                     rel: "noopener",

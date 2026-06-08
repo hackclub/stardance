@@ -145,6 +145,15 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       reading_minutes: 4,
       related: %i[outpost starting-hardware],
       markdown: "outpost/super-hardware-builder.md"
+    ),
+    new(
+      slug: :tiers,
+      title: "Hardware funding tiers",
+      description: "How Outpost funds hardware builds: the B/A/S/X tiers, what each covers, and how unspent budget turns into Stardust toward the Outpost Ticket.",
+      category: :program,
+      icon: "info",
+      reading_minutes: 3,
+      related: %i[how_to_ship]
     )
   ].freeze
 

@@ -587,6 +587,7 @@ Rails.application.routes.draw do
         resource  :ban,                 only: [ :create, :destroy ]
         resource  :impersonation,       only: [ :create ]
         resources :feature_flags,       only: [ :create, :destroy ], param: :feature
+        resource  :presentable_hardware_flag, only: [ :create, :destroy ]
         resource  :hackatime_sync,      only: [ :create ]
         resource  :order_rejection,     only: [ :create ]
         resources :balance_adjustments, only: [ :create ]
@@ -722,6 +723,15 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :funding_requests, path: "funding", only: [ :index, :show, :update ] do
+        collection do
+          get :next
+        end
+        scope module: :funding_requests do
+          resource :claim, only: [ :create, :destroy ]
+        end
+      end
+
       resources :devlog_reviews, only: [ :update ]
 
       get "devlogs/:devlog_id/commits", to: "devlog_commits#index", as: "devlog_commits"
@@ -793,6 +803,7 @@ Rails.application.routes.draw do
     resource :og_image, only: [ :show ], module: :projects, defaults: { format: :png }
     resource :ships, only: [ :create ], module: :projects
     resource :recertification, only: [ :create ], module: :projects
+    resource :funding_request, only: [ :create ], module: :projects
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
     resource :fire_nomination, only: [ :create, :destroy ], module: :projects

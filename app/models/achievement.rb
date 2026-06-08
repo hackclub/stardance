@@ -18,6 +18,14 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       icon: "fire",
       earned_check: ->(user) { user.projects.fire.exists? },
       visibility: :secret
+    ),
+    new(
+      slug: :has_presentable_hardware_project,
+      name: "Presentable Hardware Project",
+      description: "Got a hardware project polished enough to show off. Unlocks the Outpost Ticket.",
+      icon: "rocket",
+      earned_check: ->(user) { user.has_presentable_hardware_project? },
+      visibility: :visible
     )
   ].freeze
 

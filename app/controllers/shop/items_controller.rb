@@ -49,7 +49,7 @@ class Shop::ItemsController < Shop::BaseController
       return
     end
 
-    @sale_price = @shop_item.price_for_region(@user_region)
+    @sale_price = @shop_item.price_for_user(current_user, @user_region)
     @regional_base_price = @shop_item.base_price_for_region(@user_region)
     @accessories = @shop_item.available_accessories.includes(:image_attachment)
     @modifiers = @shop_item.available_modifiers_for_region(@user_region)

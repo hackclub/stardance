@@ -166,6 +166,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.index ["ysws_review_id"], name: "index_certification_devlog_reviews_on_ysws_review_id"
   end
 
+  create_table "certification_funding_requests", force: :cascade do |t|
+    t.integer "approved_amount_cents"
+    t.datetime "claim_expires_at"
+    t.datetime "claimed_at"
+    t.integer "complexity_tier", null: false
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.integer "discount_stardust_awarded"
+    t.text "feedback"
+    t.text "internal_reason"
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.integer "requested_amount_cents", null: false
+    t.bigint "reviewer_id"
+    t.integer "stardust_earned"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["decided_at"], name: "index_certification_funding_requests_on_decided_at"
+    t.index ["project_id"], name: "index_certification_funding_requests_on_project_id"
+    t.index ["project_id"], name: "index_funding_requests_unique_pending_project", unique: true, where: "(status = 0)"
+    t.index ["reviewer_id"], name: "index_certification_funding_requests_on_reviewer_id"
+    t.index ["status", "claim_expires_at"], name: "idx_funding_requests_on_status_claim_expires"
+    t.index ["user_id"], name: "index_certification_funding_requests_on_user_id"
+  end
+
   create_table "certification_ship_reviews", force: :cascade do |t|
     t.datetime "claim_expires_at"
     t.datetime "claimed_at"
@@ -522,6 +548,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.text "hackatime_projects_key_snapshot"
     t.datetime "hackatime_pulled_at"
     t.integer "likes_count", default: 0, null: false
+    t.string "phase"
     t.datetime "synced_at"
     t.boolean "tutorial", default: false, null: false
     t.datetime "updated_at", null: false
@@ -1208,6 +1235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.string "guest_email"
     t.boolean "has_gotten_free_stickers", default: false
     t.boolean "has_pending_achievements", default: false, null: false
+    t.boolean "has_presentable_hardware_project", default: false, null: false
     t.string "hcb_email"
     t.string "interests", default: [], array: true
     t.text "internal_notes"
@@ -1216,6 +1244,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.boolean "manual_ysws_override"
     t.boolean "mission_review_notifications", default: true, null: false
     t.datetime "onboarded_at"
+    t.integer "outpost_discount_stardust", default: 0, null: false
     t.string "ref"
     t.string "regions", default: [], array: true
     t.string "session_token"
@@ -1302,6 +1331,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "certification_devlog_reviews", "certification_ysws_reviews", column: "ysws_review_id"
   add_foreign_key "certification_devlog_reviews", "post_devlogs"
+  add_foreign_key "certification_funding_requests", "projects"
+  add_foreign_key "certification_funding_requests", "users"
+  add_foreign_key "certification_funding_requests", "users", column: "reviewer_id"
   add_foreign_key "certification_ship_reviews", "projects"
   add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ysws_reviews", "certification_ship_reviews", column: "ship_cert_id"

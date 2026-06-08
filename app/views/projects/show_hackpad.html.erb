@@ -853,7 +853,7 @@
                 <% if @project.demo_url.present? || @project.repo_url.present? %>
                   <div class="project-show__latest-ship-cta">
                     <% if @project.demo_url.present? %>
-                      <%= link_to "Try project →", @project.demo_url,
+                      <%= link_to @project.hardware? ? "Video of Project →" : "Try project →", @project.demo_url,
                                   target: "_blank", rel: "noopener",
                                   class: "project-show__latest-ship-btn project-show__latest-ship-btn--primary" %>
                     <% end %>

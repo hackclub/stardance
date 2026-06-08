@@ -56,6 +56,11 @@
                                 </li>
                             <% end %>
                         </ul>
+                        <% if @shop_item.is_a?(ShopItem::OutpostTicket) %>
+                            <a class="shop-order__achievement-cta" href="https://forms.hackclub.com/submit-showcase-project" target="_blank" rel="noopener">
+                                Submit your hardware project for review →
+                            </a>
+                        <% end %>
                     <% else %>
                         <% achievement_names = @required_achievements.map(&:name).to_sentence(two_words_connector: ' or ', last_word_connector: ', or ') %>
                         <span>Unlocked via "<%= achievement_names %>"</span>
@@ -283,7 +288,7 @@
                 <div class="shop-order__summary-content">
                     <div class="shop-order__summary-price">
                         <h4>Base Price:</h4>
-                        <% if @shop_item.on_sale? %>
+                        <% if @shop_item.on_sale? || @sale_price.to_i < @regional_base_price.to_i %>
                             <h4>
                                 <span class="shop-order__original-price"><%= stardust_icon %> <span class="shop-order__strikethrough"><%= @regional_base_price %></span></span>
                                 <%= stardust_icon %> <%= @sale_price.round %>
@@ -305,6 +310,14 @@
                         <h4 id="shop-order__summary-total-display" data-order-form-target="summaryTotalDisplay"><%= stardust_icon %> <%= @sale_price.round %></h4>
                     </div>
                 </div>
+                <% if @shop_item.is_a?(ShopItem::OutpostTicket) && current_user.outpost_discount_stardust.to_i > 0 %>
+                    <div class="shop-order__summary-outpost">
+                        <p><%= safe_join([ "You've earned ", stardust_icon, " ", current_user.outpost_discount_stardust.to_s, " toward the Outpost Ticket from unrequested funding." ]) %></p>
+                        <% if current_user.outpost_flight_stipend > 0 %>
+                            <p><%= safe_join([ "That covers the ticket and leaves ", stardust_icon, " ", content_tag(:strong, current_user.outpost_flight_stipend.to_s), " toward a flight stipend." ]) %></p>
+                        <% end %>
+                    </div>
+                <% end %>
             </div>
             <% primary_address = current_user.addresses.find { |a| a["primary"] } || current_user.addresses.first %>
             <% has_phone = primary_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(ShopItem::FreeStickers) %>

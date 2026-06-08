@@ -1,0 +1,40 @@
+<p>
+  Outpost funds your hardware build. When you start a project as
+  <strong>"I need Funding"</strong>, log your design hours, then hit
+  <strong>"Submit Design to Get Project Funding"</strong> and pick the complexity
+  tier that matches what you're making. A reviewer approves a grant up to that
+  tier's maximum.
+</p>
+
+<h2>The tiers</h2>
+<div class="tier-guide">
+  <% Certification::FundingRequest::TIERS.each do |_id, t| %>
+    <div class="tier-guide__row">
+      <span class="funding-tier__badge funding-tier__badge--<%= t[:code].downcase %>"><%= t[:code] %></span>
+      <div class="tier-guide__body">
+        <div class="tier-guide__name"><%= t[:name] %></div>
+        <div><%= t[:examples] %></div>
+      </div>
+      <span class="tier-guide__max">up to $<%= t[:max_cents] / 100 %></span>
+    </div>
+  <% end %>
+</div>
+<p>
+  Got a build with a cool twist and real polish? Reviewers can bump it up a tier.
+</p>
+
+<h2>Spend less, earn Stardust</h2>
+<p>
+  You don't have to request your whole tier. For every dollar you leave on the
+  table, you earn <strong><%= Certification::FundingRequest::DISCOUNT_STARDUST_PER_DOLLAR %> Stardust</strong>
+  toward the <strong>Outpost Ticket</strong> in the shop. Once your accrued
+  discount covers the ticket, the extra rolls into a <strong>flight stipend</strong>.
+</p>
+
+<h2>After your grant</h2>
+<p>
+  When your grant is approved, your project moves to the build stage. Log your
+  build time with a timelapse and post at least one build devlog before you can
+  ship. Only build-stage hours (after reviewer checks) earn Stardust at the
+  voting booth. Design-stage hours don't pay out.
+</p>

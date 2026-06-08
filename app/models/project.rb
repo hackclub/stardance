@@ -103,6 +103,7 @@ class Project < ApplicationRecord
   has_many :votes, dependent: :destroy
   has_many :reports, class_name: "Project::Report", dependent: :destroy
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
+  has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
   has_many :followers, through: :project_follows, source: :user
@@ -182,6 +183,12 @@ class Project < ApplicationRecord
   normalizes :hardware_stage, with: ->(value) { value.presence }
   validates :hardware_stage, inclusion: { in: HARDWARE_STAGES }, allow_nil: true
   validate :validate_project_categories
+  validate :hardware_stage_locked_after_funding_request
+
+  def hardware_stage_locked_after_funding_request
+    return unless hardware_stage_changed? && has_any_funding_request?
+    errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")
+  end
 
   def validate_project_categories
     return if project_categories.blank?
@@ -243,6 +250,23 @@ class Project < ApplicationRecord
 
   def build_stage?
     hardware_stage == "build"
+  end
+
+  # True while a funding request for this project is awaiting reviewer decision.
+  def has_pending_funding_request?
+    certification_funding_requests.pending.exists?
+  end
+
+  # True once any funding request has been submitted (pending, approved, or returned).
+  def has_any_funding_request?
+    return @_has_any_funding_request if defined?(@_has_any_funding_request)
+    @_has_any_funding_request = certification_funding_requests.exists?
+  end
+
+  # The latest funding request (for displaying approved amount, status, etc.).
+  def latest_funding_request
+    return @_latest_funding_request if defined?(@_latest_funding_request)
+    @_latest_funding_request = certification_funding_requests.order(created_at: :desc).first
   end
 
   # Name of the Hackatime project that Lookout timelapse heartbeats are filed
@@ -403,6 +427,13 @@ class Project < ApplicationRecord
         passed: has_devlog_since_last_ship?
       },
       {
+        key: :build_devlog,
+        label: "Post at least one build devlog before shipping",
+        fail_label: "Post at least one build devlog before you can ship!",
+        tooltip: "Now that your project is funded it's in the build stage. Log some build time and post a build devlog to show progress before you ship. Design-stage devlogs don't count.",
+        passed: !received_grant? || has_build_devlog_since_last_ship?
+      },
+      {
         key: :payout,
         label: "Your previous ship must have received a payout before you can ship again",
         fail_label: "Wait for your previous ship to get a payout before shipping again",
@@ -544,6 +575,21 @@ class Project < ApplicationRecord
   def has_devlog_since_last_ship?
     scope = devlog_posts
     scope = scope.where("posts.created_at > ?", last_ship_event.created_at) if last_ship_event
+    scope.exists?
+  end
+
+  # True once this project has had a funding request approved (the "I need
+  # Funding" path). Such projects must show real build progress before shipping.
+  def received_grant?
+    certification_funding_requests.approved.exists?
+  end
+
+  # Funded projects must post at least one BUILD-phase devlog since their last
+  # ship before they can ship — design-phase devlogs (logged before the grant)
+  # don't count.
+  def has_build_devlog_since_last_ship?
+    scope = devlogs.build_phase.where(deleted_at: nil)
+    scope = scope.where("post_devlogs.created_at > ?", last_ship_event.created_at) if last_ship_event
     scope.exists?
   end
 

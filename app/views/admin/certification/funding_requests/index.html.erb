@@ -1,4 +1,4 @@
-<% content_for :title, "Ship review queue" %>
+<% content_for :title, "Funding review queue" %>
 
 <%
   status_labels = { "pending" => "Pending", "approved" => "Approved", "returned" => "Returned", "all" => "All" }
@@ -14,7 +14,7 @@
 
     <header class="ship-queue__header">
       <div class="ship-queue__title">
-        <h1>Ship review queue</h1>
+        <h1>Funding review queue</h1>
         <span class="status-pill status-pill--<%= @status == "all" ? "pending" : @status %>">
           <%= status_labels[@status] %>
         </span>
@@ -22,9 +22,9 @@
       <div class="ship-queue__header-actions">
         <%= link_to "My Stats", admin_certification_mystats_path,
               class: "action-btn action-btn--large action-btn--secondary" %>
-        <%= link_to "Funding queue", admin_certification_funding_requests_path,
+        <%= link_to "Ship queue", admin_certification_ships_path,
               class: "action-btn action-btn--large action-btn--secondary" %>
-        <%= link_to "Start reviewing", next_admin_certification_ships_path,
+        <%= link_to "Start reviewing", next_admin_certification_funding_requests_path,
               class: "action-btn action-btn--large action-btn--primary" %>
       </div>
     </header>
@@ -59,7 +59,7 @@
             <span class="ship-queue__label">Oldest waiting</span>
             <% if @stats[:oldest_pending] %>
               <%= link_to time_ago_in_words(@stats[:oldest_pending].created_at),
-                    admin_certification_ship_path(@stats[:oldest_pending]),
+                    admin_certification_funding_request_path(@stats[:oldest_pending]),
                     class: "ship-queue__metric-value is-negative ship-queue__metric-link" %>
               <span class="ship-queue__metric-hint">in the queue</span>
             <% else %>
@@ -138,7 +138,7 @@
       </div>
     </section>
 
-    <%= form_with url: admin_certification_ships_path, method: :get,
+    <%= form_with url: admin_certification_funding_requests_path, method: :get,
           data: { certification__queue_target: "filters" }, class: "ship-queue__filters" do %>
       <div class="ship-queue__filter">
         <label for="filter-status">Status</label>
@@ -171,11 +171,11 @@
       </div>
       <div class="ship-queue__filter-actions">
         <button type="submit" class="action-btn action-btn--small action-btn--secondary">Apply</button>
-        <%= link_to "Reset", admin_certification_ships_path, class: "ship-queue__reset" %>
+        <%= link_to "Reset", admin_certification_funding_requests_path, class: "ship-queue__reset" %>
       </div>
     <% end %>
 
-    <% if @ships.empty? %>
+    <% if @funding_requests.empty? %>
       <div class="ship-queue__empty">
         <p>Nothing matches these filters.</p>
       </div>
@@ -185,38 +185,36 @@
           <thead>
             <tr>
               <th>Project</th>
+              <th>Requested</th>
               <th class="ship-queue__cell-status">Status</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <% @ships.each do |ship| %>
-              <% owner = ship.project.memberships.find(&:owner?)&.user %>
+            <% @funding_requests.each do |fr| %>
+              <% owner = fr.project.memberships.find(&:owner?)&.user %>
               <tr>
                 <td class="ship-queue__cell-project">
                   <div class="ship-queue__project-head">
-                    <%= link_to ship.project.title, admin_certification_ship_path(ship), class: "ship-queue__project-title" %>
-                    <span class="ship-queue__project-id">#<%= ship.id %></span>
+                    <%= link_to fr.project.title, admin_certification_funding_request_path(fr), class: "ship-queue__project-title" %>
+                    <span class="ship-queue__project-id">#<%= fr.id %></span>
                   </div>
                   <div class="ship-queue__project-meta">
                     <span>by <%= owner&.display_name || "—" %></span>
                     <span class="ship-queue__dot" aria-hidden="true">·</span>
-                    <span><%= time_ago_in_words(ship.created_at) %> old</span>
-                    <% if ship.pending? %>
+                    <span><%= time_ago_in_words(fr.created_at) %> old</span>
+                    <% if fr.pending? %>
                       <span class="ship-queue__dot" aria-hidden="true">·</span>
-                      <%= render "claim_flag", ship: ship %>
+                      <%= render "claim_flag", funding_request: fr %>
                     <% end %>
                   </div>
                 </td>
+                <td>$<%= fr.requested_amount_dollars %> <span class="ship-queue__dot" aria-hidden="true">·</span> <%= fr.tier_label %></td>
                 <td class="ship-queue__cell-status">
-                  <% if ship.recert_reason.present? || ship.returned_by.present? %>
-                    <span class="status-pill status-pill--returned">Bad Review</span>
-                  <% else %>
-                    <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
-                  <% end %>
+                  <span class="status-pill status-pill--<%= fr.status %>"><%= fr.status.capitalize %></span>
                 </td>
                 <td class="ship-queue__cell-action">
-                  <%= link_to "Open", admin_certification_ship_path(ship),
+                  <%= link_to "Open", admin_certification_funding_request_path(fr),
                         class: "action-btn action-btn--small action-btn--secondary" %>
                 </td>
               </tr>
@@ -226,26 +224,22 @@
       </div>
 
       <div class="ship-queue__cards">
-        <% @ships.each do |ship| %>
-          <% owner = ship.project.memberships.find(&:owner?)&.user %>
-          <%= link_to admin_certification_ship_path(ship), class: "ship-queue__card" do %>
+        <% @funding_requests.each do |fr| %>
+          <% owner = fr.project.memberships.find(&:owner?)&.user %>
+          <%= link_to admin_certification_funding_request_path(fr), class: "ship-queue__card" do %>
             <div class="ship-queue__card-top">
-              <span class="ship-queue__project-title"><%= ship.project.title %></span>
-              <% if ship.recert_reason.present? || ship.returned_by.present? %>
-                <span class="status-pill status-pill--returned">Bad Review</span>
-              <% else %>
-                <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
-              <% end %>
+              <span class="ship-queue__project-title"><%= fr.project.title %></span>
+              <span class="status-pill status-pill--<%= fr.status %>"><%= fr.status.capitalize %></span>
             </div>
             <div class="ship-queue__project-meta">
-              <span>#<%= ship.id %></span>
+              <span>#<%= fr.id %></span>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
               <span>by <%= owner&.display_name || "—" %></span>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
-              <span><%= time_ago_in_words(ship.created_at) %> old</span>
+              <span>$<%= fr.requested_amount_dollars %> · <%= fr.tier_label %></span>
             </div>
-            <% if ship.pending? %>
-              <div class="ship-queue__card-claim"><%= render "claim_flag", ship: ship %></div>
+            <% if fr.pending? %>
+              <div class="ship-queue__card-claim"><%= render "claim_flag", funding_request: fr %></div>
             <% end %>
           <% end %>
         <% end %>

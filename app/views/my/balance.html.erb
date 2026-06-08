@@ -3,6 +3,14 @@
   <div class="balance-history">
     <div class="balance-history__header">
       <h1>My Balance: <span><%= image_tag "icons/stardust.png", alt: "Stardust", class: "currency-icon" %></span> <%= current_user.balance %></h1>
+      <% if current_user.outpost_discount_stardust.to_i > 0 %>
+        <p class="balance-history__outpost">
+          Outpost Ticket discount: <%= image_tag "icons/stardust.png", alt: "Stardust", class: "currency-icon" %> <%= current_user.outpost_discount_stardust %>
+          <% if current_user.outpost_flight_stipend > 0 %>
+            &middot; Flight stipend: <%= image_tag "icons/stardust.png", alt: "Stardust", class: "currency-icon" %> <%= current_user.outpost_flight_stipend %>
+          <% end %>
+        </p>
+      <% end %>
     </div>
 
     <% if @balance.any? %>

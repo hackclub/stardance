@@ -73,7 +73,6 @@
     <%= turbo_frame_tag "shop_items" do %>
       <div class="shop-category__items">
         <% if @slug == "experiences" %>
-          <%= render "shop/items/hardware_build_fund" %>
           <%= render "shop/items/outpost_ticket" %>
         <% end %>
         <% @shop_items.each do |item| %>

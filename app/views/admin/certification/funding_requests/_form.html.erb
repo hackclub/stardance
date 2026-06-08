@@ -1,0 +1,64 @@
+<%# Unclaim form is rendered outside the verdict form to avoid invalid nesting.
+    The button inside the verdict form references it via the HTML `form` attribute. %>
+<%= form_with url: admin_certification_funding_request_claim_path(funding_request), method: :delete,
+      id: "unclaim-form-#{funding_request.id}" do %>
+<% end %>
+
+<%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form" do |f| %>
+<% if funding_request.claim_expires_at.present? %>
+  <div class="review-form__claim-banner">
+    <span>Claim active</span>
+    <span class="review-form__countdown"
+          data-certification--queue-target="countdown"
+          data-expires-at="<%= funding_request.claim_expires_at.iso8601 %>"></span>
+  </div>
+<% end %>
+  <% if funding_request.errors.any? %>
+    <div class="review-form__errors">
+      <ul>
+        <% funding_request.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <fieldset class="review-form__fieldset">
+    <legend>Verdict</legend>
+    <label class="review-form__option">
+      <%= f.radio_button :status, "approved", required: true %>
+      <span>Approve</span>
+    </label>
+    <label class="review-form__option">
+      <%= f.radio_button :status, "returned", required: true %>
+      <span>Return for changes</span>
+    </label>
+  </fieldset>
+
+  <div class="review-form__field">
+    <%= f.label :approved_amount_dollars, "Approved amount ($) — up to the #{funding_request.tier_label} max of $#{funding_request.tier_max_dollars}" %>
+    <%= f.number_field :approved_amount_dollars,
+          value: (funding_request.approved_amount_dollars || funding_request.requested_amount_dollars),
+          min: 0, max: funding_request.tier_max_dollars, step: 1 %>
+    <p class="review-form__hint">
+      Requested $<%= funding_request.requested_amount_dollars %>. Every unrequested dollar earns the owner
+      <%= Certification::FundingRequest::DISCOUNT_STARDUST_PER_DOLLAR %> Stardust toward the Outpost Ticket.
+    </p>
+  </div>
+
+  <div class="review-form__field">
+    <%= f.label :feedback, "Feedback for the user (visible to the project owner)" %>
+    <%= f.text_area :feedback, rows: 6, maxlength: 10_000 %>
+  </div>
+
+  <div class="review-form__actions">
+    <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary" %>
+    <%= link_to "Skip and get next", next_admin_certification_funding_requests_path(skip: funding_request.id),
+          class: "action-btn action-btn--small action-btn--secondary" %>
+    <button type="submit" form="unclaim-form-<%= funding_request.id %>"
+            class="action-btn action-btn--small action-btn--destructive">
+      Unclaim review
+    </button>
+    <%= link_to "Back to queue", admin_certification_funding_requests_path, class: "review-form__back" %>
+  </div>
+<% end %>

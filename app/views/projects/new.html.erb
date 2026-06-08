@@ -106,9 +106,9 @@
             <%= hidden_field_tag "project[title]", "Untitled" %>
             <%= hidden_field_tag "project[hardware_stage]", "design" %>
             <button type="submit" class="project-creation__stage-option">
-              <span class="project-creation__stage-label">Design Stage</span>
-              <span class="project-creation__stage-title">I am in the design stage of my project</span>
-              <span class="project-creation__stage-subtext">I still need to buy my parts</span>
+              <span class="project-creation__stage-label">I need Funding</span>
+              <span class="project-creation__stage-title">I need funding to buy parts for my project</span>
+              <span class="project-creation__stage-subtext">Submit your design and we'll fund your build</span>
             </button>
           <% end %>
 
@@ -116,8 +116,8 @@
             <%= hidden_field_tag "project[title]", "Untitled" %>
             <%= hidden_field_tag "project[hardware_stage]", "build" %>
             <button type="submit" class="project-creation__stage-option">
-              <span class="project-creation__stage-label">Build Stage</span>
-              <span class="project-creation__stage-title">I am in the build stage of my project</span>
+              <span class="project-creation__stage-label">I don't need Funding</span>
+              <span class="project-creation__stage-title">I don't need funding for my project</span>
               <span class="project-creation__stage-subtext">I already have my parts and am ready to start building</span>
             </button>
           <% end %>

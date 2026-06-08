@@ -136,22 +136,29 @@
             <div class="project-show__edit-grid" data-controller="project-type">
               <div class="project-show__field project-show__field--inline">
                 <span>Project type <%= render "projects/help_tooltip", text: "Software projects track coding time with Hackatime. Hardware projects (electronics, 3D printing, robotics, etc.) record a screen/build timelapse instead." %></span>
-                <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project type">
-                  <label class="project-show__stage-choice">
-                    <input type="radio" name="project_type_selector" value="software" class="project-show__stage-radio"
-                           <%= "checked" unless @project.hardware? %>
-                           data-project-type-target="typeRadio"
-                           data-action="change->project-type#sync">
-                    <span class="project-show__stage-choice-label">Software</span>
-                  </label>
-                  <label class="project-show__stage-choice">
-                    <input type="radio" name="project_type_selector" value="hardware" class="project-show__stage-radio"
-                           <%= "checked" if @project.hardware? %>
-                           data-project-type-target="typeRadio"
-                           data-action="change->project-type#sync">
-                    <span class="project-show__stage-choice-label">Hardware</span>
-                  </label>
-                </div>
+                <% if @project.has_any_funding_request? %>
+                  <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project type (locked)">
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked">Software</span>
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked project-show__stage-choice-label--selected">Hardware</span>
+                  </div>
+                <% else %>
+                  <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project type">
+                    <label class="project-show__stage-choice">
+                      <input type="radio" name="project_type_selector" value="software" class="project-show__stage-radio"
+                             <%= "checked" unless @project.hardware? %>
+                             data-project-type-target="typeRadio"
+                             data-action="change->project-type#sync">
+                      <span class="project-show__stage-choice-label">Software</span>
+                    </label>
+                    <label class="project-show__stage-choice">
+                      <input type="radio" name="project_type_selector" value="hardware" class="project-show__stage-radio"
+                             <%= "checked" if @project.hardware? %>
+                             data-project-type-target="typeRadio"
+                             data-action="change->project-type#sync">
+                      <span class="project-show__stage-choice-label">Hardware</span>
+                    </label>
+                  </div>
+                <% end %>
               </div>
 
               <%# Hardware vs software is derived purely from hardware_stage. This
@@ -163,17 +170,37 @@
               <div class="project-show__field project-show__field--inline"
                    data-project-type-target="stageSection"
                    <%= "hidden" unless @project.hardware? %>>
-                <span>Project stage <%= render "projects/help_tooltip", text: "Design stage means you're still planning and buying parts. Build stage means you have your parts and are building. You can switch between them anytime." %></span>
-                <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project stage">
-                  <label class="project-show__stage-choice">
-                    <%= form.radio_button :hardware_stage, "design", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
-                    <span class="project-show__stage-choice-label">Design</span>
-                  </label>
-                  <label class="project-show__stage-choice">
-                    <%= form.radio_button :hardware_stage, "build", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
-                    <span class="project-show__stage-choice-label">Build</span>
-                  </label>
-                </div>
+                <span>Project stage <%= render "projects/help_tooltip", text: "\"I need Funding\" means you're still designing and need a grant to buy parts. Submit your design for funding to move to building. \"I don't need Funding\" means you already have your parts and are building." %></span>
+                <% if @project.has_any_funding_request? %>
+                  <% fr = @project.latest_funding_request %>
+                  <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project stage (locked)">
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked">
+                      <% if fr.approved? %>
+                        Design Stage — $<%= fr.final_amount_dollars %> approved
+                      <% elsif fr.pending? %>
+                        Design Stage — $<%= fr.requested_amount_dollars %> under review
+                      <% else %>
+                        Design Stage — funding returned
+                      <% end %>
+                    </span>
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked project-show__stage-choice-label--selected">
+                      Build Stage
+                    </span>
+                  </div>
+                  <%# Keep hardware_stage as "build" so the form still submits correctly %>
+                  <%= form.hidden_field :hardware_stage, value: @project.hardware_stage %>
+                <% else %>
+                  <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project stage">
+                    <label class="project-show__stage-choice">
+                      <%= form.radio_button :hardware_stage, "design", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
+                      <span class="project-show__stage-choice-label">I need Funding</span>
+                    </label>
+                    <label class="project-show__stage-choice">
+                      <%= form.radio_button :hardware_stage, "build", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
+                      <span class="project-show__stage-choice-label">I don't need Funding</span>
+                    </label>
+                  </div>
+                <% end %>
               </div>
 
               <div class="project-show__field project-show__field--inline project-show__field--hackatime">
@@ -512,6 +539,33 @@
               <% end %>
             <% end %>
           <% end %>
+          <% if is_member && @project.design_stage? %>
+            <% if @project.has_pending_funding_request? %>
+              <%= render ActionButtonComponent.new(
+                    text: "Funding request under review",
+                    variant: :secondary,
+                    type: :button,
+                    disabled: :soft,
+                    data: {
+                      controller: "tooltip",
+                      tooltip_message_value: "We're reviewing your design. You'll be switched to building once it's approved.",
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
+            <% else %>
+              <%= render ActionButtonComponent.new(
+                    text: "Submit Design to Get Project Funding",
+                    variant: :primary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    onclick: "document.getElementById('funding-request-modal-' + #{@project.id.to_json}).showModal()"
+                  ) %>
+            <% end %>
+          <% end %>
+          <%# "I need Funding" (design-stage) projects must get a grant first —
+              the ship button stays hidden behind the funding button until the
+              grant flips them to the build stage. %>
+          <% unless @project.design_stage? %>
           <% if @project.shippable? %>
             <% if unposted_seconds >= 15 * 60 %>
               <%= render ActionButtonComponent.new(
@@ -533,7 +587,9 @@
           <% else %>
             <%
               ship_disabled_message =
-                if !@project.has_devlog_since_last_ship?
+                if @project.received_grant? && !@project.has_build_devlog_since_last_ship?
+                  "Post at least one build devlog before you can ship!"
+                elsif !@project.has_devlog_since_last_ship?
                   "Post at least one devlog before shipping!"
                 elsif !@project.info_complete?
                   "Complete your project info before shipping!"
@@ -555,6 +611,7 @@
                     tooltip_position_value: "top"
                   }
                 ) %>
+          <% end %>
           <% end %>
         </nav>
       <% else %>
@@ -929,7 +986,7 @@
                 <% if @project.demo_url.present? || @project.repo_url.present? %>
                   <div class="project-show__latest-ship-cta">
                     <% if @project.demo_url.present? %>
-                      <%= link_to "Try project →", @project.demo_url,
+                      <%= link_to @project.hardware? ? "Video of Project →" : "Try project →", @project.demo_url,
                                   target: "_blank", rel: "noopener",
                                   class: "project-show__latest-ship-btn project-show__latest-ship-btn--primary" %>
                     <% end %>
@@ -955,6 +1012,97 @@
         </div>
       <% end %>
     </dialog>
+
+    <%# Funding request popup — design-stage hardware only. Mirrors the ship
+        post modal but collects a complexity tier + requested amount. %>
+    <% if @project.design_stage? %>
+      <dialog id="funding-request-modal-<%= @project.id %>"
+              class="ship-modal ship-modal--post funding-modal--outpost"
+              data-controller="modal"
+              aria-label="Request project funding">
+        <%= form_with url: project_funding_request_path(@project),
+                      method: :post,
+                      data: { turbo: false },
+                      html: { class: "ship-modal__form", data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json, stardust_per_dollar: Certification::FundingRequest::DISCOUNT_STARDUST_PER_DOLLAR } } do |form| %>
+          <div class="ship-modal__panel funding-modal__panel">
+            <header class="funding-modal__header">
+              <%= image_tag "outpost.png", alt: "Outpost", class: "funding-modal__logo" %>
+              <p class="funding-modal__tagline">The greatest hardware adventure yet. Get your build funded.</p>
+            </header>
+
+            <fieldset class="funding-modal__tiers">
+              <legend>Pick your complexity tier</legend>
+              <% Certification::FundingRequest::TIERS.each do |tier_id, t| %>
+                <label class="funding-tier">
+                  <%= form.radio_button :complexity_tier, tier_id, required: true, class: "funding-tier__input", onchange: "fundingValidate(this.form)" %>
+                  <span class="funding-tier__badge funding-tier__badge--<%= t[:code].downcase %>"><%= t[:code] %></span>
+                  <span class="funding-tier__info">
+                    <span class="funding-tier__name"><%= t[:name] %></span>
+                    <span class="funding-tier__examples"><%= t[:examples] %></span>
+                  </span>
+                  <span class="funding-tier__max">up to $<%= t[:max_cents] / 100 %></span>
+                </label>
+              <% end %>
+            </fieldset>
+
+            <label class="funding-modal__amount">
+              <span>Amount requested ($)</span>
+              <%= form.number_field :requested_amount, min: 1, step: 1, required: true, class: "funding-modal__amount-input", oninput: "fundingValidate(this.form)" %>
+            </label>
+            <p class="funding-request__error" role="alert" hidden></p>
+            <p class="funding-modal__discount" role="status" hidden></p>
+
+            <p class="funding-modal__note">
+              Spend less than your tier and the rest becomes Stardust toward the Outpost Ticket.
+              <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
+            </p>
+
+            <div class="ship-modal__actions">
+              <button type="button"
+                      class="ship-modal__btn ship-modal__btn--secondary"
+                      onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
+                Cancel
+              </button>
+              <%= form.submit "Submit for funding", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit", data: { disable_with: "Submitting…" } %>
+            </div>
+          </div>
+        <% end %>
+      </dialog>
+      <script>
+        function fundingValidate(form) {
+          if (!form) return;
+          var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
+          var perDollar = parseInt(form.dataset.stardustPerDollar || "0", 10);
+          var tier = form.querySelector('[name="complexity_tier"]:checked');
+          var amountEl = form.querySelector('[name="requested_amount"]');
+          var err = form.querySelector(".funding-request__error");
+          var discountEl = form.querySelector(".funding-modal__discount");
+          var submit = form.querySelector('[type="submit"]');
+          if (!amountEl || !err || !submit) return;
+          var amount = parseFloat(amountEl.value);
+          var max = tier ? maxes[tier.value] : null;
+          if (max != null) amountEl.max = max;
+
+          var over = max != null && !isNaN(amount) && amount > max;
+          err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
+          err.hidden = !over;
+          submit.disabled = over;
+
+          if (discountEl) {
+            if (max != null && !isNaN(amount) && amount >= 1 && amount <= max) {
+              var unused = max - amount;
+              var stardust = unused * perDollar;
+              discountEl.textContent = unused > 0
+                ? "Leaving $" + unused + " unrequested earns ✦ " + stardust + " toward the Outpost Ticket."
+                : "Requesting your full tier, so no Outpost Ticket discount this time.";
+              discountEl.hidden = false;
+            } else {
+              discountEl.hidden = true;
+            }
+          }
+        }
+      </script>
+    <% end %>
   <% end %>
 
   <% if @is_member && @project.current_mission.nil? && !@project.shipped? %>

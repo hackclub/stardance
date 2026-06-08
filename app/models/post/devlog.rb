@@ -10,6 +10,7 @@
 #  hackatime_projects_key_snapshot :text
 #  hackatime_pulled_at             :datetime
 #  likes_count                     :integer          default(0), not null
+#  phase                           :string
 #  synced_at                       :datetime
 #  tutorial                        :boolean          default(FALSE), not null
 #  created_at                      :datetime         not null
@@ -28,6 +29,14 @@ class Post::Devlog < ApplicationRecord
 
   # Ignore devlog_review_id column before removing it in migration
   self.ignored_columns += [ "devlog_review_id" ]
+
+  # Which hardware stage this devlog was logged in. Stamped from the project's
+  # hardware_stage at creation (nil for software). Only build-phase time feeds
+  # the ship payout basis — see Post::ShipEvent#hours.
+  PHASES = %w[design build].freeze
+
+  scope :design_phase, -> { where(phase: "design") }
+  scope :build_phase, -> { where(phase: "build") }
 
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
