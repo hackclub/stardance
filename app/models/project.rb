@@ -238,18 +238,22 @@ class Project < ApplicationRecord
     shipped_at.present? || !draft?
   end
 
+  def self.hardware_flow_enabled?
+    Flipper.enabled?(:hardware_flow)
+  end
+
   # Hardware projects are the ones with a stage set; software projects leave it
   # nil. Gates the Lookout recorder UI on the project page.
   def hardware?
-    hardware_stage.present?
+    self.class.hardware_flow_enabled? && hardware_stage.present?
   end
 
   def design_stage?
-    hardware_stage == "design"
+    self.class.hardware_flow_enabled? && hardware_stage == "design"
   end
 
   def build_stage?
-    hardware_stage == "build"
+    self.class.hardware_flow_enabled? && hardware_stage == "build"
   end
 
   # True while a funding request for this project is awaiting reviewer decision.

@@ -1,4 +1,5 @@
 class Admin::Users::PresentableHardwareFlagsController < Admin::ApplicationController
+  before_action -> { head :not_found unless Project.hardware_flow_enabled? }
   before_action :set_user
 
   # Granted after a showcase project (forms.hackclub.com/submit-showcase-project)

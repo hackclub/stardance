@@ -87,6 +87,7 @@
           <% end %>
         <% end %>
 
+        <% if Flipper.enabled?(:hardware_flow) %>
         <button type="button"
                 class="project-creation__blank-btn project-creation__blank-btn--hardware"
                 data-action="project-builder#toggle"
@@ -95,8 +96,10 @@
                 aria-controls="project-creation-stage-chooser">
           New hardware project +
         </button>
+        <% end %>
       </div>
 
+      <% if Flipper.enabled?(:hardware_flow) %>
       <div id="project-creation-stage-chooser"
            class="project-creation__stage-chooser"
            data-project-builder-target="chooser"
@@ -124,6 +127,7 @@
         </div>
       </div>
     </section>
+      <% end %>
 
   </div>
 </dialog>

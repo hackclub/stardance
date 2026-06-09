@@ -160,10 +160,23 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
   self::SLUGGED = self::ALL.index_by(&:slug).freeze
 
   class << self
-    def all = self::ALL
-    def find(s) = self::SLUGGED[s.to_sym] or raise ActiveRecord::RecordNotFound, "Unknown guide: #{s}"
-    def find_by_slug(s) = self::SLUGGED[s&.to_sym]
-    def by_category = self::ALL.group_by(&:category)
+    def all
+      if Flipper.enabled?(:hardware_flow)
+        self::ALL
+      else
+        self::ALL.reject { |g| g.category == :outpost || g.slug == :tiers }
+      end
+    end
+    def find(s)
+      guide = self::SLUGGED[s.to_sym] or raise ActiveRecord::RecordNotFound, "Unknown guide: #{s}"
+      raise ActiveRecord::RecordNotFound, "Unknown guide: #{s}" unless all.include?(guide)
+      guide
+    end
+    def find_by_slug(s)
+      guide = self::SLUGGED[s&.to_sym]
+      guide if guide && all.include?(guide)
+    end
+    def by_category = all.group_by(&:category)
     def category_label(c) = self::CATEGORY_LABELS[c.to_sym]
     def category_order = self::CATEGORY_ORDER
   end

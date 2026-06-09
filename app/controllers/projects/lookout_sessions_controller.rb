@@ -1,4 +1,5 @@
 class Projects::LookoutSessionsController < ApplicationController
+  before_action -> { head :not_found unless Project.hardware_flow_enabled? }
   before_action :set_project
   before_action :set_lookout_session, only: %i[show record stop set_mode forward_heartbeats]
 

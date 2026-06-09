@@ -38,6 +38,7 @@ Rails.application.config.after_initialize do
         gorse_personalized_feed
         gorse_project_recommendations
         week_1_release
+        hardware_flow
       ].each { |flag| Flipper.add(flag) }
     end
   rescue StandardError => e

@@ -1,4 +1,5 @@
 class Projects::FundingRequestsController < ApplicationController
+  before_action -> { head :not_found unless Project.hardware_flow_enabled? }
   before_action :set_project
 
   # Submitted from the "Submit Design to Get Project Funding" popup on the

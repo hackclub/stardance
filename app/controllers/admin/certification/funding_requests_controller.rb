@@ -1,4 +1,5 @@
 class Admin::Certification::FundingRequestsController < Admin::Certification::ApplicationController
+  before_action -> { head :not_found unless Project.hardware_flow_enabled? }
   before_action :release_other_claims, only: [ :next ]
   before_action :set_funding_request, only: [ :show, :update ]
   before_action :set_body_class, only: [ :index, :show, :update ]

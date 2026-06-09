@@ -587,7 +587,9 @@ Rails.application.routes.draw do
         resource  :ban,                 only: [ :create, :destroy ]
         resource  :impersonation,       only: [ :create ]
         resources :feature_flags,       only: [ :create, :destroy ], param: :feature
-        resource  :presentable_hardware_flag, only: [ :create, :destroy ]
+        constraints ->(_) { Flipper.enabled?(:hardware_flow) } do
+          resource  :presentable_hardware_flag, only: [ :create, :destroy ]
+        end
         resource  :hackatime_sync,      only: [ :create ]
         resource  :order_rejection,     only: [ :create ]
         resources :balance_adjustments, only: [ :create ]
@@ -723,12 +725,14 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :funding_requests, path: "funding", only: [ :index, :show, :update ] do
-        collection do
-          get :next
-        end
-        scope module: :funding_requests do
-          resource :claim, only: [ :create, :destroy ]
+      constraints ->(_) { Flipper.enabled?(:hardware_flow) } do
+        resources :funding_requests, path: "funding", only: [ :index, :show, :update ] do
+          collection do
+            get :next
+          end
+          scope module: :funding_requests do
+            resource :claim, only: [ :create, :destroy ]
+          end
         end
       end
 
@@ -793,17 +797,21 @@ Rails.application.routes.draw do
       end
     end
     resources :reports, only: [ :create ], module: :projects
-    resources :lookout_sessions, only: %i[create show], module: :projects, shallow: false do
-      get  :record, on: :member
-      post :stop, on: :member
-      post :set_mode, on: :member
-      post :forward_heartbeats, on: :member
-      get  :status, on: :collection
+    constraints ->(_) { Flipper.enabled?(:hardware_flow) } do
+      resources :lookout_sessions, only: %i[create show], module: :projects, shallow: false do
+        get  :record, on: :member
+        post :stop, on: :member
+        post :set_mode, on: :member
+        post :forward_heartbeats, on: :member
+        get  :status, on: :collection
+      end
     end
     resource :og_image, only: [ :show ], module: :projects, defaults: { format: :png }
     resource :ships, only: [ :create ], module: :projects
     resource :recertification, only: [ :create ], module: :projects
-    resource :funding_request, only: [ :create ], module: :projects
+    constraints ->(_) { Flipper.enabled?(:hardware_flow) } do
+      resource :funding_request, only: [ :create ], module: :projects
+    end
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
     resource :fire_nomination, only: [ :create, :destroy ], module: :projects

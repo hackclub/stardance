@@ -468,7 +468,7 @@
           devlog_modifier_class = devlog_primary ? "project-show__action--primary" : "project-show__action--secondary"
         %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if @project.hardware? %>
+          <% if Flipper.enabled?(:hardware_flow) && @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: (@hackatime_linked ? nil : "Link your Hackatime account to start recording") %>
@@ -539,7 +539,7 @@
               <% end %>
             <% end %>
           <% end %>
-          <% if is_member && @project.design_stage? %>
+          <% if Flipper.enabled?(:hardware_flow) && is_member && @project.design_stage? %>
             <% if @project.has_pending_funding_request? %>
               <%= render ActionButtonComponent.new(
                     text: "Funding request under review",
@@ -616,7 +616,7 @@
         </nav>
       <% else %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if @project.hardware? %>
+          <% if Flipper.enabled?(:hardware_flow) && @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: "Link your Hackatime account to start recording" %>
@@ -1015,7 +1015,7 @@
 
     <%# Funding request popup — design-stage hardware only. Mirrors the ship
         post modal but collects a complexity tier + requested amount. %>
-    <% if @project.design_stage? %>
+    <% if Flipper.enabled?(:hardware_flow) && @project.design_stage? %>
       <dialog id="funding-request-modal-<%= @project.id %>"
               class="ship-modal ship-modal--post funding-modal--outpost"
               data-controller="modal"
