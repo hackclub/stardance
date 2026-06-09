@@ -24,13 +24,13 @@
     {
       "warning_type": "Cross-Site Scripting",
       "warning_code": 4,
-      "fingerprint": "855e9efffdfea2c597048f3062d5ad5153fe97677a5ffe3ca09fe39ed13af855",
+      "fingerprint": "e89e919b80f13b3e34709fd2b9a374e2408b0434505b2166ece1e156ca7c56a3",
       "check_name": "LinkToHref",
       "message": "Potentially unsafe model attribute in `link_to` href",
       "file": "app/views/projects/show_hackpad.html.erb",
-      "line": 806,
+      "line": 848,
       "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
-      "code": "link_to(\"Try project \\u2192\", Project.find(params[:id]).demo_url, :target => \"_blank\", :rel => \"noopener\", :class => \"project-show__latest-ship-btn project-show__latest-ship-btn--primary\")",
+      "code": "link_to((if Project.find(params[:id]).hardware? then \"Video of Project \\u2192\" else \"Try project \\u2192\" end), Project.find(params[:id]).demo_url, :target => \"_blank\", :rel => \"noopener\", :class => \"project-show__latest-ship-btn project-show__latest-ship-btn--primary\")",
       "render_path": [
         {
           "type": "controller",
