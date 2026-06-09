@@ -726,6 +726,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.index ["nominated_fire_by_id"], name: "index_projects_on_nominated_fire_by_id"
   end
 
+  create_table "raffle_draws", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "drawn_at", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.text "void_reason"
+    t.datetime "voided_at"
+    t.bigint "week_id", null: false
+    t.bigint "winner_participant_id", null: false
+    t.index ["week_id", "status"], name: "index_raffle_draws_on_week_id_and_status"
+    t.index ["week_id"], name: "index_raffle_draws_on_week_id"
+    t.index ["winner_participant_id"], name: "index_raffle_draws_on_winner_participant_id"
+  end
+
   create_table "raffle_participants", force: :cascade do |t|
     t.string "age_group", default: "teen", null: false
     t.string "code", null: false
@@ -756,6 +770,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.index ["participant_id", "status", "credited_week_id"], name: "index_raffle_referrals_on_participant_status_week"
     t.index ["referred_user_id"], name: "index_raffle_referrals_on_referred_user_id", unique: true
     t.index ["status", "created_at"], name: "index_raffle_referrals_on_status_created_at"
+  end
+
+  create_table "raffle_weekly_claims", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "participant_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "week_id", null: false
+    t.index ["participant_id", "week_id"], name: "index_raffle_weekly_claims_on_participant_id_and_week_id", unique: true
+    t.index ["participant_id"], name: "index_raffle_weekly_claims_on_participant_id"
+    t.index ["week_id"], name: "index_raffle_weekly_claims_on_week_id"
   end
 
   create_table "raffle_weeks", force: :cascade do |t|
@@ -1393,11 +1417,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
   add_foreign_key "project_skips", "users"
   add_foreign_key "projects", "users", column: "marked_fire_by_id"
   add_foreign_key "projects", "users", column: "nominated_fire_by_id"
+  add_foreign_key "raffle_draws", "raffle_participants", column: "winner_participant_id"
+  add_foreign_key "raffle_draws", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
   add_foreign_key "raffle_participants", "users"
   add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
   add_foreign_key "raffle_referrals", "users", column: "referred_user_id"
+  add_foreign_key "raffle_weekly_claims", "raffle_participants", column: "participant_id"
+  add_foreign_key "raffle_weekly_claims", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_weeks", "raffle_participants", column: "winner_participant_id"
   add_foreign_key "report_review_tokens", "project_reports", column: "report_id"
   add_foreign_key "reviewer_payout_requests", "users"

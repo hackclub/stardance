@@ -74,6 +74,7 @@ Rails.application.configure do
   # allow the raffle subdomain on `lvh.me` (both resolve to 127.0.0.1).
   config.hosts << ".lvh.me"
   config.hosts << "raffle.localhost"
+  config.hosts << ".loca.lt"
 
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true
