@@ -97,6 +97,14 @@ class Shop::OrdersController < Shop::BaseController
         current_user.lock!
         @shop_item.lock! if @shop_item.limited?
 
+        if @mission_submission
+          @mission_submission = load_redeemable_submission(@shop_item, lock: true)
+          unless @mission_submission
+            redirect_to shop_path, alert: "This mission prize has already been redeemed."
+            return
+          end
+        end
+
         if @mission_submission.nil?
           user_balance = current_user.balance
           if total_cost > user_balance

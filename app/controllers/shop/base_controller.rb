@@ -65,13 +65,17 @@ class Shop::BaseController < ApplicationController
     }
   end
 
-  def load_redeemable_submission(shop_item)
+  def load_redeemable_submission(shop_item, lock: false)
     return nil unless current_user
     submission_id = params[:mission_submission_id]
     return nil if submission_id.blank?
 
-    submission = Mission::Submission
+    scope = Mission::Submission
       .includes(mission: :prizes, ship_event: { post: :user })
+
+    scope = scope.lock if lock
+
+    submission = scope
       .find_by(id: submission_id)
     return nil unless submission
     return nil unless submission.approved?
