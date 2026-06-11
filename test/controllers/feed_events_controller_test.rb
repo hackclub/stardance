@@ -75,6 +75,59 @@ class FeedEventsControllerTest < ActionDispatch::IntegrationTest
     assert_response :accepted
   end
 
+  test "impression records a unique post view across feed requests" do
+    assert_difference -> { PostView.count } => 1, -> { @post.reload.views_count } => 1 do
+      2.times do |i|
+        post feed_events_path, params: {
+          events: [
+            {
+              event_type: "impression",
+              item_type: "post",
+              post_id: @post.id,
+              feed_request_id: "feed-#{i}"
+            }
+          ]
+        }, as: :json
+      end
+    end
+
+    assert_nil PostView.find_by!(post: @post, user: @user).read_at
+  end
+
+  test "impression on a repost credits the original post too" do
+    reposter = users(:two)
+    reposter.update!(verification_status: "verified")
+    repost = Post::Repost.create!(original_post: @post, user: reposter)
+    repost_post = Post.create!(user: reposter, postable: repost)
+
+    assert_difference -> { @post.reload.views_count } => 1, -> { repost_post.reload.views_count } => 1 do
+      post feed_events_path, params: {
+        events: [
+          {
+            event_type: "impression",
+            item_type: "post",
+            post_id: repost_post.id
+          }
+        ]
+      }, as: :json
+    end
+  end
+
+  test "read stamps read_at on the post view" do
+    post feed_events_path, params: {
+      events: [
+        {
+          event_type: "read",
+          item_type: "post",
+          post_id: @post.id
+        }
+      ]
+    }, as: :json
+
+    assert_predicate PostView.find_by!(post: @post, user: @user).read_at, :present?
+    assert_equal 1, @post.reload.views_count
+  end
+
   private
     def with_gorse_enabled
       original = Gorse.method(:enabled?)

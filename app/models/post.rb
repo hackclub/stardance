@@ -5,6 +5,7 @@
 #  id            :bigint           not null, primary key
 #  postable_type :string
 #  reposts_count :integer          default(0), not null
+#  views_count   :integer          default(0), not null
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
 #  postable_id   :bigint
@@ -38,6 +39,8 @@ class Post < ApplicationRecord
     belongs_to :user, optional: true
 
     delegated_type :postable, types: Postable.types
+
+    has_many :post_views, dependent: :delete_all
 
     validates :postable_id, presence: true, if: :postable_type?
     validates :project, presence: true, unless: :repost?
@@ -141,6 +144,12 @@ class Post < ApplicationRecord
 
     def repost?
       postable_type == "Post::Repost"
+    end
+
+    # Reposts surface the original post's content, so a view of the repost
+    # also counts as a unique view of the original.
+    def view_credited_posts
+      [ self, repost? ? postable&.original_post : nil ].compact
     end
 
     def visible_repost_original_for?(viewer)

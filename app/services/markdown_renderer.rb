@@ -6,7 +6,7 @@ class MarkdownRenderer
 
   # Bump on any rendered-output change (sanitizer, shortcodes, Rouge, link
   # hardening) — the cache key uses it to invalidate deployment-wide.
-  RENDERER_VERSION      = "v4".freeze
+  RENDERER_VERSION      = "v5".freeze
   CACHE_NAMESPACE       = "markdown".freeze
   GUIDE_CACHE_NAMESPACE = "guide-markdown".freeze
   CACHE_EXPIRES_IN      = 7.days

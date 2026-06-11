@@ -190,6 +190,73 @@ class GuideMarkdownRendererTest < ActiveSupport::TestCase
     refute_includes result.html, "[x]"
   end
 
+  # --- guide variables --------------------------------------------------------
+
+  test "var block shortcode renders a labelled input" do
+    md = <<~MD
+      :::var name="project_name" label="What's your project called?" placeholder="my-cool-app"
+      :::
+    MD
+    html = render(md).html
+    assert_includes html, %(class="guide-var")
+    assert_includes html, "What's your project called?"
+    assert_includes html, %(placeholder="my-cool-app")
+    assert_includes html, %(data-guide-var-input="project_name")
+  end
+
+  test "var block humanizes the name when label is omitted" do
+    md = <<~MD
+      :::var name="project_name"
+      :::
+    MD
+    assert_includes render(md).html, "Project name"
+  end
+
+  test "var block with invalid name renders nothing" do
+    md = <<~MD
+      :::var name="<bad name>"
+      :::
+    MD
+    html = render(md).html
+    refute_includes html, "guide-var"
+    refute_includes html, "bad name"
+  end
+
+  test "var-ref inline shortcode renders a raw reference span" do
+    html = render("Open ::var-ref[project_name] in your editor").html
+    assert_includes html, %(data-guide-var-ref="project_name")
+    assert_includes html, %(data-guide-var-mode="raw")
+    assert_includes html, "guide-var-ref--empty"
+  end
+
+  test "var-slug inline shortcode renders a slug reference span" do
+    html = render("Run `cd` into ::var-slug[project_name]").html
+    assert_includes html, %(data-guide-var-mode="slug")
+  end
+
+  test "var-ref with invalid name is stripped" do
+    html = render("::var-ref[<script>]").html
+    refute_includes html, "guide-var-ref"
+    refute_includes html, "<script>"
+  end
+
+  test "var refs expand inside fenced code blocks" do
+    md = <<~MD
+      ```bash
+      npx create-app ::var-slug[project_name]
+      ```
+    MD
+    html = render(md).html
+    assert_includes html, %(data-guide-var-ref="project_name")
+    refute_includes html, "GUIDE_INLINE"
+  end
+
+  test "var refs expand inside inline code" do
+    html = render("Run `cd ::var-slug[project_name]` next").html
+    assert_includes html, %(data-guide-var-ref="project_name")
+    refute_includes html, "GUIDE_INLINE"
+  end
+
   test "unknown block shortcode is stripped" do
     md = <<~MD
       before

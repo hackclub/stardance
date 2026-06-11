@@ -5,7 +5,8 @@
 <div class="app-layout">
   <div class="app-layout__main">
     <article class="mission-guide"
-             data-controller="mission-guide-progress"
+             data-controller="mission-guide-progress mission-guide-variables"
+             data-mission-guide-variables-mission-slug-value="<%= @mission.slug %>"
              data-mission-guide-progress-section-count-value="<%= @guide_outline.length %>"
              data-mission-guide-progress-mission-slug-value="<%= @mission.slug %>"
              data-mission-guide-progress-mission-id-value="<%= @mission.id %>"

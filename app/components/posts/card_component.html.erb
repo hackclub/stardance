@@ -241,6 +241,15 @@
       </div>
     <% end %>
 
+    <% if show_views? %>
+      <span class="feed-post-card__action feed-post-card__action--disabled"
+            aria-label="Seen by <%= views_count %> <%= "person".pluralize(views_count) %>"
+            title="Unique viewers">
+        <%= inline_svg_tag "icons/eye.svg", class: "feed-post-card__action-icon" %>
+        <span><%= views_count %></span>
+      </span>
+    <% end %>
+
     <% if show_actions %>
       <div class="feed-post-card__more-wrap" <%= tag.attributes(data: post_menu_data) %>>
         <button type="button" class="feed-post-card__more" aria-label="More actions" data-action="post-menu#toggle">

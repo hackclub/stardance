@@ -172,6 +172,12 @@ application.register("mission-guide-language", MissionGuideLanguageController);
 import MissionGuideProgressController from "./mission_guide_progress_controller";
 application.register("mission-guide-progress", MissionGuideProgressController);
 
+import MissionGuideVariablesController from "./mission_guide_variables_controller";
+application.register(
+  "mission-guide-variables",
+  MissionGuideVariablesController,
+);
+
 import ModalController from "./modal_controller";
 application.register("modal", ModalController);
 

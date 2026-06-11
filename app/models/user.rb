@@ -88,6 +88,7 @@ class User < ApplicationRecord
   has_many :project_skips, class_name: "Project::Skip", dependent: :destroy
   has_many :likes, dependent: :destroy
   has_many :comments, dependent: :destroy
+  has_many :post_views, dependent: :delete_all
   has_many :ledger_entries, dependent: :destroy
   has_many :project_follows, dependent: :destroy
   has_many :followed_projects, through: :project_follows, source: :project

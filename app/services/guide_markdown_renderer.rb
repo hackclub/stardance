@@ -13,8 +13,13 @@ class GuideMarkdownRenderer
   ATTR_RE             = /([a-z][a-z0-9_-]*)=("[^"]*"|\S+)/
 
   CALLOUT_TYPES     = %w[info tip warning danger].freeze
-  BLOCK_SHORTCODES  = %w[callout collapse].freeze
-  INLINE_SHORTCODES = %w[kbd mark].freeze
+  BLOCK_SHORTCODES  = %w[callout collapse var].freeze
+  INLINE_SHORTCODES = %w[kbd mark var-ref var-slug].freeze
+
+  # Guide variables are client-side only: the renderer emits static inputs and
+  # reference spans, and mission_guide_variables_controller.js fills in the
+  # reader's value from localStorage — rendered HTML stays cacheable per-content.
+  VAR_NAME_RE = /\A[a-z][a-z0-9_-]*\z/
 
   # Rouge's lexer tags are by convention alphanumeric / underscore / dash, but
   # we filter defensively before interpolating into a class attribute.
@@ -196,7 +201,11 @@ class GuideMarkdownRenderer
   def render_code_block(entry)
     lexer = Rouge::Lexer.find(entry[:language])&.new || Rouge::Lexers::PlainText.new
     formatter = Rouge::Formatters::HTML.new
-    highlighted = formatter.format(lexer.lex(entry[:code]))
+    # Inline shortcode extraction runs on the raw markdown, so markers survive
+    # inside fenced code. Split on them and highlight the chunks in between.
+    highlighted = entry[:code].split(inline_marker_re).map.with_index { |part, i|
+      i.odd? ? expand_inline_entry(part.to_i) : formatter.format(lexer.lex(part))
+    }.join
     language_class = lexer.tag.to_s
     language_class = "plaintext" unless language_class.match?(LANGUAGE_CLASS_RE)
     %(<pre class="guide-code"><code class="language-#{language_class}">#{highlighted}</code></pre>)
@@ -240,9 +249,7 @@ class GuideMarkdownRenderer
       next unless node.content =~ inline_re
 
       new_content = node.content.gsub(inline_re) do
-        id = Regexp.last_match(1).to_i
-        entry = @inline_registry[id]
-        entry ? render_inline_shortcode(entry) : ""
+        expand_inline_entry(Regexp.last_match(1).to_i)
       end
       replacements << [ node, new_content ]
     end
@@ -297,15 +304,23 @@ class GuideMarkdownRenderer
     case entry[:name]
     when "callout"    then render_callout(entry, depth: depth)
     when "collapse"   then render_collapse(entry, depth: depth)
+    when "var"        then render_var(entry)
     else ""
     end
+  end
+
+  def expand_inline_entry(id)
+    entry = @inline_registry[id]
+    entry ? render_inline_shortcode(entry) : ""
   end
 
   def render_inline_shortcode(entry)
     content = ERB::Util.html_escape(entry[:content].to_s)
     case entry[:name]
-    when "kbd"  then %(<kbd class="guide-kbd">#{content}</kbd>)
-    when "mark" then %(<mark class="guide-mark">#{content}</mark>)
+    when "kbd"      then %(<kbd class="guide-kbd">#{content}</kbd>)
+    when "mark"     then %(<mark class="guide-mark">#{content}</mark>)
+    when "var-ref"  then render_var_ref(entry, slugged: false)
+    when "var-slug" then render_var_ref(entry, slugged: true)
     else content
     end
   end
@@ -335,5 +350,38 @@ class GuideMarkdownRenderer
         <div class="guide-collapse__body">#{inner_html}</div>
       </details>
     HTML
+  end
+
+  def render_var(entry)
+    name = entry[:attrs]["name"].to_s.strip
+    return "" unless name.match?(VAR_NAME_RE)
+
+    label = entry[:attrs]["label"].to_s
+    label = name.tr("_-", " ").upcase_first if label.empty?
+    placeholder = entry[:attrs]["placeholder"].to_s
+    <<~HTML
+      <label class="guide-var">
+        <span class="guide-var__label">#{ERB::Util.html_escape(label)}</span>
+        <input type="text"
+               class="guide-var__input"
+               maxlength="120"
+               autocomplete="off"
+               spellcheck="false"
+               placeholder="#{ERB::Util.html_escape(placeholder)}"
+               data-guide-var-input="#{name}"
+               data-action="input->mission-guide-variables#update">
+      </label>
+    HTML
+  end
+
+  # Until the reader types a value, the span shows the variable name as a
+  # muted placeholder (the --empty modifier); the Stimulus controller swaps in
+  # the real value and drops the modifier.
+  def render_var_ref(entry, slugged:)
+    name = entry[:content].to_s.strip
+    return "" unless name.match?(VAR_NAME_RE)
+
+    mode = slugged ? "slug" : "raw"
+    %(<span class="guide-var-ref guide-var-ref--empty" data-guide-var-ref="#{name}" data-guide-var-mode="#{mode}">#{name}</span>)
   end
 end

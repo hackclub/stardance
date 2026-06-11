@@ -874,6 +874,11 @@
 
   &__action--disabled {
     cursor: default;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text-muted);
+    }
   }
 
   &__action--active {
