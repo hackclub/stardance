@@ -24,6 +24,29 @@
 #
 #  fk_rails_...  (user_id => users.id)
 #
+#
+# Table name: ledger_entries
+#
+#  id              :bigint           not null, primary key
+#  amount          :integer
+#  created_by      :string
+#  ledgerable_type :string           not null
+#  reason          :string
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#  ledgerable_id   :bigint           not null
+#  user_id         :bigint           not null
+#
+# Indexes
+#
+#  index_ledger_entries_on_ledgerable         (ledgerable_type,ledgerable_id)
+#  index_ledger_entries_on_user_id            (user_id)
+#  index_ledger_entries_unique_welcome_grant  (user_id,reason) UNIQUE WHERE ((reason)::text = 'Free Stickers Welcome Grant'::text)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#
 one:
   user: one
   ledgerable: one

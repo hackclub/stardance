@@ -12,6 +12,11 @@ class Projects::FundingRequestsController < ApplicationController
                          alert: "Only projects in the funding stage can request funding."
     end
 
+    unless @project.devlog_posts.exists?
+      return redirect_to project_path(@project),
+                         alert: "You need to post at least one devlog before requesting funding."
+    end
+
     if @project.has_pending_funding_request?
       return redirect_to project_path(@project),
                          alert: "You already have a funding request under review."
