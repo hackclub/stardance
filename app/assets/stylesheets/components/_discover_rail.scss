@@ -179,12 +179,6 @@
   white-space: nowrap;
 }
 
-.discover-rail__widgets {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
 .discover-rail__section {
   display: flex;
   flex-direction: column;
@@ -200,16 +194,6 @@
   margin: 0;
   opacity: 0.7;
   text-transform: uppercase;
-}
-
-.discover-rail__placeholder {
-  background: rgba(217, 217, 217, 0.5);
-  border-radius: var(--profile-radius);
-  height: 59px;
-
-  &--tall {
-    height: 238px;
-  }
 }
 
 .discover-rail__placeholder-text {
@@ -240,17 +224,6 @@
   display: block;
   min-height: 48px;
   padding: var(--space-xs) var(--space-s);
-
-  &--link {
-    text-decoration: none;
-    transition: border-color 0.15s ease;
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--color-brand-mint);
-      outline: 0;
-    }
-  }
 }
 
 .discover-rail__card-title {
@@ -320,7 +293,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--color-brand-highlight);
+  background: var(--color-set-2-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,4 +350,126 @@
     flex-direction: column;
     gap: 0.55rem;
   }
+}
+
+// Shared chrome for every discover-rail widget: the bordered "module tile"
+// (same surface as .mission-panel). Widgets mix this block with their own —
+// class="rail-widget events-widget" — and keep their internals under their
+// own namespace.
+.rail-widget {
+  background: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
+  border-radius: 14px;
+  color: var(--color-space-text);
+  padding: var(--space-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.rail-widget__title {
+  font-family: var(--font-family-text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.rail-widget__body {
+  color: var(--color-brand-off-white);
+  font-size: var(--font-size-s);
+  line-height: 1.45;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.rail-widget__link {
+  align-self: flex-end;
+  color: var(--color-space-text);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+  }
+}
+
+// --- Upcoming events widget ---
+
+.events-widget__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.events-widget__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.events-widget__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(217, 217, 217, 0.35);
+
+  &--empty {
+    display: block;
+  }
+}
+
+.events-widget__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.events-widget__name {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.events-widget__name-link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+    text-decoration: underline;
+  }
+}
+
+.events-widget__badge {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--color-brand-lilac);
+  color: #000;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.events-widget__meta {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-xs);
+  color: #afb2c1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

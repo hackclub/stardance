@@ -6,9 +6,9 @@ class Projects::MagicController < ApplicationController
     authorize magic
 
     if magic.grant(current_user)
-      redirect_to project_path(@project), notice: "Project marked as Super Star."
+      redirect_back_or_to project_path(@project), notice: "Project marked as Super Star."
     else
-      redirect_to project_path(@project), alert: magic.errors.full_messages.to_sentence
+      redirect_back_or_to project_path(@project), alert: magic.errors.full_messages.to_sentence
     end
   end
 
@@ -17,9 +17,9 @@ class Projects::MagicController < ApplicationController
     authorize magic
 
     if magic.revoke(current_user)
-      redirect_to project_path(@project), notice: "Project unmarked as Super Star."
+      redirect_back_or_to project_path(@project), notice: "Project unmarked as Super Star."
     else
-      redirect_to project_path(@project), alert: magic.errors.full_messages.to_sentence
+      redirect_back_or_to project_path(@project), alert: magic.errors.full_messages.to_sentence
     end
   end
 

@@ -13,7 +13,7 @@
 # Indexes
 #
 #  index_mission_step_bodies_on_mission_step_id  (mission_step_id)
-#  index_mission_step_bodies_unique_language     (mission_step_id,language) UNIQUE
+#  index_mission_step_bodies_unique_language     (mission_step_id, lower((language)::text)) UNIQUE
 #
 # Foreign Keys
 #

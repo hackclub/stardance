@@ -1,0 +1,30 @@
+<% content_for :title, "Marked safe" %>
+<%= render "admin/raffles/shared/nav" %>
+
+<h1>Marked safe (<%= @cleared.size %>)</h1>
+<p><%= link_to "← Fraud signals", admin_raffles_fraud_path %></p>
+
+<% if @cleared.any? %>
+  <table class="table-data">
+    <thead>
+      <tr><th>Participant</th><th>Type</th><th>IP</th><th>Country</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      <% @cleared.each do |participant| %>
+        <tr>
+          <td><%= link_to participant.display_name, admin_raffles_participant_path(participant) %> <code><%= participant.code %></code></td>
+          <td><%= participant.age_group %></td>
+          <td><code><%= participant.user&.ip_address || "—" %></code></td>
+          <td><%= participant.user&.geocoded_country || "—" %></td>
+          <td>
+            <%= button_to "Put back on fraud radar",
+                unclear_fraud_admin_raffles_participant_path(participant),
+                class: "btn-secondary slim" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>Nobody has been marked safe yet.</p>
+<% end %>

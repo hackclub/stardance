@@ -3,7 +3,7 @@ class ProjectsController < ApplicationController
 
   # Mission + payout-votes render as discover-rail modules on the project page.
   # The expanded mission module also previews the next guide step.
-  discover_rail_widgets :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes,
+  discover_rail_widgets :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes, :upcoming_events,
                         context: -> { { project: @project, votes_for_payout: @votes_for_payout } }
 
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]

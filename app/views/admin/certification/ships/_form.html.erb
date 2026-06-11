@@ -4,7 +4,16 @@
       id: "unclaim-form-#{ship.id}" do %>
 <% end %>
 
-<%= form_with model: ship, url: admin_certification_ship_path(ship), method: :patch, class: "review-form" do |f| %>
+<%# The video-drop controller sits on the form (not the drop zone) so its
+    submitBtn target is in scope and it can block submits mid-upload. %>
+<%= form_with model: ship, url: admin_certification_ship_path(ship), method: :patch, class: "review-form",
+      data: { controller: "certification--video-drop certification--feedback-templates",
+              action: "submit->certification--video-drop#guardSubmit",
+              "certification--video-drop-over-class": "video-drop--over",
+              "certification--video-drop-uploading-class": "video-drop--uploading",
+              "certification--video-drop-done-class": "video-drop--done",
+              "certification--video-drop-error-class": "video-drop--error",
+              "certification--video-drop-direct-upload-url-value": rails_direct_uploads_url } do |f| %>
 <% if ship.claim_expires_at.present? %>
   <div class="review-form__claim-banner">
     <span>Claim active</span>
@@ -30,23 +39,45 @@
       <span>Approve</span>
     </label>
     <label class="review-form__option">
-      <%= f.radio_button :status, "returned", required: true %>
+      <%= f.radio_button :status, "returned", required: true,
+            data: { "certification--feedback-templates-target": "returnedRadio" } %>
       <span>Reject</span>
     </label>
   </fieldset>
 
   <div class="review-form__field">
     <%= f.label :feedback, "Feedback for the user (visible to the project owner)" %>
-    <%= f.text_area :feedback, rows: 6, maxlength: 10_000 %>
+    <div class="review-form__template-bar">
+      <select class="review-form__templates" aria-label="Insert a feedback template"
+              data-certification--feedback-templates-target="picker"
+              data-action="certification--feedback-templates#insert">
+        <option value="" selected>Insert a template&hellip;</option>
+        <optgroup label="Standard">
+          <% Certification::Ship::FEEDBACK_TEMPLATES.each do |template| %>
+            <option data-body="<%= template[:body] %>"><%= template[:label] %></option>
+          <% end %>
+        </optgroup>
+        <%# Filled client-side from localStorage by the feedback-templates controller. %>
+        <optgroup label="Your templates" data-certification--feedback-templates-target="personalGroup"></optgroup>
+      </select>
+      <button type="button" class="review-form__template-action"
+              data-action="certification--feedback-templates#save">
+        Save feedback as template
+      </button>
+      <button type="button" class="review-form__template-action review-form__template-action--danger"
+              data-certification--feedback-templates-target="deleteButton"
+              data-action="certification--feedback-templates#delete" hidden>
+        Delete template
+      </button>
+    </div>
+    <%= f.text_area :feedback, rows: 6, maxlength: 10_000,
+          data: { "certification--feedback-templates-target": "feedback" } %>
   </div>
 
   <div class="review-form__field">
-    <%= f.label :verdict_video, "Walkthrough video (mp4, webm, or mov, max 250 MB)" %>
+    <%= f.label :verdict_video, "Walkthrough video (mp4, webm, or mov)" %>
     <div class="video-drop"
-         data-controller="certification--video-drop"
-         data-certification--video-drop-over-class="video-drop--over"
-         data-certification--video-drop-accepted-class="video-drop--accepted"
-         data-certification--video-drop-error-class="video-drop--error"
+         data-certification--video-drop-target="zone"
          data-action="dragover->certification--video-drop#over
                       dragleave->certification--video-drop#leave
                       drop->certification--video-drop#drop">
@@ -67,6 +98,11 @@
           Choose a different video
         </button>
       </div>
+      <div class="video-drop__progress" role="progressbar" aria-label="Video upload"
+           aria-valuemin="0" aria-valuemax="100"
+           data-certification--video-drop-target="progressWrapper" hidden>
+        <div class="video-drop__progress-bar" data-certification--video-drop-target="progressBar"></div>
+      </div>
       <p class="video-drop__status" role="status" aria-live="polite"
          data-certification--video-drop-target="status"></p>
     </div>
@@ -78,7 +114,8 @@
   </div>
 
   <div class="review-form__actions">
-    <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary" %>
+    <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary",
+          data: { "certification--video-drop-target": "submitBtn" } %>
     <%= link_to "Skip and get next", next_admin_certification_ships_path(skip: ship.id),
           class: "action-btn action-btn--small action-btn--secondary" %>
     <button type="submit" form="unclaim-form-<%= ship.id %>"

@@ -1,4 +1,4 @@
-<% content_for :title, "Participant, #{@participant.display_name}" %>
+<% content_for :title, "Participant: #{@participant.display_name}" %>
 <%= render "admin/raffles/shared/nav" %>
 
 <h1><%= @participant.display_name %> <code><%= @participant.code %></code></h1>
@@ -7,11 +7,16 @@
   <li>Type: <%= @participant.age_group %></li>
   <% if @participant.user %>
     <li>Platform user: <%= link_to @participant.user.display_name, admin_user_path(@participant.user) %></li>
+    <li>IP: <code><%= @participant.user.ip_address || "—" %></code></li>
     <li>Country: <%= @participant.user.geocoded_country || "—" %></li>
+    <li>Signed up: <%= @participant.user.created_at.strftime("%Y-%m-%d %H:%M UTC") %></li>
   <% else %>
     <li>GitHub: <%= @participant.github_login %></li>
   <% end %>
   <li>Eligible: <%= @participant.eligible? ? "Yes" : "No" %></li>
+  <% if @participant.fraud_cleared? %>
+    <li>Fraud: <span class="badge badge-verified">cleared</span></li>
+  <% end %>
   <li>Signup week: <%= @participant.signup_week&.number || "—" %></li>
   <li>Links:
     <code><%= @participant.referral_url(:web) %></code> ·
@@ -19,24 +24,118 @@
   </li>
 </ul>
 
-<h2>Referrals</h2>
+<h3>Actions</h3>
+<div class="fraud-actions-group">
+  <div class="admin-actions-wrap">
+    <%= button_to "Reject all referrals",
+        reject_referrals_admin_raffles_participant_path(@participant),
+        class: "btn-danger slim",
+        data: { turbo_confirm: "Reject ALL referrals from #{@participant.display_name}?" } %>
+    <%= button_to "Reject + ban all referred",
+        ban_referred_users_admin_raffles_participant_path(@participant),
+        class: "btn-danger slim",
+        data: { turbo_confirm: "Reject ALL referrals AND ban every referred user? This is irreversible." } %>
+    <%= button_to "Ban from raffle",
+        ban_participant_admin_raffles_participant_path(@participant),
+        class: "btn-secondary slim",
+        data: { turbo_confirm: "Ban #{@participant.display_name} from the raffle?" } %>
+    <% if @participant.user && !@participant.user.banned? %>
+      <%= button_to "Ban user from platform",
+          ban_user_admin_raffles_participant_path(@participant),
+          class: "btn-danger slim",
+          data: { turbo_confirm: "Ban #{@participant.display_name} from the platform? Rejects shop orders and deletes projects." } %>
+    <% elsif @participant.user&.banned? %>
+      <span class="badge badge-rejected">user banned</span>
+    <% end %>
+  </div>
+  <div class="admin-actions-wrap">
+    <% if @participant.fraud_cleared? %>
+      <%= button_to "Put back on fraud radar",
+          unclear_fraud_admin_raffles_participant_path(@participant),
+          class: "btn-secondary slim" %>
+    <% else %>
+      <%= button_to "Not fraud, mark safe",
+          clear_fraud_admin_raffles_participant_path(@participant),
+          class: "btn-primary slim",
+          data: { turbo_confirm: "Mark as safe? Hides from fraud dashboard." } %>
+    <% end %>
+  </div>
+</div>
+
+<% actionable = @referrals.reject { |r| r.status_rejected? || r.status_self_referral? } %>
+
+<h2>Referrals (<%= @referrals.size %>)</h2>
 <% if @referrals.any? %>
-  <table class="table-data">
-    <thead>
-      <tr><th>Referred user</th><th>Channel</th><th>Status</th><th>Week</th><th>Verified</th></tr>
-    </thead>
-    <tbody>
-      <% @referrals.each do |referral| %>
-        <tr>
-          <td><%= referral.referred_user&.display_name || "User ##{referral.referred_user_id}" %></td>
-          <td><%= referral.channel %></td>
-          <td><%= referral.status %></td>
-          <td><%= referral.credited_week&.number || "—" %></td>
-          <td><%= referral.verified_at&.to_date || "—" %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <div data-controller="bulk-select">
+    <% if actionable.any? %>
+      <div class="fraud-select-bar">
+        <label class="fraud-select-label">
+          <input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggle">
+          Select all actionable (<%= actionable.size %>)
+        </label>
+      </div>
+      <div class="fraud-bulk-actions" data-bulk-select-target="actions" hidden>
+        <span class="fraud-select-count"><span data-bulk-select-target="count">0</span> selected</span>
+        <%= form_with url: reject_selected_admin_raffles_participant_path(@participant), method: :post, class: "fraud-bulk-form", data: { turbo_confirm: "Reject selected referrals?", bulk_select_target: "form" } do %>
+          <button type="submit" class="btn-danger slim">Reject selected</button>
+        <% end %>
+        <%= form_with url: ban_selected_admin_raffles_participant_path(@participant), method: :post, class: "fraud-bulk-form", data: { turbo_confirm: "Reject selected referrals AND ban the referred users?", bulk_select_target: "form" } do %>
+          <button type="submit" class="btn-danger slim">Reject + ban selected</button>
+        <% end %>
+      </div>
+    <% end %>
+
+    <table class="table-data">
+      <thead>
+        <tr><th></th><th>Referred user</th><th>Email</th><th>IP</th><th>Signed up</th><th>Channel</th><th>Status</th><th>Week</th><th>Verified</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <% @referrals.each do |referral| %>
+          <tr>
+            <td>
+              <% unless referral.status_rejected? || referral.status_self_referral? %>
+                <input type="checkbox"
+                       value="<%= referral.id %>"
+                       data-bulk-select-target="item"
+                       data-action="bulk-select#changed">
+              <% end %>
+            </td>
+            <td>
+              <% if referral.referred_user %>
+                <%= link_to referral.referred_user.display_name, admin_user_path(referral.referred_user) %>
+                <% if referral.referred_user.banned? %>
+                  <span class="badge badge-rejected">banned</span>
+                <% end %>
+              <% else %>
+                User #<%= referral.referred_user_id %>
+              <% end %>
+            </td>
+            <td><code><%= referral.referred_user&.email || "—" %></code></td>
+            <td><code><%= referral.referred_user&.ip_address || "—" %></code></td>
+            <td><%= referral.referred_user&.created_at&.strftime("%Y-%m-%d %H:%M") || "—" %></td>
+            <td><%= referral.channel %></td>
+            <td><span class="badge badge-<%= referral.status %>"><%= referral.status %></span></td>
+            <td><%= referral.credited_week&.number || "—" %></td>
+            <td><%= referral.verified_at&.to_date || "—" %></td>
+            <td class="admin-actions-wrap">
+              <% unless referral.status_rejected? || referral.status_self_referral? %>
+                <%= button_to "Reject",
+                    reject_referral_admin_raffles_participant_path(@participant, referral_id: referral.id),
+                    class: "btn-secondary slim",
+                    data: { turbo_confirm: "Reject this referral?" } %>
+              <% end %>
+              <% if referral.referred_user && !referral.referred_user.banned? %>
+                <%= button_to "Ban user",
+                    ban_referred_user_admin_raffles_participant_path(@participant, referral_id: referral.id),
+                    class: "btn-danger slim",
+                    data: { turbo_confirm: "Ban #{referral.referred_user.display_name} from the platform?" } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 <% else %>
   <p>No referrals yet.</p>
 <% end %>

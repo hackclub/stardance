@@ -752,3 +752,14 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.attach-mission-modal__badge {
+  border: 1px solid var(--color-brand-mint);
+  border-radius: 999px;
+  color: var(--color-brand-mint);
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 2px 10px;
+  white-space: nowrap;
+}

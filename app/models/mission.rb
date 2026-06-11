@@ -128,25 +128,13 @@ class Mission < ApplicationRecord
   def prerequisites_met_by?(user)
     return true unless has_prerequisites?
     return false if user.nil?
-    completed_mission_ids = Mission::Submission
-      .where(status: "approved")
-      .joins(ship_event: :post)
-      .where(posts: { user_id: user.id })
-      .distinct
-      .pluck(:mission_id)
-    (prerequisite_ids - completed_mission_ids).empty?
+    (prerequisite_ids - user.completed_mission_ids).empty?
   end
 
   def unmet_prerequisites_for(user)
     return [] unless has_prerequisites?
     return prerequisites.to_a if user.nil?
-    completed_mission_ids = Mission::Submission
-      .where(status: "approved")
-      .joins(ship_event: :post)
-      .where(posts: { user_id: user.id })
-      .distinct
-      .pluck(:mission_id)
-    prerequisites.where.not(id: completed_mission_ids).to_a
+    prerequisites.where.not(id: user.completed_mission_ids).to_a
   end
 
   def achievement_slug
@@ -358,9 +346,12 @@ class Mission < ApplicationRecord
                      .group("posts.project_id")
                      .select("posts.project_id, SUM(post_devlogs.likes_count) AS devlog_likes_count")
 
+    attached_ids = Project::MissionAttachment.where(mission_id: id, detached_at: nil).select(:project_id)
+    shipped_ids  = submissions.not_rejected.joins(ship_event: :post).select("posts.project_id")
+
     Project
-      .joins(:mission_attachments)
-      .where(project_mission_attachments: { mission_id: id, detached_at: nil }, deleted_at: nil)
+      .where(deleted_at: nil, id: attached_ids)
+      .or(Project.where(deleted_at: nil, id: shipped_ids))
       .joins("LEFT JOIN (#{devlog_likes.to_sql}) mission_devlog_likes ON mission_devlog_likes.project_id = projects.id")
       .left_joins(:project_follows, :banner_attachment)
       .group("projects.id", "mission_devlog_likes.devlog_likes_count", "active_storage_attachments.id")
@@ -378,7 +369,7 @@ class Mission < ApplicationRecord
 
   def approved_submission_project_ids
     submissions
-      .where(status: "approved")
+      .approved
       .joins(ship_event: :post)
       .distinct
       .pluck("posts.project_id")

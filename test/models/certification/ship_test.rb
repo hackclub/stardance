@@ -134,4 +134,40 @@ class Certification::ShipTest < ActiveSupport::TestCase
       @project.ship_reviews.create!(status: :pending, reviewer: @reviewer)
     end
   end
+
+  test "submitter_history aggregates verdicts across the owner's projects" do
+    other = Project.create!(title: "Second Ship", description: "Another one", ship_status: "submitted")
+    other.memberships.create!(user: @owner, role: :owner)
+
+    returned = @project.ship_reviews.create!(status: :returned, feedback: "Fix the README.", reviewer: @reviewer)
+    approved = other.ship_reviews.create!(status: :approved, reviewer: @reviewer)
+    pending = other.ship_reviews.create!(status: :pending)
+
+    outsider_project = Project.create!(title: "Not Theirs", description: "Someone else's", ship_status: "submitted")
+    outsider_project.memberships.create!(user: @outsider, role: :owner)
+    outsider_project.ship_reviews.create!(status: :approved, reviewer: @reviewer)
+
+    history = Certification::Ship.submitter_history(@owner)
+
+    assert_equal 3, history[:total]
+    assert_equal 2, history[:projects]
+    assert_equal 1, history[:approved]
+    assert_equal 1, history[:returned]
+    assert_equal [ pending.id, approved.id, returned.id ], history[:recent].map(&:id)
+
+    assert_equal 0, Certification::Ship.submitter_history(@contributor)[:total]
+  end
+
+  test "submitter_history caps recent at six and keeps soft-deleted projects" do
+    reviews = 7.times.map { @project.ship_reviews.create!(status: :approved, reviewer: @reviewer) }
+    @project.soft_delete!(force: true)
+
+    history = Certification::Ship.submitter_history(@owner)
+
+    assert_equal 7, history[:total]
+    assert_equal 1, history[:projects]
+    assert_equal 6, history[:recent].size
+    assert_equal reviews.last.id, history[:recent].first.id
+    assert history[:recent].first.project_with_deleted.deleted?
+  end
 end

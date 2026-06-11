@@ -1,9 +1,6 @@
 <% content_for :title, "Review: #{@ship.project.title}" %>
 
-<%
-  owner = @ship.project.memberships.find(&:owner?)&.user
-  can_review = @ship.claim_held_by?(current_user) && @ship.pending?
-%>
+<% can_review = @ship.claim_held_by?(current_user) && @ship.pending? %>
 
 <div class="app-layout app-layout--wide"
      data-controller="certification--queue"
@@ -82,7 +79,7 @@
           <h2 class="ship-review__panel-title">Submission</h2>
           <dl class="ship-review__meta">
             <dt>Submitter</dt>
-            <dd><%= owner&.display_name || "—" %></dd>
+            <dd><%= @owner&.display_name || "—" %></dd>
             <dt>Submitted</dt>
             <dd><%= time_ago_in_words(@ship.project.shipped_at || @ship.created_at) %> ago</dd>
             <% if @ship.reviewer %>
@@ -103,6 +100,52 @@
       </section>
 
       <aside class="ship-review__sidebar">
+        <% if @submitter_history %>
+          <div class="ship-review__panel submitter-history">
+            <h2 class="ship-review__panel-title">Submitter history</h2>
+            <% if @submitter_history[:total] <= 1 %>
+              <p class="ship-review__description">First submission from <%= @owner.display_name %>.</p>
+            <% else %>
+              <p class="submitter-history__summary">
+                <%= pluralize(@submitter_history[:total], "review") %> across <%= pluralize(@submitter_history[:projects], "project") %>
+                &middot; <%= @submitter_history[:approved] %> approved
+                &middot; <%= @submitter_history[:returned] %> returned
+              </p>
+              <div class="submitter-history__cards">
+                <% @submitter_history[:recent].each do |review| %>
+                  <% current = review.id == @ship.id %>
+                  <%= link_to admin_certification_ship_path(review), target: "_blank", rel: "noopener",
+                        class: class_names("submitter-history__card", "submitter-history__card--current" => current) do %>
+                    <div class="submitter-history__card-head">
+                      <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
+                      <span class="submitter-history__card-id">#<%= review.id %></span>
+                      <% if current %>
+                        <span class="submitter-history__card-here">&larr; you're here</span>
+                      <% end %>
+                      <span class="submitter-history__card-date">
+                        <%= review.decided_at ? l(review.decided_at.to_date, format: :short) : "—" %>
+                      </span>
+                    </div>
+                    <div class="submitter-history__card-meta">
+                      <%= review.project_with_deleted.title %>
+                      <% if review.project_with_deleted.deleted? %>
+                        <span class="submitter-history__card-deleted">(deleted)</span>
+                      <% end %>
+                      <% if review.returned? && review.returned_by %>
+                        &middot; returned by <%= review.returned_by.display_name %>
+                      <% elsif review.decided_at && review.reviewer %>
+                        &middot; by <%= review.reviewer.display_name %>
+                      <% end %>
+                    </div>
+                    <% if review.feedback.present? %>
+                      <p class="submitter-history__card-feedback"><%= review.feedback %></p>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
         <% if can_review %>
           <%= render "form", ship: @ship %>
         <% else %>

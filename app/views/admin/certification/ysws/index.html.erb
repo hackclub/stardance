@@ -1,14 +1,15 @@
 <% content_for :title, "YSWS Review Queue" %>
 
-<main class="certification-ysws" role="main">
+<main class="ysws-queue" role="main">
   <h1>YSWS Review Queue</h1>
 
   <% if @reviews.any? %>
-    <div class="review-queue-header" role="status" aria-live="polite">
-      <p><strong>Pending Reviews:</strong> <%= @reviews.count %></p>
+    <div class="ysws-queue__summary" role="status" aria-live="polite">
+      <span class="ysws-queue__summary-label">Pending reviews</span>
+      <span class="ysws-queue__summary-count"><%= @reviews.count %></span>
     </div>
 
-    <div class="review-queue-table">
+    <div class="ysws-queue__table-container">
       <table>
         <thead>
           <tr>
@@ -24,43 +25,41 @@
         <tbody>
           <% @reviews.each do |review| %>
             <tr>
-              <td>#<%= review.id %></td>
-              <td>
+              <td data-label="ID">#<%= review.id %></td>
+              <td data-label="Type">
                 <% if review.project&.project_categories&.present? %>
                   <%= review.project.project_categories.join(", ") %>
                 <% else %>
-                  <span style="opacity: 0.5;">—</span>
+                  <span class="ysws-queue__placeholder">—</span>
                 <% end %>
               </td>
-              <td>
+              <td data-label="Project">
                 <% if review.project %>
-                  <%= link_to review.project.title, admin_project_path(review.project), class: "btn-primary slim" %>
+                  <%= link_to review.project.title, admin_project_path(review.project) %>
                 <% else %>
-                  <span style="opacity: 0.5;">—</span>
+                  <span class="ysws-queue__placeholder">—</span>
                 <% end %>
               </td>
-              <td>
-                <%= link_to review.user.display_name || "Unknown", admin_user_path(review.user), class: "btn-primary slim" %><br>
-                <small><%= review.user.email %></small>
+              <td data-label="User">
+                <%= link_to review.user.display_name || "Unknown", admin_user_path(review.user) %>
+                <span class="ysws-queue__cell-note"><%= review.user.email %></span>
               </td>
-              <td>
+              <td data-label="Hours">
                 <% hours = review.original_minutes ? (review.original_minutes / 60.0).round(1) : 0 %>
                 <%= hours %> hrs
               </td>
-              <td>
+              <td data-label="Age">
                 <% age_in_days = ((Time.current - review.created_at) / 1.day).floor %>
                 <% if age_in_days == 0 %>
-                  <span class="age-today">Today</span>
-                <% elsif age_in_days == 1 %>
-                  <span class="age-recent">1 day ago</span>
+                  <span class="ysws-queue__age ysws-queue__age--today">Today</span>
                 <% elsif age_in_days < 7 %>
-                  <span class="age-recent"><%= age_in_days %> days ago</span>
+                  <span class="ysws-queue__age ysws-queue__age--recent"><%= pluralize(age_in_days, "day") %> ago</span>
                 <% else %>
-                  <span class="age-old"><%= age_in_days %> days ago</span>
+                  <span class="ysws-queue__age ysws-queue__age--old"><%= pluralize(age_in_days, "day") %> ago</span>
                 <% end %>
               </td>
-              <td>
-                <%= link_to "View", admin_certification_ysws_review_path(review), class: "btn-view" %>
+              <td data-label="Actions">
+                <%= link_to "View", admin_certification_ysws_review_path(review), class: "ysws-queue__view-btn" %>
               </td>
             </tr>
           <% end %>
@@ -68,7 +67,7 @@
       </table>
     </div>
   <% else %>
-    <div class="empty-state" role="status">
+    <div class="ysws-queue__empty" role="status">
       <p>No pending reviews. Great job!</p>
     </div>
   <% end %>
