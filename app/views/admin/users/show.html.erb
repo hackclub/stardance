@@ -102,19 +102,22 @@
   <div>
     <h2>Hardware</h2>
     <div>
-      <% if @user.has_presentable_hardware_project? %>
+      <% if @user.manual_outpost_ticket_approval.present? %>
+        <p>
+          Manual Outpost Ticket approval:
+          <%= link_to "View in Airtable", @user.manual_outpost_ticket_approval, target: "_blank", rel: "noopener" %>
+        </p>
         <%= button_to admin_user_presentable_hardware_flag_path(@user),
                       method: :delete,
                       disabled: !current_user&.admin?,
-                      title: "Remove the presentable hardware project flag" do %>
-          Presentable hardware project ✓
+                      title: "Remove the manual Outpost Ticket approval" do %>
+          Remove approval ✗
         <% end %>
       <% else %>
-        <%= button_to admin_user_presentable_hardware_flag_path(@user),
-                      method: :post,
-                      disabled: !current_user&.admin?,
-                      title: "Mark as having a presentable hardware project (unlocks the Outpost Ticket)" do %>
-          Presentable hardware project
+        <%= form_with url: admin_user_presentable_hardware_flag_path(@user), method: :post do |f| %>
+          <%= f.label :approval_url, "Airtable record URL" %>
+          <%= f.url_field :approval_url, placeholder: "https://airtable.com/...", required: true %>
+          <%= f.submit "Approve Outpost Ticket", disabled: !current_user&.admin? %>
         <% end %>
       <% end %>
     </div>

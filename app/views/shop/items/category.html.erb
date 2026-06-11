@@ -72,7 +72,7 @@
 
     <%= turbo_frame_tag "shop_items" do %>
       <div class="shop-category__items">
-        <% if @slug == "experiences" && Flipper.enabled?(:hardware_flow) %>
+        <% if @slug == "experiences" && !Flipper.enabled?(:hardware_flow) %>
           <%= render "shop/items/outpost_ticket" %>
         <% end %>
         <% @shop_items.each do |item| %>

@@ -3,8 +3,10 @@ class CreateLookoutSessions < ActiveRecord::Migration[8.1]
     create_table :lookout_sessions do |t|
       t.references :user, null: false, foreign_key: true
       t.references :project, null: false, foreign_key: true
+      t.references :devlog, null: true, foreign_key: { to_table: :post_devlogs }
       t.string :token, null: false
       t.string :status, default: "pending"
+      t.string :mode
       t.integer :duration_seconds, default: 0
       t.string :recording_url
       t.datetime :started_at

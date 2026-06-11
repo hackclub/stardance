@@ -20,7 +20,7 @@ class HackatimeService
     end
 
     def fetch_stats(hackatime_uid, start_date: START_DATE, end_date: nil, access_token: nil)
-      params = { features: "projects", start_date: start_date, test_param: true, no_ai_coding: false }
+      params = { features: "projects", start_date: start_date, test_param: true, no_ai_coding: false, _t: Time.now.to_i }
       params[:end_date] = end_date if end_date
 
       response = stats_request(hackatime_uid, params, access_token: access_token)
@@ -51,7 +51,8 @@ class HackatimeService
         test_param: true,
         total_seconds: true,
         no_ai_coding: false,
-        filter_by_project: Array(project_keys).join(",")
+        filter_by_project: Array(project_keys).join(","),
+        _t: Time.now.to_i
       }
       params[:end_date] = end_date if end_date
 
@@ -157,6 +158,7 @@ class HackatimeService
       def connection
         @connection ||= Faraday.new(url: "#{BASE_URL}/api/v1") do |conn|
           conn.headers["Content-Type"] = "application/json"
+          conn.headers["Cache-Control"] = "no-cache, no-store"
           conn.headers["User-Agent"] = Rails.application.config.user_agent
           conn.headers["RACK_ATTACK_BYPASS"] = ENV["HACKATIME_BYPASS_KEYS"] if ENV["HACKATIME_BYPASS_KEYS"].present?
         end

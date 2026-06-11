@@ -20,11 +20,11 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       visibility: :secret
     ),
     new(
-      slug: :has_presentable_hardware_project,
+      slug: :manual_outpost_ticket_approval,
       name: "Presentable Hardware Project",
       description: "Got a hardware project polished enough to show off. Unlocks the Outpost Ticket.",
       icon: "rocket",
-      earned_check: ->(user) { user.has_presentable_hardware_project? },
+      earned_check: ->(user) { user.manual_outpost_ticket_approval.present? },
       visibility: :visible
     )
   ].freeze

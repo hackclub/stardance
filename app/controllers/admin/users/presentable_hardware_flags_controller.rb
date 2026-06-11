@@ -7,23 +7,23 @@ class Admin::Users::PresentableHardwareFlagsController < Admin::ApplicationContr
   def create
     authorize @user, :manage_feature_flags?
 
-    @user.update!(has_presentable_hardware_project: true)
-    @user.award_achievement!(:has_presentable_hardware_project, notified: true)
+    @user.update!(manual_outpost_ticket_approval: params[:approval_url])
+    @user.award_achievement!(:manual_outpost_ticket_approval, notified: true)
     log_change(true)
 
     redirect_to admin_user_path(@user),
-                notice: "Marked #{@user.display_name} as having a presentable hardware project."
+                notice: "Approved Outpost Ticket for #{@user.display_name}."
   end
 
   def destroy
     authorize @user, :manage_feature_flags?
 
-    @user.update!(has_presentable_hardware_project: false)
-    @user.achievements.where(achievement_slug: "has_presentable_hardware_project").destroy_all
+    @user.update!(manual_outpost_ticket_approval: nil)
+    @user.achievements.where(achievement_slug: "manual_outpost_ticket_approval").destroy_all
     log_change(false)
 
     redirect_to admin_user_path(@user),
-                notice: "Removed the presentable hardware project flag from #{@user.display_name}."
+                notice: "Removed Outpost Ticket approval from #{@user.display_name}."
   end
 
   private
@@ -38,7 +38,7 @@ class Admin::Users::PresentableHardwareFlagsController < Admin::ApplicationContr
       item_id: @user.id,
       event: enabled ? "presentable_hardware_enable" : "presentable_hardware_disable",
       whodunnit: current_user.id,
-      object_changes: { has_presentable_hardware_project: [ !enabled, enabled ] }.to_json
+      object_changes: { manual_outpost_ticket_approval: [ !enabled, enabled ] }.to_json
     )
   end
 end

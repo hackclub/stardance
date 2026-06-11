@@ -23,7 +23,7 @@
 #  guest_email                      :string
 #  has_gotten_free_stickers         :boolean          default(FALSE)
 #  has_pending_achievements         :boolean          default(FALSE), not null
-#  has_presentable_hardware_project :boolean          default(FALSE), not null
+#  manual_outpost_ticket_approval   :string
 #  hcb_email                        :string
 #  interests                        :string           default([]), is an Array
 #  internal_notes                   :text
