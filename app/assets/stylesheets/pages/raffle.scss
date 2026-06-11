@@ -424,6 +424,25 @@
   color: var(--color-space-text-muted);
 }
 
+// ── Fraud notice ─────────────────────────────────────────────────────────────
+.raffle-fraud-notice {
+  margin-bottom: var(--space-l);
+  padding: var(--space-s) var(--space-m);
+  background: rgba(255, 141, 157, 0.08);
+  border: 1px solid rgba(255, 141, 157, 0.25);
+  border-radius: var(--profile-radius);
+}
+
+.raffle-fraud-notice__text {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+
+  strong {
+    color: var(--color-brand-salmon);
+  }
+}
+
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 .raffle-board {
   list-style: none;

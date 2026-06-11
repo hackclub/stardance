@@ -95,20 +95,12 @@ class Projects::ShipsController < ApplicationController
     end
 
     def resolve_payout_path(mission, payout_path_param)
-      if mission.fixed_stardust_payout&.positive? && !user_has_approved_submission_for?(mission)
+      if mission.fixed_stardust_payout&.positive? && !current_user.completed_mission_ids.include?(mission.id)
         return "static_prize"
       end
       return "voting" unless mission.has_prizes?
       return "voting" if user_redeemed_prize_for?(mission)
       payout_path_param.to_s == "voting" ? "voting" : "static_prize"
-    end
-
-    def user_has_approved_submission_for?(mission)
-      Mission::Submission
-        .where(mission_id: mission.id, status: "approved")
-        .joins(ship_event: { post: :user })
-        .where(users: { id: current_user.id })
-        .exists?
     end
 
     def user_redeemed_prize_for?(mission)

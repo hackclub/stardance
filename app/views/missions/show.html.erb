@@ -90,7 +90,8 @@
           </p>
         <% end %>
 
-        <% has_three_actions = !@active_project && @attachable_projects&.any? && @mission.has_guide? %>
+        <% has_attach_choices = @attachable_projects&.any? || @continuable_projects&.any? %>
+        <% has_three_actions = !@active_project && has_attach_choices && @mission.has_guide? %>
         <div class="mission-home__hero-actions<%= " mission-home__hero-actions--spread" if has_three_actions %>">
           <% if @active_project %>
             <%= link_to "View my project",
@@ -98,14 +99,23 @@
                         data: { turbo: false },
                         class: "action-btn action-btn--large action-btn--primary" %>
           <% elsif @prerequisites_met %>
+            <%# Follow-up missions lead with continuing a prerequisite project %>
+            <% continue_flow = @continuable_projects&.any? %>
+            <% if continue_flow %>
+              <button type="button"
+                      class="action-btn action-btn--large action-btn--primary"
+                      onclick="document.getElementById('attach-mission-modal').showModal()">
+                Continue project
+              </button>
+            <% end %>
             <%= button_to "Create a project",
                           projects_setup_submit_mission_path,
                           method: :post,
                           params: { mission_slug: @mission.slug },
                           data: { turbo: false },
                           form: { class: "mission-home__cta-form" },
-                          class: "action-btn action-btn--large action-btn--primary" %>
-            <% if @attachable_projects&.any? %>
+                          class: "action-btn action-btn--large #{continue_flow ? "action-btn--secondary" : "action-btn--primary"}" %>
+            <% if !continue_flow && has_attach_choices %>
               <button type="button"
                       class="action-btn action-btn--large action-btn--secondary"
                       onclick="document.getElementById('attach-mission-modal').showModal()">
@@ -232,14 +242,31 @@
     </article>
   </div>
 
-  <% if @attachable_projects&.any? %>
-    <%= render layout: "shared/modal", locals: { id: "attach-mission-modal", title: "Attach to project", class_name: "attach-mission-modal" } do %>
-      <p class="attach-mission-modal__desc">Pick a project to attach <strong><%= @mission.name %></strong> to:</p>
+  <% if @attachable_projects&.any? || @continuable_projects&.any? %>
+    <% modal_title = @continuable_projects&.any? ? "Continue a project" : "Attach to project" %>
+    <%= render layout: "shared/modal", locals: { id: "attach-mission-modal", title: modal_title, class_name: "attach-mission-modal" } do %>
+      <p class="attach-mission-modal__desc">Pick a project to take on <strong><%= @mission.name %></strong>:</p>
       <ul class="attach-mission-modal__list">
-        <% @attachable_projects.each do |project| %>
+        <% @attachable_projects&.each do |project| %>
           <li class="attach-mission-modal__item">
             <span class="attach-mission-modal__project-name"><%= truncate(project.title, length: 50) %></span>
             <%= button_to "Attach",
+                          project_mission_path(project),
+                          method: :post,
+                          params: { mission_slug: @mission.slug },
+                          data: { turbo: false },
+                          class: "action-btn action-btn--small action-btn--primary" %>
+          </li>
+        <% end %>
+        <% prerequisites_by_id = @mission.prerequisites.index_by(&:id) %>
+        <% @continuable_projects&.each do |project| %>
+          <% shipped_prerequisite = prerequisites_by_id[project.shipped_prerequisite_mission_id] %>
+          <li class="attach-mission-modal__item">
+            <span class="attach-mission-modal__project-name"><%= truncate(project.title, length: 50) %></span>
+            <% if shipped_prerequisite %>
+              <span class="attach-mission-modal__badge">Shipped <%= shipped_prerequisite.name %></span>
+            <% end %>
+            <%= button_to "Continue",
                           project_mission_path(project),
                           method: :post,
                           params: { mission_slug: @mission.slug },

@@ -87,20 +87,13 @@ class Projects::SetupController < ApplicationController
       redirect_to mission_path(mission.slug), alert: "Complete #{unmet} first to unlock this mission." and return
     end
 
-    existing = project.mission_attachments.find_by(mission_id: mission.id)
-
-    if existing&.detached_at.nil? && existing.present?
+    if project.current_mission&.id == mission.id
       redirect_to(next_gate_after_details_path) and return
     end
 
-    is_first_attach = existing.nil?
+    is_first_attach = !project.mission_attachments.exists?(mission_id: mission.id)
 
-    if existing
-      existing.update!(detached_at: nil, attached_at: Time.current)
-    else
-      project.current_mission_attachment&.detach!
-      project.mission_attachments.create!(mission: mission, attached_at: Time.current)
-    end
+    project.attach_mission!(mission)
 
     # Authored defaults apply only on first attach — never overwrite a
     # builder's edits on re-attach.

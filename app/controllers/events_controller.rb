@@ -1,4 +1,6 @@
 class EventsController < ApplicationController
+  discover_rail_widgets :upcoming_events
+
   before_action :set_body_class
 
   # Surfaces enabled missions to everyone, plus any draft missions the current

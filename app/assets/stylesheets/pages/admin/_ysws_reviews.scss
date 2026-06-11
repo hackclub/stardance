@@ -1,6 +1,213 @@
-// YSWS Review Queue - Cosmic-themed styling matching Stardance design system
-// Architecture: BEM methodology with mobile-first responsive design
-// References: config/_variables.scss for all design tokenss
+// YSWS review pages (admin/certification/ysws).
+// Index queue styles first (.ysws-queue), show page styles below
+// (.certification-ysws). References: config/_variables.scss for design tokens.
+
+// ============================================================================
+// REVIEW QUEUE (INDEX) STYLES
+// ============================================================================
+//
+// Brand rules (docs/branding.md): set-1 containers with 8px radius and 2px
+// borders matching the set's secondary foreground (§3), View button is a
+// small-action primary pill filled with --color-brand-highlight (§4.2),
+// accents only for status (§1.3).
+//
+// Selectors are nested one level (.ysws-queue .ysws-queue__*) so they win
+// over the .admin-content element baseline declared later in admin.scss.
+//
+// Layout: ≥961px the table scrolls horizontally inside its container instead
+// of widening the page; ≤960px rows convert to stacked cards labelled via
+// each cell's data-label attribute.
+
+.ysws-queue {
+  & &__summary {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-l);
+  }
+
+  & &__summary-label {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  & &__summary-count {
+    color: var(--color-brand-highlight);
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+  }
+
+  & &__table-container {
+    @media (min-width: 961px) {
+      background: var(--color-set-1-bg);
+      border: 2px solid var(--color-set-1-fg-secondary);
+      border-radius: var(--profile-radius);
+      overflow-x: auto;
+
+      table {
+        // Container chrome lives on the scroll wrapper — undo the
+        // .admin-content table border/radius/margin so they don't double up.
+        border: none;
+        border-radius: 0;
+        margin: 0;
+      }
+
+      th {
+        border-bottom: 2px solid var(--color-set-1-fg-secondary);
+      }
+    }
+
+    @media (max-width: 960px) {
+      table,
+      tbody,
+      tr,
+      td {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      table {
+        border: none;
+        margin: 0;
+      }
+
+      tbody tr,
+      tbody tr:nth-child(odd) {
+        background: var(--color-set-1-bg);
+      }
+
+      tr {
+        border: 2px solid var(--color-set-1-fg-secondary);
+        border-radius: var(--profile-radius);
+        margin-bottom: var(--space-m);
+        padding: var(--space-s) var(--space-m);
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-s);
+        padding: var(--space-xs) 0;
+        border-bottom: none;
+
+        &::before {
+          content: attr(data-label);
+          color: var(--color-set-1-fg-secondary);
+          font-size: var(--font-size-xs);
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+
+  & &__cell-note {
+    display: block;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-xxxs);
+  }
+
+  & &__placeholder {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  // Age status pills — mint "fresh", yellow "important", salmon "warn"
+  // per the accent roles in branding §1.3.
+  & &__age {
+    display: inline-block;
+    padding: var(--space-xxxs) var(--space-s);
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  & &__age--today {
+    background: var(--color-brand-mint-soft);
+    color: var(--color-brand-mint);
+  }
+
+  & &__age--recent {
+    background: var(--color-brand-yellow-soft);
+    color: var(--color-brand-yellow);
+  }
+
+  & &__age--old {
+    background: var(--color-brand-salmon-soft);
+    color: var(--color-brand-salmon);
+  }
+
+  // Small action primary, dark-bg variant (branding §4.2): highlight fill,
+  // dark text, no border, 16px bold, 16px/3px padding, fully rounded.
+  & &__view-btn {
+    display: inline-block;
+    padding: 3px 16px;
+    border-radius: 999px;
+    background: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--color-brand-highlight-secondary);
+      color: var(--color-set-1-bg);
+      text-decoration: none;
+    }
+
+    &:active {
+      background: var(--color-space-text);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+
+  & &__empty {
+    background: var(--color-set-1-bg);
+    border: 2px solid var(--color-set-1-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-xxl);
+    text-align: center;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-l);
+
+    &::before {
+      content: "✨";
+      display: block;
+      font-size: var(--font-size-xxxl);
+      margin-bottom: var(--space-m);
+    }
+
+    p {
+      color: var(--color-set-1-fg-secondary);
+      margin: 0;
+    }
+  }
+}
+
+// ============================================================================
+// REVIEW SHOW PAGE STYLES
+// ============================================================================
 
 body:has(.certification-ysws) {
   overflow-x: clip;
@@ -37,416 +244,6 @@ body:has(.certification-ysws) {
     @media (max-width: 600px) {
       font-size: var(--font-size-xxl);
       margin-bottom: var(--space-m);
-    }
-  }
-
-  .review-queue-header {
-    background: linear-gradient(
-      135deg,
-      var(--color-set-2-bg) 0%,
-      var(--color-set-3-bg) 100%
-    );
-    border: 1px solid var(--color-brand-lilac-soft);
-    border-radius: var(--profile-radius);
-    padding: var(--space-m) var(--space-l);
-    margin-bottom: var(--space-l);
-    box-shadow: 0 4px 20px rgba(129, 255, 255, 0.1);
-    font-family: var(--font-family-sans);
-
-    @media (max-width: 600px) {
-      padding: var(--space-s) var(--space-m);
-    }
-
-    p {
-      margin: 0;
-      font-size: var(--font-size-m);
-    }
-
-    strong {
-      color: var(--color-brand-mint);
-      font-size: var(--font-size-l);
-      font-weight: 700;
-
-      @media (max-width: 600px) {
-        font-size: var(--font-size-m);
-      }
-    }
-  }
-
-  // Review queue table - responsive design with card fallback on mobile
-  .review-queue-table {
-    background: var(--color-set-2-bg);
-    border: 1px solid var(--color-space-border);
-    border-radius: var(--profile-radius);
-    overflow: hidden;
-    box-shadow: 0 8px 32px var(--color-shadow-deep);
-
-    // Desktop table layout
-    @media (min-width: 961px) {
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      thead {
-        background: linear-gradient(
-          180deg,
-          var(--color-set-3-bg) 0%,
-          var(--color-set-2-bg) 100%
-        );
-        border-bottom: 2px solid var(--color-brand-blue);
-      }
-
-      th {
-        padding: var(--space-m) var(--space-l);
-        text-align: left;
-        color: var(--color-brand-blue);
-        font-weight: 700;
-        font-size: var(--font-size-s);
-        font-family: var(--font-family-sans);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
-      }
-
-      tbody tr {
-        border-bottom: 1px solid var(--color-space-surface-faint);
-        transition: all 0.2s ease;
-
-        @media (prefers-reduced-motion: reduce) {
-          transition: none;
-        }
-
-        &:hover {
-          background: var(--color-space-surface-faint);
-          transform: translateX(4px);
-
-          @media (prefers-reduced-motion: reduce) {
-            transform: none;
-          }
-        }
-
-        &:last-child {
-          border-bottom: none;
-        }
-      }
-
-      td {
-        padding: var(--space-m) var(--space-l);
-        color: var(--color-space-text);
-        font-size: var(--font-size-m);
-        vertical-align: middle;
-
-        a.btn-primary {
-          background: linear-gradient(
-            135deg,
-            var(--color-brand-blue) 0%,
-            var(--color-brand-lilac) 100%
-          );
-          color: var(--color-set-1-bg);
-          padding: var(--space-xxs) var(--space-s);
-          border-radius: 999px;
-          text-decoration: none;
-          font-weight: 700;
-          font-size: var(--font-size-s);
-          font-family: var(--font-family-sans);
-          display: inline-block;
-          transition: all 0.2s ease;
-          border: none;
-
-          @media (prefers-reduced-motion: reduce) {
-            transition: none;
-          }
-
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(149, 219, 255, 0.4);
-
-            @media (prefers-reduced-motion: reduce) {
-              transform: none;
-            }
-          }
-
-          &.slim {
-            padding: var(--space-xxxs) var(--space-xs);
-            font-size: var(--font-size-xs);
-          }
-        }
-
-        small {
-          color: var(--color-space-text-muted);
-          font-size: var(--font-size-xs);
-        }
-      }
-
-      // Review ID column
-      td:nth-child(1) {
-        color: var(--color-brand-mint);
-        font-weight: 700;
-        font-family: "Courier New", monospace;
-      }
-
-      // Project Type column
-      td:nth-child(2) {
-        color: var(--color-brand-peach);
-        font-size: var(--font-size-s);
-      }
-
-      // Hours column
-      td:nth-child(5) {
-        color: var(--color-brand-yellow);
-        font-weight: 700;
-      }
-    }
-
-    // Mobile/tablet: convert table to card layout
-    @media (max-width: 960px) {
-      thead {
-        display: none; // Hide table headers
-      }
-
-      table,
-      tbody,
-      tr,
-      td {
-        display: block;
-      }
-
-      tr {
-        background: var(--color-set-2-bg);
-        border: 1px solid var(--color-space-surface-faint);
-        border-radius: var(--profile-radius);
-        margin-bottom: var(--space-m);
-        padding: var(--space-m);
-        transition: all 0.2s ease;
-
-        @media (prefers-reduced-motion: reduce) {
-          transition: none;
-        }
-
-        &:hover {
-          background: var(--color-space-surface-faint);
-          transform: scale(1.01);
-
-          @media (prefers-reduced-motion: reduce) {
-            transform: none;
-          }
-        }
-
-        &:last-child {
-          margin-bottom: 0;
-        }
-      }
-
-      td {
-        padding: var(--space-xs) 0;
-        border: none;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: var(--space-s);
-
-        // Add labels for mobile
-        &::before {
-          content: attr(data-label);
-          font-weight: 700;
-          color: var(--color-brand-blue);
-          font-size: var(--font-size-xs);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          font-family: var(--font-family-sans);
-          flex-shrink: 0;
-        }
-
-        &:nth-child(1)::before {
-          content: "ID";
-        }
-        &:nth-child(2)::before {
-          content: "Type";
-        }
-        &:nth-child(3)::before {
-          content: "Project";
-        }
-        &:nth-child(4)::before {
-          content: "User";
-        }
-        &:nth-child(5)::before {
-          content: "Hours";
-        }
-        &:nth-child(6)::before {
-          content: "Age";
-        }
-        &:nth-child(7)::before {
-          content: "Actions";
-        }
-
-        // Style specific columns on mobile
-        &:nth-child(1) {
-          color: var(--color-brand-mint);
-          font-weight: 700;
-          font-family: "Courier New", monospace;
-        }
-
-        &:nth-child(2) {
-          color: var(--color-brand-peach);
-          font-size: var(--font-size-s);
-        }
-
-        &:nth-child(5) {
-          color: var(--color-brand-yellow);
-          font-weight: 700;
-        }
-
-        a.btn-primary {
-          background: linear-gradient(
-            135deg,
-            var(--color-brand-blue) 0%,
-            var(--color-brand-lilac) 100%
-          );
-          color: var(--color-set-1-bg);
-          padding: var(--space-xxxs) var(--space-xs);
-          border-radius: 999px;
-          text-decoration: none;
-          font-weight: 700;
-          font-size: var(--font-size-xs);
-          font-family: var(--font-family-sans);
-          display: inline-block;
-          white-space: nowrap;
-        }
-
-        small {
-          color: var(--color-space-text-muted);
-          font-size: var(--font-size-xs);
-          display: block;
-          margin-top: var(--space-xxxs);
-        }
-      }
-    }
-  }
-
-  .empty-state {
-    background: linear-gradient(
-      135deg,
-      var(--color-set-2-bg) 0%,
-      var(--color-space-surface-soft) 100%
-    );
-    border: 2px dashed var(--color-brand-mint-soft);
-    border-radius: var(--profile-radius);
-    padding: var(--space-xxl);
-    text-align: center;
-    color: var(--color-space-text-muted);
-    font-size: var(--font-size-l);
-    font-family: var(--font-family-text);
-
-    @media (max-width: 600px) {
-      padding: var(--space-xl) var(--space-m);
-      font-size: var(--font-size-m);
-    }
-
-    &::before {
-      content: "✨";
-      display: block;
-      font-size: var(--font-size-xxxxl);
-      margin-bottom: var(--space-m);
-
-      @media (max-width: 600px) {
-        font-size: var(--font-size-xxxl);
-      }
-    }
-
-    p {
-      margin: 0;
-    }
-  }
-
-  // Age badges with glow effects - respect motion preferences
-  .age-today {
-    color: var(--color-brand-mint);
-    text-shadow: 0 0 8px rgba(129, 255, 255, 0.6);
-    font-weight: 700;
-    font-size: var(--font-size-s);
-    font-family: var(--font-family-sans);
-
-    @media (prefers-reduced-motion: reduce) {
-      text-shadow: none;
-    }
-  }
-
-  .age-recent {
-    color: var(--color-brand-yellow);
-    text-shadow: 0 0 8px rgba(255, 229, 100, 0.4);
-    font-weight: 700;
-    font-size: var(--font-size-s);
-    font-family: var(--font-family-sans);
-
-    @media (prefers-reduced-motion: reduce) {
-      text-shadow: none;
-    }
-  }
-
-  .age-old {
-    color: var(--color-brand-salmon);
-    text-shadow: 0 0 8px rgba(255, 141, 157, 0.4);
-    font-weight: 700;
-    font-size: var(--font-size-s);
-    font-family: var(--font-family-sans);
-
-    @media (prefers-reduced-motion: reduce) {
-      text-shadow: none;
-    }
-  }
-
-  // View button - canonical fully-rounded button style per branding
-  .btn-view {
-    background: linear-gradient(
-      135deg,
-      var(--color-brand-mint) 0%,
-      var(--color-brand-blue) 100%
-    );
-    color: var(--color-set-1-bg);
-    padding: var(--space-xs) var(--space-m);
-    border-radius: 999px; // Fully rounded per branding
-    text-decoration: none;
-    font-weight: 700;
-    font-size: var(--font-size-s);
-    font-family: var(--font-family-sans);
-    display: inline-block;
-    transition: all 0.2s ease;
-    border: none;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    box-shadow: 0 2px 8px rgba(129, 255, 255, 0.2);
-    cursor: pointer;
-
-    @media (prefers-reduced-motion: reduce) {
-      transition: none;
-    }
-
-    @media (max-width: 600px) {
-      padding: var(--space-xxs) var(--space-s);
-      font-size: var(--font-size-xs);
-    }
-
-    &:hover {
-      transform: translateY(-2px) scale(1.05);
-      box-shadow: 0 6px 16px rgba(129, 255, 255, 0.4);
-
-      @media (prefers-reduced-motion: reduce) {
-        transform: none;
-      }
-    }
-
-    &:active {
-      transform: translateY(0) scale(1);
-
-      @media (prefers-reduced-motion: reduce) {
-        transform: none;
-      }
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--color-brand-mint);
-      outline-offset: 2px;
     }
   }
 
@@ -1163,12 +960,22 @@ body:has(.certification-ysws) {
 
   // Video Card
   .video-card {
+    position: relative;
+    z-index: 1;
+
     h3 {
       color: var(--color-brand-lilac);
       font-size: var(--font-size-l);
       font-weight: 700;
       margin-bottom: var(--space-m);
       font-family: var(--font-family-sans);
+    }
+
+    &__player {
+      position: relative;
+      z-index: 2;
+      pointer-events: auto;
+      background: #000;
     }
 
     .video-placeholder {
@@ -2455,6 +2262,9 @@ body:has(.certification-ysws) {
       object-fit: contain;
       border-radius: var(--border-radius);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      position: relative;
+      z-index: 1;
+      pointer-events: auto;
 
       &.hidden {
         display: none;

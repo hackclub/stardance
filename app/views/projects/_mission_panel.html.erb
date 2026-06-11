@@ -42,7 +42,9 @@
     <header class="mission-panel__header">
       <div class="mission-panel__identity">
         <% if mission.icon.attached? %>
-          <%= image_tag mission.icon, alt: "", class: "mission-panel__icon" %>
+          <div class="mission-panel__icon">
+            <%= image_tag mission.icon, alt: "", class: "mission-panel__icon-img" %>
+          </div>
         <% end %>
         <div class="mission-panel__heading">
           <p class="mission-panel__eyebrow"><%= shipped ? "Part of mission" : "On a mission" %></p>
@@ -74,14 +76,53 @@
                     data: { turbo: false },
                     class: "action-btn action-btn--small action-btn--secondary" %>
         <% if is_member && !shipped %>
+          <% fallback = project.shipped? ? project.fallback_mission_after_detaching(mission) : nil %>
+          <% detach_confirm = fallback ?
+               "Detach this project from #{mission.name}? It'll go back to #{fallback.name}." :
+               "Detach this project from #{mission.name}?" %>
           <%= button_to "Detach",
                         project_mission_path(project),
                         method: :delete,
-                        data: { confirm: "Detach this project from #{mission.name}?" },
+                        data: { confirm: detach_confirm },
                         class: "mission-panel__detach" %>
         <% end %>
       </div>
     </header>
+
+    <% if shipped && is_member %>
+      <% follow_up_targets = project.follow_up_targets_for(viewer) %>
+      <% follow_ups = follow_up_targets[:ready] %>
+      <% awaiting_follow_ups = follow_up_targets[:awaiting] %>
+      <% if follow_ups.any? || awaiting_follow_ups.any? %>
+        <div class="mission-panel__follow-ups">
+          <p class="mission-panel__follow-ups-label">Keep this project going — it can continue into a follow-up mission:</p>
+          <div class="mission-panel__follow-ups-actions">
+            <% follow_ups.each do |follow_up| %>
+              <%= button_to "Continue to #{follow_up.name}",
+                            project_mission_path(project),
+                            method: :post,
+                            params: { mission_slug: follow_up.slug },
+                            data: { turbo: false, confirm: "Switch this project from #{mission.name} to #{follow_up.name}?" },
+                            class: "action-btn action-btn--small action-btn--primary" %>
+            <% end %>
+            <% awaiting_follow_ups.each do |follow_up| %>
+              <%= render ActionButtonComponent.new(
+                    text: "Continue to #{follow_up.name}",
+                    size: :small,
+                    variant: :primary,
+                    type: :button,
+                    disabled: :soft,
+                    data: {
+                      controller: "tooltip",
+                      tooltip_message_value: "Hang tight! Wait until your ship is approved to start the next mission (but you can start working on it now :))",
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
 
     <% if show_progress && total.positive? %>
       <div class="mission-panel__progress">

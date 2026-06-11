@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_172657) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -400,7 +400,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.bigint "mission_id", null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index ["mission_id", "language"], name: "index_mission_guide_variants_unique_language", unique: true
+    t.index "mission_id, lower((language)::text)", name: "index_mission_guide_variants_unique_language", unique: true
     t.index ["mission_id"], name: "index_mission_guide_variants_on_mission_id"
   end
 
@@ -468,7 +468,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.string "language", null: false
     t.bigint "mission_step_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["mission_step_id", "language"], name: "index_mission_step_bodies_unique_language", unique: true
+    t.index "mission_step_id, lower((language)::text)", name: "index_mission_step_bodies_unique_language", unique: true
     t.index ["mission_step_id"], name: "index_mission_step_bodies_on_mission_step_id"
   end
 
@@ -669,6 +669,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.index ["mission_id"], name: "index_project_mission_attachments_on_mission_id"
     t.index ["project_id", "mission_id"], name: "index_project_mission_attachments_active", unique: true, where: "((detached_at IS NULL) AND (deleted_at IS NULL))"
     t.index ["project_id"], name: "index_project_mission_attachments_on_project_id"
+    t.index ["project_id"], name: "index_project_mission_attachments_one_active", unique: true, where: "((detached_at IS NULL) AND (deleted_at IS NULL))"
   end
 
   create_table "project_reports", force: :cascade do |t|
@@ -745,6 +746,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.boolean "eligible", default: true, null: false
+    t.boolean "fraud_cleared", default: false, null: false
     t.string "github_avatar_url"
     t.string "github_login"
     t.string "github_uid"
@@ -1291,6 +1293,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
     t.index ["approx_balance"], name: "index_users_on_approx_balance", order: :desc
     t.index ["approx_total_earned"], name: "index_users_on_approx_total_earned", order: :desc
     t.index ["email"], name: "index_users_on_email"
+    t.index ["guest_email"], name: "index_users_on_guest_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
     t.index ["slack_id"], name: "index_users_on_slack_id", unique: true
@@ -1420,7 +1423,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_150529) do
   add_foreign_key "raffle_draws", "raffle_participants", column: "winner_participant_id"
   add_foreign_key "raffle_draws", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
-  add_foreign_key "raffle_participants", "users"
   add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
   add_foreign_key "raffle_referrals", "users", column: "referred_user_id"

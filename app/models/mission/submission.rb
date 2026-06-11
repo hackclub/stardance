@@ -88,6 +88,12 @@ class Mission::Submission < ApplicationRecord
     end
   end
 
+  # "Shipped" in the loose sense: any submission still in flight or approved.
+  # Contrast with `approved` for sites that need full completion.
+  scope :not_rejected, -> { where.not(status: "rejected") }
+  # Still working its way through certification/review.
+  scope :in_review, -> { where.not(status: %w[approved rejected]) }
+
   scope :reviewable,  -> { pending }
   scope :unredeemed,  -> { approved.where(shop_order_id: nil) }
   scope :stale_pending, ->(days: 7) {

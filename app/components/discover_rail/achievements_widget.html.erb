@@ -15,7 +15,10 @@
   <% if recent_achievements.any? %>
     <div class="achievements-widget__icons">
       <% recent_achievements.each do |item| %>
-        <div class="achievements-widget__icon" title="<%= item[:achievement].name %>">
+        <div class="achievements-widget__icon"
+             data-controller="tooltip"
+             data-tooltip-message-value="<%= item[:achievement].name %>"
+             data-tooltip-position-value="top">
           <%= helpers.achievement_icon item[:achievement].icon, earned: true, class: "achievements-widget__icon-img" %>
         </div>
       <% end %>

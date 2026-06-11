@@ -1,5 +1,5 @@
 <%# locals: user:, user_counter:, value_method: %>
-<% rank = user_counter %>
+<% rank = user_counter + 1 %>
 <% is_current_user = current_user&.id == user.id %>
 <li class="leaderboard-row leaderboard-row--rank-<%= rank %> <%= 'leaderboard-row--current' if is_current_user %>">
   <span class="leaderboard-row__rank" aria-label="Rank <%= rank %>">#<%= rank %></span>

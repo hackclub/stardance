@@ -1,0 +1,35 @@
+<section class="rail-widget events-widget" aria-label="Upcoming events">
+  <h3 class="rail-widget__title">Upcoming events</h3>
+  <ul class="events-widget__list">
+    <% events.each do |event| %>
+      <li class="events-widget__item">
+        <% if event[:avatar].present? %>
+          <%= image_tag event[:avatar], alt: "", class: "events-widget__avatar", loading: "lazy" %>
+        <% else %>
+          <span class="events-widget__avatar events-widget__avatar--empty" aria-hidden="true"></span>
+        <% end %>
+        <span class="events-widget__body">
+          <span class="events-widget__name">
+            <% if event[:url].present? %>
+              <%= link_to event[:title], event[:url], class: "events-widget__name-link", target: "_blank", rel: "noopener" %>
+            <% else %>
+              <%= event[:title] %>
+            <% end %>
+            <% if event[:ama] %>
+              <span class="events-widget__badge">AMA</span>
+            <% end %>
+          </span>
+          <span class="events-widget__meta">
+            <%= event[:leader] %> ·
+            <time class="events-widget__time"
+                  datetime="<%= event[:start].iso8601 %>"
+                  data-controller="event-time"
+                  data-event-time-start-value="<%= event[:start].iso8601 %>"
+                  data-event-time-end-value="<%= event[:end]&.iso8601 %>"><%= relative_time(event) %></time>
+          </span>
+        </span>
+      </li>
+    <% end %>
+  </ul>
+  <%= link_to "See all events →", "https://events.hackclub.com", target: "_blank", rel: "noopener", class: "rail-widget__link" %>
+</section>

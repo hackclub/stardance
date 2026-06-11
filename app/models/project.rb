@@ -73,6 +73,7 @@ class Project < ApplicationRecord
     user ? where.not(id: user.projects) : all
   }
   scope :fire, -> { where.not(marked_fire_at: nil) }
+  scope :fire_nomination_pending, -> { where.not(nominated_fire_at: nil).where(marked_fire_at: nil) }
   scope :with_ship_events, -> { joins(:ship_events).distinct }
   scope :with_ship_events_between, ->(start_date, end_date) {
     joins(:posts)
@@ -134,7 +135,80 @@ class Project < ApplicationRecord
   # ships are regular, non-mission ships.
   def shipped_to_mission?(mission)
     return false if mission.nil?
-    mission_submissions.where(mission_id: mission.id).where.not(status: "rejected").exists?
+    mission_submissions.not_rejected.where(mission_id: mission.id).exists?
+  end
+
+  # The one exception to the shipped-projects-keep-their-mission rule: a
+  # shipped project may still attach a mission that lists one it shipped to
+  # as a direct prerequisite (e.g. webOS 1 -> webOS 2).
+  def eligible_follow_up_mission?(mission)
+    return false if mission.nil? || !mission.has_prerequisites?
+    mission_submissions.not_rejected.where(mission_id: mission.prerequisite_ids).exists?
+  end
+
+  # Makes `mission` the current mission, replacing the active attachment
+  # when the swap is allowed: draft projects switch freely, shipped projects
+  # only move to a follow-up or back to a mission they shipped to. Otherwise
+  # the attachment validations raise RecordInvalid.
+  def attach_mission!(mission)
+    with_lock do
+      current = current_mission_attachment
+      current.detach! if current && may_swap_mission_to?(mission)
+      mission_attachments.create!(mission: mission, attached_at: Time.current)
+    end
+  end
+
+  # Detaches the current mission and returns the fallback it re-attached,
+  # if any — a shipped project never goes mission-less.
+  def detach_mission!
+    with_lock do
+      attachment = current_mission_attachment
+      next nil unless attachment
+
+      attachment.detach!
+      fallback = fallback_mission_after_detaching(attachment.mission)
+      mission_attachments.create!(mission: fallback, attached_at: Time.current) if fallback
+      fallback
+    end
+  end
+
+  # The mission a detach falls back to: the most recent one this project
+  # shipped to, other than the mission being detached.
+  def fallback_mission_after_detaching(mission)
+    scope = mission_submissions.not_rejected
+    scope = scope.where.not(mission_id: mission.id) if mission
+    scope.order(created_at: :desc).first&.mission
+  end
+
+  # Whether `mission` may replace the current attachment: draft projects
+  # switch freely; shipped projects only move to a follow-up or back to a
+  # mission they shipped to. The attachment validation enforces this too.
+  def may_swap_mission_to?(mission)
+    !shipped? || shipped_to_mission?(mission) || eligible_follow_up_mission?(mission)
+  end
+
+  # Follow-up missions for the switch UI, in one pass: :ready to attach now
+  # (all prerequisites approved for the user), :awaiting this project's
+  # in-review ships clearing (shown as disabled teasers).
+  def follow_up_targets_for(user)
+    targets = { ready: [], awaiting: [] }
+    mission = current_mission
+    return targets if user.nil? || mission.nil? || !shipped_to_mission?(mission)
+
+    missions = mission.unlocks.available.includes(:prerequisites).to_a
+    return targets if missions.empty?
+
+    completed_ids = user.completed_mission_ids
+    in_review_ids = mission_submissions.in_review.pluck(:mission_id)
+    missions.each do |mission|
+      missing = mission.prerequisite_ids - completed_ids
+      if missing.empty?
+        targets[:ready] << mission
+      elsif (missing - in_review_ids).empty?
+        targets[:awaiting] << mission
+      end
+    end
+    targets
   end
 
   # needs to be implemented

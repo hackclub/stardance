@@ -42,7 +42,6 @@ class Post < ApplicationRecord
     validates :postable_id, presence: true, if: :postable_type?
     validates :project, presence: true, unless: :repost?
 
-    after_commit :invalidate_project_time_cache, on: [ :create, :destroy ]
     after_commit :increment_devlogs_count, on: :create
     after_commit :decrement_devlogs_count, on: :destroy
     after_commit :update_project_duration_seconds, on: [ :create, :destroy ]
@@ -167,12 +166,6 @@ class Post < ApplicationRecord
     #   ).from("available_posts AS posts")
 
     private
-
-    def invalidate_project_time_cache
-      return unless postable_type == "Post::Devlog"
-
-      Rails.cache.delete("project/#{project_id}/time_seconds")
-    end
 
     def increment_devlogs_count
       return unless postable_type == "Post::Devlog"

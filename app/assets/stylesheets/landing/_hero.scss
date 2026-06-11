@@ -137,6 +137,12 @@
   line-height: 1.4;
 }
 
+.hero__subhead-break {
+  @media (max-width: 600px) {
+    display: none;
+  }
+}
+
 // Star character: dangles off the bottom-right of the RSVP button,
 // overlapping it slightly (Figma match).
 .hero__doodle-arrow {

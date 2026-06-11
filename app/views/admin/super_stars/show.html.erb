@@ -1,0 +1,77 @@
+<% content_for :title, "Super Stars" %>
+<h1>Super Stars</h1>
+
+<h2>Pending nominations (<%= @pending_pagy.count %>)</h2>
+<% if @pending_projects.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Project</th>
+        <th>Nominated by</th>
+        <th>Nominated at</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @pending_projects.each do |project| %>
+        <tr>
+          <td><%= project.id %></td>
+          <td><%= link_to project.title, project_path(project) %></td>
+          <td><%= project.nominated_fire_by&.display_name %></td>
+          <td><%= project.nominated_fire_at.strftime("%Y-%m-%d %H:%M") %></td>
+          <td>
+            <%= button_to "Approve", project_magic_path(project), method: :post %>
+            <%= button_to "Reject", project_fire_nomination_path(project), method: :delete,
+                  data: { confirm: "Reject this Super Star nomination?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @pending_pagy.pages > 1 %>
+    <div>
+      <%== @pending_pagy.series_nav %>
+    </div>
+  <% end %>
+<% else %>
+  <p>No pending nominations.</p>
+<% end %>
+
+<h2>Current Super Stars (<%= @stars_pagy.count %>)</h2>
+<% if @super_star_projects.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Project</th>
+        <th>Marked by</th>
+        <th>Marked at</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @super_star_projects.each do |project| %>
+        <tr>
+          <td><%= project.id %></td>
+          <td><%= link_to project.title, project_path(project) %></td>
+          <td><%= project.marked_fire_by&.display_name %></td>
+          <td><%= project.marked_fire_at.strftime("%Y-%m-%d %H:%M") %></td>
+          <td>
+            <%= button_to "Remove", project_magic_path(project), method: :delete,
+                  data: { confirm: "Remove Super Star from this project?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @stars_pagy.pages > 1 %>
+    <div>
+      <%== @stars_pagy.series_nav %>
+    </div>
+  <% end %>
+<% else %>
+  <p>No Super Star projects yet.</p>
+<% end %>
+
+<%= link_to "Go back", admin_projects_path %>

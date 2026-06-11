@@ -13,6 +13,9 @@ application.register("address-select", AddressSelectController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import BulkSelectController from "./bulk_select_controller";
+application.register("bulk-select", BulkSelectController);
+
 import Certification__Ysws__CompleteReviewController from "./certification/ysws/complete_review_controller";
 application.register(
   "certification--ysws--complete-review",
@@ -29,6 +32,12 @@ import Certification__Ysws__DevlogTimeChartController from "./certification/ysws
 application.register(
   "certification--ysws--devlog-time-chart",
   Certification__Ysws__DevlogTimeChartController,
+);
+
+import Certification__FeedbackTemplatesController from "./certification/feedback_templates_controller";
+application.register(
+  "certification--feedback-templates",
+  Certification__FeedbackTemplatesController,
 );
 
 import Certification__QueueController from "./certification/queue_controller";
@@ -102,6 +111,9 @@ application.register("discover-rail-search", DiscoverRailSearchController);
 
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
+
+import EventTimeController from "./event_time_controller";
+application.register("event-time", EventTimeController);
 
 import EmojiPickerController from "./emoji_picker_controller";
 application.register("emoji-picker", EmojiPickerController);
