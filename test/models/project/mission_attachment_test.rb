@@ -17,7 +17,6 @@
 #  index_project_mission_attachments_on_deleted_at  (deleted_at)
 #  index_project_mission_attachments_on_mission_id  (mission_id)
 #  index_project_mission_attachments_on_project_id  (project_id)
-#  index_project_mission_attachments_one_active     (project_id) UNIQUE WHERE ((detached_at IS NULL) AND (deleted_at IS NULL))
 #
 # Foreign Keys
 #

@@ -2,6 +2,45 @@
 # normalized signup email across users and RSVPs, banned users excluded.
 # Refreshed every 2 minutes by RefreshMaterializedAllSignupsJob; the view is
 # created in-migration and intentionally lives outside schema.rb.
+# == Schema Information
+#
+# Table name: materialized_all_signups
+#
+#  actual_referral_source       :text
+#  actual_referral_source_from  :text
+#  amd_referral_group           :text
+#  assumed_referral_source      :text
+#  assumed_referral_source_rate :decimal(, )
+#  country                      :text
+#  country_code                 :string
+#  email                        :text             primary key
+#  first_seen_at_utc            :datetime
+#  first_seen_day_et            :date
+#  geocode_methodology          :text
+#  gpu_raffle_referral_group    :text
+#  ip_address                   :string
+#  is_ambassador_signup         :boolean
+#  is_gpu_raffle_signup         :boolean
+#  is_us                        :boolean
+#  known_referral_source        :text
+#  latitude                     :float
+#  longitude                    :float
+#  missing_referral_source      :boolean
+#  nasa_referral_group          :text
+#  primary_referral_methodology :text
+#  primary_referral_source      :text
+#  raw_refs                     :text             is an Array
+#  raw_user_refs                :text             is an Array
+#  region                       :text
+#  region_code                  :string
+#  seen_in_rsvps                :boolean
+#  seen_in_users                :boolean
+#  source_group                 :text
+#
+# Indexes
+#
+#  index_materialized_all_signups_on_email  (email) UNIQUE
+#
 class Signup < ApplicationRecord
   self.table_name = "materialized_all_signups"
   self.primary_key = "email"
