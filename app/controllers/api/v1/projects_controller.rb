@@ -12,6 +12,7 @@ class Api::V1::ProjectsController < Api::BaseController
       return render json: { error: "You dont have permission to update this project!", request_id: request.request_id }, status: :forbidden
     end
 
+    @project.banner.purge if params[:remove_banner] == "1"
     @project.update!(project_params)
     render :show
   end
@@ -19,6 +20,6 @@ class Api::V1::ProjectsController < Api::BaseController
   private
 
   def project_params
-    params.permit(:title, :description, :repo_url, :demo_url, :readme_url, :ai_declaration)
+    params.permit(:title, :description, :repo_url, :demo_url, :readme_url, :ai_declaration, :banner)
   end
 end

@@ -123,6 +123,20 @@ paths:
           required: false
           schema:
             type: string
+        - name: sort_by
+          in: query
+          description: Sort field (only for type=project). Defaults to `created_at`.
+          required: false
+          schema:
+            type: string
+            enum: [created_at, devlogs_count, duration_seconds, shipped_at]
+        - name: sort_dir
+          in: query
+          description: Sort direction (only for type=project). Defaults to `desc`.
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Page"
       responses:
@@ -198,9 +212,33 @@ paths:
           $ref: "#/components/responses/Unauthorized"
     patch:
       summary: Update the authenticated user's profile
+      description: >-
+        To upload a banner, send the request as `multipart/form-data`.
+        For text-only updates, `application/json` also works.
+        Pass `remove_banner=1` to delete the current banner.
       tags: [Me]
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                bio:
+                  type: string
+                banner:
+                  type: string
+                  format: binary
+                  description: Banner image file (PNG, JPEG, WebP, or GIF; max 8 MB).
+                remove_banner:
+                  type: string
+                  enum: ["1"]
+                  description: Pass `"1"` to delete the current banner.
           application/json:
             schema:
               type: object
@@ -542,7 +580,11 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update a project
-      description: Only project members can update a project.
+      description: >-
+        Only the project author can update a project. 
+        To upload a banner, send the request as `multipart/form-data`.
+        For text-only updates, `application/json` also works.
+        Pass `remove_banner=1` to delete the current banner.
       tags: [Projects]
       parameters:
         - name: id
@@ -552,6 +594,30 @@ paths:
             type: integer
       requestBody:
         content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                repo_url:
+                  type: string
+                demo_url:
+                  type: string
+                readme_url:
+                  type: string
+                ai_declaration:
+                  type: string
+                banner:
+                  type: string
+                  format: binary
+                  description: Banner image file (JPEG, PNG, WebP, HEIC, or HEIF; max 10 MB).
+                remove_banner:
+                  type: string
+                  enum: ["1"]
+                  description: Pass `"1"` to delete the current banner.
           application/json:
             schema:
               type: object
@@ -1423,6 +1489,12 @@ components:
         avatar_url:
           type: string
           nullable: true
+        banner_url:
+          type: string
+          nullable: true
+          description: >-
+            Relative path to the user's banner image. Prepend
+            `https://stardance.hackclub.com` for a full URL. Null if no banner is set.
         balance:
           type: integer
           description: The user's current stardust balance. Only returned on `/users/me`.

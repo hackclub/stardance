@@ -2,6 +2,7 @@ class Api::V1::SearchController < Api::BaseController
   include ApiAuthenticatable
 
   VALID_TYPES = %w[user project post shop_item].freeze
+  VALID_PROJECT_SORT = %w[created_at devlogs_count duration_seconds shipped_at].freeze
 
   def index
     q = params[:q].to_s.strip
@@ -9,6 +10,10 @@ class Api::V1::SearchController < Api::BaseController
 
     unless VALID_TYPES.include?(type)
       return render json: { error: "type must be one of: #{VALID_TYPES.join(', ')}", request_id: request.request_id }, status: :bad_request
+    end
+
+    if q.blank?
+      return render json: { error: "q is required", request_id: request.request_id }, status: :bad_request
     end
 
     return unless (limit = api_limit)
@@ -52,7 +57,10 @@ class Api::V1::SearchController < Api::BaseController
                          .where(project_memberships: { user_id: params[:author_id], role: :owner })
     end
 
-    @pagy, @projects = pagy(projects.order(created_at: :desc), limit: limit)
+    sort_col = VALID_PROJECT_SORT.include?(params[:sort_by]) ? params[:sort_by] : "created_at"
+    sort_dir = params[:sort_dir] == "asc" ? :asc : :desc
+
+    @pagy, @projects = pagy(projects.order(sort_col => sort_dir), limit: limit)
     preload_devlog_ids_by_project(@projects)
     render "api/v1/search/projects"
   end

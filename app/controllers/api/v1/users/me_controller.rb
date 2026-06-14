@@ -7,6 +7,7 @@ class Api::V1::Users::MeController < Api::BaseController
   end
 
   def update
+    current_api_user.banner.purge if params[:remove_banner] == "1"
     current_api_user.update!(me_params)
     @user = current_api_user
     render "api/v1/users/show"
@@ -15,6 +16,6 @@ class Api::V1::Users::MeController < Api::BaseController
   private
 
   def me_params
-    params.permit(:bio, :display_name, :first_name, :last_name)
+    params.permit(:bio, :display_name, :first_name, :last_name, :banner)
   end
 end
