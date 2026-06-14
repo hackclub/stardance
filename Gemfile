@@ -133,6 +133,7 @@ gem "chartkick"
 # Database-level advisory locks for preventing race conditions across processes
 gem "with_advisory_lock"
 
+gem "rack-cors"
 gem "rack-attack"
 gem "query_count"
 
