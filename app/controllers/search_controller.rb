@@ -91,7 +91,7 @@ class SearchController < ApplicationController
 
   def meetup_results(query)
     return [] if query.blank?
-    return [] unless Flipper.enabled?(:week_2_release, current_user)
+    return [] unless Flipper.enabled?(:expedition_release, current_user)
 
     Expedition.browseable
       .matching(query)

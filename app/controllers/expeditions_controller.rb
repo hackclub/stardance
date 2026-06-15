@@ -1,5 +1,5 @@
 class ExpeditionsController < ApplicationController
-  before_action -> { head :not_found unless Flipper.enabled?(:week_2_release, current_user) }
+  before_action -> { head :not_found unless Flipper.enabled?(:expedition_release, current_user) }
   before_action -> { @body_class = "app-layout-page" }
 
   def index
