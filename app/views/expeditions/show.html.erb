@@ -22,7 +22,8 @@
 
       <% map_url = expedition_map_embed_url(@expedition) %>
       <% has_maps = @expedition.google_maps_url.present? || @expedition.apple_maps_url.present? %>
-      <% if @expedition.ambassador_name.present? || @expedition.venue_address.present? || has_maps || map_url %>
+      <% show_details = @signed_up && current_user&.identity_verified? %>
+      <% if show_details && (@expedition.ambassador_name.present? || @expedition.venue_address.present? || has_maps || map_url) %>
         <section class="expedition-detail">
           <% if @expedition.ambassador_name.present? %>
             <p class="expedition-hero__where">
