@@ -2,7 +2,7 @@
 
 class AmbassadorService
   class << self
-    def enabled? = ENV["AMBASSADOR_DATA_ACCESS_KEY"].present?
+    def enabled? = data_access_key.present?
 
     def expeditions
       return nil unless enabled?
@@ -19,12 +19,14 @@ class AmbassadorService
 
     private
 
+    def data_access_key = Rails.application.credentials.dig(:ambassador, :data_access_key)
+
     def api_url = ENV.fetch("AMBASSADOR_API_URL", "https://ambassador.hackclub.com")
 
     def connection
       @connection ||= Faraday.new(url: api_url) do |faraday|
         faraday.request :url_encoded
-        faraday.headers["X-Stardance-Data-Access-Key"] = ENV["AMBASSADOR_DATA_ACCESS_KEY"]
+        faraday.headers["X-Stardance-Data-Access-Key"] = data_access_key
         faraday.response :json
         faraday.adapter Faraday.default_adapter
       end
