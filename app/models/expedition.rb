@@ -98,7 +98,7 @@ class Expedition < ApplicationRecord
 
   def location
     region = [ city, state.presence || country ].compact_blank.join(", ")
-    region.presence || venue_name.presence || "Location TBA"
+    region.presence || "Location TBA"
   end
 
   def distance_km_from(origin_lat, origin_lon)
