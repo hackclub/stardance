@@ -77,6 +77,7 @@
 @use "pages/errors/not_authorized";
 @use "pages/errors/error" as errors_error;
 @use "pages/guides";
+@use "pages/expeditions/index" as expeditions_index;
 @use "pages/missions/index" as missions_index;
 @use "pages/missions/show" as missions_show;
 @use "pages/missions/guide" as missions_guide;
