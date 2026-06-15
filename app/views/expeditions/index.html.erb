@@ -1,0 +1,78 @@
+<% content_for :title, "Expeditions" %>
+<% content_for :og_title, "Expeditions on Stardance" %>
+<% content_for :og_description, "In-person meetups hosted by Hack Club Ambassadors. Find the one nearest you and come build together." %>
+
+<div class="app-layout">
+  <div class="app-layout__main">
+    <section class="expeditions">
+      <header class="expeditions__bar">
+        <h1 class="expeditions__title">Expeditions</h1>
+        <% if @featured %>
+          <p class="expeditions__lede">
+            <% if @signed_up %>
+              You're signed up! Keep checking this page for more information.
+            <% else %>
+              In-person meetups hosted by Stardance ambassadors!
+            <% end %>
+          </p>
+        <% else %>
+          <p class="expeditions__lede">There are no expeditions available to venture on right now. Check back soon!</p>
+        <% end %>
+      </header>
+
+      <% if @featured %>
+        <% featured_distance_label = expedition_distance_label(@origin && @featured.distance_km_from(*@origin)) %>
+        <%= render "expedition_hero",
+                    expedition: @featured,
+                    signed_up: @signed_up,
+                    distance_label: featured_distance_label,
+                    details_url: expedition_path(@featured) %>
+
+        <% if @more.any? %>
+          <details class="expeditions__drawer"
+                   data-controller="expeditions-search"
+                   <%= "open" if @expanded %>>
+            <summary class="expeditions__drawer-summary" data-action="click->expeditions-search#guardToggle">
+              <h2 class="expeditions__section-title">More expeditions</h2>
+              <span class="expeditions__drawer-caret" aria-hidden="true">
+                <%= inline_svg_tag "icons/chevron-down.svg" %>
+              </span>
+              <span class="expeditions__search" data-expeditions-search-target="search">
+                <%= inline_svg_tag "icons/search.svg", class: "expeditions__search-icon" %>
+                <input type="search"
+                       class="expeditions__search-input"
+                       placeholder="Search expeditions…"
+                       aria-label="Search expeditions"
+                       autocomplete="off"
+                       data-expeditions-search-target="input"
+                       data-action="input->expeditions-search#filter keydown->expeditions-search#guardToggle keyup->expeditions-search#guardToggle">
+              </span>
+            </summary>
+
+            <p class="expeditions__filter">
+              <%= link_to (@show_past ? "Hide past expeditions" : "Show past expeditions"),
+                          expeditions_path(past: (@show_past ? nil : "1"), expanded: "1"),
+                          class: "expeditions__filter-toggle#{' expeditions__filter-toggle--hide' if @show_past}" %>
+            </p>
+
+            <ul class="expeditions__grid">
+              <% @more.each do |expedition| %>
+                <li data-expeditions-search-target="item"
+                    data-search-text="<%= [ expedition.title, expedition.location ].join(" ").downcase %>">
+                  <%= render "expedition_card", expedition: expedition %>
+                </li>
+              <% end %>
+            </ul>
+
+            <p class="expeditions__search-empty" data-expeditions-search-target="empty" hidden>
+              No expeditions match your search.
+            </p>
+            <div class="expeditions__sentinel" data-expeditions-search-target="sentinel" aria-hidden="true"></div>
+          </details>
+        <% end %>
+      <% end %>
+    </section>
+  </div>
+
+  <%= render DiscoverRailComponent.new(search: false) %>
+</div>

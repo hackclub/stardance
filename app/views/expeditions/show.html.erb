@@ -1,0 +1,83 @@
+<% content_for :title, @expedition.title %>
+<% content_for :og_title, "#{@expedition.title} on Stardance" %>
+<% content_for :og_description, "An in-person Stardance meetup in #{@expedition.location}. Come build together." %>
+
+<% distance_label = expedition_distance_label(@origin && @expedition.distance_km_from(*@origin)) %>
+
+<div class="app-layout">
+  <div class="app-layout__main">
+    <section class="expeditions">
+      <header class="expeditions__bar expeditions__bar--detail">
+        <h1 class="expeditions__title">Expeditions</h1>
+        <%= link_to expeditions_path, class: "expeditions__back" do %>
+          <span aria-hidden="true">←</span>
+          <span>All expeditions</span>
+        <% end %>
+      </header>
+
+      <%= render "expedition_hero",
+                  expedition: @expedition,
+                  signed_up: @signed_up,
+                  distance_label: distance_label %>
+
+      <% map_url = expedition_map_embed_url(@expedition) %>
+      <% has_maps = @expedition.google_maps_url.present? || @expedition.apple_maps_url.present? %>
+      <% if @expedition.ambassador_name.present? || @expedition.venue_address.present? || has_maps || map_url %>
+        <section class="expedition-detail">
+          <% if @expedition.ambassador_name.present? %>
+            <p class="expedition-hero__where">
+              Hosted by
+              <% if @expedition.ambassador_slack_url %>
+                <%= link_to @expedition.ambassador_name, @expedition.ambassador_slack_url,
+                            class: "expedition-host-link", target: "_blank", rel: "noopener" %>
+              <% else %>
+                <%= @expedition.ambassador_name %>
+              <% end %>
+            </p>
+          <% end %>
+
+          <% if @expedition.venue_address.present? %>
+            <p class="expedition-detail__address"
+               data-controller="tooltip copy"
+               data-tooltip-message-value="Click to copy"
+               data-copy-text-value="<%= @expedition.venue_address %>"
+               data-action="click->copy#copy"
+               tabindex="0" role="button"><strong>Address:</strong> <%= @expedition.venue_address %></p>
+          <% end %>
+
+          <% if has_maps %>
+            <div class="expedition-detail__maps">
+              <% if @expedition.google_maps_url.present? %>
+                <%= link_to @expedition.google_maps_url,
+                            class: "expeditions__filter-toggle expedition-detail__map-link",
+                            target: "_blank", rel: "noopener" do %>
+                  <%= inline_svg_tag "icons/google-maps.svg", class: "expedition-detail__map-icon", aria: { hidden: true } %>
+                  <span>Open in Google Maps</span>
+                <% end %>
+              <% end %>
+              <% if @expedition.apple_maps_url.present? %>
+                <%= link_to @expedition.apple_maps_url,
+                            class: "expeditions__filter-toggle expedition-detail__map-link",
+                            target: "_blank", rel: "noopener" do %>
+                  <%= inline_svg_tag "icons/apple-maps.svg", class: "expedition-detail__map-icon", aria: { hidden: true } %>
+                  <span>Open in Apple Maps</span>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+
+          <% if map_url %>
+            <div class="expedition-detail__map">
+              <iframe src="<%= map_url %>"
+                      title="Map showing <%= @expedition.location %>"
+                      loading="lazy"
+                      referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+    </section>
+  </div>
+
+  <%= render DiscoverRailComponent.new(search: false) %>
+</div>

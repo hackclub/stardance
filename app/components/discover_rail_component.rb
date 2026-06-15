@@ -10,11 +10,14 @@
 #   render DiscoverRailComponent.new                       # widgets from the controller
 #   render DiscoverRailComponent.new(widgets: [:dino])     # an explicit override
 class DiscoverRailComponent < ViewComponent::Base
-  def initialize(widgets: nil, user: nil, context: nil)
+  def initialize(widgets: nil, user: nil, context: nil, search: true)
     @widget_slugs = widgets
     @user = user
     @context = context
+    @search = search
   end
+
+  def search? = @search
 
   def widgets
     @widgets ||= widget_slugs.filter_map { |slug| build_widget(slug) }

@@ -1,0 +1,45 @@
+<% details_url = local_assigns.fetch(:details_url, nil) %>
+<article class="expedition-hero">
+  <% if signed_up || distance_label %>
+    <p class="expedition-hero__eyebrow">
+      <% if signed_up %>
+        <span class="status-pill status-pill--approved">You're going</span>
+      <% end %>
+      <% if distance_label %>
+        <span class="expedition-hero__distance"><%= distance_label %> away</span>
+      <% end %>
+    </p>
+  <% end %>
+
+  <div class="expedition-hero__headline">
+    <h2 class="expedition-hero__title"><%= expedition.title %></h2>
+    <% if details_url %>
+      <%= link_to details_url, class: "expedition-details-link expedition-hero__details" do %>
+        <span>View details</span>
+        <span aria-hidden="true">→</span>
+      <% end %>
+    <% end %>
+  </div>
+
+  <p class="expedition-hero__where">
+    <%= expedition.location %><% if expedition.date %> · <%= expedition.date.strftime("%b %-d, %Y") %><% end %>
+  </p>
+
+  <% open_channel = signed_up && expedition.slack_channel_url.present? %>
+  <% can_sign_up = !signed_up && !expedition.concluded %>
+  <% if open_channel || can_sign_up %>
+    <div class="expedition-hero__actions">
+      <% if open_channel %>
+        <%= link_to "Open the channel", expedition.slack_channel_url,
+                    class: "action-btn action-btn--large action-btn--primary",
+                    target: "_blank", rel: "noopener" %>
+      <% else %>
+        <%= render SpecialActionButtonComponent.new(
+                    text: "Sign up",
+                    href: expedition_signup_url(expedition),
+                    target: "_blank",
+                    rel: "noopener") %>
+      <% end %>
+    </div>
+  <% end %>
+</article>

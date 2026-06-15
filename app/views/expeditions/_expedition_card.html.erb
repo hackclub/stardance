@@ -1,0 +1,20 @@
+<article class="expedition-card">
+  <div class="expedition-card__body">
+    <div class="expedition-card__headline">
+      <h3 class="expedition-card__title"><%= expedition.title %></h3>
+      <% if expedition.concluded %>
+        <span class="status-pill status-pill--approved">Completed</span>
+      <% end %>
+    </div>
+    <p class="expedition-card__where">
+      <%= expedition.location %><% if expedition.date %> · <%= expedition.date.strftime("%b %-d, %Y") %><% end %>
+    </p>
+
+    <div class="expedition-card__cta">
+      <%= link_to expedition_path(expedition), class: "expedition-details-link" do %>
+        <span>View details</span>
+        <span aria-hidden="true">→</span>
+      <% end %>
+    </div>
+  </div>
+</article>
