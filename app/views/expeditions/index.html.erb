@@ -32,22 +32,23 @@
           <details class="expeditions__drawer"
                    data-controller="expeditions-search"
                    <%= "open" if @expanded %>>
-            <summary class="expeditions__drawer-summary" data-action="click->expeditions-search#guardToggle">
+            <summary class="expeditions__drawer-summary">
               <h2 class="expeditions__section-title">More expeditions</h2>
               <span class="expeditions__drawer-caret" aria-hidden="true">
                 <%= inline_svg_tag "icons/chevron-down.svg" %>
               </span>
-              <span class="expeditions__search" data-expeditions-search-target="search">
-                <%= inline_svg_tag "icons/search.svg", class: "expeditions__search-icon" %>
-                <input type="search"
-                       class="expeditions__search-input"
-                       placeholder="Search expeditions…"
-                       aria-label="Search expeditions"
-                       autocomplete="off"
-                       data-expeditions-search-target="input"
-                       data-action="input->expeditions-search#filter keydown->expeditions-search#guardToggle keyup->expeditions-search#guardToggle">
-              </span>
             </summary>
+
+            <span class="expeditions__search">
+              <%= inline_svg_tag "icons/search.svg", class: "expeditions__search-icon" %>
+              <input type="search"
+                     class="expeditions__search-input"
+                     placeholder="Search expeditions…"
+                     aria-label="Search expeditions"
+                     autocomplete="off"
+                     data-expeditions-search-target="input"
+                     data-action="input->expeditions-search#filter">
+            </span>
 
             <p class="expeditions__filter">
               <%= link_to (@show_past ? "Hide past expeditions" : "Show past expeditions"),

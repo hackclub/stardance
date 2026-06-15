@@ -183,19 +183,14 @@
 }
 
 .expeditions__search {
-  display: none;
+  display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  margin-left: auto;
+  margin-top: var(--space-m);
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid var(--color-set-3-bg);
   background: var(--color-set-1-bg);
-  cursor: default;
-}
-
-.expeditions__drawer[open] .expeditions__search {
-  display: inline-flex;
 }
 
 .expeditions__search-icon {
@@ -353,14 +348,8 @@
     align-items: flex-start;
   }
 
-  .expeditions__drawer-summary {
-    flex-wrap: wrap;
-  }
-
   .expeditions__search {
-    order: 1;
     width: 100%;
-    margin-left: 0;
   }
 
   .expedition-hero,

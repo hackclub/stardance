@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["input", "item", "empty", "sentinel", "search"];
+  static targets = ["input", "item", "empty", "sentinel"];
   static values = { pageSize: { type: Number, default: 6 } };
 
   connect() {
@@ -38,17 +38,6 @@ export default class extends Controller {
       this.sentinelTarget.getBoundingClientRect().top < window.innerHeight
     ) {
       this.showMore();
-    }
-  }
-
-  guardToggle(event) {
-    if (!this.hasSearchTarget || !this.searchTarget.contains(event.target))
-      return;
-
-    if (event.type === "click") {
-      event.preventDefault();
-    } else {
-      event.stopPropagation();
     }
   }
 
