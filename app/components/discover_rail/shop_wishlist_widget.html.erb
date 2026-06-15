@@ -4,7 +4,7 @@
     <div class="shop-goals__container">
       <div class="shop-goals__items">
         <% wishlisted_items.each do |item| %>
-          <div class="shop-goals__item">
+          <div class="shop-goals__item" id="shop_wishlist_item_<%= item.id %>">
             <%= button_to shop_wishlist_path(item.id), method: :delete, class: "shop-goals__remove", title: "Remove from wishlist" do %>
               &times;
             <% end %>
