@@ -296,6 +296,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_214217) do
     t.index ["name"], name: "index_email_templates_on_name", unique: true
   end
 
+  create_table "expeditions", force: :cascade do |t|
+    t.string "airtable_id", null: false
+    t.string "ambassador_name"
+    t.string "ambassador_slack_id"
+    t.string "apple_maps_url"
+    t.string "channel_id"
+    t.string "city"
+    t.boolean "concluded", default: false, null: false
+    t.string "country"
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.string "google_maps_url"
+    t.float "latitude"
+    t.float "longitude"
+    t.string "participant_slack_ids", default: [], null: false, array: true
+    t.string "season"
+    t.string "slug"
+    t.string "state"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "venue_address"
+    t.string "venue_name"
+    t.index ["airtable_id"], name: "index_expeditions_on_airtable_id", unique: true
+    t.index ["concluded", "date", "id"], name: "index_expeditions_on_concluded_and_date_and_id"
+    t.index ["slug"], name: "index_expeditions_on_slug", unique: true
+  end
+
   create_table "flipper_features", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "key", null: false
