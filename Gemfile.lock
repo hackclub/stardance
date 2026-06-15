@@ -661,10 +661,10 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
-    sentry-rails (6.6.0)
+    sentry-rails (6.6.1)
       railties (>= 5.2.0)
-      sentry-ruby (~> 6.6.0)
-    sentry-ruby (6.6.0)
+      sentry-ruby (~> 6.6.1)
+    sentry-ruby (6.6.1)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
@@ -852,7 +852,7 @@ DEPENDENCIES
   rubocop
   rubocop-rails-omakase
   selenium-webdriver
-  sentry-rails (~> 6.5)
+  sentry-rails (~> 6.6)
   sentry-ruby (~> 6.6)
   skylight
   slack-ruby-client
