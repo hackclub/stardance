@@ -566,7 +566,6 @@ module Certification
         }
       ]
     )
-
     end
 
     def notify_owner!
