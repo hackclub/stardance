@@ -376,6 +376,197 @@ module Certification
         project: project,
         ship_cert_id: id
       ).call
+
+      GalaxySlack.client.chat_postMessage(
+      channel: "#goi-logs",
+      blocks: [
+        {
+          type: "header",
+          text: {
+            type: "plain_text",
+            text: ":yay: New YSWS Review in the queue! :yay:"
+          }
+        },
+        {
+          type: "section",
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Project:*\n#{project.title}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Approved by:*\n#{reviewer.display_name}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Submitter:*\n#{owner.display_name}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Hours:*\n#{ship_event.hours_at_ship}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Devlogs:*\n#{project.devlogs.count}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Approved at:*\n#{Time.current.strftime("%d %b %Y • %I:%M %p UTC")}"
+            }
+          ]
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Feedback:*\n#{feedback.presence || "_No feedback provided_"}"
+          }
+        },
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":stardance_star: Project"
+              },
+              url: "https://stardance.hackclub.com/projects/#{project.id}",
+              style: "primary",
+              "action_id": "link_project_click"
+            },
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":gotg: Review"
+              },
+              url: "https://stardance.hackclub.com/admin/certification/review/#{id}",
+              style: "danger",
+              "action_id": "link_review_click"
+            },
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":github: GitHub"
+              },
+              url: project.repo_url,
+              "action_id": "link_github_click"
+            },
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":stardance_star_purple: Demo"
+              },
+              url: project.demo_url,
+              "action_id": "link_demo_click"
+            }
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]
+    )
+
+    GalaxySlack.client.chat_postMessage(
+      channel: "#new-certifications",
+      blocks: [
+        {
+          type: "header",
+          text: {
+            type: "plain_text",
+            text: ":yay: New YSWS Review in the queue! :yay:"
+          }
+        },
+        {
+          type: "section",
+          fields: [
+            {
+              type: "mrkdwn",
+              text: "*Project:*\n#{project.title}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Approved by:*\n#{reviewer.display_name}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Submitter:*\n#{owner.display_name}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Hours:*\n#{ship_event.hours_at_ship}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Devlogs:*\n#{project.devlogs.count}"
+            },
+            {
+              type: "mrkdwn",
+              text: "*Approved at:*\n#{Time.current.strftime("%d %b %Y • %I:%M %p UTC")}"
+            }
+          ]
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Feedback:*\n#{feedback.presence || "_No feedback provided_"}"
+          }
+        },
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":stardance_star: Project"
+              },
+              url: "https://stardance.hackclub.com/projects/#{project.id}",
+              style: "primary",
+              "action_id": "link_project_click"
+            },
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":gotg: Review (Broken)"
+              },
+              url: "https://stardance.hackclub.com/admin/certification/review/#{id}",
+              style: "danger",
+              "action_id": "link_review_click"
+            },
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":github: GitHub"
+              },
+              url: project.repo_url,
+              "action_id": "link_github_click"
+            },
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: ":stardance_star_purple: Demo"
+              },
+              url: project.demo_url,
+              "action_id": "link_demo_click"
+            }
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]
+    )
+
     end
 
     def notify_owner!
