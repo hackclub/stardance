@@ -41,7 +41,7 @@ module Certification
   # design ("I need Funding") stage. Routes through the same reviewer queue as
   # ship certifications (Certification::Reviewable). On approval the project
   # switches to the build stage and the owner accrues an Outpost Ticket discount
-  # for every dollar they didn't request within their tier.
+  # set by the approved tier (B 30% / A 50% / S & X 100% of the ticket price).
   class FundingRequest < ApplicationRecord
     self.table_name = "certification_funding_requests"
 
@@ -62,21 +62,33 @@ module Certification
     # Complexity tiers, mirroring outpost.hackclub.com (B/A/S/X). Keyed by the
     # integer stored in complexity_tier; each carries a max grant + examples.
     TIERS = {
-      1 => { code: "B", name: "B Tier", max_cents: 2_500,  examples: "Macropads and very basic PCBs" },
-      2 => { code: "A", name: "A Tier", max_cents: 12_000, examples: "Keyboards and devboards" },
-      3 => { code: "S", name: "S Tier", max_cents: 18_000, examples: "Ambitious, polished builds" },
-      4 => { code: "X", name: "X Tier", max_cents: 40_000, examples: "Out of this world builds (may include a travel stipend)" }
+      1 => { code: "B", name: "B Tier", max_cents: 2_500,  discount_percent: 30,  examples: "Macropads and very basic PCBs" },
+      2 => { code: "A", name: "A Tier", max_cents: 12_000, discount_percent: 50,  examples: "Keyboards and devboards" },
+      3 => { code: "S", name: "S Tier", max_cents: 18_000, discount_percent: 100, examples: "Ambitious, polished builds" },
+      4 => { code: "X", name: "X Tier", max_cents: 40_000, discount_percent: 100, examples: "Out of this world builds (may include a travel stipend)" }
     }.freeze
 
     # tier => maximum grant, in cents / dollars.
     TIER_MAX_CENTS = TIERS.transform_values { |t| t[:max_cents] }.freeze
     TIER_MAX_DOLLARS = TIER_MAX_CENTS.transform_values { |cents| cents / 100 }.freeze
 
-    # Stardust knocked off the Outpost Ticket per dollar left unrequested.
-    DISCOUNT_STARDUST_PER_DOLLAR = 2
+    # tier => percent of the Outpost Ticket price knocked off when a design is
+    # approved at that tier. Flat per tier — no longer tied to unrequested dollars.
+    TIER_DISCOUNT_PERCENT = TIERS.transform_values { |t| t[:discount_percent] }.freeze
 
     # Stardust a reviewer earns per completed funding review.
     REVIEW_BOUNTY = 1
+
+    # tier id => { code:, pct:, sd: } for client-side previews (funding modal).
+    def self.tier_discount_summary
+      TIERS.each_with_object({}) do |(id, t), summary|
+        summary[id] = {
+          code: t[:code],
+          pct: t[:discount_percent],
+          sd: (t[:discount_percent] * User::OUTPOST_TICKET_BASE / 100.0).round
+        }
+      end
+    end
 
     validates :complexity_tier, inclusion: { in: TIER_MAX_CENTS.keys }
     validates :requested_amount_cents, numericality: { only_integer: true, greater_than: 0 }
@@ -164,6 +176,9 @@ module Certification
     def tier_label = tier_name || "Tier #{complexity_tier}"
     def tier_max_cents = tier[:max_cents]
     def tier_max_dollars = tier_max_cents ? tier_max_cents / 100 : nil
+    def tier_discount_percent = tier[:discount_percent].to_i
+    # Flat Stardust knocked off the Outpost Ticket for this tier.
+    def tier_discount_stardust = (tier_discount_percent * User::OUTPOST_TICKET_BASE / 100.0).round
     def requested_amount_dollars = (requested_amount_cents || 0) / 100
     def final_amount_cents = approved_amount_cents || requested_amount_cents
     def final_amount_dollars = (final_amount_cents || 0) / 100
@@ -211,8 +226,7 @@ module Certification
       end
     end
 
-    # Reviewers can approve for less than requested, but never above the tier max
-    # (keeps the unrequested-dollar discount non-negative).
+    # Reviewers can approve for less than requested, but never above the tier max.
     def approved_within_tier_max
       return if approved_amount_cents.blank? || complexity_tier.blank?
       return unless TIER_MAX_CENTS.key?(complexity_tier)
@@ -254,15 +268,14 @@ module Certification
       end
     end
 
-    # 2 Stardust per unrequested dollar within the tier, cumulative on the owner.
+    # Flat per-tier discount toward the Outpost Ticket, cumulative on the owner.
     # Snapshotted into discount_stardust_awarded so re-saving an approved request
     # never double-accrues.
     def accrue_discount_for_owner!
       return unless approved?
       return if discount_stardust_awarded.present?
 
-      unused_dollars = [ (tier_max_cents - final_amount_cents) / 100, 0 ].max
-      awarded = unused_dollars * DISCOUNT_STARDUST_PER_DOLLAR
+      awarded = tier_discount_stardust
 
       owner = project.memberships.owner.first&.user || user
       owner.with_lock do

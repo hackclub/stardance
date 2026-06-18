@@ -7,7 +7,10 @@
 
     <div class="header-content">
       <div class="header-left">
-        <h1>YSWS Review</h1>
+        <div class="ysws-title-row">
+          <h1>YSWS Review</h1>
+          <%= render "projects/fire_controls", project: @review.project %>
+        </div>
         <div class="header-title-row">
           <h2 class="project-name"><%= @review.project.title %></h2>
           <%= review_status_badge(@review) %>
@@ -161,7 +164,7 @@
           <div class="detail-item">
             <span class="detail-key">Project:</span>
             <span class="detail-value">
-              <%= link_to @review.project.title, admin_project_path(@review.project), class: "link-primary" %>
+              <%= link_to @review.project.title, project_path(@review.project), class: "link-primary" %>
             </span>
           </div>
 

@@ -592,6 +592,90 @@ body:has(.certification-ysws) {
       align-items: flex-start;
       flex-wrap: wrap;
     }
+
+    // Title row carries the page heading plus the shared Super Star (magic)
+    // controls partial (app/views/projects/_fire_controls.html.erb). That
+    // partial ships .project-show__* classes that only live in the project-show
+    // bundle, so the rules below re-skin them to match this admin header.
+    .ysws-title-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-m);
+      flex-wrap: wrap;
+    }
+
+    .project-show__pill {
+      padding: var(--space-xxs) var(--space-m);
+      border-radius: var(--profile-radius);
+      border: 2px solid var(--color-space-text);
+      background: transparent;
+      color: var(--color-space-text);
+      font-family: var(--font-family-sans);
+      font-size: var(--font-size-s);
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+
+      // Yellow at rest; on hover it blooms into the same extra-highlight
+      // gradient a Super Star project's --fire badge wears, so the action
+      // previews the reward it grants.
+      &--save {
+        background: rgba(255, 229, 100, 0.1);
+        border-color: var(--color-brand-yellow);
+        color: var(--color-brand-yellow);
+
+        &:hover {
+          background: var(--gradient-extra-highlight) center / cover no-repeat;
+          border-color: transparent;
+          color: var(--color-set-1-bg);
+          box-shadow: 0 4px 12px rgba(255, 229, 100, 0.3);
+        }
+      }
+
+      &--outline {
+        border-color: var(--color-brand-salmon);
+        color: var(--color-brand-salmon);
+
+        &:hover {
+          background: rgba(255, 141, 157, 0.1);
+          box-shadow: 0 4px 12px rgba(255, 141, 157, 0.3);
+        }
+      }
+    }
+
+    .project-show__pill-form {
+      display: contents;
+    }
+
+    .project-show__badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-xxs) var(--space-s);
+      border-radius: 999px;
+      font-size: var(--font-size-s);
+      font-weight: 700;
+      white-space: nowrap;
+
+      &--fire {
+        background: var(--gradient-extra-highlight) center / cover no-repeat;
+        color: var(--color-set-1-bg);
+      }
+
+      &--nominated {
+        background: color-mix(
+          in srgb,
+          var(--color-brand-yellow) 16%,
+          transparent
+        );
+        color: var(--color-brand-yellow);
+      }
+    }
   }
 
   // Repo Platform Card - Compact Vertical Layout

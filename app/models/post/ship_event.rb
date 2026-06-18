@@ -73,6 +73,7 @@ class Post::ShipEvent < ApplicationRecord
     where(certification_status: "approved", payout: nil)
       .where("post_ship_events.votes_count < ?", VOTES_TO_LEAVE_POOL)
       .where("post_ship_events.hours_at_ship > 0")
+      .where.not(id: Mission::Submission.where(deleted_at: nil, payout_path: "static_prize").select(:ship_event_id))
   }
   scope :paid_out, -> { where(certification_status: "approved").where.not(payout: nil) }
 

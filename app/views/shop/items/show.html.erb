@@ -311,7 +311,7 @@
                 </div>
                 <% if @shop_item.is_a?(ShopItem::OutpostTicket) && current_user.outpost_discount_stardust.to_i > 0 %>
                     <div class="shop-order__summary-outpost">
-                        <p><%= safe_join([ "You've earned ", stardust_icon, " ", current_user.outpost_discount_stardust.to_s, " toward the Outpost Ticket from unrequested funding." ]) %></p>
+                        <p><%= safe_join([ "You've earned ", stardust_icon, " ", current_user.outpost_discount_stardust.to_s, " toward the Outpost Ticket from your funded hardware designs." ]) %></p>
                         <% if current_user.outpost_flight_stipend > 0 %>
                             <p><%= safe_join([ "That covers the ticket and leaves ", stardust_icon, " ", content_tag(:strong, current_user.outpost_flight_stipend.to_s), " toward a flight stipend." ]) %></p>
                         <% end %>

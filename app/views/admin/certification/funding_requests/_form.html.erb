@@ -41,8 +41,8 @@
           value: (funding_request.approved_amount_dollars || funding_request.requested_amount_dollars),
           min: 0, max: funding_request.tier_max_dollars, step: 1 %>
     <p class="review-form__hint">
-      Requested $<%= funding_request.requested_amount_dollars %>. Every unrequested dollar earns the owner
-      <%= Certification::FundingRequest::DISCOUNT_STARDUST_PER_DOLLAR %> Stardust toward the Outpost Ticket.
+      Requested $<%= funding_request.requested_amount_dollars %>. Approving earns the owner the <%= funding_request.tier_label %> discount:
+      <%= funding_request.tier_discount_percent %>% (✦<%= funding_request.tier_discount_stardust %>) off the Outpost Ticket.
     </p>
   </div>
 

@@ -7,8 +7,8 @@
 <%# The video-drop controller sits on the form (not the drop zone) so its
     submitBtn target is in scope and it can block submits mid-upload. %>
 <%= form_with model: ship, url: admin_certification_ship_path(ship), method: :patch, class: "review-form",
-      data: { controller: "certification--video-drop certification--feedback-templates",
-              action: "submit->certification--video-drop#guardSubmit",
+      data: { controller: "certification--video-drop certification--feedback-templates certification--screenshot-check",
+              action: "submit->certification--video-drop#guardSubmit submit->certification--screenshot-check#guardSubmit",
               "certification--video-drop-over-class": "video-drop--over",
               "certification--video-drop-uploading-class": "video-drop--uploading",
               "certification--video-drop-done-class": "video-drop--done",
@@ -33,13 +33,29 @@
   <% end %>
 
   <fieldset class="review-form__fieldset">
+    <legend>Does the screenshot actually show off the project?</legend>
+    <label class="review-form__option">
+      <%= radio_button_tag :screenshot_verified, "yes", params[:screenshot_verified] == "yes", required: true,
+            data: { action: "change->certification--screenshot-check#toggle" } %>
+      <span>Yes</span>
+    </label>
+    <label class="review-form__option">
+      <%= radio_button_tag :screenshot_verified, "no", params[:screenshot_verified] == "no", required: true,
+            data: { action: "change->certification--screenshot-check#toggle" } %>
+      <span>No</span>
+    </label>
+  </fieldset>
+
+  <fieldset class="review-form__fieldset">
     <legend>Verdict</legend>
     <label class="review-form__option">
-      <%= f.radio_button :status, "approved", required: true %>
+      <%= f.radio_button :status, "approved", required: true,
+            data: { action: "change->certification--screenshot-check#toggle" } %>
       <span>Approve</span>
     </label>
     <label class="review-form__option">
-      <%= f.radio_button :status, "returned", required: true %>
+      <%= f.radio_button :status, "returned", required: true,
+            data: { action: "change->certification--screenshot-check#toggle" } %>
       <span>Reject</span>
     </label>
   </fieldset>
@@ -112,9 +128,15 @@
     <% end %>
   </div>
 
+  <div class="alert alert-warning" role="alert" hidden
+       data-certification--screenshot-check-target="warning">
+    If the screenshot isn't good, the project isn't shipped.
+  </div>
+
   <div class="review-form__actions">
     <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary",
-          data: { "certification--video-drop-target": "submitBtn" } %>
+          data: { "certification--video-drop-target": "submitBtn",
+                  "certification--screenshot-check-target": "submit" } %>
     <%= link_to "Skip and get next", next_admin_certification_ships_path(skip: ship.id),
           class: "action-btn action-btn--small action-btn--secondary" %>
     <button type="submit" form="unclaim-form-<%= ship.id %>"

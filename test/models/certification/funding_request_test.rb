@@ -72,19 +72,19 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
     fr.update!(reviewer: @reviewer, status: :approved)
 
     assert_equal "build", @project.reload.hardware_stage
-    # tier 3 (S) max $180, approved $60 => $120 unused * 2 = 240
-    assert_equal 240, @owner.reload.outpost_discount_stardust
+    # tier 3 (S) => flat 100% discount on the 300✦ Outpost Ticket = 300
+    assert_equal 300, @owner.reload.outpost_discount_stardust
     assert_equal Certification::FundingRequest::REVIEW_BOUNTY, fr.reload.stardust_earned
   end
 
-  test "reviewer can approve for less than requested, increasing the discount" do
+  test "approving for less than requested still grants the full flat tier discount" do
     fr = @project.certification_funding_requests.create!(
       user: @owner, complexity_tier: 3, requested_amount_cents: 10_000, status: :pending
     )
     fr.update!(reviewer: @reviewer, status: :approved, approved_amount_dollars: 40)
 
-    # approved $40 of $180 (S) max => $140 unused * 2 = 280
-    assert_equal 280, @owner.reload.outpost_discount_stardust
+    # flat per-tier discount: the approved amount no longer affects it; tier 3 (S) = 300
+    assert_equal 300, @owner.reload.outpost_discount_stardust
   end
 
   test "discount accrual is idempotent across re-saves" do
@@ -92,10 +92,10 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
       user: @owner, complexity_tier: 3, requested_amount_cents: 6_000, status: :pending
     )
     fr.update!(reviewer: @reviewer, status: :approved)
-    assert_equal 240, @owner.reload.outpost_discount_stardust
+    assert_equal 300, @owner.reload.outpost_discount_stardust
 
     fr.update!(feedback: "nice work")
-    assert_equal 240, @owner.reload.outpost_discount_stardust
+    assert_equal 300, @owner.reload.outpost_discount_stardust
   end
 
   test "returned requests leave the project and discount untouched" do

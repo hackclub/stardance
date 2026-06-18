@@ -27,6 +27,15 @@
 
     <div class="ship-review__body">
       <section class="ship-review__details">
+        <div class="ship-review__panel">
+          <h2 class="ship-review__panel-title">Screenshot</h2>
+          <% if @ship_event&.attachments&.any? %>
+            <%= render "shared/post_media", attachments: @ship_event.attachments %>
+          <% else %>
+            <p class="ship-review__no-declaration">No screenshot was submitted with this ship event.</p>
+          <% end %>
+        </div>
+
         <% if @ship.project.description.present? %>
           <div class="ship-review__panel">
             <h2 class="ship-review__panel-title">Description</h2>

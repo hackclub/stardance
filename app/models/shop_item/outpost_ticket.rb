@@ -85,7 +85,7 @@
 #  fk_rails_...  (user_id => users.id)
 #
 # The Outpost Ticket: locked behind the "presentable hardware project" flag and
-# discounted per-user by the Stardust accrued from unrequested funding dollars.
+# discounted per-user by the Stardust accrued from approved funding tiers.
 class ShopItem::OutpostTicket < ShopItem
   # Effective price = base price minus the user's accrued Outpost discount,
   # floored at 0. The overflow past the base becomes a flight stipend

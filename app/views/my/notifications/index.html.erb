@@ -28,7 +28,7 @@
       <p class="notifications-page__empty-hint">Go post some devlogs or comment on a project — when people follow you, reply, or review your ships, it'll show up here.</p>
     </div>
 
-    <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
+    <%== @pagy.series_nav if @pagy.pages > 1 %>
   </main>
 
   <%= render DiscoverRailComponent.new %>

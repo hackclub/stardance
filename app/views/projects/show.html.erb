@@ -1046,7 +1046,7 @@
         <%= form_with url: project_funding_request_path(@project),
                       method: :post,
                       data: { turbo: false },
-                      html: { class: "ship-modal__form", data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json, stardust_per_dollar: Certification::FundingRequest::DISCOUNT_STARDUST_PER_DOLLAR } } do |form| %>
+                      html: { class: "ship-modal__form", data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json, tier_discounts: Certification::FundingRequest.tier_discount_summary.to_json } } do |form| %>
           <div class="ship-modal__panel funding-modal__panel">
             <header class="funding-modal__header">
               <%= image_tag "outpost.png", alt: "Outpost", class: "funding-modal__logo" %>
@@ -1076,7 +1076,7 @@
             <p class="funding-modal__discount" role="status" hidden></p>
 
             <p class="funding-modal__note">
-              Spend less than your tier and the rest becomes Stardust toward the Outpost Ticket.
+              Get your design approved to earn Stardust toward the Outpost Ticket — higher tiers cover more of it.
               <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
             </p>
 
@@ -1095,7 +1095,7 @@
         function fundingValidate(form) {
           if (!form) return;
           var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
-          var perDollar = parseInt(form.dataset.stardustPerDollar || "0", 10);
+          var discounts = JSON.parse(form.dataset.tierDiscounts || "{}");
           var tier = form.querySelector('[name="complexity_tier"]:checked');
           var amountEl = form.querySelector('[name="requested_amount"]');
           var err = form.querySelector(".funding-request__error");
@@ -1112,12 +1112,11 @@
           submit.disabled = over;
 
           if (discountEl) {
-            if (max != null && !isNaN(amount) && amount >= 1 && amount <= max) {
-              var unused = max - amount;
-              var stardust = unused * perDollar;
-              discountEl.textContent = unused > 0
-                ? "Leaving $" + unused + " unrequested earns ✦ " + stardust + " toward the Outpost Ticket."
-                : "Requesting your full tier, so no Outpost Ticket discount this time.";
+            var d = tier ? discounts[tier.value] : null;
+            if (d) {
+              discountEl.textContent = d.pct >= 100
+                ? "Approved at " + d.code + " tier = a free Outpost Ticket (✦ " + d.sd + ", 100% off)."
+                : "Approved at " + d.code + " tier = " + d.pct + "% off the Outpost Ticket (✦ " + d.sd + ").";
               discountEl.hidden = false;
             } else {
               discountEl.hidden = true;

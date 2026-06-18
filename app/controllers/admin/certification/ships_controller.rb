@@ -2,6 +2,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   before_action :release_other_claims, only: [ :next ]
   before_action :set_ship, only: [ :show, :update ]
   before_action :set_submitter_context, only: [ :show, :update ]
+  before_action :set_ship_event, only: [ :show, :update ]
   before_action :set_body_class, only: [ :index, :show, :update, :logs ]
 
   def index
@@ -107,6 +108,14 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def set_ship
     @ship = ::Certification::Ship.find(params[:id])
+  end
+
+  # The screenshot(s) the submitter attached to their ship event. Loaded for
+  # update too so the re-rendered show page keeps them when the verdict form
+  # fails validation. The certification review tracks the project's most recent
+  # ship event (mirrors Certification::Ship#apply_verdict_to_project!).
+  def set_ship_event
+    @ship_event = @ship.project.last_ship_event
   end
 
   # The .app-layout wrapper reserves the sidebar gutter itself; this body class
