@@ -454,6 +454,8 @@ Rails.application.routes.draw do
 
       # public api endpoints
       get "search", to: "search#index", as: :search
+      get "leaderboard", to: "leaderboard#index", as: :leaderboard
+      get "users/me/achievements", to: "users/me/achievements#index", as: :me_achievements
       get "users/me", to: "users/me#show", as: :me
       patch "users/me", to: "users/me#update"
       get "users/me/projects", to: "users/me/projects#index", as: :me_projects
@@ -465,6 +467,7 @@ Rails.application.routes.draw do
       resources :users, only: [ :show ], constraints: { id: /\d+/ } do
         resources :projects, only: [ :index ], module: :users
         resources :posts, only: [ :index ], module: :users
+        resources :achievements, only: [ :index ], module: :users
         resource :follow, only: [ :create ], module: :users
       end
       resources :projects, only: [ :show, :update ] do

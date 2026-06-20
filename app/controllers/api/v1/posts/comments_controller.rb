@@ -55,6 +55,6 @@ class Api::V1::Posts::CommentsController < Api::BaseController
       return
     end
     @devlog = post.postable
-    render json: { error: "Resource not found", request_id: request.request_id }, status: :not_found unless @devlog
+    render json: { error: "Resource not found", request_id: request.request_id }, status: :not_found and return unless @devlog
   end
 end

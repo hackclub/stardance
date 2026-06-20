@@ -58,9 +58,9 @@ tags:
   - name: Search
     description: Endpoints for searching users, projects, posts, and shop items with filters.
   - name: Me
-    description: Endpoints for the authenticated user's profile, projects, feed, and orders.
+    description: Endpoints for the authenticated user's profile, projects, feed, orders, and achievements.
   - name: Users
-    description: Endpoints for viewing other users' profiles and content.
+    description: Endpoints for viewing other users' profiles, content, and earned achievements.
   - name: Projects
     description: Endpoints for viewing and managing projects and their posts.
   - name: Posts
@@ -71,6 +71,8 @@ tags:
     description: Endpoints for browsing missions, their steps, and prizes.
   - name: Resources
     description: Endpoints for browsing the learning resources (guides) catalog.
+  - name: Leaderboard
+    description: Stardust leaderboard — top users by current balance and all-time earned.
 
 paths:
   /search:
@@ -190,6 +192,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /leaderboard:
+    get:
+      summary: Get the stardust leaderboard
+      description: >-
+        Returns the top 100 users ranked by current stardust balance and by all-time stardust earned.
+        Only users who have opted in to leaderboard visibility are included.
+        Also returns the authenticated user's rank in each category.
+      tags: [Leaderboard]
+      responses:
+        "200":
+          description: Leaderboard data.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  by_balance:
+                    type: array
+                    description: Top users by current stardust balance, descending.
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry_Balance"
+                  by_total_earned:
+                    type: array
+                    description: Top users by all-time stardust earned, descending.
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry_TotalEarned"
+                  my_rank:
+                    type: object
+                    description: The authenticated user's rank in each category.
+                    properties:
+                      balance:
+                        type: integer
+                        description: Position in the balance leaderboard (1-based).
+                      total_earned:
+                        type: integer
+                        description: Position in the total-earned leaderboard (1-based).
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -553,6 +597,75 @@ paths:
           $ref: "#/components/responses/InvalidLimit"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /users/me/achievements:
+    get:
+      summary: List the authenticated user's achievements
+      description: >-
+        Returns all achievements visible to the authenticated user — earned and unearned.
+        Secret achievements appear as `"???"` until earned. Hidden achievements only appear once earned.
+        Includes `progress` for achievements that track incremental progress (e.g. referrals).
+        Does **not** trigger any achievement checks or awards.
+      tags: [Me]
+      responses:
+        "200":
+          description: Achievement list with progress and summary stats.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  achievements:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AchievementEntry"
+                  stats:
+                    type: object
+                    properties:
+                      earned:
+                        type: integer
+                        description: Number of countable achievements earned by the user.
+                      total:
+                        type: integer
+                        description: Total number of countable achievements available.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/{id}/achievements:
+    get:
+      summary: List a user's earned achievements
+      description: >-
+        Returns only the achievements that this user has earned. Secret achievement names and
+        descriptions are shown in full here since the user has already earned them.
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of earned achievements.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  achievements:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EarnedAchievement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /projects/{id}:
     get:
@@ -1946,6 +2059,94 @@ components:
           items:
             type: string
           description: Slugs of related resources.
+
+    LeaderboardEntry_Balance:
+      type: object
+      properties:
+        rank:
+          type: integer
+          description: Position in the leaderboard (1-based).
+        id:
+          type: integer
+        display_name:
+          type: string
+        avatar_url:
+          type: string
+        balance:
+          type: integer
+          description: Current stardust balance.
+
+    LeaderboardEntry_TotalEarned:
+      type: object
+      properties:
+        rank:
+          type: integer
+          description: Position in the leaderboard (1-based).
+        id:
+          type: integer
+        display_name:
+          type: string
+        avatar_url:
+          type: string
+        total_earned:
+          type: integer
+          description: All-time stardust earned.
+
+    AchievementEntry:
+      type: object
+      description: An achievement as seen by the authenticated user (includes unearned ones).
+      properties:
+        slug:
+          type: string
+          nullable: true
+          description: Achievement slug. Null for secret achievements that haven't been earned yet.
+        name:
+          type: string
+          description: Display name. Secret unearned achievements show `"???"`.
+        description:
+          type: string
+          nullable: true
+          description: Description text. Secret unearned achievements show the secret hint or null.
+        icon:
+          type: string
+          description: Icon identifier.
+        earned:
+          type: boolean
+        earned_at:
+          type: string
+          format: date-time
+          nullable: true
+        progress:
+          type: object
+          nullable: true
+          description: >-
+            Present for achievements with incremental progress that haven't been earned yet.
+            Null once earned or for achievements without progress tracking.
+          properties:
+            current:
+              type: integer
+            target:
+              type: integer
+        stardust_reward:
+          type: integer
+          nullable: true
+          description: Stardust reward for earning this achievement. Null for secret unearned achievements.
+
+    EarnedAchievement:
+      type: object
+      description: An achievement earned by a user (public view — always earned).
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        earned_at:
+          type: string
+          format: date-time
 
   parameters:
     Limit:
