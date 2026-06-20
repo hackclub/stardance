@@ -33,6 +33,12 @@ class Projects::MissionSectionCompletionsController < ApplicationController
     step = Mission::Step.unscoped.find_by(id: params[:mission_step_id])
     return head :unprocessable_entity if step.nil?
 
+    # Same gate as create: once the attachment is detached (e.g. the project
+    # moved on to a follow-up mission), completions are a historical record.
+    unless @project.mission_attachments.where(mission_id: step.mission_id, detached_at: nil).exists?
+      return head :unprocessable_entity
+    end
+
     @project.mission_section_completions.where(mission_step_id: step.id).destroy_all
 
     render json: { completed: false }

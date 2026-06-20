@@ -1,0 +1,8 @@
+<%= render "notifications/inbox/actor", notification: notification %>
+<%= render "notifications/inbox/others_toggle", notification: notification %>
+<span class="notifications-item__verb"> started following</span>
+<% if notification.record %>
+  <%= link_to notification.record.title, project_path(notification.record), class: "notifications-item__actor" %>
+<% else %>
+  <span class="notifications-item__verb">a project</span>
+<% end %>

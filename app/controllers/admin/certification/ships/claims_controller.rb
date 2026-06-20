@@ -21,7 +21,7 @@ class Admin::Certification::Ships::ClaimsController < Admin::Certification::Appl
     authorize @ship, policy_class: Admin::Certification::Ships::ClaimPolicy
 
     @ship.release_claim!
-    redirect_to admin_certification_ships_path, notice: "Unclaimed review for \u201c#{@ship.project.title}.\u201d"
+    redirect_to admin_certification_ship_path(@ship), notice: "Unclaimed review for \u201c#{@ship.project.title}.\u201d"
   end
 
   private

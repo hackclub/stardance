@@ -18,13 +18,20 @@ class OgImagePreviewsController < ApplicationController
       return
     end
 
+    @preview_meta = OgImage::Preview.meta_for(@preview_name)
+
     respond_to do |format|
       format.html do
+        @has_og_image = !preview_class.to_png.nil?
         @previews = grouped_previews
       end
       format.png do
         png_data = preview_class.to_png
-        send_data png_data, type: "image/png", disposition: "inline"
+        if png_data
+          send_data png_data, type: "image/png", disposition: "inline"
+        else
+          head :no_content
+        end
       end
     end
   end

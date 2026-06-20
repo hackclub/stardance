@@ -1,0 +1,13 @@
+<% mission_name = @record&.mission&.name %>
+<% project_title = @record&.ship_event&.post&.project&.title %>
+<% builder = @actor || @record&.ship_event&.post&.user %>
+
+Ready for your review!
+
+<% if builder && project_title.present? %>@<%= builder.display_name %> just submitted "<%= project_title %>"<% if mission_name %> for <%= mission_name %><% end %> and needs a reviewer.<% elsif builder %>@<%= builder.display_name %> just submitted a project<% if mission_name %> for <%= mission_name %><% end %> and needs a reviewer.<% else %>A new submission<% if mission_name %> for <%= mission_name %><% end %> is waiting for a reviewer.<% end %>
+
+Approve, request revisions, or reject — payout's on hold until you do.
+
+<% if @record %>
+Review submission: <%= mission_submission_url(@record) %>
+<% end %>

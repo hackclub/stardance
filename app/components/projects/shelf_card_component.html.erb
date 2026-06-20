@@ -1,5 +1,5 @@
 <%= link_to project_path(project), class: "project-shelf-card", data: engagement_data do %>
-  <span class="project-shelf-card__media">
+  <span class="project-shelf-card__media <%= 'ai-detected' if helpers.current_user&.admin? && project.banner.attached? && project.banner.blob.metadata["ai_generated"] %>">
     <% if project.display_banner %>
       <%= image_tag project.display_banner, alt: "", class: "project-shelf-card__image" %>
     <% else %>

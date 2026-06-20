@@ -38,4 +38,8 @@ class Admin::ShopOrderPolicy < ApplicationPolicy
   def manage?
     user&.admin?
   end
+
+  def view_on_hold_state?
+    user&.admin? || user&.fraud_dept? || user&.fulfillment_person? || user&.shop_manager?
+  end
 end

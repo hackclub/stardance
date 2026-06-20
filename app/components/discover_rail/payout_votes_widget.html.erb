@@ -1,26 +1,68 @@
-<section class="project-show__payout-votes" aria-label="Votes needed to unlock payout">
-  <div class="project-show__payout-votes-header">
-    <h3 class="project-show__payout-votes-title">Votes needed to unlock payout <span class="project-show__payout-votes-info"
-          tabindex="0"
-          aria-label="What does this mean?"
-          data-controller="tooltip"
-          data-tooltip-title-value="Votes needed to unlock payout"
-          data-tooltip-message-value="This shows the number of times other people need to vote for your project!"
-          data-tooltip-position-value="top">ⓘ</span></h3>
-    <%= link_to "Go rate projects! →",
-                helpers.new_vote_path,
-                class: "action-btn action-btn--small action-btn--primary project-show__payout-votes-cta",
-                data: { turbo_frame: "_top" } %>
-  </div>
-  <div class="project-show__payout-votes-row">
-    <progress class="project-show__payout-votes-progress"
-              value="<%= votes[:current] %>"
-              max="<%= votes[:required] %>"></progress>
-    <div class="project-show__payout-votes-text">
-      <strong><%= votes[:current] %></strong> / <%= votes[:required] %>
-      <% if votes[:remaining] <= 0 %>
-        (ready!)
-      <% end %>
-    </div>
-  </div>
+<section class="payout-checklist" aria-label="Payout progress">
+  <h3 class="payout-checklist__title">Payout progress</h3>
+
+  <% if votes[:static_prize] %>
+    <ol class="payout-checklist__steps">
+      <li class="payout-checklist__step payout-checklist__step--done">
+        <span class="payout-checklist__icon">✓</span>
+        <div class="payout-checklist__body">
+          <span class="payout-checklist__label">Ship approved</span>
+        </div>
+      </li>
+
+      <li class="payout-checklist__step">
+        <span class="payout-checklist__icon">2</span>
+        <div class="payout-checklist__body">
+          <span class="payout-checklist__label">Get stardust!</span>
+          <span class="payout-checklist__hint">This project has a fixed payout. You'll receive stardust once payouts open!</span>
+        </div>
+      </li>
+    </ol>
+  <% else %>
+    <ol class="payout-checklist__steps">
+      <% ratings_done = votes[:ratings_given] >= votes[:ratings_total] %>
+      <li class="payout-checklist__step <%= 'payout-checklist__step--done' if ratings_done %>">
+        <span class="payout-checklist__icon"><%= ratings_done ? '✓' : '1' %></span>
+        <div class="payout-checklist__body">
+          <span class="payout-checklist__label">Rate <%= votes[:ratings_total] %> projects</span>
+          <div class="payout-checklist__progress-row">
+            <progress class="payout-checklist__bar"
+                      value="<%= votes[:ratings_given] %>"
+                      max="<%= votes[:ratings_total] %>"></progress>
+            <span class="payout-checklist__count"><%= votes[:ratings_given] %>/<%= votes[:ratings_total] %></span>
+          </div>
+          <% unless ratings_done %>
+            <%= link_to "Go rate →", helpers.new_vote_path,
+                        class: "payout-checklist__action",
+                        data: { turbo_frame: "_top" } %>
+          <% end %>
+        </div>
+      </li>
+
+      <% votes_done = votes[:remaining] <= 0 %>
+      <li class="payout-checklist__step <%= 'payout-checklist__step--done' if votes_done %>">
+        <span class="payout-checklist__icon"><%= votes_done ? '✓' : '2' %></span>
+        <div class="payout-checklist__body">
+          <span class="payout-checklist__label">Get <%= votes[:required] %> ratings on your project</span>
+          <div class="payout-checklist__progress-row">
+            <progress class="payout-checklist__bar"
+                      value="<%= votes[:current] %>"
+                      max="<%= votes[:required] %>"></progress>
+            <span class="payout-checklist__count"><%= votes[:current] %>/<%= votes[:required] %></span>
+          </div>
+          <% unless votes_done %>
+            <span class="payout-checklist__hint">Others are assigned your project automatically</span>
+          <% end %>
+        </div>
+      </li>
+
+      <li class="payout-checklist__step">
+        <span class="payout-checklist__icon">3</span>
+        <div class="payout-checklist__body">
+          <span class="payout-checklist__label">Get stardust!</span>
+          <span class="payout-checklist__hint">Payouts will open soon. Once they do, you'll get stardust paid out!</span>
+        </div>
+      </li>
+    </ol>
+  <% end %>
 </section>

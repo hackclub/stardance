@@ -1,0 +1,15 @@
+<%# Green "Open" / red "Locked" claim indicator for a pending funding review. %>
+<% if funding_request.pending? %>
+  <% if funding_request.reviewer.present? && funding_request.claim_expires_at.present? && funding_request.claim_expires_at > Time.current %>
+    <span class="ship-queue__claim-flag ship-queue__claim-flag--locked">
+      <%= inline_svg_tag "icons/lock.svg", class: "ship-queue__claim-flag-icon", aria: { hidden: true } %>
+      Locked
+      <span class="ship-queue__claim-by"><%= funding_request.reviewer.display_name %></span>
+      <span class="ship-queue__countdown"
+            data-certification--queue-target="countdown"
+            data-expires-at="<%= funding_request.claim_expires_at.iso8601 %>"></span>
+    </span>
+  <% else %>
+    <span class="ship-queue__claim-flag ship-queue__claim-flag--open">Open</span>
+  <% end %>
+<% end %>

@@ -1,0 +1,12 @@
+<div class="ship-monitor__chart <%= full ? "ship-monitor__chart--full" : "" %>">
+  <div class="ship-monitor__chart-header">
+    <p class="ship-monitor__chart-title"><%= title %></p>
+    <button type="button" class="ship-monitor__chart-tip"
+            data-controller="tooltip"
+            data-tooltip-message-value="<%= tip %>"
+            data-tooltip-position-value="bottom">?</button>
+  </div>
+  <div class="ship-monitor__chart-body">
+    <canvas data-certification--ships--monitor-chart-target="<%= target %>"></canvas>
+  </div>
+</div>

@@ -1,0 +1,10 @@
+<% amount = notification.params["amount"].to_i %>
+<% source = notification.params["source"] %>
+<% if amount.positive? %>
+  <span class="notifications-item__verb">You earned</span> <strong>+<%= amount %> stardust</strong>
+<% else %>
+  <strong><%= amount %> stardust</strong> <span class="notifications-item__verb">deducted</span>
+<% end %>
+<% if source.present? %>
+  <span class="notifications-item__verb">(<%= source %>)</span>
+<% end %>

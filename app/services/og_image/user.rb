@@ -1,25 +1,15 @@
 module OgImage
   class MockUser
-    def initialize(display_name:, projects_count:, stardust_earned:, hours_logged:, joined_at: nil)
+    def initialize(display_name:, bio: nil)
       @display_name = display_name
-      @projects_count = projects_count
-      @stardust_earned = stardust_earned
-      @hours_logged = hours_logged
-      @created_at = joined_at || 3.months.ago
+      @bio = bio
+      @created_at = 3.months.ago
     end
 
-    attr_reader :display_name, :projects_count, :stardust_earned, :hours_logged, :created_at
+    attr_reader :display_name, :bio, :created_at
 
     def avatar
       MockAvatar.new
-    end
-
-    def balance
-      @stardust_earned
-    end
-
-    def devlog_seconds_total
-      @hours_logged * 3600
     end
   end
 
@@ -38,35 +28,64 @@ module OgImage
 
   class User < Base
     PREVIEWS = {
-      "default" => -> { new(sample_user) },
-      "new_user" => -> { new(sample_user(display_name: "New Member", projects_count: 0, stardust_earned: 0, hours_logged: 0)) },
-      "prolific" => -> { new(sample_user(display_name: "Super Builder", projects_count: 50, stardust_earned: 2500, hours_logged: 150)) }
+      "default" => -> { new(sample_user, stats: { projects_count: 5, ships_count: 2, devlogs_count: 12 }) },
+      "new_user" => -> { new(sample_user(display_name: "New Member"), stats: { projects_count: 0, ships_count: 0, devlogs_count: 0 }) },
+      "with_bio" => -> { new(sample_user(display_name: "hackclub_dev", bio: "Building cool stuff with LEDs and microcontrollers"), stats: { projects_count: 3, ships_count: 1, devlogs_count: 8 }) },
+      "long_name" => -> { new(sample_user(display_name: "superlongusername123"), stats: { projects_count: 42, ships_count: 10, devlogs_count: 200 }) }
+    }.freeze
+
+    PREVIEW_META = {
+      "default" => {
+        title: "@hackclub_dev | Stardance",
+        description: "5 projects · 2 ships · 12 devlogs",
+        url: "https://stardance.hackclub.com/users/hackclub_dev",
+        site_name: "Stardance - Hack Club",
+        twitter_card: "summary_large_image"
+      },
+      "new_user" => {
+        title: "@New Member | Stardance",
+        description: "0 projects · 0 ships · 0 devlogs",
+        url: "https://stardance.hackclub.com/users/new_member",
+        site_name: "Stardance - Hack Club",
+        twitter_card: "summary_large_image"
+      },
+      "with_bio" => {
+        title: "@hackclub_dev | Stardance",
+        description: "Building cool stuff with LEDs and microcontrollers",
+        url: "https://stardance.hackclub.com/users/hackclub_dev",
+        site_name: "Stardance - Hack Club",
+        twitter_card: "summary_large_image"
+      },
+      "long_name" => {
+        title: "@superlongusername123 | Stardance",
+        description: "42 projects · 10 ships · 200 devlogs",
+        url: "https://stardance.hackclub.com/users/superlongusername123",
+        site_name: "Stardance - Hack Club",
+        twitter_card: "summary_large_image"
+      }
     }.freeze
 
     class << self
-      def sample_user(display_name: "hackclub_dev", projects_count: 5, stardust_earned: 350, hours_logged: 42)
-        MockUser.new(
-          display_name: display_name,
-          projects_count: projects_count,
-          stardust_earned: stardust_earned,
-          hours_logged: hours_logged
-        )
+      def sample_user(display_name: "hackclub_dev", bio: nil)
+        MockUser.new(display_name: display_name, bio: bio)
       end
     end
 
-    def initialize(user)
+    def initialize(user, stats: {})
       super()
       @user = user
+      @stats = stats
     end
 
     def render
       create_stardance_canvas
+      draw_diagonal_scrim(opacity: 0.3)
 
       draw_avatar
-      place_stardance_logo(x: 60, y: 45, width: 200, height: 56)
+      place_stardance_logo(x: 80, y: 60, width: 240, height: 68)
       draw_title
-      draw_subtitle
-      place_star_character(x: 30, y: 20, width: 120, height: 120, gravity: "SouthWest")
+      draw_stats
+      place_star_character(x: 30, y: 20, width: 140, height: 140, gravity: "SouthWest")
     end
 
     private
@@ -75,30 +94,45 @@ module OgImage
       lines_drawn = draw_glowing_multiline_text(
         "@#{@user.display_name}",
         x: 80,
-        y: 130,
-        size: 82,
+        y: 170,
+        size: 72,
         color: "#fffcf4",
         glow_color: "#ebb7ff",
-        max_chars: 14,
+        max_chars: 18,
         max_lines: 2,
-        glow_radius: 8,
-        glow_opacity: 0.35,
+        glow_radius: 6,
+        glow_opacity: 0.3,
         font: heading_font_name
       )
-      @title_end_y = 130 + (lines_drawn * 82 * 1.3).to_i
+      @title_end_y = 170 + (lines_drawn * 72 * 1.3).to_i
     end
 
-    def draw_subtitle
+    def draw_stats
       stats = build_stats
       return if stats.empty?
 
-      start_y = @title_end_y + 10
+      start_y = @title_end_y + 20
       stats.each_with_index do |stat, index|
+        icon_x = 80
+        icon_y = start_y + (index * 52)
+        text_x = icon_x + 50
+
+        if stat[:icon]
+          icon_path = Rails.root.join("app", "assets", "images", "icons", stat[:icon])
+          place_image(
+            icon_path.to_s,
+            x: icon_x,
+            y: icon_y,
+            width: 42,
+            height: 42
+          )
+        end
+
         draw_text(
-          stat,
-          x: 80,
-          y: start_y + (index * 44),
-          size: 34,
+          stat[:text],
+          x: text_x,
+          y: icon_y,
+          size: 42,
           color: "#c9c9c9"
         )
       end
@@ -118,45 +152,15 @@ module OgImage
     end
 
     def build_stats
+      p = @stats[:projects_count] || 0
+      s = @stats[:ships_count] || 0
+      d = @stats[:devlogs_count] || 0
+
       stats = []
-      stats << "#{projects_count} #{"project".pluralize projects_count}" if projects_count > 0
-      stats << "#{stardust_earned} Stardust earned" if stardust_earned > 0
-      stats << "#{hours_logged} #{"hour".pluralize hours_logged} worked" if hours_logged > 0
-      stats << "Joined #{joined_ago}"
+      stats << { text: "#{p} #{"project".pluralize(p)}", icon: "rocket.png" }
+      stats << { text: "#{s} #{"ship".pluralize(s)}", icon: "box.png" }
+      stats << { text: "#{d} #{"devlog".pluralize(d)}", icon: "paper.png" }
       stats
-    end
-
-    def joined_ago
-      return "recently" unless @user.respond_to?(:created_at) && @user.created_at
-
-      ActionController::Base.helpers.time_ago_in_words(@user.created_at) + " ago"
-    end
-
-    def projects_count
-      return @user.projects.count if @user.respond_to?(:projects)
-      return @user.projects_count.to_i if @user.respond_to?(:projects_count)
-
-      0
-    end
-
-    def stardust_earned
-      if @user.respond_to?(:balance)
-        @user.balance.to_i
-      elsif @user.respond_to?(:stardust_earned)
-        @user.stardust_earned.to_i
-      else
-        0
-      end
-    end
-
-    def hours_logged
-      if @user.respond_to?(:devlog_seconds_total)
-        (@user.devlog_seconds_total / 3600.0).round
-      elsif @user.respond_to?(:hours_logged)
-        @user.hours_logged.to_i
-      else
-        0
-      end
     end
   end
 end

@@ -14,6 +14,27 @@ module Raffle
       apply_dev_preview if Rails.env.development?
     end
 
+    def claim
+      return redirect_to(dashboard_path) unless enrolled?
+
+      week = Raffle::Week.current
+      unless week
+        return redirect_to(dashboard_path, alert: "No active raffle week.")
+      end
+
+      unless current_participant.age_group_teen? && current_participant.hca_linked?
+        return redirect_to(dashboard_path, alert: "You need to link your Hack Club account first.")
+      end
+
+      claim = Raffle::WeeklyClaim.find_or_initialize_by(participant: current_participant, week: week)
+      if claim.new_record?
+        claim.save!
+        redirect_to dashboard_path, notice: "You claimed your free entry for week #{week.number}!"
+      else
+        redirect_to dashboard_path, notice: "You already claimed your entry for this week."
+      end
+    end
+
     def dev_referrals
       return head :not_found unless Rails.env.development? || Rails.env.test?
       return redirect_to(dashboard_path) unless enrolled?
@@ -82,6 +103,7 @@ module Raffle
       @rank = @week&.rank_for(current_participant, standings: @week_standings)
       @board_rank = @board_week&.rank_for(current_participant, standings: @board_standings)
       @board_you_entries = @board_standings[current_participant.id].to_i
+      @claimed_this_week = @week ? current_participant.claimed_week?(@week) : false
 
       pending = current_participant.pending_referrals
       @pending_count = pending.count

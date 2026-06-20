@@ -168,7 +168,7 @@ GEM
       argon2-kdf (>= 1)
     bootsnap (1.24.6)
       msgpack (~> 1.2)
-    brakeman (8.0.4)
+    brakeman (8.0.5)
       racc
     browser (6.2.0)
     builder (3.3.0)
@@ -381,6 +381,7 @@ GEM
       railties (>= 7.1)
       stimulus-rails
       turbo-rails
+    mjml-rails (5.0.0)
     msgpack (1.8.1)
     multi_xml (0.9.1)
       bigdecimal (>= 3.1, < 5)
@@ -661,10 +662,10 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
-    sentry-rails (6.6.0)
+    sentry-rails (6.6.2)
       railties (>= 5.2.0)
-      sentry-ruby (~> 6.6.0)
-    sentry-ruby (6.6.0)
+      sentry-ruby (~> 6.6.2)
+    sentry-ruby (6.6.2)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
@@ -825,6 +826,7 @@ DEPENDENCIES
   letter_opener_web
   lockbox
   mission_control-jobs
+  mjml-rails
   neighbor
   norairrecord
   omniauth
@@ -852,7 +854,7 @@ DEPENDENCIES
   rubocop
   rubocop-rails-omakase
   selenium-webdriver
-  sentry-rails (~> 6.5)
+  sentry-rails (~> 6.6)
   sentry-ruby (~> 6.6)
   skylight
   slack-ruby-client

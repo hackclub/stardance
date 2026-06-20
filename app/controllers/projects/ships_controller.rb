@@ -95,6 +95,9 @@ class Projects::ShipsController < ApplicationController
     end
 
     def resolve_payout_path(mission, payout_path_param)
+      if mission.fixed_stardust_payout&.positive? && !current_user.completed_mission_ids.include?(mission.id)
+        return "static_prize"
+      end
       return "voting" unless mission.has_prizes?
       return "voting" if user_redeemed_prize_for?(mission)
       payout_path_param.to_s == "voting" ? "voting" : "static_prize"

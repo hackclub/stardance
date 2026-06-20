@@ -35,11 +35,28 @@ class Post::Repost < ApplicationRecord
   validate :original_post_is_visible_devlog
 
   after_create_commit :send_gorse_repost_later
+  after_create_commit :notify_devlog_author
   after_update :update_reposts_count_on_soft_delete
 
   private
   def send_gorse_repost_later
     send_gorse_feedback_later(user: user, item: original_post, feedback_type: :repost, timestamp: created_at)
+  end
+
+  # Notify the reposted devlog's author. A quote-repost (one that carries its
+  # own body) gets its own standalone notification so the quote text shows;
+  # plain reposts use the aggregated type. Notification.notify skips
+  # self-reposts (actor == recipient) on its own.
+  def notify_devlog_author
+    author = original_post&.user
+    devlog = original_post&.postable
+    return if author.nil? || !devlog.is_a?(Post::Devlog)
+
+    if body.present?
+      Notifications::DevlogQuoteReposted.notify(recipient: author, actor: user, record: self)
+    else
+      Notifications::DevlogReposted.notify(recipient: author, actor: user, record: devlog)
+    end
   end
 
   def original_post_is_visible_devlog

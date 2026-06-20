@@ -1,4 +1,36 @@
-<section class="vote-page__empty" aria-labelledby="vote-page-title">
-  <h1 id="vote-page-title" class="vote-page__title">Rate this project</h1>
-  <p class="vote-page__empty-text">No ships ready to vote on right now.</p>
-</section>
+<%
+  rating_closed = local_assigns.fetch(:rating_closed, false)
+  title = rating_closed ? "Rating isn't open yet!" : "Err. Err. Something's wrong!?"
+  subtitle = rating_closed ? "Rating will open soon." : nil
+  body = if rating_closed && current_user
+    "For now, you can still work on and ship your project. We'll send an announcement once it's open!"
+  elsif rating_closed
+    "Sign up for Stardance to build and ship your own projects, then rate what others have made!"
+  else
+    "No projects ready to vote on right now. This is either a really good or bad. Nothing in between"
+  end
+  action_label = current_user ? "My projects" : ("Sign up" if rating_closed)
+  action_path = current_user ? profile_projects_path(current_user.display_name) : (root_path if rating_closed)
+%>
+
+<%= render "votes/preview_background" %>
+
+<div class="vote-page__gate-overlay">
+  <section class="vote-page__gate" aria-labelledby="vote-page-title">
+    <%= inline_svg_tag "rate/doodles.svg", class: "vote-page__gate-illustration", aria_hidden: true %>
+
+    <h1 id="vote-page-title" class="vote-page__gate-title"><%= title %></h1>
+
+    <% if subtitle.present? %>
+      <p class="vote-page__gate-subtitle"><%= subtitle %></p>
+    <% end %>
+
+    <p class="vote-page__gate-body"><%= body %></p>
+
+    <% if action_label.present? && action_path.present? %>
+      <div class="vote-page__gate-actions">
+        <%= link_to action_label, action_path, class: "vote-page__gate-btn vote-page__gate-btn--primary" %>
+      </div>
+    <% end %>
+  </section>
+</div>

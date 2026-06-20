@@ -56,6 +56,11 @@
                                 </li>
                             <% end %>
                         </ul>
+                        <% if @shop_item.is_a?(ShopItem::OutpostTicket) %>
+                            <a class="shop-order__achievement-cta" href="https://forms.hackclub.com/submit-showcase-project" target="_blank" rel="noopener">
+                                Submit your hardware project for review →
+                            </a>
+                        <% end %>
                     <% else %>
                         <% achievement_names = @required_achievements.map(&:name).to_sentence(two_words_connector: ' or ', last_word_connector: ', or ') %>
                         <span>Unlocked via "<%= achievement_names %>"</span>
@@ -75,7 +80,7 @@
             <div class="shop-order__customs-warning" data-customs-warning-target="warning" style="display: none;"></div>
         </div>
         <% if current_user %>
-        <div class="shop-order__details" data-controller="order-form" data-order-form-has-addresses-value="<%= current_user.addresses.any? %>" data-order-form-base-ticket-cost-value="<%= @sale_price || @shop_item.ticket_cost || 0 %>" data-order-form-user-balance-value="<%= current_user.balance || 0 %>" data-order-form-addresses-value="<%= current_user.addresses.to_json %>" data-order-form-blocked-countries-value="<%= @shop_item.blocked_countries.to_json %>" data-order-form-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>" data-action="address-select:change@document->order-form#addressChanged">
+        <div class="shop-order__details" data-controller="order-form" data-order-form-has-addresses-value="<%= @user_addresses.any? %>" data-order-form-base-ticket-cost-value="<%= @sale_price || @shop_item.ticket_cost || 0 %>" data-order-form-user-balance-value="<%= @user_balance %>" data-order-form-addresses-value="<%= @user_addresses.to_json %>" data-order-form-blocked-countries-value="<%= @shop_item.blocked_countries.to_json %>" data-order-form-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>" data-action="address-select:change@document->order-form#addressChanged">
             <h2>Complete your order:</h2>
             <%= form_with url: shop_orders_path(shop_item_id: @shop_item.id), method: :post, local: true, id: "order-form" do |form| %>
                 <% if not @shop_item.one_per_person_ever %>
@@ -241,13 +246,12 @@
                     </div>
                 <% end %>
             <% end %>
-            <% user_addresses = current_user.addresses %>
-            <div class="shop-order__address" data-controller="address-select" data-addresses="<%= user_addresses.to_json %>">
-                <% if user_addresses.any? %>
+            <div class="shop-order__address" data-controller="address-select" data-addresses="<%= @user_addresses.to_json %>">
+                <% if @user_addresses.any? %>
                     <div class="shop-order__address-details">
                         <%
-                          primary_addr = user_addresses.find { |a| a["primary"] } || user_addresses.first
-                          address_options = user_addresses.map do |addr|
+                          primary_addr = @user_addresses.find { |a| a["primary"] } || @user_addresses.first
+                          address_options = @user_addresses.map do |addr|
                             {
                               label: "#{addr["first_name"]} #{addr["last_name"]} - #{addr["line_1"]}, #{addr["city"]}",
                               value: addr["id"]
@@ -279,11 +283,11 @@
             </div>
             <div class="shop-order__summary">
                 <h3 class="shop-order__summary-heading">Order Summary</h3>
-                <p class="shop-order__summary-balance"><%= safe_join([ "Current Balance: ", stardust_icon, " ", current_user.balance.to_s ]) %></p>
+                <p class="shop-order__summary-balance"><%= safe_join([ "Current Balance: ", stardust_icon, " ", @user_balance.to_s ]) %></p>
                 <div class="shop-order__summary-content">
                     <div class="shop-order__summary-price">
                         <h4>Base Price:</h4>
-                        <% if @shop_item.on_sale? %>
+                        <% if @shop_item.on_sale? || @sale_price.to_i < @regional_base_price.to_i %>
                             <h4>
                                 <span class="shop-order__original-price"><%= stardust_icon %> <span class="shop-order__strikethrough"><%= @regional_base_price %></span></span>
                                 <%= stardust_icon %> <%= @sale_price.round %>
@@ -305,8 +309,16 @@
                         <h4 id="shop-order__summary-total-display" data-order-form-target="summaryTotalDisplay"><%= stardust_icon %> <%= @sale_price.round %></h4>
                     </div>
                 </div>
+                <% if @shop_item.is_a?(ShopItem::OutpostTicket) && current_user.outpost_discount_stardust.to_i > 0 %>
+                    <div class="shop-order__summary-outpost">
+                        <p><%= safe_join([ "You've earned ", stardust_icon, " ", current_user.outpost_discount_stardust.to_s, " toward the Outpost Ticket from your funded hardware designs." ]) %></p>
+                        <% if current_user.outpost_flight_stipend > 0 %>
+                            <p><%= safe_join([ "That covers the ticket and leaves ", stardust_icon, " ", content_tag(:strong, current_user.outpost_flight_stipend.to_s), " toward a flight stipend." ]) %></p>
+                        <% end %>
+                    </div>
+                <% end %>
             </div>
-            <% primary_address = current_user.addresses.find { |a| a["primary"] } || current_user.addresses.first %>
+            <% primary_address = @user_addresses.find { |a| a["primary"] } || @user_addresses.first %>
             <% has_phone = primary_address&.dig("phone_number").present? || Rails.env.development? || @shop_item.is_a?(ShopItem::FreeStickers) %>
             <% unless has_phone %>
               <div class="shop-order__no-phone-warning">

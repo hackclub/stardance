@@ -6,7 +6,10 @@ class Shop::RegionsController < Shop::BaseController
     end
 
     if current_user
-      current_user.update!(shop_region: region)
+      if current_user.shop_region != region
+        current_user.update_column(:shop_region, region)
+        current_user.shop_region = region
+      end
     else
       session[:shop_region] = region
     end
@@ -14,6 +17,7 @@ class Shop::RegionsController < Shop::BaseController
     @user_region = region
     load_shop_items
     @wishlisted_item_ids = current_user&.shop_wishlists&.pluck(:shop_item_id) || []
+    prepare_visible_shop_items
 
     respond_to do |format|
       format.turbo_stream

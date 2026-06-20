@@ -28,11 +28,23 @@ class Like < ApplicationRecord
   validates :user_id, uniqueness: { scope: [ :likeable_type, :likeable_id ], message: "has already liked this" }
 
   after_create_commit :send_gorse_like_later
+  after_create_commit :notify_devlog_author
 
   private
     def send_gorse_like_later
       if likeable_type == "Post::Devlog" && likeable&.post.present?
         send_gorse_feedback_later(user: user, item: likeable.post, feedback_type: :like, timestamp: created_at)
       end
+    end
+
+    # Notify the devlog's author that someone liked it. Notification.notify
+    # skips self-likes (actor == recipient) on its own.
+    def notify_devlog_author
+      return unless likeable_type == "Post::Devlog"
+
+      author = likeable&.post&.user
+      return if author.nil?
+
+      Notifications::DevlogLiked.notify(recipient: author, actor: user, record: likeable)
     end
 end

@@ -1,7 +1,9 @@
 class ProjectsController < ApplicationController
+  include TimelinePostPreloading
+
   # Mission + payout-votes render as discover-rail modules on the project page.
   # The expanded mission module also previews the next guide step.
-  discover_rail_widgets :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes,
+  discover_rail_widgets :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes, :upcoming_events,
                         context: -> { { project: @project, votes_for_payout: @votes_for_payout } }
 
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]
@@ -30,7 +32,7 @@ class ProjectsController < ApplicationController
   end
 
   def prepare_project_show_context
-    @members = @project.users.to_a
+    @members = @project.users.where(banned: false).to_a
     @is_member = current_user && @members.include?(current_user)
     @active_nav_slug = @is_member ? "projects" : "home"
     @can_edit_project = @is_member && policy(@project).update?
@@ -51,6 +53,7 @@ class ProjectsController < ApplicationController
         @all_hackatime_projects = current_user.hackatime_projects
         result = current_user.try_sync_hackatime_data!
         @hackatime_times = result&.dig(:projects) || {}
+        @hackatime_token_stale = current_user.hackatime_token_stale?
 
         linked_ids = @linked_hackatime_projects.map(&:id).to_set
         taken_project_ids = @all_hackatime_projects.map(&:project_id).compact.uniq - [ @project.id ]
@@ -75,13 +78,15 @@ class ProjectsController < ApplicationController
     load_posts = ->(include_deleted_devlogs: false) {
       scope = @project.posts
                        .visible_to(current_user)
-                       .includes(postable: [ :attachments_attachments ])
+                       .preload(:postable)
                        .order(created_at: :desc)
       unless include_deleted_devlogs
         scope = scope.joins("LEFT JOIN post_devlogs ON posts.postable_type = 'Post::Devlog' AND posts.postable_id = post_devlogs.id")
                      .where("posts.postable_type != 'Post::Devlog' OR post_devlogs.deleted_at IS NULL")
       end
-      scope.select { |post| post.postable.present? }
+      posts = scope.select { |post| post.postable.present? }
+      preload_timeline_postables(posts, project_context: true)
+      posts
     }
 
     @posts = if policy(@project).view_deleted_devlogs?
@@ -96,7 +101,13 @@ class ProjectsController < ApplicationController
 
     @posts = @posts.reject { |post| post.postable_type == "Post::ShipEvent" && post.postable.certification_status == "rejected" }
 
-    @show_project_onboarding = @is_member && @posts.empty?
+    # Shipwright verdicts are rendered straight from the review records —
+    # they're private to project members, so they never become Post rows.
+    @timeline_entries = (@posts + visible_ship_decisions).sort_by do |entry|
+      entry.is_a?(Certification::Ship) ? entry.decided_on : entry.created_at
+    end.reverse
+
+    @show_project_onboarding = @is_member && @timeline_entries.empty?
     @project_onboarding_mission = @project.current_mission
 
     @available_missions = if @is_member && @project.current_mission.nil? && !@project.shipped?
@@ -108,10 +119,11 @@ class ProjectsController < ApplicationController
                                       .uniq
       Mission.available
              .where.not(id: taken_mission_ids)
-             .with_attached_icon
+             .includes(:icon_attachment, :prerequisites)
              .order(featured_at: :desc)
-             .limit(12)
              .to_a
+             .select { |m| m.prerequisites_met_by?(current_user) }
+             .first(12)
     else
       []
     end
@@ -153,21 +165,46 @@ class ProjectsController < ApplicationController
       if is_owner &&
           latest_ship_event.present? &&
           latest_ship_event.certification_status == "approved" &&
-          latest_ship_event.payout.blank?
+          latest_ship_event.payout.blank? &&
+          !latest_ship_event.mission_submission&.rejected?
+
+        is_static = latest_ship_event.mission_submission&.payout_path == "static_prize"
 
         required = Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
         current = latest_ship_event.votes.payout_countable.count
         remaining = [ required - current, 0 ].max
 
+        ratings_total = Post::ShipEvent::VOTE_COST_PER_SHIP
+        ratings_remaining = [ -current_user.vote_balance, 0 ].max
+        ratings_given = ratings_total - ratings_remaining
+
         @votes_for_payout = {
           current: current,
           required: required,
-          remaining: remaining
+          remaining: remaining,
+          ratings_given: ratings_given,
+          ratings_total: ratings_total,
+          static_prize: is_static
         }
       end
     end
   end
   private :prepare_project_show_context
+
+  # Decided Shipwright reviews, shown only to project members (and admins)
+  # while the release flag is on.
+  def visible_ship_decisions
+    return [] unless current_user
+    return [] unless @is_member || current_user.admin?
+    return [] unless Flipper.enabled?(:week_1_release, current_user)
+
+    @project.ship_reviews
+            .where.not(status: :pending)
+            .includes(:reviewer)
+            .with_attached_verdict_video
+            .to_a
+  end
+  private :visible_ship_decisions
 
   def add_test_time
     authorize @project
@@ -207,9 +244,11 @@ class ProjectsController < ApplicationController
     authorize @project
     @missions = Mission.available
                        .where.not(id: missions_user_already_has_a_project_on)
-                       .includes(:icon_attachment, :banner_attachment)
+                       .includes(:icon_attachment, :banner_attachment, :prerequisites)
                        .order(featured_at: :desc)
-                       .limit(8)
+                       .to_a
+                       .select { |m| m.prerequisites_met_by?(current_user) }
+                       .first(8)
   end
 
   def missions_user_already_has_a_project_on
@@ -248,7 +287,7 @@ class ProjectsController < ApplicationController
 
       project_hours = @project.total_hackatime_hours
 
-      if (slug = params[:mission_slug].presence) && (mission = Mission.find_by(slug: slug))
+      if (slug = params[:mission_slug].presence) && (mission = Mission.find_by(slug: slug)) && mission.prerequisites_met_by?(current_user)
         @project.missions << mission
         attrs = {}
         if @project.title.blank? || @project.title == "Untitled"
@@ -356,19 +395,8 @@ class ProjectsController < ApplicationController
 
     follow = current_user.project_follows.build(project: @project)
     if follow.save
-      @project.users.includes(:preference).each do |member|
-        if member.preference&.send_notifications_for_new_followers && current_user.slack_id && member.slack_id
-          SendSlackDmJob.perform_later(
-            member.slack_id,
-            "#{current_user.display_name} is now following your project #{@project.title}!",
-            blocks_path: "notifications/new_follower",
-            locals: {
-              project_title: @project.title,
-              project_url: project_url(@project, host: "stardance.hackclub.com", protocol: "https"),
-              follower_id: current_user.slack_id
-            }
-          )
-        end
+      @project.users.find_each do |member|
+        Notifications::ProjectFollowed.notify(recipient: member, actor: current_user, record: @project)
       end
       redirect_to project_path(@project), notice: "You are now following this project."
     else
@@ -391,7 +419,7 @@ class ProjectsController < ApplicationController
   def followers
     @project = Project.find(params[:id])
     authorize @project, :show?
-    @followers = @project.followers.order(:display_name)
+    @followers = @project.followers.where(banned: false).order(:display_name)
     render "users/followers", layout: false
   end
 
@@ -434,7 +462,7 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, :update_description, hackatime_project_ids: [])
+    params.require(:project).permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, :update_description, :hardware_stage, hackatime_project_ids: [])
   end
 
   def hackatime_project_ids

@@ -34,6 +34,8 @@
 #  manual_ysws_override         :boolean
 #  mission_review_notifications :boolean          default(TRUE), not null
 #  onboarded_at                 :datetime
+#  outpost_discount_stardust    :integer          default(0), not null
+#  outpost_email_sent_at        :datetime
 #  ref                          :string
 #  regions                      :string           default([]), is an Array
 #  session_token                :string
@@ -85,3 +87,31 @@ three:
   display_name: MyString
   slack_id: U_FIXTURE_THREE
   votes_count: 0
+
+tongyu:
+  email: bucketfishy@gmail.com
+  display_name: tongyu
+  slack_id: U_FIXTURE_TONGYU
+  votes_count: 0
+  granted_roles: "{admin}"
+
+referral_referrer:
+  email: referrer@example.test
+  display_name: raffle_referrer
+  slack_id: U_FIXTURE_REFERRER
+  votes_count: 0
+  onboarded_at: <%= 1.week.ago.to_fs(:db) %>
+
+referral_referred_one:
+  email: referred1@example.test
+  display_name: referred_one
+  slack_id: U_FIXTURE_REFERRED1
+  votes_count: 0
+  ref: r-abc12
+
+referral_referred_two:
+  email: referred2@example.test
+  display_name: referred_two
+  slack_id: U_FIXTURE_REFERRED2
+  votes_count: 0
+  ref: r-abc12

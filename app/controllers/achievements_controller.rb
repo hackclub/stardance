@@ -3,6 +3,7 @@
 class AchievementsController < ApplicationController
   def index
     authorize :achievement
+    head :not_found and return unless Flipper.enabled?(:week_2_release, current_user)
 
     Achievement.all.each { |a| grant_achievement!(a.slug) if a.earned_by?(current_user) }
 

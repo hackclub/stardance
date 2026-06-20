@@ -1,8 +1,6 @@
 # Starting your hardware project
 
-Hey there! This page covers how to get started with your hardware project and some advice for working on it
-
-_Hardware support is currently in development on the platform, but you can get started right now by following these steps!_
+Hey there! This page covers how to get started with your hardware project and some advice for working on it. This is especially
 
 ## 1. Coming up with an idea
 
@@ -26,22 +24,17 @@ You'll need to create a GitHub repository. This is a place where you can store y
 
 You can find instructions on how to to make one [here](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository)
 
-Support for adding it to the Stardance platform will come soon! You won't lose any progress if you start now.
-
 ## 3. Working on your design
 
-Once you've got everything set up, start working away!
+Once you've got everything set up, start working away! As mentioned in the [Hardware in Stardance 101](/guides/hardware) You'll need to record your progress using Lookout!
 
-To track your time, you can use [Lapse](https://lapse.hackclub.com), our timelapsing tool.
+![image](https://cdn.hackclub.com/019ed754-f542-78e8-9f98-ba11070e40e8/paste-1781729129346.png)
+_hit this button to record your progress!_
 
-![image](https://cdn.hackclub.com/019e99b8-10ab-7d8c-bb5d-b70963131f05/paste-1780695436889.png)
-
-_here's what lapse looks like!_
-
-If you're having issues with lapse (i.e using Firefox, which is currently unsupported), you can write a markdown journal instead - you can find out more about that [here](https://codex.hackclub.com/shipping/journaling/)
+If you're having issues with look, you can write a markdown journal instead - you can find out more about that [here](https://codex.hackclub.com/shipping/journaling/)
 
 One resource you should definitely check out is the [Hardware Codex](https://codex.hackclub.com) - it's a collection of design resources to help you along your journey making projects!
 
 Make sure to ask tons of questions in [#outpost](https://hackclub.enterprise.slack.com/archives/C0B04RP43TQ) - the best source of advice is from your fellow hardware hackers!
 
-Once think you've finished your design, head on over to [Hardware Shipping](/guides/shipping-hardware) to get your project ready for shipping!
+Once think you've finished your design, you'll be ready to submit your project! You should check out the "Submitting" section of the [Hardware in Stardance 101](/resources/hardware)

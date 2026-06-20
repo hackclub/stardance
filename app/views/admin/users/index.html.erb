@@ -1,51 +1,55 @@
 <% content_for :title, "Users" %>
-<h1>users</h1>
 
+<div class="admin-users">
+  <h1 class="admin-user-show__title">Users</h1>
+  <%= form_with url: admin_users_path, method: :get, local: true, class: "admin-users__search" do %>
+    <%= text_field_tag :query, params[:query],
+      placeholder: "Search by name or email...",
+      autocomplete: "off",
+      class: "admin-users__search-input" %>
+    <%= render ActionButtonComponent.new(text: "Search", type: :submit, size: :small) %>
+  <% end %>
 <% if current_user.admin? || current_user.has_role?(:raffle_admin) %>
   <p><%= link_to "→ Raffle admin", admin_raffles_path %></p>
 <% end %>
+  <% if @users.any? %>
+    <div>
+      <table class="space-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <% if policy(current_user).view_email? %>
+              <th>Email</th>
+            <% end %>
+            <th>Role(s)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @users.each do |user| %>
+            <tr>
+              <td class="space-table__muted"><%= user.id %></td>
+              <td><%= link_to user.display_name, admin_certification_reports_path(reporter_id: user.id) %></td>
+              <% if policy(user).view_email? %>
+                <td class="space-table__muted"><%= user.email %></td>
+              <% end %>
+              <td><%= user.roles.map { |r| r.to_s.titleize }.join(", ").presence || "—" %></td>
+              <td>
+                <%= render ActionButtonComponent.new(text: "View", href: admin_user_path(user), size: :small, variant: :secondary) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="admin-users__empty">No users found.</p>
+  <% end %>
 
-<%= form_with url: admin_users_path, method: :get, local: true do %>
-  <%= text_field_tag :query, params[:query],
-    placeholder: "Search users by name or email...",
-    autocomplete: "off" %>
-
-  <%= submit_tag "Search" %>
-<% end %>
-
-<% if @users.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Role(s)</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @users.each do |user| %>
-        <tr>
-          <td><%= user.id %></td>
-          <td><%= link_to user.display_name, admin_reports_path(reporter_id: user.id) %></td>
-          <td><%= user.email %></td>
-          <td><%= user.roles.map { |r| r.to_s.titleize }.join(", ") %></td>
-          <td>
-            <%= link_to "👁️", admin_user_path(user), title: "View user details", style: "font-size: 1rem; text-decoration: none;" %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No users found.</p>
-<% end %>
-
-<% if @pagy.pages > 1 %>
-  <div>
-    <%== @pagy.series_nav %>
-  </div>
-<% end %>
-
-<%= link_to "Go back", admin_users_path %>
+  <% if @pagy.pages > 1 %>
+    <div class="admin-users__pagination">
+      <%== @pagy.series_nav %>
+    </div>
+  <% end %>
+</div>

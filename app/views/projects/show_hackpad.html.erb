@@ -46,7 +46,7 @@
         <%= hidden_field_tag :inline_project_show, "1" %>
 
         <header class="project-show__hero">
-          <div class="project-show__banner" data-controller="file-upload">
+          <div class="project-show__banner <%= 'ai-detected' if current_user&.admin? && @project.banner.attached? && @project.banner.blob.metadata["ai_generated"] %>" data-controller="file-upload">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image", data: { "file-upload-target": "preview" } %>
             <%= link_to back_path,
                         class: "project-show__back",
@@ -165,34 +165,47 @@
                       </div>
 
                       <div class="project-show__hackatime-dropdown" data-hackatime-link-target="dropdown" hidden>
-                        <% @hackatime_dropdown_items.reject { |i| i[:linked] }.each do |item| %>
-                          <button type="button"
-                                  class="project-show__hackatime-dropdown-item<%= " project-show__hackatime-dropdown-item--taken" if item[:taken] %>"
-                                  data-action="hackatime-link#select"
-                                  data-id="<%= item[:id] %>"
-                                  data-name="<%= item[:name] %>"
-                                  data-hours="<%= item[:hours] %>"
-                                  <%= "disabled" if item[:taken] %>>
-                            <span class="project-show__hackatime-dropdown-name"><%= item[:name] %></span>
-                            <span class="project-show__hackatime-dropdown-time"><%= format_seconds(item[:seconds]) %></span>
-                            <% if item[:taken] %>
-                              <span class="project-show__hackatime-dropdown-taken">linked to <%= item[:taken_by] %></span>
-                            <% end %>
-                          </button>
-                        <% end %>
+                        <div class="project-show__hackatime-dropdown-items">
+                          <% @hackatime_dropdown_items.reject { |i| i[:linked] }.each do |item| %>
+                            <button type="button"
+                                    class="project-show__hackatime-dropdown-item<%= " project-show__hackatime-dropdown-item--taken" if item[:taken] %>"
+                                    data-action="hackatime-link#select"
+                                    data-id="<%= item[:id] %>"
+                                    data-name="<%= item[:name] %>"
+                                    data-hours="<%= item[:hours] %>"
+                                    <%= "disabled" if item[:taken] %>>
+                              <span class="project-show__hackatime-dropdown-name"><%= item[:name] %></span>
+                              <span class="project-show__hackatime-dropdown-time"><%= format_seconds(item[:seconds]) %></span>
+                              <% if item[:taken] %>
+                                <span class="project-show__hackatime-dropdown-taken">linked to <%= item[:taken_by] %></span>
+                              <% end %>
+                            </button>
+                          <% end %>
+                        </div>
+                        <%= link_to "CAN'T FIND YOUR PROJECT? →", guide_path(:hackatime), class: "project-show__hackatime-dropdown-help", data: { turbo_frame: "_top" } %>
                       </div>
                     </div>
+                  </div>
+                <% end %>
+                <% if @hackatime_token_stale %>
+                  <div class="project-show__hackatime-stale">
+                    <span>Your Hackatime connection may be outdated — hours might be inaccurate.</span>
+                    <button type="button" class="project-show__hackatime-reconnect" onclick="document.getElementById('settings-modal').showModal()">
+                      Reconnect in settings →
+                    </button>
                   </div>
                 <% end %>
               </div>
 
               <label class="project-show__field project-show__field--inline">
-                <span>AI usage declaration <%= render "projects/help_tooltip", text: "Describe how you used AI in this project (e.g. \"Used ChatGPT for debugging\", \"GitHub Copilot for code completion\"). AI use is OK, but it should feel like your own work! If you didn't use AI, you can state that." %></span>
+                <span>AI usage declaration <%= render "projects/help_tooltip", text: "Describe how you used AI in this project (e.g. \"Used ChatGPT for debugging\", \"GitHub Copilot for code completion\"). AI use is OK, but it should feel like your own work! If you didn't use AI, write \"None\"." %></span>
                 <%= form.text_area :ai_declaration,
                                    rows: 2,
                                    maxlength: 1000,
                                    class: "project-show__control project-show__textarea",
-                                   aria: { label: "AI usage declaration" } %>
+                                   placeholder: "How did you use AI? Write \"None\" if you didn't.",
+                                   aria: { label: "AI usage declaration" },
+                                   data: { "project-form-target": "aiDeclaration" } %>
               </label>
 
               <label class="project-show__started-check">
@@ -278,7 +291,7 @@
     <% else %>
       <article class="project-show">
         <header class="project-show__hero">
-          <div class="project-show__banner">
+          <div class="project-show__banner <%= 'ai-detected' if current_user&.admin? && @project.banner.attached? && @project.banner.blob.metadata["ai_generated"] %>">
             <%= image_tag banner_url, alt: "", class: "project-show__banner-image" %>
             <%= link_to back_path,
                         class: "project-show__back",
@@ -602,19 +615,23 @@
       </div>
     <% end %>
 
-    <% if @posts.any? %>
+    <% if @timeline_entries.any? %>
       <section class="project-show__feed" aria-label="Project feed">
         <% ship_count = @posts.count { |p| p.postable_type == "Post::ShipEvent" } %>
         <% ship_index = 0 %>
-        <% @posts.each do |post| %>
-          <% if post.postable_type == "Post::ShipEvent" %>
+        <% @timeline_entries.each do |entry| %>
+          <% if entry.is_a?(Certification::Ship) %>
+            <%= render "projects/ship_decision_card", decision: entry %>
+          <% elsif entry.postable_type == "Post::ShipEvent" %>
             <% ship_index += 1 %>
+            <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes? && ship_index == 1) ? "recert-modal-#{@project.id}" : nil %>
             <%= render "projects/ship_card",
-                       post: post,
+                       post: entry,
                        project: @project,
-                       ship_number: ship_count - ship_index + 1 %>
+                       ship_number: ship_count - ship_index + 1,
+                       recert_modal_id: recert_id %>
           <% else %>
-            <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark) %>
+            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark) %>
           <% end %>
         <% end %>
       </section>
@@ -663,6 +680,10 @@
     <% end %>
 
   </div>
+
+  <% if (is_member || current_user&.can_review?) && @project.needs_changes? %>
+    <%= render "projects/recert_modal", project: @project, is_member: is_member %>
+  <% end %>
 
   <% if is_member && @composer_devlog && @composer_projects %>
     <dialog id="composer-modal-<%= @project.id %>"
@@ -802,7 +823,8 @@
                       placeholder: "What did you make? What was challenging? What are you proud of? What should people know so they can test your project?",
                       aria: { label: "Ship update" },
                       data: { composer_target: "textarea",
-                              action: "input->composer#autogrow input->composer#refreshSubmit" } %>
+                              controller: "mention-autocomplete",
+                              action: "input->composer#autogrow input->composer#refreshSubmit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
 
                 <div class="feed-composer__attach-wrap feed-composer__attach-wrap--expanded" data-composer-target="attachWrap">
                   <label class="feed-composer__attach">
@@ -843,7 +865,7 @@
                 <% if @project.demo_url.present? || @project.repo_url.present? %>
                   <div class="project-show__latest-ship-cta">
                     <% if @project.demo_url.present? %>
-                      <%= link_to "Try project →", @project.demo_url,
+                      <%= link_to @project.hardware? ? "Video of Project →" : "Try project →", @project.demo_url,
                                   target: "_blank", rel: "noopener",
                                   class: "project-show__latest-ship-btn project-show__latest-ship-btn--primary" %>
                     <% end %>

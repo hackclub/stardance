@@ -9,9 +9,6 @@ class MyResourcesTest < ActionDispatch::IntegrationTest
       hcb_email: "grants@example.test",
       send_votes_to_slack: "1",
       leaderboard_optin: "1",
-      stardust_balance_notifications: "0",
-      send_notifications_for_followed_projects: "1",
-      send_notifications_for_new_followers: "1",
       search_engine_indexing_off: "1"
     }
 
@@ -21,10 +18,6 @@ class MyResourcesTest < ActionDispatch::IntegrationTest
     preference = user.preference.reload
     assert preference.send_votes_to_slack
     assert preference.leaderboard_optin
-    assert_not preference.stardust_balance_notifications
-    assert preference.send_notifications_for_followed_projects
-    assert preference.send_notifications_for_new_followers
-    assert_not preference.send_notifications_for_new_comments
     assert preference.search_engine_indexing_off
   end
 

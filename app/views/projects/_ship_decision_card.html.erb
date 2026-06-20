@@ -1,0 +1,72 @@
+<%
+  approved = decision.approved?
+  message = if approved
+    "This project was vetted by Shipwrights and is now up for voting. You can ship again after making more updates."
+  else
+    "This needs changes before we can consider it shipped. Review the Shipwright feedback, make updates, then ship again."
+  end
+  decided_on = decision.decided_on
+  reviewer = decision.reviewer
+  reviewer_name = reviewer&.display_name.presence
+%>
+
+<article id="<%= dom_id(decision) %>"
+         class="<%= class_names(
+           "feed-post-card",
+           "ship-decision-card",
+           "ship-decision-card--#{decision.status}"
+         ) %>">
+  <header class="feed-post-card__header">
+    <% if reviewer %>
+      <%= link_to profile_path(reviewer.display_name), class: "feed-post-card__avatar-link", aria: { label: "@#{reviewer.display_name}" } do %>
+        <%= image_tag reviewer.avatar, alt: "", class: "feed-post-card__avatar" %>
+      <% end %>
+    <% else %>
+      <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">S</span>
+    <% end %>
+
+    <div class="feed-post-card__meta">
+      <p class="feed-post-card__byline">
+        <% if reviewer_name %>
+          <%= link_to "@#{reviewer_name}",
+                      profile_path(reviewer_name),
+                      class: "feed-post-card__author",
+                      data: { turbo_frame: "_top" } %>
+        <% else %>
+          <span class="feed-post-card__author">Shipwrights</span>
+        <% end %>
+        <span class="feed-post-card__context"><%= approved ? "approved" : "returned" %></span>
+        <span class="ship-decision-card__subject">your project</span>
+        <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>" title="<%= l(decided_on, format: :long) %>">
+          · <%= time_ago_in_words(decided_on) %> ago
+        </time>
+      </p>
+    </div>
+  </header>
+
+  <div class="feed-post-card__body ship-decision-card__message">
+    <p><%= message %></p>
+  </div>
+
+  <% if decision.feedback.present? %>
+    <section class="feed-post-card__body ship-decision-card__feedback" aria-label="Shipwright feedback">
+      <p class="ship-decision-card__feedback-label">Feedback</p>
+      <div class="ship-decision-card__feedback-body">
+        <%= simple_format(decision.feedback, {}, sanitize: true) %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if decision.verdict_video.attached? %>
+    <section class="feed-post-card__body ship-decision-card__video-section" aria-label="Shipwright walkthrough video">
+      <p class="ship-decision-card__video-label">Shipwright walkthrough</p>
+      <div class="ship-decision-card__video-frame">
+        <%= video_tag url_for(decision.verdict_video),
+                      controls: true,
+                      playsinline: true,
+                      preload: "metadata",
+                      class: "ship-decision-card__video" %>
+      </div>
+    </section>
+  <% end %>
+</article>

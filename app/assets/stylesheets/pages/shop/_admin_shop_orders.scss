@@ -1,0 +1,320 @@
+@use "admin_shop_shared" as s;
+
+.shop-orders {
+  @include s.page-shell;
+  @include s.space-token-remaps;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  margin-top: var(--space-m);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  &__title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-space-text);
+    margin: 0;
+    line-height: var(--line-height-headers);
+  }
+
+  &__region {
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-m);
+  }
+
+  &__view-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    @include s.pill-buttons;
+  }
+
+  &__panel {
+    @include s.space-card;
+    padding: var(--space-m);
+
+    .table-data {
+      @include s.space-table;
+    }
+  }
+
+  &__group-toggle {
+    display: flex;
+    gap: var(--space-s);
+
+    a {
+      @include s.outlined-pill-link;
+    }
+  }
+
+  &__stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__stats-title {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-space-text);
+    margin: 0;
+  }
+
+  &__stats-hint {
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-s);
+    margin: 0;
+  }
+
+  &__stat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  &__stat {
+    text-decoration: none;
+    font-weight: 600;
+    transition:
+      transform 0.1s,
+      box-shadow 0.1s,
+      filter 0.1s;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+      filter: brightness(1.05);
+    }
+
+    &--clear {
+      @include s.outlined-pill-link;
+      background: transparent;
+      border-radius: 4px; // square chip to distinguish the clear action
+      padding: 0.3rem 0.5rem;
+    }
+  }
+
+  &__stat-count {
+    display: inline-block;
+    margin-left: 0.35em;
+    padding: 0 0.4em;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.18);
+    font-weight: 700;
+  }
+
+  &__avg-time {
+    color: var(--color-space-text);
+    font-size: var(--font-size-s);
+
+    span {
+      color: s.$set-fg-secondary;
+    }
+  }
+
+  &__filters {
+    @include s.space-card;
+    padding: var(--space-m);
+  }
+
+  &__filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  &__filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-s) var(--space-m);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+
+    label {
+      color: s.$set-fg-secondary;
+      font-size: var(--font-size-s);
+      font-weight: 600;
+    }
+
+    input,
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.45rem 0.6rem;
+      background: var(--color-set-1-bg);
+      border: 2px solid s.$set-fg-secondary;
+      border-radius: 6px;
+      color: var(--color-space-text);
+      font-size: var(--font-size-s);
+      font-family: inherit;
+      color-scheme: dark; // native date picker + dropdown chrome
+
+      &::placeholder {
+        color: s.$set-fg-secondary;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-brand-blue);
+      }
+    }
+
+    &--assignees {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__range-inputs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+
+    input {
+      min-width: 0; // allow the inputs to shrink within the grid cell
+    }
+  }
+
+  &__range-sep {
+    color: s.$set-fg-secondary;
+    flex-shrink: 0;
+  }
+
+  &__assignee-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    margin-top: var(--space-xxs);
+  }
+
+  &__checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    color: var(--color-space-text);
+    font-size: var(--font-size-s);
+    font-weight: 400;
+    cursor: pointer;
+
+    input {
+      accent-color: var(--color-brand-blue);
+    }
+  }
+
+  &__filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    @include s.pill-buttons;
+  }
+
+  &__leaderboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    margin-top: var(--space-m);
+  }
+
+  &__leaderboard-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-s) var(--space-m);
+  }
+
+  &__leaderboard-title {
+    margin: 0;
+    margin-right: auto;
+    text-transform: none !important; // emoji titles read better in mixed case
+    letter-spacing: normal !important;
+
+    small {
+      color: s.$set-fg-secondary;
+      font-weight: 400;
+      text-transform: none;
+    }
+  }
+
+  &__leaderboard-toggle {
+    display: inline-flex;
+    gap: var(--space-xs);
+
+    a {
+      @include s.outlined-pill-link;
+      padding: 0.2em 0.7em;
+      transition:
+        color 0.1s,
+        border-color 0.1s,
+        background 0.1s;
+
+      &.is-active {
+        color: var(--color-set-1-bg);
+        background: var(--color-brand-blue);
+        border-color: var(--color-brand-blue);
+      }
+    }
+  }
+
+  &__leaderboard-empty {
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-s);
+    margin: 0;
+  }
+
+  &__group {
+    @include s.space-card;
+    padding: var(--space-m);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__group-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-s);
+  }
+
+  &__group-name {
+    margin: 0 !important;
+
+    a {
+      color: var(--color-space-text);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  &__group-email {
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-s);
+  }
+
+  &__group-meta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    margin-left: auto;
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-s);
+
+    span {
+      white-space: nowrap;
+    }
+  }
+}

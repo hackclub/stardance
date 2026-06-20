@@ -50,8 +50,27 @@ class FeedEventsController < ApplicationController
     def record_event(event)
       if recordable_event?(event)
         ahoy.track("feed_#{event[:item_type]}_#{event[:event_type]}", event)
+        record_post_view(event)
         send_gorse_feedback(event)
       end
+    end
+
+    def record_post_view(event)
+      item = find_item(event)
+      return unless item.is_a?(Post)
+
+      item.view_credited_posts.each do |credited_post|
+        case event[:event_type]
+        when "impression"
+          PostView.record_view(credited_post, current_user)
+        when "read", "open"
+          PostView.record_read(credited_post, current_user)
+        end
+      end
+    rescue ActiveRecord::ActiveRecordError => e
+      # This endpoint is fire-and-forget: a failed view write must not 500 the
+      # beacon or drop the rest of the event batch.
+      Sentry.capture_exception(e, extra: { post_id: event[:post_id], user_id: current_user.id })
     end
 
     def recordable_event?(event)

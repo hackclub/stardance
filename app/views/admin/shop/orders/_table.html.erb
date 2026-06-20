@@ -1,6 +1,6 @@
 <% if orders.any? %>
   <div>
-    <table>
+    <table class="space-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -32,9 +32,9 @@
               <%= order.shop_item.name %><br>
               <small><%= order.shop_item.type&.demodulize %></small>
               <% if order.parent_order_id.present? %>
-                <br><small>🔗 Accessory for #<%= order.parent_order_id %></small>
+                <br><small>🔗 Modifier for #<%= order.parent_order_id %></small>
               <% elsif order.accessory_orders.any? %>
-                <br><small>🎁 +<%= order.accessory_orders.count %> accessories</small>
+                <br><small>🎁 +<%= order.accessory_orders.count %> modifiers</small>
               <% end %>
             </td>
             <td>
@@ -47,8 +47,9 @@
             </td>
             <td><%= order.total_cost %></td>
             <td>
+              <% display_state = policy(order).view_on_hold_state? ? order.aasm_state : (order.aasm_state == "on_hold" ? "pending" : order.aasm_state) %>
               <span>
-                <%= order.aasm_state.humanize %>
+                <%= display_state.humanize %>
               </span>
               <% if order.aasm_state == "fulfilled" %>
                 <br><small>Shipped to user</small>
@@ -71,7 +72,7 @@
               <td>
                 <% if order.assigned_to_user.present? %>
                   <div>
-                    <%= image_tag order.assigned_to_user.avatar, alt: order.assigned_to_user.display_name, style: "width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" %>
+                    <%= image_tag order.assigned_to_user.avatar, alt: order.assigned_to_user.display_name, class: "space-table__avatar" %>
                     <span><%= order.assigned_to_user.display_name %></span>
                   </div>
                 <% end %>
@@ -135,7 +136,5 @@
     </table>
   </div>
 <% else %>
-  <div>
-    <p>No orders found matching the filters.</p>
-  </div>
+  <p class="admin-users__empty">No orders found matching the filters.</p>
 <% end %>

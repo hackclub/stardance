@@ -1,0 +1,15 @@
+<% project = @record %>
+
+Your project has a new follower!
+
+<% if @actor && project&.title.present? %>
+@<%= @actor.display_name %> just started following "<%= project.title %>". They'll see your devlogs and ship events in their feed.
+<% elsif project&.title.present? %>
+Someone just started following "<%= project.title %>".
+<% else %>
+A new follower jumped onto one of your projects.
+<% end %>
+
+<% if project %>
+View project: <%= project_url(project) %>
+<% end %>

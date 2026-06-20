@@ -1,0 +1,255 @@
+<% content_for :title, "Funding review queue" %>
+
+<%
+  status_labels = { "pending" => "Pending", "approved" => "Approved", "returned" => "Returned", "all" => "All" }
+  net_flow = @stats[:decisions_today] - @stats[:new_today]
+  over_target = @stats[:pending] - @stats[:queue_target]
+%>
+
+<div class="app-layout app-layout--wide"
+     data-controller="certification--queue"
+     data-certification--queue-period-value="<%= @lb_period %>">
+  <div class="app-layout__main app-layout__main--wide ship-queue">
+    <%= link_to "← back to admin", admin_root_path, class: "ship-queue__back" %>
+
+    <header class="ship-queue__header">
+      <div class="ship-queue__title">
+        <h1>Funding review queue</h1>
+        <span class="status-pill status-pill--<%= @status == "all" ? "pending" : @status %>">
+          <%= status_labels[@status] %>
+        </span>
+      </div>
+      <div class="ship-queue__header-actions">
+        <%= link_to "My Stats", admin_certification_mystats_path,
+              class: "action-btn action-btn--large action-btn--secondary" %>
+        <%= link_to "Ship queue", admin_certification_ships_path,
+              class: "action-btn action-btn--large action-btn--secondary" %>
+        <%= link_to "Start reviewing", next_admin_certification_funding_requests_path,
+              class: "action-btn action-btn--large action-btn--primary" %>
+      </div>
+    </header>
+
+    <section class="ship-queue__overview">
+      <div class="ship-queue__stats">
+        <div class="ship-queue__progress">
+          <p class="ship-queue__label">Today's progress</p>
+          <div class="ship-queue__progress-headline">
+            <span class="ship-queue__net <%= net_flow >= 0 ? "is-positive" : "is-negative" %>">
+              <%= net_flow >= 0 ? "+" : "" %><%= net_flow %>
+            </span>
+            <span class="ship-queue__progress-note">
+              <%= net_flow >= 0 ? "ahead" : "behind" %> &middot;
+              reviewed <%= @stats[:decisions_today] %>, received <%= @stats[:new_today] %> new
+            </span>
+          </div>
+        </div>
+
+        <div class="ship-queue__metrics">
+          <div class="ship-queue__metric">
+            <span class="ship-queue__label">In queue</span>
+            <span class="ship-queue__metric-value <%= over_target > 0 ? "is-negative" : "is-positive" %>">
+              <%= @stats[:pending] %>
+            </span>
+            <span class="ship-queue__metric-hint">
+              <%= over_target > 0 ? "#{over_target} over target" : "at target" %>
+            </span>
+          </div>
+
+          <div class="ship-queue__metric">
+            <span class="ship-queue__label">Oldest waiting</span>
+            <% if @stats[:oldest_pending] %>
+              <%= link_to time_ago_in_words(@stats[:oldest_pending].created_at),
+                    admin_certification_funding_request_path(@stats[:oldest_pending]),
+                    class: "ship-queue__metric-value is-negative ship-queue__metric-link" %>
+              <span class="ship-queue__metric-hint">in the queue</span>
+            <% else %>
+              <span class="ship-queue__metric-value">—</span>
+              <span class="ship-queue__metric-hint">queue clear</span>
+            <% end %>
+          </div>
+
+          <div class="ship-queue__metric">
+            <span class="ship-queue__label">Approval rate</span>
+            <span class="ship-queue__metric-value">
+              <%= @stats[:approval_rate] ? "#{@stats[:approval_rate]}%" : "—" %>
+            </span>
+            <span class="ship-queue__metric-hint">all time</span>
+          </div>
+
+          <div class="ship-queue__metric">
+            <span class="ship-queue__label">Reviewed this week</span>
+            <span class="ship-queue__metric-value <%= @stats[:decisions_this_week] >= @stats[:new_this_week] ? "is-positive" : "is-negative" %>">
+              <%= @stats[:decisions_this_week] %>
+            </span>
+            <span class="ship-queue__metric-hint"><%= @stats[:new_this_week] %> came in</span>
+          </div>
+
+          <div class="ship-queue__metric">
+            <span class="ship-queue__label">Waiting too long</span>
+            <span class="ship-queue__metric-value <%= @stats[:overdue_pending] > 0 ? "is-negative" : "is-positive" %>">
+              <%= @stats[:overdue_pending] %>
+            </span>
+            <span class="ship-queue__metric-hint">past the <%= @stats[:sla_days] %>-day target</span>
+          </div>
+        </div>
+
+        <div class="ship-queue__alltime">
+          <span class="ship-queue__label">All time</span>
+          <span class="ship-queue__tally is-positive"><%= @stats[:approved] %> approved</span>
+          <span class="ship-queue__tally is-negative"><%= @stats[:returned] %> returned</span>
+          <span class="ship-queue__tally"><%= @stats[:decided] %> reviewed</span>
+        </div>
+      </div>
+
+      <div class="ship-queue__leaderboard">
+        <div class="ship-queue__leaderboard-head">
+          <h2>Leaderboard</h2>
+          <div class="ship-queue__tabs" role="tablist">
+            <% %w[daily weekly alltime].each do |period| %>
+              <button type="button"
+                      class="ship-queue__tab <%= "is-active" if period == @lb_period %>"
+                      data-certification--queue-target="tab"
+                      data-period="<%= period %>"
+                      data-action="certification--queue#switch">
+                <%= period == "alltime" ? "All time" : period.capitalize %>
+              </button>
+            <% end %>
+          </div>
+        </div>
+
+        <% %w[daily weekly alltime].each do |period| %>
+          <ol class="ship-queue__ranks <%= "is-hidden" unless period == @lb_period %>"
+              data-certification--queue-target="panel"
+              data-period="<%= period %>">
+            <% rows = @leaderboards[period] %>
+            <% if rows.empty? %>
+              <li class="ship-queue__ranks-empty">No reviews yet.</li>
+            <% else %>
+              <% rows.each_with_index do |row, i| %>
+                <li class="ship-queue__rank">
+                  <span class="ship-queue__rank-pos"><%= i + 1 %></span>
+                  <span class="ship-queue__rank-name"><%= row[:name] %></span>
+                  <span class="ship-queue__rank-count"><%= row[:count] %></span>
+                </li>
+              <% end %>
+            <% end %>
+          </ol>
+        <% end %>
+      </div>
+    </section>
+
+    <%= form_with url: admin_certification_funding_requests_path, method: :get,
+          data: { certification__queue_target: "filters" }, class: "ship-queue__filters" do %>
+      <div class="ship-queue__filter">
+        <label for="filter-status">Status</label>
+        <%= select_tag :status,
+              options_for_select([["Pending", "pending"], ["Approved", "approved"], ["Returned", "returned"], ["All", "all"]], @status),
+              id: "filter-status", class: "ship-queue__select",
+              data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter">
+        <label for="filter-sort">Sort</label>
+        <%= select_tag :sort,
+              options_for_select([["Oldest first", "oldest"], ["Newest first", "newest"]], @sort),
+              id: "filter-sort", class: "ship-queue__select",
+              data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter">
+        <label for="filter-from">From</label>
+        <%= date_field_tag :from, @from&.iso8601, id: "filter-from", class: "ship-queue__input",
+              autocomplete: "off", data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter">
+        <label for="filter-to">To</label>
+        <%= date_field_tag :to, @to&.iso8601, id: "filter-to", class: "ship-queue__input",
+              autocomplete: "off", data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter ship-queue__filter--search">
+        <label for="filter-search">Search</label>
+        <%= text_field_tag :search, @search, id: "filter-search", placeholder: "review id or project title",
+              class: "ship-queue__input", autocomplete: "off" %>
+      </div>
+      <div class="ship-queue__filter-actions">
+        <button type="submit" class="action-btn action-btn--small action-btn--secondary">Apply</button>
+        <%= link_to "Reset", admin_certification_funding_requests_path, class: "ship-queue__reset" %>
+      </div>
+    <% end %>
+
+    <% if @funding_requests.empty? %>
+      <div class="ship-queue__empty">
+        <p>Nothing matches these filters.</p>
+      </div>
+    <% else %>
+      <div class="ship-queue__table-wrap">
+        <table class="ship-queue__table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Requested</th>
+              <th class="ship-queue__cell-status">Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @funding_requests.each do |fr| %>
+              <% owner = fr.project.memberships.find(&:owner?)&.user %>
+              <tr>
+                <td class="ship-queue__cell-project">
+                  <div class="ship-queue__project-head">
+                    <%= link_to fr.project.title, admin_certification_funding_request_path(fr), class: "ship-queue__project-title" %>
+                    <span class="ship-queue__project-id">#<%= fr.id %></span>
+                  </div>
+                  <div class="ship-queue__project-meta">
+                    <span>by <%= owner&.display_name || "—" %></span>
+                    <span class="ship-queue__dot" aria-hidden="true">·</span>
+                    <span><%= time_ago_in_words(fr.created_at) %> old</span>
+                    <% if fr.pending? %>
+                      <span class="ship-queue__dot" aria-hidden="true">·</span>
+                      <%= render "claim_flag", funding_request: fr %>
+                    <% end %>
+                  </div>
+                </td>
+                <td>$<%= fr.requested_amount_dollars %> <span class="ship-queue__dot" aria-hidden="true">·</span> <%= fr.tier_label %></td>
+                <td class="ship-queue__cell-status">
+                  <span class="status-pill status-pill--<%= fr.status %>"><%= fr.status.capitalize %></span>
+                </td>
+                <td class="ship-queue__cell-action">
+                  <%= link_to "Open", admin_certification_funding_request_path(fr),
+                        class: "action-btn action-btn--small action-btn--secondary" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ship-queue__cards">
+        <% @funding_requests.each do |fr| %>
+          <% owner = fr.project.memberships.find(&:owner?)&.user %>
+          <%= link_to admin_certification_funding_request_path(fr), class: "ship-queue__card" do %>
+            <div class="ship-queue__card-top">
+              <span class="ship-queue__project-title"><%= fr.project.title %></span>
+              <span class="status-pill status-pill--<%= fr.status %>"><%= fr.status.capitalize %></span>
+            </div>
+            <div class="ship-queue__project-meta">
+              <span>#<%= fr.id %></span>
+              <span class="ship-queue__dot" aria-hidden="true">·</span>
+              <span>by <%= owner&.display_name || "—" %></span>
+              <span class="ship-queue__dot" aria-hidden="true">·</span>
+              <span>$<%= fr.requested_amount_dollars %> · <%= fr.tier_label %></span>
+            </div>
+            <% if fr.pending? %>
+              <div class="ship-queue__card-claim"><%= render "claim_flag", funding_request: fr %></div>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @pagy.pages > 1 %>
+      <div class="ship-queue__pagination">
+        <%== @pagy.series_nav %>
+      </div>
+    <% end %>
+  </div>
+</div>

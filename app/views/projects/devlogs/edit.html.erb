@@ -17,16 +17,37 @@
             method: :patch,
             html: { multipart: true },
             class: "devlog-edit__form",
-            data: { controller: "devlog-edit" },
+            data: { controller: "devlog-edit markdown-preview",
+                    markdown_preview_url_value: markdown_preview_path },
             local: true do |f| %>
 
         <div class="devlog-edit__field">
-          <%= f.label :body, "What are you working on?", class: "devlog-edit__label" %>
-          <%= f.text_area :body,
-                class: "devlog-edit__textarea",
-                rows: 4,
-                maxlength: Post::Devlog::BODY_MAX_LENGTH,
-                placeholder: "What are you working on?" %>
+          <div class="devlog-edit__field-header">
+            <%= f.label :body, "What are you working on?", class: "devlog-edit__label" %>
+            <div class="md-tabs" role="tablist">
+              <button type="button" class="md-tabs__tab" role="tab" aria-selected="true"
+                      data-markdown-preview-target="writeTab"
+                      data-action="markdown-preview#showWrite">Write</button>
+              <button type="button" class="md-tabs__tab" role="tab" aria-selected="false"
+                      data-markdown-preview-target="previewTab"
+                      data-action="markdown-preview#showPreview">Preview</button>
+            </div>
+            <button type="button" class="devlog-edit__help-btn" aria-label="Markdown formatting help"
+                    data-action="markdown-preview#openHelp">
+              <%= inline_svg_tag "icons/question.svg", class: "devlog-edit__help-icon" %>
+            </button>
+          </div>
+          <div data-markdown-preview-target="writePanel">
+            <%= f.text_area :body,
+                  class: "devlog-edit__textarea",
+                  rows: 4,
+                  maxlength: Post::Devlog::BODY_MAX_LENGTH,
+                  placeholder: "What are you working on?",
+                  data: { markdown_preview_target: "input",
+                          controller: "mention-autocomplete",
+                          action: "keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
+          </div>
+          <div class="md-preview markdown-content devlog-edit__preview" data-markdown-preview-target="output" hidden></div>
         </div>
 
         <% if @devlog.attachments.attached? %>
@@ -79,6 +100,8 @@
               ) %>
         </div>
       <% end %>
+
+      <%= render "shared/markdown_help_dialog" %>
     </div>
   </main>
 

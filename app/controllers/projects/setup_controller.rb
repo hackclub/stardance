@@ -82,20 +82,18 @@ class Projects::SetupController < ApplicationController
       redirect_to projects_setup_missions_path, alert: "That mission isn't available." and return
     end
 
-    existing = project.mission_attachments.find_by(mission_id: mission.id)
+    unless mission.prerequisites_met_by?(current_user)
+      unmet = mission.unmet_prerequisites_for(current_user).map(&:name).to_sentence
+      redirect_to mission_path(mission.slug), alert: "Complete #{unmet} first to unlock this mission." and return
+    end
 
-    if existing&.detached_at.nil? && existing.present?
+    if project.current_mission&.id == mission.id
       redirect_to(next_gate_after_details_path) and return
     end
 
-    is_first_attach = existing.nil?
+    is_first_attach = !project.mission_attachments.exists?(mission_id: mission.id)
 
-    if existing
-      existing.update!(detached_at: nil, attached_at: Time.current)
-    else
-      project.current_mission_attachment&.detach!
-      project.mission_attachments.create!(mission: mission, attached_at: Time.current)
-    end
+    project.attach_mission!(mission)
 
     # Authored defaults apply only on first attach — never overwrite a
     # builder's edits on re-attach.
@@ -195,26 +193,22 @@ class Projects::SetupController < ApplicationController
   def suggested_missions
     scope = Mission.available
                    .where.not(id: missions_user_already_has_a_project_on)
-                   .includes(:icon_attachment)
+                   .includes(:icon_attachment, :prerequisites)
 
     difficulties = EXPERIENCE_TO_DIFFICULTIES[current_user.experience_level.to_s]
-    if difficulties.present?
+    candidates = if difficulties.present?
       matched = scope.where(difficulty: difficulties)
                      .order(featured_at: :desc)
-                     .limit(6)
                      .to_a
-      remaining_slots = 6 - matched.size
-      if remaining_slots.positive?
-        rest = scope.where.not(id: matched.map(&:id))
-                    .order(featured_at: :desc)
-                    .limit(remaining_slots)
-        matched + rest.to_a
-      else
-        matched
-      end
+      rest = scope.where.not(id: matched.map(&:id))
+                  .order(featured_at: :desc)
+                  .to_a
+      matched + rest
     else
-      scope.order(featured_at: :desc).limit(6).to_a
+      scope.order(featured_at: :desc).to_a
     end
+
+    candidates.select { |m| m.prerequisites_met_by?(current_user) }.first(6)
   end
 
   def missions_user_already_has_a_project_on

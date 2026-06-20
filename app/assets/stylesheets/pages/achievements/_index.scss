@@ -1,124 +1,130 @@
 .achievements {
-  margin: var(--space-xxxl) auto;
-  max-width: 1100px;
+  margin: var(--space-xxl) auto;
+  max-width: 960px;
   padding: 0 var(--space-l);
+}
 
-  .ui-heading {
-    margin-bottom: var(--space-l);
-  }
+// --- Header ---
+
+.achievements__header {
+  margin-bottom: var(--space-xl);
+}
+
+.achievements__title {
+  margin: 0 0 var(--space-s);
+  font-family: var(--font-family-text);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: var(--line-height-headers);
+  color: white;
 }
 
 .achievements__stats {
-  margin-bottom: var(--space-xl);
-  background: #f8e8d1;
-  border-radius: 12px;
-  padding: 1rem 1.5rem;
-  box-shadow: var(--shadow);
-}
-
-.achievements__stats-text {
-  font-family: var(--font-family-subtitle);
-  font-size: 1.1rem;
-  color: var(--color-brown-500);
-  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xxs);
+  font-family: var(--font-family-text);
+  font-size: 19px;
+  color: #83828d;
 }
 
 .achievements__stats-count {
-  font-weight: bold;
-  color: var(--color-green-500);
+  font-weight: 700;
+  color: white;
 }
 
+.achievements__stats-separator,
 .achievements__stats-total {
-  color: var(--color-brown-400);
+  color: #83828d;
+}
+
+.achievements__stats-label {
+  margin-right: var(--space-s);
 }
 
 .achievements__stats-bar {
-  width: 100%;
-  height: 16px;
-  background: var(--color-tan-300);
-  border: 2px solid var(--color-brown-400);
+  flex: 1;
+  min-width: 120px;
+  height: 10px;
+  background: var(--color-set-2-bg);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .achievements__stats-fill {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--color-green-400) 0%,
-    var(--color-green-500) 100%
-  );
+  background: var(--color-brand-lilac);
   border-radius: 999px;
   transition: width 0.5s ease;
 }
 
+// --- Grid ---
+
 .achievements__grid {
   display: grid;
-  gap: 2rem;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-m);
+  grid-template-columns: repeat(3, 1fr);
+
+  @media (max-width: 960px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 }
 
+// --- Card ---
+
 .achievements__card {
-  background: #f8e8d1;
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  padding: 1.5rem;
+  background: var(--color-set-3-bg);
+  border-radius: 8px;
+  padding: var(--space-l);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   position: relative;
-  overflow: visible;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url("landing/hero/hero-bg.webp") repeat center center / 1200px;
-    z-index: 0;
-    border-radius: 16px;
-  }
-
-  > * {
-    position: relative;
-    z-index: 1;
-  }
 
   &:not(&--earned) {
-    .achievements__icon {
-      background: var(--color-tan-300);
-    }
-
-    .achievements__icon-svg {
-      opacity: 0.4;
+    .achievements__icon-img {
+      opacity: 0.3;
+      filter: grayscale(1);
     }
   }
 }
 
+// --- Icon ---
+
 .achievements__icon {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background: var(--color-yellow-400);
+  background: var(--color-set-2-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
-  box-shadow: var(--shadow);
+  margin-bottom: var(--space-s);
+
+  .achievements__card--earned & {
+    background: var(--color-set-2-bg);
+  }
 }
 
-.achievements__icon-svg {
-  max-width: 56px;
-  max-height: 56px;
-  fill: var(--color-brown-500);
+.achievements__icon-img {
+  max-width: 48px;
+  max-height: 48px;
   object-fit: contain;
 
   &:is(svg) {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+    fill: white;
+
+    .achievements__card--earned & {
+      fill: var(--color-set-1-bg);
+    }
   }
 
   &:is(img) {
@@ -128,70 +134,79 @@
   }
 }
 
+// --- Body ---
+
+.achievements__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .achievements__name {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #4d2b32;
-  font-family: var(--font-family-subtitle);
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--space-xxs);
+  font-family: var(--font-family-text);
+  font-size: 19px;
+  font-weight: 700;
+  color: white;
 }
 
 .achievements__description {
-  font-size: 1rem;
-  color: #a87254;
-  font-family: var(--font-family-text);
   margin: 0;
-  line-height: 1.4;
+  font-family: var(--font-family-text);
+  font-size: 16px;
+  color: #afb2c1;
+  line-height: 1.5;
 }
+
+// --- Reward pill ---
 
 .achievements__reward {
-  display: inline-block;
-  font-family: var(--font-family-subtitle);
-  font-size: 0.9rem;
-  color: var(--color-brown-500);
-  background: var(--color-yellow-300);
-  padding: 0.2rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxxs);
+  font-family: var(--font-family-text);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-set-1-bg);
+  background: var(--color-brand-highlight);
+  padding: 2px 10px;
   border-radius: 999px;
-  margin-top: 0.5rem;
+  margin-top: var(--space-s);
 
   &--secret {
-    background: var(--color-tan-300);
-    color: var(--color-brown-300);
+    background: var(--color-set-2-bg);
+    color: #afb2c1;
   }
 }
+
+// --- Earned timestamp ---
 
 .achievements__earned-at {
   display: block;
   font-family: var(--font-family-text);
-  font-size: 0.85rem;
-  color: var(--color-green-500);
-  margin-top: 0.75rem;
-  background: var(--color-green-300);
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
+  font-size: 16px;
+  color: #afb2c1;
+  margin-top: var(--space-s);
 }
+
+// --- Progress ---
 
 .achievements__progress {
   width: 100%;
-  margin-top: 0.75rem;
+  margin-top: var(--space-s);
 }
 
 .achievements__progress-bar {
   width: 100%;
-  height: 10px;
-  background: var(--color-tan-300);
-  border: 2px solid var(--color-brown-400);
+  height: 8px;
+  background: var(--color-set-2-bg);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .achievements__progress-fill {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--color-yellow-400) 0%,
-    var(--color-yellow-500) 100%
-  );
+  background: var(--color-brand-lilac);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -199,62 +214,62 @@
 .achievements__progress-text {
   display: block;
   font-family: var(--font-family-text);
-  font-size: 0.8rem;
-  color: var(--color-brown-400);
-  margin-top: 0.35rem;
+  font-size: 16px;
+  color: #afb2c1;
+  margin-top: var(--space-xxs);
 }
+
+// --- Earned badge ---
 
 .achievements__badge {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(145deg, #66bb6a 0%, #43a047 100%);
-  border: 3px solid white;
+  top: -8px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  background: var(--color-brand-highlight);
+  border: 3px solid var(--color-set-1-bg);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.25),
-    inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
 .achievements__badge-icon {
-  width: 18px;
-  height: 18px;
-  color: white;
+  width: 16px;
+  height: 16px;
+  color: var(--color-set-1-bg);
 }
+
+// --- Secret card ---
 
 .achievements__card--secret {
   .achievements__icon {
-    background: var(--color-brown-300);
+    background: var(--color-set-1-bg);
   }
 
-  .achievements__name,
   .achievements__description {
-    font-style: italic;
     opacity: 0.7;
   }
 }
 
+// --- Highlight animation ---
+
 .achievements__card--highlighted {
   animation: achievement-highlight-pulse 0.6s ease-in-out 3;
-  position: relative;
   z-index: 10;
 
   &::after {
     content: "";
     position: absolute;
     inset: -4px;
-    border-radius: 20px;
+    border-radius: 12px;
     background: linear-gradient(
       45deg,
-      var(--color-yellow-400),
-      var(--color-yellow-500),
-      #fff,
-      var(--color-yellow-400)
+      var(--color-brand-highlight),
+      var(--color-brand-peach),
+      var(--color-brand-lilac),
+      var(--color-brand-highlight)
     );
     background-size: 300% 300%;
     animation: achievement-shimmer 1s ease-in-out infinite;

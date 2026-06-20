@@ -1,0 +1,27 @@
+<% mission_name = @record&.mission&.name %>
+<% project_title = @record&.ship_event&.post&.project&.title %>
+<% reviewer = @record&.reviewed_by %>
+
+<h1 style="margin:0 0 12px;font-size:22px;font-weight:700;line-height:1.3;color:#1a1a2e;">Your submission was approved!</h1>
+
+<p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  Nice work.
+  <% if mission_name && project_title %>
+    Your submission for <strong><%= mission_name %></strong> on <strong><%= project_title %></strong> just passed review<% if reviewer %>, courtesy of <strong>@<%= reviewer.display_name %></strong><% end %>.
+  <% elsif mission_name %>
+    Your submission for <strong><%= mission_name %></strong> just passed review<% if reviewer %>, courtesy of <strong>@<%= reviewer.display_name %></strong><% end %>.
+  <% else %>
+    Your mission submission just passed review.
+  <% end %>
+</p>
+
+<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  Stardust is on the way to your balance. Cast any pending votes to unlock it.
+</p>
+
+<% if @record %>
+  <div style="margin:24px 0 4px;">
+    <a href="<%= mission_submission_url(@record) %>" style="display:inline-block;padding:11px 22px;background:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;font-size:14px;line-height:1;">View submission</a>
+    <a href="<%= my_balance_url %>" style="display:inline-block;padding:11px 22px;background:#ffffff;color:#1a1a2e;text-decoration:none;border:1px solid #d9d5c5;border-radius:999px;font-weight:600;font-size:14px;line-height:1;margin-left:6px;">View balance</a>
+  </div>
+<% end %>

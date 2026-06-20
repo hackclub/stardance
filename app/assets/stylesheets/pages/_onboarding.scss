@@ -467,6 +467,7 @@
 .onboarding-screen--age-gate .onboarding-screen__title {
   font-size: clamp(1.6rem, 4vw, 3.25rem);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .onboarding-age-gate {
@@ -487,7 +488,7 @@
     font-size: 1.15rem;
     font-weight: 700;
     line-height: 1.7;
-    margin: 1.5rem auto 3.5rem;
+    margin: 1.75rem auto 3.5rem;
     max-width: 56ch;
 
     p {
@@ -501,6 +502,73 @@
     a {
       color: white;
       text-decoration: underline;
+    }
+  }
+
+  &__hero {
+    margin: 0 auto;
+    max-width: 90vw;
+    width: fit-content;
+  }
+
+  &__raffle-kicker {
+    color: var(--color-brand-lilac);
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    font-weight: 800;
+    line-height: 1.5;
+    margin: 0 0 1rem;
+    min-width: 100%;
+    text-align: left;
+    width: 0;
+  }
+
+  &__raffle {
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    box-sizing: border-box;
+    margin: 0;
+    min-width: 100%;
+    padding: 1.75rem 2rem;
+    text-align: left;
+    width: 0;
+  }
+
+  &__raffle-headline {
+    color: white;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
+  &__raffle-sub {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+    max-width: 60ch;
+  }
+
+  &__raffle-action {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__raffle-cta {
+    align-items: center;
+    background: var(--color-brand-highlight);
+    border-radius: 999px;
+    color: var(--color-set-1-bg);
+    display: inline-flex;
+    font-size: 16px;
+    font-weight: 700;
+    justify-content: center;
+    padding: 8px 22px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--color-brand-highlight-secondary);
     }
   }
 

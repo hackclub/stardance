@@ -1,4 +1,13 @@
 <% content_for :title, "Devlog by @#{@post.user&.display_name}" %>
+<% content_for :og_title, "@#{@post.user&.display_name} on #{@project.title} | Stardance" %>
+<% content_for :og_description, truncate(@devlog.body.to_s, length: 200) %>
+<%
+  og_first_image = @devlog.attachments.find { |a| a.image? }
+  if og_first_image
+    content_for :og_image, url_for(og_first_image.variant(:large))
+    content_for :twitter_card, "summary_large_image"
+  end
+%>
 
 <div class="app-layout">
   <main class="app-layout__main devlog-detail" aria-label="Devlog">
@@ -42,11 +51,11 @@
               <%= f.text_area :body,
                     id: "comment_body",
                     class: "devlog-detail__comment-textarea",
-                    placeholder: "Add a comment...",
+                    placeholder: "Add a comment... (type @ to mention someone)",
                     rows: 1,
                     maxlength: Comment::BODY_MAX_LENGTH,
-                    data: { controller: "submit-on-meta-enter",
-                            action: "keydown->submit-on-meta-enter#submit" } %>
+                    data: { controller: "submit-on-meta-enter mention-autocomplete",
+                            action: "keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
             </div>
             <div class="devlog-detail__comment-actions">
               <%= render ActionButtonComponent.new(

@@ -4,7 +4,7 @@
   <div class="app-layout__main">
     <article class="guide-article">
       <nav class="guide-article__breadcrumb" aria-label="Breadcrumb">
-        <%= link_to "Guides", guides_path, class: "guide-article__breadcrumb-link" %>
+        <%= link_to "Resources", guides_path, class: "guide-article__breadcrumb-link" %>
         <span class="guide-article__breadcrumb-sep" aria-hidden="true">/</span>
         <span class="guide-article__breadcrumb-current"><%= @guide.category_label %></span>
       </nav>
@@ -44,7 +44,7 @@
       <% end %>
 
       <div class="guide-article__back">
-        <%= link_to "← All guides", guides_path, class: "guide-article__back-link" %>
+        <%= link_to "← All resources", guides_path, class: "guide-article__back-link" %>
       </div>
     </article>
   </div>

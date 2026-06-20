@@ -37,8 +37,6 @@ class Follow < ApplicationRecord
   end
 
   def notify_followed
-    return unless followed.preference.send_notifications_for_new_followers? && followed.slack_id.present?
-
-    followed.dm_user("✨ <@#{follower.slack_id}> just started following you on Stardance!")
+    Notifications::NewFollower.notify(recipient: followed, actor: follower, record: self)
   end
 end

@@ -1,0 +1,402 @@
+// Native Lookout recorder popup (/projects/:id/lookout_sessions/:id/record).
+// Stardance space theme — the Desktop / Browser / Camera chooser + capture UI.
+
+.lookout-recorder-body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-space-bg, #08061e);
+  color: var(--color-space-text, #ffffff);
+  font-family: var(--font-family-text, "Exo 2", sans-serif);
+}
+
+.lookout-rec {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+}
+
+.lookout-rec__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  padding-bottom: var(--space-m);
+  border-bottom: 2px solid var(--color-space-border);
+}
+
+.lookout-rec__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lookout-rec__back {
+  color: var(--color-space-text);
+  opacity: 0.7;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.lookout-rec__error {
+  margin: 0;
+  padding: var(--space-s) var(--space-m);
+  border-radius: var(--profile-radius);
+  background: color-mix(in srgb, var(--color-brand-salmon) 18%, transparent);
+  color: var(--color-brand-salmon);
+}
+
+.lookout-rec__question {
+  margin: var(--space-m) 0 var(--space-l);
+  text-align: center;
+  font-size: var(--font-size-l);
+  font-weight: 700;
+}
+
+.lookout-rec__options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-m);
+}
+
+.lookout-rec__option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-l) var(--space-m);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  background: var(--color-set-2-bg, #343651);
+  color: var(--color-space-text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-space-text);
+    background: var(--color-set-3-bg, #606684);
+    outline: none;
+  }
+}
+
+.lookout-rec__badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-brand-highlight);
+  color: var(--color-set-1-bg, #08061e);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.lookout-rec__option-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.lookout-rec__option-name {
+  font-size: var(--font-size-l);
+  font-weight: 700;
+}
+
+.lookout-rec__option-sub {
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}
+
+// The `hidden` attribute must beat the `display` rules below — otherwise every
+// stage (and both pause/resume buttons) shows at once, since a CSS `display`
+// value overrides the attribute's implicit `display: none`.
+.lookout-rec [hidden] {
+  display: none !important;
+}
+
+.lookout-rec__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-m);
+}
+
+.lookout-rec__preview-wrap {
+  width: 100%;
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  overflow: hidden;
+  background: #000;
+}
+
+.lookout-rec__preview {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  background: #000;
+}
+
+.lookout-rec__meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+}
+
+.lookout-rec__status {
+  margin: 0;
+  color: var(--color-space-text-muted);
+}
+
+.lookout-rec__timer {
+  font-size: var(--font-size-l);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lookout-rec__controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-s);
+}
+
+.lookout-rec__hint {
+  margin: 0;
+  text-align: center;
+  color: var(--color-space-text-muted);
+}
+
+.lookout-rec__link {
+  color: var(--color-brand-mint);
+  font-weight: 700;
+}
+
+.lookout-rec__code {
+  display: block;
+  width: 100%;
+  padding: var(--space-s);
+  border-radius: var(--profile-radius);
+  background: var(--color-set-2-bg, #343651);
+  color: var(--color-space-text);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+// ── Done stage: preview the timelapse, then choose where the time goes ───────
+
+.lookout-rec__stage--done {
+  align-items: stretch;
+  gap: var(--space-l);
+
+  .lookout-rec__status {
+    text-align: center;
+  }
+}
+
+.lookout-rec__rendering {
+  margin: 0;
+  padding: var(--space-l) var(--space-m);
+  text-align: center;
+  color: var(--color-space-text-muted);
+}
+
+// The "where should this time go?" panel sits below the preview, set off by a
+// hairline so it reads as its own step.
+.lookout-rec__destination {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  padding-top: var(--space-l);
+  border-top: 2px solid var(--color-space-border);
+}
+
+// Each destination is a raised, selectable card — radio on the left, label and
+// its control stacked on the right.
+.lookout-rec__dest {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--space-m);
+  padding: var(--space-m);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  background: var(--color-set-2-bg, #343651);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--color-space-text);
+    background: var(--color-set-3-bg, #606684);
+  }
+
+  // Selected: mint outline + a faint mint wash so the choice is unmistakable.
+  &:has(.lookout-rec__dest-radio:checked) {
+    border-color: var(--color-brand-mint);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-mint) 12%,
+      var(--color-set-2-bg, #343651)
+    );
+  }
+
+  &--danger {
+    border-color: var(--color-danger, #e53e3e);
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--color-danger, #e53e3e);
+      background: color-mix(
+        in srgb,
+        var(--color-danger, #e53e3e) 15%,
+        var(--color-set-2-bg, #343651)
+      );
+    }
+
+    &:has(.lookout-rec__dest-radio:checked) {
+      border-color: var(--color-danger, #e53e3e);
+      background: color-mix(
+        in srgb,
+        var(--color-danger, #e53e3e) 12%,
+        var(--color-set-2-bg, #343651)
+      );
+    }
+
+    .lookout-rec__dest-name {
+      color: var(--color-danger, #e53e3e);
+    }
+  }
+
+  // An unavailable option (e.g. "existing" with no Hackatime projects yet).
+  &:has(.lookout-rec__dest-radio:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      border-color: var(--color-space-border);
+      background: var(--color-set-2-bg, #343651);
+    }
+  }
+}
+
+.lookout-rec__dest-radio {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-brand-mint);
+  cursor: inherit;
+}
+
+.lookout-rec__dest-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.lookout-rec__dest-name {
+  font-weight: 700;
+  color: var(--color-space-text);
+}
+
+.lookout-rec__dest-sub {
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}
+
+// Inset well for the dropdown / new-name field — darker than its card so it
+// reads as an input, not a button.
+.lookout-rec__dest-select,
+.lookout-rec__dest-input {
+  width: 100%;
+  max-width: 340px;
+  margin-top: var(--space-xxs);
+  padding: var(--space-xs) var(--space-s);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  background: var(--color-set-1-bg, #08061e);
+  color: var(--color-space-text);
+  font: inherit;
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-mint);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.lookout-rec__dest-input {
+  cursor: text;
+}
+
+.lookout-rec__dest-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-xs);
+}
+
+.lookout-rec__done-close {
+  align-self: center;
+}
+
+// Post-finish nudge: log the just-sent time in a devlog (it only counts then).
+.lookout-rec__post-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.lookout-rec__post-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-s) var(--space-xl);
+  border-radius: var(--profile-radius);
+  background: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-brand-highlight-secondary, #fefce7);
+    outline: none;
+  }
+}
+
+.lookout-rec__post-sub {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .lookout-rec__options {
+    grid-template-columns: 1fr;
+  }
+}

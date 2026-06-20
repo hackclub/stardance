@@ -3,7 +3,7 @@
 <%= render HeadingComponent.new(title: "Support", tone: :blue, size: :full) %>
 
 <div class="admin-workspace">
-  <%= link_to "Users", admin_users_path, class: "admin-workspace__link btn-primary" %>
-  <%= link_to "Projects", admin_projects_path, class: "admin-workspace__link btn-primary" %>
-  <%= link_to "Shop orders", admin_shop_orders_path, class: "admin-workspace__link btn-primary" %>
+  <%= render ActionButtonComponent.new(text: "Users", href: admin_users_path) %>
+  <%= render ActionButtonComponent.new(text: "Projects", href: admin_projects_path) %>
+  <%= render ActionButtonComponent.new(text: "Shop orders", href: admin_shop_orders_path) %>
 </div>

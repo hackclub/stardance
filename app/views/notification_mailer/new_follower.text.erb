@@ -1,0 +1,11 @@
+You have a new follower!
+
+<% if @actor %>
+@<%= @actor.display_name %> just started following you on Stardance. Your devlogs and ship events will land in their feed from now on.
+
+View their profile: <%= user_url(@actor) %>
+<% else %>
+Someone just started following you on Stardance. Keep shipping — they'll be watching.
+
+Open your inbox: <%= my_notifications_url %>
+<% end %>

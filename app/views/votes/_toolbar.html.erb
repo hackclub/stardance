@@ -1,11 +1,38 @@
 <header class="vote-page__toolbar">
-  <h1 id="vote-page-title" class="vote-page__title">Rate this project</h1>
+  <div class="vote-page__toolbar-top">
+    <h1 id="vote-page-title" class="vote-page__title">Rate this project</h1>
 
-  <%= button_to votes_skip_path,
-                method: :post,
-                params: { vote_assignment_id: assignment.id },
-                class: "vote-page__skip" do %>
-    <span>Skip</span>
-    <span aria-hidden="true">→</span>
-  <% end %>
+    <%= button_to votes_skip_path,
+                  method: :post,
+                  params: { vote_assignment_id: assignment.id },
+                  class: "vote-page__skip" do %>
+      <span>Skip</span>
+      <span aria-hidden="true">→</span>
+    <% end %>
+  </div>
+
+  <div class="vote-page__info-bar">
+    <div class="vote-page__info-votes">
+      <div class="vote-page__info-votes-header">
+        <span class="vote-page__info-label">
+          Ratings given
+          <span class="vote-page__info-hint"
+                data-controller="tooltip"
+                data-tooltip-message-value="Rate <%= @ratings_total %> projects per ship to unlock your payout."
+                data-tooltip-position-value="bottom"
+                tabindex="0"
+                aria-label="What does this mean?">?</span>
+        </span>
+        <div class="vote-page__info-right">
+          <span class="vote-page__info-count"><%= @ratings_given %> / <%= @ratings_total %></span>
+          <%= link_to "#", class: "vote-page__past-ratings" do %>
+            Past ratings →
+          <% end %>
+        </div>
+      </div>
+      <progress class="vote-page__info-progress"
+                value="<%= @ratings_given %>"
+                max="<%= @ratings_total %>"></progress>
+    </div>
+  </div>
 </header>

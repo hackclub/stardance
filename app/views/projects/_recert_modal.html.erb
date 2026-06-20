@@ -1,0 +1,54 @@
+<% recert_review = project.ship_reviews.order(created_at: :desc).first %>
+<dialog id="recert-modal-<%= project.id %>"
+        class="recert-modal"
+        data-controller="modal"
+        aria-labelledby="recert-modal-<%= project.id %>-title">
+  <div class="recert-modal__panel">
+    <button type="button"
+            class="recert-modal__close"
+            onclick="document.getElementById(<%= "recert-modal-#{project.id}".to_json %>).close()"
+            aria-label="Close">
+      &times;
+    </button>
+
+    <h3 id="recert-modal-<%= project.id %>-title" class="recert-modal__title">Changes requested</h3>
+    <% if is_member %>
+      <p class="recert-modal__subtitle">Your reviewer left feedback below. Address it and then request re-certification.</p>
+    <% else %>
+      <p class="recert-modal__subtitle">Reviewer feedback and walkthrough left for this project.</p>
+    <% end %>
+
+    <% if recert_review&.verdict_video&.attached? %>
+      <div class="recert-modal__video-wrap">
+        <video class="recert-modal__video"
+               controls
+               preload="metadata"
+               src="<%= rails_blob_path(recert_review.verdict_video, disposition: :inline) %>">
+        </video>
+      </div>
+    <% end %>
+
+    <% if recert_review&.feedback.present? %>
+      <div class="recert-modal__feedback">
+        <h4 class="recert-modal__feedback-label">Reviewer feedback</h4>
+        <p class="recert-modal__feedback-body"><%= recert_review.feedback %></p>
+      </div>
+    <% end %>
+
+    <div class="recert-modal__actions">
+      <button type="button"
+              class="recert-modal__btn recert-modal__btn--secondary"
+              onclick="document.getElementById(<%= "recert-modal-#{project.id}".to_json %>).close()">
+        Close
+      </button>
+      <% if is_member || current_user&.can_review? %>
+        <% confirm_msg = is_member ? "Have you addressed the feedback? This will re-enter the review queue." : "This will request re-certification on behalf of the user. Continue?" %>
+        <%= button_to "Request re-certification",
+              project_recertification_path(project),
+              method: :post,
+              class: "recert-modal__btn recert-modal__btn--primary",
+              form: { data: { turbo_confirm: confirm_msg } } %>
+      <% end %>
+    </div>
+  </div>
+</dialog>

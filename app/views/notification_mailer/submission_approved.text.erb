@@ -1,0 +1,14 @@
+<% mission_name = @record&.mission&.name %>
+<% project_title = @record&.ship_event&.post&.project&.title %>
+<% reviewer = @record&.reviewed_by %>
+
+Your submission was approved!
+
+Nice work. <% if mission_name && project_title %>Your submission for "<%= mission_name %>" on "<%= project_title %>" just passed review<% if reviewer %>, courtesy of @<%= reviewer.display_name %><% end %>.<% elsif mission_name %>Your submission for "<%= mission_name %>" just passed review<% if reviewer %>, courtesy of @<%= reviewer.display_name %><% end %>.<% else %>Your mission submission just passed review.<% end %>
+
+Stardust is on the way to your balance. Cast any pending votes to unlock it.
+
+<% if @record %>
+View submission: <%= mission_submission_url(@record) %>
+View balance: <%= my_balance_url %>
+<% end %>

@@ -35,9 +35,10 @@
           <%= mission.difficulty.titleize %>
         </li>
       <% end %>
-      <% if mission.steps_count > 0 %>
+      <% card_sections = mission.external_guide? ? mission.guide_sections_count : mission.steps_count %>
+      <% if card_sections&.positive? %>
         <li class="mission-card__meta-item">
-          <%= mission.steps_count %>-step guide
+          <%= card_sections %>-step guide
         </li>
       <% end %>
       <% if local_assigns[:badge].present? %>

@@ -6,9 +6,9 @@ class Projects::FireNominationsController < ApplicationController
     authorize magic, :nominate?
 
     if magic.nominate(current_user)
-      redirect_to project_path(@project), notice: "Project nominated for Super Star."
+      redirect_back_or_to project_path(@project), notice: "Project nominated for Super Star."
     else
-      redirect_to project_path(@project), alert: magic.errors.full_messages.to_sentence
+      redirect_back_or_to project_path(@project), alert: magic.errors.full_messages.to_sentence
     end
   end
 
@@ -17,9 +17,9 @@ class Projects::FireNominationsController < ApplicationController
     authorize magic, :withdraw_nomination?
 
     if magic.withdraw_nomination(current_user)
-      redirect_to project_path(@project), notice: "Nomination withdrawn."
+      redirect_back_or_to project_path(@project), notice: "Nomination withdrawn."
     else
-      redirect_to project_path(@project), alert: magic.errors.full_messages.to_sentence
+      redirect_back_or_to project_path(@project), alert: magic.errors.full_messages.to_sentence
     end
   end
 

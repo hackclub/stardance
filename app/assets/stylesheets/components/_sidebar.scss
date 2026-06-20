@@ -166,6 +166,28 @@
   z-index: 0;
 }
 
+.sidebar__nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: var(--color-brand-salmon);
+  color: var(--color-space-bg);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-text);
+  font-weight: 700;
+  line-height: 1;
+  margin-left: auto;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
 button.sidebar__nav-link {
   background: transparent;
   border: 0;

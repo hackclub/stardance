@@ -1,0 +1,6 @@
+<span class="notifications-item__verb">Your project</span>
+<% if notification.record %>
+  <%= link_to notification.record.title, project_path(notification.record), class: "notifications-item__actor" %>
+<% end %>
+<span class="notifications-item__verb">was marked a</span>
+<strong>Super Star</strong>

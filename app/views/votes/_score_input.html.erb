@@ -1,3 +1,10 @@
+<%
+  score_hints = {
+    (1..3) => "For projects that need major work",
+    (4..6) => "Most projects fall in this range",
+    (7..9) => "For exceptionally good projects"
+  }
+%>
 <fieldset class="vote-score">
   <legend class="vote-score__legend">
     <span class="vote-score__name"><%= category.to_s.humanize %></span>
@@ -7,12 +14,19 @@
   <div class="vote-score__options">
     <% (Vote::MIN_SCORE..Vote::MAX_SCORE).each do |score| %>
       <% input_id = "vote_#{column}_#{score}" %>
+      <% hint = score_hints.find { |range, _| range.include?(score) }&.last %>
       <%= form.radio_button column,
                             score,
                             id: input_id,
                             class: "vote-score__input",
                             checked: vote.public_send(column) == score %>
-      <%= form.label column, score, for: input_id, class: "vote-score__star" do %>
+      <%= form.label column, score, for: input_id,
+                     class: "vote-score__star",
+                     data: {
+                       controller: "tooltip",
+                       tooltip_message_value: hint,
+                       tooltip_position_value: "top"
+                     } do %>
         <%= inline_svg_tag "icons/star_fill.svg", class: "vote-score__star-icon", aria_hidden: true %>
         <span class="vote-score__star-text"><%= score %></span>
       <% end %>

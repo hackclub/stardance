@@ -23,6 +23,7 @@
 @use "components/dropdown";
 @use "components/shop-item-card";
 @use "components/admin-banner";
+@use "components/space_table";
 @use "components/top_banner";
 @use "components/tooltip";
 @use "components/like_button";
@@ -34,6 +35,7 @@
 @use "components/mission_panel";
 @use "components/status_pill";
 @use "components/feed";
+@use "components/mentions";
 @use "components/star_border";
 @use "components/star_image_input";
 @use "components/onboarding";
@@ -52,6 +54,8 @@
 @use "pages/project_setup";
 @use "pages/projects/show";
 @use "pages/projects/readme";
+@use "pages/projects/lookout_recorder";
+@use "pages/hardware_funding";
 @use "pages/votes";
 @use "pages/achievements/index" as achievements_index;
 @use "pages/shop/shop";
@@ -74,9 +78,14 @@
 @use "pages/mission_submissions/index" as mission_submissions_index;
 @use "pages/mission_submissions/show" as mission_submissions_show;
 @use "pages/admin/missions_edit" as admin_missions_edit;
+@use "pages/admin/support";
 @use "pages/certification/ships/index" as certification_ships_index;
 @use "pages/certification/ships/show" as certification_ships_show;
+@use "pages/certification/ships/monitor" as certification_ships_monitor;
 @use "pages/certification/mystats" as certification_mystats;
 @use "pages/certification/payouts" as certification_payouts;
 @use "pages/raffle";
+@use "pages/notifications" as notifications_page;
+@use "pages/notification_settings" as notification_settings_page;
+@use "pages/rng";
 @use "landing/landing_footer";

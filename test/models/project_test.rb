@@ -9,6 +9,7 @@
 #  description          :text
 #  devlogs_count        :integer          default(0), not null
 #  duration_seconds     :integer          default(0), not null
+#  hardware_stage       :string
 #  marked_fire_at       :datetime
 #  memberships_count    :integer          default(0), not null
 #  nominated_fire_at    :datetime
@@ -42,7 +43,33 @@
 require "test_helper"
 
 class ProjectTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
+  setup do
+    Flipper.enable(:hardware_flow)
+  end
+
+  test "a valid hardware_stage marks the project as hardware" do
+    project = Project.create!(title: "Soldering rig", hardware_stage: "build")
+
+    assert_equal "build", project.hardware_stage
+    assert project.hardware?
+    assert project.build_stage?
+  end
+
+  test "a blank hardware_stage normalizes to nil (software project)" do
+    project = Project.create!(title: "Convertible", hardware_stage: "design")
+    assert project.hardware?
+
+    # The edit form's type toggle submits "" when Software is selected.
+    project.update!(hardware_stage: "")
+
+    assert_nil project.hardware_stage
+    assert_not project.hardware?
+  end
+
+  test "an invalid hardware_stage is rejected" do
+    project = Project.new(title: "Bad stage", hardware_stage: "prototype")
+
+    assert_not project.valid?
+    assert project.errors[:hardware_stage].any?
+  end
 end

@@ -1,0 +1,35 @@
+<section class="achievements-widget" aria-label="Achievements">
+  <% if own_profile? %>
+    <h3 class="achievements-widget__title">Your Achievements</h3>
+  <% else %>
+    <h3 class="achievements-widget__title">@<%= profile_display_name %>'s Achievements</h3>
+  <% end %>
+
+  <div class="achievements-widget__stats">
+    <span class="achievements-widget__count"><%= earned_count %></span>
+    <span class="achievements-widget__separator">/</span>
+    <span class="achievements-widget__total"><%= total_count %></span>
+    <span class="achievements-widget__label">earned</span>
+  </div>
+
+  <% if recent_achievements.any? %>
+    <div class="achievements-widget__icons">
+      <% recent_achievements.each do |item| %>
+        <div class="achievements-widget__icon"
+             data-controller="tooltip"
+             data-tooltip-message-value="<%= item[:achievement].name %>"
+             data-tooltip-position-value="top">
+          <%= helpers.achievement_icon item[:achievement].icon, earned: true, class: "achievements-widget__icon-img" %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="achievements-widget__empty">No achievements yet.</p>
+  <% end %>
+
+  <% if own_profile? %>
+    <%= helpers.link_to "See all your achievements →", helpers.my_achievements_path, class: "achievements-widget__link" %>
+  <% else %>
+    <%= helpers.link_to "See your own achievements →", helpers.my_achievements_path, class: "achievements-widget__link" %>
+  <% end %>
+</section>

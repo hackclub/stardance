@@ -1,0 +1,13 @@
+<% votes_needed = @notification.params["votes_needed"].to_i %>
+<% project_title = @notification.params["project_title"] %>
+<% ship_date = @record.respond_to?(:post) ? @record.post&.created_at&.strftime("%b %-d, %Y") : nil %>
+
+Payout blocked — vote deficit
+
+Your payout for <% if project_title.present? %>"<%= project_title %>"<% else %>your ship event<% end %><%= " (shipped #{ship_date})" if ship_date %> is blocked because you're in a vote deficit.
+
+<% if votes_needed.positive? %>You need to cast <%= pluralize(votes_needed, "more vote") %> before your payout will be issued.<% else %>Cast more votes to clear the deficit and unblock your payout.<% end %>
+
+Every ship event you submit drops your vote balance by 15. Every vote you cast adds 1 back. Keep voting to maintain a positive balance.
+
+Vote on projects: <%= new_vote_url %>

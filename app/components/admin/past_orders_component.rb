@@ -12,5 +12,13 @@ module Admin
     def render?
       orders.any?
     end
+
+    def display_state(order)
+      if order.on_hold? && helpers.current_user.has_role?(:helper) && !helpers.current_user.admin?
+        "Pending"
+      else
+        order.aasm_state.humanize
+      end
+    end
   end
 end

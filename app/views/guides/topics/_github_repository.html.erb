@@ -1,63 +1,132 @@
-<p>
-  A GitHub repository is the home for your project's code. Stardance uses it to help reviewers and voters see what you built, how it changed over time, and whether the source is public enough for someone else to run.
-</p>
-
-<h2>Create the repository</h2>
-
-<ol>
-  <li>Go to GitHub and choose <strong>New repository</strong>.</li>
-  <li>Name it after your project, or use a short name that is easy to recognize.</li>
-  <li>Keep the repository <strong>public</strong> so reviewers can clone and inspect it.</li>
-  <li>Add a README if you do not already have one locally.</li>
-</ol>
-
+<p>This guide is written by <a href="https://hackclub.enterprise.slack.com/team/U09879W4PG8">Carlisle</a>. Feel free to message me on Slack if you have any questions or need help! If I don't respond you can also ask in <a href="https://hackclub.enterprise.slack.com/archives/C0AP0NMSP3P">#stardance-help</a>.</p>
 <div class="guide-callout">
-  <span class="guide-callout__icon" aria-hidden="true">i</span>
-  <div class="guide-callout__body">
-    <p>Private repositories, zip files, and Drive folders slow review down. A public GitHub repo is the cleanest path.</p>
-  </div>
+    <div class="guide-callout__body">
+        <p>A GitHub repository is the home for your project's code. Stardance uses it to help reviewers and voters see what you built, how it changed over time, and whether the source is public enough for someone else to run.</p>
+    </div>
 </div>
-
-<h2>Push your code</h2>
-
-<p>
-  If your project already exists on your computer, initialize git and connect it to the GitHub repository:
-</p>
-
-<pre><code>git init
-git add .
-git commit -m "initial commit"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main</code></pre>
-
-<p>
-  If you created the repository with a README on GitHub first, clone it instead, then move your project files into that folder:
-</p>
-
-<pre><code>git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></pre>
-
-<h2>Link it to Stardance</h2>
-
-<p>
-  Open your project on Stardance, choose <strong>Edit project</strong>, and paste the root repository URL into the GitHub URL field.
-</p>
-
-<p>Use this shape:</p>
-
-<pre><code>https://github.com/YOUR_USERNAME/YOUR_REPO</code></pre>
-
-<p>Do not use URLs that end in <code>.git</code>, point to <code>/tree/main</code>, or point to one specific file.</p>
-
-<h2>Before you ship</h2>
-
+<p>First of all, what <em>is</em> Git, and why do we need it? To start, Git and Github are two different things:</p>
 <ul>
-  <li>Make sure the repo is public.</li>
-  <li>Commit meaningful chunks of work as you build.</li>
-  <li>Keep secrets, API keys, and <code>.env</code> files out of git.</li>
-  <li>Add a README that explains what the project is and how to run it.</li>
+<li>Git is a tool for managing your code projects. You store each of your projects in a repository, and whenever you make an update to your project, you can "commit" the changes to the repository. Git will keep a history of every change you have made, so that in case your update accidentally broke something, you can easily undo your changes!</li>
+<li>Git<em>hub</em> is a free service that allows you to host your Git repository -- which has all of your code -- in the cloud, which makes it easy to access your code from anywhere. It allows others to check out your project, makes sharing and collaborating on projects much easier, and serves as a backup in case your computer breaks and you lose all of your code (This has happened to me 😞... <strong>back up your stuff!</strong>) Git is used all the time by programmers, and using it is an essential skill to learn.</li>
 </ul>
+<h3>To setup Github:</h3>
+<ul>
+<li>
+<p>First up... Make an account! Go to <a href="https://github.com">github.com</a> and sign up for an account (it's free, don't worry).</p>
+</li>
+<li>
+<p>Now, create a new repository, like so:</p>
+</li>
+</ul>
+<img src="https://raw.githubusercontent.com/bunnybunnybun/Python-GTK4-Tutorial/refs/heads/main/images/new-repository(small).png" alt="Image" style="width: 60vw;">
+<ol>
+<li>Choose a name for your repository, and a short description. You can change these later.</li>
+<li>Set visibility to public and add README to on.</li>
+<li>If you don't know what the "Add .gitignore" option is, then just leave it set to "None".</li>
+<li>And lastly, you can optionally set a license. You can use any license you want, or none at all, but do know that if you don't set a license, then nobody is allowed to use and improve upon your code in their own projects. I personally like to use an open source license, such as the <a href="https://choosealicense.com/licenses/mit/">MIT License</a>, which allows others to use my code in their projects if they wish.</li>
+</ol>
+<img src="https://github.com/bunnybunnybun/Python-GTK4-Tutorial/blob/main/images/create-repository.png?raw=true" alt="Image showing the create repository page" style="width: 50vw;">
+<ul>
+<li>Now copy the URL of your repository, you will need this soon!</li>
+</ul>
+<img src="https://github.com/bunnybunnybun/Python-GTK4-Tutorial/blob/main/images/copy-repostiory-url.png?raw=true" alt="Image showing where to copy repository URL." style="width: 60vw;">
+<p>So you have a repository on Github, but you also need to have Git installed on your computer. To install it, follow the instructions for your operating system:</p>
+<details class="guide-collapse">
+    <summary class="guide-collapse__summary">Windows</summary>
+    <div class="guide-collapse__body">
+        <h4>To install the desktop app (recommended):</h4>
+        <ol>
+        <li>Visit the <a href="https://github.com/apps/desktop">download page</a> for GitHub Desktop.</li>
+        <li>Click <strong>Download now</strong> and then <strong>Download for Windows</strong>.</li>
+        <li>Double-click the <strong>GitHub Desktop</strong> file that you downloaded to start the installation. It is probably in your computer's <code class="guide-code">Downloads</code> folder.</li>
+        <li>GitHub Desktop will launch after the installation is complete.</li>
+        </ol>
+        <h4>To install only the command line version (for advanced users):</h4>
+        <p>Follow the instructions <a href="https://git-scm.com/install/windows">here</a></p>
+    </div>
+</details>
 
-<p>
-  Once the repo is linked, Stardance can point reviewers and voters to the source without you having to explain it every time.
-</p>
+<details class="guide-collapse">
+    <summary class="guide-collapse__summary">MacOS</summary>
+    <div class="guide-collapse__body">
+        <h4>To install the desktop app (recommended):</h4>
+        <ol>
+        <li>Visit the <a href="https://github.com/apps/desktop">download page</a> for GitHub Desktop.</li>
+        <li>Click <strong>Download now</strong> and then <strong>Download for MacOS</strong>.</li>
+        <li>Double-click the <strong>GitHub Desktop</strong> file that you downloaded to unzip it. It is probably in your computer's <code class="guide-code">Downloads</code> folder.</li>
+        <li>Double click the unzipped <strong>Github Desktop</strong>  file to start the installation.</li>
+        <li>Github Desktop will launch after the installation is complete.</li>
+        </ol>
+        <h4>To install only the command line version (for advanced users):</h4>
+        <p>Follow the instructions <a href="https://git-scm.com/install/mac">here</a></p>
+    </div>
+</details>
+
+<details class="guide-collapse">
+    <summary class="guide-collapse__summary">Linux</summary>
+    <div class="guide-collapse__body">
+        <h4>To install the desktop app (recommended):</h4>
+        <p>Unfortunately, Github Desktop is only available on Windows and MacOS, so you will have to install and use Git through the terminal.</p>
+        <p>First, check to see if it is already installed:</p>
+        <ol>
+        <li>Open the terminal.</li>
+        <li>Run this command: <code class="guide-code">git --version</code>. If it outputs something like <code class="guide-code">git version 2.54.0</code> (the number may be different), then it is installed. If it instead outputs something like <code class="guide-code">Unknown command: git</code>, then it is not installed.</li>
+        </ol>
+        <p>To install Git, go to <a href="https://git-scm.com/install/linux">this site</a> and find the command for the distribution of Linux you are using, and run the command in the terminal. <span class="guide-mark">Do not include the hashtag (#) when you type the command</span>. It may ask you for your computer password.</p>
+    </div>
+</details>
+
+<h3>Clone your repository</h3>
+<p>After you've installed Git, you need to clone the repository onto your computer. This will let you do the coding in the local repository (the copy on your computer), and then synchronize your code onto the repository on Github (this action is referred to as "pushing" your code to Github) whenever you make a significant change to your code!</p>
+<h4>If you are using the Github Desktop app:</h4>
+<ol>
+<li>Open the app.</li>
+<li>Sign in to Github and click the authorize Github Desktop button.</li>
+<li>In the app, you should see your repository on the left side of the screen. Click on it, then click the <strong>clone</strong> button.</li>
+</ol>
+<h4>If you are using Git through the terminal:</h4>
+<p>Open the terminal app.<br>
+In the terminal, type <code class="guide-code">git clone &lt;URL of Github repository&gt;</code>. Obviously, replace <code class="guide-code">&lt;URL of Github repository&gt;</code> with the URL of your repository, which you copied earlier. Press <span class="guide-kbd">Enter ↩</span>, and Git will clone the repository onto your computer.</p>
+<div class="guide-callout">
+    <div class="guide-callout__body">
+        <p>💡Tip: Having trouble pasting the URL? Try right clicking and then clicking the paste option, or try doing <span class="guide-kbd">Control+Shift+V</span> instead of <span class="guide-kbd">Control+V</span>.</p>
+    </div>
+</div>
+<h3>Committing your code</h3>
+<p>You should put all of your code in your repository. Find your repository folder by clicking the <strong>Show in File Explorer/Finder</strong> button in Github Desktop.</p>
+<img src="https://raw.githubusercontent.com/bunnybunnybun/Python-GTK4-Tutorial/refs/heads/main/images/open-repository-folder.png" alt="Image" style="width: 60vw;">
+<p>That will open your repository folder in your file browser. If you have already started coding your project, move your code into that folder. If you haven't started yet, then put your code in there when you do start!</p>
+<p>Whenever you make an update to your project, you should "commit" your code. Committing your code is basically making a progress checkpoint. It's generally recommended to commit around once per hour. These commits, or "checkpoints", are useful because they keep a history of your progress! (They also help us verify that you aren't trying to cheat the system for free stuff!)</p>
+<h4>To commit your code using Github Desktop</h4>
+<p>Look for the sidebar on the left side of the Github Desktop app. It will show you all the files in your repository that are either new, edited, or deleted. It won't show files that haven't changed since your last commit. You can click on the files to see what exactly you changed in the file.</p>
+<p><img src="https://raw.githubusercontent.com/bunnybunnybun/Python-GTK4-Tutorial/refs/heads/main/images/commit-changes.png" alt="Image" style="height: 40vw;"></p>
+<p>Make sure all the files are selected (have a checkmark beside them). Then in the little textbox below, put a message summarizing what you changed. If you want to put a longer explanation, put it in the larger textbox right below that. Then press the <strong>commit</strong> button at the bottom!</p>
+<p>You've committed your changes, but the commit is only on your computer, not on the Github website. To upload it to Github (this action is referred to as "pushing" your code), click the <strong>Push origin</strong> button at the top of the app. That's it!</p>
+<p>If you want to see a history of all of your commits/changes, check out the history tab at the top of the sidebar. It will show you every single commit you have ever made, and what you changed in each one!</p>
+<details class="guide-collapse">
+    <summary class="guide-collapse__summary">Committing your code using the terminal instead of Github Desktop</summary>
+    <div class="guide-collapse__body">
+        <p>Make sure you put all of your code into the repository folder.<br>
+        Navigate into the repository folder in your terminal. Then:</p>
+        <ul>
+        <li>Type <code class="guide-code">git status</code>. This will show you all the changes that you haven't committed yet.</li>
+        <li>To add the files that you changed to the next commit, use <code class="guide-code">git add &lt;file&gt;</code>, replacing <code class="guide-code">&lt;file&gt;</code> with the name of the file you want to add. You can add multiple files at once, just put a space between each one. If you want to add <em>all</em> of the files, do <code class="guide-code">git add .</code>.</li>
+        <li>Do <code class="guide-code">git status</code> again to make sure everything looks right.</li>
+        <li>To commit, do <code class="guide-code">git commit -m "Summary of changes"</code> replacing <code class="guide-code">Summary of changes</code> with, well, a summary of your changes. If you want to also add a longer description going into more detail about the changes, do <code class="guide-code">git commit -m "Summary of changes" -m "Longer description of changes"</code> instead.</li>
+        <li>To upload the changes to the Github Website (the "remote repository"), do <code class="guide-code">git push</code>. It may ask for your Github credentials.<br>
+        </ul>
+    </div>
+</details>
+<h3>Link it to Stardance</h3>
+<p>Open your project on Stardance, choose Edit project, and paste the root repository URL into the GitHub URL field.</p>
+<p>Use this shape:</p>
+<pre><code>https://github.com/YOUR_USERNAME/YOUR_REPO
+</code></pre>
+<p>Do not use URLs that end in .git, point to /tree/main, or point to one specific file.</p>
+<h3>Before you ship</h3>
+<ul>
+<li>Make sure the repo is public.</li>
+<li>Commit meaningful chunks of work as you build.</li>
+<li>Keep secrets, API keys, and .env files out of git.</li>
+<li>Add a README that explains what the project is and how to run it.</li>
+</ul>

@@ -3,14 +3,12 @@
 # Table name: post_ship_events
 #
 #  id                         :bigint           not null, primary key
-#  base_hours                 :float
 #  body                       :string
-#  bridge                     :boolean          default(FALSE), not null
 #  certification_status       :string           default("pending")
 #  feedback_reason            :text
 #  feedback_video_url         :string
-#  hours                      :float
-#  legacy_payout_deduction    :float
+#  hours_at_payout            :float
+#  hours_at_ship              :float
 #  multiplier                 :float
 #  originality_median         :decimal(5, 2)
 #  originality_percentile     :decimal(5, 2)
@@ -31,30 +29,12 @@
 #  usability_median           :decimal(5, 2)
 #  usability_percentile       :decimal(5, 2)
 #  votes_count                :integer          default(0), not null
-#  voting_scale_version       :integer          default(2), not null
 #  created_at                 :datetime         not null
 #  updated_at                 :datetime         not null
 #
 require "test_helper"
 
 class Post::ShipEventTest < ActiveSupport::TestCase
-  test "legacy voting scale ship events are never payout eligible" do
-    owner = User.create!(email: "owner-#{SecureRandom.hex(6)}@example.com", display_name: "Owner", slack_id: "U#{SecureRandom.hex(8)}", vote_balance: 10)
-    project = Project.create!(title: "Legacy Eligibility #{SecureRandom.hex(4)}")
-    ship_event = Post::ShipEvent.new(
-      body: "Legacy Ship Event",
-      certification_status: "approved",
-      voting_scale_version: Post::ShipEvent::LEGACY_VOTING_SCALE_VERSION
-    )
-    ship_event.uploading_attachments = true
-    ship_event.save!
-    Post.create!(project: project, user: owner, postable: ship_event)
-
-    add_legitimate_votes(ship_event: ship_event, project: project, count: Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT)
-
-    refute ship_event.reload.payout_eligible?
-  end
-
   test "review_instructions allows nil" do
     ship_event = Post::ShipEvent.new(body: "test", review_instructions: nil, uploading_attachments: true)
     ship_event.valid?

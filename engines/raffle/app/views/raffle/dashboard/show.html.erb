@@ -38,6 +38,17 @@
         </p>
         <a href="<%= main_app_base_url %>/projects/setup" class="raffle-btn raffle-btn--sm">Create a project to link</a>
       </div>
+    <% elsif @week && current_participant.age_group_teen? %>
+      <div class="raffle-claim">
+        <% if @claimed_this_week %>
+          <p class="raffle-claim__done">You claimed your free entry for this week</p>
+        <% else %>
+          <%= form_with url: claim_path, method: :post, class: "raffle-claim__form" do %>
+            <button type="submit" class="raffle-btn">Claim free entry</button>
+            <span class="raffle-claim__hint">+1 entry for week <%= @week_number %></span>
+          <% end %>
+        <% end %>
+      </div>
     <% end %>
 
     <% if @week && @entry_count.to_i > 0 %>
@@ -64,6 +75,13 @@
         <% else %>
           +20 entries for each friend who joins and links their Hack Club account
         <% end %>
+      </p>
+    </div>
+
+    <div class="raffle-fraud-notice">
+      <p class="raffle-fraud-notice__text">
+        <strong>Heads up:</strong> we check for fake referrals. If you're creating
+        accounts to refer yourself, you'll be banned from the raffle and from Stardance.
       </p>
     </div>
 

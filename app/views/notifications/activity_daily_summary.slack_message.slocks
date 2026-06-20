@@ -1,0 +1,31 @@
+header "Daily Stardance Summary"
+
+section "*Total signups:* #{number_with_delimiter(total_users)}  •  *New (last 24h):* #{number_with_delimiter(new_users)}", markdown: true
+
+divider
+
+section "Activity",
+  fields: [
+    mrkdwn_text("*Active users (last 24h):*\n#{active_users ? number_with_delimiter(active_users) : '_n/a_'}"),
+    mrkdwn_text("*Virality factor (this week):*\n#{virality_factor ? format('%.2f%%', virality_factor * 100) : '_n/a_'}")
+  ]
+
+section "Builds (last 24h)",
+  fields: [
+    mrkdwn_text("*Devlogs:*\n#{number_with_delimiter(new_devlogs)}"),
+    mrkdwn_text("*Ships:*\n#{number_with_delimiter(new_ships)}")
+  ]
+
+section "Interactions (last 24h)",
+  fields: [
+    mrkdwn_text("*Likes:*\n#{number_with_delimiter(new_likes)}"),
+    mrkdwn_text("*Comments:*\n#{number_with_delimiter(new_comments)}"),
+    mrkdwn_text("*Reposts:*\n#{number_with_delimiter(new_reposts)}"),
+    mrkdwn_text("*Total:*\n#{number_with_delimiter(new_likes + new_comments + new_reposts)}")
+  ]
+
+divider
+
+context [
+  mrkdwn_text("Since #{since.strftime('%b %-d at %-I:%M %p %Z')}  •  Active users = signed-in visitors  •  Virality = share of this week's signups from viral channels")
+]

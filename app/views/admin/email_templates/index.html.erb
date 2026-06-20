@@ -1,0 +1,49 @@
+<% content_for :title, "Email Templates" %>
+<% content_for :stylesheets do %>
+  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="email-templates">
+  <h1 class="email-templates__title">Email Templates</h1>
+
+  <div class="email-templates__upload">
+    <%= form_with url: admin_email_templates_path, multipart: true do |f| %>
+      <%= f.label :file, "Upload Template", class: "email-templates__upload-label" %>
+      <p class="email-templates__upload-hint">Re-uploading the same name overwrites it.</p>
+      <div class="email-templates__upload-row">
+        <%= f.file_field :file, accept: ".mjml", class: "email-templates__file-input" %>
+        <%= f.text_field :name, placeholder: "Name (optional — lowercase, numbers, - _ only)", class: "email-templates__name-input" %>
+        <%= f.submit "Upload", class: "email-templates__submit" %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @templates.any? %>
+    <p class="email-templates__table-heading">Templates</p>
+    <table class="email-templates__table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Last updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @templates.each do |template| %>
+          <tr>
+            <td><code class="email-templates__name"><%= template.name %></code></td>
+            <td class="email-templates__date"><%= template.updated_at.strftime("%b %-d, %Y %H:%M") %></td>
+            <td class="email-templates__actions">
+              <%= link_to "Preview", public_email_template_path(template), target: "_blank", rel: "noopener", class: "email-templates__action-link" %>
+              <%= button_to "Delete", admin_email_template_path(template), method: :delete,
+                  class: "email-templates__action-delete",
+                  data: { turbo_confirm: "Delete \"#{template.name}\"? This cannot be undone." } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="email-templates__empty">No templates yet — upload one above.</p>
+  <% end %>
+</div>

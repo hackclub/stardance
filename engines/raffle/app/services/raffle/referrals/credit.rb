@@ -36,6 +36,9 @@ module Raffle
             credited_week: week,
             verified_at: Time.current
           )
+
+          referral.participant.user&.sync_referral_achievements!
+
           referral
         end
       end

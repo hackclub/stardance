@@ -30,7 +30,8 @@ RUN apt-get update -qq && \
     git \
     libopenblas0 \
     liblapack3 \
-    ffmpeg && \
+    ffmpeg \
+    nodejs && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Set production environment

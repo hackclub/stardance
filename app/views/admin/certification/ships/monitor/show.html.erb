@@ -1,0 +1,99 @@
+<% content_for :title, "Shipwright monitor" %>
+
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide ship-monitor">
+    <%= link_to "← ship queue", admin_certification_ships_path, class: "ship-monitor__back" %>
+
+    <header class="ship-monitor__header">
+      <h1>Shipwright monitor</h1>
+    </header>
+
+    <section class="ship-monitor__section" id="section-queue">
+      <h2 class="ship-monitor__section-title">Queue health</h2>
+
+      <div class="ship-monitor__stats">
+        <div class="ship-monitor__stats-group">
+          <p class="ship-monitor__stats-group-label">Queue</p>
+
+          <% over_target = @stats[:pending] - @stats[:queue_target] %>
+          <%= render "stat_row", label: "In queue", value: @stats[:pending],
+                     value_class: over_target > 0 ? "is-negative" : "is-positive",
+                     hint: over_target > 0 ? "#{over_target} over target of #{@stats[:queue_target]}" : "at or under target" %>
+          <%= render "stat_row", label: "Overdue", value: @stats[:overdue_pending],
+                     value_class: @stats[:overdue_pending] > 0 ? "is-negative" : "is-positive",
+                     hint: "past #{@stats[:sla_days]}-day SLA" %>
+          <% mw = @stats[:median_pending_wait_hours] %>
+          <%= render "stat_row", label: "Median wait",
+                     value: mw ? format_seconds((mw * 3600).round, include_days: true) : "—",
+                     value_class: mw ? nil : "is-positive",
+                     hint: mw ? "pending ships" : "queue clear" %>
+
+          <div class="ship-monitor__stat-row">
+            <span class="ship-monitor__stat-label">Oldest waiting</span>
+            <% if @stats[:oldest_pending] %>
+              <%= link_to time_ago_in_words(@stats[:oldest_pending].created_at),
+                    admin_certification_ship_path(@stats[:oldest_pending]),
+                    class: "ship-monitor__stat-value is-negative ship-monitor__link" %>
+            <% else %>
+              <span class="ship-monitor__stat-value is-positive">—</span>
+              <span class="ship-monitor__stat-hint">queue clear</span>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="ship-monitor__stats-group">
+          <p class="ship-monitor__stats-group-label">All time</p>
+
+          <%= render "stat_row", label: "Total judged", value: number_with_delimiter(@stats[:decided]) %>
+          <%= render "stat_row", label: "Approved", value: number_with_delimiter(@stats[:approved]),
+                     hint: @stats[:approval_rate] ? "#{@stats[:approval_rate]}% rate" : "—" %>
+          <%= render "stat_row", label: "Rejected", value: number_with_delimiter(@stats[:returned]),
+                     hint: @stats[:approval_rate] ? "#{(100 - @stats[:approval_rate]).round(1)}% rate" : nil %>
+          <% adh = @stats[:avg_decision_hours] %>
+          <%= render "stat_row", label: "Avg time to decision",
+                     value: adh ? format_seconds((adh * 3600).round, include_days: true) : "—",
+                     hint: adh ? "submission → verdict" : "no decisions yet" %>
+        </div>
+
+      </div>
+    </section>
+
+    <div data-controller="certification--ships--monitor-chart"
+         data-certification--ships--monitor-chart-data-value="<%= @chart_data %>"
+         data-certification--ships--monitor-chart-reviewer-data-value="<%= @reviewer_chart_data %>">
+
+      <section class="ship-monitor__section" id="section-activity">
+        <h2 class="ship-monitor__section-title">Activity · last 30 days</h2>
+        <div class="ship-monitor__charts">
+
+          <%= render "chart_card", title: "Queue size", target: "queueSize", full: true, tip: "Pending ships at end of each day — all submissions not yet decided." %>
+          <%= render "chart_card", title: "Median wait", target: "medianWait", full: false, tip: "Median hours from submission to verdict for ships decided that day. Half took longer, half shorter." %>
+          <%= render "chart_card", title: "Waterline", target: "net", full: false, tip: "Decisions minus submissions per day. Above zero = queue shrinking. Below zero = queue growing." %>
+          <%= render "chart_card", title: "Throughput", target: "throughput", full: false, tip: "Total decisions made vs new ships submitted each day." %>
+          <%= render "chart_card", title: "Verdicts", target: "verdict", full: false, tip: "Approvals and returns split by day." %>
+          <%= render "chart_card", title: "Rejection rate", target: "rate", full: false, tip: "Returns as a percentage of total decisions per day. Returns ÷ (approvals + returns) × 100." %>
+          <%= render "chart_card", title: "Active reviewers", target: "participation", full: false, tip: "Distinct reviewers who made at least one decision that day." %>
+
+        </div>
+      </section>
+
+      <section class="ship-monitor__section" id="section-reviewers">
+        <h2 class="ship-monitor__section-title">Reviewer comparison · last 30 days</h2>
+        <% if !@has_reviewer_chart_data %>
+          <div class="ship-monitor__empty">No reviewer activity in the last 30 days.</div>
+        <% else %>
+          <div class="ship-monitor__reviewer-picker" data-certification--ships--monitor-chart-target="reviewerPicker"></div>
+          <div class="ship-monitor__reviewer-totals" data-certification--ships--monitor-chart-target="reviewerTotals"></div>
+          <div class="ship-monitor__charts">
+
+            <%= render "chart_card", title: "Decisions", target: "reviewerDecisions", full: false, tip: "Total decisions (approvals + returns) per reviewer per day." %>
+            <%= render "chart_card", title: "Returns", target: "reviewerReturned", full: false, tip: "Ships returned for changes per reviewer per day." %>
+
+          </div>
+        <% end %>
+      </section>
+
+    </div>
+
+  </div>
+</div>

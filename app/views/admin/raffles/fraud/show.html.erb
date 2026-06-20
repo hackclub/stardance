@@ -1,0 +1,86 @@
+<% content_for :title, "Raffle fraud signals" %>
+<%= render "admin/raffles/shared/nav" %>
+
+<div class="fraud-page-header">
+  <h1>Fraud signals</h1>
+  <%= link_to "Marked safe (#{Raffle::Participant.where(fraud_cleared: true).count})", cleared_admin_raffles_fraud_path, class: "btn-secondary slim" %>
+</div>
+
+<% if @flagged.any? %>
+  <div class="admin-section admin-section--highlighted">
+    <strong><%= @flagged.size %></strong> flagged referrers ·
+    <strong><%= @total_referrals %></strong> referrals to review ·
+    <strong><%= @total_referred_users %></strong> referred users
+
+    <div class="fraud-bulk-actions">
+      <%= button_to "Reject all #{@total_referrals} referrals",
+          reject_all_flagged_admin_raffles_fraud_path,
+          class: "btn-danger slim",
+          data: { turbo_confirm: "Reject ALL #{@total_referrals} referrals from all #{@flagged.size} flagged participants? This cannot be undone." } %>
+      <%= button_to "Reject all + ban all #{@total_referred_users} referred users",
+          reject_and_ban_all_flagged_admin_raffles_fraud_path,
+          class: "btn-danger slim",
+          data: { turbo_confirm: "Reject ALL #{@total_referrals} referrals AND ban ALL #{@total_referred_users} referred users from the platform? This cannot be undone." } %>
+    </div>
+    <p class="admin-section__note">Review the list below first. Use "Not fraud" on any false positives before using bulk actions.</p>
+  </div>
+
+  <% @flagged.each do |entry| %>
+    <% participant = entry[:participant] %>
+    <div class="admin-section">
+      <div class="fraud-entry">
+        <div class="fraud-entry__top">
+          <div class="fraud-entry__who">
+            <strong><%= link_to participant.display_name, admin_raffles_participant_path(participant) %></strong>
+            <code><%= participant.code %></code>
+            <span class="fraud-entry__meta">
+              <%= participant.age_group %>
+              <% if participant.user %>
+                · <code><%= participant.user.ip_address || "?" %></code>
+                · <%= participant.user.geocoded_country || "?" %>
+              <% end %>
+              · <%= entry[:total_referrals] %> active referrals
+            </span>
+          </div>
+          <%= button_to "Not fraud",
+              clear_fraud_admin_raffles_participant_path(participant),
+              class: "btn-primary slim",
+              data: { turbo_confirm: "Mark #{participant.display_name} as safe?" } %>
+        </div>
+
+        <div class="fraud-entry__signals">
+          <% entry[:signals].each do |signal| %>
+            <span class="fraud-signal fraud-signal--<%= signal[:type] %>">
+              <%= signal[:label] %>
+              <% if signal[:detail] %>
+                <span class="fraud-signal__detail"><%= signal[:detail] %></span>
+              <% end %>
+            </span>
+          <% end %>
+        </div>
+
+        <div class="fraud-entry__footer">
+          <%= link_to "View #{entry[:total_referrals]} referrals →", admin_raffles_participant_path(participant) %>
+          <div class="admin-actions-wrap">
+            <%= button_to "Reject all referrals",
+                reject_referrals_admin_raffles_participant_path(participant),
+                class: "btn-danger slim",
+                data: { turbo_confirm: "Reject ALL referrals from #{participant.display_name}?" } %>
+            <%= button_to "Reject + ban all referred",
+                ban_referred_users_admin_raffles_participant_path(participant),
+                class: "btn-danger slim",
+                data: { turbo_confirm: "Reject ALL referrals AND ban every referred user? This is irreversible." } %>
+            <% if participant.user && !participant.user.banned? %>
+              <%= button_to "Ban this user",
+                  ban_user_admin_raffles_participant_path(participant),
+                  class: "btn-danger slim",
+                  data: { turbo_confirm: "Ban #{participant.display_name} from the platform? Rejects shop orders and deletes projects." } %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% else %>
+  <p>No fraud signals right now.</p>
+<% end %>

@@ -78,10 +78,11 @@
     .preview-container {
       flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
       padding: 2rem;
       overflow: auto;
+      gap: 2rem;
     }
     .preview-wrapper {
       background: #fff;
@@ -93,6 +94,82 @@
       display: block;
       max-width: 100%;
       height: auto;
+    }
+
+    .meta-section {
+      width: 100%;
+      max-width: 540px;
+    }
+    .meta-section h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    .social-card {
+      background: #2b2d31;
+      border-left: 4px solid #FFE564;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .social-card__body {
+      padding: 0.5rem 1rem 0.5rem;
+    }
+    .social-card__site {
+      font-size: 0.75rem;
+      color: #b5bac1;
+      margin-bottom: 0.25rem;
+    }
+    .social-card__title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #00a8fc;
+      margin-bottom: 0.25rem;
+    }
+    .social-card__desc {
+      font-size: 0.875rem;
+      color: #dbdee1;
+      line-height: 1.4;
+    }
+    .social-card__img {
+      padding: 0.25rem 1rem 0.75rem;
+    }
+    .social-card__img img {
+      display: block;
+      max-width: 100%;
+      border-radius: 4px;
+    }
+
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .meta-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+    .meta-table td:first-child {
+      width: 140px;
+      font-weight: 600;
+      color: #555;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .meta-table td:last-child {
+      color: #333;
+    }
+    .meta-table tr:last-child td {
+      border-bottom: none;
     }
   </style>
 </head>
@@ -116,16 +193,48 @@
     <main class="main">
       <header class="header">
         <h2><%= @preview_name.titleize %></h2>
-        <div class="header-actions">
-          <a href="<%= og_image_preview_path(@preview_name, format: :png) %>" target="_blank">Open in new tab</a>
-          <a href="<%= og_image_preview_path(@preview_name, format: :png) %>" download="<%= @preview_name.parameterize %>.png">Download</a>
-        </div>
+        <% if @has_og_image %>
+          <div class="header-actions">
+            <a href="<%= og_image_preview_path(@preview_name, format: :png) %>" target="_blank">Open in new tab</a>
+            <a href="<%= og_image_preview_path(@preview_name, format: :png) %>" download="<%= @preview_name.parameterize %>.png">Download</a>
+          </div>
+        <% end %>
       </header>
 
       <div class="preview-container">
-        <div class="preview-wrapper">
-          <img src="<%= og_image_preview_path(@preview_name, format: :png) %>" alt="<%= @preview_name %>">
-        </div>
+        <% if @has_og_image %>
+          <div class="preview-wrapper">
+            <img src="<%= og_image_preview_path(@preview_name, format: :png) %>" alt="<%= @preview_name %>">
+          </div>
+        <% end %>
+
+        <% if @preview_meta %>
+          <div class="meta-section">
+            <h3>Link Preview</h3>
+            <div class="social-card">
+              <div class="social-card__body">
+                <div class="social-card__site"><%= @preview_meta[:site_name] %></div>
+                <div class="social-card__title"><%= @preview_meta[:title] %></div>
+                <div class="social-card__desc"><%= @preview_meta[:description] %></div>
+              </div>
+              <% if @has_og_image %>
+                <div class="social-card__img">
+                  <img src="<%= og_image_preview_path(@preview_name, format: :png) %>" alt="">
+                </div>
+              <% end %>
+            </div>
+
+            <h3>Meta Tags</h3>
+            <table class="meta-table">
+              <tr><td>og:title</td><td><%= @preview_meta[:title] %></td></tr>
+              <tr><td>og:description</td><td><%= @preview_meta[:description] %></td></tr>
+              <tr><td>og:image</td><td><%= @has_og_image ? "(attached)" : "(none — uses default)" %></td></tr>
+              <tr><td>og:url</td><td><%= @preview_meta[:url] %></td></tr>
+              <tr><td>og:site_name</td><td><%= @preview_meta[:site_name] %></td></tr>
+              <tr><td>twitter:card</td><td><%= @preview_meta[:twitter_card] %></td></tr>
+            </table>
+          </div>
+        <% end %>
       </div>
     </main>
   </div>

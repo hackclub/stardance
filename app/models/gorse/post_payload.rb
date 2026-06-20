@@ -45,14 +45,15 @@ class Gorse::PostPayload
       hidden_devlog? ||
       hidden_ship_event? ||
       post.project&.deleted_at.present? ||
-      post.user&.identity_verified? == false
+      post.user&.identity_verified? == false ||
+      post.user&.banned?
   end
 
   private
     attr_reader :post
 
     def categories
-      [ "feed", post_type, project_categories ].flatten.compact_blank.uniq
+      [ "feed", post_type, post.project&.project_type ].compact_blank.uniq
     end
 
     def labels
@@ -60,7 +61,6 @@ class Gorse::PostPayload
         type: post_type,
         project_id: post.project_id,
         author_id: post.user_id,
-        project_categories: project_categories,
         project_type: post.project&.project_type,
         has_media: has_media?,
         certification_status: ship_certification_status
@@ -69,10 +69,6 @@ class Gorse::PostPayload
 
     def post_type
       post.postable_type.to_s.demodulize.underscore
-    end
-
-    def project_categories
-      Array(post.project&.project_categories)
     end
 
     def comment

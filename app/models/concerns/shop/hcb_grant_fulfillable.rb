@@ -90,8 +90,8 @@ module Shop::HCBGrantFulfillable
       end
     end
 
-    shop_order.shop_card_grant = grant_rec
     shop_order.mark_fulfilled! "SCG #{grant_rec.id}", nil, "System"
+    shop_order.update!(shop_card_grant: grant_rec)
 
     if latest_disbursement && memo
       begin

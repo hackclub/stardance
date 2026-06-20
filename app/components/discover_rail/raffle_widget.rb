@@ -41,5 +41,20 @@ module DiscoverRail
     def referral_url
       participant&.referral_url(:web)
     end
+
+    def claimed_this_week?
+      return false unless participant && week
+      participant.claimed_week?(week)
+    end
+
+    def can_claim?
+      return false unless participant && week
+      participant.age_group_teen? && participant.hca_linked? && !claimed_this_week?
+    end
+
+    def needs_hca?
+      return false unless participant && week
+      participant.age_group_teen? && !participant.hca_linked?
+    end
   end
 end

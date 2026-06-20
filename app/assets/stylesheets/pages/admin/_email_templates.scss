@@ -1,0 +1,226 @@
+.email-templates {
+  max-width: 860px;
+
+  &__title {
+    font-family: var(--font-family-text);
+    font-size: 40px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+    margin: 0 0 48px;
+  }
+
+  &__upload {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-space-border);
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+
+  &__upload-label {
+    display: block;
+    font-family: var(--font-family-text);
+    font-size: 19px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fff;
+    margin: 0 0 8px;
+  }
+
+  &__upload-hint {
+    font-family: var(--font-family-text);
+    font-size: 16px;
+    color: #83828d;
+    margin: 0 0 24px;
+  }
+
+  &__upload-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__file-input {
+    font-family: var(--font-family-text);
+    font-size: 16px;
+    color: #fff;
+    flex: 1;
+    min-width: 0;
+
+    &::file-selector-button {
+      background: var(--color-set-3-bg);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 3px 16px;
+      font-family: var(--font-family-text);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 12px;
+      transition:
+        background 120ms ease,
+        color 120ms ease;
+
+      &:hover {
+        background: var(--color-brand-highlight);
+        color: var(--color-set-1-bg);
+      }
+    }
+  }
+
+  &__name-input {
+    font-family: var(--font-family-text);
+    font-size: 16px;
+    color: #fff;
+    background: var(--color-set-1-bg);
+    border: 2px solid var(--color-space-border);
+    border-radius: 8px;
+    padding: 3px 12px;
+    flex: 1;
+    min-width: 160px;
+    transition: border-color 120ms ease;
+
+    &::placeholder {
+      color: #83828d;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-brand-highlight);
+    }
+  }
+
+  &__submit {
+    background: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+    border: 2px solid var(--color-brand-highlight);
+    border-radius: 999px;
+    padding: 3px 28px;
+    font-family: var(--font-family-text);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 120ms ease;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--color-brand-highlight-secondary);
+      border-color: var(--color-brand-highlight-secondary);
+    }
+  }
+
+  &__table-heading {
+    font-family: var(--font-family-text);
+    font-size: 19px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fff;
+    margin: 0 0 16px;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-family-text);
+    font-size: 16px;
+
+    thead tr {
+      border-bottom: 2px solid var(--color-space-border);
+    }
+
+    th {
+      text-align: left;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #83828d;
+      padding: 8px 16px 8px 0;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      transition: background 100ms ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+    }
+
+    td {
+      padding: 16px 16px 16px 0;
+      color: #fff;
+      vertical-align: middle;
+    }
+  }
+
+  &__name {
+    font-family: monospace;
+    font-size: 14px;
+    background: var(--color-set-1-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--color-brand-mint);
+  }
+
+  &__date {
+    color: #83828d;
+    font-size: 14px;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__action-link {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-brand-blue);
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 3px 16px;
+    border: 2px solid var(--color-brand-blue);
+    transition:
+      background 120ms ease,
+      color 120ms ease;
+
+    &:hover {
+      background: var(--color-brand-blue);
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  &__action-delete {
+    background: transparent;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-brand-salmon);
+    border: 2px solid var(--color-brand-salmon);
+    border-radius: 999px;
+    padding: 3px 16px;
+    cursor: pointer;
+    transition:
+      background 120ms ease,
+      color 120ms ease;
+
+    &:hover {
+      background: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  &__empty {
+    font-family: var(--font-family-text);
+    font-size: 19px;
+    color: #83828d;
+    padding: 32px 0;
+  }
+}

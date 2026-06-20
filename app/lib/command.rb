@@ -13,7 +13,7 @@ class Command
     new(id: :home,         title: "Home",            path: "/home",            keywords: %w[dashboard start]),
     new(id: :vote,         title: "Vote",             path: "/rate/new",        keywords: %w[review projects rate],       icon: "star_outline"),
     new(id: :shop,         title: "Shop",             path: "/shop",            keywords: %w[store buy prizes stardust],  icon: "cart_outline"),
-    new(id: :resources,    title: "Resources",        path: "/guides",          keywords: %w[guides help docs tutorials], icon: "resources"),
+    new(id: :resources,    title: "Resources",        path: "/resources",       keywords: %w[guides resources help docs tutorials], icon: "resources"),
     new(id: :projects,     title: "My Projects",      path: "/projects",        keywords: %w[builds code work]),
     new(id: :balance,      title: "My Balance",       path: "/my/balance",      keywords: %w[stardust points wallet]),
     new(id: :achievements, title: "Achievements",     path: "/my/achievements", keywords: %w[badges trophies unlocked]),

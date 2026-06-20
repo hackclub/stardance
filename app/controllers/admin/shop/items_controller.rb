@@ -10,8 +10,8 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
 
     def new
       authorize ShopItem, :new?
-      @shop_item = if params[:type].present? && available_shop_item_types.include?(params[:type])
-        available_shop_item_types.find { |t| t == params[:type] }.constantize.new
+      @shop_item = if params[:type].present? && ShopItem::SELECTABLE_TYPES.include?(params[:type])
+        ShopItem::SELECTABLE_TYPES.find { |t| t == params[:type] }.constantize.new
       else
         ShopItem.new
       end
@@ -36,7 +36,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
       if @shop_item.save
         redirect_to admin_shop_item_path(@shop_item), notice: shop_manager? ? "Draft item created." : "Shop item created successfully."
       else
-        @shop_item_types = available_shop_item_types
+        @shop_item_types = ShopItem::SELECTABLE_TYPES
         render :new, status: :unprocessable_entity
       end
     end
@@ -67,7 +67,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
 
         redirect_to admin_shop_item_path(@shop_item), notice: "Shop item updated successfully."
       else
-        @shop_item_types = available_shop_item_types
+        @shop_item_types = ShopItem::SELECTABLE_TYPES
         render :edit, status: :unprocessable_entity
       end
     end
@@ -134,29 +134,12 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
     end
 
     def set_shop_item_types
-      @shop_item_types = available_shop_item_types
+      @shop_item_types = ShopItem::SELECTABLE_TYPES
     end
 
     def set_fulfillment_users
       @fulfillment_users = User.where("'fulfillment_person' = ANY(granted_roles)").order(:display_name)
       @shop_categories = ShopCategory.order(:position, :title)
-    end
-
-    def available_shop_item_types
-      [
-        "ShopItem::Accessory",
-        "ShopItem::HCBGrant",
-        "ShopItem::HCBPreauthGrant",
-        "ShopItem::HQMailItem",
-        "ShopItem::LetterMail",
-        "ShopItem::ThirdPartyPhysical",
-        "ShopItem::ThirdPartyDigital",
-        "ShopItem::WarehouseItem",
-        "ShopItem::SpecialFulfillmentItem",
-        "ShopItem::HackClubberItem",
-        "ShopItem::FreeStickers",
-        "ShopItem::SillyItemType"
-      ]
     end
 
     def shop_item_params

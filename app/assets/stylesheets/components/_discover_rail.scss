@@ -183,7 +183,6 @@
   display: flex;
   flex-direction: column;
   gap: 11px;
-  margin-top: 7px;
 }
 
 .discover-rail__heading {
@@ -195,16 +194,6 @@
   margin: 0;
   opacity: 0.7;
   text-transform: uppercase;
-}
-
-.discover-rail__placeholder {
-  background: rgba(217, 217, 217, 0.5);
-  border-radius: var(--profile-radius);
-  height: 59px;
-
-  &--tall {
-    height: 238px;
-  }
 }
 
 .discover-rail__placeholder-text {
@@ -235,17 +224,6 @@
   display: block;
   min-height: 48px;
   padding: var(--space-xs) var(--space-s);
-
-  &--link {
-    text-decoration: none;
-    transition: border-color 0.15s ease;
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--color-brand-mint);
-      outline: 0;
-    }
-  }
 }
 
 .discover-rail__card-title {
@@ -276,6 +254,169 @@
   }
 }
 
+// --- Voting payout notice widget ---
+
+.voting-payout-notice {
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-s);
+    border-radius: var(--profile-radius);
+    background: var(--color-brand-highlight-faint);
+    border: 1px solid var(--color-brand-highlight-soft);
+  }
+
+  &__body {
+    margin: 0;
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    color: var(--color-brand-off-white);
+    line-height: 1.5;
+  }
+
+  &__threshold {
+    color: var(--color-brand-highlight);
+    font-weight: 700;
+  }
+
+  &__progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__progress {
+    flex: 1;
+    appearance: none;
+    height: 6px;
+    border-radius: 99px;
+    border: none;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.12);
+
+    &::-webkit-progress-bar {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+    }
+
+    &::-webkit-progress-value {
+      background: var(--color-brand-highlight);
+      border-radius: 99px;
+    }
+
+    &::-moz-progress-bar {
+      background: var(--color-brand-highlight);
+      border-radius: 99px;
+    }
+  }
+
+  &__progress-label {
+    flex-shrink: 0;
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    color: var(--color-brand-highlight);
+    font-weight: 600;
+  }
+
+  &__cta {
+    align-self: flex-start;
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--color-brand-highlight);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+}
+
+// --- Achievements widget ---
+
+.achievements-widget {
+  background: var(--color-set-3-bg);
+  border-radius: 8px;
+  color: white;
+  padding: var(--space-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.achievements-widget__title {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-m);
+  font-weight: 700;
+  margin: 0;
+}
+
+.achievements-widget__stats {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  color: #afb2c1;
+}
+
+.achievements-widget__count {
+  font-weight: 700;
+  color: white;
+}
+
+.achievements-widget__icons {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.achievements-widget__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-set-2-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.achievements-widget__icon-img {
+  max-width: 24px;
+  max-height: 24px;
+  object-fit: contain;
+
+  &:is(svg) {
+    width: 18px;
+    height: 18px;
+    fill: var(--color-set-1-bg);
+  }
+
+  &:is(img) {
+    image-rendering: pixelated;
+    width: auto;
+    height: auto;
+  }
+}
+
+.achievements-widget__empty {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  color: #afb2c1;
+  margin: 0;
+}
+
+.achievements-widget__link {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  color: var(--color-space-text);
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+  }
+}
+
 .discover-rail__section--wishlist {
   .shop-goals__container {
     background: transparent;
@@ -288,5 +429,411 @@
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
+  }
+}
+
+// Shared chrome for every discover-rail widget: the bordered "module tile"
+// (same surface as .mission-panel). Widgets mix this block with their own —
+// class="rail-widget events-widget" — and keep their internals under their
+// own namespace.
+.rail-widget {
+  background: var(--color-space-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.12));
+  border-radius: 14px;
+  color: var(--color-space-text);
+  padding: var(--space-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.rail-widget__title {
+  font-family: var(--font-family-text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.rail-widget__body {
+  color: var(--color-brand-off-white);
+  font-size: var(--font-size-s);
+  line-height: 1.45;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.rail-widget__link {
+  align-self: flex-end;
+  color: var(--color-space-text);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+  }
+}
+
+// --- Upcoming events widget ---
+
+.events-widget__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.events-widget__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.events-widget__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(217, 217, 217, 0.35);
+
+  &--empty {
+    display: block;
+  }
+}
+
+.events-widget__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.events-widget__name {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.events-widget__name-link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+    text-decoration: underline;
+  }
+}
+
+.events-widget__badge {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--color-brand-lilac);
+  color: #000;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.events-widget__meta {
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-xs);
+  color: #afb2c1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- Daily star roll widget ---
+
+.daily-roll-widget__button {
+  width: 100%;
+  animation: daily-roll-beckon 2.6s ease-in-out infinite;
+
+  // button_to wraps the button in a form; make it span the widget.
+  @at-root form.button_to:has(> &) {
+    display: block;
+  }
+
+  &:hover .daily-roll-widget__button-star,
+  &:focus-visible .daily-roll-widget__button-star {
+    transform: rotate(180deg) scale(1.25);
+  }
+}
+
+.daily-roll-widget__button-star {
+  display: inline-block;
+  transition: transform 300ms ease;
+}
+
+@keyframes daily-roll-beckon {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  50% {
+    box-shadow: 0 0 16px 2px var(--color-brand-highlight-soft);
+  }
+}
+
+.daily-roll-widget__result {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xs) 0 0;
+  position: relative;
+}
+
+.daily-roll-widget__number {
+  font-family: var(--font-family-text);
+  // Sized so the max roll — "+2,147,483,647", 14 characters — fits the rail.
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.daily-roll-widget--rolling .daily-roll-widget__number {
+  animation: daily-roll-hum 280ms ease-in-out infinite alternate;
+}
+
+@keyframes daily-roll-hum {
+  from {
+    filter: brightness(0.85);
+    transform: scale(0.97);
+  }
+
+  to {
+    filter: brightness(1.25);
+    transform: scale(1.03);
+  }
+}
+
+.daily-roll-widget--landed {
+  animation: daily-roll-shake 450ms ease-out;
+}
+
+@keyframes daily-roll-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  20% {
+    transform: translate(-3px, 1px);
+  }
+
+  40% {
+    transform: translate(3px, -2px);
+  }
+
+  60% {
+    transform: translate(-2px, -1px);
+  }
+
+  80% {
+    transform: translate(1px, 1px);
+  }
+}
+
+// One accent family, like the rest of the rail: the highlight golds, with
+// full Accent-2 yellow ("stars, important") saved for the rare cosmic tier.
+// Tone colors are gated on :not(--waiting) so the reel color can't spoil
+// the sign before the reveal lands.
+.daily-roll-widget:not(.daily-roll-widget--waiting) {
+  .daily-roll-widget__result--cosmic .daily-roll-widget__number {
+    color: var(--color-brand-yellow);
+    text-shadow: 0 0 20px rgba(255, 229, 100, 0.6);
+  }
+
+  .daily-roll-widget__result--high .daily-roll-widget__number {
+    color: var(--color-brand-highlight);
+    text-shadow: 0 0 16px var(--color-brand-highlight-soft);
+  }
+
+  .daily-roll-widget__result--mid .daily-roll-widget__number {
+    color: var(--color-space-text);
+    text-shadow: 0 0 12px var(--color-overlay-light);
+  }
+
+  .daily-roll-widget__result--low .daily-roll-widget__number {
+    color: var(--color-space-text-muted);
+  }
+}
+
+.daily-roll-widget__digits {
+  display: inline-block;
+}
+
+.daily-roll-widget__digits--tick {
+  animation: daily-roll-lock 160ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+// Each digit visibly snaps into place as it locks on — this is the
+// digit-by-digit growth, so the bump is pronounced.
+@keyframes daily-roll-lock {
+  0% {
+    transform: scale(1.3) translateY(-1px);
+  }
+
+  60% {
+    transform: scale(0.96);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+// The reveal's final beat: once the number has finished growing and sat for a
+// suspense beat, it gets stamped into place. Starts at resting size (the
+// digits are already there from the digit-by-digit reveal) and punches — a
+// punctuation, not a fresh entry. Shared by the rail widget and /rng hero.
+.daily-roll-widget__number--slammed {
+  animation: daily-roll-slam 360ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+@keyframes daily-roll-slam {
+  0% {
+    transform: scale(1);
+  }
+
+  30% {
+    transform: scale(1.22) rotate(-2deg);
+  }
+
+  60% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.daily-roll-widget__burst {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.daily-roll-widget__particle {
+  animation: daily-roll-burst 700ms ease-out var(--delay, 0ms) forwards;
+  color: var(--color-brand-yellow);
+  font-size: var(--font-size-s);
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+}
+
+@keyframes daily-roll-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateX(8px)
+      scale(0.6);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
+      translateX(var(--dist, 48px)) scale(1.15);
+  }
+}
+
+// Supporting bits fading in once the reveal lands (rail widget + /rng hero).
+@keyframes daily-roll-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Exo 2, not Playfair italics — branding.md reserves those for title sizes.
+.daily-roll-widget__flavor {
+  color: var(--color-brand-highlight);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+// While rolling, the flavor / actions are pulled out of the layout (not just
+// hidden) so nothing reserves blank space under the reel; they fade in once
+// the reveal lands.
+.daily-roll-widget--waiting {
+  .daily-roll-widget__flavor,
+  .daily-roll-widget__actions {
+    display: none;
+  }
+}
+
+.daily-roll-widget--landed {
+  .daily-roll-widget__flavor,
+  .daily-roll-widget__actions {
+    animation: daily-roll-fade-in 350ms ease both;
+  }
+}
+
+// copy-to-share + see-history, mirroring the /rng hero. Side by side, but
+// they wrap to full width if the rail gets tight.
+.daily-roll-widget__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xxs);
+
+  .action-btn {
+    flex: 1 1 auto;
+  }
+}
+
+// The reveal is skipped in JS under reduced motion, but the CSS-driven
+// animations (idle button glow, settle pop, landing shake) need their own
+// guard.
+@media (prefers-reduced-motion: reduce) {
+  .daily-roll-widget__button,
+  .daily-roll-widget--rolling .daily-roll-widget__number,
+  .daily-roll-widget__number--slammed,
+  .daily-roll-widget--landed,
+  .daily-roll-widget--landed .daily-roll-widget__flavor,
+  .daily-roll-widget--landed .daily-roll-widget__actions,
+  .daily-roll-widget__digits--tick {
+    animation: none;
+  }
+}
+
+// Dev-only escape hatch for re-testing the reveal.
+.daily-roll-widget__dev-clear {
+  align-self: center;
+  background: none;
+  border: 0;
+  color: var(--color-space-text-muted);
+  cursor: pointer;
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-xs);
+  padding: 0;
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-salmon);
   }
 }

@@ -22,6 +22,28 @@
       </button>
     </header>
 
+    <div class="admin-mission-edit__guide-url-form">
+      <%= form_with model: mission, url: admin_mission_path(mission.slug), method: :patch, local: true, class: "admin-mission-edit__form" do |f| %>
+        <label>
+          External guide URL
+          <small class="admin-mission-edit__hint">
+            If set, all "View guide" links point to this URL instead of the
+            built-in guide below. Leave blank to use the on-platform guide.
+          </small>
+          <%= f.url_field :guide_url, placeholder: "https://..." %>
+        </label>
+        <label>
+          Number of sections
+          <small class="admin-mission-edit__hint">
+            Only used with an external guide — sets the section count shown on
+            the mission page. Leave blank to hide the sections chip.
+          </small>
+          <%= f.number_field :guide_sections_count, min: 1, step: 1 %>
+        </label>
+        <%= f.submit "Save guide settings", class: "action-btn action-btn--small action-btn--primary" %>
+      <% end %>
+    </div>
+
     <% if available_languages.any? %>
       <nav class="admin-mission-edit__lang-tabs" aria-label="Guide language">
         <% available_languages.each do |lang| %>

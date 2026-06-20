@@ -42,6 +42,32 @@ module GitHost
       all_commits
     end
 
+    def fetch_merged_pulls(per_page: 100)
+      return [] unless owner && repo
+
+      all_pulls = []
+      page = 1
+
+      loop do
+        path = "repos/#{owner}/#{repo}/pulls"
+        params = { state: "closed", per_page: per_page, page: page }
+
+        full_url = "#{api_base}/#{path}?#{params.to_query}"
+        pulls = http_get(full_url, headers: auth_headers)
+
+        break unless pulls.is_a?(Array) && pulls.any?
+
+        merged = pulls.select { |pr| pr["merged_at"].present? && pr["user"].present? }
+        all_pulls.concat(merged.map { |pr| normalize_pull(pr) })
+
+        break if pulls.size < per_page
+
+        page += 1
+      end
+
+      all_pulls
+    end
+
     def fetch_commit(sha)
       return nil unless owner && repo && sha.present?
 
@@ -76,6 +102,16 @@ module GitHost
         additions: stats["additions"],
         deletions: stats["deletions"],
         files_changed: raw["files"]&.size
+      }
+    end
+
+    def normalize_pull(raw)
+      {
+        number: raw["number"],
+        author_login: raw["user"]["login"],
+        author_avatar_url: raw["user"]["avatar_url"],
+        author_url: raw["user"]["html_url"],
+        merged_at: Time.parse(raw["merged_at"])
       }
     end
 

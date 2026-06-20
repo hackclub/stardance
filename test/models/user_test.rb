@@ -32,6 +32,8 @@
 #  manual_ysws_override         :boolean
 #  mission_review_notifications :boolean          default(TRUE), not null
 #  onboarded_at                 :datetime
+#  outpost_discount_stardust    :integer          default(0), not null
+#  outpost_email_sent_at        :datetime
 #  ref                          :string
 #  regions                      :string           default([]), is an Array
 #  session_token                :string

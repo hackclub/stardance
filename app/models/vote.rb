@@ -52,6 +52,7 @@ class Vote < ApplicationRecord
   belongs_to :ship_event, class_name: "Post::ShipEvent", counter_cache: true
 
   has_one :assignment, class_name: "Vote::Assignment", dependent: :nullify
+  has_many :events, class_name: "Vote::Event", inverse_of: :vote, dependent: :nullify
 
   has_paper_trail on: [ :create, :update, :destroy ]
 

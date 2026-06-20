@@ -9,6 +9,7 @@
 #  description          :text
 #  devlogs_count        :integer          default(0), not null
 #  duration_seconds     :integer          default(0), not null
+#  hardware_stage       :string
 #  marked_fire_at       :datetime
 #  memberships_count    :integer          default(0), not null
 #  nominated_fire_at    :datetime
@@ -62,11 +63,18 @@ class Project < ApplicationRecord
     "Desktop App (Windows)", "Desktop App (Linux)", "Desktop App (macOS)",
     "Minecraft Mods", "Hardware", "Android App", "iOS App", "Other"
   ].freeze
+  USER_SELECTABLE_TYPES = (AVAILABLE_CATEGORIES - [ "Hardware" ]).freeze
+
+  # Hardware projects carry a build/design stage; software projects leave
+  # hardware_stage nil. Drives the Lookout screen-recording flow on the project
+  # page (hardware builders can't run a Hackatime editor plugin).
+  HARDWARE_STAGES = %w[design build].freeze
 
   scope :excluding_member, ->(user) {
     user ? where.not(id: user.projects) : all
   }
   scope :fire, -> { where.not(marked_fire_at: nil) }
+  scope :fire_nomination_pending, -> { where.not(nominated_fire_at: nil).where(marked_fire_at: nil) }
   scope :with_ship_events, -> { joins(:ship_events).distinct }
   scope :with_ship_events_between, ->(start_date, end_date) {
     joins(:posts)
@@ -87,6 +95,7 @@ class Project < ApplicationRecord
   has_many :memberships, class_name: "Project::Membership", dependent: :destroy
   has_many :users, through: :memberships
   has_many :hackatime_projects, class_name: "User::HackatimeProject", dependent: :nullify
+  has_many :lookout_sessions, dependent: :destroy
   has_many :posts, dependent: :destroy
   has_many :devlog_posts, -> { where(postable_type: "Post::Devlog").order(created_at: :desc) }, class_name: "Post"
   has_many :devlogs, through: :devlog_posts, source: :postable, source_type: "Post::Devlog"
@@ -94,8 +103,10 @@ class Project < ApplicationRecord
   has_many :ship_events, through: :ship_event_posts, source: :postable, source_type: "Post::ShipEvent"
   has_many :git_commit_posts, -> { where(postable_type: "Post::GitCommit").order(created_at: :desc) }, class_name: "Post"
   has_many :votes, dependent: :destroy
+  has_many :vote_events, class_name: "Vote::Event", dependent: :nullify
   has_many :reports, class_name: "Project::Report", dependent: :destroy
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
+  has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
   has_many :followers, through: :project_follows, source: :user
@@ -126,7 +137,80 @@ class Project < ApplicationRecord
   # ships are regular, non-mission ships.
   def shipped_to_mission?(mission)
     return false if mission.nil?
-    mission_submissions.where(mission_id: mission.id).exists?
+    mission_submissions.not_rejected.where(mission_id: mission.id).exists?
+  end
+
+  # The one exception to the shipped-projects-keep-their-mission rule: a
+  # shipped project may still attach a mission that lists one it shipped to
+  # as a direct prerequisite (e.g. webOS 1 -> webOS 2).
+  def eligible_follow_up_mission?(mission)
+    return false if mission.nil? || !mission.has_prerequisites?
+    mission_submissions.not_rejected.where(mission_id: mission.prerequisite_ids).exists?
+  end
+
+  # Makes `mission` the current mission, replacing the active attachment
+  # when the swap is allowed: draft projects switch freely, shipped projects
+  # only move to a follow-up or back to a mission they shipped to. Otherwise
+  # the attachment validations raise RecordInvalid.
+  def attach_mission!(mission)
+    with_lock do
+      current = current_mission_attachment
+      current.detach! if current && may_swap_mission_to?(mission)
+      mission_attachments.create!(mission: mission, attached_at: Time.current)
+    end
+  end
+
+  # Detaches the current mission and returns the fallback it re-attached,
+  # if any — a shipped project never goes mission-less.
+  def detach_mission!
+    with_lock do
+      attachment = current_mission_attachment
+      next nil unless attachment
+
+      attachment.detach!
+      fallback = fallback_mission_after_detaching(attachment.mission)
+      mission_attachments.create!(mission: fallback, attached_at: Time.current) if fallback
+      fallback
+    end
+  end
+
+  # The mission a detach falls back to: the most recent one this project
+  # shipped to, other than the mission being detached.
+  def fallback_mission_after_detaching(mission)
+    scope = mission_submissions.not_rejected
+    scope = scope.where.not(mission_id: mission.id) if mission
+    scope.order(created_at: :desc).first&.mission
+  end
+
+  # Whether `mission` may replace the current attachment: draft projects
+  # switch freely; shipped projects only move to a follow-up or back to a
+  # mission they shipped to. The attachment validation enforces this too.
+  def may_swap_mission_to?(mission)
+    !shipped? || shipped_to_mission?(mission) || eligible_follow_up_mission?(mission)
+  end
+
+  # Follow-up missions for the switch UI, in one pass: :ready to attach now
+  # (all prerequisites approved for the user), :awaiting this project's
+  # in-review ships clearing (shown as disabled teasers).
+  def follow_up_targets_for(user)
+    targets = { ready: [], awaiting: [] }
+    mission = current_mission
+    return targets if user.nil? || mission.nil? || !shipped_to_mission?(mission)
+
+    missions = mission.unlocks.available.includes(:prerequisites).to_a
+    return targets if missions.empty?
+
+    completed_ids = user.completed_mission_ids
+    in_review_ids = mission_submissions.in_review.pluck(:mission_id)
+    missions.each do |mission|
+      missing = mission.prerequisite_ids - completed_ids
+      if missing.empty?
+        targets[:ready] << mission
+      elsif (missing - in_review_ids).empty?
+        targets[:awaiting] << mission
+      end
+    end
+    targets
   end
 
   # needs to be implemented
@@ -168,15 +252,18 @@ class Project < ApplicationRecord
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
             size: { less_than: MAX_BANNER_SIZE, message: "is too large (max 10 MB)" },
             processable_file: true
-  validate :validate_project_categories
+  # A blank hardware_stage means "software project". The edit form's type
+  # toggle submits an empty string when Software is selected; coerce it to nil
+  # so the column actually clears and passes the inclusion validation (which
+  # allows nil, but not "").
+  normalizes :hardware_stage, with: ->(value) { value.presence }
+  validates :hardware_stage, inclusion: { in: HARDWARE_STAGES }, allow_nil: true
+  validates :project_type, inclusion: { in: AVAILABLE_CATEGORIES }, allow_nil: true
+  validate :hardware_stage_locked_after_funding_request
 
-  def validate_project_categories
-    return if project_categories.blank?
-
-    invalid_types = project_categories - AVAILABLE_CATEGORIES
-    if invalid_types.any?
-      errors.add(:project_categories, "contains invalid types: #{invalid_types.join(', ')}")
-    end
+  def hardware_stage_locked_after_funding_request
+    return unless hardware_stage_changed? && has_any_funding_request?
+    errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")
   end
 
   def validate_repo_cloneable
@@ -216,6 +303,42 @@ class Project < ApplicationRecord
 
   def shipped?
     shipped_at.present? || !draft?
+  end
+
+  def hardware?
+    hardware_stage.present?
+  end
+
+  def design_stage?
+    hardware_stage == "design"
+  end
+
+  def build_stage?
+    hardware_stage == "build"
+  end
+
+  # True while a funding request for this project is awaiting reviewer decision.
+  def has_pending_funding_request?
+    certification_funding_requests.pending.exists?
+  end
+
+  # True once any funding request has been submitted (pending, approved, or returned).
+  def has_any_funding_request?
+    return @_has_any_funding_request if defined?(@_has_any_funding_request)
+    @_has_any_funding_request = certification_funding_requests.exists?
+  end
+
+  # The latest funding request (for displaying approved amount, status, etc.).
+  def latest_funding_request
+    return @_latest_funding_request if defined?(@_latest_funding_request)
+    @_latest_funding_request = certification_funding_requests.order(created_at: :desc).first
+  end
+
+  # Name of the Hackatime project that Lookout timelapse heartbeats are filed
+  # under (and auto-linked to this project) — the project title, so recorded
+  # time lands under the same Hackatime project as any code-based time.
+  def hackatime_recorder_name
+    title
   end
 
   def display_description
@@ -278,18 +401,22 @@ class Project < ApplicationRecord
     event :return_for_changes do
       transitions from: :under_review, to: :needs_changes
     end
+
+    event :resubmit_for_review do
+      transitions from: :needs_changes, to: :submitted
+    end
   end
 
   # Maps each editable info field on the project form to the shipping
-  # requirement keys it satisfies. Mirrors FIELD_REQUIREMENT_MAP in the
-  # project-form Stimulus controller. The union of these keys is what
+  # requirement keys it satisfies. The union of these keys is what
   # distinguishes "project info" from gates like devlog / payout / vote balance.
   FIELD_REQUIREMENT_MAP = {
     description: %i[description],
     demo_url: %i[demo_url demo_url_reachable],
     repo_url: %i[repo_url repo_url_format repo_cloneable],
     readme_url: %i[readme_url readme_url_reachable],
-    banner: %i[banner]
+    banner: %i[banner],
+    ai_declaration: %i[ai_declaration]
   }.freeze
 
   INFO_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.values.flatten.freeze
@@ -347,6 +474,12 @@ class Project < ApplicationRecord
         passed: description.present?
       },
       {
+        key: :ai_declaration,
+        label: "Declare your AI usage (write \"None\" if you didn't use any)",
+        tooltip: "Describe how you used AI in this project. AI use is OK, but it should feel like your own work — if you didn't use any, write \"None\".",
+        passed: ai_declaration.present?
+      },
+      {
         key: :banner,
         label: "Upload a screenshot of your project",
         tooltip: "A screenshot (JPEG, PNG, or WebP, max 10MB) that represents your project on the explore page.",
@@ -357,6 +490,13 @@ class Project < ApplicationRecord
         label: "Post at least one devlog since your last ship",
         tooltip: "You must have posted at least one devlog after your previous ship to show progress on this version.",
         passed: has_devlog_since_last_ship?
+      },
+      {
+        key: :build_devlog,
+        label: "Post at least one build devlog before shipping",
+        fail_label: "Post at least one build devlog before you can ship!",
+        tooltip: "Now that your project is funded it's in the build stage. Log some build time and post a build devlog to show progress before you ship. Design-stage devlogs don't count.",
+        passed: !received_grant? || has_build_devlog_since_last_ship?
       },
       {
         key: :payout,
@@ -407,16 +547,10 @@ class Project < ApplicationRecord
         tooltip: "Your devlogs must have actual tracked time attached. Make sure you're logging time via Hackatime.",
         passed: duration_seconds > 10
       }
-      # { key: :ai_declaration, label: "Declare your AI usage for this project (write 'None' if you didn't use any)", passed: ai_declaration.present? }
     ]
       .map.with_index
       .sort_by { |pair| [ pair[0][:passed] ? 1 : 0, pair[1] ] }
       .map { |it| it[0] }
-  end
-
-  def visual_shipping_requirements
-    # only those that have a label we could use right now
-    shipping_requirements.select { |elem| !elem[:passed] || elem[:label] }
   end
 
   def shippable? = ship_blocking_errors.empty?
@@ -457,26 +591,6 @@ class Project < ApplicationRecord
     ship_events.first
   end
 
-  def has_legacy_ship_events?
-    ship_events.where(voting_scale_version: Post::ShipEvent::LEGACY_VOTING_SCALE_VERSION).exists?
-  end
-
-  def has_paid_current_scale_ship_events?(excluding_ship_event_id: nil)
-    scope = ship_events
-              .where(voting_scale_version: Post::ShipEvent::CURRENT_VOTING_SCALE_VERSION)
-              .where.not(payout: nil)
-    scope = scope.where.not(id: excluding_ship_event_id) if excluding_ship_event_id.present?
-    scope.exists?
-  end
-
-  def legacy_payout_total
-    ship_events
-      .where(voting_scale_version: Post::ShipEvent::LEGACY_VOTING_SCALE_VERSION)
-      .where.not(payout: nil)
-      .sum(:payout)
-      .to_f
-  end
-
   def total_ship_hours
     ship_events.sum(&:hours).to_f
   end
@@ -506,6 +620,21 @@ class Project < ApplicationRecord
   def has_devlog_since_last_ship?
     scope = devlog_posts
     scope = scope.where("posts.created_at > ?", last_ship_event.created_at) if last_ship_event
+    scope.exists?
+  end
+
+  # True once this project has had a funding request approved (the "I need
+  # Funding" path). Such projects must show real build progress before shipping.
+  def received_grant?
+    certification_funding_requests.approved.exists?
+  end
+
+  # Funded projects must post at least one BUILD-phase devlog since their last
+  # ship before they can ship — design-phase devlogs (logged before the grant)
+  # don't count.
+  def has_build_devlog_since_last_ship?
+    scope = devlogs.build_phase.where(deleted_at: nil)
+    scope = scope.where("post_devlogs.created_at > ?", last_ship_event.created_at) if last_ship_event
     scope.exists?
   end
 
@@ -570,7 +699,11 @@ class Project < ApplicationRecord
 
   def previous_ship_event_has_payout?
     return true if last_ship_event.nil?
-    last_ship_event.payout.present?
+    return true if last_ship_event.payout.present?
+    sub = last_ship_event.mission_submission
+    return true if sub&.payout_path == "static_prize"
+    return true if sub&.rejected?
+    false
   end
 
   def notify_slack_channel

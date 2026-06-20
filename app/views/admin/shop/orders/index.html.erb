@@ -1,59 +1,53 @@
 <% content_for :title, @view == 'fulfillment' ? 'Pending Fulfillment' : 'Shop Orders' %>
-<div>
-  <h1>
-    <%= @view == 'fulfillment' ? 'Pending Fulfillment' : 'Shop Orders' %>
-  </h1>
-
-  <% if current_user.fulfillment_person? && !current_user.admin? && current_user.has_regions? %>
-    <span>
-      📍 <%= current_user.regions_display %>
-    </span>
-  <% end %>
-
-  <div>
-  <% if current_user.admin? || current_user.fraud_dept? %>
-  <%= link_to "Shop Orders", admin_shop_orders_path(view: 'shop_orders') %>
+<% content_for :stylesheets do %>
+  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
 <% end %>
+<div class="shop-orders">
+  <div class="shop-orders__header">
+    <h1 class="shop-orders__title"><%= @view == 'fulfillment' ? 'Pending Fulfillment' : 'Shop Orders' %></h1>
+    <% if current_user.fulfillment_person? && !current_user.admin? && current_user.has_regions? %>
+      <span class="shop-orders__region">📍 <%= current_user.regions_display %></span>
+    <% end %>
+  </div>
+
+  <div class="shop-orders__view-tabs">
+    <% if current_user.admin? || current_user.fraud_dept? %>
+      <%= render ActionButtonComponent.new(text: "Shop Orders", href: admin_shop_orders_path(view: 'shop_orders'), size: :small, variant: @view == 'shop_orders' ? :primary : :secondary) %>
+    <% end %>
     <% if current_user.admin? || current_user.fulfillment_person? %>
-      <%= link_to "Pending Fulfillment", admin_shop_orders_path(view: 'fulfillment') %>
+      <%= render ActionButtonComponent.new(text: "Pending Fulfillment", href: admin_shop_orders_path(view: 'fulfillment'), size: :small, variant: @view == 'fulfillment' ? :primary : :secondary) %>
     <% end %>
   </div>
-</div>
 
-<div>
-  <div>
+  <div class="shop-orders__panel">
     <%= render partial: "stats", locals: { counts: @c, average_fulfillment_time: @f } %>
-  </div>
-  <div>
-    <% time_range = params[:time_range] || '7_days' %>
-    <% limit = params[:limit] || '10' %>
-    <% if @view == 'fulfillment' %>
-      <%= render partial: "action_leaderboard", locals: { mode: :fulfillment, time_range: time_range, limit: limit } %>
-    <% elsif @view == 'shop_orders' %>
-      <%= render partial: "action_leaderboard", locals: { mode: :fraud, time_range: time_range, limit: limit } %>
+    <% if policy(:admin).view_leaderboard? %>
+      <% time_range = params[:time_range] || '7_days' %>
+      <% limit = params[:limit] || '10' %>
+      <% if @view == 'fulfillment' %>
+        <%= render partial: "action_leaderboard", locals: { mode: :fulfillment, time_range: time_range, limit: limit } %>
+      <% elsif @view == 'shop_orders' %>
+        <%= render partial: "action_leaderboard", locals: { mode: :fraud, time_range: time_range, limit: limit } %>
+      <% end %>
     <% end %>
   </div>
-</div>
 
-<div>
-  <% if params[:goob] == "true" %>
-    <%= link_to "Ungroup", admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :status, :date_from, :date_to, :sort, :view, assignee_ids: []).except(:goob)) %>
-  <% else %>
-    <%= link_to "Group by User", admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :status, :date_from, :date_to, :sort, :view, assignee_ids: []).merge(goob: true)) %>
+  <div class="shop-orders__group-toggle">
+    <% if params[:goob] == "true" %>
+      <%= link_to "Ungroup", admin_shop_orders_path(preserved_filter_params.except(:goob)) %>
+    <% else %>
+      <%= link_to "Group by User", admin_shop_orders_path(preserved_filter_params.merge(goob: true)) %>
+    <% end %>
+  </div>
+
+  <%= render partial: "filters" %>
+
+  <% if @grouped_orders %>
+    <%= render partial: "grouped_table", locals: { grouped_orders: @grouped_orders } %>
+  <% elsif @shop_orders %>
+    <%= render partial: "table", locals: { orders: @shop_orders } %>
+    <% if @pagy %>
+      <%== @pagy.series_nav %>
+    <% end %>
   <% end %>
-</div>
-
-<%= render partial: "filters" %>
-
-<% if @grouped_orders %>
-  <%= render partial: "grouped_table", locals: { grouped_orders: @grouped_orders } %>
-<% elsif @shop_orders %>
-  <%= render partial: "table", locals: { orders: @shop_orders } %>
-  <% if @pagy %>
-    <%== @pagy.series_nav %>
-  <% end %>
-<% end %>
-
-<div>
-  <%= link_to "← Back", admin_users_path %>
 </div>

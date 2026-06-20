@@ -1,9 +1,15 @@
+<%
+  # route for tracking
+  demo_proxy_url = project.demo_url.present? ? demo_votes_assignment_path(assignment) : nil
+  repo_proxy_url = project.repo_url.present? ? repo_votes_assignment_path(assignment) : nil
+%>
 <section class="vote-page__timeline" aria-label="Project timeline through assigned ship">
   <% posts.each do |post| %>
     <% if post.postable_type == "Post::ShipEvent" %>
-      <%= render "projects/ship_card", post: post, project: project %>
+      <%= render "projects/ship_card", post: post, project: project, track_engagement: false,
+                 demo_url: demo_proxy_url, repo_url: repo_proxy_url %>
     <% else %>
-      <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark) %>
+      <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark, show_reposts: false, track_engagement: false) %>
     <% end %>
   <% end %>
 </section>

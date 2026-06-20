@@ -49,7 +49,9 @@ class Shop::ItemsController < Shop::BaseController
       return
     end
 
-    @sale_price = @shop_item.price_for_region(@user_region)
+    @user_addresses ||= current_user&.addresses || []
+    @user_balance = current_user&.cached_balance || 0
+    @sale_price = @shop_item.price_for_user(current_user, @user_region)
     @regional_base_price = @shop_item.base_price_for_region(@user_region)
     @accessories = @shop_item.available_accessories.includes(:image_attachment)
     @modifiers = @shop_item.available_modifiers_for_region(@user_region)
@@ -72,12 +74,15 @@ class Shop::ItemsController < Shop::BaseController
     prepare_shop_chrome
     load_shop_items
     @shop_items = Shop::Categorization.filter(@shop_items, @slug)
+    prepare_visible_shop_items
   end
 
   private
 
   def prepare_shop_chrome
     @shop_open = Flipper.enabled?(:shop_open, current_user)
+    @hardware_flow_enabled = Flipper.enabled?(:hardware_flow, current_user)
+    @show_shop_suggestion_modal = current_user && Flipper.enabled?(:shop_suggestion_box, current_user) && !current_user.has_dismissed?("shop_suggestion_box")
     @user_region = user_region
     @body_class = "shop-page"
     @region_options = Shop::Regionalizable::REGIONS.map do |code, config|
@@ -103,9 +108,8 @@ class Shop::ItemsController < Shop::BaseController
 
     pool = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
 
-    shuffled = pool.shuffle
-    @new_items     = shuffled.first(8)
-    @popular_items = shuffled.drop(8).first(8)
+    @new_items     = pool.sort_by(&:created_at).reverse.first(8)
+    @popular_items = pool.shuffle.first(8)
   end
 
   def load_orders_sidebar
@@ -127,7 +131,7 @@ class Shop::ItemsController < Shop::BaseController
 
     return "shop/items/tutorial_project" unless current_user.projects.exists?
     return "shop/items/tutorial_verify"  unless current_user.identity_submitted?
-    return "shop/items/tutorial_address" if current_user.addresses.empty?
+    return "shop/items/tutorial_address" if (@user_addresses ||= current_user.addresses).empty?
 
     nil
   end

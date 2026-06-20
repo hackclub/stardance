@@ -18,6 +18,32 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       icon: "fire",
       earned_check: ->(user) { user.projects.fire.exists? },
       visibility: :secret
+    ),
+    new(
+      slug: :referral_2,
+      name: "2 Friends Referred",
+      description: "Referred 2 people who verified their accounts.",
+      icon: "referral_2",
+      earned_check: ->(user) { user.verified_referral_count >= 2 },
+      progress: ->(user) { { current: [ user.verified_referral_count, 2 ].min, target: 2 } }
+    ),
+    new(
+      slug: :referral_5,
+      name: "5 Friends Referred",
+      description: "Referred 5 people who verified their accounts.",
+      icon: "referral_5",
+      earned_check: ->(user) { user.verified_referral_count >= 5 },
+      progress: ->(user) { { current: [ user.verified_referral_count, 5 ].min, target: 5 } }
+    ),
+    new(
+      slug: :manual_outpost_ticket_approval,
+      name: "Presentable Hardware Project",
+      description: "Got a hardware project polished enough to show off. Unlocks the Outpost Ticket.",
+      icon: "rocket",
+      # Manual-only: an admin grants/revokes this via the Outpost Ticket toggle
+      # on the user admin page. The achievement row is the source of truth.
+      earned_check: ->(user) { user.earned_achievement?(:manual_outpost_ticket_approval) },
+      visibility: :visible
     )
   ].freeze
 

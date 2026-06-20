@@ -32,6 +32,7 @@ class Rsvp < ApplicationRecord
     "AMD",
     "GitHub",
     "Linus Tech Tips",
+    "Instagram",
     "Teacher",
     "Friend"
   ].freeze

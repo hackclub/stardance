@@ -1,0 +1,7 @@
+referrer:
+  user_id: <%= ActiveRecord::FixtureSet.identify(:referral_referrer) %>
+  code: abc12
+  eligible: true
+  age_group: teen
+  created_at: <%= 1.week.ago.to_fs(:db) %>
+  updated_at: <%= 1.week.ago.to_fs(:db) %>

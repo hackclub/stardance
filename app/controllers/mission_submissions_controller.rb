@@ -86,13 +86,15 @@ class MissionSubmissionsController < ApplicationController
 
   def notify_builder(template_basename)
     builder = @submission.ship_event&.post&.user
-    return unless builder&.slack_id.present?
+    return unless builder
 
-    SendSlackDmJob.perform_later(
-      builder.slack_id,
-      blocks_path: "notifications/missions/#{template_basename}.slack_message",
-      locals: @submission.notification_locals
-    )
+    klass = case template_basename
+    when "submission_approved" then Notifications::Missions::SubmissionApproved
+    when "submission_rejected" then Notifications::Missions::SubmissionRejected
+    end
+    return unless klass
+
+    klass.notify(recipient: builder, actor: current_user, record: @submission)
   rescue StandardError => e
     Rails.logger.warn("MissionSubmissions notify_builder: #{e.message}")
   end

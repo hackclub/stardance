@@ -1,0 +1,24 @@
+<% project_title = @notification.params["project_title"] %>
+<% stardust = @notification.params["stardust"] %>
+<% hours = @notification.params["hours"] %>
+<% multiplier = @notification.params["multiplier"] %>
+<% ship_date = @notification.params["ship_date"] %>
+<% blessing = @notification.params["blessing"] %>
+
+Payout issued!
+
+Thanks for shipping. <% if stardust.present? %><%= stardust %> stardust<% else %>Your ship event payout<% end %> just landed on your balance<% if project_title.present? %> for "<%= project_title %>"<% end %>.
+
+<% if ship_date.present? %>Ship date: <%= ship_date %>
+<% end %><% if hours.present? %>Hours: <%= hours %>
+<% end %><% if multiplier.present? %>Multiplier: <%= multiplier %> stardust/hr
+<% end %><% if stardust.present? %>Stardust: <%= stardust %>
+<% end %>
+
+<% if blessing == "blessed" %>
+You're blessed — payout includes a 20% bonus for great feedback.
+<% elsif blessing == "cursed" %>
+You're cursed — payout reduced by 50%. Write more detailed feedback during voting to lift the curse.
+<% end %>
+
+View balance: <%= my_balance_url %>

@@ -29,6 +29,8 @@
 !/tmp/storage/.keep
 
 /public/assets
+/public/slack_emotes.json
+/app/javascript/config/slack_emotes.json
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key

@@ -1,0 +1,21 @@
+<% project = @record&.post&.project %>
+<% author = @record&.post&.user %>
+<% body = @notification.preview_text %>
+
+<% if project&.title.present? %>Fresh devlog on <%= project.title %>!<% else %>Fresh devlog on a project you follow!<% end %>
+
+<% if author && project&.title.present? %>
+@<%= author.display_name %> just posted an update on "<%= project.title %>".
+<% elsif project&.title.present? %>
+A new devlog just landed on "<%= project.title %>".
+<% else %>
+A project you follow just posted a new devlog.
+<% end %>
+
+<% if body.present? %>
+<%= body %>
+
+<% end %>
+<% if project %>
+Read devlog: <%= project_url(project) %>
+<% end %>

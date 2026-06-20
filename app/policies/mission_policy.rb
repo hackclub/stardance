@@ -6,6 +6,7 @@ class MissionPolicy < ApplicationPolicy
   # links shouldn't 404. Soft-deleted missions remain hidden because the
   # default scope excludes them; this policy never sees them.
   def show? = true
+  def gallery? = true
   def guide? = true
 
   def manage?

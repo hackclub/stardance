@@ -33,24 +33,26 @@
 
   <% if @orders.any? %>
     <div class="card">
-      <table class="table-data">
-        <thead>
-          <tr><th>ID</th><th>Buyer</th><th>Item</th><th>Qty</th><th>Status</th><th>Created</th><th></th></tr>
-        </thead>
-        <tbody>
-          <% @orders.each do |o| %>
-            <tr>
-              <td>#<%= o.id %></td>
-              <td><%= o.user.display_name %></td>
-              <td><%= truncate(o.shop_item.name, length: 25) %></td>
-              <td><%= o.quantity %></td>
-              <td><span class="badge badge-<%= o.aasm_state %>"><%= o.aasm_state.humanize %></span></td>
-              <td><%= o.created_at.strftime("%b %d, %Y") %><br><small class="seller-portal__muted"><%= o.created_at.strftime("%l:%M %p") %></small></td>
-              <td><%= link_to "View", seller_order_path(o), class: "btn-primary slim" %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+      <div>
+        <table class="space-table">
+          <thead>
+            <tr><th>ID</th><th>Buyer</th><th>Item</th><th>Qty</th><th>Status</th><th>Created</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% @orders.each do |o| %>
+              <tr>
+                <td>#<%= o.id %></td>
+                <td><%= o.user.display_name %></td>
+                <td><%= truncate(o.shop_item.name, length: 25) %></td>
+                <td><%= o.quantity %></td>
+                <td><span class="badge badge-<%= o.aasm_state %>"><%= o.aasm_state.humanize %></span></td>
+                <td><%= o.created_at.strftime("%b %d, %Y") %><br><small class="seller-portal__muted"><%= o.created_at.strftime("%l:%M %p") %></small></td>
+                <td><%= link_to "View", seller_order_path(o), class: "btn-primary slim" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
     <%== @pagy.series_nav if @pagy %>
   <% else %>

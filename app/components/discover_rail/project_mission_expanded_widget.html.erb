@@ -1,1 +1,2 @@
-<%= render "projects/mission_panel", project: project, viewer: user, variant: :expanded %>
+<% is_member = user && project.users.include?(user) %>
+<%= render "projects/mission_panel", project: project, viewer: user, variant: is_member ? :expanded : :compact %>

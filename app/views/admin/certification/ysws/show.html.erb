@@ -1,23 +1,19 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
-<% content_for :stylesheets do %>
-  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
-<% end %>
 
-<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>">
+<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>">
   <!-- Header Section -->
   <div class="review-detail-header">
     <%= link_to "← back", admin_certification_ysws_reviews_path, class: "btn-back", "aria-label": "Back to review queue" %>
 
     <div class="header-content">
       <div class="header-left">
-        <h1>YSWS Review</h1>
-        <div style="display: flex; align-items: center; gap: var(--space-m);">
+        <div class="ysws-title-row">
+          <h1>YSWS Review</h1>
+          <%= render "projects/fire_controls", project: @review.project %>
+        </div>
+        <div class="header-title-row">
           <h2 class="project-name"><%= @review.project.title %></h2>
-          <% if @review.reviewed_at %>
-            <span class="status-done">done</span>
-          <% else %>
-            <span class="status-pending">pending</span>
-          <% end %>
+          <%= review_status_badge(@review) %>
         </div>
         <% unless @review.ship_cert_id %>
           <p class="ship-event-note">This is a standalone ship event (reship)</p>
@@ -84,7 +80,7 @@
       <section class="review-card video-card">
         <h3>Ship Cert Video</h3>
         <% if @review.ship_cert&.verdict_video&.attached? %>
-          <video class="video-card__player" src="<%= url_for(@review.ship_cert.verdict_video) %>"
+          <video class="video-card__player" src="<%= rails_storage_redirect_path(@review.ship_cert.verdict_video) %>"
                  controls playsinline preload="metadata" style="width:100%;border-radius:var(--profile-radius)"></video>
         <% else %>
           <div class="video-placeholder">
@@ -92,6 +88,16 @@
           </div>
         <% end %>
       </section>
+
+      <% if @review.project.update_description.present? %>
+        <!-- Update Description Card -->
+        <section class="review-card update-description-card">
+          <h3>Project Update Description</h3>
+          <div class="update-description-content">
+            <pre><%= @review.project.update_description %></pre>
+          </div>
+        </section>
+      <% end %>
 
       <!-- Time Stats Section -->
       <section class="review-card stats-card">
@@ -154,7 +160,7 @@
             <li>Looks like over 30% ai - even if it is declared</li>
             <li>Looks like it isn't shipped (shipwrights messed up)</li>
             <li>last project edit was before the event launch</li>
-            <li>project was worked on before event, and not marked as Project Update: in description (return to shipwrights)</li>
+            <li>project was worked on before event, and not marked as Project Update (return to shipwrights)</li>
           </ul>
         </div>
       </section>
@@ -168,7 +174,7 @@
           <div class="detail-item">
             <span class="detail-key">Project:</span>
             <span class="detail-value">
-              <%= link_to @review.project.title, admin_project_path(@review.project), class: "link-primary" %>
+              <%= link_to @review.project.title, project_path(@review.project), class: "link-primary" %>
             </span>
           </div>
 
@@ -177,8 +183,8 @@
             <span class="detail-value" style="display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;">
               <span><%= @review.user.display_name || @review.user.email || "Unknown User" %></span>
               <span class="fraud-links" style="display: inline-flex; gap: var(--space-xxs);">
-                <a href="#" class="fraud-link" target="_blank">Billy</a>
-                <a href="#" class="fraud-link" target="_blank">Joe</a>
+                <a href="https://billy.3kh0.net/?u=<%= @review.user.slack_id %>" class="fraud-link" target="_blank">Billy</a>
+                <a href="https://joe.fraud.hackclub.com/profile/<%= @review.user.slack_id %>" class="fraud-link" target="_blank">Joe</a>
               </span>
             </span>
           </div>
@@ -186,11 +192,7 @@
           <div class="detail-item">
             <span class="detail-key">Type:</span>
             <span class="detail-value">
-              <% if @review.project.project_categories.present? %>
-                <%= @review.project.project_categories.join(", ") %>
-              <% else %>
-                unknown
-              <% end %>
+              <%= @review.project&.project_type.presence || "unknown" %>
             </span>
           </div>
 
@@ -311,9 +313,9 @@
                   <div class="media-grid">
                     <% devlog_review.post_devlog.attachments.each do |attachment| %>
                       <% if attachment.video? %>
-                        <a href="<%= url_for(attachment) %>" class="media-item video-item" data-action="click->certification--ysws--media-viewer#open">
+                        <a href="<%= rails_storage_redirect_path(attachment) %>" class="media-item video-item" data-action="click->certification--ysws--media-viewer#open">
                           <video class="media-thumbnail" muted>
-                            <source src="<%= url_for(attachment) %>" type="<%= attachment.content_type %>">
+                            <source src="<%= rails_storage_redirect_path(attachment) %>" type="<%= attachment.content_type %>">
                           </video>
                           <div class="media-type-badge">Video</div>
                         </a>
@@ -438,34 +440,65 @@
 
   <div style="height: 25px;"></div>
 
-  <!-- Action Buttons Section (Full Width) -->
-  <section class="review-card actions-card">
-    <div class="checklist-warning">
-      <div class="warning-title">Checklist (do this if u don't wanna Alex to get mad..)</div>
-      <div class="warning-items">
-        <div>• Check the Demo link (cuz u didn't..)</div>
-        <div>• Check the Repo link (cuz u didn't..)</div>
+  <% unless @review.in_unified_db? || @review.returned_at? %>
+    <!-- Action Buttons Section (Full Width) -->
+    <section class="review-card actions-card" data-certification--ysws--review-sidebar-target="actionsCard">
+      <div class="checklist-warning">
+        <div class="warning-title">Checklist (do this if u don't wanna Alex to get mad..)</div>
+        <div class="warning-items">
+          <div>• Check the Demo link (cuz u didn't..)</div>
+          <div>• Check the Repo link (cuz u didn't..)</div>
+        </div>
+      </div>
+
+      <div class="action-buttons-grid">
+        <button class="action-btn btn-return"
+                data-action="click->certification--ysws--return-to-ship-cert#open">
+          Return to Ship Certs
+        </button>
+        <button class="action-btn btn-complete"
+                data-certification--ysws--complete-review-target="button"
+                data-action="click->certification--ysws--complete-review#complete">
+          Complete Review
+        </button>
+      </div>
+    </section>
+  <% end %>
+
+  <!-- Return to Ship Cert Modal -->
+  <div class="return-ship-cert-modal" data-certification--ysws--return-to-ship-cert-target="modal">
+    <div class="return-ship-cert-modal__content" data-action="click->certification--ysws--return-to-ship-cert#stopPropagation">
+      <div class="return-ship-cert-modal__header">
+        <h2>Return to Ship Certification</h2>
+        <button class="return-ship-cert-modal__close" data-action="click->certification--ysws--return-to-ship-cert#close" aria-label="Close modal">
+          ×
+        </button>
+      </div>
+
+      <div class="return-ship-cert-modal__body">
+        <label for="recert-reason" class="return-ship-cert-modal__label">
+          Why is this project being returned to ship certification?
+        </label>
+        <textarea
+          id="recert-reason"
+          class="return-ship-cert-modal__textarea"
+          data-certification--ysws--return-to-ship-cert-target="textarea"
+          placeholder="Explain why you're returning this project (e.g. missing devlogs, hours don't add up, needs re-review...)"
+          rows="5"></textarea>
+      </div>
+
+      <div class="return-ship-cert-modal__footer">
+        <button class="return-ship-cert-modal__cancel" data-action="click->certification--ysws--return-to-ship-cert#close">
+          Cancel
+        </button>
+        <button class="return-ship-cert-modal__submit"
+                data-action="click->certification--ysws--return-to-ship-cert#submit"
+                data-certification--ysws--return-to-ship-cert-target="submitButton">
+          Return to Ship Certs
+        </button>
       </div>
     </div>
-
-    <div class="action-buttons-grid">
-      <button class="action-btn btn-secondary" disabled>
-        Cap Devlogs to 600 min
-      </button>
-      <button class="action-btn btn-approve-all" disabled>
-        Approve All Devlogs
-      </button>
-      <button class="action-btn btn-reject-all" disabled>
-        Reject All Devlogs
-      </button>
-      <button class="action-btn btn-return" disabled>
-        Return to Ship Certs
-      </button>
-      <button class="action-btn btn-complete" disabled>
-        Complete Review
-      </button>
-    </div>
-  </section>
+  </div>
 
   <!-- Fraud Report Modal -->
   <div class="fraud-report-modal" data-certification--ysws--fraud-report-target="modal">

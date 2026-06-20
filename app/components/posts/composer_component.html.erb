@@ -1,7 +1,8 @@
 <% if enabled? %>
   <section class="feed-composer"
            aria-label="<%= aria_label %>"
-           data-controller="composer emoji-picker"
+           data-controller="composer emoji-picker markdown-preview"
+           data-markdown-preview-url-value="<%= markdown_preview_path %>"
            data-composer-target="dropZone"
            data-composer-simple-mode-value="<%= simple_mode? %>"
            data-composer-max-files-value="<%= Post::Devlog::MAX_ATTACHMENTS %>"
@@ -14,14 +15,16 @@
         <% selected = project == selected_project %>
         <%= link_to project.title,
               home_path(project_id: project.id),
-              class: class_names("feed-composer__chip", "feed-composer__chip--active": selected),
+              class: class_names("feed-composer__chip", "feed-composer__chip--active": selected, "feed-composer__chip--hardware": project.hardware?),
               aria: (selected ? { current: "true" } : {}),
               data: { turbo: false,
                       action: "click->composer#selectProject",
                       composer_post_url_param: project_devlogs_path(project),
                       composer_preview_url_param: preview_time_project_devlogs_path(project),
                       composer_edit_url_param: project_path(project, editing: true),
-                      composer_hackatime_linked_param: project.hackatime_keys.present? || (project == selected_project && test_time_granted) } %>
+                      composer_hackatime_linked_param: project.hackatime_keys.present? || (project == selected_project && test_time_granted),
+                      composer_hardware_param: project.hardware?,
+                      composer_record_url_param: (show_record? && project.hardware? ? project_lookout_sessions_path(project) : "") } %>
       <% end %>
       </div>
     <% end %>
@@ -35,24 +38,33 @@
           class: "feed-composer__form",
           local: true do |f| %>
       <div class="feed-composer__scroll">
-        <div class="feed-composer__main">
+        <div class="feed-composer__main" data-markdown-preview-target="writePanel">
           <%= image_tag current_user.avatar, alt: "", class: "feed-composer__avatar" %>
 
           <div class="feed-composer__field">
             <%= f.label :body, body_label, class: "feed-composer__label" %>
             <%= f.text_area :body,
-                  class: "feed-composer__textarea",
+                  class: "feed-composer__textarea-field",
                   rows: 1,
                   maxlength: Post::Devlog::BODY_MAX_LENGTH,
-                  required: simple_mode?,
                   placeholder: placeholder,
                   aria: { label: body_label },
                   data: { composer_target: "textarea",
                           emoji_picker_target: "textarea",
-                          controller: "submit-on-meta-enter",
-                          action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty keydown->submit-on-meta-enter#submit" } %>
+                          markdown_preview_target: "input",
+                          controller: "submit-on-meta-enter mention-autocomplete",
+                          action: "focus->composer#showInfo input->composer#autogrow input->composer#refreshSubmit blur->composer#collapseIfEmpty keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
+            <div class="feed-composer__textarea"
+                 contenteditable="true"
+                 role="textbox"
+                 aria-label="<%= body_label %>"
+                 data-placeholder="<%= placeholder %>"
+                 data-emoji-picker-target="editor"
+                 data-action="focus->composer#showInfo input->emoji-picker#editorInput blur->composer#collapseIfEmpty blur->emoji-picker#editorBlur keydown->emoji-picker#editorKeydown"></div>
           </div>
         </div>
+
+        <div class="md-preview markdown-content" data-markdown-preview-target="output" hidden></div>
 
         <% if show_attachments? %>
           <div class="feed-composer__attach-wrap" data-composer-target="attachWrap">
@@ -74,6 +86,18 @@
 
       <div class="feed-composer__toolbar">
         <div class="feed-composer__tools">
+          <div class="md-tabs" role="tablist">
+            <button type="button" class="md-tabs__tab" role="tab" aria-selected="true"
+                    data-markdown-preview-target="writeTab"
+                    data-action="markdown-preview#showWrite">Write</button>
+            <button type="button" class="md-tabs__tab" role="tab" aria-selected="false"
+                    data-markdown-preview-target="previewTab"
+                    data-action="markdown-preview#showPreview">Preview</button>
+          </div>
+          <button type="button" class="feed-composer__tool-btn" aria-label="Markdown formatting help"
+                  data-action="markdown-preview#openHelp">
+            <%= inline_svg_tag "icons/question.svg", class: "feed-composer__tool-icon" %>
+          </button>
           <div class="feed-composer__emoji-wrap">
             <button type="button"
                     class="feed-composer__tool-btn"
@@ -106,6 +130,22 @@
         </div>
 
         <div class="feed-composer__submit-group">
+          <% if show_record? %>
+            <%# Record a timelapse — /home composer only, shown while a hardware
+                project is the selected chip. selectProject() in the composer
+                controller toggles it and re-points its create URL on chip switch. %>
+            <button type="button"
+                    class="feed-composer__record"
+                    data-controller="lookout-recorder"
+                    data-composer-target="recordBtn"
+                    data-action="lookout-recorder#record"
+                    data-lookout-recorder-create-url-value="<%= selected_project&.hardware? ? project_lookout_sessions_path(selected_project) : "" %>"
+                    aria-label="Record a timelapse"
+                    <%= "hidden" unless selected_project&.hardware? %>>
+              <span class="feed-composer__record-dot" aria-hidden="true"></span>
+              Record
+            </button>
+          <% end %>
           <%= render IdvBadgeComponent.new(user: current_user, context: :devlog) unless simple_mode? %>
           <%= render ActionButtonComponent.new(
                 text: submit_text,
@@ -123,7 +163,10 @@
               ) %>
         </div>
       </div>
+
     <% end %>
+
+    <%= render "shared/markdown_help_dialog" %>
   </section>
 <% elsif setup_pending? %>
   <%= link_to projects_setup_link_account_path,

@@ -65,7 +65,8 @@
     border-radius: 12px;
   }
 
-  &__label {
+  &__label,
+  &__filters label {
     display: block;
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -306,15 +307,6 @@
     gap: var(--space-m);
     padding: var(--space-m) var(--space-l);
     margin-bottom: var(--space-l);
-
-    label {
-      display: block;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: var(--space-xxs);
-    }
   }
 
   &__filter {
@@ -375,15 +367,11 @@
   }
 
   &__table {
-    // Grid lines are intentionally stronger than --card-border (which is near
-    // invisible on the dark bg) so the table reads as a crisp grid.
     --grid-line: rgba(255, 255, 255, 0.2);
 
     width: 100%;
-    table-layout: fixed; // lock column widths so Status/action don't shift per filter
     border-collapse: collapse;
     font-size: 0.9rem;
-
     thead th {
       text-align: left;
       padding: var(--space-s) var(--space-m);
@@ -392,20 +380,13 @@
       letter-spacing: 0.06em;
       color: var(--muted);
       border-bottom: 2px solid rgba(255, 255, 255, 0.32);
-      border-right: 1px solid var(--grid-line);
       white-space: nowrap;
     }
 
     tbody td {
-      padding: var(--space-s) var(--space-m);
+      padding: 10px var(--space-m);
       border-bottom: 1px solid var(--grid-line);
-      border-right: 1px solid var(--grid-line);
-      vertical-align: top;
-    }
-
-    thead th:last-child,
-    tbody td:last-child {
-      border-right: 0;
+      vertical-align: middle;
     }
 
     tbody tr:last-child td {
@@ -415,10 +396,98 @@
     tbody tr:hover {
       background: rgba(255, 255, 255, 0.03);
     }
+
+    tbody tr.ship-queue__row--link {
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+    }
   }
 
   &__cell-project {
-    min-width: 240px;
+    min-width: 200px;
+  }
+
+  &__project-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-top: 6px;
+  }
+
+  &__quick-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid var(--card-border);
+    color: var(--muted);
+    transition:
+      color 120ms ease,
+      border-color 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+  }
+
+  &__cell-author {
+    width: 130px;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  &__cell-type {
+    width: 110px;
+    white-space: nowrap;
+  }
+
+  &__cell-wait {
+    width: 70px;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  &__cell-hours {
+    width: 70px;
+    white-space: nowrap;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__wait-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--muted);
+
+    &--overdue {
+      background: rgba(248, 113, 113, 0.2);
+      color: var(--negative);
+    }
+  }
+
+  &__hours {
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-space-text);
   }
 
   &__project-head {
@@ -479,12 +548,6 @@
   // every filter; Project is the only flexible column and absorbs the rest.
   &__cell-status {
     width: 130px;
-    white-space: nowrap;
-  }
-
-  &__cell-action {
-    width: 120px;
-    text-align: right;
     white-space: nowrap;
   }
 
@@ -602,6 +665,33 @@
 
   &__card-claim {
     margin-top: var(--space-xs);
+  }
+
+  &__card-feedback {
+    margin-top: var(--space-xs);
+    font-size: 0.85rem;
+    color: var(--muted);
+    border-top: 1px solid var(--card-border);
+    padding-top: var(--space-xs);
+  }
+
+  // Inline type tags in table rows and mobile cards.
+  &__type-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+
+    &--own {
+      background: rgba(255, 176, 122, 0.2);
+      color: var(--color-brand-orange);
+    }
   }
 
   // --- Empty state -------------------------------------------------------

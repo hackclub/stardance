@@ -1,20 +1,28 @@
 <section class="vote-scorecard">
   <header class="vote-scorecard__header">
     <span class="vote-scorecard__sparkle" aria-hidden="true">
-      <%= inline_svg_tag "icons/star_fill.svg", class: "vote-scorecard__sparkle-icon" %>
+      <%= inline_svg_tag "icons/sparkle_divider.svg", class: "vote-scorecard__sparkle-icon" %>
     </span>
     <h2 id="vote-scorecard-title" class="vote-scorecard__title">Scorecard</h2>
     <span class="vote-scorecard__sparkle" aria-hidden="true">
-      <%= inline_svg_tag "icons/star_fill.svg", class: "vote-scorecard__sparkle-icon" %>
+      <%= inline_svg_tag "icons/sparkle_divider.svg", class: "vote-scorecard__sparkle-icon" %>
     </span>
   </header>
 
-  <%= form_with model: vote, url: votes_path, class: "vote-scorecard__form" do |form| %>
+  <%= form_with model: vote,
+                url: votes_path,
+                class: "vote-scorecard__form",
+                data: {
+                  controller: "vote-scorecard",
+                  action: "input->vote-scorecard#validate change->vote-scorecard#validate",
+                  vote_scorecard_required_score_count_value: Vote::SCORE_COLUMNS_BY_CATEGORY.size,
+                  vote_scorecard_minimum_word_count_value: 10
+                } do |form| %>
     <%= hidden_field_tag :vote_assignment_id, assignment.id %>
 
     <% if vote.errors.any? %>
       <div class="vote-scorecard__errors" role="alert">
-        <p class="vote-scorecard__errors-title">Check your vote</p>
+        <p class="vote-scorecard__errors-title">Check your rating</p>
         <ul class="vote-scorecard__errors-list">
           <% vote.errors.full_messages.each do |message| %>
             <li><%= message %></li>
@@ -36,13 +44,27 @@
 
     <div class="vote-scorecard__feedback">
       <%= form.label :reason, "Feedback", class: "vote-scorecard__label" %>
-      <p class="vote-scorecard__feedback-help">Any thoughts for the creator? (At least 10 words)</p>
+      <div class="vote-scorecard__feedback-meta">
+        <p class="vote-scorecard__feedback-help">Any thoughts for the creator? (At least 10 words)</p>
+        <span class="vote-scorecard__word-count" data-vote-scorecard-target="counter">0/10 words</span>
+      </div>
       <%= form.text_area :reason,
                          rows: 6,
-                         class: "vote-scorecard__textarea",
-                         placeholder: "Share what you tried, what worked, and one specific improvement." %>
+                         class: "vote-scorecard__textarea" %>
     </div>
 
-    <%= form.submit "Submit vote →", class: "vote-scorecard__submit" %>
+    <p class="vote-scorecard__warning">
+      Ratings are reviewed. Thoughtful ratings earn a
+      <strong>1.2× payout blessing</strong>.
+      Spam or low-effort ratings will get your
+      <strong>payout halved</strong>.
+    </p>
+
+    <%= render ActionButtonComponent.new(
+          text: "Submit rating",
+          disabled: true,
+          class: "vote-scorecard__submit",
+          data: { vote_scorecard_target: "submit" }
+        ) %>
   <% end %>
 </section>

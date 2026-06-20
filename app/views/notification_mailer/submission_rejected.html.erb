@@ -1,0 +1,33 @@
+<% mission_name = @record&.mission&.name %>
+<% project_title = @record&.ship_event&.post&.project&.title %>
+<% reviewer = @record&.reviewed_by %>
+<% feedback = @record&.rejection_message %>
+
+<h1 style="margin:0 0 12px;font-size:22px;font-weight:700;line-height:1.3;color:#1a1a2e;">Your submission needs revisions</h1>
+
+<p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  <% if mission_name && project_title %>
+    Your submission for <strong><%= mission_name %></strong> on <strong><%= project_title %></strong> was sent back<% if reviewer %> by <strong>@<%= reviewer.display_name %></strong><% end %> for revisions.
+  <% elsif mission_name %>
+    Your submission for <strong><%= mission_name %></strong> was sent back<% if reviewer %> by <strong>@<%= reviewer.display_name %></strong><% end %> for revisions.
+  <% else %>
+    Your mission submission was sent back for revisions.
+  <% end %>
+</p>
+
+<% if feedback.present? %>
+  <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#6b6961;text-transform:uppercase;letter-spacing:0.06em;">Reviewer feedback</p>
+  <blockquote style="margin:0 0 24px;padding:14px 18px;background:#faf8ef;border-left:3px solid #d9d5c5;color:#3a3a4a;font-size:15px;line-height:1.55;border-radius:4px;">
+    <%= simple_format(feedback) %>
+  </blockquote>
+<% end %>
+
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  Address the feedback above and re-submit when you're ready.
+</p>
+
+<% if @record %>
+  <div style="margin:24px 0 4px;">
+    <a href="<%= mission_submission_url(@record) %>" style="display:inline-block;padding:11px 22px;background:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;font-size:14px;line-height:1;">View submission</a>
+  </div>
+<% end %>

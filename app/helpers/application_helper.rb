@@ -1,6 +1,14 @@
 module ApplicationHelper
   def in_beta? = request.host.include?("beta")
 
+  # Memoized per request: the feed renders dozens of post cards and Flipper
+  # memoization is disabled app-wide, so a per-card check would hit
+  # flipper_gates once per card.
+  def show_post_views?
+    return @show_post_views if defined?(@show_post_views)
+    @show_post_views = Flipper.enabled?(:week_2_release, current_user)
+  end
+
   def main_app_base_url
     host = request.host.sub(/\Araffle\./, "")
     port = request.port
@@ -162,8 +170,10 @@ module ApplicationHelper
   end
 
   def active_users_stats
-    counts = ActiveUserTracker.counts
-    "#{counts[:signed_in]} signed in, #{counts[:anonymous]} visitors"
+    Rails.cache.fetch("active_users_stats", expires_in: 30.seconds) do
+      counts = ActiveUserTracker.counts
+      "#{counts[:signed_in]} signed in, #{counts[:anonymous]} visitors"
+    end
   end
 
   private

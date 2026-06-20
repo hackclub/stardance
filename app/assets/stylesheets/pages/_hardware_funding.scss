@@ -1,0 +1,272 @@
+// Funding request modal (Outpost-branded) + Outpost Ticket extras (shop / balance).
+
+// Outpost palette (from outpost.hackclub.com).
+$outpost-cream: #fcf3de;
+$outpost-ink: #3b312f;
+$outpost-orange: #fe5100;
+$outpost-gold: #feab01;
+$outpost-teal: #34e0ba;
+
+// ---------------------------------------------------------------------------
+// Outpost-branded funding popup. Overrides the inherited ship-modal panel so
+// the dialog reads as Outpost (cream + orange) rather than the space theme.
+// ---------------------------------------------------------------------------
+.funding-modal--outpost {
+  .ship-modal__panel {
+    background: $outpost-cream;
+    color: $outpost-ink;
+    border-radius: 18px;
+  }
+
+  .ship-modal__btn--primary {
+    background: linear-gradient(180deg, $outpost-gold, $outpost-orange);
+    border: none;
+    color: #fff;
+    font-weight: 800;
+
+    &:hover,
+    &:focus-visible {
+      filter: brightness(1.05);
+    }
+  }
+
+  .ship-modal__btn--secondary {
+    background: transparent;
+    border: 2px solid rgba($outpost-ink, 0.25);
+    color: $outpost-ink;
+  }
+}
+
+.funding-modal__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.funding-modal__logo {
+  width: auto;
+  max-width: 180px;
+  height: auto;
+}
+
+.funding-modal__tagline {
+  margin: 0;
+  font-weight: 600;
+  color: rgba($outpost-ink, 0.75);
+}
+
+.funding-modal__tiers {
+  border: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  legend {
+    font-weight: 800;
+    padding: 0;
+    margin-bottom: 0.4rem;
+    color: $outpost-ink;
+  }
+}
+
+.funding-tier {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid rgba($outpost-ink, 0.15);
+  border-radius: 12px;
+  background: rgba(#fff, 0.4);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+
+  &:hover {
+    border-color: rgba($outpost-orange, 0.5);
+  }
+
+  // Selected tier highlight.
+  &:has(.funding-tier__input:checked) {
+    border-color: $outpost-orange;
+    background: color-mix(in srgb, $outpost-orange 10%, #fff);
+  }
+
+  &__input {
+    flex: 0 0 auto;
+    accent-color: $outpost-orange;
+  }
+
+  &__badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    font-weight: 900;
+    color: #fff;
+    background: $outpost-orange;
+
+    &--b {
+      background: $outpost-teal;
+      color: $outpost-ink;
+    }
+    &--a {
+      background: #fe8002;
+    }
+    &--s {
+      background: $outpost-orange;
+    }
+    &--x {
+      background: $outpost-gold;
+      color: $outpost-ink;
+    }
+  }
+
+  &__info {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+
+  &__name {
+    font-weight: 800;
+    color: $outpost-ink;
+  }
+
+  &__examples {
+    font-size: 0.85rem;
+    color: rgba($outpost-ink, 0.7);
+  }
+
+  &__max {
+    flex: 0 0 auto;
+    font-weight: 800;
+    color: $outpost-orange;
+  }
+}
+
+.funding-modal__amount {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: $outpost-ink;
+
+  input {
+    max-width: 12rem;
+    padding: 0.45rem 0.6rem;
+    border: 2px solid rgba($outpost-ink, 0.25);
+    border-radius: 8px;
+    font-weight: 600;
+  }
+}
+
+.funding-modal__discount {
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, $outpost-teal 22%, #fff);
+  border: 1px solid color-mix(in srgb, $outpost-teal 55%, #fff);
+  font-weight: 800;
+  color: #0c6b58;
+}
+
+.funding-modal__note {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: rgba($outpost-ink, 0.8);
+}
+
+.funding-modal__guide-link {
+  font-weight: 700;
+  color: $outpost-orange;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+// Inline tier-max validation error (shown on cream — red reads fine).
+.funding-request__error {
+  margin: 0 0 1rem;
+  color: #c0392b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+// ---------------------------------------------------------------------------
+// Outpost Ticket extras elsewhere (shop order summary, balance page).
+// ---------------------------------------------------------------------------
+.shop-order__summary-outpost {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(128, 128, 128, 0.4);
+  font-size: 0.9rem;
+
+  p {
+    margin: 0.25rem 0;
+  }
+}
+
+.shop-order__achievement-cta {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.balance-history__outpost {
+  margin-top: 0.25rem;
+  opacity: 0.85;
+}
+
+.review-form__hint {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+// ---------------------------------------------------------------------------
+// /guides/tiers — tier table.
+// ---------------------------------------------------------------------------
+.tier-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.tier-guide__row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid rgba($outpost-ink, 0.12);
+  border-radius: 12px;
+
+  .funding-tier__badge {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
+.tier-guide__body {
+  flex: 1 1 auto;
+}
+
+.tier-guide__name {
+  font-weight: 800;
+}
+
+.tier-guide__max {
+  font-weight: 800;
+  color: $outpost-orange;
+}

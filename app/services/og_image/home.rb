@@ -4,6 +4,16 @@ module OgImage
       "default" => -> { new }
     }.freeze
 
+    PREVIEW_META = {
+      "default" => {
+        title: "Stardance - Hack Club",
+        description: "The largest STEM event of the summer: make anything you want and earn free prizes.",
+        url: "https://stardance.hackclub.com",
+        site_name: "Stardance - Hack Club",
+        twitter_card: "summary_large_image"
+      }
+    }.freeze
+
     IMAGE_PATH = Rails.root.join("app", "assets", "images", "landing", "space", "og-default.png").to_s
 
     def render

@@ -1,4 +1,4 @@
-<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: engagement_data) %>>
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: card_data) %>>
   <% if card_link_url.present? %>
     <%= link_to card_link_url,
           class: "feed-post-card__overlay-link",
@@ -40,7 +40,7 @@
         <% end %>
 
         <time class="feed-post-card__time" datetime="<%= display_post.created_at.iso8601 %>" title="<%= l(display_post.created_at, format: :long) %>">
-          · <%= time_ago_in_words(display_post.created_at) %>
+          · <%= time_ago_in_words(display_post.created_at) %> ago
         </time>
 
         <% if show_idv_badge? %>
@@ -78,7 +78,9 @@
             show_likes: false,
             show_comments: false,
             show_reposts: false,
-            show_actions: false
+            show_actions: false,
+            track_engagement: track_engagement,
+            show_views: show_views
           ) %>
     </div>
   <% end %>
@@ -136,12 +138,12 @@
                       <div class="comment-modal__thread-right">
                         <%= f.text_area :body,
                               class: "comment-modal__textarea",
-                              placeholder: "Post your reply",
+                              placeholder: "Post your reply (type @ to mention someone)",
                               rows: 3,
                               maxlength: Comment::BODY_MAX_LENGTH,
                               data: { comment_modal_target: "textarea",
-                                      controller: "submit-on-meta-enter",
-                                      action: "keydown->submit-on-meta-enter#submit" } %>
+                                      controller: "submit-on-meta-enter mention-autocomplete",
+                                      action: "keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
                       </div>
                     </div>
                     <div class="comment-modal__footer">
@@ -241,6 +243,15 @@
       </div>
     <% end %>
 
+    <% if show_views? %>
+      <span class="feed-post-card__action feed-post-card__action--disabled"
+            aria-label="Seen by <%= views_count %> <%= "person".pluralize(views_count) %>"
+            title="Unique viewers">
+        <%= inline_svg_tag "icons/eye.svg", class: "feed-post-card__action-icon" %>
+        <span><%= views_count %></span>
+      </span>
+    <% end %>
+
     <% if show_actions %>
       <div class="feed-post-card__more-wrap" <%= tag.attributes(data: post_menu_data) %>>
         <button type="button" class="feed-post-card__more" aria-label="More actions" data-action="post-menu#toggle">
@@ -263,7 +274,7 @@
             Copy link to clipboard
           </button>
 
-          <% if current_user.present? %>
+          <% if current_user.present? && track_engagement %>
             <button type="button" class="feed-post-card__menu-item" data-action="post-menu#notInterested">
               Don&apos;t show me posts like this
             </button>

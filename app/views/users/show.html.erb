@@ -1,7 +1,8 @@
 <% content_for :title, @user.display_name %>
-<% content_for :og_title, "#{@user.display_name} on Stardance" %>
-<% content_for :og_description, "#{@stats[:projects_count]} projects · #{@stats[:ships_count]} ships · #{@stats[:devlogs_count]} devlogs" %>
+<% content_for :og_title, "@#{@user.display_name} | Stardance" %>
+<% content_for :og_description, @user.bio.present? ? truncate(@user.bio, length: 200) : "#{@stats[:projects_count]} projects · #{@stats[:ships_count]} ships · #{@stats[:devlogs_count]} devlogs" %>
 <% content_for :og_image, user_og_image_url(@user, format: :png) %>
+<% content_for :twitter_card, "summary_large_image" %>
 
 <% if @user.preference&.search_engine_indexing_off? %>
   <% content_for :head do %>
@@ -178,6 +179,14 @@
                     data-profile-edit-target="saveBtn"
                     hidden>Save</button>
           <% elsif current_user %>
+            <% if @user.slack_id.present? %>
+              <%= link_to "https://hackclub.slack.com/team/#{ERB::Util.url_encode(@user.slack_id)}",
+                          class: "profile__action-btn profile__action-btn--slack",
+                          target: "_blank",
+                          rel: "noopener noreferrer" do %>
+                <%= inline_svg_tag "icons/slack.svg", class: "profile__action-btn-icon" %> Open in Slack
+              <% end %>
+            <% end %>
             <%# link_to + data-turbo-method instead of button_to: button_to renders %>
             <%# its own <form>, which HTML5 parsing strips when nested inside the %>
             <%# profile-edit form_with — clicking it would otherwise submit the %>
@@ -224,9 +233,9 @@
         <% @projects.each do |project| %>
           <li class="project-list__item">
             <%= link_to project_path(project), class: "profile-project-card" do %>
-              <div class="profile-project-card__banner">
-                <% if project.display_banner %>
-                  <%= image_tag project.display_banner, alt: "", class: "profile-project-card__banner-img" %>
+              <div class="profile-project-card__banner <%= 'ai-detected' if current_user&.admin? && project.banner.attached? && project.banner.blob.metadata["ai_generated"] %>">
+                <% if project.banner.attached? %>
+                  <%= image_tag project.banner, alt: "", class: "profile-project-card__banner-img" %>
                 <% else %>
                   <%= image_tag "default-banner.png", alt: "", class: "profile-project-card__banner-img" %>
                 <% end %>
@@ -234,7 +243,12 @@
 
               <div class="profile-project-card__body">
                 <div class="profile-project-card__header">
-                  <h3 class="profile-project-card__title"><%= project.title %></h3>
+                  <div class="profile-project-card__title-row">
+                    <h3 class="profile-project-card__title"><%= project.title %></h3>
+                    <% if project.hardware? %>
+                      <span class="profile-project-card__tag profile-project-card__tag--hardware">Hardware</span>
+                    <% end %>
+                  </div>
                   <ul class="profile-project-card__meta">
                     <li class="profile-project-card__meta-item">
                       <%= inline_svg_tag "icons/devlogs.svg", class: "profile-project-card__meta-icon" %>

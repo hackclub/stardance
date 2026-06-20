@@ -208,6 +208,12 @@
   }
 }
 
+.admin-mission-edit__guide-url-form {
+  margin-bottom: var(--space-l);
+  padding-bottom: var(--space-l);
+  border-bottom: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.1));
+}
+
 // Explicit fixed centering — showModal()'s default margin: auto is unreliable
 // across Safari + Firefox + Chromium without an explicit transform.
 .admin-mission-edit__paste-dialog {
@@ -441,42 +447,6 @@
   &:active {
     cursor: grabbing;
   }
-}
-
-.admin-mission-edit__guide-preview-wrap {
-  margin-top: var(--space-l);
-  padding: var(--space-m);
-  border: 1px dashed var(--color-space-border);
-  border-radius: var(--profile-radius);
-  background: var(--color-space-surface-faint);
-}
-
-.admin-mission-edit__guide-preview-summary {
-  cursor: pointer;
-  font-size: var(--font-size-s);
-  font-weight: 600;
-  color: var(--color-fg-muted);
-  list-style: none;
-
-  &::-webkit-details-marker {
-    display: none;
-  }
-
-  &::before {
-    content: "▸";
-    display: inline-block;
-    margin-right: var(--space-xs);
-    transition: transform 120ms ease;
-  }
-
-  &:hover {
-    color: var(--color-brand-mint);
-  }
-}
-
-.admin-mission-edit__guide-preview-wrap[open]
-  .admin-mission-edit__guide-preview-summary::before {
-  transform: rotate(90deg);
 }
 
 .admin-mission-edit__guide-preview-wrap {

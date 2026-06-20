@@ -5,7 +5,14 @@ class Users::OgImagesController < ApplicationController
   def show
     skip_authorization
 
-    png_data = OgImage::User.new(@user).to_png
+    counts = Post.where(user_id: @user.id).group(:postable_type).count
+    stats = {
+      projects_count: @user.projects.count,
+      ships_count: counts["Post::ShipEvent"] || 0,
+      devlogs_count: counts["Post::Devlog"] || 0
+    }
+
+    png_data = OgImage::User.new(@user, stats: stats).to_png
 
     expires_in 1.hour, public: true
     send_data png_data, type: "image/png", disposition: "inline"

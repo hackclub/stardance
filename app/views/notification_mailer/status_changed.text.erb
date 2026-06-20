@@ -1,0 +1,26 @@
+<% state = @notification.params["state"].to_s %>
+<% item = @record&.shop_item&.name %>
+<% headline = @notification.headline %>
+
+<% guidance_by_state = {
+  "awaiting_verification"      => "Send the required verification materials so we can release your order.",
+  "awaiting_verification_call" => "Schedule the verification call linked from your order page so we can release your order.",
+  "awaiting_periodical_fulfillment" => "We'll ship this in the next batch — no action needed from you.",
+  "fulfilled" => "Tracking and shipment details (where applicable) are on the order page.",
+  "rejected"  => "If you think this is a mistake, reply in the shop support thread."
+} %>
+<% guidance = guidance_by_state[state] %>
+
+Your order <%= headline %>
+
+<% if item.present? %>
+Your order for "<%= item %>" <%= headline %>.
+<% else %>
+Your shop order <%= headline %>.
+<% end %>
+
+<% if guidance %>
+<%= guidance %>
+
+<% end %>
+View my orders: <%= shop_orders_url %>

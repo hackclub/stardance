@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Newsletter: <%= @template.name.titleize %></title>
+    <%= stylesheet_link_tag "landing", media: "all" %>
+  </head>
+  <body>
+    <div class="email-preview">
+      <div class="email-preview__bg">
+        <div class="hero__left-gradient" aria-hidden="true"></div>
+        <%= image_tag image_url("landing/hero/earth.png"), class: "hero__earth", alt: "" %>
+        <%= image_tag image_url("landing/hero/moon.png"), class: "hero__moon", alt: "" %>
+        <div class="hero__nasa-photo">
+          <%= image_tag image_url("landing/hero/nasa-hero.png"), loading: "eager", alt: "" %>
+        </div>
+      </div>
+
+      <div class="email-preview__frame">
+        <iframe src="<%= @content_url %>" class="email-preview__iframe" title="Email preview"
+                onload="this.style.height = this.contentDocument.body.scrollHeight + 'px'"></iframe>
+      </div>
+    </div>
+  </body>
+</html>

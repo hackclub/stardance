@@ -3,7 +3,7 @@
 
 <h1>Weeks</h1>
 
-<table>
+<table class="table-data">
   <thead>
     <tr><th>Week</th><th>Status</th><th>Prize</th><th>Winner</th><th>Opened</th><th>Closed</th><th>Actions</th></tr>
   </thead>
@@ -11,18 +11,29 @@
     <% @weeks.each do |week| %>
       <tr>
         <td><%= link_to "Week #{week.number}", admin_raffles_week_path(week) %></td>
-        <td><%= week.status %></td>
+        <td><span class="badge badge-<%= week.status %>"><%= week.status %></span></td>
         <td><%= week.prize %></td>
-        <td><%= week.winner_participant&.display_name || "—" %></td>
+        <td>
+          <%= week.winner_participant&.display_name || "—" %>
+          <% voided_count = week.draws.count(&:status_voided?) %>
+          <% if voided_count > 0 %>
+            <span class="badge badge-rejected"><%= voided_count %> voided</span>
+          <% end %>
+        </td>
         <td><%= week.opened_at&.to_date || "—" %></td>
         <td><%= week.closed_at&.to_date || "—" %></td>
         <td>
-          <% if week.status_active? %>
+          <% if week.status_active? || week.status_archived? %>
             <% unless week.drawn? %>
-              <%= button_to "Draw winner", draw_admin_raffles_week_path(week), method: :post,
-                            data: { turbo_confirm: "Draw a winner for week #{week.number}?" } %>
+              <%= button_to(week.voided_draws.any? ? "Re-draw" : "Draw winner",
+                            draw_admin_raffles_week_path(week), method: :post,
+                            class: "btn-primary slim",
+                            data: { turbo_confirm: "Draw a winner for week #{week.number}?" }) %>
             <% end %>
+          <% end %>
+          <% if week.status_active? %>
             <%= button_to "Close & open next", close_admin_raffles_week_path(week), method: :post,
+                          class: "btn-secondary slim",
                           data: { turbo_confirm: "Archive week #{week.number} and open the next?" } %>
           <% end %>
         </td>

@@ -36,6 +36,8 @@ module Admin
                                alert: "Unknown referral status."
         end
 
+        @referral.participant.user&.sync_referral_achievements!
+
         redirect_back fallback_location: admin_raffles_referrals_path,
                       allow_other_host: false,
                       notice: "Referral updated."

@@ -23,9 +23,13 @@ module User::Achievements
     achievement
   end
 
-  def check_and_award_achievements!
-    ::Achievement.all.each do |achievement|
-      award_achievement!(achievement.slug)
-    end
+  def revoke_achievement!(slug)
+    record = achievements.find_by(achievement_slug: slug.to_s)
+    return nil unless record
+
+    record.destroy!
+    @earned_achievement_slugs&.delete(slug.to_s)
+    recalculate_has_pending_achievements!
+    true
   end
 end

@@ -1,7 +1,7 @@
 <%# Read-only project hero shown to a voter. Mirrors the read-mode of
     projects/show.html.erb minus edit/follow actions. %>
 <%
-  members        = project.users.to_a
+  members        = project.users.where(banned: false).to_a
   display        = project.display_banner
   banner_url     = display ? url_for(display) : image_path("profile/default-banner.png")
   total_hours    = (project.duration_seconds / 3600.0).round
@@ -61,7 +61,7 @@
 
       <% if project.ai_declaration.present? %>
         <div class="project-show__ai-declaration">
-          <%= inline_svg_tag "icons/star_fill.svg", class: "project-show__ai-declaration-icon", aria_hidden: true %>
+          <%= inline_svg_tag "icons/terminal.svg", class: "project-show__ai-declaration-icon", aria_hidden: true %>
           <p class="project-show__ai-declaration-text">
             <strong>This project uses AI:</strong>
             <%= project.ai_declaration %>

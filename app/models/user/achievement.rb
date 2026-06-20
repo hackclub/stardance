@@ -35,6 +35,7 @@ class User
     validates :earned_at, presence: true
 
     after_create :grant_stardust_reward
+    after_create_commit :notify_earned
 
     # Returns either a static `::Achievement` (Data.define struct) for slugs
     # in `::Achievement.all_slugs` OR a `Mission::AchievementProxy` for
@@ -67,6 +68,10 @@ class User
         reason: "Achievement: #{achievement.name}",
         created_by: "achievement:#{achievement.slug}"
       )
+    end
+
+    def notify_earned
+      ::Notifications::AchievementEarned.notify(recipient: user, record: self)
     end
   end
 end

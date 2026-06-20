@@ -1,4 +1,8 @@
 <% if Rails.env.production? %>
+  <%
+    fullstory_user = current_user if respond_to?(:current_user)
+    fullstory_participant = current_participant if respond_to?(:current_participant)
+  %>
   <script>
     window['_fs_host'] = 'fullstory.com';
     window['_fs_script'] = 'edge.fullstory.com/s/fs.js';
@@ -24,11 +28,20 @@
       g._hierarchyDefaultRegion='main';
     })(window,document,window['_fs_namespace'],'script','user');
   </script>
-  <% if current_user.present? %>
+  <% if fullstory_user.present? %>
     <script>
-      FS.identify(<%== json_escape(current_user.id.to_s.to_json) %>, {
-        displayName: <%== json_escape(current_user.display_name.to_json) %>,
-        email: <%== json_escape((current_user.email || "").to_json) %>
+      FS.identify(<%== json_escape(fullstory_user.id.to_s.to_json) %>, {
+        displayName: <%== json_escape(fullstory_user.display_name.to_json) %>,
+        email: <%== json_escape((fullstory_user.email || "").to_json) %>
+      });
+    </script>
+  <% elsif fullstory_participant.present? %>
+    <script>
+      FS.identify(<%== json_escape("raffle-participant-#{fullstory_participant.id}".to_json) %>, {
+        displayName: <%== json_escape(fullstory_participant.display_name.to_json) %>,
+        raffleParticipantId: <%== json_escape(fullstory_participant.id.to_s.to_json) %>,
+        raffleAgeGroup: <%== json_escape(fullstory_participant.age_group.to_s.to_json) %>,
+        githubLogin: <%== json_escape((fullstory_participant.github_login || "").to_json) %>
       });
     </script>
   <% end %>

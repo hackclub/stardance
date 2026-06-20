@@ -1,0 +1,39 @@
+<% content_for :title, "Contributors" %>
+<% content_for :og_title, "Stardance Contributors" %>
+<% content_for :og_description, "The folks building Stardance, ranked by merged pull requests." %>
+<%= content_for :stylesheets do %>
+  <%= stylesheet_link_tag "leaderboard", "data-turbo-track": "reload" %>
+<% end %>
+<main class="leaderboard">
+  <header class="leaderboard__hero">
+    <h1 class="leaderboard__title">
+      <span class="leaderboard__title-line">Who's building</span>
+      <span class="leaderboard__title-em">stardance</span>
+    </h1>
+    <div class="leaderboard__subtitle">
+      <strong><%= number_with_delimiter(@total_merged_prs) %></strong> merged pull requests from
+      <strong><%= @contributors.size %></strong> contributors
+      <span aria-hidden="true">·</span>
+      <%= link_to "view the repo", "https://github.com/hackclub/stardance",
+                  class: "leaderboard__subtitle-link",
+                  target: "_blank",
+                  rel: "noopener" %>
+    </div>
+  </header>
+  <div class="leaderboard__boards">
+    <section class="leaderboard-section">
+      <header class="leaderboard-section__header">
+        <h2 class="leaderboard-section__title">Merged Pull Requests</h2>
+        <p class="leaderboard-section__meta"><%= pluralize(@contributors.size, "contributor") %></p>
+      </header>
+
+      <% if @contributors.any? %>
+        <ol class="leaderboard-section__list">
+          <%= render partial: "contributors/row", collection: @contributors, as: :contributor %>
+        </ol>
+      <% else %>
+        <p class="leaderboard-section__meta">Contributor data is unavailable right now — check back soon.</p>
+      <% end %>
+    </section>
+  </div>
+</main>

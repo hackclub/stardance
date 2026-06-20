@@ -6,7 +6,7 @@
     <div class="devlog-comment__meta">
       <%= link_to "@#{comment.user.display_name}", profile_path(comment.user.display_name), class: "devlog-comment__author" %>
       <time class="devlog-comment__time" datetime="<%= comment.created_at.iso8601 %>">
-        · <%= time_ago_in_words(comment.created_at) %>
+        · <%= time_ago_in_words(comment.created_at) %> ago
       </time>
     </div>
     <% if policy(comment).destroy? %>
@@ -19,5 +19,5 @@
       <% end %>
     <% end %>
   </div>
-  <div class="devlog-comment__body"><%= sanitize md(comment.body, allow_images: false), tags: %w[p br strong em b i u s del a], attributes: %w[href target rel] %></div>
+  <div class="devlog-comment__body"><%= sanitize md(comment.body, allow_images: false), tags: %w[p br strong em b i u s del a img], attributes: %w[href target rel src alt title class loading decoding referrerpolicy] %></div>
 </div>

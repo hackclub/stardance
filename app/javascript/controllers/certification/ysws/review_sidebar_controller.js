@@ -13,7 +13,7 @@ import { Controller } from "@hotwired/stimulus";
 //   - is-open: Added to sidebar when popup is manually opened
 
 export default class extends Controller {
-  static targets = ["sidebar", "trigger", "toggle"];
+  static targets = ["sidebar", "trigger", "toggle", "actionsCard"];
 
   connect() {
     //console.log("Review sidebar controller connected!");
@@ -33,6 +33,9 @@ export default class extends Controller {
             this.popupModeActivated = true;
             this.sidebarTarget.classList.add("is-popup-mode");
             this.toggleTarget.classList.add("is-visible");
+            if (this.hasActionsCardTarget) {
+              this.actionsCardTarget.classList.add("is-visible");
+            }
           }
         });
       },
@@ -56,6 +59,9 @@ export default class extends Controller {
         this.sidebarTarget.classList.remove("is-open");
         this.toggleTarget.classList.remove("is-visible");
         this.isOpen = false;
+        if (this.hasActionsCardTarget) {
+          this.actionsCardTarget.classList.remove("is-visible");
+        }
       }
     };
 

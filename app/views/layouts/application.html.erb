@@ -13,6 +13,7 @@
     <meta name="twitter:creator" content="@hackclub">
     <meta property="og:locale" content="en_US">
     <meta property="og:site_name" content="Stardance - Hack Club">
+    <meta name="theme-color" content="#FFE564">
 
     <% og_title = content_for?(:og_title) ? yield(:og_title) : (content_for?(:title) ? "#{yield(:title)} - Stardance" : "Stardance - Hack Club") %>
     <% og_description = content_for?(:og_description) ? yield(:og_description) : "The largest STEM event of the summer: make anything you want and earn free prizes." %>
@@ -105,7 +106,11 @@
     <% end %>
     <div id="flash-region"><%= render "shared/flash" %></div>
     <%= render Onboarding::GuestBannerComponent.new unless @hide_sidebar %>
+<% if @_admin_layout %>
+<div class="admin-content"><%= yield %></div>
+<% else %>
 <%= yield %>
+<% end %>
     <%= render "shared/slack_doodle" %>
     <%= render "shared/idv_verify_modal" %>
     <% unless @hide_footer %>

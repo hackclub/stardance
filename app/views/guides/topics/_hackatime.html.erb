@@ -1,0 +1,199 @@
+<h2>What's wrong?</h2>
+
+<ul>
+  <li><a href="#setup">I haven't set up Hackatime yet</a></li>
+  <li><a href="#no-time-on-hackatime">My Hackatime dashboard shows no time</a></li>
+  <li><a href="#project-not-in-dropdown">My project isn't in the Stardance dropdown</a></li>
+  <li><a href="#time-not-on-stardance">Hackatime has my hours but Stardance doesn't</a></li>
+  <li><a href="#cant-post-devlog">I can't post a devlog</a></li>
+</ul>
+
+<hr>
+
+<h2 id="setup">Setting up Hackatime</h2>
+
+<div class="guide-video">
+  <iframe src="https://www.youtube.com/embed/grriwsX5mIo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+<% if current_user&.hackatime_identity.present? %>
+  <div class="guide-callout guide-callout--tip">
+    <span class="guide-callout__icon" aria-hidden="true">✅</span>
+    <div class="guide-callout__body">
+      <p>Your Hackatime account is already connected to Stardance. If things aren't working, skip to the sections below.</p>
+    </div>
+  </div>
+<% elsif current_user %>
+  <p>
+    Your Hackatime account isn't connected yet. Connect it from your project page (Edit > Connect Hackatime), or go straight to <a href="/auth/hackatime">connect now</a>.
+  </p>
+<% else %>
+  <p>
+    <a href="/login">Log in to Stardance</a> first, then connect your Hackatime account from your project page.
+  </p>
+<% end %>
+
+<p>
+  If you haven't used Hackatime before, go to
+  <a href="https://hackatime.hackclub.com" target="_blank" rel="noopener">hackatime.hackclub.com</a>,
+  sign in with your Hack Club account, and follow the
+  <a href="https://hackatime.hackclub.com/my/wakatime_setup" target="_blank" rel="noopener">setup instructions</a>
+  for your editor.
+</p>
+
+<div class="guide-callout guide-callout--warn">
+  <span class="guide-callout__icon" aria-hidden="true">⚠️</span>
+  <div class="guide-callout__body">
+    <p>
+      Hackatime tracks time through a <strong>plugin in your code editor</strong> (VS Code, JetBrains, Vim, etc).
+      You need to install the plugin <em>and</em> make sure it's enabled. Just connecting your account on Stardance is not enough.
+    </p>
+  </div>
+</div>
+
+<hr>
+
+<h2 id="no-time-on-hackatime">Nothing on the Hackatime dashboard?</h2>
+
+<p>
+  First, open <a href="https://hackatime.hackclub.com" target="_blank" rel="noopener">hackatime.hackclub.com</a> and check if any time has been logged.
+  If nothing shows up, the problem is your editor plugin. Stardance can't help with this part.
+</p>
+
+<h3>Check the API URL</h3>
+<p>
+  Most common mistake. Your plugin needs to point at
+  <code>https://hackatime.hackclub.com/api</code>, not the default WakaTime URL.
+  Look for "API URL" or "Base URL" in the plugin settings.
+</p>
+
+<h3>Check the API key</h3>
+<p>
+  Go to <a href="https://hackatime.hackclub.com/my/settings" target="_blank" rel="noopener">Hackatime settings</a>,
+  copy your API key, and compare it to what's in your plugin. If you're unsure, rotate the key on the site and paste the new one into your plugin.
+</p>
+
+<h3>Is the plugin actually running?</h3>
+<p>
+  In VS Code and JetBrains, look for a small WakaTime icon in the status bar. No icon means it's not running.
+</p>
+<p>
+  In <strong>Godot</strong>, you need to install the plugin <em>and</em> enable it in Project > Project Settings > Plugins. Installing alone isn't enough.
+</p>
+
+<h3>Was working before, now it stopped?</h3>
+<p>
+  Uninstall the plugin, rotate your API key on the Hackatime site, reinstall the plugin, paste the new key. This fixes it most of the time.
+</p>
+
+<h3>Just set it up?</h3>
+<p>
+  Heartbeats are batched. Code for 5-10 minutes before checking the dashboard.
+</p>
+
+<hr>
+
+<h2 id="project-not-in-dropdown">Project not in the dropdown?</h2>
+
+<h3>Projects with zero time are hidden</h3>
+<p>
+  The dropdown only shows Hackatime projects with tracked time after June 1.
+  Open the project in your editor, write some code, wait a few minutes, and try again.
+</p>
+
+<h3>The name might not be what you expect</h3>
+<p>
+  Hackatime uses your editor workspace or folder name, not what you named the project on Stardance.
+  If you renamed a folder, the old name keeps the hours and the new name starts at zero.
+  Check your <a href="https://hackatime.hackclub.com" target="_blank" rel="noopener">Hackatime dashboard</a> for the actual project name.
+</p>
+
+<h3>OnShape, KiCad, or other hardware tools?</h3>
+<p>
+  For hardware projects, use the built-in recording tool on Stardance (Lookout) to make a timelapse. Select "Hardware" when creating your project to enable it.
+</p>
+
+<hr>
+
+<h2 id="time-not-on-stardance">Hackatime has hours, Stardance doesn't?</h2>
+
+<h3>Check your accounts</h3>
+<p>
+  This is the #1 cause. Go to <a href="https://hackatime.hackclub.com" target="_blank" rel="noopener">hackatime.hackclub.com</a> and check what email you're logged in with. It needs to match your Hack Club / Stardance account.
+</p>
+<p>
+  If your emails are different and you can't switch back, ask in <strong>#stardance-help</strong> on Slack.
+</p>
+
+<h3>Time before June 1 doesn't count</h3>
+<p>
+  Stardance only counts time logged after the program start date (June 1, 2026). Everything before that is ignored.
+</p>
+
+<h3>Wrong project linked?</h3>
+<p>
+  Hackatime uses your folder name as the project name. Check your <a href="https://hackatime.hackclub.com" target="_blank" rel="noopener">dashboard</a> for the exact name and make sure that's the one linked on your Stardance project.
+</p>
+
+<h3>Connection expired?</h3>
+<p>
+  Go to <strong>Settings</strong> (gear icon in the sidebar) and hit <strong>Reconnect</strong> under the Hackatime section.
+</p>
+
+<h3>"Already connected to a different account"?</h3>
+<p>
+  Ask in <strong>#hackatime-help</strong> on Slack.
+</p>
+
+<hr>
+
+<h2 id="cant-post-devlog">Can't post a devlog?</h2>
+
+<h3>"Could not load coding time"</h3>
+<p>
+  Your Hackatime connection probably expired. Go to <strong>Settings</strong> (gear icon in the sidebar) and hit <strong>Reconnect</strong> under the Hackatime section, then try again.
+</p>
+
+<h3>Hours only get logged when you devlog</h3>
+<p>
+  Your tracked time doesn't count until you write a devlog. That "X will be logged" number on the home page is time waiting for your next devlog to capture it.
+</p>
+
+<h3>15-minute minimum</h3>
+<p>
+  You need at least 15 minutes of tracked time since your last devlog to post a new one. Under 15 minutes? Keep going.
+</p>
+
+<h3>Time resets each devlog</h3>
+<p>
+  Each devlog captures time since your <em>previous</em> devlog, not your total. If you posted 20 minutes ago and coded for 5 minutes since, you'll see 5 minutes.
+</p>
+
+<h3>Just linked a new project?</h3>
+<p>
+  Time from a newly linked Hackatime project only counts from your next devlog onward. Hours tracked before you linked it won't appear retroactively.
+</p>
+
+<hr>
+
+<h2>Other stuff</h2>
+
+<h3>Multiple devices</h3>
+<p>
+  Works fine. Install the plugin on each computer with the same API key.
+  Same folder name = same Hackatime project.
+</p>
+
+<h3>Multiple Hackatime projects</h3>
+<p>
+  You can link several Hackatime projects to one Stardance project (frontend + backend, etc).
+  The devlog composer adds all of them together. Each Hackatime project can only be linked to one Stardance project at a time.
+</p>
+
+<hr>
+
+<h2>Still stuck?</h2>
+
+<p>
+  Ask in <strong>#stardance-help</strong> or <strong>#hackatime-help</strong> on the Hack Club Slack.
+</p>

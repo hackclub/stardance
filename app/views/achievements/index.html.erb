@@ -1,15 +1,18 @@
 <% content_for :title, "Achievements" %>
-<div class="achievements" data-controller="achievement-highlight" data-achievement-highlight-slug-value="<%= params[:highlight] %>">
-  <%= render HeadingComponent.new(title: "Achievements", tone: :blue) %>
 
-  <div class="achievements__stats">
-    <div class="achievements__stats-text">
-      <span class="achievements__stats-count"><%= @achievement_stats[:earned] %></span> / <span class="achievements__stats-total"><%= @achievement_stats[:total] %></span> collected
+<div class="achievements" data-controller="achievement-highlight" data-achievement-highlight-slug-value="<%= params[:highlight] %>">
+  <header class="achievements__header">
+    <h1 class="achievements__title">Achievements</h1>
+    <div class="achievements__stats">
+      <span class="achievements__stats-count"><%= @achievement_stats[:earned] %></span>
+      <span class="achievements__stats-separator">/</span>
+      <span class="achievements__stats-total"><%= @achievement_stats[:total] %></span>
+      <span class="achievements__stats-label">collected</span>
+      <div class="achievements__stats-bar">
+        <div class="achievements__stats-fill" style="width: <%= @achievement_stats[:total] > 0 ? (@achievement_stats[:earned].to_f / @achievement_stats[:total] * 100).round : 0 %>%"></div>
+      </div>
     </div>
-    <div class="achievements__stats-bar">
-      <div class="achievements__stats-fill" style="width: <%= @achievement_stats[:total] > 0 ? (@achievement_stats[:earned].to_f / @achievement_stats[:total] * 100).round : 0 %>%"></div>
-    </div>
-  </div>
+  </header>
 
   <div class="achievements__grid">
     <% @achievements.each do |item| %>
@@ -17,25 +20,32 @@
       <% next unless achievement.shown_to?(current_user, earned: item[:earned]) %>
       <% is_obscured = !achievement.visible? && !item[:earned] %>
       <% expose_slug = item[:earned] || achievement.visible? %>
-      <div <%= tag.attributes(id: "achievement-#{achievement.slug}") if expose_slug %> class="achievements__card <%= 'achievements__card--earned' if item[:earned] %> <%= 'achievements__card--secret' if is_obscured %>" data-achievement-highlight-target="card" <%= tag.attributes(data: { slug: achievement.slug }) if expose_slug %>>
+      <div <%= tag.attributes(id: "achievement-#{achievement.slug}") if expose_slug %>
+           class="achievements__card <%= 'achievements__card--earned' if item[:earned] %> <%= 'achievements__card--secret' if is_obscured %>"
+           data-achievement-highlight-target="card"
+           <%= tag.attributes(data: { slug: achievement.slug }) if expose_slug %>>
         <div class="achievements__icon">
-          <%= achievement_icon achievement.icon, earned: item[:earned], class: "achievements__icon-svg" %>
+          <%= achievement_icon achievement.icon, earned: item[:earned], class: "achievements__icon-img" %>
         </div>
-        <h3 class="achievements__name"><%= achievement.display_name(earned: item[:earned]) %></h3>
-        <p class="achievements__description"><%= achievement.display_description(earned: item[:earned]) %></p>
-        <% if achievement.has_stardust_reward? %>
-          <span class="achievements__reward <%= 'achievements__reward--secret' if is_obscured %>">+<%= is_obscured ? "?" : achievement.stardust_reward %> <%= image_tag "icons/stardust.png", alt: "Stardust", class: "currency-icon" %></span>
-        <% end %>
-        <% if achievement.show_progress?(earned: item[:earned]) && item[:progress] %>
-          <div class="achievements__progress">
-            <div class="achievements__progress-bar">
-              <div class="achievements__progress-fill" style="width: <%= [(item[:progress][:current].to_f / item[:progress][:target] * 100), 100].min %>%"></div>
+        <div class="achievements__body">
+          <h3 class="achievements__name"><%= achievement.display_name(earned: item[:earned]) %></h3>
+          <p class="achievements__description"><%= achievement.display_description(earned: item[:earned]) %></p>
+          <% if achievement.has_stardust_reward? %>
+            <span class="achievements__reward <%= 'achievements__reward--secret' if is_obscured %>">
+              +<%= is_obscured ? "?" : achievement.stardust_reward %> <%= image_tag "icons/stardust.png", alt: "Stardust", class: "currency-icon" %>
+            </span>
+          <% end %>
+          <% if achievement.show_progress?(earned: item[:earned]) && item[:progress] %>
+            <div class="achievements__progress">
+              <div class="achievements__progress-bar">
+                <div class="achievements__progress-fill" style="width: <%= [(item[:progress][:current].to_f / item[:progress][:target] * 100), 100].min %>%"></div>
+              </div>
+              <span class="achievements__progress-text"><%= [(item[:progress][:current].to_f / item[:progress][:target] * 100).round, 100].min %>%</span>
             </div>
-            <span class="achievements__progress-text"><%= [(item[:progress][:current].to_f / item[:progress][:target] * 100).round, 100].min %>%</span>
-          </div>
-        <% elsif item[:earned] %>
-          <span class="achievements__earned-at">Earned <%= time_ago_in_words(item[:earned_at]) %> ago</span>
-        <% end %>
+          <% elsif item[:earned] %>
+            <span class="achievements__earned-at">Earned <%= time_ago_in_words(item[:earned_at]) %> ago</span>
+          <% end %>
+        </div>
         <% if item[:earned] %>
           <div class="achievements__badge">
             <%= inline_svg_tag "icons/checkmark.svg", class: "achievements__badge-icon" %>

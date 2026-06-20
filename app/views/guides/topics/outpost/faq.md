@@ -2,6 +2,10 @@
 
 Join [#outpost](https://hackclub.enterprise.slack.com/archives/C0B04RP43TQ) if you have anything not answered!
 
+### Can I use a JOURNAL.md file?
+
+Yes! You will stilln need to use hackatime to log 15 minutes journaling so that you can submit a devlog, but you may use journals. Journaled projects may be returned for insufficient quality journaling.
+
 ### There's a lot of channels! Which one do I use?
 
 tl;dr:
@@ -19,10 +23,10 @@ Nope! Those are general admission tickets. You will be able to attend the main e
 
 Yes, if you can no longer attend those events!
 
-## I have existing hardware and don't need funding!
-
-Awesome! You can collect points by submitting your build [here]
-
 ### Can I pay visa fees with the travel stipend?
 
 Yes, after qualifying!
+
+### When can I get a visa letter?
+
+You can get a visa letter after qualifying! If you need one sooner, please message @CAN on the slack.

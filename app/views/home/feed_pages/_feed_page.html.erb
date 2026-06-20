@@ -15,7 +15,9 @@
           source: source,
           position: index + 1,
           page: @pagy.page,
-          feed_request_id: @feed_request_id
+          feed_request_id: @feed_request_id,
+          current_user_reposted_post_ids: @reposted_post_ids,
+          show_views: @show_post_views
         ) %>
   <% end %>
 
@@ -58,7 +60,9 @@
   <% end %>
 
   <p class="feed-home__empty">
-    <% if current_user.present? %>
+    <% if @current_tab == "following" %>
+      Nothing here yet. Follow some people or projects to see their posts here!
+    <% elsif current_user.present? %>
       Nothing here yet. Post a devlog or ship your project to start the feed.
     <% else %>
       Nothing here yet. Sign up to start building and see the feed come alive!
@@ -67,8 +71,9 @@
 <% end %>
 
 <% if @pagy.next %>
+  <% pagination_params = (local_assigns[:feed_params] || {}).merge(page: @pagy.next) %>
   <%= turbo_frame_tag "home_feed_page_#{@pagy.next}",
-                      src: home_feed_path(page: @pagy.next),
+                      src: home_feed_path(pagination_params),
                       loading: :lazy,
                       target: "_top",
                       class: "feed-home__frame" do %>

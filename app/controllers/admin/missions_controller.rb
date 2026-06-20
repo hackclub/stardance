@@ -64,6 +64,9 @@ module Admin
 
     def update
       authorize @mission
+
+      handle_prerequisite_changes
+
       if @mission.update(mission_params)
         redirect_to edit_admin_mission_path(@mission.slug), notice: "Mission updated."
       else
@@ -131,6 +134,18 @@ module Admin
       scopes.reduce(::PaperTrail::Version.none) { |query, scope| query.or(scope) }
     end
 
+    def handle_prerequisite_changes
+      mission_input = params[:mission] || {}
+
+      if (add_id = mission_input[:add_prerequisite_id].presence)
+        @mission.prerequisite_links.find_or_create_by!(prerequisite_mission_id: add_id)
+      end
+
+      if (remove_id = mission_input[:remove_prerequisite_id].presence)
+        @mission.prerequisite_links.where(prerequisite_mission_id: remove_id).destroy_all
+      end
+    end
+
     def create_params
       params.require(:mission).permit(:slug, :name, :description)
     end
@@ -141,7 +156,7 @@ module Admin
         :name, :description, :difficulty, :submission_guide,
         :enabled, :start_at, :end_at, :featured_at,
         :achievement_name, :achievement_description, :icon, :banner,
-        :estimated_completion_minutes,
+        :estimated_completion_minutes, :fixed_stardust_payout, :guide_url, :guide_sections_count,
         :default_project_title, :default_project_description
       ]
       permitted << :slug if policy(@mission).manage_owners?

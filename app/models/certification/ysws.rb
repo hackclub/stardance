@@ -6,8 +6,10 @@
 #  airtable_synced_at    :datetime
 #  approved_minutes      :integer
 #  demo_checked_at       :datetime
+#  in_unified_db         :string
 #  original_minutes      :integer
 #  repo_checked_at       :datetime
+#  returned_at           :datetime
 #  reviewed_at           :datetime
 #  spotchecked_at        :datetime
 #  summary_justification :text
@@ -44,7 +46,7 @@ module Certification
 
     belongs_to :reviewer, class_name: "User", optional: true
     belongs_to :user
-    belongs_to :project
+    belongs_to :project, -> { with_deleted }, optional: true
     belongs_to :ship_cert, class_name: "Certification::Ship", optional: true
     belongs_to :post_ship_event, class_name: "Post::ShipEvent"
     belongs_to :spotchecked_by, class_name: "User", optional: true
@@ -53,5 +55,42 @@ module Certification
 
     validates :original_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: false
     validates :approved_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+
+    MIN_APPROVED_MINUTES = 6
+
+    def approved_minutes_total
+      devlog_reviews.sum { |dr| dr.approved_minutes.to_i }
+    end
+
+    def review_rejected?
+      user.banned? || approved_minutes_total < MIN_APPROVED_MINUTES
+    end
+
+    def review_status
+      return :in_unified_db if in_unified_db.present?
+      return :returned if returned_at.present?
+      return :pending unless reviewed_at.present?
+
+      review_rejected? ? :rejected : :approved
+    end
+
+    def check_and_update_unified_db_status!
+      api_key  = Rails.application.credentials.dig(:ysws_review, :airtable_api_key) ||
+                 Rails.application.credentials&.airtable&.api_key ||
+                 ENV["AIRTABLE_API_KEY"]
+      base_id  = Rails.application.credentials.dig(:ysws_review, :airtable_base_id) ||
+                 ENV["YSWS_REVIEW_AIRTABLE_BASE_ID"]
+      tbl_name = Rails.application.credentials.dig(:ysws_review, :airtable_table_name) ||
+                 ENV["YSWS_REVIEW_AIRTABLE_TABLE"] ||
+                 "YSWS Project Submission"
+
+      table = Norairrecord.table(api_key, base_id, tbl_name)
+      record = table.all(filter: "{review_id} = '#{id}'").first
+      unified_record_id = record&.[]("Automation - YSWS Record ID").presence
+
+      update_column(:in_unified_db, unified_record_id) if unified_record_id.present? && in_unified_db != unified_record_id
+    rescue Faraday::Error => e
+      Rails.logger.warn "[Certification::Ysws] Could not check unified DB status for ##{id}: #{e.message}"
+    end
   end
 end

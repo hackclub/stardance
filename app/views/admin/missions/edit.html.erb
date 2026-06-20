@@ -126,6 +126,38 @@
     <%= render "admin/missions/shop_unlocks_frame",
           mission: @mission, unlocks: @unlocks %>
 
+    <section class="admin-mission-edit__section">
+      <h2 class="admin-mission-edit__section-title">Prerequisites</h2>
+      <p class="admin-mission-edit__hint">
+        Missions that must be completed before builders can start this one.
+      </p>
+      <% if @mission.prerequisites.any? %>
+        <ul class="admin-mission-edit__memberships">
+          <% @mission.prerequisites.each do |prereq| %>
+            <li class="admin-mission-edit__membership">
+              <span><%= prereq.name %></span>
+              <%= button_to "Remove",
+                    admin_mission_path(@mission.slug, "mission[remove_prerequisite_id]": prereq.id),
+                    method: :patch,
+                    data: { turbo_confirm: "Remove #{prereq.name} as a prerequisite?" },
+                    class: "action-btn action-btn--small action-btn--destructive" %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+      <%= form_with model: @mission, url: admin_mission_path(@mission.slug), method: :patch, local: true, class: "admin-mission-edit__form" do |f| %>
+        <label>Add prerequisite mission
+          <%= select_tag "mission[add_prerequisite_id]",
+                options_from_collection_for_select(
+                  Mission.enabled.where.not(id: [@mission.id] + @mission.prerequisite_ids).order(:name),
+                  :id, :name
+                ),
+                prompt: "Select a mission" %>
+        </label>
+        <%= f.submit "Add prerequisite", class: "action-btn action-btn--small action-btn--primary" %>
+      <% end %>
+    </section>
+
     <% if policy(@mission).manage_owners? %>
       <%# Admin-only sections — slug rename, owner add/remove, danger zone.
           Non-admin mission owners can't see any of this; they manage the

@@ -1,0 +1,8 @@
+<span class="notifications-item__verb">Your shop order</span>
+<strong><%= notification.headline %></strong>
+<% if notification.record %>
+  <span class="notifications-item__verb">—</span>
+  <%= link_to notification.record.shop_item&.name || "order ##{notification.record.id}",
+                 shop_orders_path,
+                 class: "notifications-item__actor" %>
+<% end %>

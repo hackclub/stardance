@@ -9,32 +9,20 @@ export default class extends Controller {
     "repoUrl",
     "readmeUrl",
     "readmeContainer",
+    "aiDeclaration",
     "submit",
-    "requirementsContainer",
     "updateDeclaration",
     "updateDescriptionContainer",
     "updateDescriptionField",
   ];
-
-  // Maps form-field keys → the requirement keys they satisfy. Reachability
-  // / format checks live downstream of presence — we hide them optimistically
-  // when the user enters *anything* for the URL; if the server later rejects
-  // them at save time, they'll re-render.
-  static FIELD_REQUIREMENT_MAP = {
-    description: ["description"],
-    demo_url: ["demo_url", "demo_url_reachable"],
-    repo_url: ["repo_url", "repo_url_format", "repo_cloneable"],
-    readme_url: ["readme_url", "readme_url_reachable"],
-    banner: ["banner"],
-  };
 
   static values = {
     readmeLockedClass: {
       type: String,
       default: "project-form--readme-locked",
     },
-    // Field keys (matching FIELD_REQUIREMENT_MAP) that arrived unfinished and
-    // should be highlighted red until the user fills them in.
+    // Field keys (matching Project::FIELD_REQUIREMENT_MAP) that arrived
+    // unfinished and should be highlighted red until the user fills them in.
     incompleteFields: {
       type: Array,
       default: [],
@@ -46,7 +34,7 @@ export default class extends Controller {
     this.trackedFields = new Set(this.incompleteFieldsValue);
     this.userEditedReadme = false;
     this.debouncedDetect = this.debounce(() => this.detectReadme(), 400);
-    this.boundRecheck = () => this.recheckRequirements();
+    this.boundRefresh = () => this.refreshHighlights();
 
     this.element.addEventListener("direct-upload:end", () => {
       this.submitting = false;
@@ -58,11 +46,11 @@ export default class extends Controller {
 
     // Delegated listeners on the form so we catch every field, including
     // file inputs nested inside StarImageInputComponent.
-    this.element.addEventListener("input", this.boundRecheck);
-    this.element.addEventListener("change", this.boundRecheck);
+    this.element.addEventListener("input", this.boundRefresh);
+    this.element.addEventListener("change", this.boundRefresh);
 
     this.restoreReadmeState();
-    this.recheckRequirements();
+    this.refreshHighlights();
     this.toggleUpdateDescription();
 
     if (
@@ -75,54 +63,8 @@ export default class extends Controller {
   }
 
   disconnect() {
-    this.element.removeEventListener("input", this.boundRecheck);
-    this.element.removeEventListener("change", this.boundRecheck);
-  }
-
-  recheckRequirements() {
-    this.refreshHighlights();
-    if (!this.hasRequirementsContainerTarget) return;
-
-    const filled = {
-      description:
-        this.hasDescriptionTarget && this.fieldFilled(this.descriptionTarget),
-      demo_url: this.hasDemoUrlTarget && this.fieldFilled(this.demoUrlTarget),
-      repo_url: this.hasRepoUrlTarget && this.fieldFilled(this.repoUrlTarget),
-      readme_url:
-        this.hasReadmeUrlTarget && this.fieldFilled(this.readmeUrlTarget),
-      banner: this.bannerFilled(),
-    };
-
-    const satisfied = new Set();
-    for (const [field, isFilled] of Object.entries(filled)) {
-      if (!isFilled) continue;
-      const reqs = this.constructor.FIELD_REQUIREMENT_MAP[field] || [];
-      reqs.forEach((k) => satisfied.add(k));
-    }
-
-    let remaining = 0;
-    this.requirementsContainerTarget
-      .querySelectorAll("[data-req-key]")
-      .forEach((li) => {
-        const key = li.dataset.reqKey;
-        const hide = satisfied.has(key);
-        li.hidden = hide;
-        if (!hide) remaining += 1;
-      });
-
-    this.requirementsContainerTarget.hidden = remaining === 0;
-
-    if (this.hasSubmitTarget) {
-      const wasDisabled = this.submitTarget.disabled;
-      const shouldDisable = remaining > 0;
-      if (wasDisabled !== shouldDisable) {
-        this.submitTarget.disabled = shouldDisable;
-        this.submitTarget.classList.toggle(
-          "special-action-btn--disabled",
-          shouldDisable,
-        );
-      }
-    }
+    this.element.removeEventListener("input", this.boundRefresh);
+    this.element.removeEventListener("change", this.boundRefresh);
   }
 
   fieldFilled(target) {
@@ -135,9 +77,8 @@ export default class extends Controller {
       'input[type="file"][name="project[banner]"]',
     );
     if (input && input.files && input.files.length > 0) return true;
-    // If the project already has a banner attached (server-rendered) the
-    // `banner` requirement was never in the list to begin with — recheck
-    // still works either way.
+    // If the project already has a banner attached (server-rendered), `banner`
+    // never arrives in incompleteFields, so it's never tracked here.
     return false;
   }
 
@@ -167,6 +108,8 @@ export default class extends Controller {
         return this.hasRepoUrlTarget ? this.repoUrlTarget : null;
       case "readme_url":
         return this.hasReadmeUrlTarget ? this.readmeUrlTarget : null;
+      case "ai_declaration":
+        return this.hasAiDeclarationTarget ? this.aiDeclarationTarget : null;
       case "banner":
         return this.element.querySelector(".project-show__banner");
       default:

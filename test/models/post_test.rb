@@ -5,6 +5,7 @@
 #  id            :bigint           not null, primary key
 #  postable_type :string
 #  reposts_count :integer          default(0), not null
+#  views_count   :integer          default(0), not null
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
 #  postable_id   :bigint

@@ -10,8 +10,6 @@ class PostCreationToSlackJob < ApplicationJob
   include Rails.application.routes.url_helpers
 
   def perform(record)
-    return if Rails.env.development?
-
     case record
     when Post::Devlog
       post_devlog(record)
@@ -32,21 +30,13 @@ class PostCreationToSlackJob < ApplicationJob
     author = post.user
     return unless project && author
 
-    project.followers.includes(:preference).each do |follower|
-      if follower.preference.send_notifications_for_followed_projects
-        SendSlackDmJob.perform_later(
-          follower.slack_id,
-          "New devlog on #{project.title} by #{author.display_name}!",
-          blocks_path: "notifications/creations/followed_devlog_created",
-          locals: {
-            project_title: sanitize_mentions(project.title),
-            project_url: project_url(project, host: "stardance.hackclub.com", protocol: "https"),
-            author_name: sanitize_mentions(author.display_name) || "Someone",
-            devlog_body: sanitize_mentions(devlog.body.to_s.truncate(200))
-          }
-        )
-      end
+    project.followers.find_each do |follower|
+      Notifications::FollowedDevlogCreated.notify(recipient: follower, actor: author, record: devlog)
     end
+
+    notify_mentioned_users_for_devlog(devlog, author)
+
+    return if Rails.env.development?
 
     SendSlackDmJob.perform_later(
       CHANNEL_ID,
@@ -63,6 +53,7 @@ class PostCreationToSlackJob < ApplicationJob
 
   def post_project(project)
     return if project.deleted?
+    return if Rails.env.development?
 
     owner = project.memberships.owner.first&.user
     return unless owner
@@ -87,22 +78,15 @@ class PostCreationToSlackJob < ApplicationJob
 
     commentable_url, commentable_title, commentable_users = resolve_commentable(commentable)
     return unless commentable_url
+
     commentable_users.each do |member|
-      next if member.id == author.id
-      if member.slack_id && member.preference.send_notifications_for_new_comments
-        SendSlackDmJob.perform_later(
-          member.slack_id,
-          "New comment on your project #{commentable_title} by #{author.display_name || "Someone"}",
-          blocks_path: "notifications/creations/comment_created_dm",
-          locals: {
-            commentable_title: sanitize_mentions(commentable_title),
-            commentable_url: commentable_url,
-            author_name: sanitize_mentions(author.display_name) || "Someone",
-            comment_body: sanitize_mentions(comment.body.to_s.truncate(200))
-          }
-        )
-      end
+      Notifications::ProjectCommentReceived.notify(recipient: member, actor: author, record: comment)
     end
+
+    notify_mentioned_users(comment, author, commentable_users)
+
+    return if Rails.env.development?
+
     SendSlackDmJob.perform_later(
       CHANNEL_ID,
       nil,
@@ -138,6 +122,26 @@ class PostCreationToSlackJob < ApplicationJob
       ]
     else
       nil
+    end
+  end
+
+  def notify_mentioned_users_for_devlog(devlog, author)
+    devlog.mentioned_users.each do |user|
+      next if user.id == author.id
+
+      Notifications::MentionReceived.notify(recipient: user, actor: author, record: devlog)
+    end
+  end
+
+  def notify_mentioned_users(comment, author, already_notified_users)
+    mentioned = comment.mentioned_users
+    already_notified_ids = already_notified_users.map(&:id).to_set
+
+    mentioned.each do |user|
+      next if user.id == author.id
+      next if already_notified_ids.include?(user.id)
+
+      Notifications::MentionReceived.notify(recipient: user, actor: author, record: comment)
     end
   end
 

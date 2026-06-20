@@ -1,0 +1,34 @@
+<% state = @notification.params["state"].to_s %>
+<% item = @record&.shop_item&.name %>
+<% headline = @notification.headline %>
+
+<% guidance_by_state = {
+  "awaiting_verification"      => "Send the required verification materials so we can release your order.",
+  "awaiting_verification_call" => "Schedule the verification call linked from your order page so we can release your order.",
+  "awaiting_periodical_fulfillment" => "We'll ship this in the next batch — no action needed from you.",
+  "fulfilled" => "Tracking and shipment details (where applicable) are on the order page.",
+  "rejected"  => "If you think this is a mistake, reply in the shop support thread."
+} %>
+<% guidance = guidance_by_state[state] %>
+
+<h1 style="margin:0 0 12px;font-size:22px;font-weight:700;line-height:1.3;color:#1a1a2e;">
+  Your order <%= headline %>
+</h1>
+
+<p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  <% if item.present? %>
+    Your order for <strong><%= item %></strong> <%= headline %>.
+  <% else %>
+    Your shop order <%= headline %>.
+  <% end %>
+</p>
+
+<% if guidance %>
+  <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+    <%= guidance %>
+  </p>
+<% end %>
+
+<div style="margin:24px 0 4px;">
+  <a href="<%= shop_orders_url %>" style="display:inline-block;padding:11px 22px;background:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;font-size:14px;line-height:1;">View my orders</a>
+</div>

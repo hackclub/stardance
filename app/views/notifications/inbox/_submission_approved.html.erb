@@ -1,0 +1,6 @@
+<span class="notifications-item__verb">Your mission submission was</span>
+<strong>approved</strong>
+<% if notification.record && notification.record.mission %>
+  <span class="notifications-item__verb">—</span>
+  <%= link_to notification.record.mission.name, mission_path(notification.record.mission), class: "notifications-item__actor" %>
+<% end %>

@@ -3,7 +3,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     authorize ::Certification::Ysws
 
     @reviews = ::Certification::Ysws
-      .where(reviewed_at: nil)
+      .where(reviewed_at: nil, returned_at: nil)
       .includes(:project, :user)
       .order(created_at: :asc)
   end
@@ -13,6 +13,14 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       .includes(:project, :user, :reviewer, devlog_reviews: { post_devlog: :attachments_attachments })
       .find(params[:id])
     authorize @review
+
+    if @review.project.nil?
+      redirect_to admin_certification_ysws_reviews_path, alert: "Review ##{@review.id} has no associated project."
+      return
+    end
+
+    # Check if review is already in unified DB
+    @review.check_and_update_unified_db_status!
 
     devlog_minutes = @review.devlog_reviews.map(&:original_minutes).compact
 
@@ -47,6 +55,8 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
   def commits
     @review = ::Certification::Ysws.includes(:project).find(params[:id])
     authorize @review, :show?
+
+    return render json: { by_devlog: {}, repo_url: nil } if @review.project.nil?
 
     windows = devlog_windows_for_review(@review)
     commits_by_devlog = load_commits_with_stats(windows, @review.project)
@@ -160,5 +170,79 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     else
       render json: { success: false, errors: report.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  def complete
+    Rails.logger.info "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Starting complete action"
+
+    @review = ::Certification::Ysws.includes(:devlog_reviews).find(params[:id])
+    authorize @review, :update?
+
+    @review.check_and_update_unified_db_status!
+
+    if @review.in_unified_db.present?
+      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: already in unified DB (#{@review.in_unified_db})"
+      return render json: { success: false, error: "This review is already in the unified DB" }, status: :unprocessable_entity
+    end
+
+    incomplete = @review.devlog_reviews.select { |dr| dr.pending? || dr.justification.blank? }
+    if incomplete.any?
+      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: #{incomplete.count} incomplete devlog(s): #{incomplete.map(&:id).inspect}"
+      return render json: { success: false, error: "Fill in all devlogs" }, status: :unprocessable_entity
+    end
+
+    @review.update_columns(reviewer_id: current_user.id, reviewed_at: Time.current)
+    Rails.logger.info "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Marked reviewed_at=#{@review.reviewed_at}; enqueuing AirtableSyncJob"
+
+    ::Certification::YswsAirtableSyncJob.perform_later(@review.id)
+    Rails.logger.info "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} AirtableSyncJob enqueued successfully"
+
+    render json: {
+      success: true,
+      message: "Review completed! Syncing to Airtable in the background...",
+      redirect_url: admin_certification_ysws_reviews_path
+    }, status: :ok
+  rescue StandardError => e
+    skip_authorization unless pundit_policy_authorized?
+    Rails.logger.error "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    render json: {
+      success: false,
+      error: "Failed to complete review: #{e.message}. Let AVD know!"
+    }, status: :unprocessable_entity
+  end
+
+  def return_to_ship_cert
+    @review = ::Certification::Ysws.find(params[:id])
+    authorize @review, :update?
+
+    recert_reason = params[:recert_reason].to_s.strip
+    if recert_reason.blank?
+      return render json: { success: false, error: "A reason is required." }, status: :unprocessable_entity
+    end
+
+    if ::Certification::Ship.pending.exists?(project_id: @review.project_id)
+      if @review.project.last_ship_event&.id == @review.post_ship_event_id
+        return render json: { success: false, error: "This project already has a pending ship certification." }, status: :unprocessable_entity
+      end
+    end
+
+    ActiveRecord::Base.transaction do
+      ::Certification::Ship.create!(
+        project_id: @review.project_id,
+        recert_reason: recert_reason, # codeql[rb/cleartext-storage-sensitive-data]
+        returned_by_id: current_user.id
+      )
+      @review.update!(returned_at: Time.current)
+    end
+
+    render json: {
+      success: true,
+      message: "Project returned to ship certification queue.",
+      redirect_url: admin_certification_ysws_reviews_path
+    }, status: :ok
+  rescue StandardError => e
+    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    render json: { success: false, error: "Failed to return to ship certs: #{e.message}" }, status: :unprocessable_entity
   end
 end

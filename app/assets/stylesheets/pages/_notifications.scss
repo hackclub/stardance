@@ -1,0 +1,263 @@
+.notifications-page {
+  // Lives inside .app-layout which already handles inset; constrain content
+  // width here so the column doesn't fight with the right rail at wide widths.
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  color: var(--color-space-text);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    margin-bottom: var(--space-m);
+  }
+
+  &__title {
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-xxl);
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  &__empty {
+    padding: var(--space-xl) var(--space-l);
+    text-align: center;
+    margin-top: var(--space-m);
+  }
+
+  &__empty-title {
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-l);
+    margin: 0 0 var(--space-xxs);
+    color: var(--color-space-text);
+  }
+
+  &__empty-hint {
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+}
+
+.notifications-item {
+  // Matches the set-1 text container used across the site (e.g. .feed-post-card,
+  // docs/branding.md §3): 2px border, 8px radius, translucent dark surface.
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-s) var(--space-m);
+  color: var(--color-space-text);
+  background: rgba(5, 4, 24, 0.35);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius, var(--border-radius));
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+
+  &--unread {
+    border-color: var(--color-brand-highlight);
+  }
+
+  &--expandable {
+    cursor: pointer;
+  }
+
+  &__icon {
+    // Top-aligned so it lines up with the avatars row when a card expands,
+    // while the card centres single-line content.
+    align-self: flex-start;
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-space-text);
+    opacity: 0.75;
+  }
+
+  &__icon-svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+  }
+
+  &__main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    min-width: 0;
+  }
+
+  &__actors {
+    display: flex;
+    align-items: center;
+    gap: 0;
+
+    .notifications-item__avatar {
+      width: 28px;
+      height: 28px;
+    }
+
+    .notifications-item__avatar + .notifications-item__avatar {
+      margin-left: -8px;
+    }
+  }
+
+  &__avatar {
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 1px solid var(--color-space-bg);
+  }
+
+  &__title {
+    font-family: var(--font-family-text);
+    font-weight: 600;
+    font-size: var(--font-size-s);
+    line-height: 1.4;
+    color: var(--color-space-text);
+    word-break: break-word;
+  }
+
+  &__actor {
+    color: var(--color-space-text);
+    text-decoration: none;
+    font-weight: 700;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__verb {
+    font-weight: 400;
+    color: var(--color-space-text);
+  }
+
+  &__time {
+    opacity: 0.5;
+    font-weight: 400;
+    font-family: var(--font-family-text);
+  }
+
+  &__preview {
+    display: -webkit-box;
+    font-style: italic;
+    font-weight: 400;
+    font-size: var(--font-size-s);
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.6);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  // Preview that jumps somewhere (a comment, a quote-repost): clickable text.
+  &__preview--link {
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-space-text);
+      text-decoration: underline;
+    }
+  }
+
+  // Chevron that expands the whole card to reveal everyone behind an
+  // aggregated notification.
+  &__expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: var(--space-xxs);
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    &:hover,
+    &[aria-expanded="true"] {
+      color: var(--color-space-text);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+
+  &__expand-icon {
+    width: 16px;
+    height: 16px;
+    transition: transform 150ms ease;
+
+    .notifications-item__expand[aria-expanded="true"] & {
+      transform: rotate(180deg);
+    }
+  }
+
+  // Inline list the card grows into when expanded — full-width, in flow, so the
+  // whole card opens downward (no floating layer).
+  &__others-list {
+    list-style: none;
+    margin: var(--space-xs) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxxs);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__others-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xxs) var(--space-xs);
+    border-radius: calc(var(--profile-radius) / 1.5);
+    color: var(--color-space-text);
+    text-decoration: none;
+
+    &:hover {
+      background: var(--color-space-surface-faint);
+    }
+  }
+
+  &__others-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+  }
+
+  &__others-name {
+    font-size: var(--font-size-s);
+    font-weight: 600;
+  }
+}

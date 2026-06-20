@@ -1,0 +1,67 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# == Schema Information
+#
+# Table name: notifications
+#
+#  id                 :bigint           not null, primary key
+#  email_delivered_at :datetime
+#  group_count        :integer          default(1), not null
+#  group_key          :string
+#  params             :jsonb            not null
+#  priority           :integer          default(NULL), not null
+#  read_at            :datetime
+#  record_type        :string
+#  seen_at            :datetime
+#  slack_enqueued_at  :datetime
+#  type               :string           not null
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
+#  actor_id           :bigint
+#  recipient_id       :bigint           not null
+#  record_id          :bigint
+#
+# Indexes
+#
+#  index_notifications_on_actor_id                                (actor_id)
+#  index_notifications_on_recipient_id                            (recipient_id)
+#  index_notifications_on_recipient_id_and_created_at             (recipient_id,created_at)
+#  index_notifications_on_recipient_id_and_group_key_and_read_at  (recipient_id,group_key,read_at) WHERE (group_key IS NOT NULL)
+#  index_notifications_on_recipient_id_and_seen_at                (recipient_id,seen_at)
+#  index_notifications_on_record_type_and_record_id               (record_type,record_id)
+#  index_notifications_on_type_and_created_at                     (type,created_at)
+#  index_notifications_unique_unread_aggregate                    (recipient_id,type,group_key) UNIQUE WHERE ((read_at IS NULL) AND (group_key IS NOT NULL))
+#
+# Foreign Keys
+#
+#  fk_rails_...  (actor_id => users.id) ON DELETE => nullify
+#  fk_rails_...  (recipient_id => users.id) ON DELETE => cascade
+#
+unseen_new_follower:
+  recipient: one
+  actor: two
+  type: Notifications::NewFollower
+  priority: 0
+  params: {}
+  group_key: "user_followed:<%= ActiveRecord::FixtureSet.identify(:one) %>"
+  group_count: 1
+
+read_new_follower:
+  recipient: two
+  actor: one
+  type: Notifications::NewFollower
+  priority: 0
+  params: {}
+  group_key: "user_followed:<%= ActiveRecord::FixtureSet.identify(:two) %>"
+  group_count: 1
+  seen_at: 2026-01-01 00:00:00
+  read_at: 2026-01-01 00:00:01
+
+orphaned_notification:
+  recipient: one
+  type: Notifications::NewFollower
+  priority: 0
+  params: {}
+  record_type: Project
+  record_id: 999999999
+  group_count: 1

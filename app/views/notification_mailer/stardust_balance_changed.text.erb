@@ -1,0 +1,9 @@
+<% amount = @notification.params["amount"].to_i %>
+<% source = @notification.params["source"] %>
+<% signed = amount.positive? ? "+#{amount}" : amount.to_s %>
+
+<% if amount.positive? %><%= signed %> stardust just hit your balance!<% else %><%= signed %> stardust adjustment to your balance<% end %>
+
+<% if amount.positive? %>You earned <%= signed %> stardust<% if source.present? %> from <%= source %><% end %>. Spend it in the shop or save it for something big.<% else %>Your balance changed by <%= signed %><% if source.present? %> (<%= source %>)<% end %>.<% end %>
+
+View balance history: <%= my_balance_url %>

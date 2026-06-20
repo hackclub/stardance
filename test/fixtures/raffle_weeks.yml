@@ -1,0 +1,7 @@
+current_week:
+  number: 1
+  status: active
+  prize: "AMD RX 9060 XT"
+  opened_at: <%= 3.days.ago.to_fs(:db) %>
+  created_at: <%= 1.week.ago.to_fs(:db) %>
+  updated_at: <%= 1.week.ago.to_fs(:db) %>

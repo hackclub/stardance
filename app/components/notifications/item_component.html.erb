@@ -1,0 +1,58 @@
+<%# The card never navigates — only the actor/project links inside the sentence
+    do. For aggregated cards, clicking anywhere on the card toggles the expander
+    (card_data wires the Stimulus controller + click action; links are ignored by
+    the controller). Reading is handled by opening the inbox. %>
+<%= tag.li class: li_classes, data: card_data do %>
+  <span class="notifications-item__icon" aria-hidden="true">
+    <%= inline_svg_tag type_icon_path, class: "notifications-item__icon-svg" %>
+  </span>
+
+  <span class="notifications-item__main">
+    <% if header_avatars.any? %>
+      <span class="notifications-item__actors">
+        <% header_avatars.each do |face| %>
+          <%= image_tag face.avatar, alt: "", class: "notifications-item__avatar" %>
+        <% end %>
+
+        <% if expandable? %>
+          <button type="button"
+                  class="notifications-item__expand"
+                  data-notification-actors-target="toggle"
+                  aria-expanded="false"
+                  aria-label="Show everyone">
+            <svg class="notifications-item__expand-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        <% end %>
+      </span>
+    <% end %>
+
+    <span class="notifications-item__title">
+      <%= render notification.inbox_partial, notification: notification %>
+      <span class="notifications-item__time"> · <%= time_text %></span>
+    </span>
+
+    <% if notification.preview_text.present? %>
+      <% if notification.preview_path.present? %>
+        <%= link_to notification.preview_text, notification.preview_path,
+                    class: "notifications-item__preview notifications-item__preview--link" %>
+      <% else %>
+        <span class="notifications-item__preview"><%= notification.preview_text %></span>
+      <% end %>
+    <% end %>
+
+    <% if expandable? %>
+      <ul class="notifications-item__others-list" data-notification-actors-target="list" hidden>
+        <% aggregated_actors.each do |actor| %>
+          <li>
+            <%= link_to user_path(actor), class: "notifications-item__others-row" do %>
+              <%= image_tag actor.avatar, alt: "", class: "notifications-item__others-avatar" %>
+              <span class="notifications-item__others-name">@<%= actor.display_name %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </span>
+<% end %>

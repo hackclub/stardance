@@ -6,7 +6,7 @@ class Shop::BaseController < ApplicationController
       return current_user.shop_region if current_user.shop_region.present?
       return current_user.regions.first if current_user.has_regions?
 
-      primary_address = current_user.addresses.find { |a| a["primary"] } || current_user.addresses.first
+      primary_address = (@user_addresses ||= current_user.addresses).find { |a| a["primary"] } || @user_addresses.first
       country = primary_address&.dig("country")
       region_from_address = Shop::Regionalizable.country_to_region(country)
       return region_from_address if region_from_address != "XX" || country.present?
@@ -31,6 +31,10 @@ class Shop::BaseController < ApplicationController
     @user_balance = current_user&.cached_balance || 0
 
     preload_shop_item_images(@shop_items + Array(@recently_added_items))
+  end
+
+  def prepare_visible_shop_items(items = @shop_items)
+    @visible_shop_items = Array(items).select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
   end
 
   def preload_shop_item_images(items)

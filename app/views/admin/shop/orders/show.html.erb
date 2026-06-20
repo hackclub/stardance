@@ -1,6 +1,7 @@
 <% content_for :title, "Order ##{@order.id}" %>
 <%
   s = @order.aasm_state
+  display_s = policy(@order).view_on_hold_state? ? s : (s == "on_hold" ? "pending" : s)
 
   # Pipeline steps: index maps to how far through the flow we are
   # 0=pending, 1=verification, 2=awaiting_fulfillment, 3=fulfilled
@@ -32,7 +33,7 @@
     <div class="aorder__title-group">
       <h1 class="aorder__title">
         Order #<%= @order.id %>
-        <span class="aorder__state-badge aorder__state-badge--<%= s %>"><%= s.humanize %></span>
+        <span class="aorder__state-badge aorder__state-badge--<%= display_s %>"><%= display_s.humanize %></span>
       </h1>
       <p class="aorder__subtitle"><%= @order.shop_item.name %> · <%= @order.created_at.strftime("%b %-d, %Y at %-I:%M%p") %></p>
     </div>
@@ -44,6 +45,7 @@
   </div>
 
   <%# ── State machine stepper ────────────────────────────────────────── %>
+  <% if policy(current_user).view_order_full_details? %>
   <div class="aorder__stepper">
     <% pipeline.each_with_index do |step, i| %>
       <%
@@ -66,7 +68,7 @@
         <span class="aorder__step-sublabel">
           <% if i == step_idx && s == "awaiting_verification_call" %>Verification Call
           <% elsif i == step_idx && s == "awaiting_verification" %>Identity Check
-          <% elsif i == step_idx && s == "on_hold" %>On Hold
+          <% elsif i == step_idx && s == "on_hold" %><%= policy(@order).view_on_hold_state? ? "On Hold" : "Pending" %>
           <% else %><%= step[:sublabel] %>
           <% end %>
         </span>
@@ -90,6 +92,7 @@
       </div>
     <% end %>
   </div>
+  <% end %><%# end view_order_full_details? %>
 
   <%# ── Overview + User ─────────────────────────────────────────────── %>
   <div class="aorder__grid">
@@ -97,15 +100,21 @@
     <%# Overview card %>
     <div class="aorder__card">
       <div class="aorder__card-header">
-        <h2 class="aorder__card-title">Overview</h2>
+        <h2 class="aorder__card-title"><%= policy(current_user).view_order_full_details? ? "Overview" : "Order Details" %></h2>
       </div>
       <div class="aorder__card-body">
         <div class="aorder__row">
           <span class="aorder__row-label">Status</span>
           <span class="aorder__row-value">
-            <span class="aorder__state-badge aorder__state-badge--<%= s %>"><%= s.humanize %></span>
+            <span class="aorder__state-badge aorder__state-badge--<%= display_s %>"><%= display_s.humanize %></span>
           </span>
         </div>
+        <% unless policy(current_user).view_order_full_details? %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Item</span>
+            <span class="aorder__row-value"><%= @order.shop_item.name %></span>
+          </div>
+        <% end %>
         <div class="aorder__row">
           <span class="aorder__row-label">Quantity</span>
           <span class="aorder__row-value">
@@ -122,25 +131,42 @@
             <% end %>
           </span>
         </div>
-        <div class="aorder__row">
-          <span class="aorder__row-label">Region</span>
-          <span class="aorder__row-value"><%= @order.region || "—" %></span>
-        </div>
-        <div class="aorder__row">
-          <span class="aorder__row-label">Created</span>
-          <span class="aorder__row-value"><%= @order.created_at.strftime("%m/%d/%Y %-I:%M%p") %></span>
-        </div>
-        <% if @order.rejection_reason.present? %>
+        <% if policy(current_user).view_order_full_details? %>
           <div class="aorder__row">
-            <span class="aorder__row-label">Rejection reason</span>
-            <span class="aorder__row-value" style="color:#f87171;"><%= @order.rejection_reason %></span>
+            <span class="aorder__row-label">Region</span>
+            <span class="aorder__row-value"><%= @order.region || "—" %></span>
           </div>
         <% end %>
-        <% if @order.internal_rejection_reason.present? %>
-          <div class="aorder__row">
-            <span class="aorder__row-label">Internal reason</span>
-            <span class="aorder__row-value" style="color:#f87171;"><%= @order.internal_rejection_reason %></span>
-          </div>
+        <div class="aorder__row">
+          <span class="aorder__row-label"><%= policy(current_user).view_order_full_details? ? "Created" : "Ordered" %></span>
+          <span class="aorder__row-value"><%= @order.created_at.strftime("%m/%d/%Y %-I:%M%p") %></span>
+        </div>
+        <% unless policy(current_user).view_order_full_details? %>
+          <% if @order.fulfilled_at.present? %>
+            <div class="aorder__row">
+              <span class="aorder__row-label">Fulfilled</span>
+              <span class="aorder__row-value"><%= @order.fulfilled_at.strftime("%m/%d/%Y %-I:%M%p") %></span>
+            </div>
+          <% end %>
+          <% if @order.fulfilled_by.present? %>
+            <div class="aorder__row">
+              <span class="aorder__row-label">Fulfilled by</span>
+              <span class="aorder__row-value"><%= @order.fulfilled_by %></span>
+            </div>
+          <% end %>
+        <% else %><%# view_order_full_details? %>
+          <% if @order.rejection_reason.present? %>
+            <div class="aorder__row">
+              <span class="aorder__row-label">Rejection reason</span>
+              <span class="aorder__row-value" style="color:#f87171;"><%= @order.rejection_reason %></span>
+            </div>
+          <% end %>
+          <% if @order.internal_rejection_reason.present? %>
+            <div class="aorder__row">
+              <span class="aorder__row-label">Internal reason</span>
+              <span class="aorder__row-value" style="color:#f87171;"><%= @order.internal_rejection_reason %></span>
+            </div>
+          <% end %>
         <% end %>
       </div>
     </div>
@@ -161,7 +187,7 @@
               <%= link_to @order.user.display_name || "Unknown", admin_user_path(@order.user) unless current_user.fulfillment_person? %>
               <% if current_user.fulfillment_person? %><%= @order.user.display_name %><% end %>
             </span>
-            <% unless current_user.shop_manager? && !current_user.admin? %>
+            <% if policy(current_user).view_order_full_details? && !(current_user.shop_manager? && !current_user.admin?) %>
               <div class="aorder__user-meta">
                 <% if @order.user.slack_id.present? %>
                   <span>Slack: <a href="https://hackclub.slack.com/team/<%= @order.user.slack_id %>" target="_blank"><code><%= @order.user.slack_id %></code></a></span>
@@ -242,7 +268,9 @@
       <div class="aorder__card-header">
         <h2 class="aorder__card-title">Shop Item</h2>
         <div style="display:flex; gap: var(--space-xs); align-items:center;">
-          <%= link_to "Admin →", admin_shop_item_path(@order.shop_item), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
+          <% if current_user.admin? %>
+            <%= link_to "Admin →", admin_shop_item_path(@order.shop_item), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
+          <% end %>
           <%= link_to "Public →", shop_item_path(@order.shop_item), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;", target: "_blank" %>
           <% if policy(:admin).manage_shop? || policy(:admin).manage_draft_shop_items? %>
             <%= link_to "Edit →", edit_admin_shop_item_path(@order.shop_item), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
@@ -282,16 +310,18 @@
             <% end %>
           </span>
         </div>
-        <% regional_usd_offset = @order.region.present? ? (item.send("usd_offset_#{@order.region.downcase}") || item.send("usd_offset_xx") || 0) : 0 %>
-        <div class="aorder__row">
-          <span class="aorder__row-label">USD cost</span>
-          <span class="aorder__row-value">
-            $<%= number_with_precision((item.usd_cost || 0) + regional_usd_offset, precision: 2) %>
-            <% if regional_usd_offset != 0 %>
-              <small style="color: var(--color-space-text-muted);">(+<%= @order.region %> offset)</small>
-            <% end %>
-          </span>
-        </div>
+        <% if policy(current_user).view_order_full_details? %>
+          <% regional_usd_offset = @order.region.present? ? (item.send("usd_offset_#{@order.region.downcase}") || item.send("usd_offset_xx") || 0) : 0 %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">USD cost</span>
+            <span class="aorder__row-value">
+              $<%= number_with_precision((item.usd_cost || 0) + regional_usd_offset, precision: 2) %>
+              <% if regional_usd_offset != 0 %>
+                <small style="color: var(--color-space-text-muted);">(+<%= @order.region %> offset)</small>
+              <% end %>
+            </span>
+          </div>
+        <% end %>
         <div style="clear:both;"></div>
       </div>
     </div>
@@ -396,7 +426,7 @@
       </div>
     </div>
   <% end %>
-
+<% if policy(current_user).view_fulfillment_info? %>
   <%# ── Fulfillment info ────────────────────────────────────────────── %>
   <div class="aorder__card">
     <div class="aorder__card-header">
@@ -456,6 +486,7 @@
               </div>
             <% end %>
           </div>
+
         </div>
       <% end %>
 
@@ -508,6 +539,7 @@
       <% end %>
     </div>
   </div>
+<% end %>
 
   <%# ── Card grant ───────────────────────────────────────────────────── %>
   <% if @order.shop_card_grant_id.present? %>
@@ -555,7 +587,7 @@
       </div>
     </div>
   <% end %>
-
+  <% if policy(current_user).shop_order_action? %>
   <%# ── Actions ──────────────────────────────────────────────────────── %>
   <div class="aorder__card aorder__card--actions">
     <div class="aorder__card-header">
@@ -740,8 +772,8 @@
       </div><%# end .aorder__actions %>
     </div><%# end card-body %>
   </div><%# end Actions card %>
-
-  <%# ── Internal notes ───────────────────────────────────────────────── %>
+<% end %>
+  <% if policy(current_user).view_internal_notes? %>
   <div class="aorder__card">
     <div class="aorder__card-header">
       <h2 class="aorder__card-title">📝 Internal Notes</h2>
@@ -760,9 +792,10 @@
       </form>
     </div>
   </div>
-
-  <%# ── Past orders component + audit log ──────────────────────────── %>
+<% end %>
+<% if policy(current_user).audit_log? %>
   <%= render Admin::PastOrdersComponent.new(user: @order.user, orders: @user_orders) %>
   <%= render "admin/shared/audit_log", record: @order, item_type: "ShopOrder" %>
+  <% end %>
 
 </div><%# end .aorder %>

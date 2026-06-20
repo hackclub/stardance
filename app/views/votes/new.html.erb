@@ -1,12 +1,32 @@
 <% content_for :title, "Rate this project" %>
 
-<% if @voting_open && @assignment.present? %>
-  <main class="vote-page" aria-labelledby="vote-page-title">
+<% if @vote_blocked_reason.present? %>
+  <main class="vote-page vote-page--preview" aria-labelledby="vote-page-title">
+    <%= render "votes/preview_background" %>
+
+    <div class="vote-page__gate-overlay">
+      <section class="vote-page__gate" aria-labelledby="vote-page-title">
+        <%= inline_svg_tag "rate/doodles.svg", class: "vote-page__gate-illustration", aria_hidden: true %>
+        <h1 id="vote-page-title" class="vote-page__gate-title"><%= @vote_blocked_title || "You're all done rating!" %></h1>
+        <p class="vote-page__gate-body"><%= @vote_blocked_reason %></p>
+        <% if current_user %>
+          <div class="vote-page__gate-actions">
+            <%= link_to "My projects", profile_projects_path(current_user.display_name), class: "vote-page__gate-btn vote-page__gate-btn--primary" %>
+          </div>
+        <% end %>
+      </section>
+    </div>
+  </main>
+<% elsif @vote_policy.open? && @assignment.present? %>
+  <main class="vote-page" aria-labelledby="vote-page-title"
+        data-controller="vote-telemetry"
+        data-vote-telemetry-assignment-id-value="<%= @assignment.id %>"
+        data-vote-telemetry-endpoint-value="<%= votes_events_path %>">
     <div class="vote-page__layout">
       <section class="vote-page__main" aria-label="Project context">
         <%= render "votes/toolbar", assignment: @assignment %>
         <%= render "votes/project_card", project: @project %>
-        <%= render "votes/timeline", posts: @timeline_posts, project: @project %>
+        <%= render "votes/timeline", posts: @timeline_posts, project: @project, assignment: @assignment %>
       </section>
 
       <aside class="vote-page__aside" aria-labelledby="vote-scorecard-title">
@@ -14,43 +34,12 @@
       </aside>
     </div>
   </main>
-<% elsif @voting_open && current_user && @has_shipped %>
-  <main class="vote-page" aria-labelledby="vote-page-title">
+<% elsif @vote_policy.open? %>
+  <main class="vote-page vote-page--preview" aria-labelledby="vote-page-title">
     <%= render "votes/empty_state" %>
   </main>
 <% else %>
   <main class="vote-page vote-page--preview" aria-labelledby="vote-page-title">
-    <%= render "votes/preview_background" %>
-
-    <div class="vote-page__gate-overlay">
-      <div class="vote-page__gate">
-        <%= inline_svg_tag "rate/doodles.svg", class: "vote-page__gate-illustration", aria_hidden: true %>
-
-        <h1 id="vote-page-title" class="vote-page__gate-title">Rating isn't open yet!</h1>
-
-        <p class="vote-page__gate-subtitle">Rating will open soon.</p>
-
-        <p class="vote-page__gate-body">
-          <% if !current_user %>
-            Sign up for Stardance to build and ship your own projects,
-            then rate what others have made!
-          <% elsif @has_shipped %>
-            For now, you can continue working on your project.
-            We'll send an announcement once it's open!
-          <% else %>
-            For now, you can still work on and ship your project.
-            We'll send an announcement once it's open!
-          <% end %>
-        </p>
-
-        <div class="vote-page__gate-actions">
-          <% if current_user %>
-            <%= link_to "My projects", profile_projects_path(current_user.display_name), class: "vote-page__gate-btn vote-page__gate-btn--primary" %>
-          <% else %>
-            <%= link_to "Sign up", root_path, class: "vote-page__gate-btn vote-page__gate-btn--primary" %>
-          <% end %>
-        </div>
-      </div>
-    </div>
+    <%= render "votes/empty_state", rating_closed: true %>
   </main>
 <% end %>

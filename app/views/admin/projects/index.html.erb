@@ -1,65 +1,65 @@
 <% content_for :title, "Project Search" %>
-<h1>Project Search</h1>
+
+<div class="admin-users">
+  <h1 class="admin-user-show__title">Projects</h1>
+<% if policy(:super_star_dashboard).show? %>
+  <p><%= link_to "→ Super Stars", admin_super_stars_path %></p>
+<% end %>
 
 <div>
   <%= link_to "Active", admin_projects_path(filter: "active", query: params[:query]) %>
   <%= link_to "Deleted", admin_projects_path(filter: "deleted", query: params[:query]) %>
   <%= link_to "All", admin_projects_path(filter: "all", query: params[:query]) %>
 </div>
-
-<%= form_with url: admin_projects_path, method: :get, local: true do %>
-  <%= hidden_field_tag :filter, @filter %>
-  <%= text_field_tag :query, params[:query],
-    placeholder: "Search projects by title or other meta info...",
-    autocomplete: "off" %>
-
-  <%= submit_tag "Search" %>
-<% end %>
-
-<% if @projects.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Description</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @projects.each do |project| %>
-        <tr>
-          <td><%= project.id %></td>
-          <td><%= project.title %></td>
-          <td><%= truncate(project.description, length: 60) %></td>
-          <td>
-            <% if project.deleted? %>
-              <span>Deleted</span>
-            <% else %>
-              <span>Active</span>
-            <% end %>
-          </td>
-          <td>
-            <%= link_to "View", admin_project_path(project) %>
-            <% if project.deleted? %>
-              <%= button_to "Restore", restore_admin_project_path(project), method: :post %>
-            <% else %>
-              <%= button_to "Delete", delete_admin_project_path(project), method: :post, data: { confirm: "Are you sure you want to delete this project?" } %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No projects found.</p>
-<% end %>
-
-<% if @pagy.pages > 1 %>
-  <div>
-    <%== @pagy.series_nav %>
+  <div style="display:flex; gap: var(--space-s);">
+    <%= render ActionButtonComponent.new(text: "Active", href: admin_projects_path(filter: "active", query: params[:query]), size: :small, variant: params[:filter] == "active" || params[:filter].blank? ? :primary : :secondary) %>
+    <%= render ActionButtonComponent.new(text: "Deleted", href: admin_projects_path(filter: "deleted", query: params[:query]), size: :small, variant: params[:filter] == "deleted" ? :primary : :secondary) %>
+    <%= render ActionButtonComponent.new(text: "All", href: admin_projects_path(filter: "all", query: params[:query]), size: :small, variant: params[:filter] == "all" ? :primary : :secondary) %>
   </div>
-<% end %>
 
-<%= link_to "Go back", admin_users_path %>
+  <%= form_with url: admin_projects_path, method: :get, local: true, class: "admin-users__search" do %>
+    <%= hidden_field_tag :filter, @filter %>
+    <%= text_field_tag :query, params[:query],
+      placeholder: "Search by title or meta info...",
+      autocomplete: "off",
+      class: "admin-users__search-input" %>
+    <%= render ActionButtonComponent.new(text: "Search", type: :submit, size: :small) %>
+  <% end %>
+
+  <% if @projects.any? %>
+    <div>
+      <table class="space-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @projects.each do |project| %>
+            <tr>
+              <td class="space-table__muted"><%= project.id %></td>
+              <td><%= project.title %></td>
+              <td class="space-table__muted"><%= truncate(project.description, length: 60) %></td>
+              <td><%= project.deleted? ? "Deleted" : "Active" %></td>
+              <td>
+                <%= render ActionButtonComponent.new(text: "View", href: admin_project_path(project), size: :small, variant: :secondary) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="admin-users__empty">No projects found.</p>
+  <% end %>
+
+  <% if @pagy.pages > 1 %>
+    <div class="admin-users__pagination">
+      <%== @pagy.series_nav %>
+    </div>
+  <% end %>
+</div>

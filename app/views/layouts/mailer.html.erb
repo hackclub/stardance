@@ -1,13 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-      /* Email styles need to be inline */
-    </style>
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title><%= content_for?(:email_title) ? yield(:email_title) : "Stardance" %></title>
   </head>
-
-  <body>
-    <%= yield %>
+  <body style="margin:0;padding:0;background:#f5f3ec;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a2e;line-height:1.5;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f5f3ec;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:#ffffff;border-radius:12px;border:1px solid #e6e2d6;overflow:hidden;">
+            <tr>
+              <td style="padding:20px 32px;border-bottom:1px solid #f0eddf;">
+                <%= image_tag image_url("landing/header/stardance-logo.png"),
+                              alt: "Hack Club Stardance Challenge",
+                              width: "180",
+                              style: "display:block;height:auto;max-width:180px;border:0;" %>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px;color:#1a1a2e;font-size:15px;line-height:1.55;">
+                <%= yield %>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 32px;border-top:1px solid #f0eddf;color:#8e8b81;font-size:12px;line-height:1.5;">
+                You're receiving this notification from Hack Club's Stardance Challenge because you have email notifications enabled.
+                <a href="<%= my_notification_settings_url %>" style="color:#8e8b81;text-decoration:underline;">Manage your preferences here.</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

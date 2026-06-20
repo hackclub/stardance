@@ -1,0 +1,7 @@
+context [
+  plain_text("💬 You were mentioned!")
+]
+
+section "*<#{project_url}|#{project_title}>*", markdown: true
+
+section "_#{author_name}_ mentioned you:\n> #{comment_body}", markdown: true

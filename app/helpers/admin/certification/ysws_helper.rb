@@ -1,4 +1,20 @@
 module Admin::Certification::YswsHelper
+  REVIEW_STATUS_LABELS = {
+    in_unified_db: "in unified DB",
+    returned: "returned",
+    approved: "approved",
+    rejected: "rejected",
+    pending: "pending"
+  }.freeze
+
+  def review_status_badge(review)
+    status = review.review_status
+    tag.span(
+      REVIEW_STATUS_LABELS.fetch(status),
+      class: "status-badge status-#{status.to_s.dasherize}"
+    )
+  end
+
   def parse_repo_info(repo_url)
     return nil if repo_url.blank?
 

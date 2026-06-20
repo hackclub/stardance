@@ -1,9 +1,6 @@
 <% content_for :title, "Review: #{@ship.project.title}" %>
 
-<%
-  owner = @ship.project.memberships.find(&:owner?)&.user
-  can_review = @ship.claim_held_by?(current_user) && @ship.pending?
-%>
+<% can_review = @ship.claim_held_by?(current_user) && @ship.pending? %>
 
 <div class="app-layout app-layout--wide"
      data-controller="certification--queue"
@@ -30,47 +27,11 @@
 
     <div class="ship-review__body">
       <section class="ship-review__details">
-        <% if @ship.project.description.present? %>
-          <div class="ship-review__panel">
-            <h2 class="ship-review__panel-title">Description</h2>
-            <p class="ship-review__description"><%= @ship.project.description %></p>
-          </div>
-        <% end %>
-
-        <div class="ship-review__panel">
-          <h2 class="ship-review__panel-title">AI Declaration</h2>
-          <% if @ship.project.ai_declaration.present? %>
-            <p class="ship-review__description"><%= @ship.project.ai_declaration %></p>
-          <% else %>
-            <p class="ship-review__no-declaration">No AI declaration provided for this project.</p>
-          <% end %>
-        </div>
-
-        <div class="ship-review__panel">
-          <h2 class="ship-review__panel-title">Links</h2>
-          <dl class="ship-review__links">
-            <% if @ship.project.repo_url.present? %>
-              <dt>Repo</dt>
-              <dd><%= link_to @ship.project.repo_url, @ship.project.repo_url, target: "_blank", rel: "noopener" %></dd>
-            <% end %>
-            <% if @ship.project.demo_url.present? %>
-              <dt>Demo</dt>
-              <dd><%= link_to @ship.project.demo_url, @ship.project.demo_url, target: "_blank", rel: "noopener" %></dd>
-            <% end %>
-            <% if @ship.project.readme_url.present? %>
-              <dt>README</dt>
-              <dd><%= link_to @ship.project.readme_url, @ship.project.readme_url, target: "_blank", rel: "noopener" %></dd>
-            <% end %>
-            <dt>Project</dt>
-            <dd><%= link_to "View project page", project_path(@ship.project), target: "_blank", rel: "noopener" %></dd>
-          </dl>
-        </div>
-
         <div class="ship-review__panel">
           <h2 class="ship-review__panel-title">Submission</h2>
           <dl class="ship-review__meta">
             <dt>Submitter</dt>
-            <dd><%= owner&.display_name || "—" %></dd>
+            <dd><%= @owner&.display_name || "—" %></dd>
             <dt>Submitted</dt>
             <dd><%= time_ago_in_words(@ship.project.shipped_at || @ship.created_at) %> ago</dd>
             <% if @ship.reviewer %>
@@ -86,20 +47,159 @@
                 <span class="ship-review__badge ship-review__badge--no">No</span>
               <% end %>
             </dd>
+            <% if @ship.project.description.present? %>
+              <dt>Description</dt>
+              <dd><%= @ship.project.description %></dd>
+            <% end %>
+            <dt>AI Declaration</dt>
+            <dd>
+              <% if @ship.project.ai_declaration.present? %>
+                <%= @ship.project.ai_declaration %>
+              <% else %>
+                <span class="ship-review__no-declaration">None provided.</span>
+              <% end %>
+            </dd>
+            <dt>Links</dt>
+            <dd class="ship-review__link-row">
+              <%= link_to "project page", project_path(@ship.project), target: "_blank", rel: "noopener" %>
+              <% if @ship.project.demo_url.present? %>
+                <%= link_to "demo", @ship.project.demo_url, target: "_blank", rel: "noopener" %>
+              <% end %>
+              <% if @ship.project.repo_url.present? %>
+                <%= link_to "repo", @ship.project.repo_url, target: "_blank", rel: "noopener" %>
+              <% end %>
+              <% if @ship.project.readme_url.present? %>
+                <%= link_to "readme", @ship.project.readme_url, target: "_blank", rel: "noopener" %>
+              <% end %>
+              <a href="<%= project_url(@ship.project) %>"
+                 target="_blank" rel="noopener"
+                 data-urls="<%= html_escape([project_url(@ship.project), @ship.project.demo_url, @ship.project.repo_url, @ship.project.readme_url].compact.to_json) %>"
+                 onclick="event.preventDefault();JSON.parse(this.dataset.urls).forEach(u=>window.open(u,'_blank','noopener,noreferrer'))">open all</a>
+            </dd>
           </dl>
         </div>
+
+        <% if @ship.pending? %>
+          <%= render "form", ship: @ship, can_review: can_review %>
+        <% end %>
+
+        <% if @ship.returned_by.present? || @ship.recert_reason.present? %>
+          <div class="ship-review__return-alert">
+            <h2 class="ship-review__return-alert-title">Returned from YSWS Review</h2>
+            <% if @ship.returned_by.present? %>
+              <p class="ship-review__return-alert-meta">by <%= @ship.returned_by.display_name %></p>
+            <% end %>
+            <% if @ship.recert_reason.present? %>
+              <p class="ship-review__return-alert-reason"><%= @ship.recert_reason %></p>
+            <% end %>
+          </div>
+        <% end %>
+
       </section>
 
       <aside class="ship-review__sidebar">
-        <% if can_review %>
-          <%= render "form", ship: @ship %>
-        <% else %>
-          <div class="ship-review__claim">
-            <p>You don't currently hold the claim on this review.</p>
-            <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
-                  class: "action-btn action-btn--large action-btn--primary" %>
-            <%= link_to "Back to queue", admin_certification_ships_path,
-                  class: "action-btn action-btn--small action-btn--secondary" %>
+        <% if @ship.pending? %>
+          <div class="ship-review__panel">
+            <h2 class="ship-review__panel-title">Actions</h2>
+            <div class="ship-review__actions">
+              <% if can_review %>
+                <button type="submit" form="unclaim-form-<%= @ship.id %>"
+                        class="action-btn action-btn--large action-btn--destructive">
+                  Unclaim review
+                </button>
+              <% else %>
+                <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship), method: :post,
+                      class: "action-btn action-btn--large action-btn--primary" %>
+              <% end %>
+              <%= form_with url: set_project_type_admin_certification_ship_path(@ship), method: :patch do %>
+                <%= select_tag :project_type,
+                      options_for_select(
+                        [["Unknown", nil, { disabled: true, hidden: @ship.project.project_type.present? }], *Project::AVAILABLE_CATEGORIES.map { |t| [t, t] }],
+                        @ship.project.project_type
+                      ),
+                      onchange: "this.form.requestSubmit()",
+                      class: "ship-queue__select" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <% if @submitter_history %>
+          <div class="ship-review__panel submitter-history">
+            <h2 class="ship-review__panel-title">Submitter history</h2>
+            <% if @submitter_history[:total] <= 1 %>
+              <p class="ship-review__description">First submission from <%= @owner.display_name %>.</p>
+            <% else %>
+              <p class="submitter-history__summary">
+                <%= pluralize(@submitter_history[:total], "review") %> across <%= pluralize(@submitter_history[:projects], "project") %>
+                &middot; <%= @submitter_history[:approved] %> approved
+                &middot; <%= @submitter_history[:returned] %> returned
+              </p>
+              <div class="submitter-history__cards">
+                <% @submitter_history[:recent].each do |review| %>
+                  <% current = review.id == @ship.id %>
+                  <%= link_to admin_certification_ship_path(review), target: "_blank", rel: "noopener",
+                        class: class_names("submitter-history__card", "submitter-history__card--current" => current) do %>
+                    <div class="submitter-history__card-head">
+                      <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
+                      <span class="submitter-history__card-id">#<%= review.id %></span>
+                      <% if current %>
+                        <span class="submitter-history__card-here">&larr; you're here</span>
+                      <% end %>
+                      <span class="submitter-history__card-date">
+                        <%= review.decided_at ? l(review.decided_at.to_date, format: :short) : "—" %>
+                      </span>
+                    </div>
+                    <div class="submitter-history__card-meta">
+                      <%= review.project_with_deleted.title %>
+                      <% if review.project_with_deleted.deleted? %>
+                        <span class="submitter-history__card-deleted">(deleted)</span>
+                      <% end %>
+                      <% if review.returned? && review.returned_by %>
+                        &middot; returned by <%= review.returned_by.display_name %>
+                      <% elsif review.decided_at && review.reviewer %>
+                        &middot; by <%= review.reviewer.display_name %>
+                      <% end %>
+                    </div>
+                    <% if review.feedback.present? %>
+                      <p class="submitter-history__card-feedback"><%= review.feedback %></p>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <% if !@ship.pending? %>
+          <div class="ship-review__verdict-card">
+            <h2 class="ship-review__panel-title">Verdict</h2>
+            <div class="ship-review__verdict-outcome">
+              <span class="status-pill status-pill--<%= @ship.status %>">
+                <%= @ship.status.capitalize %>
+              </span>
+            </div>
+            <% if @ship.feedback.present? %>
+              <div class="ship-review__verdict-feedback">
+                <h3>Feedback</h3>
+                <p><%= @ship.feedback %></p>
+              </div>
+            <% end %>
+            <% if @ship.verdict_video.attached? %>
+              <div class="ship-review__verdict-video">
+                <h3>Walkthrough Video</h3>
+                <video controls playsinline class="ship-review__video-player">
+                  <source src="<%= url_for(@ship.verdict_video) %>" type="<%= @ship.verdict_video.content_type %>">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            <% end %>
+            <div class="ship-review__verdict-actions">
+              <%= link_to "Back to logs", logs_admin_certification_ships_path,
+                    class: "action-btn action-btn--small action-btn--secondary" %>
+              <%= link_to "Back to queue", admin_certification_ships_path,
+                    class: "action-btn action-btn--small action-btn--secondary" %>
+            </div>
           </div>
         <% end %>
       </aside>

@@ -1,0 +1,118 @@
+.admin-workspace {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin: var(--space-m) 0;
+}
+
+.admin-user-show {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  margin-top: var(--space-m);
+
+  &__title {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--color-space-text);
+    margin: 0;
+  }
+
+  &__banned {
+    color: var(--color-brand-salmon);
+    border-color: var(--color-brand-salmon) !important;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-m);
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__section-title {
+    margin: 0 0 var(--space-s);
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-space-text-muted);
+  }
+
+  &__dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-xxs) var(--space-m);
+    margin: 0;
+
+    dt {
+      color: var(--color-space-text-muted);
+      font-size: 16px;
+      padding-top: 2px;
+    }
+
+    dd {
+      margin: 0;
+      color: var(--color-space-text);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: flex-start;
+  }
+
+  &__muted {
+    color: var(--color-space-text-muted);
+    font-size: 16px;
+  }
+}
+
+.admin-users {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  margin-top: var(--space-m);
+
+  &__search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  &__search-input {
+    flex: 1;
+    max-width: 400px;
+    padding: var(--space-xs) var(--space-m);
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-3-bg);
+    border-radius: 999px;
+    color: var(--color-space-text);
+    font-size: 16px;
+    font-family: inherit;
+    outline: none;
+
+    &::placeholder {
+      color: var(--color-space-text-muted);
+    }
+
+    &:focus {
+      border-color: var(--color-brand-highlight);
+    }
+  }
+
+  &__empty {
+    color: var(--color-space-text-muted);
+  }
+
+  &__pagination {
+    display: flex;
+    justify-content: center;
+  }
+}

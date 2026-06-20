@@ -4,14 +4,7 @@ Now that you have the design files, it's time to actually submit your project. H
 
 ## 1. Make sure you have all of your project files!
 
-First off - check that all your project's files are actually in the repository! This includes a full CAD assembly in .STEP format, your PCB source files, and your firmware!
-
-Your directory structure should look something like this:
-
-```
-
-
-```
+First off - check that all your project's files are actually in the repository! This includes a full CAD assembly in .STEP format, your PCB source files, and your firmware! This ensures that other people will actually be able to replicate your project
 
 ## 2. Organize the different files!
 
@@ -19,13 +12,33 @@ Next, you should organize all your different files!
 
 I recommend making 3 folders - one called "CAD", one called "PCB", and one called "firmware"
 
-Drag and drop your files into their respective folders
+Drag and drop your files into their respective folders. Here's an example of what they should look like!
+
+```
+example_project
+├── README.md
+├── assets
+│   ├── logo.png
+│   └── screenshot.png
+├── cad
+│   └── example_project_full_cad.step
+├── firmware
+│   ├── Makefile
+│   └── firmware.c
+└── pcb
+    ├── example_pcb.kicad_pcb
+    ├── example_pcb.kicad_prl
+    ├── example_pcb.kicad_pro
+    └── example_pcb.kicad_sch
+```
+
+(don't worry too much about the filenames - just make sure the general structure matches!)
 
 ## 3. Make a BOM.csv file!
 
 Now, write a BOM.csv so that everyone can see where to get parts for your project! It'll also help you order all the parts once you actually get your grant.
 
-There's a template [here](https://docs.google.com/spreadsheets/d/1maI6o3gMH7iFf2YkcOIJNg3B32JRLoNRscTOKz6hCpg/edit?usp=sharing)
+There's a template [here](https://docs.google.com/spreadsheets/d/1maI6o3gMH7iFf2YkcOIJNg3B32JRLoNRscTOKz6hCpg/edit?usp=sharing) if you need
 
 ## 4. Write a README.md about your project!
 
@@ -33,6 +46,18 @@ A README.md file is what ties your project together! It should include a short d
 
 Make sure to include a screenshot of your PCB(s)/wiring diagram if applicable - it makes reviewing way easier for us and cuts down on time!
 
+One snippet you can add to your project is this. It adds a PCB button to your README that opens your repository's PCB!
+
+```
+[![View PCB on KiCanvas](https://hack.club/pcb-badge)](https://kicanvas.org/?github=https://github.com/<OWNER>/<REPOSITORY>/tree/main/pcb)
+```
+
+[![View PCB on KiCanvas](https://hack.club/pcb-badge)](https://kicanvas.org/?github=https://kicanvas.org/?github=https://github.com/hackclub/orpheus-pico)
+
 ## 5. Submit!
 
-If you're done your project, you can submit it by filling out [this form](https://forms.hackclub.com/opensauce2026-design)
+Once you're done with your project, you're ready to submit!
+
+If you just finished a _design_ and are looking for funding, fill out [this form](https://forms.hackclub.com/outpost-design)
+
+If you have a build, hang tight!

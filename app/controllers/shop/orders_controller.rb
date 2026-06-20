@@ -71,7 +71,7 @@ class Shop::OrdersController < Shop::BaseController
                    []
     end
 
-    item_price = @shop_item.price_for_region(region)
+    item_price = @shop_item.price_for_user(current_user, region)
     item_total = item_price * quantity
     accessories_total = @accessories.sum { |a| a.price_for_region(region) } * quantity
     modifiers_total = @modifiers.sum { |m| m.price_for_region(region) }

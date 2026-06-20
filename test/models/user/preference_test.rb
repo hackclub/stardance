@@ -33,11 +33,6 @@ class User::PreferenceTest < ActiveSupport::TestCase
     assert user.preference
     assert_not user.preference.send_votes_to_slack
     assert_not user.preference.leaderboard_optin
-    assert_not user.preference.stardust_balance_notifications
-    assert user.preference.send_notifications_for_followed_projects
-    assert user.preference.send_notifications_for_followed_users
-    assert user.preference.send_notifications_for_new_followers
-    assert user.preference.send_notifications_for_new_comments
     assert_not user.preference.search_engine_indexing_off
   end
 

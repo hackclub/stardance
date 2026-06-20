@@ -1,0 +1,685 @@
+// rng — /rng (your number + day-browsable leaderboard) and /rng/history
+// (your stats + every roll). Rail-less .app-layout--wide pages using the
+// same card surfaces as the home feed.
+
+.rng-board__header {
+  color: var(--color-space-text);
+}
+
+.rng-board__title {
+  font-size: 2.5rem; // 40px — matches .guides-index__title
+  font-weight: 700;
+  line-height: 1;
+  margin: 0 0 var(--space-xs);
+}
+
+.rng-board__subtitle {
+  color: var(--color-space-text-muted);
+  font-size: 1.125rem;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 40rem;
+}
+
+// Centered day selector: ‹ Today › with the count beneath.
+.rng-board__daynav {
+  align-items: center;
+  display: flex;
+  gap: var(--space-m);
+  justify-content: center;
+}
+
+.rng-board__daynav-label {
+  font-family: var(--font-family-text);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  // Hold a steady width so the arrows don't shift as the label changes
+  // ("Today" vs "June 7").
+  min-width: 7rem;
+  text-align: center;
+}
+
+.rng-board__nav-arrow {
+  align-items: center;
+  border-radius: var(--profile-radius);
+  color: var(--color-space-text);
+  display: inline-flex;
+  font-size: 1.25rem;
+  font-weight: 700;
+  height: 2rem;
+  justify-content: center;
+  line-height: 1;
+  text-decoration: none;
+  width: 2rem;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-overlay-light);
+  }
+
+  &--disabled {
+    color: var(--color-space-text-muted);
+    opacity: 0.4;
+
+    &:hover,
+    &:focus-visible {
+      background: none;
+    }
+  }
+}
+
+.rng-board__count {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  font-weight: 400;
+  margin: 0;
+}
+
+// Your number today — the page's one big moment. Reuses the daily-roll
+// reveal animation (keyframes live in components/_discover_rail.scss) with
+// rng-hero as the BEM base, so rolling here plays the same chaos → digit →
+// sign-slam sequence as the rail widget.
+.rng-hero {
+  align-items: center;
+  background: rgba(5, 4, 24, 0.35);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-l) var(--space-m);
+  position: relative;
+  text-align: center;
+}
+
+.rng-hero__label {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rng-hero__result {
+  display: inline-flex;
+  justify-content: center;
+  position: relative;
+}
+
+.rng-hero__number {
+  color: var(--color-space-text);
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+// Coloured by magnitude once settled (or on a static, already-rolled view):
+// the dim majority stays muted, the rare big roll glows. Kept neutral while
+// --waiting so the reel colour can't spoil it mid-reveal.
+.rng-hero:not(.rng-hero--waiting) {
+  .rng-hero__number--cosmic {
+    color: var(--color-brand-yellow);
+    text-shadow: 0 0 28px rgba(255, 229, 100, 0.5);
+  }
+
+  .rng-hero__number--high {
+    color: var(--color-brand-highlight);
+    text-shadow: 0 0 22px var(--color-brand-highlight-soft);
+  }
+
+  .rng-hero__number--mid {
+    color: var(--color-space-text);
+  }
+
+  .rng-hero__number--low {
+    color: var(--color-space-text-muted);
+  }
+
+  .rng-hero__number--placeholder {
+    color: var(--color-space-text-muted);
+  }
+}
+
+.rng-hero__rank {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+}
+
+// The deadpan one-liner, like the rail widget's comment.
+.rng-hero__flavor {
+  color: var(--color-brand-highlight);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-m);
+  font-weight: 600;
+  margin: 0;
+}
+
+.rng-hero__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+  justify-content: center;
+  margin-top: var(--space-xxs);
+}
+
+// While rolling, the supporting bits are pulled out of the layout entirely
+// (not just hidden) so there's no reserved blank space under the number; they
+// fade in once the reveal lands.
+.rng-hero--waiting {
+  .rng-hero__flavor,
+  .rng-hero__rank,
+  .rng-hero__actions,
+  .rng-hero__cta {
+    display: none;
+  }
+}
+
+.rng-hero--landed {
+  .rng-hero__flavor,
+  .rng-hero__rank,
+  .rng-hero__actions,
+  .rng-hero__cta {
+    animation: daily-roll-fade-in 350ms ease both;
+  }
+}
+
+// Logged-out sign-up prompt: save your roll by making an account.
+.rng-hero__cta {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+  max-width: 26rem;
+  width: 100%;
+}
+
+.rng-hero__cta-text {
+  color: var(--color-brand-highlight);
+  font-size: var(--font-size-m);
+  font-weight: 700;
+  margin: 0;
+}
+
+.rng-hero__signup {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  justify-content: center;
+  width: 100%;
+}
+
+.rng-hero__signup-input {
+  background: rgba(5, 4, 24, 0.45);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  color: var(--color-space-text);
+  flex: 1 1 12rem;
+  font: inherit;
+  min-width: 0;
+  padding: 0.7rem var(--space-m);
+
+  &::placeholder {
+    color: var(--color-space-text-muted);
+  }
+
+  &:focus {
+    border-color: var(--color-brand-highlight);
+    outline: 0;
+  }
+}
+
+.rng-hero__signup-submit {
+  flex-shrink: 0;
+}
+
+.rng-hero__cta-note,
+.rng-hero__hint {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  margin: 0;
+}
+
+// Quiet "see history" link under the roll button, before you've rolled.
+.rng-hero__history-link {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+  }
+}
+
+// Dev-only escape hatch for re-testing the reveal; quiet so it stays out of
+// the way of the real actions above it.
+.rng-hero__dev-clear {
+  background: none;
+  border: 0;
+  color: var(--color-space-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  padding: 0;
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-salmon);
+  }
+}
+
+// --- Reveal animation: shared @keyframes from components/_discover_rail.scss ---
+
+.rng-hero__digits {
+  display: inline-block;
+}
+
+.rng-hero--rolling .rng-hero__number {
+  animation: daily-roll-hum 280ms ease-in-out infinite alternate;
+}
+
+.rng-hero__digits--tick {
+  animation: daily-roll-lock 160ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+// The whole number crashes into place — the reveal's final beat.
+.rng-hero__number--slammed {
+  animation: daily-roll-slam 360ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.rng-hero--landed {
+  animation: daily-roll-shake 450ms ease-out;
+}
+
+.rng-hero__burst {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.rng-hero__particle {
+  animation: daily-roll-burst 700ms ease-out var(--delay, 0ms) forwards;
+  color: var(--color-brand-yellow);
+  font-size: var(--font-size-s);
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rng-hero--rolling .rng-hero__number,
+  .rng-hero__number--slammed,
+  .rng-hero--landed,
+  .rng-hero--landed .rng-hero__flavor,
+  .rng-hero--landed .rng-hero__rank,
+  .rng-hero--landed .rng-hero__actions,
+  .rng-hero--landed .rng-hero__cta,
+  .rng-hero__digits--tick {
+    animation: none;
+  }
+}
+
+.rng-board__history-date {
+  color: var(--color-space-text);
+  font-weight: 600;
+  min-width: 4.5rem;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+    text-decoration: underline;
+  }
+}
+
+.rng-board__history-rank {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+}
+
+// Stat tiles on /rng/history.
+.rng-board__facts {
+  display: grid;
+  gap: var(--space-xs);
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+
+.rng-board__fact {
+  background: rgba(5, 4, 24, 0.35);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  padding: var(--space-s) var(--space-m);
+}
+
+.rng-board__fact-label {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rng-board__fact-value {
+  color: var(--color-brand-highlight);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &--plain {
+    color: var(--color-space-text);
+  }
+}
+
+.rng-board__fact-date {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-xs);
+  text-decoration: none;
+  width: fit-content;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+    text-decoration: underline;
+  }
+}
+
+// --- Podium: today's top three ---
+
+.rng-board__podium {
+  align-items: end;
+  display: grid;
+  gap: var(--space-s);
+  grid-template-columns: 1fr 1.25fr 1fr;
+  padding: var(--space-m) 0;
+
+  @media (max-width: 640px) {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+}
+
+.rng-board__pedestal {
+  align-items: center;
+  background: rgba(5, 4, 24, 0.35);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  padding: var(--space-m) var(--space-s);
+
+  &--place-1 {
+    grid-column: 2;
+    padding: var(--space-l) var(--space-s);
+  }
+
+  &--place-2 {
+    grid-column: 1;
+  }
+
+  &--place-3 {
+    grid-column: 3;
+  }
+
+  &--viewer {
+    background: var(--color-brand-highlight-faint);
+    border-color: var(--color-brand-highlight);
+  }
+
+  @media (max-width: 640px) {
+    &--place-1,
+    &--place-2,
+    &--place-3 {
+      grid-column: 1;
+    }
+  }
+}
+
+.rng-board__medal {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  font-weight: 700;
+
+  .rng-board__pedestal--place-1 & {
+    color: var(--color-brand-yellow);
+    font-size: var(--font-size-m);
+  }
+}
+
+.rng-board__pedestal-avatar {
+  background: rgba(217, 217, 217, 0.35);
+  border-radius: 50%;
+  height: 48px;
+  margin-top: var(--space-xxs);
+  object-fit: cover;
+  width: 48px;
+
+  .rng-board__pedestal--place-1 & {
+    height: 64px;
+    width: 64px;
+  }
+}
+
+.rng-board__pedestal-name {
+  color: var(--color-space-text);
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+    text-decoration: underline;
+  }
+}
+
+.rng-board__pedestal-value {
+  color: var(--color-brand-highlight);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+
+  .rng-board__pedestal--place-1 & {
+    font-size: 1.45rem;
+  }
+}
+
+// No container card — like the home feed, rows sit directly on the page.
+.rng-board {
+  color: var(--color-space-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.rng-board__section-header {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  text-align: center;
+}
+
+.rng-board__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// Same box as .feed-post-card on /home.
+.rng-board__row {
+  align-items: center;
+  background: rgba(5, 4, 24, 0.35);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  display: flex;
+  gap: var(--space-s);
+  padding: var(--space-s) var(--space-m);
+
+  &--viewer {
+    background: var(--color-brand-highlight-faint);
+    border-color: var(--color-brand-highlight);
+  }
+}
+
+// "you" marker next to your own name on the board.
+.rng-board__you-tag {
+  background: var(--color-brand-highlight);
+  border-radius: 999px;
+  color: var(--color-set-1-bg);
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 8px;
+}
+
+.rng-board__rank {
+  color: var(--color-space-text-muted);
+  flex-shrink: 0;
+  font-size: var(--font-size-s);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 2.25rem;
+
+  &--first {
+    color: var(--color-brand-yellow);
+  }
+}
+
+.rng-board__avatar {
+  background: rgba(217, 217, 217, 0.35);
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 32px;
+  object-fit: cover;
+  width: 32px;
+}
+
+.rng-board__name {
+  color: var(--color-space-text);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+    text-decoration: underline;
+  }
+}
+
+.rng-board__value {
+  color: var(--color-brand-highlight);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.rng-board__empty {
+  color: var(--color-space-text-muted);
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+// "You're #150 — jump to your spot" when your roll is on another page.
+.rng-board__you {
+  align-self: flex-start;
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+  }
+}
+
+// Leaderboard page-through controls (separate from the day arrows up top).
+.rng-board__pages {
+  align-items: center;
+  display: flex;
+  gap: var(--space-m);
+  justify-content: center;
+  padding: var(--space-xs) 0;
+}
+
+.rng-board__page-link {
+  color: var(--color-space-text);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+  }
+
+  &--disabled {
+    color: var(--color-space-text-muted);
+    opacity: 0.4;
+  }
+}
+
+.rng-board__page-status {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  font-variant-numeric: tabular-nums;
+}
+
+// "All-time best: @name +N on June 7" footer line of the leaderboard.
+.rng-board__alltime {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  margin: 0;
+}
+
+.rng-board__alltime-name,
+.rng-board__alltime-date {
+  color: var(--color-space-text);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+    text-decoration: underline;
+  }
+}
+
+.rng-board__alltime-value {
+  color: var(--color-brand-highlight);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.rng-board__back {
+  color: var(--color-space-text-muted);
+  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-highlight);
+  }
+}

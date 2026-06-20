@@ -1,0 +1,6 @@
+<% @body_class = [@body_class, "admin-page"].compact.join(" ") %>
+<% @_admin_layout = true %>
+<% content_for(:stylesheets) do %>
+  <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
+<% end %>
+<%= render template: "layouts/application" %>

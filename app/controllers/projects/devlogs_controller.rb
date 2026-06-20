@@ -12,7 +12,7 @@ class Projects::DevlogsController < ApplicationController
     authorize @devlog
     @body_class = "app-layout-page"
     @post = @project.posts.visible_to(current_user).find_by!(postable: @devlog)
-    @comments = @devlog.comments.not_deleted.includes(:user).order(created_at: :asc)
+    @comments = @devlog.comments.not_deleted.joins(:user).where(users: { banned: false }).includes(:user).order(created_at: :asc)
   end
 
   def create
@@ -23,11 +23,16 @@ class Projects::DevlogsController < ApplicationController
       return redirect_to project_path(@project), alert: "Could not calculate your coding time. Please try again." unless @preview_time.present?
 
       @devlog = Post::Devlog.new(devlog_params)
+      @devlog.uploading_attachments = devlog_params[:attachments].present?
       @devlog.duration_seconds = @preview_seconds
+      # Remember which hardware stage this time was logged in (nil for software)
+      # so the ship payout basis can count build-phase time only.
+      @devlog.phase = @project.hardware_stage
       @devlog.hackatime_projects_key_snapshot = test_time_granted? ? "test" : @project.hackatime_keys.join(",")
 
       if @devlog.save
         Post.create!(project: @project, user: current_user, postable: @devlog)
+        attach_lookout_sessions(@devlog)
         session.delete(test_time_session_key) if test_time_granted?
         track_event "devlog_posted", { project_id: @project.id, devlog_id: @devlog.id, duration_seconds: @devlog.duration_seconds }
         flash[:notice] = "Devlog created successfully"
@@ -44,12 +49,12 @@ class Projects::DevlogsController < ApplicationController
     authorize @project, :create_devlog?
     load_preview_time
     respond_to do |format|
-      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds } }
+      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds, hardware: @project.hardware?, token_stale: @token_stale } }
       format.json { render json: { preview_time: @preview_time } }
     end
   rescue Pundit::NotAuthorizedError
     respond_to do |format|
-      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: nil, preview_seconds: 0 }, status: :forbidden }
+      format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: nil, preview_seconds: 0, hardware: @project.hardware?, token_stale: false }, status: :forbidden }
       format.json { render json: { error: "Not authorized" }, status: :forbidden }
     end
   end
@@ -61,30 +66,33 @@ class Projects::DevlogsController < ApplicationController
   def update
     authorize @devlog
     previous_body = @devlog.body
+    permitted_params = update_devlog_params
+    new_attachments = permitted_params[:attachments]&.reject(&:blank?) || []
+    body_params = permitted_params.except(:attachments)
+    attachment_ids_to_remove = Array(params[:remove_attachment_ids]).reject(&:blank?)
+    attachments_to_remove = @devlog.attachments.where(id: attachment_ids_to_remove)
+    remaining_count = @devlog.attachments.count - attachments_to_remove.count
 
     # Remove selected attachments first
-    if params[:remove_attachment_ids].present?
-      attachments_to_remove = @devlog.attachments.where(id: params[:remove_attachment_ids])
-      remaining_count = @devlog.attachments.count - attachments_to_remove.count
-      new_attachments_count = update_devlog_params[:attachments]&.reject(&:blank?).count || 0
-
-      if remaining_count + new_attachments_count < 1
-        flash.now[:alert] = "Your devlog must have at least one attachment."
-        return render :edit, status: :unprocessable_entity
-      end
-
-      attachments_to_remove.each(&:purge_later)
+    if remaining_count + new_attachments.count < 1
+      flash.now[:alert] = "Your devlog must have at least one attachment."
+      return render :edit, status: :unprocessable_entity
     end
 
-    # Extract new attachments to append separately (don't replace existing)
-    new_attachments = update_devlog_params[:attachments]
-    body_params = update_devlog_params.except(:attachments)
+    if remaining_count + new_attachments.count > Post::Devlog::MAX_ATTACHMENTS
+      flash.now[:alert] = "Your devlog can't have more than #{Post::Devlog::MAX_ATTACHMENTS} attachments."
+      return render :edit, status: :unprocessable_entity
+    end
+
+    if attachment_ids_to_remove.any?
+      attachments_to_remove.each(&:purge_later)
+    end
 
     @devlog.uploading_attachments = new_attachments.present?
 
     if @devlog.update(body_params)
       # Append new attachments instead of replacing
-      if new_attachments.present?
+      if new_attachments.any?
         @devlog.attachments.attach(new_attachments)
       end
 
@@ -175,12 +183,21 @@ class Projects::DevlogsController < ApplicationController
     params.require(:post_devlog).permit(:body, attachments: [])
   end
 
+  def attach_lookout_sessions(devlog)
+    ids = Array(params.dig(:post_devlog, :lookout_session_ids)).reject(&:blank?)
+    return if ids.empty?
+
+    @project.lookout_sessions.where(user: current_user, id: ids, devlog_id: nil)
+      .update_all(devlog_id: devlog.id)
+  end
+
   def update_devlog_params
     params.require(:post_devlog).permit(:body, attachments: [])
   end
 
   def load_preview_time
     @preview_seconds = 0
+    @token_stale = false
     @project.reload
     hackatime_keys = @project.hackatime_keys
 
@@ -189,7 +206,11 @@ class Projects::DevlogsController < ApplicationController
 
     seconds = @project.seconds_coded_in_devlog_window(current_user.hackatime_identity&.uid, access_token: current_user.hackatime_identity&.access_token)
     return apply_test_time_preview if test_time_granted? && seconds.nil?
-    return @preview_time = nil if seconds.nil?
+
+    if seconds.nil?
+      @token_stale = current_user.hackatime_token_stale?
+      return @preview_time = nil
+    end
 
     @preview_seconds = seconds
     apply_test_time_preview if test_time_granted? && @preview_seconds < TEST_TIME_SECONDS

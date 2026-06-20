@@ -1,0 +1,131 @@
+<% content_for :title, "Ship review logs" %>
+
+<div class="app-layout app-layout--wide"
+     data-controller="certification--queue">
+  <div class="app-layout__main app-layout__main--wide ship-queue">
+    <%= link_to "← Back to queue", admin_certification_ships_path, class: "ship-queue__back" %>
+
+    <header class="ship-queue__header">
+      <div class="ship-queue__title">
+        <h1>Ship review logs</h1>
+      </div>
+    </header>
+
+    <%= form_with url: logs_admin_certification_ships_path, method: :get,
+          data: { certification__queue_target: "filters" }, class: "ship-queue__filters" do %>
+      <div class="ship-queue__filter">
+        <label for="filter-status">Status</label>
+        <%= select_tag :status,
+              options_for_select([["All Reviewed", "all"], ["Approved", "approved"], ["Returned", "returned"]], @status),
+              id: "filter-status", class: "ship-queue__select",
+              data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter">
+        <label for="filter-sort">Sort</label>
+        <%= select_tag :sort,
+              options_for_select([["Newest first", "newest"], ["Oldest first", "oldest"]], @sort),
+              id: "filter-sort", class: "ship-queue__select",
+              data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter">
+        <label for="filter-from">From</label>
+        <%= date_field_tag :from, @from&.iso8601, id: "filter-from", class: "ship-queue__input",
+              autocomplete: "off", data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter">
+        <label for="filter-to">To</label>
+        <%= date_field_tag :to, @to&.iso8601, id: "filter-to", class: "ship-queue__input",
+              autocomplete: "off", data: { action: "change->certification--queue#submit" } %>
+      </div>
+      <div class="ship-queue__filter ship-queue__filter--search">
+        <label for="filter-search">Search</label>
+        <%= text_field_tag :search, @search, id: "filter-search", placeholder: "review id or project title",
+              class: "ship-queue__input", autocomplete: "off" %>
+      </div>
+      <div class="ship-queue__filter-actions">
+        <button type="submit" class="action-btn action-btn--small action-btn--secondary">Apply</button>
+        <%= link_to "Reset", logs_admin_certification_ships_path, class: "ship-queue__reset" %>
+      </div>
+    <% end %>
+
+    <% if @ships.empty? %>
+      <div class="ship-queue__empty">
+        <p>No reviewed ships match these filters.</p>
+      </div>
+    <% else %>
+      <div class="ship-queue__table-wrap">
+        <table class="ship-queue__table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Feedback</th>
+              <th class="ship-queue__cell-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @ships.each do |ship| %>
+              <% owner = ship.project.memberships.find(&:owner?)&.user %>
+              <tr>
+                <td class="ship-queue__cell-project">
+                  <div class="ship-queue__project-head">
+                    <%= link_to ship.project.title, admin_certification_ship_path(ship), class: "ship-queue__project-title" %>
+                    <span class="ship-queue__project-id">#<%= ship.id %></span>
+                  </div>
+                  <div class="ship-queue__project-meta">
+                    <span>by <%= owner&.display_name || "—" %></span>
+                    <span class="ship-queue__dot" aria-hidden="true">·</span>
+                    <% if ship.reviewer %>
+                      <span>reviewed by <%= ship.reviewer.display_name %></span>
+                      <span class="ship-queue__dot" aria-hidden="true">·</span>
+                    <% end %>
+                    <span><%= time_ago_in_words(ship.decided_at || ship.updated_at) %> ago</span>
+                  </div>
+                </td>
+                <td class="ship-queue__cell-feedback">
+                  <%= ship.feedback.present? ? truncate(ship.feedback, length: 120) : "—" %>
+                </td>
+                <td class="ship-queue__cell-status">
+                  <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ship-queue__cards">
+        <% @ships.each do |ship| %>
+          <% owner = ship.project.memberships.find(&:owner?)&.user %>
+          <%= link_to admin_certification_ship_path(ship), class: "ship-queue__card" do %>
+            <div class="ship-queue__card-top">
+              <span class="ship-queue__project-title"><%= ship.project.title %></span>
+              <span class="status-pill status-pill--<%= ship.status %>"><%= ship.status.capitalize %></span>
+            </div>
+            <div class="ship-queue__project-meta">
+              <span>#<%= ship.id %></span>
+              <span class="ship-queue__dot" aria-hidden="true">·</span>
+              <span>by <%= owner&.display_name || "—" %></span>
+              <span class="ship-queue__dot" aria-hidden="true">·</span>
+              <% if ship.reviewer %>
+                <span>reviewed by <%= ship.reviewer.display_name %></span>
+                <span class="ship-queue__dot" aria-hidden="true">·</span>
+              <% end %>
+              <span><%= time_ago_in_words(ship.decided_at || ship.updated_at) %> ago</span>
+            </div>
+            <% if ship.feedback.present? %>
+              <div class="ship-queue__card-feedback">
+                <strong>Feedback:</strong> <%= truncate(ship.feedback, length: 80) %>
+              </div>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @pagy.pages > 1 %>
+      <div class="ship-queue__pagination">
+        <%== @pagy.series_nav %>
+      </div>
+    <% end %>
+  </div>
+</div>

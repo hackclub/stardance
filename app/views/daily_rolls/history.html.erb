@@ -1,0 +1,58 @@
+<% content_for :title, "your rolls - rng" %>
+
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main">
+    <header class="rng-board__header">
+      <h1 class="rng-board__title">your rolls</h1>
+      <p class="rng-board__subtitle">
+        Every number the universe has assigned you.
+        <%= link_to "← back to the leaderboard", rng_path, class: "rng-board__back" %>
+      </p>
+    </header>
+
+    <% if @stats %>
+      <div class="rng-board__facts">
+        <div class="rng-board__fact">
+          <span class="rng-board__fact-label">Best</span>
+          <span class="rng-board__fact-value"><%= formatted_roll_value(@stats[:best].value) %></span>
+          <%= link_to rng_date_label(@stats[:best].rolled_on, today: @today),
+                      rng_date_path(@stats[:best].rolled_on, today: @today),
+                      class: "rng-board__fact-date" %>
+        </div>
+        <div class="rng-board__fact">
+          <span class="rng-board__fact-label">Worst</span>
+          <span class="rng-board__fact-value"><%= formatted_roll_value(@stats[:worst].value) %></span>
+          <%= link_to rng_date_label(@stats[:worst].rolled_on, today: @today),
+                      rng_date_path(@stats[:worst].rolled_on, today: @today),
+                      class: "rng-board__fact-date" %>
+        </div>
+        <div class="rng-board__fact">
+          <span class="rng-board__fact-label">Rolls</span>
+          <span class="rng-board__fact-value rng-board__fact-value--plain"><%= number_with_delimiter(@stats[:count]) %></span>
+        </div>
+        <div class="rng-board__fact">
+          <span class="rng-board__fact-label">Lifetime total</span>
+          <span class="rng-board__fact-value"><%= formatted_roll_value(@stats[:total]) %></span>
+        </div>
+      </div>
+
+      <section class="rng-board" aria-label="All your rolls">
+        <ol class="rng-board__list">
+          <% @history.each do |roll| %>
+            <li class="rng-board__row">
+              <%= link_to rng_date_label(roll.rolled_on, today: @today),
+                          rng_date_path(roll.rolled_on, today: @today),
+                          class: "rng-board__history-date" %>
+              <span class="rng-board__history-rank">#<%= roll.rank %> that day</span>
+              <span class="rng-board__value"><%= formatted_roll_value(roll.value) %></span>
+            </li>
+          <% end %>
+        </ol>
+      </section>
+    <% else %>
+      <p class="rng-board__empty">
+        No rolls yet. <%= link_to "Go get your first number →", rng_path, class: "rng-board__back" %>
+      </p>
+    <% end %>
+  </div>
+</div>

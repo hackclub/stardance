@@ -1,0 +1,26 @@
+<%# locals: contributor:, contributor_counter: %>
+<% rank = contributor_counter + 1 %>
+<li class="leaderboard-row leaderboard-row--rank-<%= rank %>">
+  <span class="leaderboard-row__rank" aria-label="Rank <%= rank %>">#<%= rank %></span>
+
+  <%= image_tag contributor[:avatar_url],
+                alt: "",
+                class: "leaderboard-row__avatar",
+                loading: "lazy" %>
+
+  <div class="leaderboard-row__identity">
+    <p class="leaderboard-row__name">
+      <%= link_to contributor[:login], contributor[:url],
+                  class: "leaderboard-row__name-link",
+                  target: "_blank",
+                  rel: "noopener" %>
+    </p>
+  </div>
+
+  <p class="leaderboard-row__score">
+    <span class="leaderboard-row__score-value">
+      <%= number_with_delimiter(contributor[:merged_pr_count]) %>
+    </span>
+    <span class="leaderboard-row__score-label">Merged <%= "PR".pluralize(contributor[:merged_pr_count]) %></span>
+  </p>
+</li>

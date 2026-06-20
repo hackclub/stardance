@@ -10,7 +10,7 @@
   <% end %>
 </nav>
 
-<table>
+<table class="table-data">
   <thead>
     <tr><th>Referrer</th><th>Referred user</th><th>Channel</th><th>Status</th><th>Week</th><th>Actions</th></tr>
   </thead>
@@ -20,7 +20,7 @@
         <td><%= link_to referral.participant.display_name, admin_raffles_participant_path(referral.participant) %></td>
         <td><%= referral.referred_user&.display_name || "User ##{referral.referred_user_id}" %></td>
         <td><%= referral.channel %></td>
-        <td><%= referral.status %></td>
+        <td><span class="badge badge-<%= referral.status %>"><%= referral.status %></span></td>
         <td><%= referral.credited_week&.number || "—" %></td>
         <td>
           <% unless referral.status_verified? %>

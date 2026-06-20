@@ -1,0 +1,8 @@
+<%# Inline "and N others" count inside the notification sentence. The chevron
+    that expands the card to list everyone lives in the card body
+    (Notifications::ItemComponent), not here. %>
+<% others = notification.group_count.to_i - 1 %>
+<% if others.positive? %>
+  <span class="notifications-item__verb"> and</span>
+  <strong><%= pluralize(others, "other") %></strong>
+<% end %>

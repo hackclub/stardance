@@ -4,8 +4,8 @@ module Raffle
 
     has_many :credited_referrals, class_name: "Raffle::Referral",
              foreign_key: :credited_week_id, dependent: :nullify, inverse_of: :credited_week
-    has_many :signup_participants, class_name: "Raffle::Participant",
-             foreign_key: :signup_week_id, dependent: :nullify, inverse_of: :signup_week
+    has_many :draws, class_name: "Raffle::Draw", foreign_key: :week_id, dependent: :destroy
+    has_many :weekly_claims, class_name: "Raffle::WeeklyClaim", foreign_key: :week_id, dependent: :destroy
     belongs_to :winner_participant, class_name: "Raffle::Participant", optional: true
 
     enum :status, { active: "active", archived: "archived" }, prefix: :status
@@ -25,23 +25,23 @@ module Raffle
     # 20 per verified referral credited to this week.
     # Teens without HCA linked get 0 entries (excluded entirely).
     def standings
-      hca_linked_user_ids = ::User::Identity.where(provider: "hack_club").pluck(:user_id)
+      hca_linked_user_ids = ::User::Identity.where(provider: "hack_club").pluck(:user_id).to_set
+      banned_user_ids = ::User.where(banned: true).pluck(:id).to_set
+      eligible_participants = Raffle::Participant.where(eligible: true).index_by(&:id)
 
-      base = signup_participants.where(eligible: true).each_with_object({}) do |p, h|
-        next if p.age_group_teen? && !hca_linked_user_ids.include?(p.user_id)
-        h[p.id] = 1
+      can_enter = ->(pid) {
+        p = eligible_participants[pid]
+        p && !(p.user_id && banned_user_ids.include?(p.user_id)) &&
+          !(p.age_group_teen? && !hca_linked_user_ids.include?(p.user_id))
+      }
+
+      base = weekly_claims.pluck(:participant_id).each_with_object({}) do |pid, h|
+        h[pid] = 1 if can_enter.call(pid)
       end
 
-      referral_counts = credited_referrals.status_verified
-                                          .group(:participant_id)
-                                          .count
-
-      activated_pids = Raffle::Participant.where(id: referral_counts.keys).select do |p|
-        p.age_group_adult? || hca_linked_user_ids.include?(p.user_id)
-      end.map(&:id)
-
-      activated_pids.each do |pid|
-        base[pid] = (base[pid] || 0) + (referral_counts[pid] * 20)
+      credited_referrals.status_verified.group(:participant_id).count.each do |pid, count|
+        next unless can_enter.call(pid)
+        base[pid] = (base[pid] || 0) + (count * 20)
       end
 
       base
@@ -71,6 +71,14 @@ module Raffle
 
     def drawn?
       winner_participant_id.present?
+    end
+
+    def voided_draws
+      draws.status_voided.chronological
+    end
+
+    def voided_winner_ids
+      draws.status_voided.pluck(:winner_participant_id)
     end
   end
 end

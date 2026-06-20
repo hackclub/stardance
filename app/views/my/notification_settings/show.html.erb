@@ -1,0 +1,75 @@
+<% content_for :title, "Notification Settings" %>
+<% @active_nav_slug = "notifications" %>
+
+<main class="notification-settings">
+  <header class="notification-settings__header">
+    <h1 class="notification-settings__title">Notification settings</h1>
+    <p class="notification-settings__hint">
+      Choose where each kind of notification is delivered — your in-app Notification tab, Slack, and email.
+      Critical alerts are always delivered everywhere and can't be turned off.
+    </p>
+  </header>
+
+  <%= form_with url: my_notification_settings_path, method: :patch, local: true, class: "notification-settings__form", data: { turbo: false } do |f| %>
+    <% @grouped_types.each do |group_name, types| %>
+      <section class="notification-settings__group">
+        <h2 class="notification-settings__group-title"><%= group_name %></h2>
+
+        <table class="notification-settings__matrix">
+          <thead>
+            <tr>
+              <th class="notification-settings__matrix-category">Category</th>
+              <th class="notification-settings__matrix-toggle">Notification tab</th>
+              <th class="notification-settings__matrix-toggle">Slack</th>
+              <th class="notification-settings__matrix-toggle">Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% types.each do |klass| %>
+              <% category = klass.category_key.to_s %>
+              <% pref = @preferences_by_category[category] %>
+              <% priority = klass.default_priority.to_s %>
+              <% defaults = Notification::PRIORITY_CHANNEL_DEFAULTS[priority] %>
+              <% locked = priority == "critical" %>
+              <% slack_checked = locked || (pref&.slack_enabled.nil? ? defaults[:slack] : pref.slack_enabled) %>
+              <% email_checked = locked || (pref&.email_enabled.nil? ? defaults[:email] : pref.email_enabled) %>
+              <% in_app_checked = locked || (pref&.in_app_enabled.nil? ? true : pref.in_app_enabled) %>
+
+              <tr class="notification-settings__row">
+                <td class="notification-settings__cell notification-settings__cell--meta">
+                  <strong class="notification-settings__category-label"><%= klass.category_label %></strong>
+                  <span class="notification-settings__category-description"><%= klass.category_description %></span>
+                </td>
+                <td class="notification-settings__cell notification-settings__cell--toggle">
+                  <% unless locked %>
+                    <input type="hidden" name="preferences[<%= category %>][in_app]" value="0">
+                  <% end %>
+                  <%= check_box_tag "preferences[#{category}][in_app]", "1", in_app_checked, disabled: locked, id: "pref_#{category}_in_app" %>
+                  <% if locked %>
+                    <input type="hidden" name="preferences[<%= category %>][in_app]" value="1">
+                  <% end %>
+                </td>
+                <td class="notification-settings__cell notification-settings__cell--toggle">
+                  <%= check_box_tag "preferences[#{category}][slack]", "1", slack_checked, disabled: locked, id: "pref_#{category}_slack" %>
+                  <% if locked %>
+                    <input type="hidden" name="preferences[<%= category %>][slack]" value="1">
+                  <% end %>
+                </td>
+                <td class="notification-settings__cell notification-settings__cell--toggle">
+                  <%= check_box_tag "preferences[#{category}][email]", "1", email_checked, disabled: locked, id: "pref_#{category}_email" %>
+                  <% if locked %>
+                    <input type="hidden" name="preferences[<%= category %>][email]" value="1">
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
+    <% end %>
+
+    <div class="notification-settings__actions">
+      <%= f.submit "Save preferences", class: "action-btn action-btn--large action-btn--primary" %>
+    </div>
+  <% end %>
+</main>

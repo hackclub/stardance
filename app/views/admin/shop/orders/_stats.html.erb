@@ -1,56 +1,58 @@
-<div>
-  <h2>Statistics</h2>
-  <p>Click a status to filter orders:</p>
-  <div>
-    <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).merge(status: 'pending')),
-        style: "text-decoration: none;" do %>
-      Pending: <%= counts[:pending] %>
+<div class="shop-orders__stats">
+  <h2 class="shop-orders__stats-title">Statistics</h2>
+  <p class="shop-orders__stats-hint">Click a status to filter orders:</p>
+  <div class="shop-orders__stat-grid">
+    <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'pending')),
+        class: "shop-orders__stat badge badge-pending" do %>
+      Pending <span class="shop-orders__stat-count"><%= counts[:pending] %></span>
     <% end %>
 
-    <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).merge(status: 'awaiting_verification')),
-        style: "text-decoration: none;" do %>
-      Awaiting Verification: <%= counts[:awaiting_verification] %>
+    <% if policy(:admin).view_fraud_review_filters? %>
+      <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'awaiting_verification')),
+          class: "shop-orders__stat badge badge-awaiting_verification" do %>
+        Awaiting Verification <span class="shop-orders__stat-count"><%= counts[:awaiting_verification] %></span>
+      <% end %>
     <% end %>
 
-    <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).merge(status: 'awaiting_verification_call')),
-        style: "text-decoration: none;" do %>
-      Verification Call: <%= counts[:awaiting_verification_call] %>
+    <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'awaiting_verification_call')),
+        class: "shop-orders__stat badge badge-awaiting_verification" do %>
+      Verification Call <span class="shop-orders__stat-count"><%= counts[:awaiting_verification_call] %></span>
     <% end %>
 
-    <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).merge(status: 'awaiting_periodical_fulfillment')),
-        style: "text-decoration: none;" do %>
-      Awaiting Fulfillment: <%= counts[:awaiting_fulfillment] %>
+    <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'awaiting_periodical_fulfillment')),
+        class: "shop-orders__stat badge badge-awaiting_periodical_fulfillment" do %>
+      Awaiting Fulfillment <span class="shop-orders__stat-count"><%= counts[:awaiting_fulfillment] %></span>
     <% end %>
 
-    <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).merge(status: 'on_hold')),
-        style: "text-decoration: none;" do %>
-      On Hold: <%= counts[:on_hold] %>
+    <% if policy(:admin).view_fraud_review_filters? %>
+      <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'on_hold')),
+          class: "shop-orders__stat badge badge-on_hold" do %>
+        On Hold <span class="shop-orders__stat-count"><%= counts[:on_hold] %></span>
+      <% end %>
     <% end %>
 
-    <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).merge(status: 'fulfilled')),
-        style: "text-decoration: none;" do %>
-      Fulfilled: <%= counts[:fulfilled] %>
+    <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'fulfilled')),
+        class: "shop-orders__stat badge badge-fulfilled" do %>
+      Fulfilled <span class="shop-orders__stat-count"><%= counts[:fulfilled] %></span>
     <% end %>
 
-    <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).merge(status: 'rejected')),
-        style: "text-decoration: none;" do %>
-      Rejected: <%= counts[:rejected] %>
+    <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'rejected')),
+        class: "shop-orders__stat badge badge-rejected" do %>
+      Rejected <span class="shop-orders__stat-count"><%= counts[:rejected] %></span>
     <% end %>
 
     <% if params[:status].present? %>
-      <%= link_to admin_shop_orders_path(params.permit(:user_search, :shop_item_id, :date_from, :date_to, :sort, :view, :goob, :region, assignee_ids: []).except(:status)),
-          style: "text-decoration: none; background: #e5e7eb; color: #374151;" do %>
+      <%= link_to admin_shop_orders_path(preserved_filter_params.except(:status)),
+          class: "shop-orders__stat shop-orders__stat--clear" do %>
         ✕ Clear filter
       <% end %>
     <% end %>
   </div>
 
   <% if average_fulfillment_time %>
-    <div>
+    <div class="shop-orders__avg-time">
       <strong>Average time from order to fulfilled:</strong>
-      <span>
-        <%= distance_of_time_in_words(average_fulfillment_time) %>
-      </span>
+      <span><%= distance_of_time_in_words(average_fulfillment_time) %></span>
     </div>
   <% end %>
 </div>

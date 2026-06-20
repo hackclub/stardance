@@ -35,6 +35,10 @@ class ProjectPolicy < ApplicationPolicy
         member? && user&.eligible_for_shop?
     end
 
+    def request_recertification?
+        (member? || user&.can_review?) && record.needs_changes?
+    end
+
     def follow?
         signed_in_any? && show?
     end

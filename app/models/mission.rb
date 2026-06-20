@@ -14,6 +14,9 @@
 #  end_at                       :datetime
 #  estimated_completion_minutes :integer
 #  featured_at                  :datetime
+#  fixed_stardust_payout        :integer
+#  guide_sections_count         :integer
+#  guide_url                    :string
 #  name                         :string           not null
 #  prizes_count                 :integer          default(0), not null
 #  slug                         :string           not null
@@ -49,6 +52,14 @@ class Mission < ApplicationRecord
            class_name: "Mission::GuideVariant", dependent: :destroy, inverse_of: :mission
   has_many :section_completions, class_name: "Mission::SectionCompletion", dependent: :destroy
 
+  has_many :prerequisite_links, class_name: "Mission::Prerequisite",
+           foreign_key: :dependent_mission_id, dependent: :destroy
+  has_many :prerequisites, through: :prerequisite_links, source: :prerequisite_mission
+
+  has_many :dependent_links, class_name: "Mission::Prerequisite",
+           foreign_key: :prerequisite_mission_id, dependent: :destroy
+  has_many :unlocks, through: :dependent_links, source: :dependent_mission
+
   accepts_nested_attributes_for :guide_variants, allow_destroy: true,
                                                  reject_if: ->(attrs) { attrs[:language].blank? && attrs[:body].blank? }
 
@@ -61,11 +72,15 @@ class Mission < ApplicationRecord
   enum :difficulty, DIFFICULTIES.index_with(&:itself), prefix: true
 
   validates :slug, presence: true, uniqueness: true,
-                   format: { with: /\A[a-z0-9][a-z0-9_-]*\z/, message: "must be URL-safe" }
+                   format: { with: /\A[a-z0-9][a-z0-9_-]*\z/, message: "must be URL-safe" },
+                   exclusion: { in: %w[all new], message: "is reserved" }
   validates :name, presence: true
   validates :description, presence: true
   validates :estimated_completion_minutes,
             numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 100_000 },
+            allow_nil: true
+  validates :fixed_stardust_payout,
+            numericality: { only_integer: true, greater_than: 0 },
             allow_nil: true
   validates :default_project_title, length: { maximum: 120 }, allow_blank: true
   validates :default_project_description, length: { maximum: 1_000 }, allow_blank: true
@@ -108,6 +123,19 @@ class Mission < ApplicationRecord
 
   def has_steps?  = steps.any?
   def has_prizes? = prizes.any?
+  def has_prerequisites? = prerequisites.any?
+
+  def prerequisites_met_by?(user)
+    return true unless has_prerequisites?
+    return false if user.nil?
+    (prerequisite_ids - user.completed_mission_ids).empty?
+  end
+
+  def unmet_prerequisites_for(user)
+    return [] unless has_prerequisites?
+    return prerequisites.to_a if user.nil?
+    prerequisites.where.not(id: user.completed_mission_ids).to_a
+  end
 
   def achievement_slug
     return nil if achievement_name.blank?
@@ -118,7 +146,9 @@ class Mission < ApplicationRecord
     guide_variants.order(:position, :id).first
   end
 
-  def has_guide? = guide_variants.any?
+  def has_guide? = guide_variants.any? || guide_url.present?
+
+  def external_guide? = guide_url.present?
 
   def available_languages
     guide_variants.order(:position, :id).pluck(:language)
@@ -310,32 +340,36 @@ class Mission < ApplicationRecord
     end
   end
 
-  def showcase_projects(limit: 6)
+  def showcase_projects(limit: 6, offset: 0)
     devlog_likes = Post::Devlog
                      .joins(:post)
                      .group("posts.project_id")
                      .select("posts.project_id, SUM(post_devlogs.likes_count) AS devlog_likes_count")
 
+    attached_ids = Project::MissionAttachment.where(mission_id: id, detached_at: nil).select(:project_id)
+    shipped_ids  = submissions.not_rejected.joins(ship_event: :post).select("posts.project_id")
+
     Project
-      .joins(:mission_attachments)
-      .where(project_mission_attachments: { mission_id: id, detached_at: nil }, deleted_at: nil)
+      .where(deleted_at: nil, id: attached_ids)
+      .or(Project.where(deleted_at: nil, id: shipped_ids))
       .joins("LEFT JOIN (#{devlog_likes.to_sql}) mission_devlog_likes ON mission_devlog_likes.project_id = projects.id")
-      .left_joins(:project_follows)
-      .group("projects.id", "mission_devlog_likes.devlog_likes_count")
+      .left_joins(:project_follows, :banner_attachment)
+      .group("projects.id", "mission_devlog_likes.devlog_likes_count", "active_storage_attachments.id")
       .order(Arel.sql(<<~SQL))
+        (active_storage_attachments.id IS NULL) ASC,
         (COALESCE(mission_devlog_likes.devlog_likes_count, 0)
           + COUNT(DISTINCT project_follows.id)) DESC,
         projects.id DESC
       SQL
+      .offset(offset)
       .limit(limit)
-      .includes(:users)
       .with_attached_banner
       .to_a
   end
 
   def approved_submission_project_ids
     submissions
-      .where(status: "approved")
+      .approved
       .joins(ship_event: :post)
       .distinct
       .pluck("posts.project_id")

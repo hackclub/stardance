@@ -1,0 +1,5 @@
+<div class="ship-monitor__stat-row">
+  <span class="ship-monitor__stat-label"><%= label %></span>
+  <span class="ship-monitor__stat-value<%= " #{value_class}" if local_assigns[:value_class] %>"><%= value %></span>
+  <% if local_assigns[:hint] %><span class="ship-monitor__stat-hint"><%= hint %></span><% end %>
+</div>

@@ -1,0 +1,7 @@
+<%= render "notifications/inbox/actor", notification: notification %>
+<span class="notifications-item__verb"> quote-reposted your devlog</span>
+<% project = notification.record&.original_post&.project %>
+<% if project %>
+  <span class="notifications-item__verb">on</span>
+  <%= link_to project.title, project_path(project), class: "notifications-item__actor" %>
+<% end %>

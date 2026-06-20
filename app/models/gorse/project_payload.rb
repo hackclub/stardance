@@ -37,12 +37,11 @@ class Gorse::ProjectPayload
     attr_reader :project
 
     def categories
-      [ "project", project.project_type, project.project_categories ].flatten.compact_blank.uniq
+      [ "project", project.project_type ].compact_blank.uniq
     end
 
     def labels
       Gorse::Labels.cast(
-        project_categories: project.project_categories,
         project_type: project.project_type,
         ship_status: project.ship_status,
         tutorial: project.tutorial?,

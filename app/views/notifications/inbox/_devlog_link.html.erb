@@ -1,0 +1,13 @@
+<%# Links to the notification's devlog (record) and the project it's on.
+    `label` is the text for the devlog link (e.g. "your devlog", "a devlog"). %>
+<% devlog = notification.record %>
+<% project = devlog&.post&.project %>
+<% if devlog && project %>
+  <%= link_to label, project_devlog_path(project, devlog), class: "notifications-item__actor" %>
+<% else %>
+  <span class="notifications-item__verb"><%= label %></span>
+<% end %>
+<% if project %>
+  <span class="notifications-item__verb">on</span>
+  <%= link_to project.title, project_path(project), class: "notifications-item__actor" %>
+<% end %>

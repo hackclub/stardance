@@ -114,10 +114,15 @@ class ReviewerPayoutRequest < ApplicationRecord
 
   def self.total_earned_for(user)
     return 0 unless user
-    Certification::Ship
-      .where(reviewer: user)
-      .where.not(status: :pending)
-      .sum(:stardust_earned)
+    ship = Certification::Ship
+             .where(reviewer: user)
+             .where.not(status: :pending)
+             .sum(:stardust_earned)
+    funding = Certification::FundingRequest
+                .where(reviewer: user)
+                .where.not(status: :pending)
+                .sum(:stardust_earned)
+    ship + funding
   end
 
   def self.unclaimed_for(user)

@@ -1,0 +1,20 @@
+<%= turbo_frame_tag "gallery-page-#{@page}" do %>
+  <% @gallery_projects.each do |project| %>
+    <div class="mission-home__gallery-item" role="listitem">
+      <% if @approved_project_ids.include?(project.id) %>
+        <span class="mission-home__gallery-badge mission-home__gallery-badge--approved">Completed</span>
+      <% else %>
+        <span class="mission-home__gallery-badge mission-home__gallery-badge--in-progress">In progress</span>
+      <% end %>
+      <%= render Projects::ShelfCardComponent.new(project: project) %>
+    </div>
+  <% end %>
+  <% if @next_page %>
+    <%= turbo_frame_tag "gallery-page-#{@next_page}" do %>
+      <div class="mission-home__gallery-show-more-wrapper">
+        <%= link_to "Show more", gallery_mission_path(@mission.slug, page: @next_page),
+              class: "mission-home__gallery-show-more" %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

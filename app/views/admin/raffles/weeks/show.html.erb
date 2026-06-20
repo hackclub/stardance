@@ -1,41 +1,113 @@
 <% content_for :title, "Week #{@week.number}" %>
 <%= render "admin/raffles/shared/nav" %>
 
-<h1>Week <%= @week.number %> <small>(<%= @week.status %>)</small></h1>
+<h1>Week <%= @week.number %> <span class="badge badge-<%= @week.status %>"><%= @week.status %></span></h1>
 
-<ul>
-  <li>Prize: <%= @week.prize %></li>
-  <li>Opened: <%= @week.opened_at&.to_date || "—" %> · Closed: <%= @week.closed_at&.to_date || "—" %></li>
-  <% if @week.drawn? %>
-    <li>Winner: <%= link_to @week.winner_participant.display_name, admin_raffles_participant_path(@week.winner_participant) %> (drawn <%= @week.drawn_at.to_date %>)</li>
-  <% end %>
-</ul>
+<div class="flex">
+  <div class="card">
+    <h3>Details</h3>
+    <p><strong>Prize:</strong> <%= @week.prize %></p>
+    <p><strong>Opened:</strong> <%= @week.opened_at&.strftime("%b %d, %Y") || "—" %></p>
+    <p><strong>Closed:</strong> <%= @week.closed_at&.strftime("%b %d, %Y") || "—" %></p>
+    <p><strong>Participants:</strong> <%= @standings.size %></p>
+  </div>
 
-<% if @week.status_active? %>
+  <div class="card">
+    <h3>Winner</h3>
+    <% if @week.drawn? %>
+      <p>
+        <%= link_to @week.winner_participant.display_name, admin_raffles_participant_path(@week.winner_participant) %>
+        (<code><%= @week.winner_participant.code %></code>)
+        — drawn <%= @week.drawn_at.strftime("%b %d, %Y") %>
+      </p>
+      <button type="button" class="btn-danger slim" onclick="document.getElementById('void-draw-dialog').showModal()">
+        Void this draw
+      </button>
+    <% elsif @voided_draws.any? %>
+      <p>No current winner (<%= @voided_draws.size %> voided draw<%= @voided_draws.size == 1 ? "" : "s" %>)</p>
+    <% else %>
+      <p>Not yet drawn</p>
+    <% end %>
+  </div>
+</div>
+
+<% if @week.status_active? || @week.status_archived? %>
   <p>
     <% unless @week.drawn? %>
-      <%= button_to "Draw winner", draw_admin_raffles_week_path(@week), method: :post,
-                    data: { turbo_confirm: "Draw a winner for week #{@week.number}? This cannot be undone." } %>
+      <%= button_to(@voided_draws.any? ? "Re-draw winner" : "Draw winner",
+                    draw_admin_raffles_week_path(@week), method: :post,
+                    class: "btn-primary slim",
+                    data: { turbo_confirm: "Draw a winner for week #{@week.number}?" }) %>
     <% end %>
-    <%= button_to "Close & open next", close_admin_raffles_week_path(@week), method: :post,
-                  data: { turbo_confirm: "Archive week #{@week.number} and open the next?" } %>
+    <% if @week.status_active? %>
+      <%= button_to "Close & open next", close_admin_raffles_week_path(@week), method: :post,
+                    class: "btn-secondary slim",
+                    data: { turbo_confirm: "Archive week #{@week.number} and open the next?" } %>
+    <% end %>
   </p>
 <% end %>
 
-<h2>Standings</h2>
-<% if @standings.any? %>
-  <table>
-    <thead><tr><th>#</th><th>Participant</th><th>Entries</th></tr></thead>
-    <tbody>
-      <% @standings.each_with_index do |(participant, entries), i| %>
-        <tr>
-          <td><%= i + 1 %></td>
-          <td><%= link_to participant.display_name, admin_raffles_participant_path(participant) %></td>
-          <td><%= entries %></td>
-        </tr>
+<% if @voided_draws.any? %>
+  <div class="admin-section">
+    <h3 class="admin-section__header admin-section__header--amber">Voided draws</h3>
+    <table class="table-data">
+      <thead>
+        <tr><th>Winner</th><th>Reason</th><th>Drawn</th><th>Voided</th></tr>
+      </thead>
+      <tbody>
+        <% @voided_draws.each do |draw| %>
+          <tr>
+            <td><%= link_to draw.winner_participant.display_name, admin_raffles_participant_path(draw.winner_participant) %></td>
+            <td><%= draw.void_reason %></td>
+            <td><%= draw.drawn_at.strftime("%b %d %H:%M") %></td>
+            <td><%= draw.voided_at&.strftime("%b %d %H:%M") || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<div class="admin-section">
+  <h3 class="admin-section__header">Standings</h3>
+  <% voided_ids = @voided_draws.map(&:winner_participant_id) %>
+  <% if @standings.any? %>
+    <table class="table-data">
+      <thead><tr><th>#</th><th>Participant</th><th>Code</th><th>Entries</th><th></th></tr></thead>
+      <tbody>
+        <% @standings.each_with_index do |(participant, entries), i| %>
+          <tr style="<%= "opacity: 0.5" if voided_ids.include?(participant.id) %>">
+            <td><%= i + 1 %></td>
+            <td><%= link_to participant.display_name, admin_raffles_participant_path(participant) %></td>
+            <td><code><%= participant.code %></code></td>
+            <td><%= entries %></td>
+            <td><% if voided_ids.include?(participant.id) %><span class="badge badge-rejected">voided</span><% end %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p>No entries credited to this week.</p>
+  <% end %>
+</div>
+
+<% if @week.drawn? %>
+  <dialog id="void-draw-dialog">
+    <div class="card" style="min-width: 400px">
+      <h3>Void draw for Week <%= @week.number %></h3>
+      <p>This will remove <strong><%= @week.winner_participant.display_name %></strong> as the winner and allow a re-draw. They will be excluded from future draws for this week.</p>
+      <%= form_with url: void_draw_admin_raffles_week_path(@week), method: :post do |f| %>
+        <div class="reject-modal__field">
+          <%= f.label :void_reason, "Reason for voiding (required)" %>
+          <%= f.text_area :void_reason, placeholder: "e.g. Fraudulent referrals from bot accounts", rows: 3, required: true %>
+        </div>
+        <%= f.hidden_field :ban_user, value: "0", id: "ban_user_hidden" %>
+        <div class="reject-modal__actions">
+          <button type="button" class="btn-secondary slim" onclick="document.getElementById('void-draw-dialog').close()">Cancel</button>
+          <%= f.submit "Void draw", class: "btn-secondary slim" %>
+          <button type="submit" class="btn-danger slim" onclick="document.getElementById('ban_user_hidden').value='1'">Void & ban user</button>
+        </div>
       <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No entries credited to this week.</p>
+    </div>
+  </dialog>
 <% end %>

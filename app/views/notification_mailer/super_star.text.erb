@@ -1,0 +1,15 @@
+<% project_title = @record&.title %>
+
+<% if project_title.present? %><%= project_title %> is a Super Star!<% else %>Your project is a Super Star!<% end %>
+
+<% if @actor && project_title.present? %>
+@<%= @actor.display_name %> marked "<%= project_title %>" as a Super Star — a recognition saved for projects with exceptional craft, polish, or ambition.
+<% else %>
+Your project was just marked a Super Star — a recognition saved for exceptional work.
+<% end %>
+
+As thanks, a bonus prize is on its way to your shipping address.
+
+<% if @record %>
+View project: <%= project_url(@record) %>
+<% end %>

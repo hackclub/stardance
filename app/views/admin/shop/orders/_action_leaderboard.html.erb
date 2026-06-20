@@ -75,9 +75,9 @@
   limit_options = [10, nil]
 %>
 
-<div>
-  <div>
-    <h3>
+<div class="shop-orders__leaderboard">
+  <div class="shop-orders__leaderboard-header">
+    <h3 class="shop-orders__leaderboard-title">
       <% if mode == :fraud %>
         🕵️ Fraud Team Leaderboard
       <% elsif mode == :fulfillment %>
@@ -87,18 +87,19 @@
       <% end %>
       <small>(<%= time_range == '7_days' ? '7 days' : 'all time' %>)</small>
     </h3>
-    <div>
-      <%= link_to "7 days", admin_shop_orders_path(view: @view, time_range: '7_days', limit: limit) %>
-      <%= link_to "All time", admin_shop_orders_path(view: @view, time_range: 'all_time', limit: limit) %>
+    <div class="shop-orders__leaderboard-toggle">
+      <%= link_to "7 days", admin_shop_orders_path(view: @view, time_range: '7_days', limit: limit), class: "shop-orders__toggle-link #{'is-active' if time_range == '7_days'}" %>
+      <%= link_to "All time", admin_shop_orders_path(view: @view, time_range: 'all_time', limit: limit), class: "shop-orders__toggle-link #{'is-active' if time_range != '7_days'}" %>
     </div>
-    <div>
-      <%= link_to "Top 10", admin_shop_orders_path(view: @view, time_range: time_range, limit: 10) %>
-      <%= link_to "All", admin_shop_orders_path(view: @view, time_range: time_range, limit: nil) %>
+    <div class="shop-orders__leaderboard-toggle">
+      <%= link_to "Top 10", admin_shop_orders_path(view: @view, time_range: time_range, limit: 10), class: "shop-orders__toggle-link #{'is-active' if limit == 10}" %>
+      <%= link_to "All", admin_shop_orders_path(view: @view, time_range: time_range, limit: nil), class: "shop-orders__toggle-link #{'is-active' if limit.nil?}" %>
     </div>
   </div>
 
   <% if top_users.any? %>
-    <table>
+    <div>
+    <table class="space-table">
       <thead>
         <tr>
           <th>#</th>
@@ -145,7 +146,8 @@
         <% end %>
       </tbody>
     </table>
+    </div>
   <% else %>
-    <p>No order actions <%= time_range == '7_days' ? 'in the last 7 days' : 'recorded' %>.</p>
+    <p class="shop-orders__leaderboard-empty">No order actions <%= time_range == '7_days' ? 'in the last 7 days' : 'recorded' %>.</p>
   <% end %>
 </div>

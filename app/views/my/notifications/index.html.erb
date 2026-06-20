@@ -1,0 +1,35 @@
+<% content_for :title, "Notifications" %>
+<% @active_nav_slug = "notifications" %>
+
+<div class="app-layout">
+  <main class="app-layout__main notifications-page"
+        data-controller="notifications-inbox"
+        data-notifications-inbox-mark-seen-url-value="<%= mark_all_seen_my_notifications_path %>">
+
+    <header class="notifications-page__header">
+      <h1 class="notifications-page__title">Notifications</h1>
+
+      <div class="notifications-page__actions">
+        <%= link_to "Settings", my_notification_settings_path,
+                    class: "action-btn action-btn--small action-btn--secondary" %>
+      </div>
+    </header>
+
+    <ol class="notifications-page__list" data-notifications-inbox-target="list">
+      <% @notifications.each do |notification| %>
+        <%= render "notifications/inbox_row", notification: notification %>
+      <% end %>
+    </ol>
+
+    <div class="notifications-page__empty"
+         data-notifications-inbox-target="empty"
+         <%= "hidden" if @notifications.any? %>>
+      <p class="notifications-page__empty-title">Nothing here yet</p>
+      <p class="notifications-page__empty-hint">Go post some devlogs or comment on a project — when people follow you, reply, or review your ships, it'll show up here.</p>
+    </div>
+
+    <%== @pagy.series_nav if @pagy.pages > 1 %>
+  </main>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

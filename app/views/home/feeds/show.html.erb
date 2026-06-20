@@ -1,9 +1,10 @@
+<% feed_params = @current_tab.present? && @current_tab != "for_you" ? { tab: @current_tab } : {} %>
 <% if @pagy.page > 1 %>
   <%= turbo_frame_tag "home_feed_page_#{@pagy.page}", target: "_top", class: "feed-home__frame" do %>
-    <%= render "home/feed_pages/feed_page" %>
+    <%= render "home/feed_pages/feed_page", feed_params: feed_params %>
   <% end %>
 <% else %>
   <%= turbo_frame_tag "home_feed", target: "_top", class: "feed-home__frame" do %>
-    <%= render "home/feed_pages/feed_page" %>
+    <%= render "home/feed_pages/feed_page", feed_params: feed_params %>
   <% end %>
 <% end %>

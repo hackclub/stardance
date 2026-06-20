@@ -10,12 +10,18 @@ module Certification
     end
 
     def call
-      hours_worked = ship_event.hours || 0
+      hours_worked = ship_event.hours_at_ship.to_f
       original_minutes = (hours_worked * 60).to_i
 
       ActiveRecord::Base.transaction do
+        devlog_posts = devlogs_since_last_ship.to_a
+        # "Original" reflects ALL logged time across the ship window (every
+        # phase), independent of Post::ShipEvent#hours, which is the build-only
+        # deflated payout basis. Reviewers deflate from this raw baseline.
+        original_minutes = devlog_posts.sum { |post| (post.postable&.duration_seconds || 0) / 60 }
+
         ysws_review = create_ysws_review(original_minutes)
-        create_devlog_reviews(ysws_review)
+        create_devlog_reviews(ysws_review, devlog_posts)
         ysws_review
       end
     end
@@ -35,8 +41,8 @@ module Certification
       )
     end
 
-    def create_devlog_reviews(ysws_review)
-      devlogs_since_last_ship.each do |post|
+    def create_devlog_reviews(ysws_review, devlog_posts)
+      devlog_posts.each do |post|
         devlog = post.postable
         devlog_minutes = (devlog.duration_seconds || 0) / 60
 
@@ -52,7 +58,7 @@ module Certification
     end
 
     def devlogs_since_last_ship
-      start_time, end_time = time_range_since_previous_ship
+      start_time, end_time = ship_window
 
       project.posts.of_devlogs(join: true)
              .where("posts.created_at >= ? AND posts.created_at <= ?", start_time, end_time)
@@ -60,17 +66,13 @@ module Certification
              .order("posts.created_at ASC")
     end
 
-    def time_range_since_previous_ship
+    def ship_window
       ship_event_post = ship_event.post
-      previous_ship_event_post = project.posts.of_ship_events
-                                        .where("posts.created_at < ?", ship_event_post.created_at)
-                                        .order("posts.created_at DESC")
-                                        .first
+      previous_ship_at = project.posts.of_ship_events
+                                .where("posts.created_at < ?", ship_event_post.created_at)
+                                .maximum(:created_at)
 
-      start_time = previous_ship_event_post ? previous_ship_event_post.created_at : project.created_at
-      end_time = ship_event_post.created_at
-
-      [ start_time, end_time ]
+      [ previous_ship_at || project.created_at, ship_event_post.created_at ]
     end
   end
 end

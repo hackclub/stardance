@@ -36,7 +36,7 @@
           <% if step3_done %>
             Verify your identity
           <% elsif step2_done && current_user %>
-            <%= button_to "Verify your identity", my_verification_refresh_path(idv_check: 1), method: :post, class: "shop-hub__progress-link", form: { class: "shop-hub__progress-form" } %>
+            <button type="button" class="shop-hub__progress-link" onclick="document.getElementById('idv-verify-modal')?.showModal()">Verify your identity</button>
           <% else %>
             Verify your identity
           <% end %>

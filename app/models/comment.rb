@@ -26,6 +26,7 @@ class Comment < ApplicationRecord
   BODY_MAX_LENGTH = 5_000
 
   include SoftDeletable
+  include Mentionable
   has_paper_trail
 
   belongs_to :commentable, polymorphic: true, counter_cache: true

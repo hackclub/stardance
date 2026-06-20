@@ -7,7 +7,7 @@ section "Your payout for #{ship_event_label}#{ship_date.present? ? " (shipped #{
 
 divider
 
-section "You need to vote *#{pluralize(votes_needed, 'more time')}* before your payouts will be issued.", markdown: true
+section "You need to cast *#{pluralize(votes_needed, 'more vote')}* before your payout will be issued.", markdown: true
 
 section "Remember: every time you ship a project, your vote balance decreases by 15. Every time you vote, it increases by 1. Keep voting to maintain a positive balance!", markdown: true
 

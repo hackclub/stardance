@@ -1,0 +1,8 @@
+<%= render "notifications/inbox/actor", notification: notification %>
+<span class="notifications-item__verb"> commented on</span>
+<% project = notification.record&.commentable.respond_to?(:post) ? notification.record.commentable.post&.project : nil %>
+<% if project %>
+  <%= link_to project.title, project_path(project), class: "notifications-item__actor" %>
+<% else %>
+  <span class="notifications-item__verb">your project</span>
+<% end %>

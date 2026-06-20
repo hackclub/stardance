@@ -44,9 +44,7 @@ export default class extends Controller {
     this.hide();
   }
 
-  toggle = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+  toggle = () => {
     if (this.popover) this.hide();
     else this.show();
   };

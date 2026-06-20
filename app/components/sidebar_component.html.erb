@@ -41,9 +41,18 @@
               <%= label_block %>
             </span>
           <% else %>
-            <%= link_to item[:path], class: link_classes, aria: (active?(item) ? { current: "page" } : {}), data: { turbo: true, active_prefix: item[:active_prefix], slug: item[:slug] }.compact do %>
+            <% link_data = { turbo: true, active_prefix: item[:active_prefix], slug: item[:slug] }.compact %>
+            <% link_data[:controller] = "notifications-badge" if item[:slug] == "notifications" %>
+            <%= link_to item[:path], class: link_classes, aria: (active?(item) ? { current: "page" } : {}), data: link_data do %>
               <%= icon_block %>
               <%= label_block %>
+              <% if item.key?(:badge) %>
+                <% count = item[:badge].to_i %>
+                <span class="sidebar__nav-badge"
+                      data-notifications-badge-target="badge"
+                      aria-label="<%= count %> unread"
+                      <%= "hidden" if count == 0 %>><%= count %></span>
+              <% end %>
             <% end %>
           <% end %>
         </li>
@@ -105,35 +114,10 @@
       </div>
 
       <div class="settings-form__field">
-        <label class="settings-form__checkbox">
-          <%= check_box_tag :stardust_balance_notifications, "1", preference.stardust_balance_notifications, id: "stardust_balance_notifications" %>
-          <span>Balance change notifications</span>
-        </label>
-        <small class="settings-form__hint">Receive a Slack DM when your Stardust balance changes</small>
-      </div>
-
-      <div class="settings-form__field">
-        <label class="settings-form__checkbox">
-          <%= check_box_tag :send_notifications_for_followed_projects, "1", preference.send_notifications_for_followed_projects, id: "send_notifications_for_followed_projects" %>
-          <span>Followed project notifications</span>
-        </label>
-        <small class="settings-form__hint">Receive a Slack DM when a project you're following has a new devlog</small>
-      </div>
-
-      <div class="settings-form__field">
-        <label class="settings-form__checkbox">
-          <%= check_box_tag :send_notifications_for_new_followers, "1", preference.send_notifications_for_new_followers, id: "send_notifications_for_new_followers" %>
-          <span>New follower notifications</span>
-        </label>
-        <small class="settings-form__hint">Receive a Slack DM when someone starts following a project you're making</small>
-      </div>
-
-      <div class="settings-form__field">
-        <label class="settings-form__checkbox">
-          <%= check_box_tag :send_notifications_for_new_comments, "1", preference.send_notifications_for_new_comments, id: "send_notifications_for_new_comments" %>
-          <span>New comment notifications</span>
-        </label>
-        <small class="settings-form__hint">Receive a Slack DM when someone comments on a project you made</small>
+        <p class="settings-form__hint">
+          Per-category notification controls (Slack, email) moved to a dedicated page:
+          <%= link_to "Manage notifications →", my_notification_settings_path %>
+        </p>
       </div>
 
       <div class="settings-form__field">
@@ -152,11 +136,32 @@
         <small class="settings-form__hint">Blur sensitive info like addresses and API keys</small>
       </div>
 
+      <div class="settings-form__field">
+        <label class="settings-form__label">Hackatime</label>
+        <% if user.hackatime_identity.present? %>
+          <div class="settings-form__hackatime-status">
+            <span class="settings-form__hackatime-linked">Connected</span>
+            <button type="submit" form="hackatime-reconnect-form" class="settings-form__hackatime-btn">
+              Reconnect
+            </button>
+          </div>
+        <% else %>
+          <button type="submit" form="hackatime-reconnect-form" class="settings-form__hackatime-btn">
+            Connect Hackatime
+          </button>
+        <% end %>
+        <small class="settings-form__hint">Links your coding time from Hackatime to your projects</small>
+      </div>
+
       <div class="modal__actions">
         <button type="button" class="modal__actions-close" onclick="document.getElementById('settings-form').reset(); document.getElementById('settings-modal').close()">Cancel</button>
         <%= f.submit "Save", class: "modal__actions-close modal__actions-close--primary" %>
       </div>
     <% end %>
+    <form id="hackatime-reconnect-form" method="post" action="/auth/hackatime" hidden>
+      <input type="hidden" name="origin" value="<%= helpers.request.fullpath %>">
+      <input type="hidden" name="authenticity_token" value="<%= helpers.form_authenticity_token %>">
+    </form>
 
     <div class="api-key-section">
       <label class="settings-form__label">Your API Key</label>

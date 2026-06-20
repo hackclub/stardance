@@ -1,9 +1,9 @@
 <% if attachments.any? %>
-  <div class="feed-post-card__media">
+  <div class="feed-post-card__media" data-count="<%= attachments.size %>">
     <div class="feed-post-card__media-viewport">
       <div class="feed-post-card__media-track">
-        <% attachments.each_with_index do |attachment, index| %>
-          <figure class="feed-post-card__media-slide" <%= "hidden" if index.positive? %>>
+        <% attachments.each do |attachment| %>
+          <figure class="feed-post-card__media-slide <%= 'ai-detected' if current_user&.admin? && attachment.blob.metadata["ai_generated"] %>">
             <% if attachment.variable? %>
               <%= image_tag attachment.variant(:large), alt: "", class: "feed-post-card__image" %>
             <% elsif attachment.content_type.to_s.start_with?("image/") %>

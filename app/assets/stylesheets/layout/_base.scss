@@ -105,6 +105,11 @@ body.app-layout-page.signed-in {
   max-width: none;
 }
 
+.ai-detected {
+  outline: 2px dashed var(--color-brand-orange);
+  outline-offset: -2px;
+}
+
 .dev-footer {
   text-align: center;
   font-size: 0.75rem;

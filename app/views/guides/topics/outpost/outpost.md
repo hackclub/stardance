@@ -1,35 +1,36 @@
-# Outpost
+Outpost is a 6-day hardware hackathon + expo we're hosting with [Open Sauce](https://opensauce.com) from July 14-20th!
 
-Outpost is a 6-day hardware hackathon + expo we're hosting with [Open Sauce](https://opensauce.com)!
+![image](https://cdn.hackclub.com/019ed71f-48d8-7255-ae12-1eeea412f559/paste-1781725611726.png)
 
-First, after arriving in San Francisco with the projects you built, you'll team up with 2-3 other Hack Clubbers for a 4-day hardware hackathon to build out your demo booths.
-
-A booth is an 8x8 feet area that you'll share with your teammates to actually demo what you put! Here's some examples:
-
-![image](https://cdn.hackclub.com/019e45c8-371b-701c-af2f-c88daf56ea25/paste-1779287202837.png)
-
-At the hackathon, there'll be
-There'll be scrap wood, cardboard, hot glue, and electronics to throw together whatever crazy things you can. This is also the time to fix anything that might've broken on the way there!
-
-After that, you'll transport your hackathon projects + qualifier projects to Open Sauce and set it up to exhibit, where you'll be showcasing your projects to 35,000+ people that weekend with your fellow Hack Clubbers!
-
-## Qualifying
+## Qualifying:
 
 To qualify, you will need:
 
-- [Super hardware builder status](/guides/super-hardware-builder)
-- ~30h worth of stardust (final amount will be released soonTM)
+- [Super hardware builder status](/guides/super-hardware-builder), which you can get by
+- 300 Stardust so that you can buy an Outpost ticket on the [shop](/shop/category/outpost)
     - You can earn discounts on this price by designing hardware projects! Check out [tiers](/guides/outpost-tiers)
 
-## What's provided:
+---
 
-- Lodging during the hackathon on-site, and dorm rooms from
-- Breakfast, Lunch, and Dinner for the full event
-- $75 USD base flight stipend, where you can earn more through making more projects!
-- Funding for public transit between locations
-- Awesome swag (including jackets & t-shirts!)
+## Event Details:
 
-## Details:
+First, after arriving in San Francisco with the projects you built, you'll team up with 2-3 other Hack Clubbers for a 4-day hardware hackathon to build out the projects on your booth!
+
+A booth is an **8ft x 8ft** area that you'll share with your teammates to actually demo what you put! Here's some examples:
+
+![image](https://cdn.hackclub.com/019e45c8-371b-701c-af2f-c88daf56ea25/paste-1779287202837.png)
+
+There'll be tons of electronics, scrap wood, cardboard, and anything else you need to create awesome demos at Open Sauce!
+
+After that, you'll transport your hackathon projects + qualifier projects to Open Sauce and set it up to exhibit, where you'll be showcasing your projects to 35,000+ people that weekend with your fellow Hack Clubbers!
+
+### What's provided:
+
+- Lodging during the hackathon on-site from July 14-17th, and dorm rooms from the night of July 17th to morning of July 20th
+- Breakfast, Lunch, and Dinner for the full event (excluding July 20th)
+- $75 USD base flight stipend for all qualified attendees, where you can earn more through making more projects!
+- Funding for public transit between venues (up to $40 USD)
+- Awesome swag! (including jackets & t-shirts!)
 
 ### Key locations:
 
@@ -46,8 +47,8 @@ To qualify, you will need:
 - **July 16th** Hacking day 2
 - **July 17th** Travel to Open Sauce venue, set up final booths
 - **July 18th** Day 1 of Open Sauce expo
-- **July 19th:** Day 2 of Open Sauce expo + teardown + travel back home
-- **July 20th:** Travel back home day 2, if needed!
+- **July 19th:** Day 2 of Open Sauce expo + teardown + closing
+- **July 20th:** Travel back home!
 
 ### Other logistics:
 

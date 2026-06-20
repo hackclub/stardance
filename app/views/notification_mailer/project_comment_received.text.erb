@@ -1,0 +1,13 @@
+<% comment = @record %>
+<% project = comment&.commentable.respond_to?(:post) ? comment.commentable.post&.project : nil %>
+<% body = @notification.preview_text %>
+
+<% if @actor && project&.title.present? %>@<%= @actor.display_name %> just commented on <%= project.title %>!<% elsif project&.title.present? %>New comment on <%= project.title %>!<% else %>Someone just commented on your project!<% end %>
+
+<% if body.present? %>
+<%= body %>
+
+<% end %>
+<% if project %>
+Reply: <%= project_url(project) %>
+<% end %>

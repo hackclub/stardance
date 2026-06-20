@@ -3,14 +3,14 @@ class Api::V1::AmbassadorReferralsController < Api::V1::BaseController
   private_constant :BOOLEAN
 
   def index
-    render json: payload(User.ambassador_referrals, rsvp_scope: Rsvp.ambassador_referrals)
+    render json: payload(User.ambassador_referrals.where(banned: false), rsvp_scope: Rsvp.ambassador_referrals)
   end
 
   def show
     code = params[:id].to_s
     if code.start_with?(Rsvp::AMBASSADOR_REFERRAL_PREFIX)
       render json: payload(
-        User.ambassador_referrals.matching_ref(code),
+        User.ambassador_referrals.where(banned: false).matching_ref(code),
         rsvp_scope: Rsvp.ambassador_referrals.matching_ref(code)
       )
     else
@@ -26,7 +26,7 @@ class Api::V1::AmbassadorReferralsController < Api::V1::BaseController
     def payload(scope, rsvp_scope:)
       records = scope.order(:id).to_a
       referrals = user_items(records)
-      referrals += rsvp_items(rsvp_scope.order(:id).to_a) if include_rsvps?
+      referrals += rsvp_items(rsvp_scope.order(:id).to_a, referred_users: records) if include_rsvps?
 
       {
         prefix: Rsvp::AMBASSADOR_REFERRAL_PREFIX,
@@ -36,23 +36,24 @@ class Api::V1::AmbassadorReferralsController < Api::V1::BaseController
     end
 
     def user_items(users)
-      metrics = AmbassadorReferralMetrics.new(users)
+      seconds = User.ambassador_referral_seconds(users)
 
       users.map do |user|
         user.ambassador_referral_payload(
-          hours_logged: hours(metrics.logged_seconds[user.id]),
-          hours_approved: hours(metrics.approved_seconds[user.id])
+          hours_logged: hours(seconds[:logged][user.id]),
+          hours_approved: hours(seconds[:approved][user.id])
         ).merge(rsvp: false)
       end
     end
 
-    def rsvp_items(rsvps)
-      users_by_email = User.matching_emails(rsvps.map(&:email))
-                           .index_by { |user| user.email.to_s.downcase }
+    def rsvp_items(rsvps, referred_users:)
+      referred_emails = referred_users.map { |user| user.email.to_s.downcase }.to_set
 
-      rsvps.reject { |rsvp| users_by_email.key?(rsvp.email.to_s.downcase) }.map do |rsvp|
+      rsvps.reject { |rsvp| referred_emails.include?(rsvp.email.to_s.downcase) }.map do |rsvp|
         rsvp.ambassador_referral_payload.merge(
           rsvp: true,
+          slack_id: nil,
+          display_name: nil,
           verification_status: nil,
           hours_logged: nil,
           hours_approved: nil

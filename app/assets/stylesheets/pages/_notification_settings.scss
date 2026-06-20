@@ -1,0 +1,110 @@
+.notification-settings {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-l);
+  color: var(--color-space-text);
+
+  &__header {
+    margin-bottom: var(--space-l);
+  }
+
+  &__title {
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-xxxl);
+    margin: 0 0 var(--space-xs);
+  }
+
+  &__hint {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    max-width: 60ch;
+  }
+
+  &__matrix {
+    width: 100%;
+    // `separate` (not `collapse`) so the rounded corners on the table actually
+    // clip the border — with `collapse`, the border lives on cells and
+    // squares off past the radius.
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--color-space-surface-faint);
+    border: 1px solid var(--color-space-surface-soft);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+
+    th,
+    td {
+      padding: var(--space-s) var(--space-m);
+      border-bottom: 1px solid var(--color-space-surface-soft);
+    }
+
+    tr:last-child > td {
+      border-bottom: 0;
+    }
+
+    th {
+      text-align: left;
+      color: var(--color-space-text-muted);
+      font-weight: 600;
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      background: var(--color-space-surface-faint);
+    }
+  }
+
+  &__matrix-toggle {
+    width: 80px;
+    text-align: center;
+  }
+
+  &__row:last-child td {
+    border-bottom: 0;
+  }
+
+  &__group {
+    margin-bottom: var(--space-l);
+  }
+
+  &__group-title {
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--space-s);
+    color: var(--color-space-text);
+  }
+
+  &__cell--meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__category-label {
+    color: var(--color-space-text);
+  }
+
+  &__category-description {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  &__cell--toggle {
+    text-align: center;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--color-brand-mint);
+    }
+
+    input[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-l);
+  }
+}

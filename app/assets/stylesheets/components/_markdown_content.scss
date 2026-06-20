@@ -131,5 +131,16 @@
     border-radius: var(--profile-radius);
     display: block;
     margin: var(--space-s) auto;
+
+    &.slack-emote {
+      display: inline-block;
+      width: 1.35em;
+      height: 1.35em;
+      max-width: 1.35em;
+      margin: 0 0.08em;
+      border-radius: 4px;
+      vertical-align: -0.25em;
+      object-fit: contain;
+    }
   }
 }

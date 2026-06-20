@@ -1,6 +1,7 @@
 Raffle::Engine.routes.draw do
   root to: "dashboard#show"
   get "dashboard", to: "dashboard#show", as: :dashboard
+  post "claim", to: "dashboard#claim", as: :claim
 
   match "auth/github/callback", to: "sessions#create", via: [ :get, :post ]
   get "auth/failure", to: "sessions#failure"

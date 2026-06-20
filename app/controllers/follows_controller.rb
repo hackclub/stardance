@@ -9,7 +9,7 @@ class FollowsController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to profile_path(@target.display_name) }
-      format.json { render json: { following: true, follower_count: @target.followers.count } }
+      format.json { render json: { following: true, follower_count: @target.followers.where(banned: false).count } }
     end
   end
 
@@ -20,7 +20,7 @@ class FollowsController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to profile_path(@target.display_name) }
-      format.json { render json: { following: false, follower_count: @target.followers.count } }
+      format.json { render json: { following: false, follower_count: @target.followers.where(banned: false).count } }
     end
   end
 

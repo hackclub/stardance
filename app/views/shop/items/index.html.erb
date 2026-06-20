@@ -34,7 +34,7 @@
             <% if idv_done %>
               Verify your identity
             <% else %>
-              <%= button_to "Verify your identity", my_verification_refresh_path(idv_check: 1), method: :post, class: "shop-hub__progress-link", form: { class: "shop-hub__progress-form" } %>
+              <button type="button" class="shop-hub__progress-link" onclick="document.getElementById('idv-verify-modal')?.showModal()">Verify your identity</button>
             <% end %>
           </div>
           <% devlog_done = Post.where(user: current_user, postable_type: "Post::Devlog").exists? %>
@@ -115,9 +115,11 @@
     <% if @shop_open %>
       <section class="shop-hub__main">
         <ul class="shop-hub__category-grid" aria-label="Shop categories">
+          <% used_thumb_ids = Set.new %>
           <% @categories.each do |category| %>
-            <% category_items = Shop::Categorization.filter(@shop_items, category.slug) %>
-            <% category_thumbs = category_items.select { |i| i.image.attached? }.first(3) %>
+            <% category_items = category.filter(@shop_items) %>
+            <% category_thumbs = category_items.select { |i| i.image.attached? && !used_thumb_ids.include?(i.id) }.first(3) %>
+            <% used_thumb_ids.merge(category_thumbs.map(&:id)) %>
             <li class="shop-hub__category-tile">
               <%= link_to shop_category_path(category.slug), class: "shop-hub__category-link", data: { turbo: true } do %>
                 <div class="shop-hub__category-art" aria-hidden="true">
@@ -154,12 +156,11 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="15 18 9 12 15 6" /> </svg>
             </button>
             <ul class="shop-hub__items-grid" data-horizontal-scroll-target="track">
-              <li class="shop-hub__items-card">
-                <%= render "shop/items/hardware_build_fund" %>
-              </li>
+              <% unless Flipper.enabled?(:hardware_flow, current_user) %>
               <li class="shop-hub__items-card">
                 <%= render "shop/items/outpost_ticket" %>
               </li>
+              <% end %>
               <% @new_items.each do |item| %>
                 <li class="shop-hub__items-card">
                   <%= render "shop/items/item_card",

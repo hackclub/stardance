@@ -424,6 +424,25 @@
   color: var(--color-space-text-muted);
 }
 
+// ── Fraud notice ─────────────────────────────────────────────────────────────
+.raffle-fraud-notice {
+  margin-bottom: var(--space-l);
+  padding: var(--space-s) var(--space-m);
+  background: rgba(255, 141, 157, 0.08);
+  border: 1px solid rgba(255, 141, 157, 0.25);
+  border-radius: var(--profile-radius);
+}
+
+.raffle-fraud-notice__text {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+
+  strong {
+    color: var(--color-brand-salmon);
+  }
+}
+
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 .raffle-board {
   list-style: none;
@@ -867,6 +886,35 @@
     font-size: var(--font-size-s);
     color: var(--color-space-text);
   }
+}
+
+.raffle-claim {
+  margin-bottom: var(--space-l);
+  padding: var(--space-m) var(--space-l);
+  background: var(--color-set-1-card);
+  border: 2px solid var(--color-brand-teal);
+  border-radius: var(--profile-radius);
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+}
+
+.raffle-claim__form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+}
+
+.raffle-claim__hint {
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}
+
+.raffle-claim__done {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-brand-teal);
+  font-weight: 600;
 }
 
 .raffle-odds {

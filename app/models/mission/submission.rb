@@ -42,6 +42,7 @@ class Mission::Submission < ApplicationRecord
   self.table_name = "mission_submissions"
 
   include SoftDeletable
+  include Ledgerable
   include AASM
 
   has_paper_trail
@@ -87,6 +88,12 @@ class Mission::Submission < ApplicationRecord
     end
   end
 
+  # "Shipped" in the loose sense: any submission still in flight or approved.
+  # Contrast with `approved` for sites that need full completion.
+  scope :not_rejected, -> { where.not(status: "rejected") }
+  # Still working its way through certification/review.
+  scope :in_review, -> { where.not(status: %w[approved rejected]) }
+
   scope :reviewable,  -> { pending }
   scope :unredeemed,  -> { approved.where(shop_order_id: nil) }
   scope :stale_pending, ->(days: 7) {
@@ -101,7 +108,6 @@ class Mission::Submission < ApplicationRecord
     global_ids = User.where("? = ANY (granted_roles)", "mission_reviewer").pluck(:id)
 
     User.where(id: (per_mission_ids + global_ids).uniq - teammate_ids)
-        .where(mission_review_notifications: true)
         .where.not(slack_id: [ nil, "" ])
   end
 
@@ -127,12 +133,9 @@ class Mission::Submission < ApplicationRecord
   private
 
   def notify_reviewers
+    builder = ship_event&.post&.user
     reviewer_recipients.find_each do |reviewer|
-      SendSlackDmJob.perform_later(
-        reviewer.slack_id,
-        blocks_path: "notifications/missions/submission_pending_for_reviewer.slack_message",
-        locals: notification_locals
-      )
+      Notifications::Missions::SubmissionPendingForReviewer.notify(recipient: reviewer, actor: builder, record: self)
     end
   rescue StandardError => e
     Rails.logger.warn("Mission::Submission notify_reviewers (#{id}): #{e.message}")

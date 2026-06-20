@@ -1,0 +1,9 @@
+<%# locals: roll:, rank: %>
+<% is_current_user = current_user&.id == roll.user_id %>
+<li class="rng-board__row <%= "rng-board__row--viewer" if is_current_user %>">
+  <span class="rng-board__rank <%= "rng-board__rank--first" if rank == 1 %>" aria-label="Rank <%= rank %>"><%= rank == 1 ? "★" : "##{rank}" %></span>
+  <%= image_tag roll.user.avatar, alt: "", class: "rng-board__avatar", loading: "lazy" %>
+  <%= link_to roll.user.display_name, profile_path(roll.user.display_name), class: "rng-board__name" %>
+  <% if is_current_user %><span class="rng-board__you-tag">you</span><% end %>
+  <span class="rng-board__value"><%= formatted_roll_value(roll.value) %></span>
+</li>

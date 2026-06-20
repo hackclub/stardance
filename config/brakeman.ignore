@@ -24,13 +24,13 @@
     {
       "warning_type": "Cross-Site Scripting",
       "warning_code": 4,
-      "fingerprint": "855e9efffdfea2c597048f3062d5ad5153fe97677a5ffe3ca09fe39ed13af855",
+      "fingerprint": "e89e919b80f13b3e34709fd2b9a374e2408b0434505b2166ece1e156ca7c56a3",
       "check_name": "LinkToHref",
       "message": "Potentially unsafe model attribute in `link_to` href",
       "file": "app/views/projects/show_hackpad.html.erb",
-      "line": 806,
+      "line": 848,
       "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
-      "code": "link_to(\"Try project \\u2192\", Project.find(params[:id]).demo_url, :target => \"_blank\", :rel => \"noopener\", :class => \"project-show__latest-ship-btn project-show__latest-ship-btn--primary\")",
+      "code": "link_to((if Project.find(params[:id]).hardware? then \"Video of Project \\u2192\" else \"Try project \\u2192\" end), Project.find(params[:id]).demo_url, :target => \"_blank\", :rel => \"noopener\", :class => \"project-show__latest-ship-btn project-show__latest-ship-btn--primary\")",
       "render_path": [
         {
           "type": "controller",
@@ -88,7 +88,30 @@
         79
       ],
       "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "afd46b7b61f1a5de4583920dedb365d30d8286afdeb70a759bf74bea1b3ea30e",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "app/services/git_host/git_cli.rb",
+      "line": 89,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "Open3.capture2(\"git\", \"-C\", clone_path, \"log\", \"--format=#{\"%H%n%s%n%b%n%an%n%ae%n%aI%n---COMMIT_END---\"}\", \"--since=#{since.iso8601}\", \"--until=#{before.iso8601}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "GitHost::GitCli",
+        "method": "parse_git_log"
+      },
+      "user_input": "since.iso8601",
+      "confidence": "Medium",
+      "cwe_id": [
+        77
+      ],
+      "note": "False positive: Open3.capture2(*cmd) uses the multi-arg array form (no shell); the interpolated values are a frozen format string and iso8601 timestamps, each a single --flag=value arg"
     }
   ],
-  "brakeman_version": "8.0.4"
+  "brakeman_version": "8.0.5"
 }

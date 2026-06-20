@@ -1,118 +1,128 @@
 <% content_for :title, "Project ##{@project.id}" %>
-<h1>Project #<%= @project.id %></h1>
 
-<% if @project.deleted? %>
-  <div>
-    <strong>⚠️ This project has been deleted</strong>
-    <span>Deleted at: <%= @project.deleted_at.strftime("%Y-%m-%d %H:%M") %></span>
-  </div>
-<% end %>
+<div class="admin-user-show">
+  <h1 class="admin-user-show__title">Project #<%= @project.id %></h1>
 
-<div>
-  <div>
-    <h2>Details</h2>
-    <div>
-      <div><b>Title:</b> <%= @project.title %></div>
-      <div><b>Description:</b> <%= @project.description.presence || "None" %></div>
-      <div>
-        <b>Ship Status:</b> <%= @project.ship_status.titleize %>
-        <button type="button" onclick="document.getElementById('change-ship-status-modal').showModal()">Change</button>
-      </div>
-      <div><b>Type:</b> <%= @project.project_type.presence || "Not set" %></div>
-      <div><b>Categories:</b> <%= @project.project_categories.any? ? @project.project_categories.join(", ") : "None" %></div>
-      <div><b>Created:</b> <%= @project.created_at.strftime("%Y-%m-%d %H:%M") %></div>
-      <div><b>Updated:</b> <%= @project.updated_at.strftime("%Y-%m-%d %H:%M") %></div>
-      <div><b>Shipped:</b> <%= @project.shipped_at&.strftime("%Y-%m-%d %H:%M") || "Not shipped" %></div>
-      <div><b>Status:</b> <%= @project.deleted? ? "Deleted" : "Active" %></div>
-      <div><b>Tutorial:</b> <%= @project.tutorial? ? "Yes" : "No" %></div>
-      <div><b>Duration:</b> <%= @project.duration_seconds > 0 ? "#{(@project.duration_seconds / 3600.0).round(1)}h" : "0h" %></div>
-      <div><b>Devlogs:</b> <%= @project.devlogs_count %></div>
-      <div><b>AI Declaration:</b> <%= @project.ai_declaration.presence || "None" %></div>
-      <% if @project.repo_url.present? %>
-        <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
-          <div><b>Repo:</b> <%= link_to @project.repo_url, safe_repo_url, target: "_blank", rel: "noopener noreferrer" %></div>
-        <% else %>
-          <div><b>Repo:</b> <%= @project.repo_url %> <span>(invalid URL)</span></div>
-        <% end %>
-      <% end %>
-      <% if @project.demo_url.present? %>
-        <% if (safe_demo_url = safe_external_url(@project.demo_url)) %>
-          <div><b>Demo:</b> <%= link_to @project.demo_url, safe_demo_url, target: "_blank", rel: "noopener noreferrer" %></div>
-        <% else %>
-          <div><b>Demo:</b> <%= @project.demo_url %> <span>(invalid URL)</span></div>
-        <% end %>
-      <% end %>
-    </div>
-  </div>
-
-  <div>
-    <h2>Members</h2>
-    <% if @project.users.any? %>
-      <ul>
-        <% @project.users.each do |u| %>
-          <li><%= link_to u.display_name, admin_user_path(u) %></li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p>No members.</p>
-    <% end %>
-  </div>
-
-  <div>
-    <h2>Hackatime Keys</h2>
-    <% if @project.hackatime_projects.any? %>
-      <ul>
-        <% @project.hackatime_projects.each do |hp| %>
-          <li>
-            <code><%= hp.name %></code>
-            <small>(<%= link_to hp.user.display_name, admin_user_path(hp.user) %>)</small>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p>No hackatime keys linked.</p>
-    <% end %>
-  </div>
-</div>
-
-<div>
-  <%= link_to "← Back", admin_projects_path %>
-  <%= link_to "View Public Page", project_path(@project), target: "_blank" %>
-  <%= link_to "View Votes", votes_admin_project_path(@project) %>
   <% if @project.deleted? %>
-    <%= button_to "Restore Project", restore_admin_project_path(@project),
-      method: :post,
-      data: { confirm: "Are you sure you want to restore this project?" } %>
-  <% else %>
-    <%= button_to "Delete Project", delete_admin_project_path(@project),
-      method: :post,
-      data: { confirm: "Are you sure you want to delete this project?" } %>
+    <div class="mission-panel mission-panel--empty admin-user-show__banned">
+      <strong>⚠️ Deleted</strong>
+      <span class="admin-user-show__muted">at <%= @project.deleted_at.strftime("%Y-%m-%d %H:%M") %></span>
+    </div>
   <% end %>
 
-</div>
-
-<%= render layout: "shared/modal", locals: { id: "change-ship-status-modal", title: "Change Ship Status", description: "Override the ship status for this project. This bypasses AASM transitions and is logged to PaperTrail." } do %>
-  <form action="<%= update_ship_status_admin_project_path(@project) %>" method="post">
-    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-
-    <div>
-      <%= label_tag :ship_status, "New Status" %>
-      <%= select_tag :ship_status,
-            options_for_select(
-              Project.aasm.states.map { |s| [s.name.to_s.titleize, s.name.to_s] },
-              @project.ship_status
-            ) %>
+  <div class="admin-user-show__grid">
+    <div class="mission-panel">
+      <h2 class="admin-user-show__section-title">Details</h2>
+      <dl class="admin-user-show__dl">
+        <dt>Title</dt>        <dd><%= @project.title %></dd>
+        <dt>Description</dt>  <dd><%= @project.description.presence || content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
+        <dt>Ship status</dt>
+        <dd>
+          <%= @project.ship_status.titleize %>
+          <% if policy(current_user).view_order_full_details? %>
+            <button type="button" onclick="document.getElementById('change-ship-status-modal').showModal()">Change</button>
+          <% end %>
+        </dd>
+        <dt>Type</dt>         <dd><%= @project.project_type.presence || content_tag(:span, "Not set", class: "admin-user-show__muted") %></dd>
+        <dt>Categories</dt>   <dd><%= @project.project_categories.any? ? @project.project_categories.join(", ") : content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
+        <dt>Created</dt>      <dd><%= @project.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
+        <dt>Updated</dt>      <dd><%= @project.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
+        <dt>Shipped</dt>      <dd><%= @project.shipped_at&.strftime("%Y-%m-%d %H:%M") || content_tag(:span, "Not shipped", class: "admin-user-show__muted") %></dd>
+        <dt>Status</dt>       <dd><%= @project.deleted? ? "Deleted" : "Active" %></dd>
+        <dt>Tutorial</dt>     <dd><%= @project.tutorial? ? "Yes" : "No" %></dd>
+        <dt>Duration</dt>     <dd><%= @project.duration_seconds > 0 ? "#{(@project.duration_seconds / 3600.0).round(1)}h" : "0h" %></dd>
+        <dt>Devlogs</dt>      <dd><%= @project.devlogs_count %></dd>
+        <dt>AI Declaration</dt><dd><%= @project.ai_declaration.presence || content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
+        <% if @project.repo_url.present? %>
+          <dt>Repo</dt>
+          <dd>
+            <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
+              <%= link_to @project.repo_url, safe_repo_url, target: "_blank", rel: "noopener noreferrer" %>
+            <% else %>
+              <%= @project.repo_url %> <span class="admin-user-show__muted">(invalid URL)</span>
+            <% end %>
+          </dd>
+        <% end %>
+        <% if @project.demo_url.present? %>
+          <dt>Demo</dt>
+          <dd>
+            <% if (safe_demo_url = safe_external_url(@project.demo_url)) %>
+              <%= link_to @project.demo_url, safe_demo_url, target: "_blank", rel: "noopener noreferrer" %>
+            <% else %>
+              <%= @project.demo_url %> <span class="admin-user-show__muted">(invalid URL)</span>
+            <% end %>
+          </dd>
+        <% end %>
+      </dl>
     </div>
-    <div>
-      <button type="submit">Update Status</button>
-      <button type="button" onclick="document.getElementById('change-ship-status-modal').close()">Cancel</button>
-    </div>
-  </form>
-<% end %>
-<%= render "admin/shared/ledger_log",
-    entries: LedgerEntry.where(ledgerable_type: "Post::ShipEvent", ledgerable_id: @project.ship_events.select(:id)),
-    title: "Project Ledger" %>
 
-<div>
-  <%= render "admin/shared/audit_log", record: @project %>
+    <div class="mission-panel">
+      <h2 class="admin-user-show__section-title">Members</h2>
+      <% if @project.users.any? %>
+        <ul style="color: #e2e8f0;">
+          <% @project.users.each do |u| %>
+            <li><%= link_to u.display_name, admin_user_path(u) %></li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="admin-user-show__muted">No members.</p>
+      <% end %>
+
+      <% if policy(current_user).view_order_full_details? %>
+        <h2 class="admin-user-show__section-title" style="margin-top: var(--space-m);">Hackatime Keys</h2>
+        <% if @project.hackatime_projects.any? %>
+          <ul>
+            <% @project.hackatime_projects.each do |hp| %>
+              <li>
+                <code><%= hp.name %></code>
+                <small class="admin-user-show__muted">(<%= link_to hp.user.display_name, admin_user_path(hp.user) %>)</small>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="admin-user-show__muted">No hackatime keys linked.</p>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if policy(current_user).view_order_full_details? %>
+    <div class="mission-panel">
+      <h2 class="admin-user-show__section-title">Actions</h2>
+      <div class="admin-user-show__actions">
+        <%= render ActionButtonComponent.new(text: "← Back", href: admin_projects_path, size: :small, variant: :secondary) %>
+        <%= render ActionButtonComponent.new(text: "Public Page", href: project_path(@project), size: :small, variant: :secondary) %>
+        <%= render ActionButtonComponent.new(text: "Votes", href: votes_admin_project_path(@project), size: :small, variant: :secondary) %>
+        <% if @project.deleted? %>
+          <%= button_to "Restore Project", restore_admin_project_path(@project), method: :post,
+              data: { confirm: "Restore this project?" } %>
+        <% else %>
+          <%= button_to "Delete Project", delete_admin_project_path(@project), method: :post,
+              data: { confirm: "Delete this project?" } %>
+        <% end %>
+      </div>
+    </div>
+
+    <%= render layout: "shared/modal", locals: { id: "change-ship-status-modal", title: "Change Ship Status", description: "Bypasses AASM transitions and is logged to PaperTrail." } do %>
+      <form action="<%= update_ship_status_admin_project_path(@project) %>" method="post">
+        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+        <%= label_tag :ship_status, "New Status" %>
+        <%= select_tag :ship_status,
+              options_for_select(
+                Project.aasm.states.map { |s| [s.name.to_s.titleize, s.name.to_s] },
+                @project.ship_status
+              ) %>
+        <button type="submit">Update Status</button>
+        <button type="button" onclick="document.getElementById('change-ship-status-modal').close()">Cancel</button>
+      </form>
+    <% end %>
+
+    <%= render "admin/shared/ledger_log",
+        entries: LedgerEntry.where(ledgerable_type: "Post::ShipEvent", ledgerable_id: @project.ship_events.select(:id)),
+        title: "Project Ledger" %>
+  <% end %>
+
+  <% if policy(current_user).audit_log? %>
+    <%= render "admin/shared/audit_log", record: @project %>
+  <% end %>
 </div>

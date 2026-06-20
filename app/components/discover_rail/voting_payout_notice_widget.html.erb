@@ -1,0 +1,29 @@
+<section class="discover-rail__section voting-payout-notice" aria-label="Payout progress">
+  <h3 class="discover-rail__heading">Payouts</h3>
+  <div class="voting-payout-notice__card">
+    <% if reached? %>
+      <p class="voting-payout-notice__body">
+        <strong class="voting-payout-notice__threshold"><%= threshold %> ships</strong>
+        are fully rated — payouts are now being processed!
+      </p>
+    <% else %>
+      <p class="voting-payout-notice__body">
+        Payouts unlock once
+        <strong class="voting-payout-notice__threshold"><%= threshold %> ships</strong>
+        are fully rated by the community.
+      </p>
+      <div class="voting-payout-notice__progress-wrap">
+        <progress class="voting-payout-notice__progress"
+                  value="<%= current %>"
+                  max="<%= threshold %>"
+                  aria-label="<%= current %> of <%= threshold %> ships fully rated"></progress>
+        <span class="voting-payout-notice__progress-label">
+          <%= current %> / <%= threshold %>
+        </span>
+      </div>
+      <%= helpers.link_to "Rate a project →", helpers.new_vote_path,
+            class: "voting-payout-notice__cta",
+            data: { turbo_frame: "_top" } %>
+    <% end %>
+  </div>
+</section>

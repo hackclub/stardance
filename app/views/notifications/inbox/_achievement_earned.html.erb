@@ -1,0 +1,7 @@
+<span class="notifications-item__verb">You earned the</span>
+<% if notification.achievement %>
+  <%= link_to notification.achievement.name, my_achievements_path, class: "notifications-item__actor" %>
+  <span class="notifications-item__verb">achievement</span>
+<% else %>
+  <strong>an achievement</strong>
+<% end %>

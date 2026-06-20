@@ -5,12 +5,13 @@
 <div class="app-layout">
   <div class="app-layout__main">
     <article class="mission-guide"
-             data-controller="mission-guide-progress"
+             data-controller="mission-guide-progress mission-guide-variables"
+             data-mission-guide-variables-mission-slug-value="<%= @mission.slug %>"
              data-mission-guide-progress-section-count-value="<%= @guide_outline.length %>"
              data-mission-guide-progress-mission-slug-value="<%= @mission.slug %>"
              data-mission-guide-progress-mission-id-value="<%= @mission.id %>"
              data-mission-guide-progress-project-id-value="<%= @active_project&.id %>"
-             data-mission-guide-progress-create-url-value="<%= @active_project ? project_mission_section_completions_path(@active_project) : "" %>"
+             data-mission-guide-progress-create-url-value="<%= @progress_syncable ? project_mission_section_completions_path(@active_project) : "" %>"
              data-mission-guide-progress-completed-step-ids-value="<%= @completed_step_ids.to_a.to_json %>">
       <header class="mission-guide__header">
         <p class="mission-guide__breadcrumb">

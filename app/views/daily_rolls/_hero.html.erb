@@ -1,0 +1,71 @@
+<%# The big moment on /rng.
+    - Signed in, today: your roll (or the roll button); reveal plays on a fresh roll.
+    - Signed in, past date: your roll for that day, static, no copy.
+    - Logged out (anonymous: true): a cookie-backed roll + a sign-up CTA (onboarding flow).
+    Locals: roll:, just_rolled:, for_today: (default true), date_label:, anonymous: (default false). %>
+<%
+  for_today = local_assigns.fetch(:for_today, true)
+  date_label = local_assigns.fetch(:date_label, nil)
+  anonymous = local_assigns.fetch(:anonymous, false)
+%>
+<section class="rng-hero <%= "rng-hero--waiting" if just_rolled %>"
+         id="rng-hero"
+         aria-label="Your roll"
+         data-controller="daily-roll"
+         data-daily-roll-base-class-value="rng-hero"
+         data-daily-roll-just-rolled-value="<%= just_rolled %>"
+         data-daily-roll-value-value="<%= roll&.value %>">
+  <% if roll %>
+    <span class="rng-hero__label"><%= for_today ? "Your number today" : "Your number · #{date_label}" %></span>
+    <div class="rng-hero__result">
+      <span class="rng-hero__number rng-hero__number--<%= roll.tone %>" data-daily-roll-target="number"><%= just_rolled ? "✦" : formatted_roll_value(roll.value) %></span>
+      <span class="rng-hero__burst" data-daily-roll-target="burst" aria-hidden="true"></span>
+    </div>
+    <p class="rng-hero__flavor"><%= roll.flavor %></p>
+
+    <% if anonymous %>
+      <div class="rng-hero__cta">
+        <p class="rng-hero__cta-text">join stardance to get on the leaderboard!</p>
+        <%= form_with url: onboarding_start_path, method: :post, class: "rng-hero__signup" do |form| %>
+          <%= form.email_field :email, placeholder: "you@email.com", required: true,
+                               autocomplete: "email", class: "rng-hero__signup-input" %>
+          <%= form.submit "join →", class: "action-btn action-btn--primary action-btn--large rng-hero__signup-submit" %>
+        <% end %>
+        <p class="rng-hero__cta-note">sign up and roll for real — yours will count on the board.</p>
+      </div>
+    <% else %>
+      <span class="rng-hero__rank">#<%= roll.rank %> <%= for_today ? "today" : "that day" %></span>
+      <div class="rng-hero__actions">
+        <%= link_to "see history", rng_history_path, class: "action-btn action-btn--secondary action-btn--large" %>
+        <% if for_today %>
+          <button type="button" class="action-btn action-btn--primary action-btn--large"
+                  data-controller="tooltip copy"
+                  data-tooltip-message-value="Click to copy"
+                  data-copy-text-value="<%= roll_share_text(roll) %>"
+                  data-action="click->copy#copy">copy to share</button>
+        <% end %>
+      </div>
+      <% if for_today && Rails.env.development? %>
+        <%= button_to "clear roll (dev)", clear_daily_roll_path, method: :delete, class: "rng-hero__dev-clear" %>
+      <% end %>
+    <% end %>
+  <% elsif for_today %>
+    <span class="rng-hero__label">You haven't rolled today</span>
+    <span class="rng-hero__number rng-hero__number--placeholder">???</span>
+    <%# Turbo Drive is off app-wide, so the form must opt in or this falls back
+        to a full-page reload and the reveal never runs. %>
+    <%= button_to "roll", daily_roll_path,
+                  class: "action-btn action-btn--primary action-btn--large",
+                  form: { data: { turbo: true } },
+                  data: { turbo_submits_with: "rolling…" } %>
+    <% if anonymous %>
+      <p class="rng-hero__hint">biggest number wins. sign up to get on the board.</p>
+    <% else %>
+      <%= link_to "see history", rng_history_path, class: "rng-hero__history-link" %>
+    <% end %>
+  <% else %>
+    <span class="rng-hero__label">No roll · <%= date_label %></span>
+    <span class="rng-hero__number rng-hero__number--placeholder">—</span>
+    <%= link_to "see history", rng_history_path, class: "rng-hero__history-link" %>
+  <% end %>
+</section>

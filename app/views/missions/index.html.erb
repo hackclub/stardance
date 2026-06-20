@@ -11,28 +11,29 @@
       </p>
     </header>
 
-    <% if @draft_missions.any? %>
-      <section class="missions-index__section" aria-labelledby="missions-index-drafts">
-        <h2 id="missions-index-drafts" class="missions-index__section-title">Drafts</h2>
-        <ul class="missions-index__grid">
-          <% @draft_missions.each do |mission| %>
-            <li><%= render "missions/mission_card", mission: mission, badge: "Draft", manageable: true %></li>
-          <% end %>
-        </ul>
-      </section>
-    <% end %>
-
     <% if @available_missions.any? %>
       <section class="missions-index__section" aria-labelledby="missions-index-available">
         <h2 id="missions-index-available" class="missions-index__section-title">Available now</h2>
         <ul class="missions-index__grid">
           <% @available_missions.each do |mission| %>
-            <li><%= render "missions/mission_card", mission: mission %></li>
+            <% locked = mission.has_prerequisites? && !(mission.prerequisite_ids.to_set <= @completed_mission_ids) %>
+            <li><%= render "missions/mission_card", mission: mission, badge: locked ? "Locked" : nil %></li>
           <% end %>
         </ul>
       </section>
     <% else %>
       <p class="missions-index__empty">No missions are available right now — check back soon.</p>
+    <% end %>
+
+    <% if @completed_missions.any? %>
+      <section class="missions-index__section" aria-labelledby="missions-index-completed">
+        <h2 id="missions-index-completed" class="missions-index__section-title">Completed</h2>
+        <ul class="missions-index__grid">
+          <% @completed_missions.each do |mission| %>
+            <li><%= render "missions/mission_card", mission: mission, badge: "Completed" %></li>
+          <% end %>
+        </ul>
+      </section>
     <% end %>
 
     <% if @upcoming_missions.any? %>
@@ -46,9 +47,20 @@
       </section>
     <% end %>
 
+    <% if @draft_missions.any? %>
+      <section class="missions-index__section" aria-labelledby="missions-index-drafts">
+        <h2 id="missions-index-drafts" class="missions-index__section-title">Drafts</h2>
+        <ul class="missions-index__grid">
+          <% @draft_missions.each do |mission| %>
+            <li><%= render "missions/mission_card", mission: mission, badge: "Draft", manageable: true %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
     <% if @ended_missions.any? %>
       <section class="missions-index__section missions-index__section--past" aria-labelledby="missions-index-past">
-        <h2 id="missions-index-past" class="missions-index__section-title">Past missions</h2>
+        <h2 id="missions-index-past" class="missions-index__section-title">Ended</h2>
         <ul class="missions-index__grid">
           <% @ended_missions.each do |mission| %>
             <li><%= render "missions/mission_card", mission: mission, badge: "Ended" %></li>

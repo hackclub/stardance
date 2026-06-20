@@ -155,3 +155,5 @@ hq_source = ShopSource.find_by!(slug: "hq")
   item.shop_categories << merch_category unless item.shop_categories.include?(merch_category)
   item.shop_sources    << hq_source      unless item.shop_sources.include?(hq_source)
 end
+
+load Rails.root.join("db/seeds/outpost_ticket.rb")

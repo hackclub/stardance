@@ -5,15 +5,27 @@
 <% end %>
 
 <div class="app-layout">
-  <main class="app-layout__main feed-home" aria-label="Home feed">
+  <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
     <%= render "shared/raffle_referral_banner" %>
     <% if current_user.present? %>
       <%= render Posts::ComposerComponent.new(
             post: @devlog,
             current_user: current_user,
             projects: @composer_projects,
-            selected_project: @selected_project
+            selected_project: @selected_project,
+            show_record: true
           ) %>
+    <% end %>
+
+    <% if Flipper.enabled?(:week_3_release, current_user) %>
+      <nav class="feed-tabs" aria-label="Feed filters">
+        <button class="feed-tabs__tab feed-tabs__tab--active" data-feed-tabs-target="tab" data-tab="for_you" data-action="feed-tabs#switch">For you</button>
+        <% if current_user.present? %>
+          <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="following" data-action="feed-tabs#switch">Following</button>
+        <% end %>
+        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="popular" data-action="feed-tabs#switch">Popular</button>
+        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="newest" data-action="feed-tabs#switch">Newest</button>
+      </nav>
     <% end %>
 
     <%= turbo_frame_tag "home_feed", src: home_feed_path, target: "_top", class: "feed-home__frame" do %>

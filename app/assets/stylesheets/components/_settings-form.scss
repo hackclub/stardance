@@ -115,4 +115,35 @@
       margin-left: calc(1.25rem + var(--space-s));
     }
   }
+
+  &__hackatime-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  &__hackatime-linked {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    color: var(--color-brand-yellow);
+  }
+
+  &__hackatime-btn {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    color: var(--color-space-text);
+    background: transparent;
+    border: 2px solid var(--color-border-input);
+    border-radius: 999px;
+    padding: var(--space-xxs) var(--space-m);
+    cursor: pointer;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease;
+
+    &:hover {
+      border-color: var(--color-border-input-focus);
+    }
+  }
 }

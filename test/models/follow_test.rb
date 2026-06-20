@@ -47,17 +47,13 @@ class FollowTest < ActiveSupport::TestCase
     assert_includes follow.errors[:followed_id], "can't follow yourself"
   end
 
-  test "fires Slack DM to followed user when notifications enabled" do
-    @bob.preference.update!(send_notifications_for_new_followers: true)
-    assert_enqueued_with(job: SendSlackDmJob) do
+  test "creates an in-app notification for the followed user" do
+    assert_difference -> { @bob.notifications.count }, 1 do
       Follow.create!(follower: @alice, followed: @bob)
     end
-  end
 
-  test "does not fire Slack DM if followed user opted out" do
-    @bob.preference.update!(send_notifications_for_new_followers: false)
-    assert_no_enqueued_jobs(only: SendSlackDmJob) do
-      Follow.create!(follower: @alice, followed: @bob)
-    end
+    notification = @bob.notifications.last
+    assert_instance_of Notifications::NewFollower, notification
+    assert_equal @alice, notification.actor
   end
 end

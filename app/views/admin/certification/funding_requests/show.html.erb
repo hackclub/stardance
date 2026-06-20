@@ -1,0 +1,100 @@
+<% content_for :title, "Funding review: #{@funding_request.project.title}" %>
+
+<%
+  owner = @funding_request.project.memberships.find(&:owner?)&.user
+  can_review = @funding_request.claim_held_by?(current_user) && @funding_request.pending?
+%>
+
+<div class="app-layout app-layout--wide"
+     data-controller="certification--queue"
+     data-certification--queue-server-now-value="<%= Time.current.iso8601 %>">
+  <div class="app-layout__main app-layout__main--wide ship-review">
+    <%= link_to "← back to queue", admin_certification_funding_requests_path, class: "ship-review__back" %>
+
+    <div class="ship-review__momentum" role="status" aria-live="polite">
+      <% if @reviewed_today.zero? %>
+        <span class="ship-review__momentum-label">First funding review of the day. Let's go.</span>
+      <% else %>
+        <span class="ship-review__momentum-count"><%= @reviewed_today %></span>
+        <span class="ship-review__momentum-label">reviewed today. Keep the momentum going.</span>
+      <% end %>
+    </div>
+
+    <header class="ship-review__header">
+      <div class="ship-review__title">
+        <h1><%= @funding_request.project.title %></h1>
+        <span class="status-pill status-pill--<%= @funding_request.status %>"><%= @funding_request.status.capitalize %></span>
+      </div>
+      <span class="ship-review__id">#<%= @funding_request.id %></span>
+    </header>
+
+    <div class="ship-review__body">
+      <section class="ship-review__details">
+        <div class="ship-review__panel">
+          <h2 class="ship-review__panel-title">Funding request</h2>
+          <dl class="ship-review__meta">
+            <dt>Complexity tier</dt>
+            <dd><%= @funding_request.tier_label %>: <%= @funding_request.tier_examples %> (max $<%= @funding_request.tier_max_dollars %>)</dd>
+            <dt>Requested</dt>
+            <dd>$<%= @funding_request.requested_amount_dollars %></dd>
+            <% if @funding_request.approved_amount_cents.present? %>
+              <dt>Approved</dt>
+              <dd>$<%= @funding_request.approved_amount_dollars %></dd>
+            <% end %>
+          </dl>
+        </div>
+
+        <% if @funding_request.project.description.present? %>
+          <div class="ship-review__panel">
+            <h2 class="ship-review__panel-title">Description</h2>
+            <p class="ship-review__description"><%= @funding_request.project.description %></p>
+          </div>
+        <% end %>
+
+        <div class="ship-review__panel">
+          <h2 class="ship-review__panel-title">Links</h2>
+          <dl class="ship-review__links">
+            <% if @funding_request.project.repo_url.present? %>
+              <dt>Repo</dt>
+              <dd><%= link_to @funding_request.project.repo_url, @funding_request.project.repo_url, target: "_blank", rel: "noopener" %></dd>
+            <% end %>
+            <% if @funding_request.project.demo_url.present? %>
+              <dt>Demo</dt>
+              <dd><%= link_to @funding_request.project.demo_url, @funding_request.project.demo_url, target: "_blank", rel: "noopener" %></dd>
+            <% end %>
+            <dt>Project</dt>
+            <dd><%= link_to "View project page", project_path(@funding_request.project), target: "_blank", rel: "noopener" %></dd>
+          </dl>
+        </div>
+
+        <div class="ship-review__panel">
+          <h2 class="ship-review__panel-title">Submission</h2>
+          <dl class="ship-review__meta">
+            <dt>Submitter</dt>
+            <dd><%= owner&.display_name || "—" %></dd>
+            <dt>Submitted</dt>
+            <dd><%= time_ago_in_words(@funding_request.created_at) %> ago</dd>
+            <% if @funding_request.reviewer %>
+              <dt>Reviewer</dt>
+              <dd><%= @funding_request.reviewer.display_name %></dd>
+            <% end %>
+          </dl>
+        </div>
+      </section>
+
+      <aside class="ship-review__sidebar">
+        <% if can_review %>
+          <%= render "form", funding_request: @funding_request %>
+        <% else %>
+          <div class="ship-review__claim">
+            <p>You don't currently hold the claim on this review.</p>
+            <%= button_to "Claim this review", admin_certification_funding_request_claim_path(@funding_request), method: :post,
+                  class: "action-btn action-btn--large action-btn--primary" %>
+            <%= link_to "Back to queue", admin_certification_funding_requests_path,
+                  class: "action-btn action-btn--small action-btn--secondary" %>
+          </div>
+        <% end %>
+      </aside>
+    </div>
+  </div>
+</div>

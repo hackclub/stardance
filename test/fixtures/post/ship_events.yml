@@ -5,14 +5,12 @@
 # Table name: post_ship_events
 #
 #  id                         :bigint           not null, primary key
-#  base_hours                 :float
 #  body                       :string
-#  bridge                     :boolean          default(FALSE), not null
 #  certification_status       :string           default("pending")
 #  feedback_reason            :text
 #  feedback_video_url         :string
-#  hours                      :float
-#  legacy_payout_deduction    :float
+#  hours_at_payout            :float
+#  hours_at_ship              :float
 #  multiplier                 :float
 #  originality_median         :decimal(5, 2)
 #  originality_percentile     :decimal(5, 2)
@@ -33,7 +31,6 @@
 #  usability_median           :decimal(5, 2)
 #  usability_percentile       :decimal(5, 2)
 #  votes_count                :integer          default(0), not null
-#  voting_scale_version       :integer          default(2), not null
 #  created_at                 :datetime         not null
 #  updated_at                 :datetime         not null
 #

@@ -3,6 +3,18 @@
 <%= turbo_frame_tag "admin-mission-edit-prizes" do %>
   <section class="admin-mission-edit__section">
     <h2 class="admin-mission-edit__section-title">Prizes</h2>
+
+    <%= form_with model: mission, url: admin_mission_path(mission.slug), method: :patch, local: true, class: "admin-mission-edit__form" do |f| %>
+      <label>
+        Fixed stardust payout
+        <small class="admin-mission-edit__hint">
+          Builders receive this many stardust when their submission is approved.
+          Leave blank for no fixed payout.
+        </small>
+        <%= f.number_field :fixed_stardust_payout, min: 1, step: 1 %>
+      </label>
+      <%= f.submit "Save stardust payout", class: "action-btn action-btn--small action-btn--primary" %>
+    <% end %>
     <ul class="admin-mission-edit__prizes">
       <% prizes.each do |prize| %>
         <li class="admin-mission-edit__prize">

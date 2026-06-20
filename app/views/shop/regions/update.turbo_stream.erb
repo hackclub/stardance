@@ -1,14 +1,12 @@
 <%= turbo_stream.replace "shop_items" do %>
   <%= turbo_frame_tag "shop_items" do %>
     <div class="shop-category__items">
-      <% @shop_items.each do |item| %>
-        <% if item.image.present? && item.enabled_in_region?(@user_region) %>
-          <%= render "shop/items/item_card",
-                item: item,
-                region: @user_region,
-                balance: @user_balance,
-                wishlisted_item_ids: @wishlisted_item_ids %>
-        <% end %>
+      <% @visible_shop_items.each do |item| %>
+        <%= render "shop/items/item_card",
+              item: item,
+              region: @user_region,
+              balance: @user_balance,
+              wishlisted_item_ids: @wishlisted_item_ids %>
       <% end %>
     </div>
   <% end %>

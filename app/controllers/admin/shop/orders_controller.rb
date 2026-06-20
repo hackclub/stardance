@@ -2,6 +2,21 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   before_action :set_paper_trail_whodunnit
   before_action :set_order, except: [ :index ]
 
+  # Filter/search params that should survive navigation between the status
+  # chips, the group-by-user toggle, and pagination. Centralised here so the
+  # views don't each repeat (and risk drifting from) the permit list.
+  PRESERVED_FILTER_KEYS = [
+    :user_search, :shop_item_id, :status, :date_from, :date_to, :sort, :view,
+    :goob, :region, :item_type, :min_tickets, :max_tickets, :has_tracking,
+    :order_type, { assignee_ids: [] }
+  ].freeze
+
+  helper_method :preserved_filter_params
+
+  def preserved_filter_params
+    params.permit(*PRESERVED_FILTER_KEYS)
+  end
+
   def index
     # Determine view mode
     @view = params[:view] || "shop_orders"
@@ -572,6 +587,29 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     scope = scope.where(shop_item_id: params[:shop_item_id]) if params[:shop_item_id].present?
     scope = scope.where("created_at >= ?", params[:date_from]) if params[:date_from].present?
     scope = scope.where("created_at <= ?", params[:date_to]) if params[:date_to].present?
+
+    if params[:item_type].present?
+      scope = scope.joins(:shop_item).where(shop_items: { type: params[:item_type] })
+    end
+
+    if params[:min_tickets].present?
+      scope = scope.where("shop_orders.frozen_item_price * shop_orders.quantity >= ?", params[:min_tickets])
+    end
+    if params[:max_tickets].present?
+      scope = scope.where("shop_orders.frozen_item_price * shop_orders.quantity <= ?", params[:max_tickets])
+    end
+
+    # Presence/absence of a shipping tracking number.
+    case params[:has_tracking]
+    when "yes" then scope = scope.where.not(tracking_number: [ nil, "" ])
+    when "no"  then scope = scope.where(tracking_number: [ nil, "" ])
+    end
+
+    # Standalone orders vs. modifier/accessory orders (which have a parent).
+    case params[:order_type]
+    when "standalone" then scope = scope.where(parent_order_id: nil)
+    when "modifier"   then scope = scope.where.not(parent_order_id: nil)
+    end
 
     if params[:user_search].present?
       search = "%#{ActiveRecord::Base.sanitize_sql_like(params[:user_search])}%"

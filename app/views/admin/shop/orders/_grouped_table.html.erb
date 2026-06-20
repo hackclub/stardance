@@ -1,20 +1,21 @@
 <% grouped_orders.each do |group| %>
-  <div>
-    <div>
-      <h3>
+  <div class="shop-orders__group">
+    <div class="shop-orders__group-header">
+      <h3 class="shop-orders__group-name">
         <%= link_to group[:user].display_name || "Unknown", admin_user_path(group[:user]) %>
       </h3>
-      <div>
+      <div class="shop-orders__group-email">
         <%= group[:user].email %>
       </div>
-      <div>
+      <div class="shop-orders__group-meta">
         <span><%= pluralize(group[:orders].count, 'order') %></span>
         <span><%= pluralize(group[:total_items], 'item') %></span>
         <span><%= group[:total_shells] %> tickets</span>
       </div>
     </div>
 
-    <table>
+    <div>
+    <table class="space-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -34,7 +35,7 @@
             <td><%= order.quantity %></td>
             <td><%= order.total_cost %></td>
             <td>
-              <span>
+              <span class="badge badge-<%= order.aasm_state %>">
                 <%= order.aasm_state.humanize %>
               </span>
             </td>
@@ -46,5 +47,6 @@
         <% end %>
       </tbody>
     </table>
+    </div>
   </div>
 <% end %>

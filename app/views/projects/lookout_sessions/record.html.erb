@@ -1,0 +1,175 @@
+<% content_for :title, "Record a timelapse" %>
+
+<main class="lookout-rec"
+      data-controller="lookout-capture"
+      data-lookout-capture-token-value="<%= @lookout_session.token %>"
+      data-lookout-capture-api-base-value="<%= @lookout_api_base %>"
+      data-lookout-capture-deep-link-value="<%= @deep_link %>"
+      data-lookout-capture-mode-url-value="<%= set_mode_project_lookout_session_path(@project, @lookout_session) %>"
+      data-lookout-capture-forward-url-value="<%= forward_heartbeats_project_lookout_session_path(@project, @lookout_session) %>">
+
+  <header class="lookout-rec__header">
+    <h1 class="lookout-rec__title">Lookout Recording</h1>
+    <%= link_to "Back to project", project_path(@project),
+                class: "lookout-rec__back",
+                data: { action: "lookout-capture#close" } %>
+  </header>
+
+  <p class="lookout-rec__error" data-lookout-capture-target="error" hidden></p>
+
+  <%# ── Mode chooser ─────────────────────────────────────────────────── %>
+  <section class="lookout-rec__chooser" data-lookout-capture-target="chooser">
+    <h2 class="lookout-rec__question">How would you like to record?</h2>
+
+    <div class="lookout-rec__options">
+      <button type="button" class="lookout-rec__option" data-action="lookout-capture#chooseDesktop">
+        <span class="lookout-rec__badge">Recommended</span>
+        <svg class="lookout-rec__option-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <rect x="2" y="4" width="20" height="13" rx="2" /><path d="M8 21h8M12 17v4" />
+        </svg>
+        <span class="lookout-rec__option-name">Desktop</span>
+        <span class="lookout-rec__option-sub">Open in Lookout app</span>
+      </button>
+
+      <button type="button" class="lookout-rec__option" data-action="lookout-capture#chooseBrowser">
+        <svg class="lookout-rec__option-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" />
+        </svg>
+        <span class="lookout-rec__option-name">Browser</span>
+        <span class="lookout-rec__option-sub">Share your screen</span>
+      </button>
+
+      <button type="button" class="lookout-rec__option" data-action="lookout-capture#chooseCamera">
+        <svg class="lookout-rec__option-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <rect x="2" y="6" width="14" height="12" rx="2" /><path d="m16 10 6-3v10l-6-3z" />
+        </svg>
+        <span class="lookout-rec__option-name">Camera</span>
+        <span class="lookout-rec__option-sub">Use your webcam</span>
+      </button>
+    </div>
+  </section>
+
+  <%# ── Desktop hand-off ─────────────────────────────────────────────── %>
+  <section class="lookout-rec__stage" data-lookout-capture-target="desktopStage" hidden>
+    <p class="lookout-rec__status" data-lookout-capture-target="desktopStatus">Opening the Lookout desktop app…</p>
+    <p class="lookout-rec__hint">
+      If nothing happened, <a href="#" class="lookout-rec__link" data-lookout-capture-target="deepLink">click here to open it</a>, or copy this link:
+    </p>
+    <code class="lookout-rec__code" data-lookout-capture-target="deepLinkText"></code>
+    <p class="lookout-rec__hint">
+      Don't have the desktop app yet?
+      <%= link_to "Download Lookout", "https://lookout.hackclub.com/",
+                  class: "lookout-rec__link", target: "_blank", rel: "noopener" %>
+    </p>
+  </section>
+
+  <%# ── Browser / camera capture ─────────────────────────────────────── %>
+  <section class="lookout-rec__stage" data-lookout-capture-target="captureStage" hidden>
+    <div class="lookout-rec__preview-wrap">
+      <video class="lookout-rec__preview" data-lookout-capture-target="preview" muted playsinline></video>
+    </div>
+
+    <div class="lookout-rec__meter">
+      <span class="lookout-rec__status" data-lookout-capture-target="status">Starting…</span>
+      <span class="lookout-rec__timer" data-lookout-capture-target="timer">0m 0s</span>
+    </div>
+
+    <div class="lookout-rec__controls">
+      <%= render ActionButtonComponent.new(text: "Pause", size: :small, variant: :secondary, type: :button,
+            data: { action: "lookout-capture#pause", "lookout-capture-target": "pauseBtn" }) %>
+      <%= render ActionButtonComponent.new(text: "Resume", size: :small, variant: :secondary, type: :button,
+            data: { action: "lookout-capture#resume", "lookout-capture-target": "resumeBtn" }) %>
+      <%= render ActionButtonComponent.new(text: "Stop & save", size: :small, variant: :destructive, type: :button,
+            data: { action: "lookout-capture#stop", "lookout-capture-target": "stopBtn" }) %>
+    </div>
+  </section>
+
+  <%# ── Done: preview the timelapse, then choose where the time goes ────── %>
+  <section class="lookout-rec__stage lookout-rec__stage--done" data-lookout-capture-target="doneStage" hidden>
+    <p class="lookout-rec__status" data-lookout-capture-target="doneStatus">Finishing up your timelapse…</p>
+
+    <div class="lookout-rec__preview-wrap">
+      <video class="lookout-rec__preview" data-lookout-capture-target="result" controls playsinline hidden></video>
+      <p class="lookout-rec__rendering" data-lookout-capture-target="rendering">Rendering your timelapse preview…</p>
+    </div>
+
+    <% hackatime_project_names = Array(@hackatime_project_names) %>
+    <% default_hackatime_name = @default_hackatime_name.presence || @project.hackatime_recorder_name %>
+    <div class="lookout-rec__destination" data-lookout-capture-target="destination">
+      <h2 class="lookout-rec__question">Where should this time go?</h2>
+
+      <label class="lookout-rec__dest">
+        <input type="radio" name="lookout-dest" value="existing" class="lookout-rec__dest-radio"
+               data-action="change->lookout-capture#chooseDestination"
+               <%= "checked" if hackatime_project_names.any? %>
+               <%= "disabled" if hackatime_project_names.empty? %>>
+        <span class="lookout-rec__dest-text">
+          <span class="lookout-rec__dest-name">Add to an existing Hackatime project</span>
+          <% if hackatime_project_names.any? %>
+            <select class="lookout-rec__dest-select" data-lookout-capture-target="existingSelect">
+              <% linked_names = Array(@linked_hackatime_names) %>
+              <% if linked_names.any? %>
+                <optgroup label="Linked to this project">
+                  <% linked_names.each do |name| %>
+                    <option value="<%= name %>" <%= "selected" if name == @default_existing_hackatime_name %>><%= name %></option>
+                  <% end %>
+                </optgroup>
+                <% other_names = hackatime_project_names - linked_names %>
+                <% if other_names.any? %>
+                  <optgroup label="Your other Hackatime projects">
+                    <% other_names.each do |name| %>
+                      <option value="<%= name %>"><%= name %></option>
+                    <% end %>
+                  </optgroup>
+                <% end %>
+              <% else %>
+                <% hackatime_project_names.each do |name| %>
+                  <option value="<%= name %>"><%= name %></option>
+                <% end %>
+              <% end %>
+            </select>
+          <% else %>
+            <span class="lookout-rec__dest-sub">You don't have any Hackatime projects yet.</span>
+          <% end %>
+        </span>
+      </label>
+
+      <label class="lookout-rec__dest">
+        <input type="radio" name="lookout-dest" value="new" class="lookout-rec__dest-radio"
+               data-action="change->lookout-capture#chooseDestination"
+               <%= "checked" if hackatime_project_names.empty? %>>
+        <span class="lookout-rec__dest-text">
+          <span class="lookout-rec__dest-name">Create a new Hackatime project</span>
+          <input type="text" class="lookout-rec__dest-input" data-lookout-capture-target="newName"
+                 value="<%= default_hackatime_name %>" placeholder="Project name" maxlength="120" autocomplete="off" disabled>
+        </span>
+      </label>
+
+      <label class="lookout-rec__dest lookout-rec__dest--danger">
+        <input type="radio" name="lookout-dest" value="skip" class="lookout-rec__dest-radio"
+               data-action="change->lookout-capture#chooseDestination">
+        <span class="lookout-rec__dest-text">
+          <span class="lookout-rec__dest-name">Don't Send to Hackatime (Delete)</span>
+        </span>
+      </label>
+
+      <p class="lookout-rec__error" data-lookout-capture-target="destError" hidden></p>
+
+      <div class="lookout-rec__dest-actions">
+        <%= render ActionButtonComponent.new(text: "Finish", variant: :primary, type: :button,
+              data: { action: "lookout-capture#finish", "lookout-capture-target": "finishBtn" }) %>
+      </div>
+    </div>
+
+    <%# Shown after the time is sent — nudge to actually log it in a devlog. %>
+    <div class="lookout-rec__post-prompt" data-lookout-capture-target="postPrompt" hidden>
+      <%= link_to "Post a Devlog", project_path(@project), class: "lookout-rec__post-btn" %>
+      <p class="lookout-rec__post-sub">Your time only counts once you do a devlog.</p>
+    </div>
+
+    <%= link_to "Back to project →", project_path(@project),
+                class: "lookout-rec__link lookout-rec__done-close",
+                data: { "lookout-capture-target": "doneClose" },
+                hidden: true %>
+  </section>
+</main>

@@ -10,6 +10,11 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   # If running the rails server then create or migrate existing database...
   ./bin/rails db:prepare
 
+  # Refresh generated Slack custom emotes for the composer.
+  if ! ./bin/rails slack_emotes:import; then
+    echo "Slack emote import failed; continuing boot without refreshed emotes"
+  fi
+
   # ...and background the slow avif conversion task.
   nohup ./bin/rake assets:avif >> log/avif_conversion.log 2>&1 &
 

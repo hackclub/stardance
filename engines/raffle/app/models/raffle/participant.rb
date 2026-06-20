@@ -7,6 +7,7 @@ module Raffle
     belongs_to :user, class_name: "::User", optional: true
     belongs_to :signup_week, class_name: "Raffle::Week", optional: true
     has_many :referrals, class_name: "Raffle::Referral", dependent: :destroy
+    has_many :weekly_claims, class_name: "Raffle::WeeklyClaim", dependent: :destroy
 
     enum :age_group, { teen: "teen", adult: "adult" }, prefix: :age_group
 
@@ -63,13 +64,17 @@ module Raffle
       return 0 unless week && eligible?
       return 0 if age_group_teen? && !hca_linked?
 
-      base = (age_group_teen? && signup_week_id == week.id) ? 1 : 0
+      base = weekly_claims.where(week: week).exists? ? 1 : 0
       referral_entries = referrals.status_verified.where(credited_week_id: week.id).count * 20
       base + referral_entries
     end
 
+    def claimed_week?(week)
+      weekly_claims.where(week: week).exists?
+    end
+
     def eligible?
-      eligible
+      eligible && !user&.banned?
     end
 
     def hca_linked?

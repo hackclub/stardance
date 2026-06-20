@@ -51,13 +51,13 @@ jobs:
     name: ${{ matrix.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
 
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y ${{ matrix.system_packages }}
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@v1.312.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -83,9 +83,6 @@ jobs:
 
   db_checks:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -100,45 +97,33 @@ jobs:
       RAILS_ENV: test
       DATABASE_URL: postgresql://postgres:password@localhost:5432/stardance_test
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libblas-dev liblapack-dev
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1.312.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
 
       - name: Check schema matches migrations
-        id: migration_check
         run: |
           bundle exec rails db:migrate
-          git diff --exit-code db/schema.rb
-      - name: Comment on schema failure
-        if: failure() && steps.migration_check.outcome == 'failure' && github.event_name == 'pull_request'
-        uses: actions/github-script@v9
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `### :rage2: you GOOF!\n Schema dump has fallen out of date\n\nRun \`rails db:migrate\` locally and commit the changes to \`db/schema.rb\`.`
-            });
+          if ! git diff --exit-code db/schema.rb; then
+            echo "### :rage2: you GOOF!" >> $GITHUB_STEP_SUMMARY
+            echo "Schema dump has fallen out of date." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo 'Run `rails db:migrate` locally and commit the changes to `db/schema.rb`.' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
       - name: Check annotations are up to date
-        id: annotate_check
-        if: success()
-        run: bundle exec annotaterb models --frozen
-      - name: Comment on annotation failure
-        if: failure() && steps.annotate_check.outcome == 'failure' && github.event_name == 'pull_request'
-        uses: actions/github-script@v9
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `### :rage1: you SILLY GOOSE!\nModel annotations have fallen out of date.\n\nPlease run \`bundle exec annotaterb models\` locally and commit the changes.`
-            });
+        run: |
+          if ! bundle exec annotaterb models --frozen; then
+            echo "### :rage1: you SILLY GOOSE!" >> $GITHUB_STEP_SUMMARY
+            echo "Model annotations have fallen out of date." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo 'Run `bundle exec annotaterb models` locally and commit the changes.' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

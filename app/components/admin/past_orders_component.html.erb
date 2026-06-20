@@ -5,13 +5,13 @@
         📋 <%= title %> (<%= orders.count %>)
       </summary>
       <div class="admin-section__content">
-        <%= render "admin/past_orders_component/orders_table", orders: orders %>
+        <%= render "admin/past_orders_component/orders_table", orders: orders, component: self %>
       </div>
     </details>
   <% else %>
     <h2 class="admin-section__header">
       📋 <%= title %> (<%= orders.count %>)
     </h2>
-    <%= render "admin/past_orders_component/orders_table", orders: orders %>
+    <%= render "admin/past_orders_component/orders_table", orders: orders, component: self %>
   <% end %>
 </div>

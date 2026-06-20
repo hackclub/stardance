@@ -1,20 +1,20 @@
-<div>
-  <h3>Filters & Search</h3>
-  <%= form_with url: admin_shop_orders_path, method: :get, local: true do |f| %>
-    <div>
-      <div>
+<div class="shop-orders__filters">
+  <h3>Filters &amp; Search</h3>
+  <%= form_with url: admin_shop_orders_path, method: :get, local: true, class: "shop-orders__filter-form" do |f| %>
+    <div class="shop-orders__filter-grid">
+      <div class="shop-orders__field">
         <%= f.label :user_search, "User (name/email)" %>
         <%= f.text_field :user_search, value: params[:user_search], placeholder: "Search users" %>
       </div>
 
-      <div>
+      <div class="shop-orders__field">
         <%= f.label :shop_item_id, "Item" %>
         <%= f.select :shop_item_id, options_from_collection_for_select(ShopItem.order(:name), :id, :name, params[:shop_item_id]),
             { prompt: "All items" } %>
       </div>
 
       <% unless current_user.fulfillment_person? %>
-      <div>
+      <div class="shop-orders__field">
         <%= f.label :region, "Region" %>
         <%= f.select :region, options_for_select([
             ['All regions', ''],
@@ -26,32 +26,34 @@
             ['Rest of World', 'XX']
           ], params[:region]) %>
       </div>
-      <% end %>
-<% unless current_user.fulfillment_person? %>
-      <div>
-        <%= f.label :status, "Status" %>
-        <%= f.select :status, options_for_select([
+
+      <div class="shop-orders__field">
+        <% status_options = [
             ['All statuses', ''],
             ['Pending', 'pending'],
             ['Awaiting Verification Call', 'awaiting_verification_call'],
             ['Awaiting Fulfillment', 'awaiting_periodical_fulfillment'],
             ['Fulfilled', 'fulfilled'],
-            ['Rejected', 'rejected'],
-            ['On Hold', 'on_hold']
-          ], params[:status] || @default_status) %>
+            ['Rejected', 'rejected']
+          ]
+          # "On hold" is a fraud-review state, hidden from non-fraud staff.
+          status_options << ['On Hold', 'on_hold'] if policy(:admin).view_fraud_review_filters? %>
+        <%= f.label :status, "Status" %>
+        <%= f.select :status, options_for_select(status_options, params[:status] || @default_status) %>
       </div>
-<% end %>
-      <div>
+      <% end %>
+
+      <div class="shop-orders__field">
         <%= f.label :date_from, "From" %>
         <%= f.date_field :date_from, value: params[:date_from] %>
       </div>
 
-      <div>
+      <div class="shop-orders__field">
         <%= f.label :date_to, "To" %>
         <%= f.date_field :date_to, value: params[:date_to] %>
       </div>
 
-      <div>
+      <div class="shop-orders__field">
         <%= f.label :sort, "Sort by" %>
         <%= f.select :sort, options_for_select([
             ['Created (newest)', 'created_at_desc'],
@@ -62,18 +64,52 @@
             ['Tickets (low)', 'shells_asc']
           ], params[:sort] || 'created_at_desc') %>
       </div>
+
+      <div class="shop-orders__field">
+        <%= f.label :item_type, "Item type" %>
+        <%= f.select :item_type, options_for_select(
+            [['All types', '']] + ShopItem::SELECTABLE_TYPES.map { |t| [t.demodulize.titleize, t] },
+            params[:item_type]) %>
+      </div>
+
+      <div class="shop-orders__field shop-orders__field--range">
+        <%= f.label :min_tickets, "Tickets (min / max)" %>
+        <div class="shop-orders__range-inputs">
+          <%= f.number_field :min_tickets, value: params[:min_tickets], placeholder: "Min", min: 0, step: "any" %>
+          <span class="shop-orders__range-sep">–</span>
+          <%= f.number_field :max_tickets, value: params[:max_tickets], placeholder: "Max", min: 0, step: "any" %>
+        </div>
+      </div>
+
+      <div class="shop-orders__field">
+        <%= f.label :has_tracking, "Tracking" %>
+        <%= f.select :has_tracking, options_for_select([
+            ['Any', ''],
+            ['Has tracking', 'yes'],
+            ['Missing tracking', 'no']
+          ], params[:has_tracking]) %>
+      </div>
+
+      <div class="shop-orders__field">
+        <%= f.label :order_type, "Order type" %>
+        <%= f.select :order_type, options_for_select([
+            ['All orders', ''],
+            ['Standalone only', 'standalone'],
+            ['Modifiers only', 'modifier']
+          ], params[:order_type]) %>
+      </div>
     </div>
 
     <% if @fulfillment_users.present? %>
-    <div>
+    <div class="shop-orders__field shop-orders__field--assignees">
       <label>Assignee</label>
-      <div>
-        <label>
+      <div class="shop-orders__assignee-options">
+        <label class="shop-orders__checkbox">
           <%= check_box_tag "assignee_ids[]", "unassigned", Array(params[:assignee_ids]).include?("unassigned"), id: "assignee_unassigned" %>
           Unassigned
         </label>
         <% @fulfillment_users.each do |fu| %>
-          <label>
+          <label class="shop-orders__checkbox">
             <%= check_box_tag "assignee_ids[]", fu.id, Array(params[:assignee_ids]).include?(fu.id.to_s), id: "assignee_#{fu.id}" %>
             <%= fu.display_name %>
           </label>
@@ -82,9 +118,9 @@
     </div>
     <% end %>
 
-    <div>
-      <%= f.submit "Apply Filters" %>
-      <%= link_to "Clear All", admin_shop_orders_path(view: params[:view]) %>
+    <div class="shop-orders__filter-actions">
+      <%= f.submit "Apply Filters", class: "btn-primary" %>
+      <%= link_to "Clear All", admin_shop_orders_path(view: params[:view]), class: "btn-secondary" %>
     </div>
 
     <%= f.hidden_field :goob, value: params[:goob] if params[:goob] %>

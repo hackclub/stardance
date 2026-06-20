@@ -6,12 +6,6 @@
 <div class="app-layout">
   <div class="app-layout__main">
     <article class="mission-home">
-      <% if @mission.banner.attached? %>
-        <div class="mission-home__banner">
-          <%= image_tag @mission.banner, alt: "", class: "mission-home__banner-img" %>
-        </div>
-      <% end %>
-
       <p class="mission-home__crumb">
         <span class="mission-home__crumb-links">
           <%= link_to "Missions", missions_path, class: "mission-home__crumb-link" %>
@@ -21,6 +15,26 @@
           <% end %>
         </span>
       </p>
+
+      <% if @mission.banner.attached? %>
+        <div class="mission-home__banner">
+          <%= image_tag @mission.banner, alt: "", class: "mission-home__banner-img" %>
+        </div>
+      <% end %>
+
+      <% if !@prerequisites_met && @unmet_prerequisites.any? %>
+        <div class="mission-home__locked">
+          <p class="mission-home__locked-message">
+            This mission is locked. Complete
+            <% @unmet_prerequisites.each_with_index do |prereq, i| %>
+              <%= ", " if i > 0 && i < @unmet_prerequisites.length - 1 %>
+              <%= " and " if i > 0 && i == @unmet_prerequisites.length - 1 %>
+              <%= link_to prereq.name, mission_path(prereq.slug), class: "mission-home__locked-link" %>
+            <% end %>
+            first to unlock it!
+          </p>
+        </div>
+      <% end %>
 
       <section class="mission-home__hero">
         <%# star creature peeking off the top-right of the hero card %>
@@ -50,8 +64,9 @@
               <% if @estimated_label.present? %>
                 <li class="mission-home__hero-chip mission-home__hero-chip--time"><%= @estimated_label %></li>
               <% end %>
-              <% if @mission.has_guide? %>
-                <li class="mission-home__hero-chip mission-home__hero-chip--sections"><%= pluralize(@guide_outline.length, "section") %></li>
+              <% sections_count = @mission.external_guide? ? @mission.guide_sections_count : @guide_outline.length %>
+              <% if sections_count&.positive? %>
+                <li class="mission-home__hero-chip mission-home__hero-chip--sections"><%= pluralize(sections_count, "section") %></li>
               <% end %>
             </ul>
 
@@ -75,22 +90,32 @@
           </p>
         <% end %>
 
-        <% has_three_actions = !@active_project && @attachable_projects&.any? && @mission.has_guide? %>
+        <% has_attach_choices = @attachable_projects&.any? || @continuable_projects&.any? %>
+        <% has_three_actions = !@active_project && has_attach_choices && @mission.has_guide? %>
         <div class="mission-home__hero-actions<%= " mission-home__hero-actions--spread" if has_three_actions %>">
           <% if @active_project %>
             <%= link_to "View my project",
                         project_path(@active_project),
                         data: { turbo: false },
                         class: "action-btn action-btn--large action-btn--primary" %>
-          <% else %>
+          <% elsif @prerequisites_met %>
+            <%# Follow-up missions lead with continuing a prerequisite project %>
+            <% continue_flow = @continuable_projects&.any? %>
+            <% if continue_flow %>
+              <button type="button"
+                      class="action-btn action-btn--large action-btn--primary"
+                      onclick="document.getElementById('attach-mission-modal').showModal()">
+                Continue project
+              </button>
+            <% end %>
             <%= button_to "Create a project",
                           projects_setup_submit_mission_path,
                           method: :post,
                           params: { mission_slug: @mission.slug },
                           data: { turbo: false },
                           form: { class: "mission-home__cta-form" },
-                          class: "action-btn action-btn--large action-btn--primary" %>
-            <% if @attachable_projects&.any? %>
+                          class: "action-btn action-btn--large #{continue_flow ? "action-btn--secondary" : "action-btn--primary"}" %>
+            <% if !continue_flow && has_attach_choices %>
               <button type="button"
                       class="action-btn action-btn--large action-btn--secondary"
                       onclick="document.getElementById('attach-mission-modal').showModal()">
@@ -100,7 +125,9 @@
           <% end %>
           <% if @mission.has_guide? %>
             <%= link_to (@active_project ? "View guide" : "Preview guide"),
-                        guide_mission_path(@mission.slug),
+                        @mission.external_guide? ? @mission.guide_url : guide_mission_path(@mission.slug),
+                        target: @mission.external_guide? ? "_blank" : nil,
+                        rel: @mission.external_guide? ? "noopener" : nil,
                         data: { turbo: false },
                         class: "action-btn action-btn--large action-btn--secondary" %>
           <% end %>
@@ -120,7 +147,8 @@
         <% end %>
 
         <%# Prizes card %>
-        <% if @ordered_prizes.any? %>
+        <% has_stardust = @mission.fixed_stardust_payout&.positive? %>
+        <% if @ordered_prizes.any? || has_stardust || @unlocked_missions.any? %>
           <section class="mission-home__card mission-home__rewards"
                    aria-labelledby="mission-home-rewards">
             <h2 id="mission-home-rewards" class="mission-home__card-title">
@@ -128,8 +156,21 @@
             </h2>
             <ul class="mission-home__prize-list">
               <% tones = %w[yellow lilac peach mint] %>
+              <% tone_idx = 0 %>
+              <% if has_stardust %>
+                <li class="mission-home__prize mission-home__prize--<%= tones[tone_idx % tones.length] %>">
+                  <div class="mission-home__prize-tile">
+                    <%= stardust_icon(extra_class: "mission-home__prize-img") %>
+                  </div>
+                  <div class="mission-home__prize-body">
+                    <p class="mission-home__prize-title"><%= @mission.fixed_stardust_payout %> stardust</p>
+                    <p class="mission-home__prize-blurb">Yours to spend in the shop!</p>
+                  </div>
+                </li>
+                <% tone_idx += 1 %>
+              <% end %>
               <% @ordered_prizes.each_with_index do |prize, idx| %>
-                <% tone = tones[idx % tones.length] %>
+                <% tone = tones[(tone_idx + idx) % tones.length] %>
                 <li class="mission-home__prize mission-home__prize--<%= tone %>">
                   <div class="mission-home__prize-tile">
                     <% if prize.shop_item.respond_to?(:image) && prize.shop_item.image.respond_to?(:attached?) && prize.shop_item.image.attached? %>
@@ -148,6 +189,24 @@
                   </div>
                 </li>
               <% end %>
+              <% @unlocked_missions.each_with_index do |unlocked, idx| %>
+                <% tone = tones[(tone_idx + @ordered_prizes.size + idx) % tones.length] %>
+                <li class="mission-home__prize mission-home__prize--<%= tone %>">
+                  <div class="mission-home__prize-tile">
+                    <% if unlocked.icon.attached? %>
+                      <%= image_tag unlocked.icon, alt: "", class: "mission-home__prize-img mission-home__prize-img--contain" %>
+                    <% else %>
+                      <svg viewBox="0 0 24 24" width="28" height="28" class="mission-home__prize-glyph" aria-hidden="true">
+                        <path d="M12 1.5 13.6 10.4 22.5 12 13.6 13.6 12 22.5 10.4 13.6 1.5 12 10.4 10.4Z" />
+                      </svg>
+                    <% end %>
+                  </div>
+                  <div class="mission-home__prize-body">
+                    <p class="mission-home__prize-title">Unlocks <%= link_to unlocked.name, mission_path(unlocked.slug) %></p>
+                    <p class="mission-home__prize-blurb">Completing this mission will unlock the <%= unlocked.name %> mission</p>
+                  </div>
+                </li>
+              <% end %>
             </ul>
           </section>
         <% end %>
@@ -158,31 +217,56 @@
           <h2 id="mission-home-gallery" class="mission-home__section-title">
             Projects for this <em class="mission-home__section-title-accent">mission</em>
           </h2>
-          <ul class="mission-home__gallery-grid">
-            <% @gallery_projects.first(3).each do |project| %>
-              <li class="mission-home__gallery-item">
+          <div class="mission-home__gallery-grid" role="list">
+            <% @gallery_projects.each do |project| %>
+              <div class="mission-home__gallery-item" role="listitem">
                 <% if @approved_project_ids.include?(project.id) %>
-                  <span class="mission-home__gallery-badge mission-home__gallery-badge--approved">Approved</span>
+                  <span class="mission-home__gallery-badge mission-home__gallery-badge--approved">Completed</span>
                 <% else %>
                   <span class="mission-home__gallery-badge mission-home__gallery-badge--in-progress">In progress</span>
                 <% end %>
                 <%= render Projects::ShelfCardComponent.new(project: project) %>
-              </li>
+              </div>
             <% end %>
-          </ul>
+            <% if @has_more_gallery %>
+              <%= turbo_frame_tag "gallery-page-2" do %>
+                <div class="mission-home__gallery-show-more-wrapper">
+                  <%= link_to "Show more", gallery_mission_path(@mission.slug, page: 2),
+                        class: "mission-home__gallery-show-more" %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
         </section>
       <% end %>
     </article>
   </div>
 
-  <% if @attachable_projects&.any? %>
-    <%= render layout: "shared/modal", locals: { id: "attach-mission-modal", title: "Attach to project", class_name: "attach-mission-modal" } do %>
-      <p class="attach-mission-modal__desc">Pick a project to attach <strong><%= @mission.name %></strong> to:</p>
+  <% if @attachable_projects&.any? || @continuable_projects&.any? %>
+    <% modal_title = @continuable_projects&.any? ? "Continue a project" : "Attach to project" %>
+    <%= render layout: "shared/modal", locals: { id: "attach-mission-modal", title: modal_title, class_name: "attach-mission-modal" } do %>
+      <p class="attach-mission-modal__desc">Pick a project to take on <strong><%= @mission.name %></strong>:</p>
       <ul class="attach-mission-modal__list">
-        <% @attachable_projects.each do |project| %>
+        <% @attachable_projects&.each do |project| %>
           <li class="attach-mission-modal__item">
             <span class="attach-mission-modal__project-name"><%= truncate(project.title, length: 50) %></span>
             <%= button_to "Attach",
+                          project_mission_path(project),
+                          method: :post,
+                          params: { mission_slug: @mission.slug },
+                          data: { turbo: false },
+                          class: "action-btn action-btn--small action-btn--primary" %>
+          </li>
+        <% end %>
+        <% prerequisites_by_id = @mission.prerequisites.index_by(&:id) %>
+        <% @continuable_projects&.each do |project| %>
+          <% shipped_prerequisite = prerequisites_by_id[project.shipped_prerequisite_mission_id] %>
+          <li class="attach-mission-modal__item">
+            <span class="attach-mission-modal__project-name"><%= truncate(project.title, length: 50) %></span>
+            <% if shipped_prerequisite %>
+              <span class="attach-mission-modal__badge">Shipped <%= shipped_prerequisite.name %></span>
+            <% end %>
+            <%= button_to "Continue",
                           project_mission_path(project),
                           method: :post,
                           params: { mission_slug: @mission.slug },

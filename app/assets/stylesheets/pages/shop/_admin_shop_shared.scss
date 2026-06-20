@@ -1,10 +1,5 @@
-// Shared tokens & mixins for all admin shop pages.
-// Import this with @use before defining page-specific blocks.
-
 $set-fg-secondary: #83828d;
 
-// Remap tan/brown tokens so existing .card, .table-data, .form-control
-// resolve to the space theme without touching each callsite.
 @mixin space-token-remaps {
   --color-tan-300: var(--color-set-2-bg);
   --color-tan-400: var(--color-set-1-bg);
@@ -34,13 +29,13 @@ $set-fg-secondary: #83828d;
     color: $set-fg-secondary;
     font-size: 0.875rem;
     text-decoration: none;
+
     &:hover {
       color: var(--color-space-text);
     }
   }
 }
 
-// Set-2 card with space-theme h3 (small heading, all-caps per branding §2.1)
 @mixin space-card {
   background: var(--color-set-2-bg);
   border: 2px solid $set-fg-secondary;
@@ -56,7 +51,6 @@ $set-fg-secondary: #83828d;
   }
 }
 
-// .table-data space-theme overrides
 @mixin space-table {
   border-color: $set-fg-secondary;
 
@@ -74,6 +68,7 @@ $set-fg-secondary: #83828d;
   td {
     color: var(--color-space-text);
   }
+
   tbody tr {
     background: var(--color-set-2-bg);
   }
@@ -84,6 +79,23 @@ $set-fg-secondary: #83828d;
       var(--color-set-2-bg),
       var(--color-set-1-bg) 40%
     );
+  }
+}
+
+@mixin outlined-pill-link {
+  color: $set-fg-secondary;
+  font-size: var(--font-size-s);
+  text-decoration: none;
+  border: 2px solid $set-fg-secondary;
+  border-radius: 9999px;
+  padding: 0.25em 0.75em;
+  transition:
+    color 0.1s,
+    border-color 0.1s;
+
+  &:hover {
+    color: var(--color-space-text);
+    border-color: var(--color-space-text);
   }
 }
 

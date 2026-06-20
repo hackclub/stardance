@@ -1,0 +1,109 @@
+<% content_for :title, "daily random number" %>
+<% content_for :og_title, "daily random number - Stardance" %>
+<% content_for :og_description, "One random number a day. Biggest number wins." %>
+
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main">
+    <header class="rng-board__header">
+      <h1 class="rng-board__title">daily random number</h1>
+      <p class="rng-board__subtitle">
+        Get a random number each day, biggest number wins :)
+        Today's rolls reset in <span data-controller="countdown" data-countdown-reset-at-value="<%= rng_reset_at.iso8601 %>"><%= time_until_rng_reset %></span>.
+      </p>
+    </header>
+
+    <% if current_user %>
+      <%= render "daily_rolls/hero",
+                 roll: @viewer_date_roll,
+                 just_rolled: false,
+                 for_today: @date == @today,
+                 date_label: rng_date_label(@date, today: @today) %>
+    <% else %>
+      <%= render "daily_rolls/hero", roll: @anonymous_roll, just_rolled: false, anonymous: true %>
+    <% end %>
+
+    <%
+      show_podium = @page == 1
+      podium = show_podium ? @rolls.first(3) : []
+      list = show_podium ? @rolls.drop(3) : @rolls
+      list_start_rank = show_podium ? podium.size + 1 : @offset + 1
+      viewer_on_page = @viewer_date_roll.present? && @viewer_page == @page
+    %>
+
+    <section class="rng-board" aria-label="Leaderboard">
+      <header class="rng-board__section-header">
+        <nav class="rng-board__daynav" aria-label="Browse days">
+          <% if @date > @earliest_date %>
+            <%= link_to "‹", rng_date_path(@date - 1, today: @today), class: "rng-board__nav-arrow", "aria-label": "Previous day" %>
+          <% else %>
+            <span class="rng-board__nav-arrow rng-board__nav-arrow--disabled" aria-hidden="true">‹</span>
+          <% end %>
+          <h2 class="rng-board__daynav-label"><%= rng_date_label(@date, today: @today) %></h2>
+          <% if @date < @today %>
+            <%= link_to "›", rng_date_path(@date + 1, today: @today), class: "rng-board__nav-arrow", "aria-label": "Next day" %>
+          <% else %>
+            <span class="rng-board__nav-arrow rng-board__nav-arrow--disabled" aria-hidden="true">›</span>
+          <% end %>
+        </nav>
+        <p class="rng-board__count"><%= pluralize(@total_count, "roll") %></p>
+      </header>
+
+      <% if podium.any? %>
+        <div class="rng-board__podium">
+          <% podium.each_with_index do |roll, index| %>
+            <div class="rng-board__pedestal rng-board__pedestal--place-<%= index + 1 %> <%= "rng-board__pedestal--viewer" if current_user&.id == roll.user_id %>">
+              <span class="rng-board__medal"><%= index.zero? ? "★" : "##{index + 1}" %></span>
+              <%= image_tag roll.user.avatar, alt: "", class: "rng-board__pedestal-avatar" %>
+              <%= link_to roll.user.display_name, profile_path(roll.user.display_name), class: "rng-board__pedestal-name" %>
+              <% if current_user&.id == roll.user_id %><span class="rng-board__you-tag">you</span><% end %>
+              <span class="rng-board__pedestal-value"><%= formatted_roll_value(roll.value) %></span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if list.any? %>
+        <ol class="rng-board__list">
+          <% list.each_with_index do |roll, index| %>
+            <%= render "daily_rolls/roll_row", roll: roll, rank: list_start_rank + index %>
+          <% end %>
+        </ol>
+      <% end %>
+
+      <% if @rolls.empty? %>
+        <p class="rng-board__empty"><%= @date == @today ? "No rolls yet today." : "No rolls on this day." %></p>
+      <% end %>
+
+      <% if @viewer_date_roll && !viewer_on_page %>
+        <%= link_to "You're ##{number_with_delimiter(@viewer_rank)} — jump to your spot",
+                    rng_page_path(@date, @viewer_page, today: @today),
+                    class: "rng-board__you" %>
+      <% end %>
+
+      <% if @total_pages > 1 %>
+        <nav class="rng-board__pages" aria-label="Leaderboard pages">
+          <% if @page > 1 %>
+            <%= link_to "‹ prev", rng_page_path(@date, @page - 1, today: @today), class: "rng-board__page-link" %>
+          <% else %>
+            <span class="rng-board__page-link rng-board__page-link--disabled" aria-hidden="true">‹ prev</span>
+          <% end %>
+          <span class="rng-board__page-status">Page <%= @page %> of <%= number_with_delimiter(@total_pages) %></span>
+          <% if @page < @total_pages %>
+            <%= link_to "next ›", rng_page_path(@date, @page + 1, today: @today), class: "rng-board__page-link" %>
+          <% else %>
+            <span class="rng-board__page-link rng-board__page-link--disabled" aria-hidden="true">next ›</span>
+          <% end %>
+        </nav>
+      <% end %>
+
+      <% if @record %>
+        <p class="rng-board__alltime">
+          All-time best:
+          <%= link_to @record.user.display_name, profile_path(@record.user.display_name), class: "rng-board__alltime-name" %>
+          <span class="rng-board__alltime-value"><%= formatted_roll_value(@record.value) %></span>
+          on <%= link_to rng_date_label(@record.rolled_on, today: @today), rng_date_path(@record.rolled_on, today: @today), class: "rng-board__alltime-date" %>
+        </p>
+      <% end %>
+    </section>
+  </div>
+</div>

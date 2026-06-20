@@ -17,7 +17,6 @@ class GorsePayloadsTest < ActiveSupport::TestCase
     @project.update!(
       title: "Orbital Notebook",
       description: "A useful project log",
-      project_categories: [ "Web App" ],
       project_type: "Web App",
       devlogs_count: 1
     )
@@ -41,7 +40,7 @@ class GorsePayloadsTest < ActiveSupport::TestCase
     assert_equal "post:#{@post.id}", payload[:ItemId]
     assert_includes payload[:Categories], "feed"
     assert_equal "devlog", payload[:Labels][:type]
-    assert_includes payload[:Labels][:project_categories], "Web App"
+    assert_equal "Web App", payload[:Labels][:project_type]
     assert_equal false, payload[:IsHidden]
   end
 
