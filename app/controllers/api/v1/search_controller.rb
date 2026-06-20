@@ -2,6 +2,7 @@ class Api::V1::SearchController < Api::BaseController
   include ApiAuthenticatable
 
   VALID_TYPES = %w[user project post shop_item].freeze
+  SEMANTIC_TYPES = %w[project devlog ship user].freeze
   VALID_PROJECT_SORT = %w[created_at devlogs_count duration_seconds shipped_at].freeze
 
   def index
@@ -19,6 +20,23 @@ class Api::V1::SearchController < Api::BaseController
     return unless (limit = api_limit)
 
     send(:"search_#{type}", q, limit)
+  end
+
+  def semantic
+    unless SemanticSearch.enabled?
+      return render json: { error: "Semantic search is not available", request_id: request.request_id }, status: :service_unavailable
+    end
+
+    q = params[:q].to_s.strip
+    return render json: { error: "q is required", request_id: request.request_id }, status: :bad_request if q.blank?
+
+    limit = [ (params[:limit] || 20).to_i, 50 ].min
+    results = SemanticSearch.search(q, viewer: current_api_user, surface: "api", limit: limit)
+
+    flat = SEMANTIC_TYPES.flat_map { |type| results[type] || [] }
+                         .map { |r| r.slice(:type, :id, :title, :subtitle, :preview) }
+
+    render json: { results: flat }
   end
 
   private

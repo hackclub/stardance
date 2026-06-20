@@ -75,6 +75,53 @@ tags:
     description: Stardust leaderboard — top users by current balance and all-time earned.
 
 paths:
+  /search/semantic:
+    get:
+      summary: Semantic search
+      description: >-
+        Vector-based semantic search across projects, devlogs, ships, and users.
+        Returns up to 50 results merged from all types, ranked by relevance.
+        Returns `503` if semantic search is not configured on the server (requires Redis + OpenAI).
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query string.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Max results to return (1–50, default 20).
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Semantic search results.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SemanticResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          description: Semantic search not available (Redis or OpenAI not configured).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /search:
     get:
       summary: Search
@@ -634,6 +681,259 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /users/me/wishlist:
+    get:
+      summary: List current user's wishlist
+      description: Returns all shop items the authenticated user has wishlisted, ordered newest first.
+      tags: [Me]
+      responses:
+        "200":
+          description: List of wishlisted shop items.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wishlist:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WishlistEntry"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/wishlist/{id}:
+    post:
+      summary: Add item to wishlist
+      description: Adds the given shop item to the authenticated user's wishlist. Idempotent — calling it twice has no extra effect.
+      tags: [Me]
+      parameters:
+        - name: id
+          in: path
+          description: Shop item ID.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Item wishlisted.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wishlisted:
+                    type: boolean
+                    example: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Remove item from wishlist
+      description: Removes the given shop item from the authenticated user's wishlist. Idempotent — no error if it wasn't wishlisted.
+      tags: [Me]
+      parameters:
+        - name: id
+          in: path
+          description: Shop item ID.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Item removed from wishlist.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wishlisted:
+                    type: boolean
+                    example: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/balance:
+    get:
+      summary: Get current user's stardust balance and ledger
+      description: Returns the authenticated user's current stardust balance and paginated transaction history.
+      tags: [Me]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Balance and ledger entries.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stardust_balance:
+                    type: integer
+                    description: Current stardust balance.
+                  ledger:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LedgerEntry"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/shop_region:
+    patch:
+      summary: Set current user's shop region
+      description: Updates the authenticated user's shop region, which controls which shop items are marked as available.
+      tags: [Me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [region]
+              properties:
+                region:
+                  type: string
+                  description: ISO-style region code (e.g. `US`, `EU`, `XX` for global).
+      responses:
+        "200":
+          description: Region updated.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shop_region:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Invalid region code.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /users/find:
+    get:
+      summary: Find user by username
+      description: >-
+        Looks up a user by their display name (case-insensitive exact match).
+        Returns the same shape as `GET /users/{id}`.
+      tags: [Users]
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: The user's display name.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The user.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{id}/followers:
+    get:
+      summary: List a user's followers
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of followers.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{id}/following:
+    get:
+      summary: List users that a user follows
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Paginated list of followed users.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/InvalidLimit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /users/{id}/achievements:
     get:
       summary: List a user's earned achievements
@@ -1146,7 +1446,7 @@ paths:
                               type: string
                             group_name:
                               type: string
-                            ticket_cost:
+                            stardust_cost:
                               type: integer
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1232,6 +1532,241 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationError"
+
+  /projects/{id}/mission:
+    post:
+      summary: Attach a mission to a project
+      description: >-
+        Attaches the given mission to the authenticated user's project.
+        The user must own the project. Mission prerequisites must be met.
+        If the project already has an active mission, it is swapped.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          description: Project ID.
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mission_slug]
+              properties:
+                mission_slug:
+                  type: string
+                  description: Slug of the mission to attach.
+      responses:
+        "200":
+          description: Mission attached.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mission_slug:
+                    type: string
+                  attached:
+                    type: boolean
+                    example: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Prerequisites not met or mission not available.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Detach the active mission from a project
+      description: Detaches the project's currently active mission. The user must own the project.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          description: Project ID.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mission detached.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attached:
+                    type: boolean
+                    example: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Cannot detach (e.g. project already shipped to this mission).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /projects/{id}/mission_section_completions:
+    get:
+      summary: List mission section completions for a project
+      description: Returns the completed guide steps for the project's currently active mission.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          description: Project ID.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of completed steps.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mission_slug:
+                    type: string
+                  completions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        mission_step_id:
+                          type: integer
+                        title:
+                          type: string
+                        completed_at:
+                          type: string
+                          format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Project has no active mission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Mark a mission guide step complete
+      description: >-
+        Marks the given step complete for this project. Idempotent — calling it twice is safe.
+        The project must be actively enrolled in the step's mission.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          description: Project ID.
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mission_step_id]
+              properties:
+                mission_step_id:
+                  type: integer
+                  description: ID of the `Mission::Step` to mark complete.
+      responses:
+        "200":
+          description: Step marked complete.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  completed:
+                    type: boolean
+                    example: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Step not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Project not enrolled in this mission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /projects/{id}/mission_section_completions/{step_id}:
+    delete:
+      summary: Unmark a mission guide step
+      description: Removes the completion record for the given step. Idempotent.
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          description: Project ID.
+          required: true
+          schema:
+            type: integer
+        - name: step_id
+          in: path
+          description: Mission step ID to unmark.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Step unmarked.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/X-Request-ID"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  completed:
+                    type: boolean
+                    example: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Step not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Project not enrolled in this mission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /posts/{id}/like:
     post:
@@ -1868,6 +2403,74 @@ components:
           type: string
           format: date-time
 
+    LedgerEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: integer
+          description: Signed stardust amount — positive for earnings, negative for spending.
+        reason:
+          type: string
+          description: Human-readable description of the transaction.
+        created_at:
+          type: string
+          format: date-time
+
+    SemanticResult:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [project, devlog, ship, user]
+        id:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        preview:
+          type: string
+          nullable: true
+          description: Short excerpt from the document content.
+
+    WishlistEntry:
+      type: object
+      description: A wishlisted shop item with the timestamp the user added it.
+      properties:
+        wishlisted_at:
+          type: string
+          format: date-time
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        stardust_cost:
+          type: integer
+          description: Cost in stardust.
+        one_per_person_ever:
+          type: boolean
+        limited:
+          type: boolean
+        available:
+          type: boolean
+          description: Whether this item is available in the user's region.
+        available_regions:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        image_url:
+          type: string
+          nullable: true
+
     ShopItem:
       type: object
       properties:
@@ -1877,7 +2480,7 @@ components:
           type: string
         description:
           type: string
-        ticket_cost:
+        stardust_cost:
           type: integer
           description: Cost in stardust.
         one_per_person_ever:

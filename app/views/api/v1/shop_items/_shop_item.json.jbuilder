@@ -1,4 +1,5 @@
-json.extract! item, :id, :name, :description, :ticket_cost, :one_per_person_ever, :limited, :created_at
+json.extract! item, :id, :name, :description, :one_per_person_ever, :limited, :created_at
+json.stardust_cost item.ticket_cost
 
 json.available item.enabled_in_region?(user_region)
 json.available_regions item.enabled_region_codes

@@ -454,6 +454,7 @@ Rails.application.routes.draw do
 
       # public api endpoints
       get "search", to: "search#index", as: :search
+      get "search/semantic", to: "search#semantic", as: :semantic_search
       get "leaderboard", to: "leaderboard#index", as: :leaderboard
       get "users/me/achievements", to: "users/me/achievements#index", as: :me_achievements
       get "users/me", to: "users/me#show", as: :me
@@ -464,15 +465,25 @@ Rails.application.routes.draw do
       get "users/me/recommended_projects", to: "users/me/recommended_projects#index", as: :me_recommended_projects
       get "users/me/orders", to: "users/me/orders#index", as: :me_orders
       get "users/me/orders/:id", to: "users/me/orders#show", as: :me_order
+      get "users/me/wishlist", to: "users/me/wishlist#index", as: :me_wishlist
+      post "users/me/wishlist/:id", to: "users/me/wishlist#create"
+      delete "users/me/wishlist/:id", to: "users/me/wishlist#destroy"
+      get "users/me/balance", to: "users/me/balance#index", as: :me_balance
+      patch "users/me/shop_region", to: "users/me/shop_region#update", as: :me_shop_region
+      get "users/find", to: "users#find", as: :find_user
       resources :users, only: [ :show ], constraints: { id: /\d+/ } do
         resources :projects, only: [ :index ], module: :users
         resources :posts, only: [ :index ], module: :users
         resources :achievements, only: [ :index ], module: :users
+        resources :followers, only: [ :index ], module: :users
+        resources :following, only: [ :index ], module: :users
         resource :follow, only: [ :create ], module: :users
       end
       resources :projects, only: [ :show, :update ] do
         resources :posts, only: [ :index, :show, :create, :update, :destroy ], module: :projects
         resource :follow, only: [ :create ], module: :projects
+        resource :mission, only: [ :create, :destroy ], module: :projects
+        resources :mission_section_completions, only: [ :index, :create, :destroy ], module: :projects
       end
       resources :posts, only: [] do
         resource :like, only: [ :create ], module: :posts
