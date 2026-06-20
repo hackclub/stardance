@@ -509,6 +509,9 @@ GEM
     rack (3.2.6)
     rack-attack (6.8.0)
       rack (>= 1.0, < 4)
+    rack-cors (3.0.0)
+      logger
+      rack (>= 3.0.14)
     rack-mini-profiler (4.0.1)
       rack (>= 1.2.0)
     rack-oauth2 (2.3.0)
@@ -843,6 +846,7 @@ DEPENDENCIES
   pundit (~> 2.5)
   query_count
   rack-attack
+  rack-cors
   rack-mini-profiler
   raffle!
   rails (~> 8.1.3)
