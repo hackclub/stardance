@@ -429,8 +429,13 @@ button.sidebar__nav-link {
 }
 
 @keyframes hackatime-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .sidebar__guest-cta-btn {

@@ -19,7 +19,10 @@ export default class extends Controller {
   async #fetch() {
     try {
       const response = await fetch(this.urlValue, {
-        headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
       });
       if (!response.ok) return;
       const { formatted } = await response.json();
