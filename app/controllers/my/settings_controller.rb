@@ -9,6 +9,7 @@ class My::SettingsController < ApplicationController
       search_engine_indexing_off: params[:search_engine_indexing_off] == "1"
     )
     session[:streamer_mode] = params[:streamer_mode] == "1"
+    session[:hackatime_indicator_hidden] = params[:hackatime_indicator_hidden] == "1"
     redirect_back fallback_location: root_path, notice: "Settings saved"
   end
 

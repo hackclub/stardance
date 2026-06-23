@@ -61,7 +61,7 @@
   </nav>
 
   <div class="sidebar__user" aria-live="polite">
-    <% if signed_in? && user.hackatime_identity.present? %>
+    <% if signed_in? && user.hackatime_identity.present? && !controller.session[:hackatime_indicator_hidden] %>
       <div class="sidebar__hackatime"
            data-controller="hackatime-indicator"
            data-hackatime-indicator-url-value="<%= helpers.my_hackatime_stats_path %>">
@@ -161,6 +161,16 @@
         <% end %>
         <small class="settings-form__hint">Links your coding time from Hackatime to your projects</small>
       </div>
+
+      <% if user.hackatime_identity.present? %>
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= check_box_tag :hackatime_indicator_hidden, "1", controller.session[:hackatime_indicator_hidden], id: "hackatime_indicator_hidden" %>
+          <span>Hide coding time indicator</span>
+        </label>
+        <small class="settings-form__hint">Hides the live minutes counted pill in the sidebar</small>
+      </div>
+      <% end %>
 
       <div class="modal__actions">
         <button type="button" class="modal__actions-close" onclick="document.getElementById('settings-form').reset(); document.getElementById('settings-modal').close()">Cancel</button>
