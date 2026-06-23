@@ -26,4 +26,8 @@ class MyPolicy < ApplicationPolicy
   def update_notification_settings?
     signed_in_any?
   end
+
+  def show_hackatime_stats?
+    signed_in_any?
+  end
 end

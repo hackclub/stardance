@@ -61,6 +61,15 @@
   </nav>
 
   <div class="sidebar__user" aria-live="polite">
+    <% if signed_in? && user.hackatime_identity.present? %>
+      <div class="sidebar__hackatime"
+           data-controller="hackatime-indicator"
+           data-hackatime-indicator-url-value="<%= helpers.my_hackatime_stats_path %>">
+        <span class="sidebar__hackatime-dot" aria-hidden="true"></span>
+        <span class="sidebar__hackatime-time" data-hackatime-indicator-target="time">…</span>
+        <span class="sidebar__hackatime-label">coded</span>
+      </div>
+    <% end %>
     <% if signed_in? %>
       <div class="sidebar__user-card">
         <div class="sidebar__user-meta">

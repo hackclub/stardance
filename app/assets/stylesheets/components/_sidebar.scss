@@ -397,6 +397,42 @@ button.sidebar__nav-link {
   padding: var(--space-xs) var(--space-s);
 }
 
+.sidebar__hackatime {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xxs) var(--space-s);
+  margin-bottom: var(--space-xs);
+  border-radius: var(--profile-radius);
+  background: var(--color-brand-mint-soft);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-s);
+  color: var(--color-brand-mint);
+}
+
+.sidebar__hackatime-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  animation: hackatime-pulse 2s ease-in-out infinite;
+}
+
+.sidebar__hackatime-time {
+  font-weight: 600;
+}
+
+.sidebar__hackatime-label {
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+}
+
+@keyframes hackatime-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 .sidebar__guest-cta-btn {
   display: block;
   width: 100%;
@@ -455,6 +491,10 @@ button.sidebar__nav-link {
 }
 
 @media (max-width: 960px) {
+  .sidebar__hackatime {
+    display: none;
+  }
+
   .sidebar {
     position: fixed;
     z-index: 100;

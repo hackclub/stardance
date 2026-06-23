@@ -169,6 +169,9 @@ application.register("form-submit-once", FormSubmitOnceController);
 import GuidePreviewController from "./guide_preview_controller";
 application.register("guide-preview", GuidePreviewController);
 
+import HackatimeIndicatorController from "./hackatime_indicator_controller";
+application.register("hackatime-indicator", HackatimeIndicatorController);
+
 import HackatimeLinkController from "./hackatime_link_controller";
 application.register("hackatime-link", HackatimeLinkController);
 
