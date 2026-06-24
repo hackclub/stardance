@@ -47,8 +47,9 @@ class StreakActivity < ApplicationRecord
       project_keys = linked_projects.pluck(:name)
       today = streak_date_for(Time.current, user.timezone)
 
-      start_date = if user.streak_synced_at
-        streak_date_for(user.streak_synced_at, user.timezone)
+      last_synced = user.try(:streak_synced_at)
+      start_date = if last_synced
+        streak_date_for(last_synced, user.timezone)
       else
         Date.parse(HackatimeService::START_DATE)
       end
@@ -71,7 +72,7 @@ class StreakActivity < ApplicationRecord
         record.update!(coded_seconds: seconds)
       end
 
-      user.update_column(:streak_synced_at, Time.current)
+      user.update_column(:streak_synced_at, Time.current) if user.has_attribute?(:streak_synced_at)
     end
 
     def streak_date_for(time, timezone)

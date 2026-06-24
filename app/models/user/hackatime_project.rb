@@ -39,7 +39,7 @@ class User::HackatimeProject < ApplicationRecord
   private
 
   def enqueue_streak_resync
-    user.update_column(:streak_synced_at, nil)
+    user.update_column(:streak_synced_at, nil) if user.has_attribute?(:streak_synced_at)
     StreakSyncJob.perform_later(user_id)
   end
 
