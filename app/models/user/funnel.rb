@@ -1,7 +1,11 @@
 # The product activation funnel, in order. Each step maps to the timestamp at
-# which the user first reached it (nil if not reached yet). A user's current
-# stage is the furthest step they've reached; they are "stuck" once they've sat
-# at that step without advancing.
+# which the user first reached it (nil if not reached yet). funnel_stage is the
+# earliest step they HAVEN'T completed — the next action to nudge them toward —
+# and funnel_stage_entered_at is when they last made forward progress (their
+# "stuck since"). Because steps can be completed out of order (e.g. HCA can be
+# linked before a project exists), we report the first *gap* rather than the
+# furthest step reached, so a user who skipped an earlier step still gets
+# nudged to fill it. Once every step is done the stage is :completed.
 #
 # Rails only reports *which* stage and *when* it was entered — it deliberately
 # does not decide "stuck for 2 days" or send anything. That lives downstream:
@@ -32,12 +36,12 @@ module User::Funnel
     after_update_commit :flag_for_resync!, if: :saved_change_to_onboarded_at?
   end
 
-  # Symbol of the furthest funnel step the user has reached (always at least
-  # :signed_up, since every user has a created_at).
-  def funnel_stage = current_funnel_step.first
+  # The earliest funnel step the user hasn't completed — the next action to
+  # nudge them toward — or :completed once every step is done.
+  def funnel_stage = funnel_progress.first
 
-  # When the user reached their current stage — i.e. when they got "stuck".
-  def funnel_stage_entered_at = current_funnel_step.last
+  # When the user last made forward progress — their "stuck since".
+  def funnel_stage_entered_at = funnel_progress.last
 
   # Force this user to the front of the Airtable sync queue: records_to_sync
   # orders by `synced_at ASC NULLS FIRST`, so nulling it makes the next
@@ -49,11 +53,13 @@ module User::Funnel
 
   private
 
-  # [stage, reached_at] for the highest-ordered step with a timestamp.
-  def current_funnel_step
-    funnel_step_timestamps
-      .compact
-      .max_by { |stage, _at| STAGES.index(stage) }
+  # [next_incomplete_step, last_progress_at]. signed_up is always present
+  # (created_at), so the gap is never :signed_up; when there's no gap left the
+  # user has finished the funnel and the stage is :completed.
+  def funnel_progress
+    timestamps = funnel_step_timestamps
+    next_step = STAGES.find { |stage| timestamps[stage].nil? } || :completed
+    [ next_step, timestamps.values.compact.max ]
   end
 
   def funnel_step_timestamps
