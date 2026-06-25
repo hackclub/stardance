@@ -33,16 +33,6 @@ class DailyRoll < ApplicationRecord
   # pre-launch test rolls show "day -1".
   LAUNCH_ON = Date.new(2026, 6, 15)
 
-  # How a roll's magnitude is built: append digits one at a time, and after
-  # each one flip a coin that's slightly less likely to come up "keep going."
-  # The coin starts loaded with KEEP_GOING_WEIGHT heads and gains one tail per
-  # digit, so most rolls stay short and the rare long one is the jackpot —
-  # which is exactly what makes the digit-by-digit reveal suspenseful (you
-  # never know if it's about to stop). Bump the weight for longer numbers.
-  KEEP_GOING_WEIGHT = 4
-  # Never build past int4's digit count; the magnitude is clamped to MAX_VALUE.
-  MAX_DIGITS = MAX_VALUE.to_s.length
-
   # Throwaway aside about a roll, keyed to how big the number got. Each tier
   # has a few casual variants; one is picked per roll (see #flavor). Most rolls
   # land in the bottom tiers. Thresholds are checked high-to-low.
@@ -89,21 +79,9 @@ class DailyRoll < ApplicationRecord
     find_by!(user: user, rolled_on: Date.current)
   end
 
-  # A value whose digit count is itself random (see KEEP_GOING_WEIGHT). The
-  # first digit is a sure thing; each subsequent one is a coin flip that gets
-  # longer odds. Always positive; clamped to MAX_VALUE.
+  # A number whose value is uniformly random, and cryptographically secure.
   def self.random_value
-    digits = +""
-    tails = 0
-    loop do
-      break unless rand(KEEP_GOING_WEIGHT + tails) < KEEP_GOING_WEIGHT
-
-      digits << rand(10).to_s
-      tails += 1
-      break if digits.length >= MAX_DIGITS
-    end
-
-    [ digits.to_i, MAX_VALUE ].min
+    SecureRandom.random_number(MAX_VALUE + 1)
   end
 
   def self.for_today(user)
