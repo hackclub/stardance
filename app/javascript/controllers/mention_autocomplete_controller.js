@@ -250,7 +250,7 @@ export default class extends Controller {
   _avatarUrl(user) {
     if (user.avatar) return user.avatar;
     if (user.slack_id)
-      return `https://cachet.hackclub.com/users/${user.slack_id}/r`;
+      return `https://cachet.dunkirk.sh/users/${user.slack_id}/r`;
     return "";
   }
 
