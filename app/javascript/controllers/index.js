@@ -160,6 +160,9 @@ application.register("emoji-picker", EmojiPickerController);
 import EventTimeController from "./event_time_controller";
 application.register("event-time", EventTimeController);
 
+import ExpeditionsSearchController from "./expeditions_search_controller";
+application.register("expeditions-search", ExpeditionsSearchController);
+
 import FallingStarController from "./falling_star_controller";
 application.register("falling-star", FallingStarController);
 

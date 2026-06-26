@@ -59,7 +59,8 @@ class SearchController < ApplicationController
       commands: command_results(q, surface),
       projects: semantic_results.fetch("project", []),
       posts: semantic_results.fetch("devlog", []) + semantic_results.fetch("ship", []),
-      users: merged_user_results(q, semantic_results.fetch("user", []))
+      users: merged_user_results(q, semantic_results.fetch("user", [])),
+      meetups: meetup_results(q)
     }
 
     respond_to do |format|
@@ -86,6 +87,25 @@ class SearchController < ApplicationController
         method: command.post? ? "post" : "get"
       }
     end
+  end
+
+  def meetup_results(query)
+    return [] if query.blank?
+    return [] unless Flipper.enabled?(:expedition_release, current_user)
+
+    Expedition.browseable
+      .matching(query)
+      .limit(GLOBAL_MAX_RESULTS)
+      .map do |expedition|
+        {
+          type: "meetup",
+          id: expedition.id,
+          title: expedition.title,
+          subtitle: expedition.location,
+          preview: expedition.date&.strftime("%b %-d, %Y"),
+          path: expedition_path(expedition)
+        }
+      end
   end
 
   def merged_user_results(query, semantic_users)

@@ -50,6 +50,12 @@ production:
     concurrency: 1
     description: "Sync ship events to Airtable every minute with single execution limit"
 
+  sync_expeditions:
+    class: ExpeditionSyncJob
+    schedule: every minute
+    concurrency: 1
+    description: "Mirror the Ambassador meetups feed into the expeditions table (reconciles deletes, no orphans)"
+
   shop_process_warehouse_orders:
     class: Shop::ProcessWarehouseOrdersJob
     schedule: every 2 days

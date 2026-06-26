@@ -50,6 +50,11 @@ class SidebarComponent < ViewComponent::Base
         icon: { idle: "book", active: "book_active" } }
     ])
 
+    if signed_in? && Flipper.enabled?(:expedition_release, user)
+      items << { slug: "expeditions", label: "expeditions", path: helpers.expeditions_path,
+        icon: "compass" }
+    end
+
     if signed_in?
       items << { slug: "projects", label: "my projects",   path: helpers.profile_projects_path(user.display_name),
         icon: :avatar, active_prefix: "/@" }

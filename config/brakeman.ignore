@@ -181,6 +181,108 @@
         79
       ],
       "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "e83c7adc97e57cb01dab38da4d59fc322bb2492ce62f75c56ea69176c0d3f004",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/expeditions/show.html.erb",
+      "line": 31,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Expedition.find_by_param!(params[:id]).ambassador_name, Expedition.find_by_param!(params[:id]).ambassador_slack_url, :class => \"expedition-host-link\", :target => \"_blank\", :rel => \"noopener\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "ExpeditionsController",
+          "method": "show",
+          "line": 22,
+          "file": "app/controllers/expeditions_controller.rb",
+          "rendered": {
+            "name": "expeditions/show",
+            "file": "app/views/expeditions/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "expeditions/show"
+      },
+      "user_input": "Expedition.find_by_param!(params[:id]).ambassador_slack_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "57da360aef712367c43383bce8a05734c0ed6104fb7e2e6eb51b10e789e53a64",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/expeditions/show.html.erb",
+      "line": 51,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Expedition.find_by_param!(params[:id]).google_maps_url, :class => \"expeditions__filter-toggle expedition-detail__map-link\", :target => \"_blank\", :rel => \"noopener\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "ExpeditionsController",
+          "method": "show",
+          "line": 22,
+          "file": "app/controllers/expeditions_controller.rb",
+          "rendered": {
+            "name": "expeditions/show",
+            "file": "app/views/expeditions/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "expeditions/show"
+      },
+      "user_input": "Expedition.find_by_param!(params[:id]).google_maps_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "1c843dcfb1d4f3f99eadd1872a75e26865b9bc45df3e94355a13c063d9bb53d5",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/expeditions/show.html.erb",
+      "line": 59,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Expedition.find_by_param!(params[:id]).apple_maps_url, :class => \"expeditions__filter-toggle expedition-detail__map-link\", :target => \"_blank\", :rel => \"noopener\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "ExpeditionsController",
+          "method": "show",
+          "line": 22,
+          "file": "app/controllers/expeditions_controller.rb",
+          "rendered": {
+            "name": "expeditions/show",
+            "file": "app/views/expeditions/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "expeditions/show"
+      },
+      "user_input": "Expedition.find_by_param!(params[:id]).apple_maps_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": ""
     }
   ],
   "brakeman_version": "8.0.5"

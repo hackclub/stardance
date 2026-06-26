@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="180"
+   height="180"
+   viewBox="0 0 180 180"
+   fill="none"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="compass.svg"
+   inkscape:version="1.3.2"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="4"
+     inkscape:cx="90"
+     inkscape:cy="90"
+     inkscape:window-width="1440"
+     inkscape:window-height="900"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g1"
+       transform="translate(90 90) rotate(39.05)">
+      <path
+         id="path1"
+         d="M0 -80L38 -16C40 -13 38 -9 32 -9H-32C-38 -9 -40 -13 -38 -16L0 -80Z"
+         fill="#F9899A" />
+      <path
+         id="path2"
+         d="M0 80L-38 16C-40 13 -38 9 -32 9H32C38 9 40 13 38 16L0 80Z"
+         fill="#AEEFFF" />
+      <circle
+         id="path3"
+         cx="0"
+         cy="0"
+         r="20"
+         fill="#D8B8F8" />
+      <circle
+         id="path4"
+         cx="0"
+         cy="0"
+         r="9"
+         fill="#FFF8D0" />
+    </g>
+  </g>
+</svg>

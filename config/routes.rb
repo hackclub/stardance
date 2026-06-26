@@ -548,6 +548,9 @@ Rails.application.routes.draw do
   # Events — listing of missions and (eventually) other themed events.
   resources :events, only: [ :index ]
 
+  # Expeditions — IRL meetups run by Ambassadors.
+  resources :expeditions, only: [ :index, :show ]
+
   # My
   namespace :my do
     resource :balance, only: [ :show ]
