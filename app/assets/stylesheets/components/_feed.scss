@@ -902,9 +902,14 @@
     grid-template-columns: 1fr;
   }
 
+  // A single attachment keeps its own aspect ratio (height-capped) instead of
+  // being forced into a 16:9 box. A forced landscape box cropped portrait /
+  // vertical videos to their top slice and clipped the native video controls
+  // out of reach via overflow: hidden.
   &__media[data-count="1"] &__media-slide {
-    aspect-ratio: 16 / 9;
-    max-height: 420px;
+    aspect-ratio: auto;
+    max-height: min(70vh, 560px);
+    overflow: visible;
   }
 
   &__media[data-count="3"] &__media-slide:first-child {
@@ -918,6 +923,14 @@
     height: 100%;
     display: block;
     object-fit: contain;
+  }
+
+  // For the single-attachment case, follow the media's natural height (capped)
+  // so nothing is cropped; multi-item grids still fill their square slots above.
+  &__media[data-count="1"] &__image,
+  &__media[data-count="1"] &__video {
+    height: auto;
+    max-height: min(70vh, 560px);
   }
 
   &__file {
