@@ -23,7 +23,18 @@
             <button type="button" onclick="document.getElementById('change-ship-status-modal').showModal()">Change</button>
           <% end %>
         </dd>
-        <dt>Type</dt>         <dd><%= @project.project_type.presence || content_tag(:span, "Not set", class: "admin-user-show__muted") %></dd>
+        <dt>Kind</dt>
+        <dd>
+          <% if @project.hardware? %>
+            Hardware — <%= @project.hardware_stage.titleize %>
+          <% else %>
+            Software
+          <% end %>
+          <% if policy(@project).update? %>
+            <button type="button" onclick="document.getElementById('change-hardware-stage-modal').showModal()">Change</button>
+          <% end %>
+        </dd>
+        <dt>Classifier type</dt><dd><%= @project.project_type.presence || content_tag(:span, "Not set", class: "admin-user-show__muted") %></dd>
         <dt>Categories</dt>   <dd><%= @project.project_categories.any? ? @project.project_categories.join(", ") : content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
         <% if @project.hardware? && Flipper.enabled?(:hardware_flow, current_user) %>
           <dt>Hardware review</dt>
@@ -104,6 +115,9 @@
           <%= button_to "Delete Project", delete_admin_project_path(@project), method: :post,
               data: { confirm: "Delete this project?" } %>
         <% end %>
+        <% if policy(@project).update? && @project.last_ship_event.present? %>
+          <button type="button" onclick="document.getElementById('reset-latest-ship-modal').showModal()">Reset Latest Ship</button>
+        <% end %>
       </div>
     </div>
 
@@ -119,6 +133,41 @@
         <button type="submit">Update Status</button>
         <button type="button" onclick="document.getElementById('change-ship-status-modal').close()">Cancel</button>
       </form>
+    <% end %>
+
+    <% if policy(@project).update? %>
+      <%= render layout: "shared/modal", locals: { id: "change-hardware-stage-modal", title: "Change Project Kind", description: "Override whether this is treated as software or hardware. Bypasses the funding-request lock and is logged to PaperTrail." } do %>
+        <form action="<%= update_hardware_stage_admin_project_path(@project) %>" method="post">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <%= hidden_field_tag :_method, "patch" %>
+          <%= label_tag :hardware_stage, "Project Kind" %>
+          <%= select_tag :hardware_stage,
+                options_for_select(
+                  [
+                    [ "Software", "" ],
+                    [ "Hardware — design stage / needs funding", "design" ],
+                    [ "Hardware — build stage / already has parts", "build" ]
+                  ],
+                  @project.hardware_stage.to_s
+                ) %>
+          <%= label_tag :reason, "Audit reason" %>
+          <%= text_area_tag :reason, "", rows: 3, required: true, placeholder: "Why staff is changing this project kind" %>
+          <button type="submit">Update Project Kind</button>
+          <button type="button" onclick="document.getElementById('change-hardware-stage-modal').close()">Cancel</button>
+        </form>
+      <% end %>
+    <% end %>
+
+    <% if policy(@project).update? && @project.last_ship_event.present? %>
+      <%= render layout: "shared/modal", locals: { id: "reset-latest-ship-modal", title: "Reset Latest Ship", description: "Soft-resets the project to an un-shipped draft so the owner can fix it and re-ship. Nothing is deleted — the ship event, its review, votes and YSWS links are all kept. Logged to PaperTrail." } do %>
+        <form action="<%= reset_latest_ship_admin_project_path(@project) %>" method="post" data-turbo-confirm="Reset this project's latest ship back to draft? Nothing is deleted.">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <%= label_tag :reason, "Audit reason" %>
+          <%= text_area_tag :reason, "", rows: 3, required: true, placeholder: "Why staff is resetting the latest ship" %>
+          <button type="submit">Reset Latest Ship</button>
+          <button type="button" onclick="document.getElementById('reset-latest-ship-modal').close()">Cancel</button>
+        </form>
+      <% end %>
     <% end %>
 
     <%= render "admin/shared/ledger_log",

@@ -86,4 +86,24 @@ class Certification::ShipTest < ActiveSupport::TestCase
     assert_equal reviews.last.id, history[:recent].first.id
     assert history[:recent].first.project_with_deleted.deleted?
   end
+
+  test "available_for keeps software/unclassified ships but excludes hardware" do
+    make_pending = ->(attrs) do
+      project = Project.create!({ description: "x", ship_status: "submitted" }.merge(attrs))
+      project.memberships.create!(user: @owner, role: :owner)
+      project.ship_reviews.create!(status: :pending)
+    end
+
+    software     = make_pending.call(title: "SW", project_type: "Web App")
+    unclassified = make_pending.call(title: "Unclassified", project_type: nil)
+    ai_hardware  = make_pending.call(title: "AI HW", project_type: "Hardware")
+    flow_hardware = make_pending.call(title: "Flow HW", hardware_stage: "design")
+
+    available = Certification::Ship.available_for(@reviewer)
+
+    assert_includes available, software
+    assert_includes available, unclassified
+    assert_not_includes available, ai_hardware
+    assert_not_includes available, flow_hardware
+  end
 end

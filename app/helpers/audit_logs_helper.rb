@@ -5,7 +5,7 @@ module AuditLogsHelper
   # When an "update" event contains an aasm_state change, we show the
   # new state instead of a generic "update" badge.
   def audit_event_display(version)
-    return { label: version.event, css_class: version.event } unless version.event == "update"
+    return { label: version.event.to_s.humanize, css_class: version.event } unless version.event == "update"
 
     changes = parse_version_changes(version)
     aasm = changes["aasm_state"] || changes["ship_status"] || changes["status"]

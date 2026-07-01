@@ -109,8 +109,21 @@ module Certification
         : joins(:project).where(projects: { project_type: type })
     }
 
+    # Hardware projects belong in the hardware review flow (funding / build),
+    # not the software ship-review queue. "Hardware" = either the canonical
+    # hardware_stage, or the AI classifier tagging the project "Hardware".
+    # IS DISTINCT FROM keeps unclassified (project_type NULL) projects in.
+    scope :excluding_hardware, -> {
+      joins(:project)
+        .where(projects: { hardware_stage: nil })
+        .where("projects.project_type IS DISTINCT FROM ?", "Hardware")
+    }
+
+    # Drives reviewer auto-assignment (next_eligible), so hardware is filtered
+    # out of the feed. The index listing uses policy_scope instead, so admins
+    # can still find hardware ships via the project-type filter.
     def self.available_for(user)
-      super.merge(for_reviewer(user))
+      super.merge(for_reviewer(user)).merge(excluding_hardware)
     end
 
     # Health target for the pending queue. Above this we read as "behind".
