@@ -1,5 +1,5 @@
-<section class="rail-widget events-widget" aria-label="Upcoming events">
-  <h3 class="rail-widget__title">Upcoming events</h3>
+<section class="rail-widget events-widget" aria-label="Stardance expeditions">
+  <h3 class="rail-widget__title">Stardance expeditions</h3>
   <ul class="events-widget__list">
     <% events.each do |event| %>
       <li class="events-widget__item">
@@ -20,7 +20,7 @@
             <% end %>
           </span>
           <span class="events-widget__meta">
-            <%= event[:leader] %> ·
+            <%= event[:location].presence || event[:leader] %> ·
             <time class="events-widget__time"
                   datetime="<%= event[:start].iso8601 %>"
                   data-controller="event-time"
@@ -31,5 +31,7 @@
       </li>
     <% end %>
   </ul>
-  <%= link_to "See all events →", "https://events.hackclub.com", target: "_blank", rel: "noopener", class: "rail-widget__link" %>
+  <% if can_post_expeditions? %>
+    <%= link_to "Post an expedition →", "https://ambassador.hackclub.com/dashboard", target: "_blank", rel: "noopener", class: "rail-widget__link" %>
+  <% end %>
 </section>

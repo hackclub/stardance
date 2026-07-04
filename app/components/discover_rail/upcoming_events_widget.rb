@@ -4,27 +4,13 @@ module DiscoverRail
   class UpcomingEventsWidget < BaseWidget
     register_as :upcoming_events
 
-    API_URL = "https://events.hackclub.com/api/events/upcoming/"
-    # The API returns every Hack Club event; we only surface Stardance's own.
-    STARDANCE_TAG = "stardance"
+    DEFAULT_API_URL = "https://ambassador.hackclub.com/api/stardance/expeditions"
+    DEFAULT_STATUS_API_URL = "https://ambassador.hackclub.com/api/stardance/ambassadors"
+    API_URL = ENV.fetch("AMBASSADOR_EXPEDITIONS_API_URL", DEFAULT_API_URL)
+    STATUS_API_URL = ENV.fetch("AMBASSADOR_STATUS_API_URL", DEFAULT_STATUS_API_URL)
+    API_KEY = ENV["AMBASSADOR_EXPEDITIONS_API_KEY"].presence
     LIMIT = 3
     CACHE_TTL = 15.minutes
-
-    # Hand-curated events the API doesn't carry (or doesn't tag as Stardance).
-    # Past entries drop out of the rail automatically — prune them here once
-    # they're stale.
-    PINNED_EVENTS = [
-      {
-        title: "AMA: Artemis I Flight Director Elias Myrmo",
-        leader: "Elias Myrmo",
-        start: "2026-06-12T21:00:00Z", # Fri June 12, 5pm EDT
-        end: "2026-06-12T22:00:00Z", # announcement gives no end; assume an hour
-        slug: "eliasmyrmo",
-        ama: true,
-        avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR44FWKqT-m6yTSq_GX1VsFf5HN-KTP5sZTSA&s",
-        url: "https://lu.ma/eliasmyrmo"
-      }
-    ].freeze
     HTTP_TIMEOUT = 3 # seconds; the rail must never stall a pageload
 
     def events
@@ -58,12 +44,26 @@ module DiscoverRail
       end
     end
 
+    def can_post_expeditions?
+      return false if user&.slack_id.blank?
+      return false if API_KEY.blank?
+
+      Rails.cache.fetch(
+        [ "discover_rail", "ambassador_status", STATUS_API_URL, user.slack_id ],
+        expires_in: CACHE_TTL
+      ) do
+        request_ambassador_status(user.slack_id)
+      end
+    end
+
     private
 
     def fetch_events
+      return [] if API_KEY.blank?
+
       # Failures cache as "[]" so a broken API costs one request per TTL, not
       # one per pageload.
-      raw = Rails.cache.fetch("discover_rail/upcoming_events", expires_in: CACHE_TTL) do
+      raw = Rails.cache.fetch([ "discover_rail", "ambassador_expeditions", API_URL ], expires_in: CACHE_TTL) do
         request_events || "[]"
       end
       return [] if raw.blank?
@@ -71,54 +71,71 @@ module DiscoverRail
       parsed = JSON.parse(raw)
       now = Time.current
 
-      api_events = parsed
-        .select { |e| Array(e["tags"]).include?(STARDANCE_TAG) }
+      Array(parsed["expeditions"])
         .filter_map { |e| build_event(e) }
-
-      (pinned_events + api_events)
         .uniq { |e| e[:slug] }
-        .select { |e| (e[:end] || e[:start]) >= now } # stays up while running
+        .select { |e| e[:start] >= now }
         .sort_by { |e| e[:start] }
         .first(LIMIT)
     rescue JSON::ParserError, StandardError
       []
     end
 
-    def pinned_events
-      PINNED_EVENTS.map do |e|
-        e.merge(start: Time.zone.parse(e[:start]), end: e[:end] && Time.zone.parse(e[:end]))
-      end
-    end
-
-    # Returns the response body on success, nil otherwise. The URL must keep
-    # its trailing slash — the API 308s the slashless form and Net::HTTP
-    # doesn't follow redirects.
+    # Returns the response body on success, nil otherwise.
     def request_events
       uri = URI(API_URL)
       response = Net::HTTP.start(uri.host, uri.port,
                                  use_ssl: uri.scheme == "https",
                                  open_timeout: HTTP_TIMEOUT,
                                  read_timeout: HTTP_TIMEOUT) do |http|
-        http.request(Net::HTTP::Get.new(uri))
+        request = Net::HTTP::Get.new(uri)
+        request["Accept"] = "application/json"
+        request["X-Stardance-Data-Access-Key"] = API_KEY
+        http.request(request)
       end
       response.is_a?(Net::HTTPSuccess) ? response.body : nil
     rescue StandardError
       nil
     end
 
+    def request_ambassador_status(slack_id)
+      uri = URI("#{STATUS_API_URL.chomp("/")}/#{ERB::Util.url_encode(slack_id)}")
+      response = Net::HTTP.start(uri.host, uri.port,
+                                 use_ssl: uri.scheme == "https",
+                                 open_timeout: HTTP_TIMEOUT,
+                                 read_timeout: HTTP_TIMEOUT) do |http|
+        request = Net::HTTP::Get.new(uri)
+        request["Accept"] = "application/json"
+        request["X-Stardance-Data-Access-Key"] = API_KEY
+        http.request(request)
+      end
+      return false unless response.is_a?(Net::HTTPSuccess)
+
+      JSON.parse(response.body)["ambassador"] == true
+    rescue JSON::ParserError, StandardError
+      false
+    end
+
     def build_event(data)
-      start_time = Time.zone.parse(data["start"])
+      start_time = Time.zone.parse(data["date"].to_s)
       return nil unless start_time
 
+      venue = data["venue"].is_a?(Hash) ? data["venue"] : {}
+      city = venue["city"].presence
+      state = venue["state"].presence
+      country = venue["country"].presence
+      location = [ city, state || country ].compact.join(", ").presence
+
       {
-        title: data["title"],
-        leader: data["leader"],
+        title: data["prettyName"].presence || data["name"].presence || "Stardance expedition",
+        leader: data["ambassadorName"].presence || "Hack Club Ambassador",
+        location: location,
         start: start_time,
-        end: data["end"].present? ? Time.zone.parse(data["end"]) : nil,
-        slug: data["slug"],
-        ama: data["ama"] == true,
-        avatar: data["avatar"],
-        url: data["cal"].presence
+        end: nil,
+        slug: data["slug"].presence || data["id"],
+        ama: false,
+        avatar: nil,
+        url: data["googleMapsUrl"].presence || data["appleMapsUrl"].presence
       }
     rescue ArgumentError
       nil
