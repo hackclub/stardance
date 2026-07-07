@@ -103,7 +103,7 @@
                   <p class="project-show__authors">
                     By
                     <% members.each_with_index do |m, i| %>
-                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= render StreakBadgeComponent.new(user: m) %><%= "," if i < members.length - 2 && members.length > 2 %>
+                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= render StreakBadgeComponent.new(user: m) %><%= " ⚡" if m.admin? %><%= "," if i < members.length - 2 && members.length > 2 %>
                     <% end %>
                   </p>
                 </div>
@@ -407,7 +407,7 @@
                   <p class="project-show__authors">
                     By
                     <% members.each_with_index do |m, i| %>
-                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= render StreakBadgeComponent.new(user: m) %><%= "," if i < members.length - 2 && members.length > 2 %>
+                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= render StreakBadgeComponent.new(user: m) %><%= " ⚡" if m.admin? %><%= "," if i < members.length - 2 && members.length > 2 %>
                     <% end %>
                   </p>
                 </div>
@@ -478,8 +478,7 @@
       <% if @hackatime_linked || @test_time_granted %>
         <%
           no_hackatime_project = @project.hackatime_keys.blank? && !@test_time_granted
-          live_seconds = @project.hackatime_keys.sum { |k| @hackatime_times[k].to_i }
-          unposted_seconds = [ live_seconds - @project.duration_seconds, 0 ].max
+          unposted_seconds = @unposted_seconds.to_i
           enough_time = !no_hackatime_project && (unposted_seconds >= 15 * 60 || @test_time_granted)
           devlog_disabled_message = "Edit this project to add a Hackatime project" if no_hackatime_project
           # Only call it the primary action when devlogging is actually
@@ -684,7 +683,7 @@
         ship_tour_text = if is_fixed_payout
           "Your ship is now in review. Once it's approved, you'll earn the mission's prizes!"
         else
-          "Yay congrats on your first ship! To get your payout, you need to vote at least #{Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT} times on other people's projects."
+          "Yay congrats on your first ship! To get your payout, you need to vote at least #{Post::ShipEvent::VOTE_COST_PER_SHIP} times on other people's projects."
         end
 
         ship_tour_steps = [
@@ -912,7 +911,7 @@
 
   <% if is_member && @hackatime_linked && @project.has_devlog_since_last_ship? %>
     <%
-      ship_warn_seconds = [ @project.hackatime_keys.sum { |k| @hackatime_times[k].to_i } - @project.duration_seconds, 0 ].max
+      ship_warn_seconds = @unposted_seconds.to_i
       ship_warn_hours = ship_warn_seconds / 3600
       ship_warn_minutes = (ship_warn_seconds % 3600) / 60
       ship_warn_time = ship_warn_hours > 0 ? "#{ship_warn_hours}h #{ship_warn_minutes}m" : "#{ship_warn_minutes}m"

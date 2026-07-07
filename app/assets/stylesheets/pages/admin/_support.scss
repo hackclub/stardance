@@ -34,6 +34,12 @@
     }
   }
 
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-l);
+  }
+
   &__section-title {
     margin: 0 0 var(--space-s);
     font-size: 16px;
@@ -66,6 +72,43 @@
     flex-wrap: wrap;
     gap: var(--space-xs);
     align-items: flex-start;
+    background: var(--color-set-3-bg);
+    border-radius: 10px;
+    padding: var(--space-s);
+
+    // button_to wraps in <form> — make it layout-transparent so the button
+    // is the direct flex child instead of the form.
+    form {
+      display: contents;
+    }
+
+    a,
+    button {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--color-space-border);
+      background: var(--color-set-2-bg);
+      color: var(--color-space-text);
+      font-size: 16px;
+      font-family: var(--font-family-text);
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+
+      &:hover {
+        border-color: var(--color-brand-highlight-secondary);
+        color: var(--color-brand-highlight-secondary);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
   }
 
   &__muted {

@@ -135,6 +135,12 @@ production:
     concurrency: 1
     description: "Calculate weekly fulfillment payouts (3 tickets per fulfilled order)"
 
+  fraud_calculate_payouts:
+    class: Fraud::CalculatePayoutsJob
+    schedule: "0 23 L * * America/New_York"
+    concurrency: 1
+    description: "Calculate monthly fraud squad payouts on the last day of the month at 11pm EST (bracket-based, max 1000 tickets)"
+
   support_vibecheck_est:
     class: SupportVibecheckJob
     schedule: every day at 12pm America/New_York

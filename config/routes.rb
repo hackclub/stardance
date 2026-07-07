@@ -529,6 +529,8 @@ Rails.application.routes.draw do
   get "home", to: "home#index"
   resources :feed_events, only: [ :create ]
   resource :daily_roll, only: [ :create ]
+  post "daily_roll/reroll", to: "daily_rolls#reroll", as: :reroll_daily_roll
+  get "daily_roll/reroll_status", to: "daily_rolls#reroll_status", as: :reroll_status_daily_roll
   patch "streaks/timezone", to: "streaks#update_timezone"
   get "streaks/month", to: "streaks#month", as: :streak_month
   get "rng", to: "daily_rolls#leaderboard", as: :rng
@@ -733,6 +735,15 @@ Rails.application.routes.draw do
     resources :suspicious_votes, only: [ :index ]
     resources :audit_logs, only: [ :index, :show ]
     resources :fulfillment_payouts, only: [ :index, :show ] do
+      member do
+        post :approve
+        post :reject
+      end
+      collection do
+        post :trigger
+      end
+    end
+    resources :fraud_payouts, only: [ :index, :show ] do
       member do
         post :approve
         post :reject

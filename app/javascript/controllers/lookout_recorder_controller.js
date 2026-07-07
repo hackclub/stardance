@@ -23,7 +23,10 @@ export default class extends Controller {
         },
       });
 
-      if (!res.ok) throw new Error(await this.errorDetail(res));
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `The server returned ${res.status}.`);
+      }
 
       const session = await res.json();
       const recorderUrl = session.record_url;
@@ -40,16 +43,6 @@ export default class extends Controller {
       console.error("Lookout record error", error);
       window.alert(`Couldn't start a screen recording.\n\n${error.message}`);
     }
-  }
-
-  async errorDetail(res) {
-    try {
-      const body = await res.json();
-      if (body && body.error) return body.error;
-    } catch (_) {
-      // non-JSON response
-    }
-    return `The server returned ${res.status}.`;
   }
 
   csrfToken() {

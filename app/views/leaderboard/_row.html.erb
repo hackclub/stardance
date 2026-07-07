@@ -11,7 +11,7 @@
   <div class="leaderboard-row__identity">
     <p class="leaderboard-row__name">
       <%= link_to user.display_name, profile_path(user.display_name),
-                  class: "leaderboard-row__name-link" %><%= render StreakBadgeComponent.new(user: user) %>
+                  class: "leaderboard-row__name-link" %><%= render StreakBadgeComponent.new(user: user) %><%= " ⚡" if user.admin? %>
       <% if is_current_user %>
         <span class="leaderboard-row__you-badge">YOU</span>
       <% end %>

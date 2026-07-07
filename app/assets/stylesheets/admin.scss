@@ -2,8 +2,9 @@
 @use "pages/admin/missions_edit";
 @use "pages/admin/ysws_reviews";
 @use "pages/admin/email_templates";
+@use "pages/admin/fraud_dashboard";
 @use "pages/admin/ledger_entries";
-@use "pages/certification/reports";
+@use "pages/admin/vote_flags";
 @use "pages/shop/admin_shop_shared";
 @use "pages/shop/admin_shop_dashboard";
 @use "pages/shop/admin_shop_item_form";
@@ -66,7 +67,7 @@ body.admin-page {
     font-size: var(--font-size-l);
   }
 
-  a:not(.action-btn) {
+  a:not(.action-btn):not([class*="btn-"]) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 
@@ -260,6 +261,12 @@ body.admin-page {
   }
 }
 
+/* In flex/grid contexts the inline rule is overridden — use display:contents
+   so the form disappears from the box model and the button participates directly. */
+.admin-actions-wrap form.button_to {
+  display: contents;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    Utility / class-based styles — cards, buttons, badges, etc.
    These reference the remapped variables above so they automatically
@@ -324,7 +331,9 @@ body.admin-page {
   }
 }
 
-.btn-primary {
+.btn-primary,
+a.btn-primary,
+button.btn-primary {
   @extend %btn-base;
   background: var(--color-brand-blue);
   color: var(--color-set-1-bg);
@@ -336,7 +345,9 @@ body.admin-page {
   }
 }
 
-.btn-secondary {
+.btn-secondary,
+a.btn-secondary,
+button.btn-secondary {
   @extend %btn-base;
   background: var(--color-space-surface);
   color: white;
@@ -344,10 +355,13 @@ body.admin-page {
   &:hover {
     background: var(--color-space-surface-strong);
     box-shadow: var(--shadow);
+    color: white;
   }
 }
 
-.btn-danger {
+.btn-danger,
+a.btn-danger,
+button.btn-danger {
   @extend %btn-base;
   background: #ef4444;
   color: white;
@@ -393,7 +407,7 @@ body.admin-page {
 
 /* Status Badges */
 .badge {
-  padding: 0.375rem 0.5rem 0.3rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -479,6 +493,12 @@ body.admin-page {
   &__description {
     color: var(--color-space-text-muted);
     margin: 0 0 var(--space-m) 0;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-s);
   }
 }
 
@@ -610,7 +630,16 @@ dialog {
   border: 1px solid var(--color-space-border);
   border-radius: 0.5rem;
   padding: var(--space-m);
-  margin-top: var(--space-m);
+
+  // When audit-log is used inside admin-section it acts as a layout helper
+  // only — strip its standalone container styles to avoid double borders/bg.
+  .audit-log {
+    margin-top: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible; // no clipping needed — parent card handles it
+  }
 
   &--highlighted {
     border: 2px solid var(--color-brand-yellow);
@@ -639,6 +668,7 @@ dialog {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .admin-section__summary {
@@ -707,11 +737,11 @@ dialog {
 
 /* ── Audit log component ─────────────────────────────────────────── */
 .audit-log {
-  margin-top: var(--space-l);
   border: 1px solid var(--color-space-border);
   border-radius: 8px;
   background: var(--color-space-surface-faint);
-  overflow: hidden;
+  overflow-y: hidden; // clip table corners to card border-radius
+  overflow-x: auto; // horizontal scroll at the card level, not in a nested box
 }
 
 .audit-log__header {
@@ -735,7 +765,7 @@ dialog {
 }
 
 .audit-log__table-wrap {
-  overflow-x: auto;
+  // overflow-x is handled by the parent .audit-log to avoid a nested scroll context
 }
 
 .audit-log__table {
@@ -913,6 +943,77 @@ dialog {
   padding: var(--space-m);
   text-align: center;
   font-style: italic;
+}
+
+/* ── Audit log filter form ───────────────────────────────────────── */
+
+.admin-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.admin-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+
+  &--inline {
+    align-items: center;
+  }
+}
+
+.admin-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  flex: 1;
+}
+
+.admin-filters__label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-space-text-muted);
+
+  &--checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+    cursor: pointer;
+  }
+}
+
+.admin-filters__input,
+.admin-filters__select {
+  padding: var(--space-xs) var(--space-s);
+  background: var(--color-set-2-bg);
+  border: 1px solid var(--color-space-border);
+  border-radius: 6px;
+  color: var(--color-space-text);
+  font-size: var(--font-size-s);
+  font-family: inherit;
+  outline: none;
+
+  &:focus {
+    border-color: var(--color-brand-highlight);
+  }
+
+  &::placeholder {
+    color: var(--color-space-text-muted);
+  }
+}
+
+.admin-filters__actions {
+  display: flex;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
 }
 
 /* ── Fraud dashboard ─────────────────────────────────────────────── */

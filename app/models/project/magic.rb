@@ -29,7 +29,7 @@ class Project::Magic
   def grant(user)
     return false unless ensure_not_fire
     return false unless perform(user, "mark_fire") do
-      fire_event = Post::FireEvent.create!(body: fire_event_body(user))
+      fire_event = Post::FireEvent.create!()
       project.posts.create!(user: user, postable: fire_event)
       project.update!(marked_fire_at: Time.current, marked_fire_by: user)
     end
@@ -90,10 +90,6 @@ class Project::Magic
   rescue ActiveRecord::RecordInvalid => e
     errors.merge!(e.record.errors)
     false
-  end
-
-  def fire_event_body(user)
-    "⭐ #{user.display_name} marked your project as a Super Star! As a prize for your great work, look out for a bonus prize in the mail :)"
   end
 
   def enqueue_magic_jobs

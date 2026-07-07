@@ -1,0 +1,206 @@
+// Shared fraud-tool pill (Billy / Joe) — usable anywhere in the admin
+.admin-fraud-link {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 213, 152, 0.12);
+  color: var(--color-brand-peach);
+  border: 1px solid rgba(255, 213, 152, 0.3);
+  padding: 1px var(--space-xs);
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-family: var(--font-family-text);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+
+  &:hover {
+    background: rgba(255, 213, 152, 0.22);
+  }
+}
+
+.admin-project__members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  color: var(--color-space-text);
+}
+
+.admin-project__member {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.admin-project__fraud-links {
+  display: flex;
+  gap: 4px;
+}
+
+.fraud-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+  margin: var(--space-m) 0;
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-space-text-muted);
+    margin: 0;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+// Highlights the signed-in reviewer's own row in the bracket standings table.
+.fraud-leaderboard__row--me {
+  background: rgba(149, 219, 255, 0.08);
+}
+
+// Shop order review queue overview (fraud dashboard). Same stats shape as
+// the Shipwrights ship-queue overview, restyled with Stardance brand tokens
+// instead of that page's off-brand green/red.
+.order-queue {
+  --positive: var(--color-brand-mint);
+  --negative: var(--color-brand-salmon);
+
+  color: var(--color-space-text);
+
+  &__overview {
+    margin-bottom: var(--space-l);
+  }
+
+  &__stats {
+    background: var(--color-space-card);
+    border: 1px solid var(--color-space-border);
+    border-radius: 12px;
+  }
+
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-space-text-muted);
+    margin-bottom: var(--space-xxs);
+  }
+
+  &__stats {
+    padding: var(--space-l);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  &__progress-headline {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  &__net {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+
+    &.is-positive {
+      color: var(--positive);
+    }
+
+    &.is-negative {
+      color: var(--negative);
+    }
+  }
+
+  &__progress-note {
+    color: var(--color-space-text-muted);
+    font-size: 0.95rem;
+  }
+
+  &__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-l);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--color-space-border);
+  }
+
+  &__metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__metric-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+
+    &.is-positive {
+      color: var(--positive);
+    }
+
+    &.is-negative {
+      color: var(--negative);
+    }
+  }
+
+  &__metric-link {
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      filter: brightness(1.1);
+    }
+  }
+
+  &__metric-hint {
+    font-size: 0.75rem;
+    color: var(--color-space-text-muted);
+  }
+
+  &__alltime {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-m);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--color-space-border);
+    font-size: 0.9rem;
+  }
+
+  &__tally {
+    color: var(--color-space-text-muted);
+
+    &.is-positive {
+      color: var(--positive);
+    }
+
+    &.is-negative {
+      color: var(--negative);
+    }
+  }
+}

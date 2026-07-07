@@ -1,220 +1,225 @@
 <% content_for :title, "Audit Logs" %>
-<div>
-  <div>
-    <h1>Audit Logs</h1>
-    <% if @affected_record.present? %>
-      <div>
-        Showing logs for <strong><%= params[:item_type] %> #<%= params[:item_id] %></strong>
-        <% if @affected_record.respond_to?(:display_name) %>
-          (<%= @affected_record.display_name %>)
-        <% elsif @affected_record.respond_to?(:name) %>
-          (<%= @affected_record.name %>)
-        <% elsif @affected_record.respond_to?(:title) %>
-          (<%= @affected_record.title %>)
-        <% end %>
-        <%= link_to "× Clear filter", admin_audit_logs_path %>
-      </div>
-    <% end %>
-  </div>
 
-  <div>
-    <h3>Filters & Search</h3>
+<%= render HeadingComponent.new(title: "Audit Logs", tone: :blue, size: :full) %>
 
-    <%= form_with url: admin_audit_logs_path, method: :get, local: true do |f| %>
-      <div>
-        <div>
-          <%= f.label :search, "Search Changes" %>
-          <%= f.text_field :search, value: params[:search], placeholder: "Search in changes..." %>
-        </div>
+<div class="admin-user-show">
+  <% if @affected_record.present? %>
+    <div class="mission-panel">
+      Showing logs for <strong><%= params[:item_type] %> #<%= params[:item_id] %></strong>
+      <% if @affected_record.respond_to?(:display_name) %>
+        — <%= @affected_record.display_name %>
+      <% elsif @affected_record.respond_to?(:name) %>
+        — <%= @affected_record.name %>
+      <% end %>
+      <%= link_to "× Clear filter", admin_audit_logs_path, class: "admin-user-show__muted" %>
+    </div>
+  <% end %>
 
-        <div>
-          <%= f.label :item_type, "Model Type" %>
-          <%= f.select :item_type, options_for_select(@item_types, params[:item_type]), { include_blank: "All" } %>
-        </div>
+  <details class="admin-section">
+    <summary class="admin-section__summary">🔍 Filters & Search</summary>
+    <div class="admin-section__content">
+      <%= form_with url: admin_audit_logs_path, method: :get, local: true do |f| %>
+        <div class="admin-filters">
+          <div class="admin-filters__row">
+            <div class="admin-filters__field">
+              <%= f.label :search, "Search Changes", class: "admin-filters__label" %>
+              <%= f.text_field :search, value: params[:search], placeholder: "Search in changes...", class: "admin-filters__input" %>
+            </div>
 
-        <div>
-          <%= f.label :item_id, "Record ID" %>
-          <%= f.number_field :item_id, value: params[:item_id], placeholder: "e.g. 123" %>
-        </div>
+            <div class="admin-filters__field">
+              <%= f.label :item_type, "Model Type", class: "admin-filters__label" %>
+              <%= f.select :item_type, options_for_select(@item_types, params[:item_type]), { include_blank: "All" }, class: "admin-filters__select" %>
+            </div>
 
-        <div>
-          <%= f.label :event, "Action" %>
-          <%= f.select :event, options_for_select(@events, params[:event]), { include_blank: "All" } %>
-        </div>
+            <div class="admin-filters__field">
+              <%= f.label :item_id, "Record ID", class: "admin-filters__label" %>
+              <%= f.number_field :item_id, value: params[:item_id], placeholder: "e.g. 123", class: "admin-filters__input" %>
+            </div>
 
-        <div data-controller="searchable-select">
-          <%= f.label :whodunnit, "Performed By" %>
-          <% selected_user = @users.find { |u| u.id.to_s == params[:whodunnit].to_s } %>
-          <%= f.hidden_field :whodunnit, value: params[:whodunnit], data: { searchable_select_target: "hiddenField" } %>
-          <input
-            type="text"
-            placeholder="Search users..."
-            value="<%= selected_user&.display_name %>"
-            data-searchable-select-target="input"
-            data-action="focus->searchable-select#open input->searchable-select#filter"
-            autocomplete="off">
-          <div data-searchable-select-target="dropdown">
-            <div
-              data-searchable-select-target="option"
-              data-action="click->searchable-select#clear"
-              data-value=""
-              data-label=""
-              data-search-text="all">All</div>
-            <% @users.each do |user| %>
-              <div
-                data-searchable-select-target="option"
-                data-action="click->searchable-select#select"
-                data-value="<%= user.id %>"
-                data-label="<%= user.display_name %>"
-                data-search-text="<%= "#{user.display_name} #{user.id}".downcase %>">
-                <img src="<%= user.avatar %>" alt="">
-                <span><%= user.display_name %></span>
-                <span>#<%= user.id %></span>
+            <div class="admin-filters__field">
+              <%= f.label :event, "Action", class: "admin-filters__label" %>
+              <%= f.select :event, options_for_select(@events, params[:event]), { include_blank: "All" }, class: "admin-filters__select" %>
+            </div>
+
+            <div class="admin-filters__field" data-controller="searchable-select">
+              <%= f.label :whodunnit, "Performed By", class: "admin-filters__label" %>
+              <% selected_user = @users.find { |u| u.id.to_s == params[:whodunnit].to_s } %>
+              <%= f.hidden_field :whodunnit, value: params[:whodunnit], data: { searchable_select_target: "hiddenField" } %>
+              <input type="text" placeholder="Search users..." value="<%= selected_user&.display_name %>"
+                     class="admin-filters__input"
+                     data-searchable-select-target="input"
+                     data-action="focus->searchable-select#open input->searchable-select#filter"
+                     autocomplete="off">
+              <div data-searchable-select-target="dropdown">
+                <div data-searchable-select-target="option" data-action="click->searchable-select#clear"
+                     data-value="" data-label="" data-search-text="all">All</div>
+                <% @users.each do |user| %>
+                  <div data-searchable-select-target="option" data-action="click->searchable-select#select"
+                       data-value="<%= user.id %>" data-label="<%= user.display_name %>"
+                       data-search-text="<%= "#{user.display_name} #{user.id}".downcase %>">
+                    <img src="<%= user.avatar %>" alt="">
+                    <span><%= user.display_name %></span>
+                    <span class="admin-user-show__muted">#<%= user.id %></span>
+                  </div>
+                <% end %>
               </div>
-            <% end %>
+            </div>
+
+            <div class="admin-filters__field">
+              <%= f.label :changed_field, "Changed Field", class: "admin-filters__label" %>
+              <%= f.text_field :changed_field, value: params[:changed_field], placeholder: "e.g. aasm_state", class: "admin-filters__input" %>
+            </div>
+
+            <div class="admin-filters__field">
+              <%= f.label :sort, "Sort", class: "admin-filters__label" %>
+              <%= f.select :sort, options_for_select([["Newest first", "desc"], ["Oldest first", "asc"]], params[:sort] || "desc"), {}, class: "admin-filters__select" %>
+            </div>
+
+            <div class="admin-filters__field">
+              <%= f.label :start_date, "From", class: "admin-filters__label" %>
+              <%= f.date_field :start_date, value: params[:start_date], class: "admin-filters__input" %>
+            </div>
+
+            <div class="admin-filters__field">
+              <%= f.label :end_date, "To", class: "admin-filters__label" %>
+              <%= f.date_field :end_date, value: params[:end_date], class: "admin-filters__input" %>
+            </div>
+
+            <div class="admin-filters__field">
+              <%= f.label :period, "Quick Range", class: "admin-filters__label" %>
+              <%= f.select :period, options_for_select([["Any time", ""], ["Today", "today"], ["Last 7 days", "week"], ["Last 30 days", "month"], ["Last 90 days", "quarter"]], params[:period]), {}, class: "admin-filters__select" %>
+            </div>
+          </div>
+
+          <div class="admin-filters__row admin-filters__row--inline">
+            <label class="admin-filters__label admin-filters__label--checkbox">
+              <%= f.check_box :show_system, { checked: @show_system }, "1", "0" %>
+              Show system activities
+            </label>
+          </div>
+
+          <div class="admin-filters__actions">
+            <%= f.submit "Apply Filters", class: "action-btn action-btn--small action-btn--primary" %>
+            <%= link_to "Clear All", admin_audit_logs_path, class: "action-btn action-btn--small action-btn--secondary" %>
           </div>
         </div>
+      <% end %>
+    </div>
+  </details>
 
-        <div>
-          <%= f.label :start_date, "From" %>
-          <%= f.date_field :start_date, value: params[:start_date] %>
-        </div>
-
-        <div>
-          <%= f.label :end_date, "To" %>
-          <%= f.date_field :end_date, value: params[:end_date] %>
-        </div>
-      </div>
-
-      <div>
-        <%= f.check_box :show_system, { checked: @show_system }, "1", "0" %>
-        <%= f.label :show_system, "Show system activities" %>
-      </div>
-
-      <div>
-        <%= f.submit "Apply Filters" %>
-        <%= link_to "Clear All", admin_audit_logs_path %>
-      </div>
-    <% end %>
-  </div>
-
-  <div>
+  <div class="audit-log">
     <% if @versions.any? %>
-      <table>
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>User</th>
-            <th>Action</th>
-            <th>Model</th>
-            <th>Record</th>
-            <th>Changes</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% deduped_versions = dedupe_versions(@versions.to_a) %>
-          <% users_by_id = User.where(id: deduped_versions.map(&:whodunnit).compact.uniq).index_by { |u| u.id.to_s } %>
-          <% deduped_versions.each do |version| %>
+      <div class="audit-log__table-wrap">
+        <table class="audit-log__table">
+          <thead>
             <tr>
-              <td>
-                <span><%= version.created_at.strftime("%b %d, %Y") %></span>
-                <span><%= version.created_at.strftime("%H:%M:%S") %></span>
-              </td>
-              <td>
-                <% if version.whodunnit.present? %>
-                  <% user = users_by_id[version.whodunnit.to_s] %>
-                  <% if user %>
-                    <div>
-                      <img src="<%= user.avatar %>" alt="">
-                      <span><%= user.display_name %></span>
+              <th class="audit-log__th">Timestamp</th>
+              <th class="audit-log__th">User</th>
+              <th class="audit-log__th">Action</th>
+              <th class="audit-log__th">Model</th>
+              <th class="audit-log__th">Record</th>
+              <th class="audit-log__th">Changes</th>
+              <th class="audit-log__th"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users_by_id = User.where(id: @versions.map(&:whodunnit).compact.uniq).index_by { |u| u.id.to_s } %>
+            <% @versions.each do |version| %>
+              <tr class="audit-log__row">
+                <td class="audit-log__td audit-log__td--time">
+                  <span class="audit-log__date"><%= version.created_at.strftime("%b %-d, %Y") %></span>
+                  <span class="audit-log__time"><%= version.created_at.strftime("%-I:%M:%S%p") %></span>
+                </td>
+                <td class="audit-log__td">
+                  <% if version.whodunnit.present? %>
+                    <% user = users_by_id[version.whodunnit.to_s] %>
+                    <% if user %>
+                      <div class="audit-log__user">
+                        <img src="<%= user.avatar %>" alt="" class="audit-log__avatar">
+                        <span class="audit-log__username"><%= user.display_name %></span>
+                      </div>
+                    <% else %>
+                      <span class="audit-log__system">User #<%= version.whodunnit %></span>
+                    <% end %>
+                  <% else %>
+                    <span class="audit-log__system">System</span>
+                  <% end %>
+                </td>
+                <td class="audit-log__td">
+                  <% display = audit_event_display(version) %>
+                  <span class="audit-log__event"><%= display[:label] %></span>
+                </td>
+                <td class="audit-log__td">
+                  <code class="audit-log__field"><%= version.item_type %></code>
+                </td>
+                <td class="audit-log__td">
+                  <% case version.item_type
+                     when "User" %>
+                    <%= link_to "##{version.item_id}", admin_user_path(version.item_id), class: "audit-log__link" %>
+                  <% when "Project" %>
+                    <%= link_to "##{version.item_id}", admin_project_path(version.item_id), class: "audit-log__link" %>
+                  <% when "ShopOrder" %>
+                    <%= link_to "##{version.item_id}", admin_shop_order_path(version.item_id), class: "audit-log__link" %>
+                  <% when "ShopItem" %>
+                    <%= link_to "##{version.item_id}", admin_shop_item_path(version.item_id), class: "audit-log__link" %>
+                  <% else %>
+                    <code class="audit-log__field">#<%= version.item_id %></code>
+                  <% end %>
+                </td>
+                <td class="audit-log__td">
+                  <% if version.object_changes.present? %>
+                    <%
+                      raw_changes = version.object_changes
+                      changes = if raw_changes.is_a?(Hash)
+                        raw_changes
+                      elsif raw_changes.is_a?(String)
+                        YAML.safe_load(raw_changes, permitted_classes: [Time, Date, DateTime, BigDecimal, Symbol]) rescue {}
+                      else
+                        {}
+                      end
+                    %>
+                    <% sensitive_fields = %w[encrypted_password password_digest frozen_address frozen_address_ciphertext frozen_phone_ciphertext email address ip_address phone phone_number hcb_email] %>
+                    <div class="audit-log__changes">
+                      <% changes.keys.take(3).each do |k| %>
+                        <% v = changes[k] %>
+                        <div class="audit-log__change">
+                          <code class="audit-log__field"><%= k %></code>
+                          <% if sensitive_fields.include?(k.to_s) %>
+                            <span class="audit-log__redacted">🔒 redacted</span>
+                          <% elsif v.is_a?(Array) && v.length == 2 %>
+                            <span class="audit-log__old"><%= truncate(v[0].to_s, length: 25) %></span>
+                            <span class="audit-log__arrow">→</span>
+                            <span class="audit-log__new"><%= truncate(v[1].to_s, length: 25) %></span>
+                          <% else %>
+                            <span class="audit-log__val"><%= truncate(v.to_s, length: 40) %></span>
+                          <% end %>
+                        </div>
+                      <% end %>
+                      <% if changes.keys.count > 3 %>
+                        <span class="audit-log__more">+<%= changes.keys.count - 3 %> more</span>
+                      <% end %>
                     </div>
                   <% else %>
-                    <span>User #<%= version.whodunnit %></span>
+                    <span class="audit-log__empty">—</span>
                   <% end %>
-                <% else %>
-                  <span>System</span>
-                <% end %>
-              </td>
-              <td>
-                <% display = audit_event_display(version) %>
-                <span>
-                  <%= display[:label] %>
-                </span>
-              </td>
-              <td><code><%= version.item_type %></code></td>
-              <td>
-                <% case version.item_type
-                   when "User" %>
-                  <%= link_to "##{version.item_id}", admin_user_path(version.item_id) %>
-                <% when "Project" %>
-                  <%= link_to "##{version.item_id}", admin_project_path(version.item_id) %>
-                <% when "ShopOrder" %>
-                  <%= link_to "##{version.item_id}", admin_shop_order_path(version.item_id) %>
-                <% when "ShopItem" %>
-                  <%= link_to "##{version.item_id}", admin_shop_item_path(version.item_id) %>
-                <% else %>
-                  <code>#<%= version.item_id %></code>
-                <% end %>
-              </td>
-              <td>
-                <% if version.object_changes.present? %>
-                  <%
-                    raw_changes = version.object_changes
-                    changes = if raw_changes.is_a?(Hash)
-                      raw_changes
-                    elsif raw_changes.is_a?(String)
-                      YAML.safe_load(raw_changes, permitted_classes: [Time, Date, DateTime, BigDecimal, Symbol]) rescue {}
-                    else
-                      {}
-                    end
-                  %>
-                  <% sensitive_fields = %w[encrypted_password password_digest frozen_address frozen_address_ciphertext frozen_phone_ciphertext email address ip_address phone phone_number hcb_email] %>
-                  <div>
-                    <% changes.keys.take(3).each do |k| %>
-                      <% v = changes[k] %>
-                      <div>
-                        <code><%= k %></code>
-                        <% if sensitive_fields.include?(k.to_s) %>
-                          <span>🔒 [REDACTED]</span>
-                        <% elsif v.is_a?(Array) && v.length == 2 %>
-                          <span><%= truncate(v[0].to_s, length: 30) %></span>
-                          → <span><%= truncate(v[1].to_s, length: 30) %></span>
-                        <% else %>
-                          <span><%= truncate(v.to_s, length: 50) %></span>
-                        <% end %>
-                      </div>
-                    <% end %>
-                    <% if changes.keys.count > 3 %>
-                      <span>(+<%= changes.keys.count - 3 %> more)</span>
-                    <% end %>
-                  </div>
-                <% else %>
-                  <span>—</span>
-                <% end %>
-              </td>
-              <td>
-                <%= link_to "Details", admin_audit_log_path(version) %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    <% else %>
-      <p>No audit logs found matching your filters.</p>
-    <% end %>
-
-    <% if @pagy.pages > 1 %>
-      <div>
-        <%== @pagy.series_nav %>
-        <div>
-          <%== @pagy.info_tag %>
-        </div>
+                </td>
+                <td class="audit-log__td audit-log__td--action">
+                  <%= link_to "Details →", admin_audit_log_path(version), class: "audit-log__link" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
       </div>
-    <% end %>
-  </div>
 
-  <div>
-    <%= link_to "← Back to Users", admin_users_path %>
+      <% if @pagy.pages > 1 %>
+        <div class="audit-log__footer">
+          <%== @pagy.series_nav %>
+          <span class="audit-log__count"><%== @pagy.info_tag %></span>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="audit-log__empty-msg">No audit logs found matching your filters.</p>
+    <% end %>
   </div>
 </div>

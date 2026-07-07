@@ -1,62 +1,98 @@
+// Page-title banner — Stardance reskin.
+// Tones drive --_accent / --_glow via CSS custom properties.
+
 .ui-heading {
+  // Default tone: warm highlight (cream)
+  --_accent: var(--color-brand-highlight);
+  --_glow: var(--color-brand-highlight-soft);
+
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: var(--space-xs);
 
-  &--red {
-    .ui-heading__surface {
-      background-color: var(--color-red-500);
-    }
-
-    .ui-heading__backdrop {
-      background-color: var(--color-red-400);
-    }
+  // Tone modifiers — mapped to Stardance palette
+  &--salmon {
+    --_accent: var(--color-brand-salmon);
+    --_glow: var(--color-brand-salmon-soft);
   }
 
-  &--green {
-    .ui-heading__surface {
-      background-color: var(--color-green-500);
-    }
+  &--mint {
+    --_accent: var(--color-brand-mint);
+    --_glow: var(--color-brand-mint-soft);
+  }
 
-    .ui-heading__backdrop {
-      background-color: var(--color-green-400);
-    }
+  &--lilac {
+    --_accent: var(--color-brand-lilac);
+    --_glow: var(--color-brand-lilac-soft);
   }
 
   &--blue {
-    .ui-heading__surface {
-      background-color: var(--color-blue-500);
-    }
-
-    .ui-heading__backdrop {
-      background-color: var(--color-blue-400);
-    }
+    --_accent: var(--color-brand-blue);
+    --_glow: rgba(149, 219, 255, 0.18);
   }
 
+  &--yellow {
+    --_accent: var(--color-brand-yellow);
+    --_glow: var(--color-brand-yellow-soft);
+  }
+
+  // Full-width page-header banner
   &--full {
     width: 100%;
-    margin: 2.5em 0;
-
-    .ui-heading__title {
-      font-size: 2.25rem;
-    }
+    text-align: left;
+    margin-block: var(--space-xl) var(--space-m);
 
     .ui-heading__stack {
-      width: 50%;
-    }
-
-    .ui-heading__surface {
       width: 100%;
     }
 
-    @media (max-width: 960px) {
-      .ui-heading__stack {
-        width: 100%;
+    // Backdrop becomes a left-anchored ambient glow
+    .ui-heading__backdrop {
+      inset: 0;
+      width: 50%;
+      border-radius: 0;
+      background: radial-gradient(
+        ellipse at left center,
+        var(--_glow) 0%,
+        transparent 70%
+      );
+      filter: blur(0);
+      animation: none;
+    }
+
+    // Surface is a flush bottom-bordered bar — no pill shape
+    .ui-heading__surface {
+      width: 100%;
+      justify-content: flex-start;
+      padding: var(--space-m) 0 var(--space-s);
+      background: transparent;
+      border: none;
+      border-radius: 0;
+
+      // Gradient accent rule along the bottom
+      &::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: linear-gradient(to right, var(--_accent), transparent 60%);
+      }
+    }
+
+    .ui-heading__title {
+      font-size: clamp(1.75rem, 3vw, 2.25rem);
+
+      // Suppress the dot-marker — the left glow is the accent cue here
+      &::before {
+        display: none;
       }
     }
   }
+
+  // ── Sub-elements ────────────────────────────────────────────────────────────
 
   &__stack {
     position: relative;
@@ -65,18 +101,19 @@
     padding-inline: var(--space-s);
   }
 
+  // Blurred ambient glow that sits behind the surface pill
   &__backdrop {
     position: absolute;
-    left: 50%;
-    bottom: calc(var(--space-xxs) * -1);
-    transform: translateX(-50%);
-    width: calc(86% - var(--space-xs));
-    height: 120%;
-    background-color: var(--color-brown-400);
-    border-radius: var(--border-radius);
+    inset: -14px -22px;
+    background: var(--_glow);
+    border-radius: 28px;
+    filter: blur(24px);
     z-index: 0;
+    pointer-events: none;
+    animation: ui-heading-breathe 5s ease-in-out infinite;
   }
 
+  // Main title container — pill for default, flush bar for --full
   &__surface {
     position: relative;
     display: inline-flex;
@@ -84,22 +121,38 @@
     justify-content: center;
     min-height: 3.5rem;
     padding: var(--space-xs) var(--space-xl);
-    background-color: var(--color-brown-500);
-    color: var(--color-bg);
-    border-radius: calc(var(--border-radius) * 0.8);
-    background-image: url("mask/title.webp");
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
+    background: var(--color-set-2-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--_accent);
+    border-radius: 8px;
     z-index: 1;
   }
 
   &__title {
     margin: 0;
+    font-family: "Playfair Display", Georgia, serif;
     font-size: var(--font-size-xxl);
-    font-weight: 400;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--color-space-text);
+    line-height: var(--line-height-headers);
+
+    // Small accent dot before the title
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--_accent);
+      margin-right: var(--space-s);
+      vertical-align: middle;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px 2px var(--_glow);
+    }
   }
 
+  // Optional badge / action in the top-right corner of the surface
   &__extra {
     position: absolute;
     right: var(--space-m);
@@ -108,6 +161,18 @@
     z-index: 2;
   }
 }
+
+@keyframes ui-heading-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+// ── Vote cookie (unrelated to heading — lives here for historical reasons) ────
 
 .vote-verdict-cookie {
   cursor: help;

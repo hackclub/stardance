@@ -1,0 +1,34 @@
+<%# The earned-reroll control, shared by the /rng hero and the rail widget.
+    While locked it carries the reroll-poll controller, which re-fetches this
+    partial on an interval (plain fetch, no Turbo) and swaps it in place, so the
+    button flips to unlocked once a background streak sync lands — no reload.
+    Locals:
+      user:  the viewer
+      roll:  today's roll
+      block: BEM block of the host surface ("rng-hero" / "daily-roll-widget")
+      size:  :large (hero) or :small (rail widget) %>
+<%
+  state = reroll_state(user, roll)
+  data = { reroll_state: state }
+  if state == :locked
+    data[:controller] = "reroll-poll"
+    data[:reroll_poll_url_value] = reroll_status_daily_roll_path(surface: block)
+  end
+%>
+<%= tag.span class: "reroll-control", id: "#{block}-reroll", data: data do %>
+  <% case state %>
+  <% when :unlocked %>
+    <%# Turbo Drive is off app-wide; opt in so the reveal animation runs. %>
+    <%= button_to "reroll", reroll_daily_roll_path,
+                  class: "action-btn action-btn--primary action-btn--#{size} #{block}__reroll",
+                  form: { data: { turbo: true } },
+                  data: { turbo_submits_with: "rerolling…" } %>
+  <% when :locked %>
+    <%= render ActionButtonComponent.new(
+          text: "reroll 🔒", size: size, type: :button, disabled: :soft,
+          class: "#{block}__reroll",
+          data: { controller: "tooltip", tooltip_message_value: reroll_locked_hint }) %>
+  <% when :used %>
+    <span class="<%= block %>__reroll-note">rerolled +<%= formatted_roll_value(roll.reroll_value) %></span>
+  <% end %>
+<% end %>

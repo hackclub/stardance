@@ -8,6 +8,8 @@
       data-lookout-capture-mode-url-value="<%= set_mode_project_lookout_session_path(@project, @lookout_session) %>"
       data-lookout-capture-forward-url-value="<%= forward_heartbeats_project_lookout_session_path(@project, @lookout_session) %>"
       data-lookout-capture-skip-url-value="<%= skip_project_lookout_session_path(@project, @lookout_session) %>">
+      data-lookout-capture-stop-url-value="<%= stop_project_lookout_session_path(@project, @lookout_session) %>"
+      data-lookout-capture-sync-url-value="<%= project_lookout_session_path(@project, @lookout_session) %>">
 
   <header class="lookout-rec__header">
     <h1 class="lookout-rec__title">Lookout Recording</h1>
@@ -87,7 +89,7 @@
 
   <%# ── Done: preview the timelapse, then choose where the time goes ────── %>
   <section class="lookout-rec__stage lookout-rec__stage--done" data-lookout-capture-target="doneStage" hidden>
-    <p class="lookout-rec__status" data-lookout-capture-target="doneStatus">Finishing up your timelapse…</p>
+    <p class="lookout-rec__status" data-lookout-capture-target="doneStatus">Finishing up processing your timelapse. This can take a minute or two. Keep this tab open.</p>
 
     <div class="lookout-rec__preview-wrap">
       <video class="lookout-rec__preview" data-lookout-capture-target="result" controls playsinline hidden></video>
@@ -174,3 +176,9 @@
                 hidden: true %>
   </section>
 </main>
+
+<%# Hardware moved to Outpost — once this timelapse finishes, the capture
+    controller pops this notice (rendered only for hardware projects). %>
+<% if @project.hardware? && Flipper.enabled?(:hardware_to_outpost, current_user) %>
+  <%= render "projects/hardware_outpost_modal" %>
+<% end %>

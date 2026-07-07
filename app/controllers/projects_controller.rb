@@ -9,6 +9,7 @@ class ProjectsController < ApplicationController
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]
   before_action :set_project, only: [ :show, :readme, :add_test_time ]
   before_action :redirect_guest_owner_to_link!, only: [ :show, :readme, :edit, :update ]
+  before_action :redirect_hardware_creation_to_outpost, only: [ :create ]
 
   def show
     authorize @project
@@ -57,6 +58,8 @@ class ProjectsController < ApplicationController
         result = current_user.try_sync_hackatime_data!
         @hackatime_times = result&.dig(:projects) || {}
         @hackatime_token_stale = current_user.hackatime_token_stale?
+        identity = current_user.hackatime_identity
+        @unposted_seconds = @project.seconds_coded_in_devlog_window(identity.uid, access_token: identity.access_token).to_i
 
         linked_ids = @linked_hackatime_projects.map(&:id).to_set
         taken_project_ids = @all_hackatime_projects.map(&:project_id).compact.uniq - [ @project.id ]
@@ -265,7 +268,11 @@ class ProjectsController < ApplicationController
   end
 
   def new
-    if current_user&.projects&.none?
+    # First-timers get bounced to the setup wizard — except when a blocked
+    # hardware create sent them here to see the Outpost popup (?hardware=outpost),
+    # which lives on this page. Bouncing then would drop the param (no popup) and
+    # could ping-pong with the wizard's own hardware redirect.
+    if current_user&.projects&.none? && params[:hardware] != "outpost"
       # /projects/new just bounces to setup for first-timers — pop it from the
       # back-stack so the idea step's back button skips over it.
       if session[:previous_pages].is_a?(Array)
@@ -496,6 +503,22 @@ class ProjectsController < ApplicationController
     return unless @project&.memberships&.exists?(user_id: current_user.id, role: :owner)
 
     redirect_to projects_setup_link_account_path, alert: "Finish setting up your account to keep working on your project."
+  end
+
+  # Hardware projects live on Outpost now, not Stardance. Intercept any attempt
+  # to create one here — the /projects/new hardware form posts a hardware_stage,
+  # and a hardware mission_slug would also make the project hardware — and bounce
+  # back to the new-project page with the Outpost popup open.
+  def redirect_hardware_creation_to_outpost
+    return unless Flipper.enabled?(:hardware_to_outpost, current_user)
+    # Guests can't create a project anyway (ProjectPolicy#new?/#create? require an
+    # HCA-linked user), so don't bounce them to /projects/new — that would just
+    # 403 before the popup shows. Let the normal auth flow handle them.
+    return unless current_user&.hca_linked?
+
+    creating_hardware = params.dig(:project, :hardware_stage).present? ||
+      (params[:mission_slug].present? && Mission.find_by(slug: params[:mission_slug])&.hardware?)
+    redirect_to new_project_path(hardware: "outpost") if creating_hardware
   end
 
   def project_params

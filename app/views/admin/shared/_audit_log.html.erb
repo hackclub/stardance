@@ -1,18 +1,18 @@
 <%# Renders an inline audit log table matching the /admin/audit_logs design.
     Usage: render "admin/shared/audit_log", record: @project
-    Optional: limit (default 10), item_type (for "View all" link, default record class name) %>
+    Optional: limit (default 10), item_type (for "View all" link, default record class name)
+    Optional: pagy + displayed_versions — pass pre-paginated results for full pagination UI %>
 <% limit = local_assigns.fetch(:limit, 10) %>
 <% item_type = local_assigns.fetch(:item_type, record.class.name) %>
+<% audit_pagy = local_assigns[:pagy] %>
 <% versions = record.versions.order(created_at: :desc) %>
-<% displayed_versions = dedupe_versions(versions.limit(limit * 2).to_a).first(limit) %>
+<% displayed_versions = audit_pagy ? local_assigns[:displayed_versions] : dedupe_versions(versions.limit(limit * 2).to_a).first(limit) %>
 <% users_by_id = User.where(id: displayed_versions.map(&:whodunnit).compact.uniq).index_by { |u| u.id.to_s } %>
 
-<div class="audit-log">
-  <div class="audit-log__header">
-    <h3 class="audit-log__title">📜 Audit Log</h3>
-    <span class="audit-log__count"><%= versions.count %> changes</span>
-  </div>
+<details class="admin-section">
+  <summary class="admin-section__summary">Audit Log (<%= versions.count %> changes)</summary>
 
+  <div class="admin-section__content audit-log">
   <% if versions.any? %>
     <div class="audit-log__table-wrap">
       <table class="audit-log__table">
@@ -70,7 +70,7 @@
                       <div class="audit-log__change">
                         <code class="audit-log__field"><%= k %></code>
                         <% if sensitive_fields.include?(k.to_s) %>
-                          <span class="audit-log__redacted">🔒 redacted</span>
+                          <span class="audit-log__redacted">redacted</span>
                         <% elsif v.is_a?(Array) && v.length == 2 %>
                           <span class="audit-log__old"><%= truncate(v[0].to_s, length: 25) %></span>
                           <span class="audit-log__arrow">→</span>
@@ -97,7 +97,11 @@
       </table>
     </div>
 
-    <% if versions.count > limit %>
+    <% if audit_pagy %>
+      <div class="audit-log__footer">
+        <%== audit_pagy.series_nav %>
+      </div>
+    <% elsif versions.count > limit %>
       <div class="audit-log__footer">
         <%= link_to "View all #{versions.count} changes →", admin_audit_logs_path(item_type: item_type, item_id: record.id), class: "audit-log__view-all" %>
       </div>
@@ -105,4 +109,5 @@
   <% else %>
     <p class="audit-log__empty-msg">No audit history yet.</p>
   <% end %>
-</div>
+  </div>
+</details>

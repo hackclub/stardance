@@ -88,18 +88,28 @@
         <% end %>
 
         <% if Flipper.enabled?(:hardware_flow, current_user) %>
-        <button type="button"
-                class="project-creation__blank-btn project-creation__blank-btn--hardware"
-                data-action="project-builder#toggle"
-                data-project-builder-target="hardwareBtn"
-                aria-expanded="false"
-                aria-controls="project-creation-stage-chooser">
-          New hardware project +
-        </button>
+          <% if Flipper.enabled?(:hardware_to_outpost, current_user) %>
+            <%# Hardware moved to Outpost — open the Outpost popup instead of the
+                on-Stardance funding/build chooser. %>
+            <button type="button"
+                    class="project-creation__blank-btn project-creation__blank-btn--hardware"
+                    onclick="document.getElementById('hardware-outpost-modal').showModal()">
+              New hardware project +
+            </button>
+          <% else %>
+            <button type="button"
+                    class="project-creation__blank-btn project-creation__blank-btn--hardware"
+                    data-action="project-builder#toggle"
+                    data-project-builder-target="hardwareBtn"
+                    aria-expanded="false"
+                    aria-controls="project-creation-stage-chooser">
+              New hardware project +
+            </button>
+          <% end %>
         <% end %>
       </div>
 
-      <% if Flipper.enabled?(:hardware_flow, current_user) %>
+      <% if Flipper.enabled?(:hardware_flow, current_user) && !Flipper.enabled?(:hardware_to_outpost, current_user) %>
       <div id="project-creation-stage-chooser"
            class="project-creation__stage-chooser"
            data-project-builder-target="chooser"
@@ -126,8 +136,12 @@
           <% end %>
         </div>
       </div>
-    </section>
       <% end %>
+    </section>
 
   </div>
 </dialog>
+
+<% if Flipper.enabled?(:hardware_to_outpost, current_user) %>
+  <%= render "projects/hardware_outpost_modal" %>
+<% end %>

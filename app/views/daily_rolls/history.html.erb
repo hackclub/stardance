@@ -14,14 +14,14 @@
       <div class="rng-board__facts">
         <div class="rng-board__fact">
           <span class="rng-board__fact-label">Best</span>
-          <span class="rng-board__fact-value"><%= formatted_roll_value(@stats[:best].value) %></span>
+          <span class="rng-board__fact-value"><%= formatted_roll_value(@stats[:best].total) %></span>
           <%= link_to rng_date_label(@stats[:best].rolled_on, today: @today),
                       rng_date_path(@stats[:best].rolled_on, today: @today),
                       class: "rng-board__fact-date" %>
         </div>
         <div class="rng-board__fact">
           <span class="rng-board__fact-label">Worst</span>
-          <span class="rng-board__fact-value"><%= formatted_roll_value(@stats[:worst].value) %></span>
+          <span class="rng-board__fact-value"><%= formatted_roll_value(@stats[:worst].total) %></span>
           <%= link_to rng_date_label(@stats[:worst].rolled_on, today: @today),
                       rng_date_path(@stats[:worst].rolled_on, today: @today),
                       class: "rng-board__fact-date" %>
@@ -44,7 +44,7 @@
                           rng_date_path(roll.rolled_on, today: @today),
                           class: "rng-board__history-date" %>
               <span class="rng-board__history-rank">#<%= roll.rank %> that day</span>
-              <span class="rng-board__value"><%= formatted_roll_value(roll.value) %></span>
+              <span class="rng-board__value"><%= formatted_roll_value(roll.total) %></span>
             </li>
           <% end %>
         </ol>

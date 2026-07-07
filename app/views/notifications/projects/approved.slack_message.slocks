@@ -1,0 +1,22 @@
+header ":sparkles: Your project was approved!"
+
+section "Your project *<#{project_url}|#{project_title}>* has been approved and is now out for voting.", markdown: true
+
+if feedback.present?
+  section "*Feedback:* #{feedback}", markdown: true
+end
+
+if video_url.present?
+  section "*Walkthrough Video:* <#{video_url}|Click here to watch>", markdown: true
+end
+
+if video_url.present?
+  actions [
+    button("View project", "view_project", url: project_url),
+    button("Watch review video", "watch_video", url: video_url)
+  ]
+else
+  actions [
+    button("View project", "view_project", url: project_url)
+  ]
+end

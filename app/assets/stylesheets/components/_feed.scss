@@ -894,8 +894,6 @@
     min-width: 0;
     min-height: 0;
     aspect-ratio: 1 / 1;
-    display: grid;
-    place-items: center;
     margin: 0;
     border: 1px solid var(--color-space-surface-faint);
     border-radius: calc(var(--border-radius) * 0.45);
@@ -1080,6 +1078,51 @@
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  &__super-star {
+    padding-left: var(--space-s);
+  }
+
+  &__super-star-title {
+    position: relative;
+    padding: 0 4px;
+
+    background: var(--gradient-extra-highlight) center / cover no-repeat;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--font-h2);
+
+    // underline with gradient
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 6px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient-extra-highlight) center / cover no-repeat;
+      @media (min-width: 1024px) {
+        bottom: 8px;
+      }
+    }
+  }
+
+  &__super-star-header {
+    padding-left: var(--space-s);
+  }
+
+  &__super-star-body {
+    padding-left: var(--space-s);
+    padding-bottom: var(--space-s);
+    font-size: calc(var(--font-size-s) * 1.2);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   .like-button,

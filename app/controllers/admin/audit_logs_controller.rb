@@ -7,41 +7,49 @@ module Admin
 
       @versions = ::PaperTrail::Version.order(created_at: :desc)
 
-      # Hide system activities by default (where whodunnit is nil)
+      # Show system activities by default; opt out via checkbox
       @show_system = params[:show_system] == "1"
-      unless @show_system
-        @versions = @versions.where.not(whodunnit: nil)
-      end
+      @versions = @versions.where.not(whodunnit: nil) unless @show_system
 
       # Apply filters
-      if params[:item_type].present?
-        @versions = @versions.where(item_type: params[:item_type])
-      end
-
-      if params[:item_id].present?
-        @versions = @versions.where(item_id: params[:item_id])
-      end
-
-      if params[:event].present?
-        @versions = @versions.where(event: params[:event])
-      end
-
-      if params[:whodunnit].present?
-        @versions = @versions.where(whodunnit: params[:whodunnit])
-      end
+      @versions = @versions.where(item_type: params[:item_type]) if params[:item_type].present?
+      @versions = @versions.where(item_id: params[:item_id])     if params[:item_id].present?
+      @versions = @versions.where(event: params[:event])         if params[:event].present?
+      @versions = @versions.where(whodunnit: params[:whodunnit]) if params[:whodunnit].present?
 
       if params[:start_date].present?
         @versions = @versions.where("created_at >= ?", params[:start_date])
       end
 
       if params[:end_date].present?
-        @versions = @versions.where("created_at <= ?", params[:end_date])
+        @versions = @versions.where("created_at <= ?", params[:end_date].to_date.end_of_day)
+      end
+
+      # Quick date preset (overrides start/end date if both present)
+      if params[:period].present?
+        cutoff = case params[:period]
+        when "today"   then Time.current.beginning_of_day
+        when "week"    then 7.days.ago
+        when "month"   then 30.days.ago
+        when "quarter" then 90.days.ago
+        end
+        @versions = @versions.where("created_at >= ?", cutoff) if cutoff
+      end
+
+      # Filter by specific changed field name
+      if params[:changed_field].present?
+        safe_field = params[:changed_field].gsub(/[^a-zA-Z0-9_]/, "")
+        @versions = @versions.where("object_changes::text ILIKE ?", "%\"#{safe_field}\"%")
       end
 
       # Text search in object_changes
       if params[:search].present?
         @versions = @versions.where("object_changes::text ILIKE ?", "%#{params[:search]}%")
       end
+
+      # Sort
+      sort_dir = params[:sort] == "asc" ? :asc : :desc
+      @versions = @versions.order(created_at: sort_dir)
 
       # CSV export (before pagination)
       respond_to do |format|

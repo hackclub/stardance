@@ -7,6 +7,10 @@ class Admin::ProjectPolicy < ApplicationPolicy
     index?
   end
 
+  def view_votes?
+    user.admin?
+  end
+
   def restore?
     user.admin? || user.fraud_dept?
   end

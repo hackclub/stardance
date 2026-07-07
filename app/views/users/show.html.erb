@@ -65,7 +65,7 @@
           </div>
 
           <div class="profile__identity-text">
-            <h1 class="profile__handle">@<%= @user.display_name %><%= render StreakBadgeComponent.new(user: @user, size: :large) %><% if own_profile %><%= render IdvBadgeComponent.new(user: @user, context: :profile) %><% end %></h1>
+            <h1 class="profile__handle">@<%= @user.display_name %><%= render StreakBadgeComponent.new(user: @user, size: :large) %><%= " ⚡" if @user.admin? %><% if own_profile %><%= render IdvBadgeComponent.new(user: @user, context: :profile) %><% end %></h1>
             <% if own_profile %>
               <div class="profile__handle-edit"
                    data-controller="username-availability"

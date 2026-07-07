@@ -2,9 +2,128 @@
 
 <%= render HeadingComponent.new(title: "Fraud", tone: :blue, size: :full) %>
 
-<div class="admin-workspace">
-  <%= link_to "Users", admin_users_path, class: "admin-workspace__link btn-primary" %>
-  <%= link_to "Projects", admin_projects_path, class: "admin-workspace__link btn-primary" %>
-  <%= link_to "Shop orders", admin_shop_orders_path, class: "admin-workspace__link btn-primary" %>
-  <%= link_to "Reports", admin_certification_reports_path, class: "admin-workspace__link btn-primary" %>
+<%
+  order_net_flow = @order_stats[:decisions_today] - @order_stats[:new_today]
+  order_over_target = @order_stats[:pending] - @order_stats[:queue_target]
+%>
+
+<section class="order-queue__overview">
+  <div class="order-queue__stats">
+    <div class="order-queue__progress">
+      <p class="order-queue__label">Today's progress</p>
+      <div class="order-queue__progress-headline">
+        <span class="order-queue__net <%= order_net_flow >= 0 ? "is-positive" : "is-negative" %>">
+          <%= order_net_flow >= 0 ? "+" : "" %><%= order_net_flow %>
+        </span>
+        <span class="order-queue__progress-note">
+          <%= order_net_flow >= 0 ? "ahead" : "behind" %> &middot;
+          reviewed <%= @order_stats[:decisions_today] %>, received <%= @order_stats[:new_today] %> new
+        </span>
+      </div>
+    </div>
+
+    <div class="order-queue__metrics">
+      <div class="order-queue__metric">
+        <span class="order-queue__label">In queue</span>
+        <span class="order-queue__metric-value <%= order_over_target > 0 ? "is-negative" : "is-positive" %>">
+          <%= @order_stats[:pending] %>
+        </span>
+        <span class="order-queue__metric-hint">
+          <%= order_over_target > 0 ? "#{order_over_target} over target" : "at target" %>
+        </span>
+      </div>
+
+      <div class="order-queue__metric">
+        <span class="order-queue__label">Oldest waiting</span>
+        <% if @order_stats[:oldest_pending] %>
+          <%= link_to time_ago_in_words(@order_stats[:oldest_pending].created_at),
+                admin_shop_order_path(@order_stats[:oldest_pending]),
+                class: "order-queue__metric-value is-negative order-queue__metric-link" %>
+          <span class="order-queue__metric-hint">in the queue</span>
+        <% else %>
+          <span class="order-queue__metric-value">—</span>
+          <span class="order-queue__metric-hint">queue clear</span>
+        <% end %>
+      </div>
+
+      <div class="order-queue__metric">
+        <span class="order-queue__label">Approval rate</span>
+        <span class="order-queue__metric-value">
+          <%= @order_stats[:approval_rate] ? "#{@order_stats[:approval_rate]}%" : "—" %>
+        </span>
+        <span class="order-queue__metric-hint">all time</span>
+      </div>
+
+      <div class="order-queue__metric">
+        <span class="order-queue__label">Reviewed this week</span>
+        <span class="order-queue__metric-value <%= @order_stats[:decisions_this_week] >= @order_stats[:new_this_week] ? "is-positive" : "is-negative" %>">
+          <%= @order_stats[:decisions_this_week] %>
+        </span>
+        <span class="order-queue__metric-hint"><%= @order_stats[:new_this_week] %> came in</span>
+      </div>
+
+      <div class="order-queue__metric">
+        <span class="order-queue__label">Waiting too long</span>
+        <span class="order-queue__metric-value <%= @order_stats[:overdue_pending] > 0 ? "is-negative" : "is-positive" %>">
+          <%= @order_stats[:overdue_pending] %>
+        </span>
+        <span class="order-queue__metric-hint">past the <%= @order_stats[:long_wait_days] %>-day target</span>
+      </div>
+    </div>
+
+    <div class="order-queue__alltime">
+      <span class="order-queue__label">All time</span>
+      <span class="order-queue__tally is-positive"><%= @order_stats[:approved] %> approved</span>
+      <span class="order-queue__tally is-negative"><%= @order_stats[:rejected] %> rejected</span>
+      <span class="order-queue__tally"><%= @order_stats[:decided] %> reviewed</span>
+    </div>
+  </div>
+</section>
+
+<div class="fraud-dashboard">
+  <section class="fraud-dashboard__section">
+    <h2 class="fraud-dashboard__section-label">Review Queues</h2>
+    <div class="fraud-dashboard__buttons">
+      <%
+        badge_modifier = case @pending_orders_count
+          when 1..25    then "mint"
+          when 26..75   then "yellow"
+          when 76..125  then "peach"
+          when 126..199 then "salmon"
+          when 200..300 then "red-pulse"
+          when 301..400 then "red-pulse-spin"
+          when 401..500 then "fire"
+          else               @pending_orders_count > 500 ? "fire" : nil
+        end
+      %>
+      <div class="fraud-shop-btn<%= " fraud-shop-btn--critical" if @pending_orders_count >= 500 %>">
+        <%= render ActionButtonComponent.new(href: admin_shop_orders_path) do %>
+          <span class="action-btn__label">Shop Orders</span>
+          <% if @pending_orders_count > 0 %>
+            <span class="action-btn__badge action-btn__badge--<%= badge_modifier %>"><%= @pending_orders_count %></span>
+          <% end %>
+        <% end %>
+        <% if @pending_orders_count >= 500 %>
+          <span class="fraud-shop-btn__worse">worse than flavortown 💀</span>
+        <% end %>
+      </div>
+
+      <%= render ActionButtonComponent.new(href: admin_certification_reports_path) do %>
+        <span class="action-btn__label">Reports</span>
+        <% if @pending_fraud_reports_count > 0 %>
+          <span class="action-btn__badge action-btn__badge--salmon"><%= @pending_fraud_reports_count %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="fraud-dashboard__section">
+    <h2 class="fraud-dashboard__section-label">Browse</h2>
+    <div class="fraud-dashboard__buttons">
+      <%= render ActionButtonComponent.new(text: "Audit Logs", href: admin_audit_logs_path) %>
+      <%= render ActionButtonComponent.new(text: "Users", href: admin_users_path) %>
+      <%= render ActionButtonComponent.new(text: "Projects", href: admin_projects_path) %>
+      <%= render ActionButtonComponent.new(text: "Payouts", href: admin_fraud_payouts_path) %>
+    </div>
+  </section>
 </div>

@@ -11,5 +11,6 @@ class Post::FireEvent < ApplicationRecord
   include Postable
   has_paper_trail
 
-  validates :body, presence: { message: "Message can't be blank" }
+  # No longer needed since the body is hardcoded in the card component for compatibility with old stars
+  # validates :body, presence: { message: "Message can't be blank" }
 end

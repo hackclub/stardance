@@ -1,0 +1,110 @@
+// Notice popup shown when a builder tries to create a hardware project on
+// Stardance — hardware moved off the platform to Hack Club Outpost. A single
+// space-themed card: heading + Outpost logo + highlights + a Learn-more CTA.
+.hardware-outpost {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 90vw;
+  max-width: 440px;
+  max-height: fit-content;
+  overflow: visible;
+
+  &::backdrop {
+    background: var(--color-backdrop, rgba(0, 0, 0, 0.6));
+    backdrop-filter: blur(4px);
+  }
+
+  &__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-m);
+    padding: var(--space-xxl) var(--space-xl) var(--space-xl);
+    background: var(--color-set-2-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    z-index: 1;
+    appearance: none;
+    background: none;
+    border: none;
+    color: var(--color-space-text-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 150ms ease;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__eyebrow {
+    margin: 0;
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-brand-mint);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--font-size-xxl);
+    line-height: 1.15;
+    color: var(--color-space-text);
+  }
+
+  &__lede {
+    margin: 0;
+    max-width: 32ch;
+    font-size: var(--font-size-m);
+    line-height: 1.45;
+    color: var(--color-space-text-muted);
+  }
+
+  &__logo {
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    margin: var(--space-xxs) 0;
+  }
+
+  &__highlights {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+
+    li {
+      font-size: var(--font-size-m);
+      line-height: 1.3;
+      color: var(--color-space-text);
+    }
+  }
+
+  &__cta {
+    margin-top: var(--space-xs);
+    width: 100%;
+  }
+}

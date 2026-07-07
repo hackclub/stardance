@@ -4,7 +4,7 @@
       <li class="follow-list__item">
         <%= link_to profile_path(u.display_name), class: "follow-list__link" do %>
           <%= image_tag u.avatar, alt: u.display_name, class: "follow-list__avatar" %>
-          <span class="follow-list__name">@<%= u.display_name %></span><%= render StreakBadgeComponent.new(user: u) %>
+          <span class="follow-list__name">@<%= u.display_name %></span><%= render StreakBadgeComponent.new(user: u) %><%= " ⚡" if u.admin? %>
         <% end %>
       </li>
     <% end %>

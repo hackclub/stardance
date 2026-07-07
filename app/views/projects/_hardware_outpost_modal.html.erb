@@ -1,0 +1,22 @@
+<%# Notice shown when a builder tries to create a hardware project on Stardance —
+    hardware moved off the platform to Hack Club Outpost. Opened by the "New
+    hardware project +" button and by the server guards via ?hardware=outpost. %>
+<dialog id="hardware-outpost-modal" class="hardware-outpost" data-controller="modal">
+  <div class="hardware-outpost__card">
+    <button type="button" class="hardware-outpost__close" data-action="click->modal#close" aria-label="Close">&times;</button>
+
+    <p class="hardware-outpost__eyebrow">Heads up</p>
+    <h2 class="hardware-outpost__title">Hardware projects have moved off the platform</h2>
+    <p class="hardware-outpost__lede">Building hardware? It all happens over on Hack Club Outpost now.</p>
+
+    <%= image_tag "outpost.png", alt: "Hack Club Outpost — July 14–19, San Francisco", class: "hardware-outpost__logo" %>
+
+    <ul class="hardware-outpost__highlights">
+      <li>6-day in-person hardware hackathon</li>
+      <li>Get your project funded</li>
+      <li>San Francisco · July 14–19</li>
+    </ul>
+
+    <a href="https://docs.google.com/document/d/19OTgGmew9m7nNlNTeEn87zjU9M1Qv2ir5XBHOEgPlvI/edit?tab=t.0" class="action-btn action-btn--primary hardware-outpost__cta" target="_blank" rel="noopener noreferrer">Learn more &rarr;</a>
+  </div>
+</dialog>

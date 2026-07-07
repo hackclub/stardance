@@ -198,7 +198,7 @@ export default class extends Controller {
       previewUrl,
       editUrl,
       hackatimeLinked,
-      hardware,
+      recordable,
       recordUrl,
     } = event.params;
     const linked = !!hackatimeLinked;
@@ -238,10 +238,11 @@ export default class extends Controller {
       if (editUrl) this.warnTarget.href = editUrl;
     }
 
-    // The Record button (home composer only) applies to hardware projects; show
-    // it and point it at the newly-selected project's create-session endpoint.
+    // The Record button (home composer only) shows for recordable projects
+    // (hardware, or any project once the :lookout flag is on); point it at the
+    // newly-selected project's create-session endpoint.
     if (this.hasRecordBtnTarget) {
-      this.recordBtnTarget.hidden = !hardware;
+      this.recordBtnTarget.hidden = !recordable;
       if (recordUrl) {
         this.recordBtnTarget.dataset.lookoutRecorderCreateUrlValue = recordUrl;
       }

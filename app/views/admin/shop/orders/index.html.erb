@@ -20,7 +20,9 @@
   </div>
 
   <div class="shop-orders__panel">
-    <%= render partial: "stats", locals: { counts: @c, average_fulfillment_time: @f } %>
+    <div class="shop-orders__panel-stats">
+      <%= render partial: "stats", locals: { counts: @c, average_fulfillment_time: @f } %>
+    </div>
     <% if policy(:admin).view_leaderboard? %>
       <% time_range = params[:time_range] || '7_days' %>
       <% limit = params[:limit] || '10' %>

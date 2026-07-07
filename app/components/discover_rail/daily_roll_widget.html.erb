@@ -3,7 +3,7 @@
          aria-label="rng"
          data-controller="daily-roll"
          data-daily-roll-just-rolled-value="<%= just_rolled? %>"
-         data-daily-roll-value-value="<%= roll&.value %>">
+         data-daily-roll-value-value="<%= roll&.total %>">
   <h3 class="rail-widget__title">rng</h3>
 
   <% if rolled? %>
@@ -13,7 +13,7 @@
     </div>
     <p class="daily-roll-widget__flavor"><%= roll.flavor %></p>
   <% else %>
-    <p class="rail-widget__body">You get one random number a day. Biggest number wins.</p>
+    <p class="rail-widget__body">You get one (or two) random numbers a day. Biggest number wins a <strong>ticket to NASA's Kennedy Space Center</strong>. Reroll to make your number bigger!</p>
     <%# Turbo Drive is off app-wide (application.js), so the form must opt in
         or the roll falls back to a full-page reload and the reveal animation
         never runs. %>
@@ -32,6 +32,10 @@
               data-tooltip-message-value="Click to copy"
               data-copy-text-value="<%= helpers.roll_share_text(roll) %>"
               data-action="click->copy#copy">copy to share</button>
+
+      <% if helpers.reroll_enabled?(user) %>
+        <%= render "daily_rolls/reroll_control", user: user, roll: roll, block: "daily-roll-widget", size: :small %>
+      <% end %>
     </div>
   <% end %>
 

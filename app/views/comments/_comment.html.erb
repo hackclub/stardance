@@ -4,7 +4,7 @@
       <%= image_tag comment.user.avatar, alt: "", class: "devlog-comment__avatar" %>
     <% end %>
     <div class="devlog-comment__meta">
-      <%= link_to "@#{comment.user.display_name}", profile_path(comment.user.display_name), class: "devlog-comment__author" %><%= render StreakBadgeComponent.new(user: comment.user) %>
+      <%= link_to "@#{comment.user.display_name}", profile_path(comment.user.display_name), class: "devlog-comment__author" %><%= render StreakBadgeComponent.new(user: comment.user) %><%= " ⚡" if comment.user.admin? %>
       <time class="devlog-comment__time" datetime="<%= comment.created_at.iso8601 %>">
         · <%= time_ago_in_words(comment.created_at) %> ago
       </time>

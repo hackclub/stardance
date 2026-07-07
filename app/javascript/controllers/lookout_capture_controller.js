@@ -45,6 +45,8 @@ export default class extends Controller {
     modeUrl: String,
     forwardUrl: String,
     skipUrl: String,
+    stopUrl: String,
+    syncUrl: String,
   };
 
   connect() {
@@ -276,11 +278,18 @@ export default class extends Controller {
     this.stopStream();
 
     this.showStage("done");
-    this.setText(this.doneStatusTarget, "Saving your recording…");
+    this.setText(
+      this.doneStatusTarget,
+      "Finishing up processing your timelapse. This can take a minute or two. Keep this tab open.",
+    );
     this.chooseDestination(); // enable the right destination field for the default
+    // Tell Lookout to stop, and tell Stardance too so it stamps stopped_at and
+    // starts syncing the recording immediately rather than waiting for the
+    // every-5-min poller to notice.
     await this.postJson(`/api/sessions/${this.tokenValue}/stop`, {}).catch(
       () => {},
     );
+    this.notifyStardanceStop();
     // No auto-forward: the user picks where the time goes (or not) on this stage,
     // then clicks Finish. Meanwhile, poll for the compiled video to preview it.
     this.pollStatus(this.doneStatusTarget, { showVideo: true });
@@ -298,6 +307,31 @@ export default class extends Controller {
       },
       body: JSON.stringify({ mode }),
     }).catch(() => {});
+  }
+
+  // Tell Stardance the recording stopped so it stamps stopped_at and syncs the
+  // latest state from Lookout right away, instead of waiting for the every-5-min
+  // poller. Same-origin, best-effort — the recorder still works against Lookout's
+  // API even if this fails.
+  notifyStardanceStop() {
+    if (!this.stopUrlValue) return;
+    fetch(this.stopUrlValue, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": this.csrfToken(),
+      },
+    }).catch(() => {});
+  }
+
+  // Ask Stardance to pull this session from Lookout (its `show` action runs
+  // sync_from_remote!), so the finished recording + duration land in Stardance's
+  // DB within seconds instead of on the next poll cycle. Best-effort.
+  syncStardance() {
+    if (!this.syncUrlValue) return;
+    fetch(this.syncUrlValue, { headers: { Accept: "application/json" } }).catch(
+      () => {},
+    );
   }
 
   // ── destination ("where should this time go?") ────────────────────────
@@ -466,6 +500,9 @@ export default class extends Controller {
     }
 
     if (data.status === "complete") {
+      // Stardance still shows this session in-progress until it syncs from
+      // Lookout — pull it now so the finished recording appears in the app.
+      this.syncStardance();
       if (doneOnComplete) {
         this.showStage("done");
         this.chooseDestination();
@@ -474,6 +511,7 @@ export default class extends Controller {
         this.setText(statusEl, "Your timelapse is ready!");
       }
       if (showVideo) await this.revealVideo();
+      this.showHardwareOutpostNotice();
       return;
     }
     if (data.status === "failed") {
@@ -484,7 +522,12 @@ export default class extends Controller {
       return;
     }
 
-    this.setText(statusEl, "Processing your timelapse…");
+    this.setText(
+      statusEl,
+      doneOnComplete
+        ? "Waiting for your Lookout recording to finish…"
+        : "Finishing up processing your timelapse. This can take a minute or two. Keep this tab open.",
+    );
     if (!TERMINAL.includes(data.status)) {
       this.statusTimer = setTimeout(
         () => this.pollStatus(statusEl, { showVideo, doneOnComplete }),
@@ -512,6 +555,14 @@ export default class extends Controller {
       this.renderingTarget.textContent =
         "Your timelapse will be ready to watch in a moment.";
     }
+  }
+
+  // Hardware moved to Outpost — once the timelapse is done, let the builder know.
+  // The notice is only rendered on the page for hardware projects with the flag
+  // on, so this is a no-op everywhere else.
+  showHardwareOutpostNotice() {
+    const dialog = document.getElementById("hardware-outpost-modal");
+    if (dialog && !dialog.open) dialog.showModal();
   }
 
   close(event) {

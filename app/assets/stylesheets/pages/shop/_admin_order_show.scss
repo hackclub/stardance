@@ -1,5 +1,5 @@
 .aorder {
-  padding: var(--space-xl) var(--space-xxl);
+  padding: var(--space-l) var(--space-xxl);
   max-width: 1400px;
   margin: 0 auto;
 
@@ -85,6 +85,10 @@
       background: rgba(168, 85, 247, 0.15);
       color: #c084fc;
     }
+    &--approved {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
   }
 
   // ── State machine stepper ────────────────────────────────────────────
@@ -95,8 +99,8 @@
     background: var(--color-space-card);
     border: 1px solid var(--color-space-border);
     border-radius: 12px;
-    padding: var(--space-xl) var(--space-xxl);
-    margin-bottom: var(--space-xl);
+    padding: var(--space-l) var(--space-xxl);
+    margin-bottom: var(--space-l);
     gap: 0;
     row-gap: var(--space-l);
   }
@@ -213,9 +217,9 @@
   &__grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl);
+    gap: var(--space-l);
     align-items: start;
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-l);
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
@@ -228,7 +232,7 @@
     border: 1px solid var(--color-space-border);
     border-radius: 12px;
     overflow: hidden;
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-l);
 
     &--warn {
       border-color: rgba(249, 115, 22, 0.3);
@@ -242,7 +246,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-m) var(--space-xl);
+    padding: var(--space-s) var(--space-m);
     border-bottom: 1px solid var(--color-space-border);
     background: rgba(255, 255, 255, 0.02);
     gap: var(--space-m);
@@ -258,8 +262,14 @@
     letter-spacing: 0.8px;
   }
 
+  &__card-subtitle {
+    font-size: var(--font-size-xs);
+    font-family: var(--font-family-text);
+    color: var(--color-space-text-muted);
+  }
+
   &__card-body {
-    padding: var(--space-xl);
+    padding: var(--space-s);
   }
 
   // ── Info rows ────────────────────────────────────────────────────────
@@ -562,20 +572,20 @@
     }
 
     &--approve {
-      color: #4ade80;
-      border-color: rgba(74, 222, 128, 0.3);
-      background: rgba(74, 222, 128, 0.08);
+      color: #fff;
+      border-color: rgba(74, 222, 128, 0.6);
+      background: rgba(74, 222, 128, 0.35);
       &:hover:not(:disabled) {
-        background: rgba(74, 222, 128, 0.15);
+        background: rgba(74, 222, 128, 0.5);
       }
     }
 
     &--reject {
-      color: #f87171;
-      border-color: rgba(248, 113, 113, 0.3);
-      background: rgba(248, 113, 113, 0.08);
+      color: #fff;
+      border-color: rgba(248, 113, 113, 0.6);
+      background: rgba(248, 113, 113, 0.35);
       &:hover:not(:disabled) {
-        background: rgba(248, 113, 113, 0.15);
+        background: rgba(248, 113, 113, 0.5);
       }
     }
 
@@ -585,6 +595,15 @@
       background: rgba(251, 191, 36, 0.06);
       &:hover:not(:disabled) {
         background: rgba(251, 191, 36, 0.12);
+      }
+    }
+
+    &--secondary {
+      color: var(--color-space-text);
+      border-color: var(--color-space-border);
+      background: rgba(255, 255, 255, 0.04);
+      &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.08);
       }
     }
 
@@ -860,7 +879,6 @@
   border: 1px solid var(--color-space-border);
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: var(--space-l);
 
   &__header {
     display: flex;

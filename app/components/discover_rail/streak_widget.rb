@@ -35,7 +35,7 @@ module DiscoverRail
     end
 
     def before_render
-      sync_if_stale! if ready?
+      user.sync_streak_if_stale! if ready?
     end
 
     def streak_count
@@ -70,14 +70,6 @@ module DiscoverRail
 
     def linked_projects?
       user.hackatime_projects.where.not(project_id: nil).exists?
-    end
-
-    def sync_if_stale!
-      cache_key = "streak_sync:#{user.id}"
-      return if Rails.cache.read(cache_key)
-
-      Rails.cache.write(cache_key, true, expires_in: 15.minutes)
-      StreakSyncJob.perform_later(user.id)
     end
   end
 end

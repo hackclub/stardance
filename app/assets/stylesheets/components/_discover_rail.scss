@@ -727,6 +727,22 @@
   .action-btn {
     flex: 1 1 auto;
   }
+
+  // reroll uses button_to, which wraps the button in a <form>. Collapse it so
+  // the button itself becomes the flex item and matches copy-to-share. (The
+  // .reroll-control poll wrapper is collapsed globally, see _rng.scss.)
+  form.button_to {
+    display: contents;
+  }
+}
+
+// "rerolled +N" — shown once the earned reroll has been spent (the number
+// above already reflects the summed total). Takes its own line in the wrap.
+.daily-roll-widget__reroll-note {
+  color: var(--color-space-text-muted);
+  flex: 1 1 100%;
+  font-size: var(--font-size-s);
+  text-align: center;
 }
 
 // The reveal is skipped in JS under reduced motion, but the CSS-driven

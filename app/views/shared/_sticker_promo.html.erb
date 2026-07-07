@@ -1,5 +1,5 @@
-<% if current_user&.onboarded? && !current_user.has_dismissed?("sticker_promo") && Time.current < Time.new(2026, 6, 30, 4, 59, 0, "+00:00") %>
-  <div data-controller="sticker-promo">
+<% if current_user&.onboarded? && StickerPromo.active? && !current_user.has_dismissed?(StickerPromo.dismissal_key) %>
+  <div data-controller="sticker-promo" data-sticker-promo-key-value="<%= StickerPromo.dismissal_key %>">
     <dialog class="sticker-promo" data-sticker-promo-target="dialog">
       <div class="sticker-promo__content">
         <button type="button" class="sticker-promo__close" data-action="click->sticker-promo#dismiss" aria-label="Close">&times;</button>
@@ -11,7 +11,7 @@
         </div>
 
         <p class="sticker-promo__text">
-          If you ship a project by <strong class="sticker-promo__underline">NEXT MONDAY</strong> (29th June 2359 EST)
+          If you ship a project by <strong class="sticker-promo__underline"><%= StickerPromo::DEADLINE_LABEL %></strong>
         </p>
 
         <button type="button" class="sticker-promo__cta" data-action="click->sticker-promo#dismiss">I'll start hacking now!</button>

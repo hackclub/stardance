@@ -1,0 +1,124 @@
+<% content_for :title, "Fraud Squad Payouts" %>
+
+<div class="aorder">
+  <div class="aorder__header">
+    <div class="aorder__title-group">
+      <h1 class="aorder__title">Fraud Squad Payouts</h1>
+      <p class="aorder__subtitle">Monthly bracket-based payouts for fraud reviewers</p>
+    </div>
+    <% if policy(FraudPayoutRun).trigger? %>
+      <%= button_to "Trigger Manual Run", trigger_admin_fraud_payouts_path,
+          method: :post,
+          class: "aorder__btn aorder__btn--secondary",
+          data: { confirm: "Calculate payouts for all unpaid reviewed orders since the last run. Continue?" } %>
+    <% end %>
+  </div>
+
+  <div class="aorder__card" style="margin-bottom: var(--space-l);">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">Your Estimated Payout</h2>
+      <span class="aorder__card-subtitle">Issued automatically on the last day of each month</span>
+    </div>
+    <div class="aorder__card-body">
+      <div style="font-size: var(--font-size-xxl); font-family: var(--font-family-subtitle); font-weight:700; color: var(--color-space-text);">
+        <%= number_with_delimiter(@estimated_amount) %> <%= stardust_icon %>
+      </div>
+      <div style="font-size: var(--font-size-s); color: var(--color-space-text-muted); font-family: var(--font-family-text); margin-top: var(--space-xxs);">
+        <%= @estimated_orders %> unpaid <%= 'order'.pluralize(@estimated_orders) %> reviewed this period &middot; bracket payout based on the standings below
+      </div>
+    </div>
+  </div>
+
+  <div class="aorder__card" style="margin-bottom: var(--space-l);">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">Bracket Standings</h2>
+      <% if @bracket %>
+        <span class="aorder__card-subtitle">Top reviewer sets the curve &mdash; <%= @bracket[:max_count] %> reviews = <%= number_with_delimiter(@bracket[:max_payout]) %> <%= stardust_icon %></span>
+      <% end %>
+    </div>
+    <div class="aorder__card-body" style="padding: 0;">
+      <% if @leaderboard.any? %>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Reviewer</th>
+              <th>Reviews</th>
+              <th>Of Top</th>
+              <th>Bracket</th>
+              <th style="text-align: right;">Payout</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @leaderboard.each_with_index do |row, index| %>
+              <% is_me = row[:user] == current_user.id %>
+              <tr class="<%= "fraud-leaderboard__row--me" if is_me %>">
+                <td style="color: var(--color-space-text-muted);"><%= index + 1 %></td>
+                <td>
+                  <%= row[:user_record]&.display_name || "User ##{row[:user]}" %>
+                  <% if is_me %>
+                    <span class="badge" style="font-size: 10px; padding: 1px 7px; margin-left: 4px; background: rgba(149,219,255,0.18); color: var(--color-brand-blue);">you</span>
+                  <% end %>
+                </td>
+                <td><%= row[:total] %></td>
+                <td style="color: var(--color-space-text-muted);"><%= row[:percent] %>%</td>
+                <td><span class="badge" style="background: rgba(235,183,255,0.14); color: var(--color-brand-lilac);"><%= row[:bracket] %></span></td>
+                <td style="text-align: right; font-weight: 600;"><%= number_with_delimiter(row[:payout].to_i) %> <%= stardust_icon %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p style="padding: var(--space-m); color: var(--color-space-text-muted); text-align: center; margin: 0;">No reviews recorded yet.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="aorder__card">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">Payout Runs</h2>
+    </div>
+    <div class="aorder__card-body" style="padding: 0;">
+      <% if @runs.any? %>
+        <table style="width:100%; border-collapse:collapse; font-family: var(--font-family-text); font-size: var(--font-size-s);">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--color-space-border); background: rgba(255,255,255,0.02);">
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Run</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Period</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Orders</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Total Tickets</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Approved By</th>
+              <th style="padding: var(--space-s) var(--space-m);"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @runs.each do |run| %>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);">#<%= run.id %></td>
+                <td style="padding: var(--space-s) var(--space-m);">
+                  <span class="aorder__state-badge aorder__state-badge--<%= run.aasm_state == 'pending_approval' ? 'pending' : run.aasm_state %>">
+                    <%= run.aasm_state.humanize %>
+                  </span>
+                </td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text-muted);">
+                  <%= run.period_start&.strftime("%b %d, %Y") || "All time" %> &rarr; <%= run.period_end.strftime("%b %d, %Y") %>
+                </td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= run.total_orders %></td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= number_with_delimiter(run.total_amount) %> <%= stardust_icon %></td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text-muted);"><%= run.approved_by_user&.display_name || "—" %></td>
+                <td style="padding: var(--space-s) var(--space-m);">
+                  <%= link_to "View →", admin_fraud_payout_path(run), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p style="padding: var(--space-m); color: var(--color-space-text-muted); font-family: var(--font-family-text); font-size: var(--font-size-s); text-align: center; margin: 0;">
+          No payout runs yet. Trigger a manual run or wait for the scheduled job.
+        </p>
+      <% end %>
+    </div>
+  </div>
+</div>

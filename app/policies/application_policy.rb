@@ -51,6 +51,10 @@ class ApplicationPolicy
     attr_reader :user, :scope
   end
 
+  def view_deleted_devlogs?
+    user&.admin? || user&.has_role?(:fraud_dept)
+  end
+
   private
 
   def logged_in?

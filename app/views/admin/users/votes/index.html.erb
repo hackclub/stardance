@@ -20,6 +20,7 @@
           <th>Tech.</th>
           <th>Usab.</th>
           <th>Story.</th>
+          <th>Time spent</th>
           <th>Status</th>
           <th>Reason</th>
         </tr>
@@ -39,6 +40,7 @@
             <td><%= vote.technical_score || "—" %></td>
             <td><%= vote.usability_score || "—" %></td>
             <td><%= vote.storytelling_score || "—" %></td>
+            <td><%= vote_duration_in_words(vote.time_taken_to_vote_in_seconds) %></td>
             <td><%= vote.discarded? ? "Discarded" : "Counted" %></td>
             <td class="vote-reasons">
               <% if vote.reason.present? %>

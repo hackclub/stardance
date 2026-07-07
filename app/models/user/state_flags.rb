@@ -1,20 +1,24 @@
 module User::StateFlags
   extend ActiveSupport::Concern
 
-  DISMISSIBLE_THINGS = %w[home_intro flagship_ad shop_suggestion_box willsbuilds_banner shop_picks_intro slack_doodle sticker_promo].freeze
+  DISMISSIBLE_THINGS = %w[home_intro flagship_ad shop_suggestion_box willsbuilds_banner shop_picks_intro slack_doodle].freeze
+
+  # Families of week-scoped dismissal keys (e.g. "sticker_promo_2026_07_07"),
+  # where the suffix rotates so each occurrence is dismissed independently.
+  DISMISSIBLE_PREFIXES = %w[sticker_promo].freeze
 
   def has_dismissed?(thing_name) = things_dismissed.include?(thing_name.to_s)
 
   def dismiss_thing!(thing_name)
     thing_name_str = thing_name.to_s
-    raise ArgumentError, "Invalid thing to dismiss: #{thing_name_str}" unless DISMISSIBLE_THINGS.include?(thing_name_str)
+    raise ArgumentError, "Invalid thing to dismiss: #{thing_name_str}" unless dismissible_thing?(thing_name_str)
 
     append_array_value_once(:things_dismissed, thing_name_str)
   end
 
   def undismiss_thing!(thing_name)
     thing_name_str = thing_name.to_s
-    raise ArgumentError, "Invalid thing to dismiss: #{thing_name_str}" unless DISMISSIBLE_THINGS.include?(thing_name_str)
+    raise ArgumentError, "Invalid thing to dismiss: #{thing_name_str}" unless dismissible_thing?(thing_name_str)
 
     remove_array_value(:things_dismissed, thing_name_str)
   end
@@ -30,6 +34,11 @@ module User::StateFlags
   def has_pending_setup_project? = guest? && projects.exists?
 
   private
+    def dismissible_thing?(thing_name)
+      DISMISSIBLE_THINGS.include?(thing_name) ||
+        DISMISSIBLE_PREFIXES.any? { |prefix| thing_name.start_with?("#{prefix}_") }
+    end
+
     def append_array_value_once(column, value)
       values = things_dismissed || []
       return if values.include?(value)

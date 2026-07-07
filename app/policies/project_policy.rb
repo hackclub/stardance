@@ -47,10 +47,6 @@ class ProjectPolicy < ApplicationPolicy
         signed_in_any? && show?
     end
 
-    def view_deleted_devlogs?
-        user&.can_see_deleted_devlogs?
-    end
-
     def see_votes?
         member? || user.admin?
     end

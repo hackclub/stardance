@@ -22,13 +22,15 @@ class Admin::ProjectsController < Admin::ApplicationController
   end
 
   def show
-    @project = ::Project.unscoped.find(params[:id])
+    @project = ::Project.unscoped
+      .includes(:users, hackatime_projects: { user: :identities })
+      .find(params[:id])
     authorize @project
   end
 
   def votes
     @project = ::Project.find(params[:id])
-    authorize @project, :show?
+    authorize @project, :view_votes?
 
     @pagy, @votes = pagy(
       @project.votes.includes(:user, :events).order(created_at: :desc)

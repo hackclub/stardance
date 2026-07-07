@@ -46,12 +46,17 @@ module Posts
       repost? && !plain_repost?
     end
 
+    def fire_event?
+      display_post&.postable_type == "Post::FireEvent"
+    end
+
     def card_classes
       class_names(
         "feed-post-card",
-        "feed-post-card--linked": card_link_url.present?,
+        "feed-post-card--linked": card_link_url.present? && request.path != card_link_url,
         "feed-post-card--compact": compact,
         "feed-post-card--quote-repost": quote_repost?,
+        "feed-post-card--fire": fire_event?,
         "feed-post-card--#{theme}": theme.present?
       )
     end

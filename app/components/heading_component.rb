@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 class HeadingComponent < ViewComponent::Base
-  TONES = %i[brown red green blue].freeze
+  TONES = %i[blue mint salmon lilac yellow cream].freeze
   SIZES = %i[default full].freeze
 
   attr_reader :title, :tone, :size
 
-  def initialize(title:, tone: :brown, size: :default)
+  def initialize(title:, tone: :cream, size: :default)
     @title = title
     @tone = normalize(:tone, tone, TONES)
     @size = normalize(:size, size, SIZES)
@@ -15,7 +15,7 @@ class HeadingComponent < ViewComponent::Base
   def heading_classes
     class_names(
       "ui-heading",
-      "ui-heading--#{tone}": tone != :brown,
+      "ui-heading--#{tone}": tone != :cream,
       "ui-heading--full": size == :full
     )
   end
@@ -27,6 +27,6 @@ class HeadingComponent < ViewComponent::Base
     return symbolized if allowed.include?(symbolized)
 
     raise ArgumentError,
-          "#{name} must be one of #{allowed.join(', ')}, got #{value.inspect}"
+          "#{name} must be one of #{allowed.join(", ")}, got #{value.inspect}"
   end
 end

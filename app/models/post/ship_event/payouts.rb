@@ -174,6 +174,9 @@ module Post::ShipEvent::Payouts
     if issued
       notify_payout_issued
       broadcast_payout
+      # Jump the recipient to the front of the Airtable sync so their
+      # `Loops - stardancePayout*` contact properties refresh within ~1 min.
+      payout_recipient&.flag_for_resync!
     end
 
     issued

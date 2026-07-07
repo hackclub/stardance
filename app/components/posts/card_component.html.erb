@@ -1,5 +1,11 @@
-<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: card_data) %>>
-  <% if card_link_url.present? %>
+<% on_card_link_target = card_link_url.present? && request.path == card_link_url %>
+<% if on_card_link_target %>
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>">
+<% else %>
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>"
+  <%= tag.attributes(data: card_data) %>>
+<% end %>
+  <% if card_link_url.present? && !on_card_link_target %>
     <%= link_to card_link_url,
           class: "feed-post-card__overlay-link",
           aria: { label: "Open comments for this post" } do %>
@@ -13,33 +19,47 @@
       <span>Reposted by</span>
       <%= link_to "@#{post.user.display_name.presence || "stardancer"}",
             profile_path(post.user.display_name),
-            class: "feed-post-card__reposted-by-link" %><%= render StreakBadgeComponent.new(user: post.user) %>
+            class: "feed-post-card__reposted-by-link" %><%= render StreakBadgeComponent.new(user: post.user) %><%= " ⚡" if post.user.admin? %>
     </div>
   <% end %>
 
-  <header class="feed-post-card__header">
-    <% if author.present? %>
-      <%= link_to profile_path(author.display_name), class: "feed-post-card__avatar-link", aria: { label: "@#{author_name}" } do %>
-        <%= image_tag author.avatar,
-                      alt: "",
-                      class: "feed-post-card__avatar",
-                      loading: (lazy_media ? "lazy" : nil),
-                      decoding: (lazy_media ? "async" : nil) %>
+  <% if fire_event? %>
+    <div class="feed-post-card__super-star markdown-content">
+      <span class="feed-post-card__super-star-title">
+        Super Star
+      </span>
+    </div>
+  <% end %>
+
+  <header class="feed-post-card__header<%= ' feed-post-card__super-star-header' if fire_event? %>">
+    <% unless fire_event? %>
+      <% if author.present? %>
+        <%= link_to profile_path(author.display_name), class: "feed-post-card__avatar-link", aria: { label: "@#{author_name}" } do %>
+          <%= image_tag author.avatar,
+                        alt: "",
+                        class: "feed-post-card__avatar",
+                        loading: (lazy_media ? "lazy" : nil),
+                        decoding: (lazy_media ? "async" : nil) %>
+        <% end %>
+      <% else %>
+        <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">S</span>
       <% end %>
-    <% else %>
-      <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">S</span>
     <% end %>
 
     <div class="feed-post-card__meta">
       <p class="feed-post-card__byline">
         <% if author.present? %>
           <%= link_to "@#{author_name}", profile_path(author.display_name), class: "feed-post-card__author" %>
-          <%= render StreakBadgeComponent.new(user: author) %>
+          <%= render StreakBadgeComponent.new(user: author) %><%= " ⚡" if author.admin? %>
         <% else %>
           <span class="feed-post-card__author">@stardancer</span>
         <% end %>
 
-        <% if project.present? %>
+        <% if fire_event? %>
+          <span class="feed-post-card__context">has marked</span>
+          <%= link_to project.title, project_path(project), class: "feed-post-card__project" %>
+          <span class="feed-post-card__context">as a Super Star!</span>
+        <% elsif project.present? %>
           <span class="feed-post-card__context">on</span>
           <%= link_to project.title, project_path(project), class: "feed-post-card__project" %>
         <% end %>
@@ -65,7 +85,12 @@
     </div>
   </header>
 
-  <% if body.present? && !quote_repost? %>
+  <% if fire_event? %>
+    <div class="feed-post-card__super-star-body markdown-content">
+      <!-- Hardcoded body since the old ship events had the header inside the body -->
+      <%= helpers.md("As a prize for your great work, look out for a bonus prize in the mail :)", allow_images: false) %>
+    </div>
+  <% elsif body.present? && !quote_repost? %>
     <div class="feed-post-card__body markdown-content">
       <%= helpers.md(body, allow_images: false) %>
     </div>
@@ -88,7 +113,7 @@
     </div>
   <% end %>
 
-  <% if show_footer? %>
+  <% if show_footer? && !fire_event? %>
   <footer class="feed-post-card__actions">
     <% if show_comments && interaction_post&.postable_type == "Post::Devlog" %>
       <div class="feed-post-card__comment-action"

@@ -31,8 +31,8 @@
         <% end %>
         <dt>Created</dt>      <dd><%= @project.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
         <dt>Updated</dt>      <dd><%= @project.updated_at.strftime("%Y-%m-%d %H:%M") %></dd>
-        <dt>Shipped</dt>      <dd><%= @project.shipped_at&.strftime("%Y-%m-%d %H:%M") || content_tag(:span, "Not shipped", class: "admin-user-show__muted") %></dd>
-        <dt>Status</dt>       <dd><%= @project.deleted? ? "Deleted" : "Active" %></dd>
+        <dt>Last Shipped</dt> <dd><%= @project.shipped_at&.strftime("%Y-%m-%d %H:%M") || content_tag(:span, "Not shipped", class: "admin-user-show__muted") %></dd>
+        <dt>Active</dt>       <dd><%= @project.deleted? ? "Deleted" : "Yes" %></dd>
         <dt>Tutorial</dt>     <dd><%= @project.tutorial? ? "Yes" : "No" %></dd>
         <dt>Duration</dt>     <dd><%= @project.duration_seconds > 0 ? "#{(@project.duration_seconds / 3600.0).round(1)}h" : "0h" %></dd>
         <dt>Devlogs</dt>      <dd><%= @project.devlogs_count %></dd>
@@ -63,9 +63,17 @@
     <div class="mission-panel">
       <h2 class="admin-user-show__section-title">Members</h2>
       <% if @project.users.any? %>
-        <ul style="color: #e2e8f0;">
+        <ul class="admin-project__members">
           <% @project.users.each do |u| %>
-            <li><%= link_to u.display_name, admin_user_path(u) %></li>
+            <li class="admin-project__member">
+              <%= link_to u.display_name, admin_user_path(u) %>
+              <% if u.slack_id.present? %>
+                <span class="admin-project__fraud-links">
+                  <%= link_to "Billy ↗", "https://billy.3kh0.net/?u=#{u.slack_id}", target: "_blank", rel: "noopener noreferrer", class: "admin-fraud-link" %>
+                  <%= link_to "Joe ↗", "https://joe.fraud.hackclub.com/profile/#{u.slack_id}", target: "_blank", rel: "noopener noreferrer", class: "admin-fraud-link" %>
+                </span>
+              <% end %>
+            </li>
           <% end %>
         </ul>
       <% else %>
@@ -77,9 +85,14 @@
         <% if @project.hackatime_projects.any? %>
           <ul>
             <% @project.hackatime_projects.each do |hp| %>
-              <li>
+              <li class="admin-project__member">
                 <code><%= hp.name %></code>
                 <small class="admin-user-show__muted">(<%= link_to hp.user.display_name, admin_user_path(hp.user) %>)</small>
+                <% if (hackatime_uid = hp.user.identities.find { |i| i.provider == "hackatime" }&.uid) %>
+                  <%= link_to "Joe ↗",
+                        "https://joe.fraud.hackclub.com/overview?u=#{hackatime_uid}&d=#{@project.created_at.strftime("%Y-%m-%d")}&projects=#{ERB::Util.url_encode(hp.name)}",
+                        target: "_blank", rel: "noopener noreferrer", class: "admin-fraud-link" %>
+                <% end %>
               </li>
             <% end %>
           </ul>
@@ -90,13 +103,15 @@
     </div>
   </div>
 
-  <% if policy(current_user).view_order_full_details? %>
-    <div class="mission-panel">
-      <h2 class="admin-user-show__section-title">Actions</h2>
-      <div class="admin-user-show__actions">
-        <%= render ActionButtonComponent.new(text: "← Back", href: admin_projects_path, size: :small, variant: :secondary) %>
-        <%= render ActionButtonComponent.new(text: "Public Page", href: project_path(@project), size: :small, variant: :secondary) %>
+  <div class="mission-panel">
+    <h2 class="admin-user-show__section-title">Actions</h2>
+    <div class="admin-user-show__actions">
+      <%= render ActionButtonComponent.new(text: "← Back", href: admin_projects_path, size: :small, variant: :secondary) %>
+      <%= render ActionButtonComponent.new(text: "Public Page", href: project_path(@project), size: :small, variant: :secondary) %>
+      <% if policy(@project).view_votes? %>
         <%= render ActionButtonComponent.new(text: "Votes", href: votes_admin_project_path(@project), size: :small, variant: :secondary) %>
+      <% end %>
+      <% if policy(current_user).view_order_full_details? %>
         <% if @project.deleted? %>
           <%= button_to "Restore Project", restore_admin_project_path(@project), method: :post,
               data: { confirm: "Restore this project?" } %>
@@ -104,9 +119,11 @@
           <%= button_to "Delete Project", delete_admin_project_path(@project), method: :post,
               data: { confirm: "Delete this project?" } %>
         <% end %>
-      </div>
+      <% end %>
     </div>
+  </div>
 
+  <% if policy(current_user).view_order_full_details? %>
     <%= render layout: "shared/modal", locals: { id: "change-ship-status-modal", title: "Change Ship Status", description: "Bypasses AASM transitions and is logged to PaperTrail." } do %>
       <form action="<%= update_ship_status_admin_project_path(@project) %>" method="post">
         <%= hidden_field_tag :authenticity_token, form_authenticity_token %>

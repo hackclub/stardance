@@ -422,13 +422,40 @@ module Certification
     def notify_owner!
       return unless owner&.slack_id.present?
 
+      routes = Rails.application.routes.url_helpers
+      url_opts = Rails.application.config.action_controller.default_url_options
+                      .reverse_merge(host: "stardance.hackclub.com", protocol: "https")
+
+      locals = {
+        project_title: project.title,
+        project_url: routes.project_url(project, **url_opts),
+        feedback: feedback.to_s,
+        video_url: verdict_video.attached? ? routes.rails_blob_url(verdict_video, **url_opts) : nil
+      }
+
       case status.to_sym
       when :approved
-        owner.dm_user("Your project '#{project.title}' was approved. It's out for voting now.")
+        msg = "Your project '#{project.title}' was approved. It's out for voting now."
+        msg += "\n\nFeedback: #{feedback}" if feedback.present?
+
+        SendSlackDmJob.perform_later(
+          owner.slack_id,
+          msg,
+          blocks_path: "notifications/projects/approved",
+          locals: locals,
+          sent_by_id: reviewer_id
+        )
       when :returned
         msg = "Your project '#{project.title}' needs changes before it can ship."
-        msg += "\n\n#{feedback}" if feedback.present?
-        owner.dm_user(msg)
+        msg += "\n\nFeedback: #{feedback}" if feedback.present?
+
+        SendSlackDmJob.perform_later(
+          owner.slack_id,
+          msg,
+          blocks_path: "notifications/projects/returned",
+          locals: locals,
+          sent_by_id: reviewer_id
+        )
       end
     end
   end

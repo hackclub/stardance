@@ -301,6 +301,9 @@ application.register("project-type", ProjectTypeController);
 import ReadmeImageController from "./readme_image_controller";
 application.register("readme-image", ReadmeImageController);
 
+import RerollPollController from "./reroll_poll_controller";
+application.register("reroll-poll", RerollPollController);
+
 import RevealOnScrollController from "./reveal_on_scroll_controller";
 application.register("reveal-on-scroll", RevealOnScrollController);
 

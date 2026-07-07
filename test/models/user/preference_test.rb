@@ -11,7 +11,7 @@
 #  send_notifications_for_new_followers     :boolean          default(TRUE), not null
 #  send_votes_to_slack                      :boolean          default(FALSE), not null
 #  stardust_balance_notifications           :boolean          default(FALSE), not null
-#  streak_slack_status_enabled              :boolean          default(FALSE), not null
+#  streak_slack_status_enabled              :boolean          default(TRUE), not null
 #  created_at                               :datetime         not null
 #  updated_at                               :datetime         not null
 #  user_id                                  :bigint           not null

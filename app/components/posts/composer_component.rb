@@ -67,10 +67,21 @@ module Posts
     end
 
     # Only the /home composer shows the "Record a timelapse" button (toggled per
-    # selected project's hardware status by the composer controller). The project
-    # page has its own dedicated record button, so its composer leaves this off.
+    # selected project by the composer controller). The project page has its own
+    # dedicated record button, so its composer leaves this off.
     def show_record?
       show_record
+    end
+
+    # Where the Record button points for a given project chip, or "" when the
+    # button shouldn't render. Lookout recording is offered for hardware projects,
+    # and for every project once the :lookout flag is on (Lookout becomes the
+    # default time path there). The view keys both the create-URL and the button's
+    # visibility off this one method, so they can never drift apart.
+    def record_url_for(project)
+      return "" unless show_record? && project
+      return "" unless project.hardware? || Flipper.enabled?(:lookout, current_user)
+      helpers.project_lookout_sessions_path(project)
     end
 
     def form_url

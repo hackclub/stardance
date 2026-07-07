@@ -99,6 +99,19 @@ class NotificationTest < ActiveSupport::TestCase
     end
   end
 
+  test "email_deliverable defaults true so a high-priority type still emails" do
+    notification = Notifications::NewFollower.new(priority: :high)
+    assert_includes notification.effective_channels, :email
+  end
+
+  test "email_deliverable false drops the email channel but keeps slack" do
+    notification = Notifications::Payouts::ShipEventIssued.new(priority: :high)
+    channels = notification.effective_channels
+
+    assert_includes channels, :slack
+    assert_not_includes channels, :email
+  end
+
   test "orphaned? returns true when the polymorphic record is missing" do
     orphan = notifications(:orphaned_notification)
     assert orphan.orphaned?

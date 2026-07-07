@@ -5,12 +5,10 @@
 #  id                         :bigint           not null, primary key
 #  body                       :string
 #  certification_status       :string           default("pending")
-#  comments_count             :integer          default(0), not null
 #  feedback_reason            :text
 #  feedback_video_url         :string
 #  hours_at_payout            :float
 #  hours_at_ship              :float
-#  likes_count                :integer          default(0), not null
 #  multiplier                 :float
 #  originality_median         :decimal(5, 2)
 #  originality_percentile     :decimal(5, 2)
@@ -103,7 +101,9 @@ class Post::ShipEvent < ApplicationRecord
   end
 
   def capture_hours_at_ship
-    reload.recalculate_hours_at_ship
+    association(:post).reset
+    association(:project).reset
+    recalculate_hours_at_ship
   end
 
   def recalculate_hours_at_ship

@@ -399,10 +399,10 @@ class Project < ApplicationRecord
     state :rejected
 
     event :submit_for_review do
-      transitions from: [ :draft, :submitted, :under_review, :needs_changes, :approved, :rejected ], to: :submitted, guard: :shippable?
-      after do
-        self.shipped_at = Time.current # I moved this logic to the ships controller as there's differences in how we handle reships - @AVD
-      end
+      transitions from: [ :draft, :submitted, :under_review, :needs_changes, :approved, :rejected ],
+                  to: :submitted,
+                  guard: :shippable?,
+                  after: -> { self.shipped_at = Time.current }
     end
 
     event :start_review do
@@ -418,7 +418,7 @@ class Project < ApplicationRecord
     end
 
     event :return_for_changes do
-      transitions from: :under_review, to: :needs_changes
+      transitions from: [ :under_review, :approved ], to: :needs_changes
     end
 
     event :resubmit_for_review do

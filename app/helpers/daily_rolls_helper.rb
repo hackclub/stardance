@@ -6,13 +6,41 @@ module DailyRollsHelper
     number_with_delimiter(value)
   end
 
+  # Whether the earned-reroll feature is live for this user.
+  def reroll_enabled?(user)
+    Flipper.enabled?(:rng_reroll, user)
+  end
+
+  # State of the earned reroll for today's roll:
+  #   :used     — already rerolled today
+  #   :unlocked — coded more than REROLL_MIN_SECONDS today on a linked project
+  #   :locked   — hasn't coded enough yet
+  # nil when there's nothing to reroll (no user, or they haven't rolled yet).
+  def reroll_state(user, roll)
+    return nil if user.nil? || roll.nil?
+    return :used if roll.rerolled?
+
+    reroll_coded_seconds(user) > DailyRoll::REROLL_MIN_SECONDS ? :unlocked : :locked
+  end
+
+  # Seconds the user has coded today on a linked Stardance project (the gate
+  # for unlocking the reroll). Read from the cached streak activity.
+  def reroll_coded_seconds(user)
+    user&.streak_today_activity&.coded_seconds.to_i
+  end
+
+  # Tooltip on the locked reroll button: what to do to unlock it.
+  def reroll_locked_hint
+    "Code 5 min on a Stardance project today to unlock a reroll which will increase your number!"
+  end
+
   # The copy-to-share blurb, e.g.
   #   stardance rng day 1
   #   🎲 50 · ranked #150 so far
   #   https://…/rng
   def roll_share_text(roll)
     "stardance rng #{roll.day_label}\n" \
-      "🎲 #{formatted_roll_value(roll.value)} · ranked ##{roll.rank} so far\n" \
+      "🎲 #{formatted_roll_value(roll.total)} · ranked ##{roll.rank} so far\n" \
       "#{rng_url}"
   end
 

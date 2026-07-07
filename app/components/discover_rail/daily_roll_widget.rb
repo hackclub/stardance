@@ -24,9 +24,9 @@ module DiscoverRail
       rolled? && context[:just_rolled].present?
     end
 
-    # Rolls are always positive, so the value is shown plainly.
+    # The day's number is the roll plus any earned reroll, shown plainly.
     def formatted_value
-      number_with_delimiter(roll.value)
+      number_with_delimiter(roll.total)
     end
   end
 end

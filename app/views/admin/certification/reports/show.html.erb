@@ -1,144 +1,119 @@
 <% content_for :title, "Report ##{@report.id}" %>
 
-<main class="admin-reports">
-  <%= link_to "← back to reports", admin_certification_reports_path, class: "btn-back" %>
+<main>
+  <%= link_to "← back to reports", admin_certification_reports_path, class: "btn-secondary slim" %>
 
-  <div class="reports-show-header">
-    <div class="header-meta">
-      <h1>Report #<%= @report.id %></h1>
-      <span class="status-badge status-badge--<%= @report.status %>"><%= @report.status %></span>
-    </div>
+  <div class="admin-actions-wrap">
+    <h1>Report #<%= @report.id %></h1>
+    <% badge_class = @report.status == "reviewed" ? "badge-active" : @report.status == "dismissed" ? "badge-archived" : "badge-pending" %>
+    <span class="badge <%= badge_class %>"><%= @report.status %></span>
   </div>
 
-  <div class="reports-show-grid">
-    <!-- Left: the person/project being reported -->
-    <div class="reports-show-left">
-      <section class="report-card">
-        <h3>Reported Project</h3>
+  <div class="flex">
+    <section class="admin-section">
+      <h3 class="admin-section__header">Reported Project</h3>
 
-        <% if @report.project.present? %>
-          <% owner = @report.project.memberships.find_by(role: :owner)&.user %>
-          <div class="detail-list">
-            <div class="detail-item">
-              <span class="detail-key">Title</span>
-              <span class="detail-value">
-                <%= link_to @report.project.title, admin_project_path(@report.project) %>
-              </span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-key">Owner</span>
-              <div class="detail-value">
-                <% if owner %>
-                  <div class="user-cell">
-                    <img src="<%= owner.avatar %>" alt="">
-                    <%= link_to owner.display_name, admin_user_path(owner) %>
-                  </div>
-                <% else %>
-                  <span class="detail-empty">Unknown</span>
-                <% end %>
-              </div>
-            </div>
-            <div class="detail-item">
-              <span class="detail-key">Demo URL</span>
-              <span class="detail-value">
-                <% if @report.project.demo_url.present? %>
-                  <%= link_to truncate(@report.project.demo_url, length: 50), @report.project.demo_url, target: "_blank" %>
-                <% else %>
-                  <span class="detail-empty">Not provided</span>
-                <% end %>
-              </span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-key">Repo URL</span>
-              <span class="detail-value">
-                <% if @report.project.repo_url.present? %>
-                  <%= link_to truncate(@report.project.repo_url, length: 50), @report.project.repo_url, target: "_blank" %>
-                <% else %>
-                  <span class="detail-empty">Not provided</span>
-                <% end %>
-              </span>
-            </div>
-            <% if @report.project.description.present? %>
-              <div class="detail-item">
-                <span class="detail-key">Description</span>
-                <span class="detail-value detail-value--prewrap"><%= @report.project.description %></span>
-              </div>
-            <% end %>
-          </div>
+      <% if @report.project.present? %>
+        <% owner = @report.project.memberships.find_by(role: :owner)&.user %>
+        <dl class="admin-user-show__dl">
+          <dt>Title</dt>
+          <dd><%= link_to @report.project.title, admin_project_path(@report.project) %></dd>
 
-          <div class="project-link-buttons">
-            <%= link_to "View Project →", admin_project_path(@report.project), class: "project-link-btn project-link-btn--navigate" %>
+          <dt>Owner</dt>
+          <dd>
             <% if owner %>
-              <%= link_to "View Owner →", admin_user_path(owner), class: "project-link-btn project-link-btn--navigate" %>
-            <% end %>
-            <% if @report.project.demo_url.present? %>
-              <%= link_to "Demo ↗", @report.project.demo_url, target: "_blank", class: "project-link-btn" %>
-            <% end %>
-            <% if @report.project.repo_url.present? %>
-              <%= link_to "Repo ↗", @report.project.repo_url, target: "_blank", class: "project-link-btn" %>
-            <% end %>
-            <% if owner&.slack_id.present? %>
-              <%= link_to "Billy ↗", "https://billy.3kh0.net/?u=#{owner.slack_id}", target: "_blank", rel: "noopener", class: "project-link-btn project-link-btn--fraud" %>
-              <%= link_to "Joe ↗", "https://joe.fraud.hackclub.com/profile/#{owner.slack_id}", target: "_blank", rel: "noopener", class: "project-link-btn project-link-btn--fraud" %>
-            <% end %>
-          </div>
-        <% else %>
-          <p class="deleted-project-notice">This project has been deleted.</p>
-        <% end %>
-      </section>
-    </div>
-
-    <!-- Right: report reasoning, reporter + actions -->
-    <div class="reports-show-right">
-      <section class="report-card">
-        <h3>Report Info</h3>
-
-        <div class="detail-list">
-          <div class="detail-item">
-            <span class="detail-key">Reporter</span>
-            <div class="detail-value">
-              <div class="user-cell">
-                <img src="<%= @report.reporter.avatar %>" alt="">
-                <%= link_to @report.reporter.display_name, admin_user_path(@report.reporter) %>
+              <div class="admin-actions-wrap">
+                <img src="<%= owner.avatar %>" alt="" style="width:24px;height:24px;border-radius:50%;">
+                <%= link_to owner.display_name, admin_user_path(owner) %>
               </div>
-            </div>
-          </div>
-          <div class="detail-item">
-            <span class="detail-key">Reason</span>
-            <span class="detail-value">
-              <span class="reason-badge reason-badge--<%= @report.reason.parameterize(separator: '_') %>">
-                <%= @report.reason.titleize %>
-              </span>
-            </span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-key">Created</span>
-            <span class="detail-value">
-              <%= @report.created_at.strftime("%b %d, %Y at %H:%M") %>
-              <span class="detail-meta">
-                (<%= time_ago_in_words(@report.created_at) %> ago)
-              </span>
-            </span>
-          </div>
-        </div>
+            <% else %>
+              Unknown
+            <% end %>
+          </dd>
 
-        <div class="details-text-block">
-          <div class="block-label">Reasoning</div>
-          <p><%= @report.details %></p>
-        </div>
+          <dt>Demo URL</dt>
+          <dd>
+            <% if @report.project.demo_url.present? %>
+              <%= link_to truncate(@report.project.demo_url, length: 50), @report.project.demo_url, target: "_blank" %>
+            <% else %>
+              Not provided
+            <% end %>
+          </dd>
 
-        <% if @report.pending? %>
-          <div class="report-actions">
-            <%= button_to "Mark Action Taken", review_admin_certification_report_path(@report), method: :post, class: "btn-mark-reviewed" %>
-            <%= button_to "Dismiss Report", dismiss_admin_certification_report_path(@report), method: :post, class: "btn-dismiss" %>
+          <dt>Repo URL</dt>
+          <dd>
+            <% if @report.project.repo_url.present? %>
+              <%= link_to truncate(@report.project.repo_url, length: 50), @report.project.repo_url, target: "_blank" %>
+            <% else %>
+              Not provided
+            <% end %>
+          </dd>
+
+          <% if @report.project.description.present? %>
+            <dt>Description</dt>
+            <dd><%= @report.project.description %></dd>
+          <% end %>
+        </dl>
+
+        <div class="admin-actions-wrap" style="margin-top: var(--space-m)">
+          <%= link_to "View Project →", admin_project_path(@report.project), class: "btn-primary slim" %>
+          <% if owner %>
+            <%= link_to "View Owner →", admin_user_path(owner), class: "btn-primary slim" %>
+          <% end %>
+          <% if @report.project.demo_url.present? %>
+            <%= link_to "Demo ↗", @report.project.demo_url, target: "_blank", class: "btn-secondary slim" %>
+          <% end %>
+          <% if @report.project.repo_url.present? %>
+            <%= link_to "Repo ↗", @report.project.repo_url, target: "_blank", class: "btn-secondary slim" %>
+          <% end %>
+          <% if owner&.slack_id.present? %>
+            <%= link_to "Billy ↗", "https://billy.3kh0.net/?u=#{owner.slack_id}", target: "_blank", rel: "noopener", class: "btn-secondary slim" %>
+            <%= link_to "Joe ↗", "https://joe.fraud.hackclub.com/profile/#{owner.slack_id}", target: "_blank", rel: "noopener", class: "btn-secondary slim" %>
+          <% end %>
+        </div>
+      <% else %>
+        <p>This project has been deleted.</p>
+      <% end %>
+    </section>
+
+    <section class="admin-section">
+      <h3 class="admin-section__header">Report Info</h3>
+
+      <dl class="admin-user-show__dl">
+        <dt>Reporter</dt>
+        <dd>
+          <div class="admin-actions-wrap">
+            <img src="<%= @report.reporter.avatar %>" alt="" style="width:24px;height:24px;border-radius:50%;">
+            <%= link_to @report.reporter.display_name, admin_user_path(@report.reporter) %>
           </div>
-        <% elsif @report.reviewed? %>
-          <div class="status-notice status-notice--reviewed">✅ This report has been reviewed</div>
-        <% elsif @report.dismissed? %>
-          <div class="status-notice status-notice--dismissed">✗ This report has been dismissed</div>
-        <% end %>
-      </section>
-    </div>
+        </dd>
+
+        <dt>Reason</dt>
+        <dd><span class="badge"><%= @report.reason.titleize %></span></dd>
+
+        <dt>Created</dt>
+        <dd>
+          <%= @report.created_at.strftime("%b %d, %Y at %H:%M") %>
+          (<%= time_ago_in_words(@report.created_at) %> ago)
+        </dd>
+      </dl>
+
+      <div class="admin-section admin-section--highlighted">
+        <p class="admin-section__header">Reasoning</p>
+        <p><%= @report.details %></p>
+      </div>
+
+      <% if @report.pending? %>
+        <div class="admin-actions-wrap" style="margin-top: var(--space-m)">
+          <%= button_to "Mark Action Taken", review_admin_certification_report_path(@report), method: :post, class: "btn-primary" %>
+          <%= button_to "Dismiss Report", dismiss_admin_certification_report_path(@report), method: :post, class: "btn-danger" %>
+        </div>
+      <% elsif @report.reviewed? %>
+        <p class="badge badge-active">✅ This report has been reviewed</p>
+      <% elsif @report.dismissed? %>
+        <p class="badge badge-archived">✗ This report has been dismissed</p>
+      <% end %>
+    </section>
   </div>
 
   <%= render "admin/shared/audit_log", record: @report, item_type: "Project::Report" %>

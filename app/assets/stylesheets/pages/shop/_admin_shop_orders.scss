@@ -40,10 +40,18 @@
   &__panel {
     @include s.space-card;
     padding: var(--space-m);
+    display: flex;
+    gap: var(--space-l);
+    align-items: flex-start;
 
     .table-data {
       @include s.space-table;
     }
+  }
+
+  &__panel-stats {
+    flex: 1;
+    min-width: 0;
   }
 
   &__group-toggle {
@@ -222,8 +230,23 @@
   &__leaderboard {
     display: flex;
     flex-direction: column;
-    gap: var(--space-s);
-    margin-top: var(--space-m);
+    gap: var(--space-xs);
+    flex-shrink: 0;
+    width: 420px;
+    overflow-x: auto;
+
+    table {
+      width: 100%;
+      font-size: 11px;
+      margin: 0;
+      border-radius: 6px;
+
+      th,
+      td {
+        padding: 3px 6px;
+        white-space: nowrap;
+      }
+    }
   }
 
   &__leaderboard-header {

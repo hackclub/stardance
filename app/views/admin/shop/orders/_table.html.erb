@@ -25,8 +25,12 @@
           <tr>
             <td>#<%= order.id %></td>
             <td>
-              <%= link_to order.user.display_name || "Unknown", admin_user_path(order.user) %><br>
-              <small><%= order.user.email %></small>
+              <% if order.user %>
+                <%= link_to order.user.display_name || "Unknown", admin_user_path(order.user) %><br>
+                <small><%= order.user.email %></small>
+              <% else %>
+                <span>Unknown</span>
+              <% end %>
             </td>
             <td>
               <%= order.shop_item.name %><br>

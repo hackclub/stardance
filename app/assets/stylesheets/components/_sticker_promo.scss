@@ -73,12 +73,13 @@
     width: 100%;
     height: auto;
     display: block;
+    transform: translate(6%, -6%);
   }
 
   &__text {
     font-family: var(--font-family-text);
     font-weight: 700;
-    font-size: clamp(1.125rem, 3vw, 2.5rem);
+    font-size: clamp(1rem, 2.4vw, 2rem);
     color: #fffefe;
     margin: 0;
     line-height: 1.2;

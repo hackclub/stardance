@@ -1,0 +1,109 @@
+<% content_for :title, "Fraud Payout Run ##{@run.id}" %>
+
+<div class="aorder">
+  <div class="aorder__header">
+    <div class="aorder__title-group">
+      <h1 class="aorder__title">
+        Fraud Payout Run #<%= @run.id %>
+        <span class="aorder__state-badge aorder__state-badge--<%= @run.aasm_state == 'pending_approval' ? 'pending' : @run.aasm_state %>">
+          <%= @run.aasm_state.humanize %>
+        </span>
+      </h1>
+      <p class="aorder__subtitle">
+        <%= @run.period_start&.strftime("%b %d, %Y") || "All time" %> &rarr; <%= @run.period_end.strftime("%b %d, %Y %H:%M") %>
+      </p>
+    </div>
+    <%= link_to "← Back", admin_fraud_payouts_path, class: "aorder__btn aorder__btn--back" %>
+  </div>
+
+  <%# Overview stats %>
+  <div class="aorder__grid">
+    <div class="aorder__card">
+      <div class="aorder__card-header">
+        <h2 class="aorder__card-title">Overview</h2>
+      </div>
+      <div class="aorder__card-body">
+        <div class="aorder__row">
+          <span class="aorder__row-label">Orders reviewed</span>
+          <span class="aorder__row-value"><strong><%= @run.total_orders %></strong></span>
+        </div>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Total tickets</span>
+          <span class="aorder__row-value"><strong><%= number_with_delimiter(@run.total_amount) %></strong> <%= stardust_icon %></span>
+        </div>
+        <div class="aorder__row">
+          <span class="aorder__row-label">Reviewers</span>
+          <span class="aorder__row-value"><strong><%= @run.lines.count %></strong></span>
+        </div>
+        <% if @run.approved? && @run.approved_by_user %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Approved by</span>
+            <span class="aorder__row-value"><%= link_to @run.approved_by_user.display_name, admin_user_path(@run.approved_by_user) %></span>
+          </div>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Approved at</span>
+            <span class="aorder__row-value"><%= @run.approved_at&.strftime("%b %d, %Y %H:%M") %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @run.pending_approval? && policy(@run).approve? %>
+      <div class="aorder__card aorder__card--actions">
+        <div class="aorder__card-header">
+          <h2 class="aorder__card-title">Actions</h2>
+        </div>
+        <div class="aorder__card-body">
+          <p style="font-family: var(--font-family-text); font-size: var(--font-size-s); color: var(--color-space-text-muted); margin-bottom: var(--space-m);">
+            Approving will distribute <strong><%= number_with_delimiter(@run.total_amount) %></strong> tickets to <strong><%= @run.lines.count %></strong> fraud reviewers. This cannot be undone.
+          </p>
+          <div class="aorder__actions">
+            <%= button_to "Approve & Distribute", approve_admin_fraud_payout_path(@run),
+                method: :post,
+                class: "aorder__btn aorder__btn--approve",
+                data: { confirm: "Distribute #{number_with_delimiter(@run.total_amount)} tickets to #{@run.lines.count} reviewers? This cannot be undone." } %>
+            <%= button_to "Reject", reject_admin_fraud_payout_path(@run),
+                method: :post,
+                class: "aorder__btn aorder__btn--reject",
+                data: { confirm: "Reject this payout run and release orders for the next run?" } %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Payout lines %>
+  <div class="aorder__card">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">Payout Lines</h2>
+      <span style="font-size: var(--font-size-xs); color: var(--color-space-text-muted); font-family: var(--font-family-text);"><%= @run.lines.count %> reviewers</span>
+    </div>
+    <div class="aorder__card-body" style="padding: 0;">
+      <table style="width:100%; border-collapse:collapse; font-family: var(--font-family-text); font-size: var(--font-size-s);">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--color-space-border); background: rgba(255,255,255,0.02);">
+            <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Reviewer</th>
+            <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Orders Reviewed</th>
+            <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Tickets Earned</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @run.lines.includes(:user).order(amount: :desc).each_with_index do |line, i| %>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: var(--space-s) var(--space-m);">
+                <div style="display:flex; align-items:center; gap: var(--space-s);">
+                  <img src="<%= line.user.avatar %>" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                  <%= link_to line.user.display_name, admin_user_path(line.user), style: "color: var(--color-space-text);" %>
+                </div>
+              </td>
+              <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= line.order_count %></td>
+              <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= number_with_delimiter(line.amount) %> <%= stardust_icon %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%= render "admin/shared/audit_log", record: @run, item_type: "FraudPayoutRun" %>
+</div>

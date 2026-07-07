@@ -90,7 +90,7 @@ module Certification
     # Estimated stardust a reviewer would earn per reviewed devlog. YSWS
     # reviewing isn't a real payout source yet (no stardust_earned column), so
     # the dashboard leaderboard uses this to show a projected payout.
-    STARDUST_PER_DEVLOG = 0.1
+    STARDUST_PER_DEVLOG = 0.2
 
     # All-time devlog-review leaderboard. A devlog counts as reviewed once its
     # parent YSWS review is completed (reviewed_at present); completion already

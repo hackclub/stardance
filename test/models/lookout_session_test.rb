@@ -15,11 +15,13 @@
 #  token                  :string           not null
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
+#  devlog_id              :bigint
 #  project_id             :bigint           not null
 #  user_id                :bigint           not null
 #
 # Indexes
 #
+#  index_lookout_sessions_on_devlog_id              (devlog_id)
 #  index_lookout_sessions_on_project_id             (project_id)
 #  index_lookout_sessions_on_project_id_and_status  (project_id,status)
 #  index_lookout_sessions_on_token                  (token) UNIQUE
@@ -27,6 +29,7 @@
 #
 # Foreign Keys
 #
+#  fk_rails_...  (devlog_id => post_devlogs.id)
 #  fk_rails_...  (project_id => projects.id)
 #  fk_rails_...  (user_id => users.id)
 #
