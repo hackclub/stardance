@@ -165,7 +165,7 @@ GEM
       csv
       railties (>= 7.2)
       safely_block (>= 1)
-    blind_index (2.8.0)
+    blind_index (2.8.1)
       activesupport (>= 7.2)
       argon2-kdf (>= 1)
     bootsnap (1.24.6)
