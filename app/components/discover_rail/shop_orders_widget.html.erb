@@ -4,7 +4,7 @@
     <ul class="discover-rail__list">
       <% orders.each do |order| %>
         <li class="discover-rail__card">
-          <p class="discover-rail__card-title">Order (ID: <%= order.id %>) <%= order.aasm_state&.humanize&.downcase %></p>
+          <p class="discover-rail__card-title">Order (ID: <%= order.id %>) <%= display_state(order)&.humanize&.downcase %></p>
           <p class="discover-rail__card-body"><%= helpers.truncate(order.shop_item&.name.to_s, length: 60) %></p>
         </li>
       <% end %>

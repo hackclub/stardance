@@ -8,6 +8,10 @@ module DiscoverRail
       context[:sidebar_orders] || []
     end
 
+    def display_state(order)
+      order.on_hold? ? "pending" : order.aasm_state
+    end
+
     def render?
       user.present?
     end
