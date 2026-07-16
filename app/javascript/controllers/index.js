@@ -214,6 +214,9 @@ application.register("image-dropzone", ImageDropzoneController);
 import JsonHighlightController from "./json_highlight_controller";
 application.register("json-highlight", JsonHighlightController);
 
+import LikeController from "./like_controller";
+application.register("like", LikeController);
+
 import LookoutCaptureController from "./lookout_capture_controller";
 application.register("lookout-capture", LookoutCaptureController);
 
