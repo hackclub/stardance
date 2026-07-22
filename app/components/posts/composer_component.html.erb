@@ -42,7 +42,7 @@
         <div class="feed-composer__main" data-markdown-preview-target="writePanel">
           <%= image_tag current_user.avatar, alt: "", class: "feed-composer__avatar" %>
 
-          <div class="feed-composer__field">
+          <div class="feed-composer__field" style="position: relative;">
             <%= f.label :body, body_label, class: "feed-composer__label" %>
             <%= f.text_area :body,
                   class: "feed-composer__textarea-field",
@@ -62,6 +62,10 @@
                  data-placeholder="<%= placeholder %>"
                  data-emoji-picker-target="editor"
                  data-action="focus->composer#showInfo input->emoji-picker#editorInput blur->composer#collapseIfEmpty blur->emoji-picker#editorBlur keydown->emoji-picker#editorKeydown"></div>
+
+            <div class="feed-composer__emoji-popover"
+                 data-emoji-picker-target="popover"
+                 hidden></div>
           </div>
         </div>
 
@@ -115,11 +119,6 @@
                   data-action="markdown-preview#openHelp">
             <%= inline_svg_tag "icons/question.svg", class: "feed-composer__tool-icon" %>
           </button>
-          <div class="feed-composer__emoji-wrap">
-            <div class="feed-composer__emoji-popover"
-                 data-emoji-picker-target="popover"
-                 hidden></div>
-          </div>
 
           <% if show_time_preview? %>
             <div class="feed-composer__info-wrap" data-composer-target="footer">

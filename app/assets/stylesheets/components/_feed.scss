@@ -327,6 +327,7 @@
   &__field {
     min-width: 0;
     flex: 1;
+    position: relative;
   }
 
   &__label {
@@ -489,14 +490,8 @@
     height: 22px;
   }
 
-  &__emoji-wrap {
-    position: relative;
-  }
-
   &__emoji-popover {
     position: absolute;
-    top: calc(100% + var(--space-xs));
-    left: 0;
     z-index: 100;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
