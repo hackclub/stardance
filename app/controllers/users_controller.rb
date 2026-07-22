@@ -92,7 +92,7 @@ class UsersController < ApplicationController
 
   def profile_activity
     scope = Post.left_outer_joins(:project)
-                .where("projects.deleted_at IS NULL OR posts.postable_type = ?", "Post::Repost")
+                .where("posts.postable_type = ?", "Post::Repost")
                 .visible_to(current_user)
                 .where(user_id: @user.id)
                 .preload(:postable)
