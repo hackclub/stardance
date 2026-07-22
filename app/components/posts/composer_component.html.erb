@@ -42,7 +42,7 @@
         <div class="feed-composer__main" data-markdown-preview-target="writePanel">
           <%= image_tag current_user.avatar, alt: "", class: "feed-composer__avatar" %>
 
-          <div class="feed-composer__field" style="position: relative;">
+          <div class="feed-composer__field">
             <%= f.label :body, body_label, class: "feed-composer__label" %>
             <%= f.text_area :body,
                   class: "feed-composer__textarea-field",

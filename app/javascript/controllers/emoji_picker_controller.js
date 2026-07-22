@@ -206,7 +206,10 @@ export default class extends Controller {
         let top = rect.bottom - fieldRect.top + 4;
         const popoverHeight = this.popoverTarget.offsetHeight;
 
-        if (rect.bottom + popoverHeight + 8 > window.innerHeight && rect.top - popoverHeight - 8 > 0) {
+        if (
+          rect.bottom + popoverHeight + 8 > window.innerHeight &&
+          rect.top - popoverHeight - 8 > 0
+        ) {
           top = rect.top - fieldRect.top - popoverHeight - 4;
         }
 
