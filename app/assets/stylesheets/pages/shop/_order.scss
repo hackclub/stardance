@@ -720,3 +720,99 @@
     }
   }
 }
+
+.customs-modal {
+  border: 2px solid var(--color-brand-salmon);
+  border-radius: var(--border-radius);
+  padding: var(--space-xl);
+  max-width: 440px;
+  width: 90%;
+  background: var(--color-set-2-bg);
+  color: var(--color-space-text);
+  font-family: var(--font-family-text);
+
+  &::backdrop {
+    background: var(--color-backdrop);
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    background: none;
+    border: none;
+    color: var(--color-space-text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: var(--space-xxs);
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__title {
+    margin: 0 0 var(--space-m) 0;
+    font-size: var(--font-size-xxl);
+    color: var(--color-brand-salmon);
+    font-family: var(--font-family-text);
+  }
+
+  &__body {
+    margin: 0 0 var(--space-m) 0;
+    line-height: var(--line-height-body);
+    color: var(--color-space-text);
+
+    &--detail {
+      color: var(--color-space-text-muted);
+      font-size: var(--font-size-s);
+    }
+
+    &--eu {
+      color: var(--color-brand-peach);
+      font-size: var(--font-size-s);
+      font-style: italic;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-s);
+    margin-top: var(--space-l);
+  }
+
+  &__btn {
+    flex: 1;
+    padding: var(--space-s) var(--space-m);
+    border-radius: var(--profile-radius);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition:
+      background 0.15s ease,
+      opacity 0.15s ease;
+
+    &--confirm {
+      background: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+
+    &--cancel {
+      background: var(--color-space-surface-faint);
+      color: var(--color-space-text-muted);
+      border: 1px solid var(--color-space-border);
+
+      &:hover {
+        background: var(--color-space-surface-soft);
+        color: var(--color-space-text);
+      }
+    }
+  }
+}

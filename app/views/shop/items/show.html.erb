@@ -97,9 +97,11 @@
             <div class="shop-order__customs-warning" data-customs-warning-target="warning" style="display: none;"></div>
         </div>
         <% if current_user %>
-        <div class="shop-order__details" data-controller="order-form" data-order-form-has-addresses-value="<%= @user_addresses.any? %>" data-order-form-base-ticket-cost-value="<%= @sale_price || @shop_item.ticket_cost || 0 %>" data-order-form-user-balance-value="<%= @user_balance %>" data-order-form-free-value="<%= @mission_submission.present? %>" data-order-form-addresses-value="<%= @user_addresses.to_json %>" data-order-form-blocked-countries-value="<%= @shop_item.blocked_countries.to_json %>" data-order-form-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>" data-action="address-select:change@document->order-form#addressChanged">
+        <% eu_countries = %w[AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE] %>
+        <div class="shop-order__details" data-controller="order-form customs-modal" data-order-form-has-addresses-value="<%= @user_addresses.any? %>" data-order-form-base-ticket-cost-value="<%= @sale_price || @shop_item.ticket_cost || 0 %>" data-order-form-user-balance-value="<%= @user_balance %>" data-order-form-free-value="<%= @mission_submission.present? %>" data-order-form-addresses-value="<%= @user_addresses.to_json %>" data-order-form-blocked-countries-value="<%= @shop_item.blocked_countries.to_json %>" data-order-form-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>" data-action="address-select:change@document->order-form#addressChanged address-select:change@document->customs-modal#addressChanged" data-customs-modal-item-type-value="<%= customs_warning_item_type(@shop_item) %>" data-customs-modal-source-region-value="<%= customs_warning_source_region(@shop_item) %>" data-customs-modal-storage-key-value="customs-modal-dismissed-<%= @shop_item.id %>" data-customs-modal-eu-countries-value="<%= eu_countries.to_json %>">
             <h2>Complete your order:</h2>
-            <%= form_with url: shop_orders_path(shop_item_id: @shop_item.id), method: :post, local: true, id: "order-form" do |form| %>
+            <%= form_with url: shop_orders_path(shop_item_id: @shop_item.id), method: :post, local: true, id: "order-form", data: { action: "submit->customs-modal#interceptSubmit" } do |form| %>
+                <%= render "shop/items/customs_modal" %>
                 <% if @mission_submission %>
                     <%= form.hidden_field :quantity, value: 1 %>
                     <%= form.hidden_field :mission_submission_id, value: @mission_submission.id %>

@@ -1,0 +1,23 @@
+<dialog class="customs-modal"
+        data-controller="modal"
+        data-customs-modal-target="dialog">
+  <button type="button" class="customs-modal__close" aria-label="Close" data-action="click->customs-modal#cancel">&times;</button>
+  <div class="customs-modal__content">
+    <h3 class="customs-modal__title">Heads up!</h3>
+    <p class="customs-modal__body">
+      You're about to order an item that ships from Hack Club HQ!
+      You may be charged customs or import fees.
+      It is your responsibility to pay them.
+    </p>
+    <p class="customs-modal__body customs-modal__body--detail">
+      This often includes handling fees (around ~$10) + 21% of the original price of your package.
+    </p>
+    <p class="customs-modal__body customs-modal__body--eu customs-modal__eu-note" data-customs-modal-target="euNote" style="display: none;">
+      Additionally, new EU regulations add a flat &euro;3 fee for every item that ships from outside the EU.
+    </p>
+    <div class="customs-modal__actions">
+      <button type="button" class="customs-modal__btn customs-modal__btn--confirm" data-action="click->customs-modal#confirm">I understand, continue</button>
+      <button type="button" class="customs-modal__btn customs-modal__btn--cancel" data-action="click->customs-modal#cancel">Cancel</button>
+    </div>
+  </div>
+</dialog>
