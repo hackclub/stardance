@@ -7,7 +7,19 @@
 <main class="integrity-review" role="main">
   <header class="integrity-review__header">
     <%= link_to "← Back to queue", admin_certification_integrity_reviews_path, class: "integrity-review__back" %>
-    <h1>Integrity Review #<%= @review.id %></h1>
+    <div class="integrity-review__header-main">
+      <h1>Integrity Review #<%= @review.id %></h1>
+      <div class="integrity-review__header-meta">
+        <% if project&.hackatime_keys&.any? %>
+          <ul class="integrity-review__hackatime-keys">
+            <% project.hackatime_keys.each do |key| %>
+              <li class="integrity-review__hackatime-key"><%= key %></li>
+            <% end %>
+          </ul>
+        <% end %>
+        <%= render "flags", review: @review %>
+      </div>
+    </div>
   </header>
 
   <div class="integrity-review__cards">
@@ -188,9 +200,25 @@
     <% end %>
   </section>
 
-  <div class="integrity-review__actions" role="group" aria-label="Review decision">
-    <button type="button" class="integrity-review__action integrity-review__action--pass" disabled>Not Fraudulent</button>
-    <button type="button" class="integrity-review__action integrity-review__action--fraud" disabled>Fraudulent</button>
-    <button type="button" class="integrity-review__action integrity-review__action--deduct" disabled>Deducted hours</button>
-  </div>
+  <% if @review.pending? && @review.claimed_by?(current_user) %>
+    <%= form_with url: admin_certification_integrity_review_path(@review), method: :patch, class: "integrity-review__decision" do %>
+      <div class="integrity-review__decision-fields">
+        <div class="integrity-review__decision-field">
+          <%= label_tag :deduction_hours, "Hours to deduct", class: "integrity-review__decision-label" %>
+          <%= number_field_tag :deduction_hours, params[:deduction_hours], step: 0.1, min: 0, inputmode: "decimal", autocomplete: "off", class: "integrity-review__decision-input", aria: { describedby: "integrity-review-deduct-help" } %>
+          <p class="integrity-review__decision-help" id="integrity-review-deduct-help">Only used by the "Deduct hours" verdict.</p>
+        </div>
+        <div class="integrity-review__decision-field integrity-review__decision-field--wide">
+          <%= label_tag :decision_justification, "Justification (optional)", class: "integrity-review__decision-label" %>
+          <%= text_area_tag :decision_justification, params[:decision_justification], rows: 3, class: "integrity-review__decision-textarea" %>
+        </div>
+      </div>
+
+      <div class="integrity-review__actions" role="group" aria-label="Review decision">
+        <%= button_tag "Not Fraudulent", type: :submit, name: "decision", value: "pass", class: "integrity-review__action integrity-review__action--pass" %>
+        <%= button_tag "Fraudulent", type: :submit, name: "decision", value: "fraud", class: "integrity-review__action integrity-review__action--fraud", data: { turbo_confirm: "Mark this project as fraudulent? This rejects it in the YSWS review." } %>
+        <%= button_tag "Deduct hours", type: :submit, name: "decision", value: "deduct", class: "integrity-review__action integrity-review__action--deduct" %>
+      </div>
+    <% end %>
+  <% end %>
 </main>

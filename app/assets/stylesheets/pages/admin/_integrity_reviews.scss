@@ -118,6 +118,65 @@
     @extend %integrity-table-container;
   }
 
+  // A review claimed by the current admin. Desktop rows can't paint a <tr>
+  // border under the collapsed table, so an inset ring stands in; the stacked
+  // mobile cards recolour their border instead.
+  & &__row--claimed {
+    @media (min-width: 961px) {
+      box-shadow: inset 0 0 0 2px var(--color-brand-yellow);
+    }
+
+    @media (max-width: 960px) {
+      border-color: var(--color-brand-yellow);
+    }
+  }
+
+  // Flag filter bar — colour-coded pill links (OR filter). Selected pills read
+  // solid; deselected ones dim to an outline so the active set is obvious.
+  & &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-l);
+  }
+
+  & &__filter {
+    text-decoration: none;
+    cursor: pointer;
+
+    // Deselected: drop the tint to a hairline outline of the flag's own hue,
+    // which the tag's `color` already carries.
+    &:not(.is-selected) {
+      background: transparent;
+      box-shadow: inset 0 0 0 1px currentcolor;
+      opacity: 0.6;
+    }
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+
+  & &__filter-reset {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-brand-highlight);
+      text-decoration: underline;
+    }
+  }
+
   & &__placeholder {
     color: var(--color-set-1-fg-secondary);
   }
@@ -183,13 +242,46 @@
   }
 }
 
-// Integrity review detail (show) — two info cards + disabled decision actions.
+// Integrity review detail (show) — two info cards + the decision form.
 // Set-1 containers to match the queue's surfaces (branding §1.1, §3); decision
-// buttons are large-action dark-bg variants (§4.3), all disabled at 0.5 opacity
-// (§4 rule 10). Selectors nested one level to win over .admin-content baseline.
+// buttons are large-action dark-bg variants (§4.3). Selectors nested one level
+// to win over .admin-content baseline.
 .integrity-review {
   & &__header {
     margin-bottom: var(--space-xl);
+  }
+
+  // Title on the left, Hackatime projects + flag tags pinned to the
+  // top-right corner. Wraps to stacked on narrow viewports so the meta
+  // group drops below the heading.
+  & &__header-main {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-m);
+
+    h1 {
+      margin: 0;
+    }
+  }
+
+  // Hackatime projects sit to the left of the flag tags within the group.
+  & &__header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  & &__hackatime-keys {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   & &__back {
@@ -435,6 +527,11 @@
     }
   }
 
+  & &__hackatime-key {
+    font-weight: 700;
+    color: var(--color-brand-mint);
+  }
+
   // Full-width rows (e.g. the heartbeat treemap): stack the label above the
   // value so the value can span the whole panel width instead of a column.
   & &__row--block {
@@ -451,15 +548,71 @@
     color: var(--color-set-1-fg-secondary);
   }
 
+  // Decision form — deduction/justification inputs sit above the verdict pills.
+  & &__decision {
+    margin-top: var(--space-xl);
+  }
+
+  & &__decision-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    margin-bottom: var(--space-m);
+  }
+
+  & &__decision-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+
+    &--wide {
+      flex: 1 1 320px;
+    }
+  }
+
+  & &__decision-label {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  & &__decision-input,
+  & &__decision-textarea {
+    padding: var(--space-xs) var(--space-s);
+    border: 2px solid var(--color-set-2-bg);
+    border-radius: var(--space-xs);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text);
+    font-size: var(--font-size-s);
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-brand-highlight);
+    }
+  }
+
+  & &__decision-input {
+    width: 8rem;
+  }
+
+  & &__decision-textarea {
+    width: 100%;
+    resize: vertical;
+  }
+
+  & &__decision-help {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-set-1-fg-secondary);
+  }
+
   & &__actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-m);
   }
 
-  // Large-action pills (branding §4.3), dark-bg variants. Disabled here by
-  // design — decision wiring is deferred — so all three carry the 0.5 opacity
-  // disabled state and a not-allowed cursor.
+  // Large-action pills (branding §4.3), dark-bg variants.
   & &__action {
     padding: 12px 32px;
     border: 2px solid transparent;
@@ -467,11 +620,6 @@
     font-size: var(--font-size-l);
     font-weight: 700;
     cursor: pointer;
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
   }
 
   // Primary — the "clear" verdict: highlight fill, dark text.
@@ -493,5 +641,48 @@
     background: var(--color-set-2-bg);
     color: var(--color-space-text);
     border-color: var(--color-space-text);
+  }
+}
+
+// Integrity flag tags — one colour-coded pill per raised flag, shared by the
+// queue (index) and review-detail (show) pages. Each flag maps to its own
+// accent hue; the fill is a translucent tint of that same hue. Tints are kept
+// local here (rather than as global tokens) since they're specific to these
+// pages. Accent-as-status per branding §1.3.
+.integrity-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__tag {
+    display: inline-block;
+    padding: var(--space-xxxs) var(--space-s);
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  @each $flag, $hue,
+    $tint
+      in ("unknown-file", var(--color-brand-salmon), rgba(255, 141, 157, 0.18)),
+    ("cursor-strange", var(--color-brand-lilac), rgba(235, 183, 255, 0.18)),
+    ("neuralnet", var(--color-brand-blue), rgba(149, 219, 255, 0.18)),
+    ("no-hackatime-user", var(--color-brand-peach), rgba(255, 213, 152, 0.18)),
+    ("check-failed", var(--color-brand-yellow), rgba(255, 229, 100, 0.18))
+  {
+    &__tag--#{$flag} {
+      background: $tint;
+      color: $hue;
+    }
+  }
+
+  &__none {
+    color: var(--color-set-1-fg-secondary);
   }
 }

@@ -113,6 +113,14 @@
         77
       ],
       "note": "False positive: Open3.capture2(*cmd) uses the multi-arg array form (no shell); the interpolated values are a frozen format string and iso8601 timestamps, each a single --flag=value arg"
+    },
+    {
+      "fingerprint": "160ee353d49154f06a9d66f7e7499992370cd6e087eda407ddabcd54f5ca48a3",
+      "note": "Admin-entered workshop zoom_link, model-validated to start with https:// (no javascript: scheme possible); rendered as a plain link on the admin show page."
+    },
+    {
+      "fingerprint": "b3bc2171440b421e9e327dea883e5351727f11a9c2550dad8e63761e207a9d73",
+      "note": "Intentional external redirect: the Join button sends attendees to the workshop's Zoom call. zoom_link is admin-entered and model-validated to be an https:// URL."
     }
   ],
   "brakeman_version": "8.0.5"

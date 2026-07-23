@@ -1,0 +1,7 @@
+<% content_for :title, "Edit workshop" %>
+
+<div class="admin-workshops">
+  <h1>Edit workshop</h1>
+  <p><%= link_to "← Back to workshop", admin_workshop_path(@workshop) %></p>
+  <%= render "form", workshop: @workshop %>
+</div>

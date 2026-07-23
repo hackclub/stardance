@@ -1924,6 +1924,104 @@ turbo-frame#project_hero {
   }
 }
 
+.delete-project-modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(400px, 92vw);
+  width: 100%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  margin: 0;
+  color: var(--color-space-text);
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  &__body {
+    background: var(--color-space-bg-2, #0d0b2e);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--border-radius);
+    padding: var(--space-l);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    color: var(--color-brand-salmon);
+  }
+
+  &__text {
+    margin: 0;
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+  }
+
+  &__warning {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--color-space-text-secondary);
+    line-height: 1.4;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-s);
+    justify-content: flex-end;
+    margin-top: var(--space-xs);
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 2px solid var(--color-set-3-bg);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+
+    &--cancel:hover,
+    &--cancel:focus-visible {
+      border-color: var(--color-brand-highlight-secondary);
+      color: var(--color-brand-highlight-secondary);
+      outline: none;
+    }
+
+    &--delete {
+      background: var(--color-brand-salmon);
+      border-color: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+
+    &--delete:hover,
+    &--delete:focus-visible {
+      filter: brightness(1.05);
+      outline: none;
+    }
+  }
+}
+
 // Ship flow modals (refresher video + ship post) launched from the
 // "Ship your project!" button, replacing the old multi-page wizard.
 .ship-modal {

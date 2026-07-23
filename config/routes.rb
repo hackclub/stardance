@@ -663,6 +663,7 @@ Rails.application.routes.draw do
         resource :rejection, only: :create
       end
     end
+    resources :workshops
     resources :vote_flags, only: [ :index ] do
       scope module: :vote_flags do
         resource :approval, only: :create
@@ -813,6 +814,7 @@ Rails.application.routes.draw do
       # Integrity review queue — restricted to admins and fraud leads.
       get "integrity", to: "integrity#index", as: "integrity_reviews"
       get "integrity/:id", to: "integrity#show", as: "integrity_review"
+      patch "integrity/:id", to: "integrity#update"
 
       # Reviewer stats & payout requests
       scope "/ship" do
@@ -994,6 +996,14 @@ Rails.application.routes.draw do
     member do
       get :guide
       get :gallery
+    end
+  end
+
+  # Workshops (index + show; upcoming ones also surface in the events widget).
+  resources :workshops, only: [ :index, :show ] do
+    scope module: :workshops do
+      resource :rsvp, only: [ :create, :destroy ]
+      resource :attendance, only: [ :create ]
     end
   end
 

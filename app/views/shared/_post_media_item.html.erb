@@ -6,7 +6,9 @@
         loading: (lazy ? "lazy" : nil), decoding: (lazy ? "async" : nil) %>
 <% elsif attachment.content_type.to_s.start_with?("video/") %>
   <%= video_tag rails_storage_redirect_url(attachment), controls: true,
-        preload: (lazy ? "none" : "metadata"), class: "feed-post-card__video" %>
+        preload: (lazy ? "none" : "metadata"),
+        poster: (attachment.previewable? ? url_for(attachment.preview(resize_to_limit: [400, 225], format: :webp)) : nil),
+        class: "feed-post-card__video" %>
 <% else %>
   <%= link_to attachment.filename.to_s, url_for(attachment), class: "feed-post-card__file" %>
 <% end %>

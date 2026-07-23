@@ -81,10 +81,8 @@ class Notification < ApplicationRecord
   scope :unseen, -> { where(seen_at: nil) }
   scope :unread, -> { where(read_at: nil) }
 
-  # The whole notifications feature (in-app, Slack, email) is behind the
-  # week_2_release flag, gated per recipient.
   def self.enabled_for?(user)
-    user.present? && Flipper.enabled?(:week_2_release, user)
+    user.present?
   end
 
   # Whether this notification type is relevant enough to a user to be worth

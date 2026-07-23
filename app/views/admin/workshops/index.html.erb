@@ -1,0 +1,40 @@
+<% content_for :title, "Workshops" %>
+
+<div class="admin-workshops">
+  <h1>Workshops</h1>
+  <p><%= link_to "+ New workshop", new_admin_workshop_path, class: "btn-primary" %></p>
+
+  <% { "Upcoming" => @upcoming_workshops, "Past" => @past_workshops }.each do |heading, workshops| %>
+    <div class="card">
+      <h3><%= heading %></h3>
+      <% if workshops.any? %>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Starts (Eastern)</th>
+              <th>Ends (Eastern)</th>
+              <th>RSVPs</th>
+              <th>Attendees</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% workshops.each do |workshop| %>
+              <tr>
+                <td><%= link_to workshop.title, admin_workshop_path(workshop) %></td>
+                <td><%= workshop_time(workshop.starts_at) %></td>
+                <td><%= workshop_time(workshop.ends_at) %></td>
+                <td><%= @rsvp_counts.fetch(workshop.id, 0) %></td>
+                <td><%= @attendance_counts.fetch(workshop.id, 0) %></td>
+                <td><%= link_to "Edit", edit_admin_workshop_path(workshop) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p>No <%= heading.downcase %> workshops.</p>
+      <% end %>
+    </div>
+  <% end %>
+</div>

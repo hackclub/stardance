@@ -15,6 +15,9 @@
 <% if current_user.admin? || current_user.has_role?(:raffle_admin) %>
   <p><%= link_to "→ Raffle admin", admin_raffles_path %></p>
 <% end %>
+<% if current_user.admin? || current_user.workshop_manager? %>
+  <p><%= link_to "→ Workshop admin", admin_workshops_path %></p>
+<% end %>
   <% if @users.any? %>
     <div>
       <table class="space-table">

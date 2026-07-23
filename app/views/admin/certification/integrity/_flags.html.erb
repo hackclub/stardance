@@ -1,0 +1,12 @@
+<%# Renders an integrity review's raised flags as a row of colour-coded tags. %>
+<%# Each flag name maps to its own accent hue in the SCSS (branding §1.3). %>
+<% flags = review.flag_names %>
+<% if flags.any? %>
+  <ul class="integrity-flags">
+    <% flags.each do |flag| %>
+      <li class="integrity-flags__tag integrity-flags__tag--<%= flag.to_s.dasherize %>"><%= flag.to_s.humanize %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <span class="integrity-flags__none">None</span>
+<% end %>

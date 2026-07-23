@@ -23,12 +23,19 @@
   # Only highlight the unfinished sections when the user arrived via the
   # "Complete project info" button (which adds ?complete=1).
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
+  can_delete_project = policy(@project).destroy? && (!@project.shipped? || policy(@project).force_destroy?)
 %>
 
 <div class="app-layout" data-controller="profile-modal">
   <div class="app-layout__main">
     <%= turbo_frame_tag "project_hero" do %>
+    <% if can_delete_project %>
+      <%= form_with(url: project_path(@project), method: :delete, id: "delete-project-form", style: "display: none;") do %>
+      <% end %>
+    <% end %>
+
     <% if can_edit_project && (params[:editing].present? || @project.errors.any?) %>
+
       <%= form_with(model: @project,
                     url: project_path(@project),
                     method: :patch,
@@ -351,6 +358,11 @@
             <div class="project-show__panel-actions">
               <% if @project.fire? %>
                 <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
+              <% end %>
+              <% if can_delete_project %>
+                <button type="button"
+                        class="project-show__pill project-show__pill--destructive"
+                        onclick="document.getElementById('delete-project-modal').showModal()">Delete project</button>
               <% end %>
               <%= link_to "Discard changes", project_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "project_hero" } %>
               <%= form.submit "Save", class: "project-show__pill project-show__pill--save", data: { "project-form-target": "submit" } %>
@@ -848,7 +860,7 @@
                        payout_review: entry.postable == @votes_for_payout&.dig(:ship_event) ? @votes_for_payout : nil,
                        mission_resubmit_modal_id: mission_modal_id %>
           <% else %>
-            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark) %>
+            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true) %>
           <% end %>
         <% end %>
       </section>
@@ -1226,6 +1238,18 @@
   <% end %>
 
   <%= render DiscoverRailComponent.new %>
+
+  <dialog id="delete-project-modal" class="delete-project-modal" data-controller="modal">
+    <div class="delete-project-modal__body">
+      <h3 class="delete-project-modal__title">Delete project?</h3>
+      <p class="delete-project-modal__text">Are you sure you want to permanently delete this project? This action cannot be undone.</p>
+      <p class="delete-project-modal__warning">All devlogs, followers, and associated data will be removed.</p>
+      <div class="delete-project-modal__actions">
+        <button type="button" class="delete-project-modal__btn delete-project-modal__btn--cancel" onclick="document.getElementById('delete-project-modal').close()">Cancel</button>
+        <button type="submit" form="delete-project-form" class="delete-project-modal__btn delete-project-modal__btn--delete">Yes, delete it</button>
+      </div>
+    </div>
+  </dialog>
 
   <dialog id="followers-modal"
           class="followers-modal"

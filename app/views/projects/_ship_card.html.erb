@@ -73,6 +73,11 @@
         <% end %>
       <% end %>
     <% end %>
+    <% if ship.payout_blessing == "blessed" %>
+      <span class="project-show__latest-ship-status project-show__latest-ship-status--approved" title="Blessed (+20% bonus)">✨ Blessed</span>
+    <% elsif ship.payout_blessing == "cursed" %>
+      <span class="project-show__latest-ship-status project-show__latest-ship-status--returned" title="Cursed (-50% reduction)">💀 Cursed</span>
+    <% end %>
   </div>
 
   <header class="feed-post-card__header">
@@ -123,6 +128,17 @@
       <%= inline_svg_tag "icons/time.svg", class: "profile-project-card__meta-icon profile-project-card__meta-icon--time" %>
       <span><%= ship_hours %>h<%= " build" if project.hardware? %></span>
     </li>
+    <% if ship.multiplier.present? %>
+      <li class="profile-project-card__meta-item profile-project-card__meta-item--multiplier" title="Quality multiplier">
+        <%= inline_svg_tag "icons/star_fill.svg", class: "profile-project-card__meta-icon" %>
+        <span><%= number_with_precision(ship.multiplier, precision: 2) %>x multiplier</span>
+      </li>
+    <% end %>
+    <% if ship.payout.present? %>
+      <li class="profile-project-card__meta-item profile-project-card__meta-item--payout" title="Stardust payout">
+        <span><%= ship.payout.to_i %> Stardust</span>
+      </li>
+    <% end %>
     <% mission = ship.mission_submission&.mission %>
     <% if mission %>
       <li class="profile-project-card__meta-item profile-project-card__meta-item--mission">

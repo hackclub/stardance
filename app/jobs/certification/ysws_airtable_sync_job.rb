@@ -90,6 +90,11 @@ module Certification
           rejected: true,
           rejection_reason: "User banned: #{user.banned_reason || 'No reason provided'}"
         }
+      elsif integrity_check_for(review).banned?
+        {
+          rejected: true,
+          rejection_reason: "Manual fraud check rejected"
+        }
       else
         { rejected: false, rejection_reason: nil }
       end
@@ -164,17 +169,23 @@ module Certification
       user_data = extract_user_data(user)
       primary_address = user_data[:addresses]&.first || {}
 
-      # Calculate minutes
+      integrity_check = integrity_check_for(review)
+
+      # Calculate minutes. When the fraud department deducted hours during
+      # integrity review, those come off the reviewer-approved total before we
+      # report the override hours to Airtable.
       total_original_minutes = devlog_reviews.sum { |dr| dr.original_minutes.to_i }
       total_approved_minutes = review.approved_minutes_total
-      hours_spent = (total_approved_minutes / 60.0).round(2)
+      deducted_minutes = integrity_check.deducted? ? integrity_check.deduction_minutes.to_i : 0
+      net_approved_minutes = [ total_approved_minutes - deducted_minutes, 0 ].max
+      hours_spent = (net_approved_minutes / 60.0).round(2)
 
       # Check if all devlogs rejected OR under threshold
       all_rejected = devlog_reviews.all? { |dr| dr.rejected? }
       under_min_threshold = total_approved_minutes < ::Certification::Ysws::MIN_APPROVED_MINUTES
 
       # Determine final rejection status
-      final_rejected = review.review_rejected?
+      final_rejected = review.review_rejected? || rejection_info[:rejected]
       final_rejection_reason = if rejection_info[:rejected]
         rejection_info[:rejection_reason]
       elsif all_rejected
@@ -197,8 +208,6 @@ module Certification
         .where("fulfilled_by IS NULL OR fulfilled_by NOT LIKE ?", "System%")
         .includes(:shop_item)
 
-      integrity_check = integrity_check_for(review)
-
       # Build justification using the ideal format
       justification = build_justification(
         review: review,
@@ -206,6 +215,7 @@ module Certification
         devlog_reviews: devlog_reviews,
         total_original_minutes: total_original_minutes,
         total_approved_minutes: total_approved_minutes,
+        deducted_minutes: deducted_minutes,
         ship_certifier_name: ship_certifier_name,
         approved_orders: approved_orders
       )
@@ -321,7 +331,7 @@ module Certification
       "banned" => "Project rejected due to manual review of heartbeats."
     }.freeze
 
-    def build_justification(review:, integrity_check:, devlog_reviews:, total_original_minutes:, total_approved_minutes:, ship_certifier_name:, approved_orders:)
+    def build_justification(review:, integrity_check:, devlog_reviews:, total_original_minutes:, total_approved_minutes:, deducted_minutes:, ship_certifier_name:, approved_orders:)
       project_id = review.project_id
       ysws_review_id = review.id
       ship_cert_id = review.ship_cert_id
@@ -354,6 +364,12 @@ module Certification
       intro = "The user logged #{original_formatted} on hackatime.#{adjusted_note}"
       intro += "\n#{commit_activity_sentence(review, total_original_minutes)}"
       intro += "\nThis is a project update." if project_updated
+      if deducted_minutes.positive?
+        deducted_hours = (deducted_minutes / 60.0).round(2)
+        deduction_explanation = "Further deducted by #{deducted_hours} hours by the fraud department for hour fraud."
+        deduction_explanation += " Reason: #{integrity_check.decision_justification}" if integrity_check.decision_justification.present?
+        intro += "\n#{deduction_explanation}"
+      end
 
       integrity_note = INTEGRITY_JUSTIFICATION_NOTES.fetch(integrity_check.status)
 

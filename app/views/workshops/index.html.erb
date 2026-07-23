@@ -1,0 +1,51 @@
+<% content_for :title, "Workshops" %>
+<% content_for :og_title, "Workshops on Stardance" %>
+<% content_for :og_description, "Live sessions with the Stardance crew. RSVP, get pinged before start, and hop on the Zoom." %>
+
+<div class="app-layout">
+  <div class="app-layout__main">
+    <header class="workshops-index__header">
+      <h1 class="workshops-index__title">Workshops</h1>
+      <p class="workshops-index__lede">
+        Live sessions with the Stardance crew. RSVP to get pinged <%= Workshop::JOIN_WINDOW.inspect %> before start, then hop on the Zoom right from the workshop page.
+      </p>
+    </header>
+
+    <% if @live_workshops.any? %>
+      <section class="workshops-index__section" aria-labelledby="workshops-index-live">
+        <h2 id="workshops-index-live" class="workshops-index__section-title">Happening now</h2>
+        <ul class="workshops-index__grid">
+          <% @live_workshops.each do |workshop| %>
+            <li><%= render "workshops/workshop_card", workshop: workshop %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
+    <% if @upcoming_workshops.any? %>
+      <section class="workshops-index__section" aria-labelledby="workshops-index-upcoming">
+        <h2 id="workshops-index-upcoming" class="workshops-index__section-title">Upcoming</h2>
+        <ul class="workshops-index__grid">
+          <% @upcoming_workshops.each do |workshop| %>
+            <li><%= render "workshops/workshop_card", workshop: workshop %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% elsif @live_workshops.empty? %>
+      <p class="workshops-index__empty">No workshops on the calendar right now. Check back soon!</p>
+    <% end %>
+
+    <% if @past_workshops.any? %>
+      <section class="workshops-index__section workshops-index__section--past" aria-labelledby="workshops-index-past">
+        <h2 id="workshops-index-past" class="workshops-index__section-title">Past</h2>
+        <ul class="workshops-index__grid">
+          <% @past_workshops.each do |workshop| %>
+            <li><%= render "workshops/workshop_card", workshop: workshop, badge: "Ended" %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+  </div>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

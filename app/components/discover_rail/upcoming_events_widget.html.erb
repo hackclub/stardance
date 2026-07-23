@@ -11,16 +11,19 @@
         <span class="events-widget__body">
           <span class="events-widget__name">
             <% if event[:url].present? %>
-              <%= link_to event[:title], event[:url], class: "events-widget__name-link", target: "_blank", rel: "noopener" %>
+              <% link_options = event[:workshop] ? {} : { target: "_blank", rel: "noopener" } %>
+              <%= link_to event[:title], event[:url], class: "events-widget__name-link", **link_options %>
             <% else %>
               <%= event[:title] %>
             <% end %>
             <% if event[:ama] %>
               <span class="events-widget__badge">AMA</span>
+            <% elsif event[:workshop] %>
+              <span class="events-widget__badge">Workshop</span>
             <% end %>
           </span>
           <span class="events-widget__meta">
-            <%= event[:leader] %> ·
+            <% if event[:leader].present? %><%= event[:leader] %> ·<% end %>
             <time class="events-widget__time"
                   datetime="<%= event[:start].iso8601 %>"
                   data-controller="event-time"

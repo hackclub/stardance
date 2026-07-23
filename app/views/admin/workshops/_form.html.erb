@@ -1,0 +1,36 @@
+<%= form_with model: [ :admin, workshop ], local: true do |f| %>
+  <% if workshop.errors.any? %>
+    <div class="card">
+      <h4><%= pluralize(workshop.errors.count, "error") %> prohibited this workshop from being saved:</h4>
+      <ul>
+        <% workshop.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="card">
+    <p>
+      <%= f.label :title %><br>
+      <%= f.text_field :title, class: "form-control" %>
+    </p>
+    <p>
+      <%= f.label :description %><br>
+      <%= f.text_area :description, rows: 6, class: "form-control" %>
+    </p>
+    <p>
+      <%= f.label :zoom_link, "Zoom link (optional, add it shortly before start)" %><br>
+      <%= f.url_field :zoom_link, placeholder: "https://zoom.us/j/…", class: "form-control" %>
+    </p>
+    <p>
+      <%= f.label :starts_at, "Starts at (Eastern time)" %><br>
+      <%= f.datetime_local_field :starts_at, value: workshop.starts_at&.in_time_zone(Workshop::TIME_ZONE)&.strftime("%Y-%m-%dT%H:%M"), class: "form-control" %>
+    </p>
+    <p>
+      <%= f.label :ends_at, "Ends at (Eastern time)" %><br>
+      <%= f.datetime_local_field :ends_at, value: workshop.ends_at&.in_time_zone(Workshop::TIME_ZONE)&.strftime("%Y-%m-%dT%H:%M"), class: "form-control" %>
+    </p>
+    <p><%= f.submit class: "btn-primary" %></p>
+  </div>
+<% end %>

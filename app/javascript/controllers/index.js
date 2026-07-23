@@ -396,3 +396,6 @@ application.register("what-is-this", WhatIsThisController);
 
 import WordCycleController from "./word_cycle_controller";
 application.register("word-cycle", WordCycleController);
+
+import WorkshopCountdownController from "./workshop_countdown_controller";
+application.register("workshop-countdown", WorkshopCountdownController);

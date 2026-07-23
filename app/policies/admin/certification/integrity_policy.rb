@@ -6,4 +6,8 @@ class Admin::Certification::IntegrityPolicy < ApplicationPolicy
   def show?
     index?
   end
+
+  def update?
+    index?
+  end
 end

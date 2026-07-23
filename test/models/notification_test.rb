@@ -58,14 +58,6 @@ class NotificationTest < ActiveSupport::TestCase
     assert_equal "low", notification.priority
   end
 
-  test "notify is a no-op when the week_2_release flag is off for the recipient" do
-    Flipper.disable(:week_2_release)
-
-    assert_no_difference "Notification.count" do
-      assert_nil Notifications::NewFollower.notify(recipient: @bob, actor: @alice)
-    end
-  end
-
   test "notify skips self-notify by default" do
     assert_no_difference "Notification.count" do
       Notifications::NewFollower.notify(recipient: @alice, actor: @alice)

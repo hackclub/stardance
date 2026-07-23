@@ -9,6 +9,8 @@ module DiscoverRail
     STARDANCE_TAG = "stardance"
     LIMIT = 3
     CACHE_TTL = 15.minutes
+    # Short TTL so admin edits surface quickly without a query per pageload.
+    WORKSHOPS_CACHE_TTL = 5.minutes
 
     # Hand-curated events the API doesn't carry (or doesn't tag as Stardance).
     # Past entries drop out of the rail automatically — prune them here once
@@ -75,7 +77,7 @@ module DiscoverRail
         .select { |e| Array(e["tags"]).include?(STARDANCE_TAG) }
         .filter_map { |e| build_event(e) }
 
-      (pinned_events + api_events)
+      (pinned_events + workshop_events + api_events)
         .uniq { |e| e[:slug] }
         .select { |e| (e[:end] || e[:start]) >= now } # stays up while running
         .sort_by { |e| e[:start] }
@@ -87,6 +89,25 @@ module DiscoverRail
     def pinned_events
       PINNED_EVENTS.map do |e|
         e.merge(start: Time.zone.parse(e[:start]), end: e[:end] && Time.zone.parse(e[:end]))
+      end
+    end
+
+    # Workshops link to the in-app workshop page, which WorkshopPolicy gates
+    # to linked HCA accounts, so guests and logged-out viewers don't see them.
+    def workshop_events
+      return [] unless user&.hca_linked?
+
+      Rails.cache.fetch("discover_rail/workshop_events", expires_in: WORKSHOPS_CACHE_TTL) do
+        Workshop.upcoming.limit(LIMIT).map do |workshop|
+          {
+            title: workshop.title,
+            start: workshop.starts_at,
+            end: workshop.ends_at,
+            slug: "workshop-#{workshop.id}",
+            workshop: true,
+            url: Rails.application.routes.url_helpers.workshop_path(workshop)
+          }
+        end
       end
     end
 

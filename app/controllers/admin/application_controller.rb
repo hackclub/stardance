@@ -18,6 +18,8 @@ module Admin
         redirect_to admin_shop_path
       elsif current_user.has_role?(:raffle_admin) && !current_user.admin?
         redirect_to admin_raffles_path
+      elsif current_user.workshop_manager? && !current_user.admin?
+        redirect_to admin_workshops_path
       else
         redirect_to admin_users_path
       end

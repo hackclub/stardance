@@ -1,0 +1,38 @@
+# == Schema Information
+#
+# Table name: workshops
+#
+#  id                :bigint           not null, primary key
+#  description       :text
+#  ends_at           :datetime         not null
+#  rsvps_notified_at :datetime
+#  starts_at         :datetime         not null
+#  title             :string           not null
+#  zoom_link         :string
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#
+# Indexes
+#
+#  index_workshops_on_starts_at  (starts_at)
+#
+# No zoom_link: the link is normally added shortly before start.
+upcoming:
+  title: "Intro to PCB design"
+  description: "Design your first PCB with us."
+  starts_at: <%= 2.days.from_now %>
+  ends_at: <%= 2.days.from_now + 1.hour %>
+
+joinable:
+  title: "Ship your first project"
+  description: "Live shipping session."
+  zoom_link: "https://zoom.us/j/987654321"
+  starts_at: <%= 10.minutes.from_now %>
+  ends_at: <%= 70.minutes.from_now %>
+
+ended:
+  title: "Soldering basics"
+  description: "Already happened."
+  zoom_link: "https://zoom.us/j/555555555"
+  starts_at: <%= 2.days.ago %>
+  ends_at: <%= 2.days.ago + 1.hour %>

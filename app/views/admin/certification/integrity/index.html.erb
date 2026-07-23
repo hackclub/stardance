@@ -3,12 +3,34 @@
 <main class="integrity-queue" role="main">
   <h1>Integrity Review Queue</h1>
 
-  <% if @reviews.any? %>
+  <% if @total_pending.zero? %>
+    <div class="integrity-queue__empty" role="status">
+      <p>No projects pending manual review.</p>
+    </div>
+  <% else %>
     <div class="integrity-queue__summary" role="status" aria-live="polite">
-      <span class="integrity-queue__summary-label">Pending manual review</span>
+      <span class="integrity-queue__summary-label">Showing</span>
       <span class="integrity-queue__summary-count"><%= @reviews.count %></span>
     </div>
 
+    <% if @available_flags.any? %>
+      <div class="integrity-queue__filters" role="group" aria-label="Filter by flag">
+        <% @available_flags.each do |flag| %>
+          <% active = @selected_flags.include?(flag) %>
+          <% toggled = active ? @selected_flags - [ flag ] : @selected_flags + [ flag ] %>
+          <%= link_to flag.to_s.humanize,
+                      admin_certification_integrity_reviews_path(flags: toggled.presence || [ "" ]),
+                      class: "integrity-flags__tag integrity-flags__tag--#{flag.to_s.dasherize} integrity-queue__filter#{' is-selected' if active}",
+                      aria: { pressed: active } %>
+        <% end %>
+
+        <% unless @selected_flags.sort == @available_flags.sort %>
+          <%= link_to "Show all", admin_certification_integrity_reviews_path, class: "integrity-queue__filter-reset" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @reviews.any? %>
     <div class="integrity-queue__table-container">
       <table>
         <thead>
@@ -17,6 +39,7 @@
             <th>Project ID</th>
             <th>Ship Event ID</th>
             <th>User</th>
+            <th>Flags</th>
             <th>Age</th>
             <th>Actions</th>
           </tr>
@@ -25,7 +48,7 @@
           <% @reviews.each do |review| %>
             <% project = review.project %>
             <% shipper = review.user %>
-            <tr>
+            <tr class="<%= "integrity-queue__row--claimed" if review.claimed_by?(current_user) %>">
               <td data-label="Project">
                 <% if project %>
                   <%= link_to project.title, project_path(project) %>
@@ -42,6 +65,7 @@
                   <span class="integrity-queue__placeholder">—</span>
                 <% end %>
               </td>
+              <td data-label="Flags"><%= render "flags", review: review %></td>
               <td data-label="Age">
                 <% age_in_days = ((Time.current - review.ship_event.created_at) / 1.day).floor %>
                 <% if age_in_days.zero? %>
@@ -60,9 +84,10 @@
         </tbody>
       </table>
     </div>
-  <% else %>
-    <div class="integrity-queue__empty" role="status">
-      <p>No projects pending manual review.</p>
-    </div>
+    <% else %>
+      <div class="integrity-queue__empty" role="status">
+        <p>No projects match the selected flags.</p>
+      </div>
+    <% end %>
   <% end %>
 </main>

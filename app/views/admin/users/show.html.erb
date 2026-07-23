@@ -201,17 +201,9 @@
       <% end %>
       <% if current_user.admin? %>
         <%
-          all_roles = [
-            { name: 'fraud_dept', disabled: !current_user&.admin? },
-            { name: 'fraud_lead', disabled: !current_user&.admin? },
-            { name: 'fulfillment_person', disabled: !current_user&.admin? },
-            { name: 'project_certifier', disabled: !current_user&.admin? },
-            { name: 'guardian_of_integrity', disabled: !current_user&.admin? },
-            { name: 'mission_reviewer', disabled: !current_user&.admin? },
-            { name: 'helper', disabled: !current_user&.admin? },
-            { name: 'shop_manager', disabled: !current_user&.admin? },
-            { name: 'admin', disabled: !current_user&.super_admin? },
-          ]
+          all_roles = User::Role.all_slugs.reject { |slug| slug == :super_admin }.map do |slug|
+            { name: slug.to_s, disabled: slug == :admin ? !current_user&.super_admin? : !current_user&.admin? }
+          end
           promotable_roles = all_roles.reject { |r| @user.has_role?(r[:name]) }
           demotable_roles = all_roles.select { |r| @user.has_role?(r[:name]) }
         %>
