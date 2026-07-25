@@ -6,6 +6,12 @@
   author      = post.user
   ship_text   = ship.body.to_s
   ship_hours  = ship.hours_at_ship.to_f.round
+  
+  # For hardware, expose the payout basis hours if available
+  payout_hours = if project.hardware? && ship.hours_at_payout.present?
+                   ship.hours_at_payout
+                 end
+  
   ship_number      = local_assigns[:ship_number]
   recert_modal_id  = local_assigns[:recert_modal_id]
   pending_review   = ship.certification_status == "pending"
@@ -125,6 +131,11 @@
     <li class="profile-project-card__meta-item profile-project-card__meta-item--time">
       <%= inline_svg_tag "icons/time.svg", class: "profile-project-card__meta-icon profile-project-card__meta-icon--time" %>
       <span><%= ship_hours %>h<%= " build" if project.hardware? %></span>
+      <% if payout_hours && payout_hours != ship_hours %>
+        <span class="project-show__latest-ship-stats-note" title="Only <%= number_with_precision(payout_hours, precision: 1) %> hours were approved by the YSWS reviewer for the Stardust payout">
+          (<%= number_with_precision(payout_hours, precision: 1) %>h approved)
+        </span>
+      <% end %>
     </li>
     <% if ship.multiplier.present? %>
       <li class="profile-project-card__meta-item profile-project-card__meta-item--multiplier" title="Quality multiplier">

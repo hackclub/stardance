@@ -1190,6 +1190,12 @@ turbo-frame#project_hero {
   opacity: 0.75;
 }
 
+.project-show__latest-ship-stats-note {
+  color: var(--color-space-text-muted, #9b99b6);
+  font-size: 0.875rem;
+  margin-left: 0.35rem;
+}
+
 .project-show__latest-ship-media {
   border-radius: var(--profile-radius);
   overflow: hidden;
