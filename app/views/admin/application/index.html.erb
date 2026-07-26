@@ -1,0 +1,38 @@
+<% content_for :title, "Admin" %>
+
+<div class="admin-hub">
+  <%= render HeadingComponent.new(title: "Admin", tone: :blue, size: :full) %>
+
+  <% if @weighted_grants_count.present? %>
+    <p class="admin-hub__wg">
+      <span class="admin-hub__wg-label">WG</span>
+      <span class="admin-hub__wg-value"><%= number_with_precision(@weighted_grants_count, precision: 2, strip_insignificant_zeros: true) %></span>
+    </p>
+  <% end %>
+
+  <section class="admin-hub__buttons" aria-label="Admin links">
+    <% @admin_dashboard_sections.each do |section| %>
+      <% section[:links].each do |link| %>
+        <div class="admin-hub__button-wrap admin-hub__button-wrap--<%= section[:accent] %>" title="<%= link[:description] %>">
+          <%= render ActionButtonComponent.new(
+            text: link[:label],
+            href: link[:path],
+            size: :large,
+            variant: :secondary
+          ) %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <% @admin_dashboard_tools.each do |tool| %>
+      <div class="admin-hub__button-wrap admin-hub__button-wrap--tool" title="<%= tool[:description] %>">
+        <%= render ActionButtonComponent.new(
+          text: tool[:label],
+          href: tool[:path],
+          size: :large,
+          variant: :secondary
+        ) %>
+      </div>
+    <% end %>
+  </section>
+</div>
