@@ -17,15 +17,20 @@
     background:
       linear-gradient(rgba(8, 6, 30, 0.94), rgba(8, 6, 30, 0.94)) padding-box,
       linear-gradient(
-        110deg,
-        rgb(255, 102, 126),
-        rgb(255, 229, 100),
-        rgb(129, 255, 255),
-        rgb(149, 219, 255),
-        rgb(235, 183, 255)
-      ) border-box;
-    background-size: 100% 100%, 240% 240%;
-    background-position: 0 0, 0% 50%;
+          110deg,
+          rgb(255, 102, 126),
+          rgb(255, 229, 100),
+          rgb(129, 255, 255),
+          rgb(149, 219, 255),
+          rgb(235, 183, 255)
+        )
+        border-box;
+    background-size:
+      100% 100%,
+      240% 240%;
+    background-position:
+      0 0,
+      0% 50%;
     animation: admin-hub-wg-rgb-shift 6s linear infinite;
     color: var(--color-brand-off-white);
     padding: 0.6rem 1.2rem;
@@ -52,15 +57,21 @@
 
   @keyframes admin-hub-wg-rgb-shift {
     0% {
-      background-position: 0 0, 0% 50%;
+      background-position:
+        0 0,
+        0% 50%;
     }
 
     50% {
-      background-position: 0 0, 100% 50%;
+      background-position:
+        0 0,
+        100% 50%;
     }
 
     100% {
-      background-position: 0 0, 0% 50%;
+      background-position:
+        0 0,
+        0% 50%;
     }
   }
 
