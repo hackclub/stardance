@@ -18,7 +18,7 @@ class Admin::ProjectsController < Admin::ApplicationController
       projects = projects.where("title ILIKE ? OR description ILIKE ?", q, q)
     end
 
-    @pagy, @projects = pagy(:offset, projects.order(:id))
+    @pagy, @projects = pagy(:offset, projects.includes(mission_attachments: :mission).order(:id))
   end
 
   def show
@@ -163,5 +163,31 @@ class Admin::ProjectsController < Admin::ApplicationController
     )
 
     redirect_to admin_project_path(@project), notice: "State forced from #{old_state} to #{new_state}."
+  end
+
+  # Admin override of Projects::MissionsController#destroy: skips the
+  # builder-facing "already shipped to this mission" guard so a mission can
+  # be detached from this page regardless of ship state. detach_mission!
+  # itself has no state-based validation, so this always succeeds as long as
+  # a mission is currently attached.
+  def detach_mission
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :detach_mission?
+
+    attachment = @project.current_mission_attachment
+    unless attachment
+      redirect_to admin_project_path(@project), alert: "No mission attached."
+      return
+    end
+
+    mission = attachment.mission
+    restored = @project.detach_mission!
+
+    notice = if restored
+      "Detached from the #{mission.name} mission — now on #{restored.name}."
+    else
+      "Detached from the #{mission.name} mission."
+    end
+    redirect_to admin_project_path(@project), notice: notice
   end
 end

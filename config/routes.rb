@@ -655,6 +655,7 @@ Rails.application.routes.draw do
         post :delete
         post :update_ship_status
         post :force_state
+        post :detach_mission
         get  :votes
       end
     end

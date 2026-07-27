@@ -53,4 +53,11 @@
     background: rgba(255, 255, 255, 0.08);
     color: var(--color-space-text-muted, rgba(255, 255, 255, 0.6));
   }
+
+  &--mission {
+    background: var(--color-brand-mint-soft);
+    color: var(--color-brand-mint);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
 }

@@ -51,4 +51,10 @@
     border-radius: 50%;
     object-fit: cover;
   }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+  }
 }

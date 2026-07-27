@@ -23,6 +23,14 @@
             <button type="button" onclick="document.getElementById('change-ship-status-modal').showModal()">Change</button>
           <% end %>
         </dd>
+        <dt>Mission</dt>
+        <dd>
+          <% if @project.current_mission %>
+            <span class="status-pill status-pill--mission"><%= @project.current_mission.name %></span>
+          <% else %>
+            <span class="admin-user-show__muted">None</span>
+          <% end %>
+        </dd>
         <dt>Type</dt>         <dd><%= @project.project_type.presence || content_tag(:span, "Not set", class: "admin-user-show__muted") %></dd>
         <dt>Categories</dt>   <dd><%= @project.project_categories.any? ? @project.project_categories.join(", ") : content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
         <% if @project.hardware? && Flipper.enabled?(:hardware_flow, current_user) %>
@@ -110,6 +118,10 @@
       <%= render ActionButtonComponent.new(text: "Public Page", href: project_path(@project), size: :small, variant: :secondary) %>
       <% if policy(@project).view_votes? %>
         <%= render ActionButtonComponent.new(text: "Votes", href: votes_admin_project_path(@project), size: :small, variant: :secondary) %>
+      <% end %>
+      <% if @project.current_mission && policy(@project).detach_mission? %>
+        <%= button_to "Detach Mission", detach_mission_admin_project_path(@project), method: :post,
+            data: { confirm: "Detach this project from #{@project.current_mission.name}?" } %>
       <% end %>
       <% if policy(current_user).view_order_full_details? %>
         <% if @project.deleted? %>

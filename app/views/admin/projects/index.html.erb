@@ -35,18 +35,31 @@
             <th>Title</th>
             <th>Description</th>
             <th>Status</th>
+            <th>Mission</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <% @projects.each do |project| %>
+            <% current_attachment = project.mission_attachments.detect { |ma| ma.detached_at.nil? } %>
             <tr>
               <td class="space-table__muted"><%= project.id %></td>
               <td><%= project.title %></td>
               <td class="space-table__muted"><%= truncate(project.description, length: 60) %></td>
               <td><%= project.deleted? ? "Deleted" : "Active" %></td>
               <td>
+                <% if current_attachment %>
+                  <span class="status-pill status-pill--mission"><%= current_attachment.mission.name %></span>
+                <% else %>
+                  <span class="admin-user-show__muted">None</span>
+                <% end %>
+              </td>
+              <td class="space-table__actions">
                 <%= render ActionButtonComponent.new(text: "View", href: admin_project_path(project), size: :small, variant: :secondary) %>
+                <% if current_attachment && policy(project).detach_mission? %>
+                  <%= button_to "Detach", detach_mission_admin_project_path(project), method: :post,
+                      data: { confirm: "Detach this project from #{current_attachment.mission.name}?" } %>
+                <% end %>
               </td>
             </tr>
           <% end %>
