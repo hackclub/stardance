@@ -57,7 +57,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ${{ matrix.system_packages }}
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1.316.0
+        uses: ruby/setup-ruby@v1.320.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -102,7 +102,7 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libblas-dev liblapack-dev
 
-      - uses: ruby/setup-ruby@v1.316.0
+      - uses: ruby/setup-ruby@v1.320.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
