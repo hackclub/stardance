@@ -411,7 +411,8 @@
                 <div class="project-show__title-row">
                   <h1 class="project-show__title"><%= @project.title %></h1>
                   <% if @project.hardware? %>
-                    <span class="project-show__tag project-show__tag--hardware">Hardware</span>
+                    <%= render "projects/hardware_pills", project: @project,
+                               privileged: is_member || current_user&.admin? %>
                   <% end %>
                   <%= admin_tool(compact: true, roles: [ :fraud_dept, :helper, :nda_helper ]) do %>
                     <%= link_to "🔨", admin_project_path(@project), class: "project-show__admin-link", data: { turbo_frame: "_top" }, "aria-label": "View #{@project.title} in admin" %>

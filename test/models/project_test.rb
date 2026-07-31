@@ -72,4 +72,41 @@ class ProjectTest < ActiveSupport::TestCase
     assert_not project.valid?
     assert project.errors[:hardware_stage].any?
   end
+
+  test "complexity_tier comes from the latest funding request" do
+    project = Project.create!(title: "Tiered rig", hardware_stage: "design")
+    owner = create_user(slack_id: "U_TIER_OWNER", display_name: "tierowner")
+    project.memberships.create!(user: owner, role: :owner)
+
+    assert_nil project.complexity_tier, "a project that never asked for funding has no tier"
+
+    devlog = Post::Devlog.new(body: "design log", duration_seconds: 3600, phase: "design")
+    devlog.uploading_attachments = true
+    devlog.save!
+    Post.create!(project: project, user: owner, postable: devlog)
+
+    project.certification_funding_requests.create!(
+      user: owner, complexity_tier: 3, requested_amount_cents: 6_000
+    )
+
+    # latest_funding_request memoizes, so read the tier off a fresh instance.
+    assert_equal "S Tier", Project.find(project.id).complexity_tier[:name]
+  end
+
+  test "build_approved? only counts an approved build review" do
+    project = Project.create!(title: "Reviewed rig", hardware_stage: "build", ship_status: "submitted")
+    owner = create_user(slack_id: "U_BUILD_OWNER", display_name: "buildowner")
+    project.memberships.create!(user: owner, role: :owner)
+
+    assert_not project.build_approved?
+
+    review = project.ship_reviews.create!(status: :pending)
+    assert_not project.build_approved?, "a review awaiting a verdict isn't an approval"
+
+    review.update!(status: :returned, feedback: "needs work")
+    assert_not project.build_approved?, "a returned review isn't an approval"
+
+    project.ship_reviews.create!(status: :approved)
+    assert project.build_approved?
+  end
 end

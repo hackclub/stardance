@@ -462,6 +462,13 @@ class Project < ApplicationRecord
     @_latest_funding_request = certification_funding_requests.order(created_at: :desc).first
   end
 
+  # Complexity tier definition (code, name, max grant) this project's build is
+  # pitched at, read off its most recent funding request. Nil for projects that
+  # never asked for funding.
+  def complexity_tier
+    Certification::FundingRequest::TIERS[latest_funding_request&.complexity_tier]
+  end
+
   # Name of the Hackatime project this project's time is filed under (and which
   # Project::EnsureHackatimeProjectsJob seeds for hardware builders to pick in
   # Lapse): the project title, so timelapse time lands under the same Hackatime
@@ -767,6 +774,12 @@ class Project < ApplicationRecord
   # Funding" path). Such projects must show real build progress before shipping.
   def received_grant?
     certification_funding_requests.approved.exists?
+  end
+
+  # True once a build review (Certification::Ship) has approved one of this
+  # project's ships — the build-stage counterpart to received_grant?.
+  def build_approved?
+    ship_reviews.approved.exists?
   end
 
   # Funded projects must post at least one BUILD-phase devlog since their last

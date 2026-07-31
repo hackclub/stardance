@@ -206,6 +206,49 @@ turbo-frame#project_hero {
     background: var(--color-brand-orange-soft);
     color: var(--color-brand-orange);
   }
+
+  // Funding tier, coloured with the same per-tier accents as the funding
+  // modal's tier picker (see _hardware_funding.scss) so B/A/S/X read the same
+  // wherever they appear. A tier without a rule below falls back to the neutral
+  // treatment rather than borrowing another tier's colour.
+  &--tier {
+    background: var(--project-show-tag-accent-soft, var(--color-space-surface-faint));
+    color: var(--project-show-tag-accent, var(--color-brand-off-white));
+  }
+
+  &--tier-b {
+    --project-show-tag-accent: var(--color-brand-mint);
+    --project-show-tag-accent-soft: var(--color-brand-mint-soft);
+  }
+
+  &--tier-a {
+    --project-show-tag-accent: var(--color-brand-blue);
+    --project-show-tag-accent-soft: var(--color-brand-blue-soft);
+  }
+
+  &--tier-s {
+    --project-show-tag-accent: var(--color-brand-lilac);
+    --project-show-tag-accent-soft: var(--color-brand-lilac-soft);
+  }
+
+  &--tier-x {
+    --project-show-tag-accent: var(--color-brand-yellow);
+    --project-show-tag-accent-soft: var(--color-brand-yellow-soft);
+  }
+
+  // Design/build stage is the plainest fact in the row, so it stays neutral
+  // and lets the tier and approval pills carry the colour.
+  &--stage {
+    background: var(--color-space-surface-faint);
+    color: var(--color-brand-off-white);
+  }
+
+  // Passed a review — mint reads as "cleared" without competing with the
+  // orange hardware marker.
+  &--approved {
+    background: var(--color-brand-mint-soft);
+    color: var(--color-brand-mint);
+  }
 }
 
 .project-show__admin-link {
