@@ -98,6 +98,10 @@ class Shop::OrdersController < Shop::BaseController
         current_user.lock!
         @shop_item.lock! if @shop_item.limited?
 
+        # recalc mod prices after lock so theyre fresh
+        modifiers_total = @modifiers.sum { |m| m.price_for_region(region) }
+        total_cost = item_total + accessories_total + modifiers_total
+
         if @mission_submission.nil?
           user_balance = current_user.balance
           if total_cost > user_balance

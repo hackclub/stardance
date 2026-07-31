@@ -452,7 +452,9 @@ class ShopOrder < ApplicationRecord
     return if redeeming_mission_submission.present?
     return unless frozen_item_price&.positive? && quantity.present?
 
-    total_cost_for_validation = frozen_item_price * quantity
+    # include modifier costs in the balance check
+    modifier_cost = frozen_modifiers_price || 0
+    total_cost_for_validation = (frozen_item_price * quantity) + modifier_cost
     if user&.balance&.< total_cost_for_validation
       shortage = total_cost_for_validation - (user.balance || 0)
       errors.add(:base, "Insufficient balance. You need #{shortage} more tickets.")
