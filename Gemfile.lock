@@ -113,7 +113,7 @@ GEM
       cgi
       device_detector (>= 1)
       safely_block (>= 0.4)
-    annotaterb (4.23.0)
+    annotaterb (4.24.0)
       activerecord (>= 6.0.0)
       activesupport (>= 6.0.0)
     anonymous_loader (0.1.3)
