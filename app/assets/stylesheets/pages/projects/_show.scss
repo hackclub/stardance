@@ -189,6 +189,20 @@ turbo-frame#project_hero {
   }
 }
 
+// The pills move as one unit: when they don't fit beside the title the whole
+// group wraps to the next line together instead of splitting across the break.
+// flex: 0 0 auto keeps the group at its natural width so the parent wraps it
+// rather than squeezing it; max-width lets it wrap internally only once a full
+// row still isn't enough.
+.project-show__tags {
+  display: flex;
+  flex: 0 0 auto;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .project-show__tag {
   display: inline-flex;
   align-items: center;
@@ -212,7 +226,7 @@ turbo-frame#project_hero {
   // wherever they appear. A tier without a rule below falls back to the neutral
   // treatment rather than borrowing another tier's colour.
   &--tier {
-    background: var(--project-show-tag-accent-soft, var(--color-space-surface-faint));
+    background: var(--project-show-tag-accent-soft, var(--color-space-bg-2));
     color: var(--project-show-tag-accent, var(--color-brand-off-white));
   }
 
@@ -236,18 +250,22 @@ turbo-frame#project_hero {
     --project-show-tag-accent-soft: var(--color-brand-yellow-soft);
   }
 
-  // Design/build stage is the plainest fact in the row, so it stays neutral
-  // and lets the tier and approval pills carry the colour.
+  // Which stage the build is in.
   &--stage {
-    background: var(--color-space-surface-faint);
-    color: var(--color-brand-off-white);
+    background: var(--color-orange-400-soft);
+    color: var(--color-orange-400);
   }
 
-  // Passed a review — mint reads as "cleared" without competing with the
-  // orange hardware marker.
-  &--approved {
-    background: var(--color-brand-mint-soft);
-    color: var(--color-brand-mint);
+  // Design review passed.
+  &--approved-design {
+    background: var(--color-green-350-soft);
+    color: var(--color-green-350);
+  }
+
+  // Build review passed.
+  &--approved-build {
+    background: var(--color-purple-400-soft);
+    color: var(--color-purple-400);
   }
 }
 

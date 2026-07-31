@@ -156,6 +156,18 @@
   // Amber — traffic-light amber, used to signal a "pending" / in-review state.
   --color-amber-500: hsl(40, 100%, 45%);
 
+  // Review-state pill accents, each with the matching 0.18 tint used as the pill
+  // background (same treatment as the --color-brand-*-soft pairs above). Deeper
+  // and more saturated than the brand pastels so they stay legible as text on
+  // the lighter set-3 panels, and so the orange doesn't read as the reserved
+  // pastel --color-brand-orange admin marker.
+  --color-orange-400: hsl(22, 95%, 62%);
+  --color-orange-400-soft: hsla(22, 95%, 62%, 0.18);
+  --color-green-350: hsl(122, 60%, 62%);
+  --color-green-350-soft: hsla(122, 60%, 62%, 0.18);
+  --color-purple-400: hsl(272, 90%, 76%);
+  --color-purple-400-soft: hsla(272, 90%, 76%, 0.18);
+
   // Brand palette (Figma — eight swatches + orange admin marker)
   --color-brand-mint: #81ffff;
   --color-brand-lilac: #ebb7ff;

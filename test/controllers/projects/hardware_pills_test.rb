@@ -37,7 +37,8 @@ class Projects::HardwarePillsTest < ActionDispatch::IntegrationTest
     assert_select ".project-show__tag--hardware", text: "Hardware"
     assert_select ".project-show__tag--stage", text: "Design Stage"
     assert_select ".project-show__tag--tier", 0
-    assert_select ".project-show__tag--approved", 0
+    assert_select ".project-show__tag--approved-design", 0
+    assert_select ".project-show__tag--approved-build", 0
   end
 
   test "an approved funding request adds the tier and design approval pills" do
@@ -49,7 +50,7 @@ class Projects::HardwarePillsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".project-show__tag--tier-s", text: "S Tier"
     assert_select ".project-show__tag--stage", text: "Build Stage"
-    assert_select ".project-show__tag--approved", text: "Design Approved"
+    assert_select ".project-show__tag--approved-design", text: "Design Approved"
   end
 
   test "a pending build review shows no build approval pill" do
@@ -60,7 +61,7 @@ class Projects::HardwarePillsTest < ActionDispatch::IntegrationTest
     get project_path(project)
 
     assert_response :success
-    assert_select ".project-show__tag--approved", 0
+    assert_select ".project-show__tag--approved-build", 0
   end
 
   test "an approved build review adds the build approval pill" do
@@ -71,7 +72,23 @@ class Projects::HardwarePillsTest < ActionDispatch::IntegrationTest
     get project_path(project)
 
     assert_response :success
-    assert_select ".project-show__tag--approved", text: "Build Approved"
+    assert_select ".project-show__tag--approved-build", text: "Build Approved"
+    # Only the build is approved, so the stage pill still has something to say.
+    assert_select ".project-show__tag--stage", text: "Build Stage"
+  end
+
+  test "the stage pill drops out once both reviews are approved" do
+    project = approve_funding_for(create_project(hardware_stage: "design"))
+    project.update!(ship_status: "submitted")
+    project.ship_reviews.create!(status: :approved, reviewer: @reviewer)
+    sign_in @owner
+
+    get project_path(project)
+
+    assert_response :success
+    assert_select ".project-show__tag--approved-design", text: "Design Approved"
+    assert_select ".project-show__tag--approved-build", text: "Build Approved"
+    assert_select ".project-show__tag--stage", 0
   end
 
   test "the pills are public — an outsider sees them too" do
@@ -83,7 +100,7 @@ class Projects::HardwarePillsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".project-show__tag--hardware", text: "Hardware"
     assert_select ".project-show__tag--tier-s", text: "S Tier"
-    assert_select ".project-show__tag--approved", text: "Design Approved"
+    assert_select ".project-show__tag--approved-design", text: "Design Approved"
   end
 
   private

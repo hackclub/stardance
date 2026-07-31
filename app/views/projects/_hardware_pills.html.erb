@@ -1,5 +1,8 @@
 <%# Hardware milestone pills for the project title row. The list itself lives in
-    ProjectsHelper#hardware_pills — add pills there, not here. %>
-<% hardware_pills(project, privileged: privileged).each do |pill| %>
-  <span class="<%= pill[:css_class] %>"><%= pill[:label] %></span>
-<% end %>
+    ProjectsHelper#hardware_pills — add pills there, not here. The wrapper keeps
+    the pills together when the row breaks; see .project-show__tags. %>
+<div class="project-show__tags">
+  <% hardware_pills(project, privileged: privileged).each do |pill| %>
+    <span class="<%= pill[:css_class] %>"><%= pill[:label] %></span>
+  <% end %>
+</div>

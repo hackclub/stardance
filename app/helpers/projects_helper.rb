@@ -15,13 +15,19 @@ module ProjectsHelper
   # isn't already in _show.scss needs a rule adding there for its colour.
   def hardware_pills(project, privileged:)
     tier = project.complexity_tier
+    design_approved = project.received_grant?
+    build_approved = project.build_approved?
+
+    # Once both reviews are through, the stage pill is redundant — the approval
+    # pills already say where the build got to.
+    show_stage = !(design_approved && build_approved)
 
     pills = [
       project_pill("Hardware", :hardware),
       (project_pill(tier[:name], :tier, :"tier-#{tier[:code].downcase}") if tier),
-      project_pill(project.design_stage? ? "Design Stage" : "Build Stage", :stage),
-      (project_pill("Design Approved", :approved) if project.received_grant?),
-      (project_pill("Build Approved", :approved) if project.build_approved?)
+      (project_pill(project.design_stage? ? "Design Stage" : "Build Stage", :stage) if show_stage),
+      (project_pill("Design Approved", :"approved-design") if design_approved),
+      (project_pill("Build Approved", :"approved-build") if build_approved)
     ].compact
 
     privileged ? pills : pills.reject { |pill| pill[:members_only] }
