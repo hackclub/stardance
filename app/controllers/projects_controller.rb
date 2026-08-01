@@ -523,7 +523,12 @@ class ProjectsController < ApplicationController
 
 
     if @project.demo_url.present? && @project.repo_url.present?
-      if @project.demo_url == @project.repo_url || @project.demo_url == @project.readme_url
+      
+      demo = @project.demo_url.strip.chomp("/", "#", "?")
+      repo = @project.repo_url.strip.chomp("/", "#", "?")
+      readme = @project.readme_url.to_s.strip.chomp("/", "#", "?")
+
+      if demo == repo || demo == readme
         @project.errors.add(:base, "Demo URL and Repository URL cannot be the same")
       end
     end
