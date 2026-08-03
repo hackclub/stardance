@@ -118,7 +118,7 @@ GEM
       activesupport (>= 6.0.0)
     anonymous_loader (0.1.3)
       version_gem (~> 1.1, >= 1.1.14)
-    appsignal (4.9.0)
+    appsignal (4.9.1)
       logger
       rack (>= 2.0.0)
     argon2-kdf (1.0.0)
