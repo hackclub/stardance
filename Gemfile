@@ -125,7 +125,7 @@ gem "faker", "~> 3.6"
 gem "jsbundling-rails", "~> 1.3"
 gem "stackprof"
 gem "sentry-ruby", "~> 6.6"
-gem "sentry-rails", "~> 6.6"
+gem "sentry-rails", "~> 6.7"
 
 # for pagination
 gem "pagy", "~> 43.5"
