@@ -145,7 +145,7 @@ gem "query_count"
 # Rack Mini Profiler gem for performance monitoring
 gem "rack-mini-profiler"
 
-gem "redis", "~> 5.4"
+gem "redis", "~> 6.0"
 
 gem "ahoy_matey"
 
