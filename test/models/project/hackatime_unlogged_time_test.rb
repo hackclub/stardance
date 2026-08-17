@@ -4,7 +4,7 @@ class Project::HackatimeUnloggedTimeTest < ActiveSupport::TestCase
   self.fixture_table_names = []
 
   setup do
-    @owner = create_user(slack_id: "U_UNLOGGED_OWNER", display_name: "unlogged_owner")
+    @owner = create_user(slack_id: "U059VC0UDEU", display_name: "mahad")
     @project = Project.create!(title: "Late heartbeats", description: "Testing cumulative Hackatime totals")
     @project.memberships.create!(user: @owner, role: :owner)
     User::HackatimeProject.insert_all!([
