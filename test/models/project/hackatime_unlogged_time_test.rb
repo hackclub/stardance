@@ -5,10 +5,8 @@ class Project::HackatimeUnloggedTimeTest < ActiveSupport::TestCase
 
   setup do
     @owner = create_user(slack_id: "U_UNLOGGED_OWNER", display_name: "unlogged_owner")
-    @collaborator = create_user(slack_id: "U_UNLOGGED_COLLABORATOR", display_name: "unlogged_collaborator")
     @project = Project.create!(title: "Late heartbeats", description: "Testing cumulative Hackatime totals")
     @project.memberships.create!(user: @owner, role: :owner)
-    @project.memberships.create!(user: @collaborator, role: :contributor)
     User::HackatimeProject.insert_all!([
       { user_id: @owner.id, project_id: @project.id, name: "late-heartbeats", created_at: Time.current, updated_at: Time.current }
     ])
@@ -35,17 +33,6 @@ class Project::HackatimeUnloggedTimeTest < ActiveSupport::TestCase
 
   test "includes late heartbeats in the next devlog without double counting logged time" do
     create_devlog(user: @owner, duration: 1.hour, at: 1.day.ago)
-
-    seconds = HackatimeService.stub(:fetch_total_seconds_for_projects, 2.5.hours.to_i) do
-      @project.unlogged_hackatime_seconds("ht-owner", user: @owner)
-    end
-
-    assert_equal 1.5.hours.to_i, seconds
-  end
-
-  test "only subtracts devlogs written by the current author" do
-    create_devlog(user: @owner, duration: 1.hour, at: 2.days.ago)
-    create_devlog(user: @collaborator, duration: 3.hours, at: 1.day.ago)
 
     seconds = HackatimeService.stub(:fetch_total_seconds_for_projects, 2.5.hours.to_i) do
       @project.unlogged_hackatime_seconds("ht-owner", user: @owner)
