@@ -79,6 +79,9 @@ module Battlemage
 
     config.exceptions_app = self.routes
 
+    # Allow the app to be embedded in an iframe from any origin.
+    config.action_dispatch.default_headers.delete("X-Frame-Options")
+
     config.middleware.insert_after ActionDispatch::RemoteIp, Rack::Attack
     config.middleware.insert_before ActionDispatch::Static, ServeAvif
     config.middleware.insert_before ActionDispatch::Static, NoCacheErrors
