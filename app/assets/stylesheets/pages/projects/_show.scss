@@ -1199,12 +1199,20 @@ turbo-frame#project_hero {
   }
 }
 
+// Fixing the overflow bug on mobile ( issue#1099 )
 .project-show__latest-ship-stats {
   list-style: none;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-l);
   opacity: 0.75;
+}
+
+@media (max-width: 720px) {
+  .project-show__latest-ship-stats {
+    gap: var(--space-s);
+  }
 }
 
 .project-show__latest-ship-media {
