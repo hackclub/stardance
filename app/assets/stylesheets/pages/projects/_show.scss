@@ -2076,8 +2076,6 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
 
   &::backdrop {
@@ -2092,6 +2090,9 @@ turbo-frame#project_hero {
 }
 
 .ship-modal__panel {
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
@@ -2277,8 +2278,6 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
 
   &::backdrop {
@@ -2289,6 +2288,9 @@ turbo-frame#project_hero {
 
 .recert-modal__panel {
   position: relative;
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
