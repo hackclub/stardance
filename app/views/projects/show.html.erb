@@ -1238,6 +1238,7 @@
                     method: :post,
                     data: { turbo: false },
                     html: { class: "ship-modal__form",
+                            onsubmit: "return fundingSubmit(this)",
                             data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json,
                                     controller: ("action-items" if design_gated),
                                     action: ("submit->action-items#guard" if design_gated) }.compact } do |form| %>
@@ -1308,13 +1309,6 @@
       <% end %>
     </dialog>
     <script>
-      function fundingActionItemsPending(form) {
-        var boxes = form.querySelectorAll('[name^="acknowledged_action_items"]');
-        return Array.prototype.some.call(boxes, function (box) {
-          return !box.checked;
-        });
-      }
-
       function fundingValidate(form) {
         if (!form) return;
         var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
@@ -1327,19 +1321,29 @@
         var max = tier ? maxes[tier.value] : null;
         if (max != null) amountEl.max = max;
 
-        var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
         var over = max != null && !isNaN(amount) && amount > max;
         err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
         err.hidden = !over;
 
-        // Reruns on every field change, so every condition has to be here or the
-        // button gets re-enabled — including the action items.
-        var amountValid = !isNaN(amount) && amount >= 1 && !over;
-        submit.disabled =
-          !tier ||
-          !amountValid ||
-          (bomCheck && !bomCheck.checked) ||
-          fundingActionItemsPending(form);
+        // Only the over-max case disables the button. A missing BOM or an
+        // unacknowledged action item leaves it clickable on purpose, so
+        // submitting can explain what's missing instead of the button going
+        // silently dead — the BOM below, the action items via the Stimulus guard.
+        submit.disabled = over;
+      }
+
+      function fundingSubmit(form) {
+        var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
+        if (bomCheck && !bomCheck.checked) {
+          var err = form.querySelector(".funding-request__error");
+          if (err) {
+            err.textContent = "Confirm you have a BOM.csv in your repository before submitting.";
+            err.hidden = false;
+          }
+          bomCheck.focus();
+          return false;
+        }
+        return true;
       }
 
       document.querySelectorAll("form[data-tier-maxes]").forEach(fundingValidate);

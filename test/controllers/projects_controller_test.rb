@@ -342,6 +342,21 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".ship-decision-card__feedback-body ul.review-feedback__items li", text: "add a BOM"
   end
 
+  test "the fund-request submit explains itself instead of a dead button" do
+    @project.update!(hardware_stage: "design")
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    # Clickable by default: the BOM requirement is explained on submit, not by
+    # a silently disabled button.
+    assert_select "form.ship-modal__form[onsubmit='return fundingSubmit(this)']"
+    assert_match(/function fundingSubmit/, response.body)
+    # The acknowledgment check lives only in the Stimulus controller now.
+    assert_no_match(/fundingActionItemsPending/, response.body)
+  end
+
   test "review shortcut shows for a project certifier and no one else" do
     @project.update!(hardware_stage: "design")
 
