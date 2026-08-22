@@ -126,6 +126,42 @@ module Certification
       status.to_s.in?(DECIDED_STATUSES)
     end
 
+    # --- action items --------------------------------------------------------
+
+    ACTION_ITEM_LINE = /\A[[:blank:]]*-[[:blank:]]+(\S.*?)[[:blank:]]*\z/
+
+    def action_items
+      feedback.to_s.each_line.filter_map { |line| line.chomp[ACTION_ITEM_LINE, 1] }
+    end
+
+    def feedback_prose
+      feedback.to_s.each_line.reject { |line| ACTION_ITEM_LINE.match?(line.chomp) }.join.strip
+    end
+
+    def gates_resubmission?
+      action_items.any?
+    end
+
+    def action_items_digest
+      items = action_items
+      return if items.empty?
+
+      Digest::SHA256.hexdigest(items.join("\n"))
+    end
+
+    def action_items_blocker(acknowledged:, digest:)
+      return nil unless gates_resubmission?
+      return :unacknowledged if digest.blank?
+      return :stale unless digest == action_items_digest
+
+      # Integer(…, exception: false) rather than to_i: the params are whatever the
+      # client posted, and a hash-shaped value has no to_i.
+      ticked = Array(acknowledged).filter_map { |index| Integer(index, exception: false) }
+      return :unacknowledged unless action_items.each_index.all? { |index| ticked.include?(index) }
+
+      nil
+    end
+
     # --- wrong-queue corrections ---------------------------------------------
     #
     # A reviewer who opens a submission that belongs in the other hardware queue
