@@ -94,7 +94,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
 
   def load_hardware_review_context
     @project = @funding_request.project
-    @ship = @project.ship_reviews.order(created_at: :desc).first
+    @ship = @project.latest_ship_review
     @owner = @project.memberships.owner.first&.user
     @active_review = @funding_request
     @active_review_type = :funding

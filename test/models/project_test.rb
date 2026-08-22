@@ -72,4 +72,28 @@ class ProjectTest < ActiveSupport::TestCase
     assert_not project.valid?
     assert project.errors[:hardware_stage].any?
   end
+
+  # The action-item gate reads latest_ship_review in views and controllers alike;
+  # they only agree while it resolves to one record, so ties break by id.
+  test "latest_ship_review breaks a created_at tie by id" do
+    project = Project.create!(title: "Tie", ship_status: "submitted")
+    reviewer = create_user(slack_id: "U_TIE_REV", display_name: "tie-rev")
+    same_time = 2.days.ago
+    project.ship_reviews.create!(status: :returned, reviewer: reviewer, created_at: same_time)
+    newer = project.ship_reviews.create!(status: :returned, reviewer: reviewer, created_at: same_time)
+
+    assert_equal newer.id, project.reload.latest_ship_review.id
+  end
+
+  test "reload drops the memoized latest_ship_review" do
+    project = Project.create!(title: "Memo", ship_status: "submitted")
+    reviewer = create_user(slack_id: "U_MEMO_REV", display_name: "memo-rev")
+    first = project.ship_reviews.create!(status: :returned, reviewer: reviewer)
+    assert_equal first.id, project.latest_ship_review.id
+
+    second = project.ship_reviews.create!(status: :returned, reviewer: reviewer)
+    project.reload
+
+    assert_equal second.id, project.latest_ship_review.id
+  end
 end

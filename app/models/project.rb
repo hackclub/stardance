@@ -512,6 +512,17 @@ class Project < ApplicationRecord
     @_latest_ship_review = ship_reviews.order(created_at: :desc, id: :desc).first
   end
 
+  # with_lock (and any explicit reload) refreshes the row but leaves these
+  # request-scoped memos in place, so a value read before the lock would leak a
+  # pre-lock snapshot into the locked section. Drop them whenever the record
+  # reloads. remove_instance_variable, not nil: the memos guard on `defined?`.
+  def reload(*)
+    %i[@_latest_ship_review @_latest_funding_request @_has_any_funding_request].each do |ivar|
+      remove_instance_variable(ivar) if instance_variable_defined?(ivar)
+    end
+    super
+  end
+
   # Name of the Hackatime project this project's time is filed under (and which
   # Project::EnsureHackatimeProjectsJob seeds for hardware builders to pick in
   # Lapse): the project title, so timelapse time lands under the same Hackatime

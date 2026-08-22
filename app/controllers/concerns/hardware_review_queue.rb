@@ -155,7 +155,7 @@ module HardwareReviewQueue
 
   def load_review_context
     @funding_request = @project.latest_funding_request
-    @ship = @project.ship_reviews.order(created_at: :desc).first
+    @ship = @project.latest_ship_review
     @owner = review_owner
     @active_review =
       if @funding_request&.pending?
