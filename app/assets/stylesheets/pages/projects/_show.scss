@@ -2195,6 +2195,11 @@ turbo-frame#project_hero {
   align-items: center;
   justify-content: center;
   padding: 8px 18px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.1);
@@ -2222,8 +2227,8 @@ turbo-frame#project_hero {
     color: var(--color-set-1-bg);
   }
 
-  &--primary:hover,
-  &--primary:focus-visible {
+  &--primary:hover:not(:disabled),
+  &--primary:focus-visible:not(:disabled) {
     filter: brightness(1.05);
     outline: none;
   }
@@ -2389,6 +2394,12 @@ turbo-frame#project_hero {
   overflow-wrap: anywhere;
 }
 
+.recert-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
 .recert-modal__actions {
   display: flex;
   gap: var(--space-s);
@@ -2401,6 +2412,11 @@ turbo-frame#project_hero {
   align-items: center;
   justify-content: center;
   padding: 8px 20px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.08);
@@ -2416,8 +2432,8 @@ turbo-frame#project_hero {
     border-color 150ms ease,
     color 150ms ease;
 
-  &:hover,
-  &:focus-visible {
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
     background: rgba(255, 255, 255, 0.14);
     border-color: rgba(255, 255, 255, 0.35);
     outline: none;

@@ -1,0 +1,26 @@
+<div class="action-items" data-action-items-target="block">
+  <p class="action-items__hint"
+     data-action-items-target="hint"
+     data-pending="Your last reviewer asked for these changes. Tick each one to confirm you've done it."
+     data-ready="All confirmed — you're ready to submit!">Your last reviewer asked for these changes. Tick each one to confirm you've done it.</p>
+
+  <ul class="action-items__list">
+    <% review.action_items.each_with_index do |item, index| %>
+      <li class="action-items__item">
+        <label class="action-items__label">
+          <%# id: nil - the name repeats, so Rails would give every box the same id. %>
+          <%= check_box_tag "acknowledged_action_items[]", index, false,
+                id: nil,
+                class: "action-items__checkbox",
+                data: { action_items_target: "checkbox", action: "change->action-items#report" } %>
+          <span class="action-items__text"><%= item %></span>
+        </label>
+      </li>
+    <% end %>
+  </ul>
+
+  <p class="action-items__progress" data-action-items-target="progress" aria-live="polite"></p>
+  <p class="action-items__error" role="alert" data-action-items-target="error" hidden></p>
+
+  <%= hidden_field_tag "action_items_digest", review.action_items_digest, id: nil %>
+</div>

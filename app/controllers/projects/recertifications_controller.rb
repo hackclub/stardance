@@ -1,15 +1,19 @@
 class Projects::RecertificationsController < ApplicationController
+  include ActionItemGate
+
   before_action :set_project
 
   def create
     authorize @project, :request_recertification?
 
     @project.with_lock do
-      latest_review = @project.ship_reviews.order(created_at: :desc, id: :desc).first
+      latest_review = @project.latest_ship_review
 
       if latest_review&.pending?
         redirect_to project_path(@project), alert: "A review is already pending for this project." and return
       end
+
+      return if action_items_block_resubmission?(latest_review)
 
       @project.resubmit_for_review!
       ship_event = @project.last_ship_event

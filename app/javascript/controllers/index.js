@@ -7,6 +7,9 @@ import { application } from "./application";
 import AchievementHighlightController from "./achievement_highlight_controller";
 application.register("achievement-highlight", AchievementHighlightController);
 
+import ActionItemsController from "./action_items_controller";
+application.register("action-items", ActionItemsController);
+
 import AddressSelectController from "./address_select_controller";
 application.register("address-select", AddressSelectController);
 

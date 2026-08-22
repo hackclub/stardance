@@ -501,7 +501,15 @@ class Project < ApplicationRecord
   # The latest funding request (for displaying approved amount, status, etc.).
   def latest_funding_request
     return @_latest_funding_request if defined?(@_latest_funding_request)
-    @_latest_funding_request = certification_funding_requests.order(created_at: :desc).first
+    @_latest_funding_request = certification_funding_requests.order(created_at: :desc, id: :desc).first
+  end
+
+  # The review the action-item gate answers to. Views and controllers have to
+  # agree on which record this is or a builder can be shown one checklist and
+  # judged against another, so there is one definition.
+  def latest_ship_review
+    return @_latest_ship_review if defined?(@_latest_ship_review)
+    @_latest_ship_review = ship_reviews.order(created_at: :desc, id: :desc).first
   end
 
   # Name of the Hackatime project this project's time is filed under (and which
