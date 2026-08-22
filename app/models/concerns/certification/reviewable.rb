@@ -131,11 +131,11 @@ module Certification
     ACTION_ITEM_LINE = /\A[[:blank:]]*-[[:blank:]]+(\S.*?)[[:blank:]]*\z/
 
     def action_items
-      feedback.to_s.each_line.filter_map { |line| line.chomp[ACTION_ITEM_LINE, 1] }
+      parsed_feedback[:items]
     end
 
     def feedback_prose
-      feedback.to_s.each_line.reject { |line| ACTION_ITEM_LINE.match?(line.chomp) }.join.strip
+      parsed_feedback[:prose]
     end
 
     def gates_resubmission?
@@ -249,6 +249,19 @@ module Certification
     end
 
     private
+
+    # action_items and feedback_prose each scan the feedback with the regex, and
+    # both are read several times per timeline render. Parse once and memoize,
+    # keyed on the feedback so an edit on the same record re-parses.
+    def parsed_feedback
+      return @parsed_feedback if @parsed_feedback && @parsed_feedback[:source] == feedback
+
+      @parsed_feedback = {
+        source: feedback,
+        items: feedback.to_s.each_line.filter_map { |line| line.chomp[ACTION_ITEM_LINE, 1] },
+        prose: feedback.to_s.each_line.reject { |line| ACTION_ITEM_LINE.match?(line.chomp) }.join.strip
+      }
+    end
 
     # Overridden where a submission has a public artifact to hide (a ship has a
     # Post::ShipEvent on the timeline; a funding request is members-only already).

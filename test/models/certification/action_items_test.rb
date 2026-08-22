@@ -21,6 +21,16 @@ class Certification::ActionItemsTest < ActiveSupport::TestCase
     end
   end
 
+  test "reparses when the feedback changes on the same record" do
+    review = build("- first")
+    assert_equal [ "first" ], review.action_items
+
+    review.feedback = "- first\n- second"
+
+    assert_equal [ "first", "second" ], review.action_items
+    assert_equal "", review.feedback_prose
+  end
+
   private
 
   def build(feedback)
