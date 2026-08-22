@@ -258,8 +258,10 @@ module Certification
 
       @parsed_feedback = {
         source: feedback,
-        items: feedback.to_s.each_line.filter_map { |line| line.chomp[ACTION_ITEM_LINE, 1] },
-        prose: feedback.to_s.each_line.reject { |line| ACTION_ITEM_LINE.match?(line.chomp) }.join.strip
+        # Frozen: the memo is shared across reads, so an in-place mutation by a
+        # caller would corrupt every later action_items/digest read on this record.
+        items: feedback.to_s.each_line.filter_map { |line| line.chomp[ACTION_ITEM_LINE, 1] }.freeze,
+        prose: feedback.to_s.each_line.reject { |line| ACTION_ITEM_LINE.match?(line.chomp) }.join.strip.freeze
       }
     end
 

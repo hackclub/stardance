@@ -5,7 +5,7 @@ class Projects::ShipsController < ApplicationController
   def create
     authorize @project, :ship?
 
-    latest_review = @project.ship_reviews.order(created_at: :desc, id: :desc).first
+    latest_review = @project.latest_ship_review
     if latest_review&.pending?
       redirect_to project_path(@project),
                   alert: "Your project is being reviewed. You can ship again once it's approved." and return
