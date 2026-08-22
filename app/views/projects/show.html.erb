@@ -935,11 +935,13 @@
         <% ship_index = 0 %>
         <% @timeline_entries.each do |entry| %>
           <% if entry.is_a?(Certification::Ship) %>
-            <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project %>
+            <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
+            <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project,
+                       recert_modal_id: recert_id %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
             <%# The resubmit button reuses the funding modal, which only renders
                 while the project is still in the design stage. %>
-            <% resubmit_id = (Flipper.enabled?(:hardware_flow, current_user) && @project.design_stage?) ? "funding-request-modal-#{@project.id}" : nil %>
+            <% resubmit_id = (Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage?) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
                        resubmit_modal_id: resubmit_id %>
@@ -1188,141 +1190,160 @@
       <% end %>
     </dialog>
 
-    <%# Funding request popup — design-stage hardware only. Mirrors the ship
-        post modal but collects a complexity tier + requested amount. %>
-    <% if Flipper.enabled?(:hardware_flow, current_user) && @project.design_stage? %>
-      <dialog id="funding-request-modal-<%= @project.id %>"
-              class="ship-modal ship-modal--post funding-modal"
-              data-controller="modal"
-              aria-label="Request project funding">
-        <% if @project.awards_design_kit? %>
-        <%= form_with url: project_funding_request_path(@project),
-                      method: :post,
-                      data: { turbo: false },
-                      html: { class: "ship-modal__form" } do |form| %>
-          <div class="ship-modal__panel funding-modal__panel">
-            <header class="funding-modal__header">
-              <h2 class="funding-modal__title">Submit your design</h2>
-              <p class="funding-modal__tagline">Get your design approved and we'll ship you the kit to build a <%= @project.current_mission.name %>.</p>
-            </header>
+  <% end %>
 
-            <p class="funding-modal__note">
-              Once a reviewer approves your design, your kit becomes available to redeem and your project moves to the build stage.
-            </p>
+  <%# Funding request popup — design-stage hardware only. Mirrors the ship
+      post modal but collects a complexity tier + requested amount. %>
+  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+    <dialog id="funding-request-modal-<%= @project.id %>"
+            class="ship-modal ship-modal--post funding-modal"
+            data-controller="modal"
+            aria-label="Request project funding">
+      <% returned_design = @project.latest_funding_request %>
+      <% design_gated = returned_design&.returned? && returned_design.gates_resubmission? %>
+      <% if @project.awards_design_kit? %>
+      <%= form_with url: project_funding_request_path(@project),
+                    method: :post,
+                    data: { turbo: false,
+                            controller: ("action-items" if design_gated),
+                            action: ("submit->action-items#guard" if design_gated) }.compact,
+                    html: { class: "ship-modal__form" } do |form| %>
+        <div class="ship-modal__panel funding-modal__panel">
+          <header class="funding-modal__header">
+            <h2 class="funding-modal__title">Submit your design</h2>
+            <p class="funding-modal__tagline">Get your design approved and we'll ship you the kit to build a <%= @project.current_mission.name %>.</p>
+          </header>
 
-            <div class="ship-modal__actions">
-              <button type="button"
-                      class="ship-modal__btn ship-modal__btn--secondary"
-                      onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
-                Cancel
-              </button>
-              <%= form.submit "Submit design", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit", data: { disable_with: "Submitting…" } %>
-            </div>
+          <p class="funding-modal__note">
+            Once a reviewer approves your design, your kit becomes available to redeem and your project moves to the build stage.
+          </p>
+
+          <% if design_gated %>
+            <%= render "projects/action_items", review: returned_design %>
+          <% end %>
+
+          <div class="ship-modal__actions">
+            <button type="button"
+                    class="ship-modal__btn ship-modal__btn--secondary"
+                    onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
+              Cancel
+            </button>
+            <%= form.submit "Submit design", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit",
+                  data: { disable_with: "Submitting…", action_items_target: ("submit" if design_gated) } %>
           </div>
-        <% end %>
-        <% else %>
-        <%= form_with url: project_funding_request_path(@project),
-                      method: :post,
-                      data: { turbo: false },
-                      html: { class: "ship-modal__form", onsubmit: "return fundingSubmit(this)", data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json } } do |form| %>
-          <div class="ship-modal__panel funding-modal__panel">
-            <header class="funding-modal__header">
-              <h2 class="funding-modal__title">Get your build funded</h2>
-              <p class="funding-modal__tagline">Tell us what you're making and what it'll cost.</p>
-            </header>
+        </div>
+      <% end %>
+      <% else %>
+      <%= form_with url: project_funding_request_path(@project),
+                    method: :post,
+                    data: { turbo: false },
+                    html: { class: "ship-modal__form",
+                            data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json,
+                                    controller: ("action-items" if design_gated),
+                                    action: ("submit->action-items#guard" if design_gated) }.compact } do |form| %>
+        <div class="ship-modal__panel funding-modal__panel">
+          <header class="funding-modal__header">
+            <h2 class="funding-modal__title">Get your build funded</h2>
+            <p class="funding-modal__tagline">Tell us what you're making and what it'll cost.</p>
+          </header>
 
-            <fieldset class="funding-modal__tiers">
-              <legend>Pick your complexity tier</legend>
-              <% Certification::FundingRequest::TIERS.each do |tier_id, t| %>
-                <label class="funding-tier funding-tier--<%= t[:code].downcase %>">
-                  <%= form.radio_button :complexity_tier, tier_id, required: true, class: "funding-tier__input", onchange: "fundingValidate(this.form)" %>
-                  <span class="funding-tier__badge"><%= t[:code] %></span>
-                  <span class="funding-tier__info">
-                    <span class="funding-tier__name"><%= t[:name] %></span>
-                    <span class="funding-tier__examples"><%= t[:examples] %></span>
-                  </span>
-                  <span class="funding-tier__max">up to $<%= t[:max_cents] / 100 %></span>
-                </label>
-              <% end %>
-            </fieldset>
+          <fieldset class="funding-modal__tiers">
+            <legend>Pick your complexity tier</legend>
+            <% Certification::FundingRequest::TIERS.each do |tier_id, t| %>
+              <label class="funding-tier funding-tier--<%= t[:code].downcase %>">
+                <%= form.radio_button :complexity_tier, tier_id, required: true, class: "funding-tier__input", onchange: "fundingValidate(this.form)" %>
+                <span class="funding-tier__badge"><%= t[:code] %></span>
+                <span class="funding-tier__info">
+                  <span class="funding-tier__name"><%= t[:name] %></span>
+                  <span class="funding-tier__examples"><%= t[:examples] %></span>
+                </span>
+                <span class="funding-tier__max">up to $<%= t[:max_cents] / 100 %></span>
+              </label>
+            <% end %>
+          </fieldset>
 
+          <div class="funding-modal__request-row">
             <label class="funding-modal__amount">
               <span>Amount requested ($)</span>
               <%= form.number_field :requested_amount, min: 1, step: 1, required: true, class: "funding-modal__amount-input", oninput: "fundingValidate(this.form)" %>
             </label>
-            <p class="funding-request__error" role="alert" hidden></p>
 
-            <p class="funding-modal__note">
-              Get your design approved and we'll issue a grant card for the approved amount. Higher tiers fund more.
-              <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
-            </p>
+            <div class="funding-modal__bom">
+              <p class="funding-modal__bom-hint">
+                Don't have one? Check
+                <%= link_to "the hardware codex",
+                      "https://codex.hackclub.com/shipping/101/#3-make-a-bill-of-materials",
+                      class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
+                out for info!
+              </p>
 
-            <%# No `required`: the browser blocks submission silently when the
-                control is scrolled out of view inside a dialog, so the check is
-                enforced on submit instead, where it can point at itself. %>
-            <label class="funding-modal__bom-check">
-              <input type="checkbox" onchange="fundingValidate(this.form)">
-              <span>I have a <code>BOM.csv</code> in my repository</span>
-            </label>
-
-            <div class="ship-modal__actions">
-              <button type="button"
-                      class="ship-modal__btn ship-modal__btn--secondary"
-                      onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
-                Cancel
-              </button>
-              <%= form.submit "Submit for funding", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit", data: { disable_with: "Submitting…" } %>
+                <label class="funding-modal__bom-check">
+                <input type="checkbox" onchange="fundingValidate(this.form)">
+                <span>I have a <code>BOM.csv</code> in the root of my repository</span>
+              </label>
             </div>
           </div>
-        <% end %>
-        <% end %>
-      </dialog>
-      <script>
-        function fundingBomLabel(form) {
-          return form.querySelector(".funding-modal__bom-check");
-        }
+          <p class="funding-request__error" role="alert" hidden></p>
 
-        function fundingValidate(form) {
-          if (!form) return;
-          var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
-          var tier = form.querySelector('[name="complexity_tier"]:checked');
-          var amountEl = form.querySelector('[name="requested_amount"]');
-          var err = form.querySelector(".funding-request__error");
-          var submit = form.querySelector('[type="submit"]');
-          if (!amountEl || !err || !submit) return;
-          var amount = parseFloat(amountEl.value);
-          var max = tier ? maxes[tier.value] : null;
-          if (max != null) amountEl.max = max;
+          <p class="funding-modal__note">
+            Get your design approved and we'll issue a grant card for the approved amount. Higher tiers fund more.
+            <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
+          </p>
 
-          var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
-          var over = max != null && !isNaN(amount) && amount > max;
-          err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
-          err.hidden = !over;
-          // Only the over-max case disables the button. An unchecked BOM leaves it
-          // clickable on purpose, so pressing it can explain itself.
-          submit.disabled = over;
+          <% if design_gated %>
+            <%= render "projects/action_items", review: returned_design %>
+          <% end %>
 
-          if (bomCheck && bomCheck.checked) {
-            fundingBomLabel(form).classList.remove("funding-modal__bom-check--error");
-          }
-        }
+          <div class="ship-modal__actions">
+            <button type="button"
+                    class="ship-modal__btn ship-modal__btn--secondary"
+                    onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
+              Cancel
+            </button>
+            <%= form.submit "Submit for funding", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit",
+                  data: { disable_with: "Submitting…", action_items_target: ("submit" if design_gated) } %>
+          </div>
+        </div>
+      <% end %>
+      <% end %>
+    </dialog>
+    <script>
+      function fundingActionItemsPending(form) {
+        var boxes = form.querySelectorAll('[name^="acknowledged_action_items"]');
+        return Array.prototype.some.call(boxes, function (box) {
+          return !box.checked;
+        });
+      }
 
-        function fundingSubmit(form) {
-          var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
-          if (bomCheck && !bomCheck.checked) {
-            var err = form.querySelector(".funding-request__error");
-            fundingBomLabel(form).classList.add("funding-modal__bom-check--error");
-            if (err) {
-              err.textContent = "Confirm you have a BOM.csv in your repository before submitting.";
-              err.hidden = false;
-            }
-            bomCheck.focus();
-            return false;
-          }
-          return true;
-        }
-      </script>
-    <% end %>
+      function fundingValidate(form) {
+        if (!form) return;
+        var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
+        var tier = form.querySelector('[name="complexity_tier"]:checked');
+        var amountEl = form.querySelector('[name="requested_amount"]');
+        var err = form.querySelector(".funding-request__error");
+        var submit = form.querySelector('[type="submit"]');
+        if (!amountEl || !err || !submit) return;
+        var amount = parseFloat(amountEl.value);
+        var max = tier ? maxes[tier.value] : null;
+        if (max != null) amountEl.max = max;
+
+        var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
+        var over = max != null && !isNaN(amount) && amount > max;
+        err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
+        err.hidden = !over;
+
+        // Reruns on every field change, so every condition has to be here or the
+        // button gets re-enabled — including the action items.
+        var amountValid = !isNaN(amount) && amount >= 1 && !over;
+        submit.disabled =
+          !tier ||
+          !amountValid ||
+          (bomCheck && !bomCheck.checked) ||
+          fundingActionItemsPending(form);
+      }
+
+      document.querySelectorAll("form[data-tier-maxes]").forEach(fundingValidate);
+    </script>
   <% end %>
 
   <% if @is_member && @project.current_mission.nil? && !@project.shipped? %>

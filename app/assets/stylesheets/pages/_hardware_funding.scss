@@ -146,6 +146,34 @@
   }
 }
 
+.funding-modal__request-row {
+  --funding-control-height: 3rem;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-m);
+
+  .funding-modal__amount {
+    flex: 0 0 auto;
+  }
+
+  .funding-modal__bom {
+    flex: 1 1 17rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+}
+
+.funding-modal__bom-hint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--color-space-text-muted);
+  text-wrap: pretty;
+}
+
 .funding-modal__amount {
   display: flex;
   flex-direction: column;
@@ -154,7 +182,10 @@
   color: var(--color-space-text);
 
   input {
-    max-width: 12rem;
+    // Explicit: a number input narrows itself once `max` is set on it.
+    width: 12rem;
+    max-width: 100%;
+    min-height: var(--funding-control-height, auto);
     padding: var(--space-s) var(--space-m);
     background-color: var(--color-set-1-bg);
     color: var(--color-space-text);
@@ -192,8 +223,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-s);
-  padding: var(--space-xs) var(--space-s);
-  border: 2px solid transparent;
+  min-height: var(--funding-control-height, auto);
+  padding: var(--space-s) var(--space-m);
+  background: var(--color-overlay-light-soft);
+  border: 2px solid var(--color-border-input);
   border-radius: var(--border-radius);
   font-size: var(--font-size-s);
   color: var(--color-space-text);
@@ -202,17 +235,18 @@
     border-color 120ms ease,
     background 120ms ease;
 
-  // Set when a submit is attempted with the box unticked, so the requirement
-  // points at itself instead of the form failing silently.
-  &--error {
-    border-color: var(--color-brand-salmon);
-    background: var(--color-brand-salmon-soft);
+  &:hover {
+    border-color: var(--color-border-input-focus);
+  }
 
-    input[type="checkbox"] {
-      accent-color: var(--color-brand-salmon);
-      outline: 2px solid var(--color-brand-salmon);
-      outline-offset: 2px;
-    }
+  &:focus-within {
+    border-color: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+  }
+
+  &:has(input[type="checkbox"]:checked) {
+    background: color-mix(in srgb, var(--color-brand-mint) 8%, transparent);
+    border-color: color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
   }
 
   input[type="checkbox"] {
