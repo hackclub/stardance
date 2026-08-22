@@ -3,7 +3,9 @@ require "test_helper"
 class Projects::RecertificationsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @owner = create_user(slack_id: "U_REC_OWNER", display_name: "rec-owner", verified: true)
-    @project = Project.create!(title: "Returned build")
+    # The action-item gate is hardware-only, so the gated tests below need a
+    # hardware project — as the "Returned build" name always intended.
+    @project = Project.create!(title: "Returned build", hardware_stage: "build")
     @project.memberships.create!(user: @owner, role: :owner)
     @project.update!(ship_status: "needs_changes")
 
@@ -50,6 +52,20 @@ class Projects::RecertificationsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_match(/updated their feedback/, flash[:alert])
+  end
+
+  test "a software project's dashed feedback does not gate resubmission" do
+    software = Project.create!(title: "Returned software")
+    software.memberships.create!(user: @owner, role: :owner)
+    software.update!(ship_status: "needs_changes")
+    review = software.ship_reviews.create!(status: :pending)
+    review.update!(reviewer: reviewer, status: :returned, feedback: "nearly there\n- rework the CSS")
+
+    assert_difference -> { software.ship_reviews.count }, 1 do
+      post project_recertification_path(software)
+    end
+
+    assert_equal "submitted", software.reload.ship_status
   end
 
   test "a reviewer acting on the builder's behalf is not gated" do

@@ -455,6 +455,14 @@ module Certification
     def queue_mismatch_flagged_label = "build certification"
     def queue_mismatch_suggested_label = "design funding"
 
+    # Action items gate only the hardware build resubmission. Software ship
+    # reviewers routinely leave "- " bullets - the returned-ship FEEDBACK_TEMPLATES
+    # ship with them - so keying off dashed feedback alone would drag software
+    # ships into the acknowledgment flow the hardware queue owns.
+    def gates_resubmission?
+      super && project&.hardware?
+    end
+
     private
 
     # Read straight off the association rather than through

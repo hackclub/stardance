@@ -52,7 +52,13 @@
     <section class="feed-post-card__body ship-decision-card__feedback" aria-label="Shipwright feedback">
       <p class="ship-decision-card__feedback-label">Feedback</p>
       <div class="ship-decision-card__feedback-body">
-        <%= render "projects/review_feedback", review: decision %>
+        <%# Action items are a hardware-only affordance; software feedback stays
+            plain prose, bullets and all. %>
+        <% if project.hardware? %>
+          <%= render "projects/review_feedback", review: decision %>
+        <% else %>
+          <%= simple_format(decision.feedback, {}, sanitize: true) %>
+        <% end %>
       </div>
     </section>
   <% end %>

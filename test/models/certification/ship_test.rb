@@ -135,6 +135,23 @@ class Certification::ShipTest < ActiveSupport::TestCase
     refute_equal hardware.id, Certification::Ship.next_eligible(@reviewer).id
   end
 
+  # Action items only gate the hardware build flow. A software Shipwright's
+  # dashed feedback (the "Doesn't meet quality standards" template ships with
+  # bullets) must not turn resubmission into an acknowledgment checklist.
+  test "gates_resubmission? fires for a hardware ship with action items" do
+    review = Certification::Ship.new(feedback: "nearly there\n- add a BOM",
+                                     project: Project.new(hardware_stage: "build"))
+
+    assert review.gates_resubmission?
+  end
+
+  test "gates_resubmission? never fires for a software ship, even with dashed feedback" do
+    review = Certification::Ship.new(feedback: "nearly there\n- rework the CSS",
+                                     project: Project.new(hardware_stage: nil))
+
+    assert_not review.gates_resubmission?
+  end
+
   private
 
   def hardware_project(stage: "build")

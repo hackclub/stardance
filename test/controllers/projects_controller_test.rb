@@ -317,6 +317,31 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button", text: /Record a timelapse/, count: 0
   end
 
+  test "software ship feedback renders as prose, not an action-item checklist" do
+    Flipper.enable(:week_1_release)
+    @project.update!(ship_status: "submitted")
+    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- rework the CSS")
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items", 0
+    assert_select ".ship-decision-card__feedback-body", text: /rework the CSS/
+  end
+
+  test "hardware ship feedback renders reviewer action items as a checklist" do
+    Flipper.enable(:week_1_release)
+    @project.update!(hardware_stage: "build", ship_status: "submitted")
+    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- add a BOM")
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items li", text: "add a BOM"
+  end
+
   test "review shortcut shows for a project certifier and no one else" do
     @project.update!(hardware_stage: "design")
 
