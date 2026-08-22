@@ -1,0 +1,13 @@
+<div class="review-feedback">
+  <% if review.feedback_prose.present? %>
+    <div class="review-feedback__prose"><%= simple_format(review.feedback_prose, {}, sanitize: true) %></div>
+  <% end %>
+
+  <% if review.action_items.any? %>
+    <ul class="review-feedback__items">
+      <% review.action_items.each do |item| %>
+        <li class="review-feedback__item"><%= item %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

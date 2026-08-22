@@ -91,7 +91,7 @@
 
   <div class="feed-post-card__body funding-request-card__message">
     <% if show_feedback %>
-      <%= simple_format(funding_request.feedback, {}, sanitize: true) %>
+      <%= render "projects/review_feedback", review: funding_request %>
     <% else %>
       <p><%= message %></p>
     <% end %>
