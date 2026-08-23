@@ -33,7 +33,10 @@ export default class extends Controller {
     if (!this.hasSubmitTarget) return;
 
     const form = this.element.closest("form") || this.element;
-    if (form.dataset.tierMaxes && typeof window.fundingValidate === "function") {
+    if (
+      form.dataset.tierMaxes &&
+      typeof window.fundingValidate === "function"
+    ) {
       window.fundingValidate(form);
       return;
     }

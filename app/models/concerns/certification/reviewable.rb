@@ -138,6 +138,39 @@ module Certification
       parsed_feedback[:prose]
     end
 
+    # The feedback split into ordered blocks for display: a run of prose lines
+    # becomes a :prose segment and a run of "- " lines an :items segment, in the
+    # order the reviewer wrote them. feedback_prose and action_items flatten the
+    # whole thing (for the digest and the resubmission gate); this keeps the
+    # bullets in place, so a closing line written after the list still renders
+    # after the list rather than being hoisted above it.
+    def feedback_segments
+      segments = []
+      prose = []
+
+      flush_prose = lambda do
+        text = prose.join.strip
+        segments << { type: :prose, text: text } unless text.empty?
+        prose.clear
+      end
+
+      feedback.to_s.each_line do |line|
+        if (item = line.chomp[ACTION_ITEM_LINE, 1])
+          flush_prose.call
+          if segments.last && segments.last[:type] == :items
+            segments.last[:items] << item
+          else
+            segments << { type: :items, items: [ item ] }
+          end
+        else
+          prose << line
+        end
+      end
+      flush_prose.call
+
+      segments
+    end
+
     def gates_resubmission?
       action_items.any?
     end
