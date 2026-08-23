@@ -1,0 +1,42 @@
+// Thumbnail gallery for reviewer-attached funding-feedback photos. Rendered
+// beside the feedback text on both the reviewer review view and the
+// builder-facing funding request card (partial:
+// admin/certification/funding_requests/_feedback_images).
+.feedback-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    margin: 0;
+  }
+
+  &__link {
+    display: block;
+    border-radius: calc(var(--border-radius) * 0.5);
+    overflow: hidden;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-mint);
+      outline-offset: 2px;
+    }
+  }
+
+  &__media {
+    display: block;
+    width: 84px;
+    height: 84px;
+    object-fit: cover;
+    border: 1px solid var(--color-space-border);
+    border-radius: calc(var(--border-radius) * 0.5);
+    background: var(--color-space-card);
+    transition: filter 0.15s ease;
+
+    &:hover {
+      filter: brightness(1.08);
+    }
+  }
+}

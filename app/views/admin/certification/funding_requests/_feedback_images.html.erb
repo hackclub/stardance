@@ -1,0 +1,21 @@
+<%# Reviewer-attached feedback photos for a funding request, shown beside the
+    feedback text on both the reviewer review view and the builder-facing card.
+
+    Only persisted attachments render: after a failed verdict submit the form
+    re-shows the request with the reviewer's picks still staged (unsaved), and
+    those must not appear as though they were already attached.
+
+    Locals: funding_request (required). %>
+<% saved_feedback_images = funding_request.feedback_images.select(&:persisted?) %>
+<% if saved_feedback_images.any? %>
+  <ul class="feedback-images">
+    <% saved_feedback_images.each do |image| %>
+      <li class="feedback-images__item">
+        <%= link_to url_for(image), target: "_blank", rel: "noopener noreferrer", class: "feedback-images__link" do %>
+          <%= image_tag image.variant(:thumb), alt: "Reviewer feedback image",
+                loading: "lazy", class: "feedback-images__media" %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
