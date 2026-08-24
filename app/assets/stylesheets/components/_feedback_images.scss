@@ -1,12 +1,11 @@
-// Thumbnail gallery for reviewer-attached funding-feedback photos. Rendered
-// beside the feedback text on both the reviewer review view and the
-// builder-facing funding request card (partial:
-// admin/certification/funding_requests/_feedback_images).
+// Reviewer-attached funding-feedback photos: a thumbnail gallery beside the
+// feedback text (partial: admin/certification/funding_requests/_feedback_images).
+// Each thumbnail opens the full image in a modal, like project photos elsewhere.
 .feedback-images {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
-  margin: var(--space-xs) 0 0;
+  margin: var(--space-s) 0 0;
   padding: 0;
   list-style: none;
 
@@ -14,9 +13,13 @@
     margin: 0;
   }
 
-  &__link {
+  &__trigger {
     display: block;
+    padding: 0;
+    border: 0;
+    background: none;
     border-radius: calc(var(--border-radius) * 0.5);
+    cursor: pointer;
     overflow: hidden;
 
     &:focus-visible {
@@ -27,16 +30,153 @@
 
   &__media {
     display: block;
-    width: 84px;
-    height: 84px;
+    width: 112px;
+    height: 112px;
     object-fit: cover;
     border: 1px solid var(--color-space-border);
     border-radius: calc(var(--border-radius) * 0.5);
     background: var(--color-space-card);
-    transition: filter 0.15s ease;
+    transition:
+      filter 0.15s ease,
+      transform 0.15s ease;
 
-    &:hover {
+    .feedback-images__trigger:hover & {
       filter: brightness(1.08);
+      transform: scale(1.02);
+    }
+  }
+
+  // Expanded view: the whole review the way a devlog reads. A large, transparent,
+  // centred <dialog> holding a surface panel on a dimmed backdrop — the same
+  // shape as .ship-modal / .payout-review-modal.
+  &__modal {
+    position: fixed;
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    width: min(860px, 94vw);
+    max-height: 90vh;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-space-text);
+    overflow: visible;
+
+    &::backdrop {
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(2px);
+    }
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    max-height: 90vh;
+    padding: var(--space-l);
+    overflow-y: auto;
+    // Match the funding-request card's surface (set-4 + the cream funding accent)
+    // so the expanded view reads as the same review.
+    background: var(--color-set-4-bg);
+    border: 2px solid var(--color-brand-highlight);
+    border-radius: var(--border-radius);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  &__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+  }
+
+  &__panel-title {
+    margin: 0;
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-size: var(--font-size-l);
+    font-weight: 700;
+    color: var(--color-space-text);
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-space-text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background 120ms ease,
+      color 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--color-space-text);
+      outline: none;
+    }
+  }
+
+  // The review rendered as a feed-post-card, but seamless inside the panel: no
+  // card border/background of its own (the panel is the surface). Keeping the
+  // .feed-post-card class means its byline/body offset and post-media styles
+  // still apply. Compound selector so this beats the base .feed-post-card.
+  &__panel &__card {
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+
+    // Show each photo whole (not cover-cropped) and keep the modal compact so it
+    // stays comfortably centred rather than running off-screen.
+    .feed-post-card__media-viewport {
+      background: transparent;
+    }
+
+    .feed-post-card__image {
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      max-height: 56vh;
+      margin: 0 auto;
+      object-fit: contain;
+    }
+
+    // Carousel controls as a compact pair at the media's bottom-right, always
+    // visible (the feed hides its full-height gradient arrows until hover).
+    .feed-post-card__media-arrow {
+      top: auto;
+      bottom: var(--space-xs);
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(5, 4, 24, 0.6);
+      color: #fff;
+      opacity: 1;
+    }
+
+    .feed-post-card__media-arrow--prev {
+      left: auto;
+      right: calc(var(--space-xs) + 42px);
+    }
+
+    .feed-post-card__media-arrow--next {
+      right: var(--space-xs);
     }
   }
 }

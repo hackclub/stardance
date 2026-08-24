@@ -1,6 +1,11 @@
 <%# Reviewer-attached feedback photos for a funding request, shown beside the
     feedback text on both the reviewer review view and the builder-facing card.
 
+    Inline: a small thumbnail gallery. Clicking any thumbnail opens one large
+    modal that shows the whole review the way a devlog reads - reviewer byline,
+    the feedback text, and the photos in the shared post-media gallery. The modal
+    closes via the button, Esc, or a backdrop click (modal controller).
+
     Only persisted attachments render: after a failed verdict submit the form
     re-shows the request with the reviewer's picks still staged (unsaved), and
     those must not appear as though they were already attached.
@@ -8,14 +13,70 @@
     Locals: funding_request (required). %>
 <% saved_feedback_images = funding_request.feedback_images.select(&:persisted?) %>
 <% if saved_feedback_images.any? %>
+  <% dialog_id = "feedback-images-#{funding_request.id}" %>
+  <% reviewer = funding_request.reviewer %>
+  <% decided_on = funding_request.decided_at || funding_request.created_at %>
+
   <ul class="feedback-images">
     <% saved_feedback_images.each do |image| %>
       <li class="feedback-images__item">
-        <%= link_to url_for(image), target: "_blank", rel: "noopener noreferrer", class: "feedback-images__link" do %>
-          <%= image_tag image.variant(:thumb), alt: "Reviewer feedback image",
+        <button type="button" class="feedback-images__trigger"
+                onclick="document.getElementById(<%= dialog_id.to_json %>).showModal()"
+                aria-label="Open reviewer feedback">
+          <%= image_tag image.variant(:medium), alt: "Reviewer feedback image",
                 loading: "lazy", class: "feedback-images__media" %>
-        <% end %>
+        </button>
       </li>
     <% end %>
   </ul>
+
+  <%# stopPropagation so a click inside the modal (backdrop, ×, content) doesn't
+      bubble to the review body's open handler, which would reopen it. %>
+  <dialog id="<%= dialog_id %>" class="feedback-images__modal" data-controller="modal"
+          aria-label="Reviewer feedback" onclick="event.stopPropagation()">
+    <div class="feedback-images__panel">
+      <header class="feedback-images__panel-head">
+        <p class="feedback-images__panel-title">Reviewer feedback</p>
+        <button type="button" class="feedback-images__close"
+                data-action="modal#close" aria-label="Close">&times;</button>
+      </header>
+
+      <article class="feed-post-card feedback-images__card">
+        <header class="feed-post-card__header">
+          <% if reviewer %>
+            <%= link_to profile_path(reviewer.display_name), class: "feed-post-card__avatar-link",
+                  aria: { label: "@#{reviewer.display_name}" } do %>
+              <%= image_tag reviewer.avatar, alt: "", class: "feed-post-card__avatar" %>
+            <% end %>
+          <% else %>
+            <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">$</span>
+          <% end %>
+          <div class="feed-post-card__meta">
+            <p class="feed-post-card__byline">
+              <% if reviewer %>
+                <%= render "shared/username_link", user: reviewer,
+                      link_class: "feed-post-card__author", badge: false %>
+              <% else %>
+                <span class="feed-post-card__author">A reviewer</span>
+              <% end %>
+              <span class="feed-post-card__context">left feedback</span>
+              <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>"
+                    title="<%= l(decided_on, format: :long) %>">
+                · <%= time_ago_in_words(decided_on) %> ago
+              </time>
+            </p>
+          </div>
+        </header>
+
+        <% if funding_request.feedback.present? %>
+          <div class="feed-post-card__body markdown-content">
+            <%= simple_format(funding_request.feedback, {}, sanitize: true) %>
+          </div>
+        <% end %>
+
+        <%= render "shared/post_media",
+              attachments: saved_feedback_images, variant: :large, lazy: false %>
+      </article>
+    </div>
+  </dialog>
 <% end %>

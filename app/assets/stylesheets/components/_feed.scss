@@ -2361,6 +2361,7 @@
   // project story. Only a returned request breaks out of it.
   --funding-accent: var(--color-brand-highlight);
 
+  position: relative;
   background: var(--color-set-4-bg);
   border-color: var(--funding-accent);
   gap: var(--space-xxs);
@@ -2402,6 +2403,51 @@
 
     p + p {
       margin-top: var(--space-xs);
+    }
+
+    // Reviewer feedback with photos: the whole block opens the feedback modal.
+    &--openable {
+      cursor: pointer;
+    }
+  }
+
+  // One "expand" control for the whole review, anchored bottom-right. Opens the
+  // same feedback modal as clicking the review body. `!important` overrides the
+  // broad `.feed-post-card button { position: relative }` reset, which would
+  // otherwise keep this in flow and stretch it across the flex column.
+  &__expand {
+    position: absolute !important;
+    right: var(--space-m);
+    bottom: var(--space-m);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: var(--space-xxs) var(--space-s);
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    background: rgba(5, 4, 24, 0.35);
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-mint-soft);
+      border-color: var(--color-brand-mint);
+      color: var(--color-space-text);
+      outline: none;
     }
   }
 
