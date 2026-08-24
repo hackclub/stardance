@@ -577,3 +577,97 @@
     color: var(--color-brand-mint);
   }
 }
+
+// Internal notes ledger for reviewers, kept across a project's funding and ship
+// reviews. It lives on the already staff-only /admin review page, so it needs no
+// per-element admin marker (branding §1.5).
+.reviewer-notes {
+  display: grid;
+  gap: var(--space-m);
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__list {
+    display: grid;
+    gap: var(--space-s);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    padding: var(--space-s);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem;
+    margin: 0 0 var(--space-xs);
+    font-size: var(--font-size-s);
+  }
+
+  &__author {
+    font-weight: 700;
+    color: var(--color-space-text);
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  &__time {
+    color: var(--color-space-text-muted);
+  }
+
+  &__body {
+    margin: 0;
+    color: var(--color-space-text);
+    white-space: pre-wrap;
+  }
+
+  &__empty {
+    margin: 0;
+  }
+
+  &__form {
+    display: grid;
+    gap: var(--space-xs);
+    justify-items: start;
+  }
+
+  &__label {
+    font-weight: 600;
+  }
+
+  &__input {
+    width: 100%;
+    padding: var(--space-s);
+    font-family: inherit;
+    font-size: var(--font-size-m);
+    color: var(--color-space-text);
+    background: var(--color-space-surface, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.18));
+    border-radius: 8px;
+    resize: vertical;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 1px;
+    }
+  }
+}

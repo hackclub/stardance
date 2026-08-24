@@ -136,6 +136,42 @@
           <% end %>
         </div>
 
+        <%# Internal notes ledger: context for the next reviewer, kept across
+            this project's funding and ship reviews and never shown to the
+            builder. The whole /admin review page is already staff-only. %>
+        <div class="ship-review__panel reviewer-notes">
+          <header class="reviewer-notes__header">
+            <h2 class="ship-review__panel-title reviewer-notes__title">Reviewer notes</h2>
+          </header>
+
+          <% if @review_notes.any? %>
+            <ul class="reviewer-notes__list">
+              <% @review_notes.each do |note| %>
+                <li class="reviewer-notes__item">
+                  <p class="reviewer-notes__meta">
+                    <%= render "shared/username_link", user: note.author, link_class: "reviewer-notes__author", text: note.author.display_name, badge: false %>
+                    <time class="reviewer-notes__time" datetime="<%= note.created_at.iso8601 %>"
+                          title="<%= l(note.created_at, format: :long) %>">
+                      · <%= l(note.created_at, format: :short) %>
+                    </time>
+                  </p>
+                  <p class="reviewer-notes__body"><%= note.body %></p>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="ship-review__description reviewer-notes__empty">No reviewer notes yet.</p>
+          <% end %>
+
+          <%= form_with url: admin_certification_project_review_notes_path(@project),
+                scope: :certification_review_note, method: :post, class: "reviewer-notes__form" do |form| %>
+            <%= form.label :body, "Add a note for the next reviewer", class: "reviewer-notes__label" %>
+            <%= form.text_area :body, rows: 3, class: "reviewer-notes__input",
+                  placeholder: "Context the next reviewer should know (not shown to the builder)" %>
+            <%= form.submit "Add note", class: "action-btn action-btn--small action-btn--secondary" %>
+          <% end %>
+        </div>
+
         <%# Secondary context: useful when a verdict is borderline, not needed to
             start reviewing, so it sits below the evidence and the form. %>
         <details class="hardware-review__more">

@@ -234,6 +234,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_002911) do
     t.index ["ysws_review_id"], name: "index_certification_mac_analyses_on_ysws_review_id", unique: true
   end
 
+  create_table "certification_review_notes", force: :cascade do |t|
+    t.bigint "author_id", null: false
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_certification_review_notes_on_author_id"
+    t.index ["project_id"], name: "index_certification_review_notes_on_project_id"
+  end
+
   create_table "certification_review_skips", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "reviewable_id", null: false
@@ -1700,6 +1710,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_002911) do
   add_foreign_key "certification_integrities", "users", column: "claimed_by_id"
   add_foreign_key "certification_integrities", "users", column: "reviewer_id"
   add_foreign_key "certification_mac_analyses", "certification_ysws_reviews", column: "ysws_review_id"
+  add_foreign_key "certification_review_notes", "projects"
+  add_foreign_key "certification_review_notes", "users", column: "author_id"
   add_foreign_key "certification_review_skips", "users"
   add_foreign_key "certification_ship_reviews", "post_ship_events", on_delete: :nullify
   add_foreign_key "certification_ship_reviews", "projects"

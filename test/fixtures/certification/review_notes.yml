@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# == Schema Information
+#
+# Table name: certification_review_notes
+#
+#  id         :bigint           not null, primary key
+#  body       :text
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  author_id  :bigint           not null
+#  project_id :bigint           not null
+#
+# Indexes
+#
+#  index_certification_review_notes_on_author_id   (author_id)
+#  index_certification_review_notes_on_project_id  (project_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (author_id => users.id)
+#  fk_rails_...  (project_id => projects.id)
+#
+reviewer_note_one:
+  project: one
+  author: one
+  body: "Checked the BOM against the repo; parts list looks complete."
