@@ -117,6 +117,12 @@ class Mission::Submission < ApplicationRecord
   scope :stale_pending, ->(days: 7) {
     pending.where("pending_at < ?", days.days.ago)
   }
+  # Every verdict handed down on a project, across every mission it has been
+  # submitted to, newest first. Includes verdicts since erased from the record
+  # by a re-review request, so see Verdict before relying on the columns alone.
+  def self.review_history_for(project, excluding: nil)
+    Verdict.history_for(project, excluding: excluding)
+  end
 
   # When the submission last entered the review queue; created_at covers rows
   # that predate pending_at (or never reached the queue).

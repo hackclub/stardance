@@ -79,6 +79,20 @@ class Post::ShipEventTest < ActiveSupport::TestCase
     assert_not_empty ship_event.errors[:review_instructions]
   end
 
+  test "a new ship consumes banked votes and leaves twelve ratings due" do
+    project = Project.create!(title: "Banked vote project #{SecureRandom.hex(4)}")
+    Project::Membership.create!(project: project, user: @owner, role: :owner)
+    @owner.update!(vote_balance: Vote::MAX_BANKED_VOTES)
+
+    ActiveRecord::Base.transaction do
+      ship_event = Post::ShipEvent.new(body: "Ship it", uploading_attachments: true)
+      ship_event.save!(validate: false)
+      Post.create!(project: project, user: @owner, postable: ship_event)
+    end
+
+    assert_equal(-Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT, @owner.reload.vote_balance)
+  end
+
   test "refresh_payout_score! stores medians and percentiles" do
     low_ship = create_ship_event(hours: 2, scores: [ 2, 2, 2, 2 ])
     high_ship = create_ship_event(hours: 2, scores: [ 8, 8, 8, 8 ])

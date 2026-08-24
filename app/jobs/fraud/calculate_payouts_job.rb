@@ -16,7 +16,7 @@ class Fraud::CalculatePayoutsJob < ApplicationJob
       total_amount: 0
     )
 
-    grouped = orders.group_by { |o| reviewer_id_for(o) }.reject { |uid, _| uid.nil? }
+    grouped = FraudPayoutRun.orders_by_reviewer(orders)
 
     leaderboard = grouped.map { |user_id, user_orders| { user: user_id, total: user_orders.size } }
     bracket_results = BracketCalculator.new(leaderboard, 1000).calculate
@@ -50,20 +50,10 @@ class Fraud::CalculatePayoutsJob < ApplicationJob
   private
 
   def eligible_orders(manual)
-    scope = ShopOrder
-      .where(aasm_state: FraudPayoutRun::REVIEW_STATES)
-      .where(fraud_payout_line_id: nil)
+    scope = FraudPayoutRun.payout_eligible_orders
 
     scope = scope.where("shop_orders.created_at >= ?", last_run_end) if manual && last_run_end
     scope.to_a
-  end
-
-  def reviewer_id_for(order)
-    FraudPayoutRun.reviewer_versions
-      .where(item_id: order.id)
-      .order(:created_at)
-      .filter_map { |v| FraudPayoutRun.reviewer_from_version(v) }
-      .first
   end
 
   def last_run_end

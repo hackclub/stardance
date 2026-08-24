@@ -33,6 +33,64 @@ class Admin::Missions::SubmissionsControllerTest < ActionDispatch::IntegrationTe
     assert_equal 1, Mission::Submission.reviewed_today(@reviewer, mission: @mission)
   end
 
+  test "the review page lists decided mission reviews on the same project" do
+    earlier_mission = create_mission
+    earlier = ship_to_mission!(@project, @builder, earlier_mission, status: "rejected")
+    earlier.update!(reviewed_by: @reviewer, reviewed_at: 1.day.ago,
+                    rejection_message: "Needs a real README")
+
+    sign_in @reviewer
+    get admin_mission_submission_path(@mission.slug, @submission)
+
+    assert_response :success
+    assert_select ".review-history__item", 1
+    assert_select ".review-history__mission", text: earlier_mission.name
+    assert_select ".review-history__feedback", text: /Needs a real README/
+    assert_select ".review-history__link[href=?]",
+                  admin_mission_submission_path(earlier_mission.slug, earlier)
+  end
+
+  # The common loop: the builder asks for a re-review, which reuses the same ship
+  # event and wipes the verdict off the row. Without reading it back from
+  # PaperTrail the next reviewer sees no sign this was already knocked back.
+  test "the review page surfaces a verdict a re-review request erased" do
+    sign_in @reviewer
+    Mission::Submission.atomic_claim!(@submission.id, @reviewer)
+    patch admin_mission_submission_path(@mission.slug, @submission),
+          params: { mission_submission: { status: "rejected", feedback: "README is a stub." } }
+    assert @submission.reload.rejected?
+
+    sign_in @builder
+    post project_mission_resubmission_path(@project)
+
+    @submission.reload
+    assert @submission.pending?, "the re-review request should send it back to the queue"
+    assert_nil @submission.rejection_message, "the controller is expected to wipe the verdict"
+    assert_nil @submission.reviewed_by_id
+
+    sign_in @reviewer
+    get admin_mission_submission_path(@mission.slug, @submission)
+
+    assert_response :success
+    assert_select ".review-history__item", 1
+    assert_select ".review-history__feedback", text: /README is a stub\./
+    assert_select ".review-history__meta", text: /#{@reviewer.display_name}/
+    # It is this submission's own past, so there is nowhere else to link.
+    assert_select ".review-history__link", count: 0
+  end
+
+  test "the review page leaves the submission being reviewed out of its own history" do
+    @submission.update!(reviewed_by: @reviewer, reviewed_at: 1.hour.ago)
+    @submission.update_column(:status, "approved")
+
+    sign_in @reviewer
+    get admin_mission_submission_path(@mission.slug, @submission)
+
+    assert_response :success
+    assert_select ".review-history__item", 0
+    assert_select ".review-history__empty"
+  end
+
   test "rejecting without feedback bounces back" do
     sign_in @reviewer
     Mission::Submission.atomic_claim!(@submission.id, @reviewer)
@@ -42,6 +100,41 @@ class Admin::Missions::SubmissionsControllerTest < ActionDispatch::IntegrationTe
 
     assert_redirected_to admin_mission_submission_path(@mission.slug, @submission)
     assert @submission.reload.pending?
+  end
+
+  test "plain reject leaves the project attached to the mission" do
+    sign_in @reviewer
+    Mission::Submission.atomic_claim!(@submission.id, @reviewer)
+
+    patch admin_mission_submission_path(@mission.slug, @submission),
+          params: { mission_submission: { status: "rejected", feedback: "Needs work" } }
+
+    assert_redirected_to next_admin_mission_submissions_path(@mission.slug)
+    assert @submission.reload.rejected?
+    assert_equal @mission, @project.reload.current_mission
+  end
+
+  test "reject and detach frees the project from the mission" do
+    sign_in @reviewer
+    Mission::Submission.atomic_claim!(@submission.id, @reviewer)
+
+    patch admin_mission_submission_path(@mission.slug, @submission),
+          params: { mission_submission: { status: "rejected", feedback: "Needs work", detach_project: "1" } }
+
+    assert_redirected_to next_admin_mission_submissions_path(@mission.slug)
+    assert @submission.reload.rejected?
+    assert_nil @project.reload.current_mission
+  end
+
+  test "detach flag is ignored when approving" do
+    sign_in @reviewer
+    Mission::Submission.atomic_claim!(@submission.id, @reviewer)
+
+    patch admin_mission_submission_path(@mission.slug, @submission),
+          params: { mission_submission: { status: "approved", detach_project: "1" } }
+
+    assert @submission.reload.approved?
+    assert_equal @mission, @project.reload.current_mission
   end
 
   test "claims are exclusive while fresh and stealable when expired" do

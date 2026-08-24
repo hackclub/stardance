@@ -1,6 +1,10 @@
 class AddPartialUniqueIndexOnUsersDisplayName < ActiveRecord::Migration[8.1]
   disable_ddl_transaction!
 
+  class MigrationUser < ActiveRecord::Base
+    self.table_name = "users"
+  end
+
   INDEX_NAME = "index_users_on_lower_display_name_unique".freeze
 
   KERBAL_NAMES = %w[
@@ -11,6 +15,8 @@ class AddPartialUniqueIndexOnUsersDisplayName < ActiveRecord::Migration[8.1]
   ].freeze
 
   def up
+    MigrationUser.reset_column_information
+
     fill_blank_display_names
     sanitize_unsafe_characters
     resolve_duplicates
@@ -35,29 +41,29 @@ class AddPartialUniqueIndexOnUsersDisplayName < ActiveRecord::Migration[8.1]
     end
 
     def fill_blank_display_names
-      User.unscoped.where(display_name: [ nil, "" ]).find_each do |user|
+      MigrationUser.unscoped.where(display_name: [ nil, "" ]).find_each do |user|
         user.update_column(:display_name, generate_random_username)
       end
     end
 
     def sanitize_unsafe_characters
-      User.unscoped.where.not(display_name: [ nil, "" ]).find_each do |user|
+      MigrationUser.unscoped.where.not(display_name: [ nil, "" ]).find_each do |user|
         sanitized = user.display_name.gsub(/[^a-zA-Z0-9_-]/, "_").first(30)
         user.update_column(:display_name, sanitized) if sanitized != user.display_name
       end
     end
 
     def resolve_duplicates
-      dupes = User.unscoped
-                  .where.not(display_name: [ nil, "" ])
-                  .group("LOWER(display_name)")
-                  .having("COUNT(*) > 1")
-                  .pluck(Arel.sql("LOWER(display_name)"))
+      dupes = MigrationUser.unscoped
+                           .where.not(display_name: [ nil, "" ])
+                           .group("LOWER(display_name)")
+                           .having("COUNT(*) > 1")
+                           .pluck(Arel.sql("LOWER(display_name)"))
 
       dupes.each do |lowered_name|
-        users = User.unscoped
-                    .where("LOWER(display_name) = ?", lowered_name)
-                    .order(:created_at)
+        users = MigrationUser.unscoped
+                             .where("LOWER(display_name) = ?", lowered_name)
+                             .order(:created_at)
 
         users.offset(1).find_each do |user|
           user.update_column(:display_name, generate_random_username)

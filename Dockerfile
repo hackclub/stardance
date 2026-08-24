@@ -65,7 +65,9 @@ RUN apt-get update -qq && \
 # Install application gems
 COPY Gemfile Gemfile.lock ./
 COPY engines/raffle/raffle.gemspec ./engines/raffle/
-RUN bundle install && \
+COPY bin/install-sqlite-vec-arm64 ./bin/
+RUN ./bin/install-sqlite-vec-arm64 && \
+    bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
 

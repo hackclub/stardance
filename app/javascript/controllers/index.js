@@ -325,6 +325,9 @@ application.register("readme-image", ReadmeImageController);
 import RerollPollController from "./reroll_poll_controller";
 application.register("reroll-poll", RerollPollController);
 
+import ReviewFeedbackImagesController from "./review_feedback_images_controller";
+application.register("review-feedback-images", ReviewFeedbackImagesController);
+
 import RevealOnScrollController from "./reveal_on_scroll_controller";
 application.register("reveal-on-scroll", RevealOnScrollController);
 

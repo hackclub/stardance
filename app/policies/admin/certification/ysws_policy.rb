@@ -1,6 +1,6 @@
 class Admin::Certification::YswsPolicy < ApplicationPolicy
   def index?
-    user.admin? || user.has_role?(:guardian_of_integrity)
+    user&.admin? || user&.has_role?(:guardian_of_integrity)
   end
 
   def show?

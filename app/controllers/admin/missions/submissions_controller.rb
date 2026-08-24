@@ -70,6 +70,9 @@ module Admin
       def show
         authorize @submission
         @reviewed_today = Mission::Submission.reviewed_today(current_user, mission: @mission)
+        @project_review_history = Mission::Submission.review_history_for(
+          @submission.ship_event&.post&.project, excluding: @submission
+        )
         @versions = @submission.versions.order(created_at: :asc).to_a
         whodunnit_ids = @versions.map(&:whodunnit).compact.uniq
         @whodunnit_users = User.where(id: whodunnit_ids).index_by { |u| u.id.to_s }
@@ -103,6 +106,10 @@ module Admin
                       alert: "This submission can't be #{new_status} right now." and return
         end
 
+        detach_requested = new_status == "rejected" &&
+                           ActiveModel::Type::Boolean.new.cast(params.dig(:mission_submission, :detach_project))
+        detached = false
+
         Mission::Submission.transaction do
           if new_status == "approved"
             @submission.update!(reviewed_by: current_user, reviewed_at: Time.current, rejection_message: nil)
@@ -111,14 +118,16 @@ module Admin
           else
             @submission.update!(reviewed_by: current_user, reviewed_at: Time.current, rejection_message: feedback)
             @submission.reject!
+            detached = detach_submission_project! if detach_requested
           end
         end
 
         notify_builder(new_status)
 
         reviewed = Mission::Submission.reviewed_today(current_user, mission: @mission)
+        verdict = detached ? "Rejected and detached the project" : new_status.titleize
         redirect_to next_admin_mission_submissions_path(mission_slug),
-                    notice: "#{new_status.titleize}. That's #{reviewed} reviewed today."
+                    notice: "#{verdict}. That's #{reviewed} reviewed today."
       end
 
       def next
@@ -287,6 +296,20 @@ module Admin
         scope
       end
 
+
+      # Detaches the submission's project from the mission it was rejected on,
+      # but only while that mission is still the project's current one — so we
+      # never yank a mission the builder has since swapped to. Returns whether
+      # a detach actually happened. The MissionAttachment change is versioned
+      # by PaperTrail (whodunnit set in the admin controller chain).
+      def detach_submission_project!
+        project = @submission.ship_event&.post&.project
+        return false unless project
+        return false unless project.current_mission == @submission.mission
+
+        project.detach_mission!
+        true
+      end
 
       def notify_builder(status)
         builder = @submission.ship_event&.post&.user

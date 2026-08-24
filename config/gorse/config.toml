@@ -57,7 +57,7 @@ cache_expire = "10s"
 [recommend]
 # Cache size for recommended/popular/latest item lists.
 cache_size = 100
-cache_expire = "72h"
+cache_expire = "30m"
 # Online recs only consider the latest N feedbacks per user, for efficiency.
 context_size = 100
 active_user_ttl = 0
@@ -117,7 +117,7 @@ read_replacement_decay = 0.6
 # Factorization-machine reranker over the candidate recommenders below. Set to
 # "none" to skip learned reranking and just merge candidates by their scores.
 type = "fm"
-cache_expire = "120h"
+cache_expire = "6h"
 recommenders = ["collaborative", "non-personalized/trending_recent", "latest"]
 fit_period = "60m"
 fit_epoch = 100

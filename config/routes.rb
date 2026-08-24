@@ -842,6 +842,7 @@ Rails.application.routes.draw do
           get :build
           get :next
         end
+        post :flag_for_fraud, on: :member
       end
     end
     get "mission_reviews", to: "missions/submissions#overview", as: :mission_reviews
@@ -891,6 +892,7 @@ Rails.application.routes.draw do
           get :build
           get :next
         end
+        post :flag_for_fraud, on: :member
       end
 
       resources :devlog_reviews, only: [ :update ]
@@ -944,6 +946,10 @@ Rails.application.routes.draw do
     get  "setup/link_account",  to: "setup#link_account",  as: :setup_link_account
     get  "setup/welcome",       to: "setup#welcome",       as: :setup_welcome
   end
+
+  # Permalink to the most recently created project. Mounted before
+  # `resources :projects` so "latest" isn't swallowed as a project id.
+  get "projects/latest", to: "projects#latest", as: :latest_project
 
   # Projects — public index lives on the user profile projects section; only
   # show/new/edit/update/destroy and the nested resources are exposed here.
@@ -1050,6 +1056,9 @@ Rails.application.routes.draw do
   # Project-side / reviewer-queue / admin-managed missions surfaces ship in later PRs.
   resources :missions, only: [ :index, :show ], param: :slug do
     resource :og_image, only: [ :show ], module: :missions, defaults: { format: :png }
+    collection do
+      get :search
+    end
     member do
       get :guide
       get :gallery

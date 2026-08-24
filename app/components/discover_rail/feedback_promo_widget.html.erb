@@ -1,0 +1,12 @@
+<section class="rail-widget" aria-label="Share your feedback">
+  <h3 class="rail-widget__title">Let us know what you think for a chance to win 50 <%= helpers.stardust_icon %>!</h3>
+  <button type="button"
+          class="action-btn action-btn--primary action-btn--small"
+          data-fillout-id="<%= FORM_ID %>"
+          data-fillout-embed-type="slider"
+          data-fillout-slider-direction="right"
+          data-fillout-inherit-parameters
+          data-fillout-domain="<%= FORM_DOMAIN %>"
+          data-fillout-popup-size="medium">Share feedback</button>
+  <%= javascript_include_tag EMBED_SCRIPT_SRC, defer: true %>
+</section>

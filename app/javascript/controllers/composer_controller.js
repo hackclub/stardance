@@ -10,12 +10,16 @@ export default class extends Controller {
     "warn",
     "form",
     "textarea",
+    "editor",
     "submit",
     "attachWrap",
     "recordBtn",
+    "error",
   ];
   static values = {
     maxFiles: { type: Number, default: 4 },
+    maxFileSize: { type: Number, default: 50 * 1024 * 1024 },
+    bodyMaxLength: { type: Number, default: 4000 },
     previewTimeUrl: String,
     hackatimeLinked: { type: Boolean, default: false },
     simpleMode: { type: Boolean, default: false },
@@ -25,6 +29,7 @@ export default class extends Controller {
   #urls = [];
   #composerOpen = false;
   #previewSeconds = 0;
+  #fileError = null;
 
   #onTimeFrameLoad = (event) => {
     if (!this.hasTimeFrameTarget || event.target !== this.timeFrameTarget)
@@ -77,13 +82,17 @@ export default class extends Controller {
   }
 
   #updateSubmit() {
+    const bodyPresent =
+      this.hasTextareaTarget && this.textareaTarget.value.trim().length > 0;
+    const bodyValid = bodyPresent && !this.#bodyTooLong();
     let enabled;
     if (this.simpleModeValue) {
-      enabled =
-        this.hasTextareaTarget && this.textareaTarget.value.trim().length > 0;
+      enabled = bodyValid;
     } else {
-      enabled = this.#files.length > 0 && this.#previewSeconds >= 15 * 60;
+      enabled =
+        bodyValid && this.#files.length > 0 && this.#previewSeconds >= 15 * 60;
     }
+    this.#updateError();
     if (this.hasAttachWrapTarget) {
       const show = this.#composerOpen && this.#files.length === 0;
       this.attachWrapTarget.classList.toggle(
@@ -114,6 +123,13 @@ export default class extends Controller {
   }
 
   guardSubmit(event) {
+    if (this.#bodyTooLong()) {
+      event.preventDefault();
+      this.#updateError();
+      if (this.hasEditorTarget) this.editorTarget.focus();
+      return;
+    }
+
     if (
       this.hasSubmitTarget &&
       this.submitTarget.getAttribute("aria-disabled") === "true"
@@ -136,6 +152,15 @@ export default class extends Controller {
   // Only the devlog composer (non-simple mode) surfaces this.
   #disabledReason() {
     const missing = [];
+    if (
+      !this.hasTextareaTarget ||
+      this.textareaTarget.value.trim().length === 0
+    )
+      missing.push("write an update");
+    if (this.#bodyTooLong())
+      missing.push(
+        `shorten your update to ${this.bodyMaxLengthValue} characters`,
+      );
     if (this.#files.length === 0) missing.push("attach a screenshot or video");
     if (!this.hackatimeLinkedValue) {
       missing.push("link a Hackatime project to track your time");
@@ -145,6 +170,28 @@ export default class extends Controller {
 
     if (missing.length === 0) return "";
     return `To post, ${missing.join(" and ")}.`;
+  }
+
+  #bodyTooLong() {
+    return this.#bodyLength() > this.bodyMaxLengthValue;
+  }
+
+  // Match Ruby String#length by counting Unicode code points rather than
+  // JavaScript UTF-16 code units (an emoji should count as one character).
+  #bodyLength() {
+    return this.hasTextareaTarget
+      ? Array.from(this.textareaTarget.value).length
+      : 0;
+  }
+
+  #updateError() {
+    if (!this.hasErrorTarget) return;
+
+    const message = this.#bodyTooLong()
+      ? `Your update is ${this.#bodyLength()} characters. The maximum is ${this.bodyMaxLengthValue}.`
+      : this.#fileError;
+    this.errorTarget.textContent = message || "";
+    this.errorTarget.hidden = !message;
   }
 
   // Drive the tooltip controller on the submit button: set its message when
@@ -286,9 +333,19 @@ export default class extends Controller {
   #acceptedTypes = [];
 
   #addFiles(fileList) {
-    const incoming = Array.from(fileList).filter((f) =>
-      this.#acceptedTypes.includes(f.type),
+    const files = Array.from(fileList);
+    const oversized = files.filter(
+      (file) => file.size >= this.maxFileSizeValue,
     );
+    const incoming = files.filter(
+      (file) =>
+        file.size < this.maxFileSizeValue &&
+        this.#acceptedTypes.includes(file.type),
+    );
+    this.#fileError =
+      oversized.length > 0
+        ? `${oversized.map((file) => file.name).join(", ")} ${oversized.length === 1 ? "is" : "are"} too large. Attachments must be smaller than ${Math.round(this.maxFileSizeValue / 1024 / 1024)} MB.`
+        : null;
     const room = this.maxFilesValue - this.#files.length;
     this.#files.push(...incoming.slice(0, Math.max(0, room)));
     this.#render();

@@ -30,6 +30,14 @@ module Certification
         )
       end
 
+      # Projects with an unresolved (pending) fraud report. They're held back
+      # from the review queue and the "next" hand-out so a flagged build isn't
+      # served to a reviewer until the fraud team clears it — the project stays
+      # reachable directly, it's just not auto-offered.
+      def fraud_flagged_project_ids
+        ::Project::Report.pending.where(reason: "fraud").select(:project_id)
+      end
+
       def atomic_claim!(record_id, user)
         now = Time.current
         expires = now + CLAIM_TTL
@@ -112,6 +120,7 @@ module Certification
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
       locals[:owner_slack_id] = owner&.slack_id
       locals[:reviewer_slack_id] = reviewer&.slack_id
+      locals[:feedback_image_urls] = feedback_image_slack_urls
       SendSlackDmJob.perform_later(
         HARDWARE_REVIEW_CHANNEL,
         nil,
@@ -120,6 +129,29 @@ module Certification
       )
     rescue StandardError => e
       Rails.logger.error("#{self.class.name} ##{id} post_verdict_to_hardware_review_channel! failed: #{e.message}")
+    end
+
+    # Public, Slack-renderable URLs for the reviewer's attached feedback photos so
+    # the verdict channel post can show them inline. Only funding requests carry
+    # feedback images; Slack won't render our webp variants, so this serves a PNG
+    # one. A bad image never takes down the verdict post - it just drops out.
+    def feedback_image_slack_urls
+      return [] unless respond_to?(:feedback_images) && feedback_images.attached?
+
+      routes = Rails.application.routes.url_helpers
+      url_opts = (Rails.application.config.action_controller.default_url_options || {})
+                   .reverse_merge(host: "stardance.hackclub.com", protocol: "https")
+
+      feedback_images.filter_map do |image|
+        next unless image.persisted?
+
+        routes.rails_representation_url(
+          image.variant(resize_to_limit: [ 1600, 1600 ], format: :png), **url_opts
+        )
+      rescue StandardError => e
+        Rails.logger.error("feedback_image_slack_urls (##{id}) failed: #{e.message}")
+        nil
+      end
     end
 
     def decided?

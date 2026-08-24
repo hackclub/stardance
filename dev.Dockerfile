@@ -33,7 +33,8 @@ WORKDIR /app
 # Install application gems
 COPY Gemfile Gemfile.lock ./
 COPY engines/raffle/raffle.gemspec ./engines/raffle/
-RUN bundle install
+COPY bin/install-sqlite-vec-arm64 ./bin/
+RUN ./bin/install-sqlite-vec-arm64 && bundle install
 
 # Add a script to be executed every time the container starts
 COPY entrypoint.dev.sh /usr/bin/

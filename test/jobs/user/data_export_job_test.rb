@@ -10,9 +10,12 @@ class User::DataExportJobTest < ActiveJob::TestCase
     @project = Project.create!(title: "My Cool Project", description: "desc")
     Project::Membership.create!(user: @user, project: @project)
 
+    # A real (minimal) PNG so content round-trips through Lockbox encryption
+    @png_bytes = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=")
+
     @devlog = Post::Devlog.new(body: "Devlog body text", duration_seconds: 1.hour)
     @devlog.attachments.attach(
-      io: StringIO.new(Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=")),
+      io: StringIO.new(@png_bytes),
       filename: "progress.png",
       content_type: "image/png"
     )
@@ -37,6 +40,12 @@ class User::DataExportJobTest < ActiveJob::TestCase
     assert_includes entries, "projects/my-cool-project-#{@project.id}/project.json"
     assert_includes entries, "projects/my-cool-project-#{@project.id}/devlogs/devlog-#{@devlog.id}.md"
     assert_includes entries, "projects/my-cool-project-#{@project.id}/devlogs/attachments/#{@devlog.id}-1.png"
+
+    # Attachments must be exported decrypted (Lockbox), byte-for-byte
+    assert_equal @png_bytes, zip_entry_content(@export, "projects/my-cool-project-#{@project.id}/devlogs/attachments/#{@devlog.id}-1.png")
+
+    # The ZIP itself must be downloadable plaintext (not double-encrypted)
+    assert_equal "PK", @export.zip_file.open { |f| f.read(2) }
   end
 
   test "keeps attachments from different devlogs in distinct entries" do

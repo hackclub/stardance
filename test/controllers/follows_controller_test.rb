@@ -34,4 +34,19 @@ class FollowsControllerTest < ActionDispatch::IntegrationTest
     post user_follow_path(@bob)
     assert_response :forbidden
   end
+
+  test "prompts guest users to upgrade with a forbidden turbo stream response" do
+    guest = create_user(slack_id: "U_GUEST", display_name: "guest", hca_linked: false)
+    sign_in guest
+
+    assert_no_difference "Follow.count" do
+      post user_follow_path(@bob), headers: { "ACCEPT" => Mime[:turbo_stream].to_s }
+    end
+
+    assert_response :forbidden
+    assert_select "turbo-stream[action='append'][targets='body']", 1 do
+      assert_select "dialog.upgrade-modal[aria-labelledby='upgrade-modal-title'][data-turbo-temporary]", 1
+      assert_select "#upgrade-modal-title", text: "Sign in to continue"
+    end
+  end
 end

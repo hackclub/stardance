@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   include TimelinePostPreloading
 
-  discover_rail_widgets :certificate, :achievements, :upcoming_events,
+  discover_rail_widgets :certificate, :achievements, :upcoming_events, :feedback_promo,
                         context: -> { { profile_user: @user } }
 
   before_action :set_user
@@ -61,7 +61,7 @@ class UsersController < ApplicationController
   private
 
   def set_user
-    @user = User.includes(:preference)
+    @user = User.eager_load(:preference)
 
     if params[:username].present?
       @user = @user.find_by!("LOWER(display_name) = ?", params[:username].downcase)
@@ -77,7 +77,7 @@ class UsersController < ApplicationController
   def load_profile(active_tab)
     @active_tab     = active_tab
     @body_class     = "app-layout-page"
-    @projects       = profile_projects
+    @projects       = profile_projects.load
     @activity       = profile_activity
     @stats          = profile_stats
     @follower_count  = @user.followers.where(banned: false).count
@@ -87,9 +87,6 @@ class UsersController < ApplicationController
 
   def profile_projects
     @user.projects
-         .select(:id, :title, :description, :created_at, :updated_at,
-                 :ship_status, :shipped_at, :devlogs_count, :duration_seconds,
-                 :hardware_stage)
          .includes(:users, banner_attachment: :blob, mission_attachments: { mission: { banner_attachment: :blob } })
          .order(created_at: :desc)
   end

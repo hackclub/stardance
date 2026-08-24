@@ -58,7 +58,7 @@ module ApplicationHelper
   def admin_tool(compact: false, extra_class: nil, roles: [], &block)
     acting_user = impersonating? ? real_user : current_user
     allowed = acting_user&.admin? || roles.any? { |role| acting_user&.has_role?(role) }
-    return unless allowed && Flipper.enabled?(:shigimi_eyes, acting_user)
+    return unless allowed && !Flipper.enabled?(:no_shigimi_eyes, acting_user)
 
     classes = [ "admin", "tools-do" ]
     classes << "tools-do--inline" if compact

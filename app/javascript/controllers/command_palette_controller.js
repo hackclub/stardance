@@ -1,13 +1,25 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["input", "item", "results"];
-  static values = { searchUrl: String };
+  static targets = [
+    "input",
+    "item",
+    "results",
+    "dynamicJumpResults",
+    "dynamicJumpList",
+    "dynamicMissionResults",
+    "dynamicMissionList",
+  ];
+  static values = { searchUrl: String, missionSearchUrl: String };
 
   connect() {
     this._activeIndex = -1;
     this._searchTimer = null;
-    this._initialResults = this.resultsTarget.innerHTML;
+    this._commandTimer = null;
+    this._missionRequest = null;
+    this._commandRequest = null;
+    if (this.hasResultsTarget)
+      this._initialResults = this.resultsTarget.innerHTML;
     this._boundGlobalKey = this._globalKey.bind(this);
     document.addEventListener("keydown", this._boundGlobalKey);
   }
@@ -15,6 +27,8 @@ export default class extends Controller {
   disconnect() {
     document.removeEventListener("keydown", this._boundGlobalKey);
     clearTimeout(this._searchTimer);
+    clearTimeout(this._commandTimer);
+    this._cancelRequests();
   }
 
   _globalKey(event) {
@@ -31,7 +45,16 @@ export default class extends Controller {
   close() {
     this.element.close();
     this.inputTarget.value = "";
-    this._restoreInitialResults();
+    clearTimeout(this._searchTimer);
+    clearTimeout(this._commandTimer);
+    this._cancelRequests();
+    this._clearDynamicJump();
+    this._clearDynamicMissions();
+    if (this.hasResultsTarget && this.hasSearchUrlValue) {
+      this._restoreInitialResults();
+    } else {
+      this.filter();
+    }
   }
 
   handleCancel(event) {
@@ -52,15 +75,68 @@ export default class extends Controller {
   filter() {
     const query = this.inputTarget.value.toLowerCase().trim();
     clearTimeout(this._searchTimer);
+    clearTimeout(this._commandTimer);
+    this._cancelRequests();
 
-    if (query.length > 0 && this.hasSearchUrlValue) {
-      this.resultsTarget.innerHTML =
-        '<p class="command-palette__empty">Searching...</p>';
-      this._searchTimer = setTimeout(() => this._loadResults(query), 180);
+    const directRoutes = [
+      {
+        pattern: /^user#(\d+)$/i,
+        path: (id) => `/admin/users/${id}`,
+        label: "User",
+      },
+      {
+        pattern: /^audit#(\d+)$/i,
+        path: (id) => `/admin/audit_logs/${id}`,
+        label: "Audit Log",
+      },
+      {
+        pattern: /^project#(\d+)$/i,
+        path: (id) => `/admin/projects/${id}`,
+        label: "Project",
+      },
+      {
+        pattern: /^report#(\d+)$/i,
+        path: (id) => `/admin/reports/${id}`,
+        label: "Report",
+      },
+      {
+        pattern: /^order#(\d+)$/i,
+        path: (id) => `/admin/shop/orders/${id}`,
+        label: "Shop Order",
+      },
+    ];
+    const directMatch = directRoutes.reduce(
+      (found, r) =>
+        found ||
+        (query.match(r.pattern) && { id: query.match(r.pattern)[1], ...r }),
+      null,
+    );
+    if (directMatch) {
+      this._clearDynamicMissions();
+      this._renderDynamicJump({
+        label: `${directMatch.label} #${directMatch.id}`,
+        path: directMatch.path(directMatch.id),
+      });
       return;
     }
+    this._clearDynamicJump();
 
-    this._restoreInitialResults();
+    if (query.length >= 2 && this.hasMissionSearchUrlValue) {
+      this._searchTimer = setTimeout(() => this._fetchAll(query), 200);
+    } else {
+      this._clearDynamicMissions();
+    }
+
+    if (this.hasResultsTarget && this.hasSearchUrlValue) {
+      if (query.length > 0) {
+        this.resultsTarget.innerHTML =
+          '<p class="command-palette__empty">Searching...</p>';
+        this._commandTimer = setTimeout(() => this._loadResults(query), 180);
+      } else {
+        this._restoreInitialResults();
+      }
+      return;
+    }
 
     const list = this.itemTargets[0]?.parentElement;
     if (!list) return;
@@ -105,7 +181,7 @@ export default class extends Controller {
         break;
       case "Enter":
         event.preventDefault();
-        this._activate();
+        this._activate(event.shiftKey);
         break;
       case "Escape":
         this.close();
@@ -123,12 +199,104 @@ export default class extends Controller {
 
   select(event) {
     const item = event.currentTarget;
-    this._visitItem(item);
+    const { path, focus, method, adminPath } = item.dataset;
+    const useAdminPath = event.shiftKey && adminPath;
+    const effectivePath = useAdminPath ? adminPath : path;
+    if (!effectivePath && !focus) return;
+
+    this.close();
+    if (focus && !useAdminPath) {
+      document.querySelector(focus)?.focus();
+    } else if (method === "post" && !useAdminPath) {
+      this._postAction(effectivePath);
+    } else {
+      window.Turbo.visit(effectivePath);
+    }
   }
 
-  resultsLoaded() {
-    this._activeIndex = -1;
-    this._clearActive();
+  _fetchAll(query) {
+    const q = encodeURIComponent(query);
+    const request = new AbortController();
+    this._missionRequest = request;
+
+    fetch(`${this.missionSearchUrlValue}?q=${q}`, {
+      headers: { Accept: "application/json" },
+      signal: request.signal,
+    })
+      .then((r) => r.json())
+      .then((missions) => {
+        if (this._missionRequest === request)
+          this._renderDynamicMissions(missions);
+      })
+      .catch(() => {
+        if (this._missionRequest === request) this._clearDynamicMissions();
+      })
+      .finally(() => {
+        if (this._missionRequest === request) this._missionRequest = null;
+      });
+  }
+
+  _renderDynamicJump({ label, path }) {
+    const list = this.dynamicJumpListTarget;
+    list.innerHTML = "";
+    const li = document.createElement("li");
+    li.className = "command-palette__item";
+    li.role = "option";
+    li.id = "cp-dyn-jump";
+    li.dataset.commandPaletteTarget = "item";
+    li.dataset.action =
+      "click->command-palette#select mouseenter->command-palette#highlight";
+    li.dataset.path = path;
+    li.innerHTML = `<span class="command-palette__item-title">${this._escape(label)}</span>`;
+    list.appendChild(li);
+    this.dynamicJumpResultsTarget.style.display = "";
+  }
+
+  _clearDynamicJump() {
+    if (this.hasDynamicJumpListTarget)
+      this.dynamicJumpListTarget.innerHTML = "";
+    if (this.hasDynamicJumpResultsTarget)
+      this.dynamicJumpResultsTarget.style.display = "none";
+  }
+
+  _renderDynamicMissions(missions) {
+    const list = this.dynamicMissionListTarget;
+    list.innerHTML = "";
+
+    if (!missions.length) {
+      this.dynamicMissionResultsTarget.style.display = "none";
+      return;
+    }
+
+    missions.forEach((mission, i) => {
+      const li = document.createElement("li");
+      li.className = "command-palette__item";
+      li.role = "option";
+      li.id = `cp-dyn-mission-${i}`;
+      li.dataset.commandPaletteTarget = "item";
+      li.dataset.action =
+        "click->command-palette#select mouseenter->command-palette#highlight";
+      li.dataset.path = `/missions/${mission.slug}`;
+      li.innerHTML = `<span class="command-palette__item-title">${this._escape(mission.name)}</span>`;
+      list.appendChild(li);
+    });
+
+    this.dynamicMissionResultsTarget.style.display = "";
+  }
+
+  _clearDynamicMissions() {
+    if (this.hasDynamicMissionListTarget)
+      this.dynamicMissionListTarget.innerHTML = "";
+    if (this.hasDynamicMissionResultsTarget)
+      this.dynamicMissionResultsTarget.style.display = "none";
+  }
+
+  _escape(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   _move(dir) {
@@ -143,19 +311,20 @@ export default class extends Controller {
     this._applyActive();
   }
 
-  _activate() {
+  _activate(shiftKey = false) {
     const item = this.itemTargets[this._activeIndex];
-    this._visitItem(item);
-  }
-
-  _visitItem(item) {
-    if (!item?.dataset.path) return;
+    const { path, focus, method, adminPath } = item?.dataset ?? {};
+    const useAdminPath = shiftKey && adminPath;
+    const effectivePath = useAdminPath ? adminPath : path;
+    if (!effectivePath && !focus) return;
 
     this.close();
-    if (item.dataset.method === "post") {
-      this._postAction(item.dataset.path);
+    if (focus && !useAdminPath) {
+      document.querySelector(focus)?.focus();
+    } else if (method === "post" && !useAdminPath) {
+      this._postAction(effectivePath);
     } else {
-      window.Turbo.visit(item.dataset.path);
+      window.Turbo.visit(effectivePath);
     }
   }
 
@@ -163,11 +332,70 @@ export default class extends Controller {
     const url = new URL(this.searchUrlValue, window.location.origin);
     url.searchParams.set("q", query);
     url.searchParams.set("surface", "command_palette");
-    this.resultsTarget.src = url.toString();
+    url.searchParams.set("current_path", window.location.pathname);
+    const request = new AbortController();
+    this._commandRequest = request;
+
+    fetch(url.toString(), {
+      headers: { Accept: "application/json" },
+      signal: request.signal,
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (this._commandRequest === request) this._renderResults(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (this._commandRequest === request) this._commandRequest = null;
+      });
+  }
+
+  _renderResults(data) {
+    const groups = [
+      ["Commands", data.commands ?? []],
+      ["Projects", data.projects ?? []],
+      ["Posts", data.posts ?? []],
+      ["Users", data.users ?? []],
+    ].filter(([, items]) => items.length > 0);
+
+    if (!groups.length) {
+      this.resultsTarget.innerHTML =
+        '<p class="command-palette__empty">No results found.</p>';
+      this._activeIndex = -1;
+      this._clearActive();
+      return;
+    }
+
+    let html = "";
+    let idx = 0;
+    groups.forEach(([label, items]) => {
+      html += `<p class="command-palette__section-label">${this._escape(label)}</p><ul class="command-palette__list">`;
+      items.forEach((item) => {
+        const path = item.path ? `data-path="${this._escape(item.path)}"` : "";
+        const focus = item.focus
+          ? `data-focus="${this._escape(item.focus)}"`
+          : "";
+        const adminPath = item.admin_path
+          ? `data-admin-path="${this._escape(item.admin_path)}"`
+          : "";
+        const method = item.method === "post" ? 'data-method="post"' : "";
+        html += `<li class="command-palette__item" role="option" id="cp-sr-${idx++}"
+                    data-command-palette-target="item"
+                    data-action="click->command-palette#select mouseenter->command-palette#highlight"
+                    ${path} ${focus} ${adminPath} ${method}>
+                   <span class="command-palette__item-title">${this._escape(item.title ?? "")}</span>
+                   ${item.subtitle ? `<span class="command-palette__item-meta">${this._escape(item.subtitle)}</span>` : ""}
+                 </li>`;
+      });
+      html += "</ul>";
+    });
+
+    this.resultsTarget.innerHTML = html;
+    this._activeIndex = -1;
+    this._clearActive();
   }
 
   _restoreInitialResults() {
-    this.resultsTarget.removeAttribute("src");
     this.resultsTarget.innerHTML = this._initialResults;
     this._activeIndex = -1;
     this._clearActive();
@@ -185,6 +413,13 @@ export default class extends Controller {
       const cb = document.getElementById("streamer_mode");
       if (cb) cb.checked = enable;
     });
+  }
+
+  _cancelRequests() {
+    this._missionRequest?.abort();
+    this._commandRequest?.abort();
+    this._missionRequest = null;
+    this._commandRequest = null;
   }
 
   _applyActive() {

@@ -565,7 +565,7 @@
                   onclick: "document.getElementById('composer-modal-' + #{@project.id.to_json}).showModal()"
                 ) %>
           <% end %>
-          <% unless @project.info_complete? %>
+          <% unless @project.stage_info_complete? %>
             <% if @project.has_devlog_since_last_ship? %>
               <%= render ActionButtonComponent.new(
                     text: "Complete project info",
@@ -592,7 +592,7 @@
                   ) %>
             <% end %>
           <% end %>
-          <% if is_member && current_user && @project.info_complete? %>
+          <% if is_member && current_user && @project.stage_info_complete? %>
             <% unless current_user.identity_verified? %>
               <%= render ActionButtonComponent.new(
                     text: "Verify your identity",
@@ -636,7 +636,7 @@
                       tooltip_position_value: "top"
                     }
                   ) %>
-            <% elsif !@project.info_complete? %>
+            <% elsif !@project.funding_info_complete? %>
               <%= render ActionButtonComponent.new(
                     text: "Submit for funding",
                     variant: :primary,
@@ -940,8 +940,11 @@
                        recert_modal_id: recert_id %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
             <%# The resubmit button reuses the funding modal, which only renders
-                while the project is still in the design stage. %>
-            <% resubmit_id = (Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage?) ? "funding-request-modal-#{@project.id}" : nil %>
+                while the project is still in the design stage. It belongs on the
+                latest review only - older returned reviews are history the
+                builder has already moved past. %>
+            <% resubmit_available = Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+            <% resubmit_id = (resubmit_available && entry == @project.latest_funding_request) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
                        resubmit_modal_id: resubmit_id %>

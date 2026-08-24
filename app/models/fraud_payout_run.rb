@@ -25,6 +25,12 @@ class FraudPayoutRun < ApplicationRecord
 
   REVIEW_STATES = %w[awaiting_periodical_fulfillment rejected on_hold].freeze
 
+  def self.payout_eligible_orders
+    ShopOrder
+      .where(aasm_state: REVIEW_STATES)
+      .where(fraud_payout_line_id: nil)
+  end
+
   # Base scope for PaperTrail versions that could represent a fraud review.
   def self.reviewer_versions
     ::PaperTrail::Version
@@ -42,6 +48,23 @@ class FraudPayoutRun < ApplicationRecord
     state_change = changes["aasm_state"]
     return nil unless state_change.is_a?(Array) && state_change[1].in?(REVIEW_STATES)
     version.whodunnit.to_i
+  end
+
+  def self.orders_by_reviewer(orders)
+    orders = orders.to_a
+    reviewer_by_order_id = {}
+
+    reviewer_versions
+      .where(item_id: orders.map(&:id))
+      .order(:created_at, :id)
+      .each do |version|
+        reviewer_id = reviewer_from_version(version)
+        reviewer_by_order_id[version.item_id.to_i] ||= reviewer_id if reviewer_id
+      end
+
+    orders
+      .group_by { |order| reviewer_by_order_id[order.id] }
+      .reject { |reviewer_id, _| reviewer_id.nil? }
   end
 
   aasm timestamps: true do

@@ -109,6 +109,10 @@
       <% if policy(@project).view_votes? %>
         <%= render ActionButtonComponent.new(text: "Votes", href: votes_admin_project_path(@project), size: :small, variant: :secondary) %>
       <% end %>
+      <% payout_ship_event = @project.last_ship_event %>
+      <% if payout_ship_event && Post::ShipEvent.payout_feature_enabled?(current_user) && policy(:payout_review).show? %>
+        <%= render ActionButtonComponent.new(text: "Payout details", href: admin_payout_review_path(payout_ship_event), size: :small, variant: :secondary) %>
+      <% end %>
       <% if policy(current_user).view_order_full_details? %>
         <% if @project.deleted? %>
           <%= button_to "Restore Project", restore_admin_project_path(@project), method: :post,

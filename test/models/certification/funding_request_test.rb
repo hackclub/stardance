@@ -64,6 +64,24 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
     Post.create!(project: @project, user: @owner, postable: devlog)
   end
 
+  test "available_for holds back projects with an unresolved fraud report" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
+    )
+    assert_includes ::Certification::FundingRequest.available_for(@reviewer), fr
+
+    report = @project.reports.create!(
+      reporter: @reviewer, reason: "fraud", status: :pending,
+      details: "Looks like a resold kit, not a real build."
+    )
+    assert_not_includes ::Certification::FundingRequest.available_for(@reviewer), fr,
+      "a project with a pending fraud report should be held back from the review queue"
+
+    report.update!(status: :dismissed)
+    assert_includes ::Certification::FundingRequest.available_for(@reviewer), fr,
+      "clearing the fraud report should return the project to the queue"
+  end
+
   test "rejects a requested amount above the tier maximum" do
     fr = @project.certification_funding_requests.new(user: @owner, complexity_tier: 1, requested_amount_cents: 5_000)
     assert_not fr.valid?
@@ -196,6 +214,50 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
 
     assert_equal "design", @project.reload.hardware_stage, "a superseded request must not advance the project"
     assert_nil old.reload.hcb_grant_hashid, "a superseded request must not issue a grant"
+  end
+
+  test "a reviewer can attach feedback images, which persist" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
+    )
+    fr.feedback_images.attach(io: StringIO.new(PIXEL_PNG), filename: "wiring.png", content_type: "image/png")
+
+    assert fr.valid?
+    assert fr.save
+    assert_equal 1, fr.reload.feedback_images.count
+  end
+
+  test "feedback images reject a non-image file" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
+    )
+    fr.feedback_images.attach(io: StringIO.new("just notes, not an image"), filename: "notes.txt", content_type: "text/plain")
+
+    assert_not fr.valid?
+    assert fr.errors[:feedback_images].any?
+  end
+
+  test "feedback images reject a file over the size limit" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
+    )
+    oversized = PIXEL_PNG + ("\0" * 16.megabytes)
+    fr.feedback_images.attach(io: StringIO.new(oversized), filename: "huge.png", content_type: "image/png")
+
+    assert_not fr.valid?
+    assert fr.errors[:feedback_images].any?
+  end
+
+  test "feedback images reject more than the max count" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
+    )
+    (Certification::FundingRequest::MAX_FEEDBACK_IMAGES + 1).times do |i|
+      fr.feedback_images.attach(io: StringIO.new(PIXEL_PNG), filename: "img#{i}.png", content_type: "image/png")
+    end
+
+    assert_not fr.valid?
+    assert fr.errors[:feedback_images].any?
   end
 
   private

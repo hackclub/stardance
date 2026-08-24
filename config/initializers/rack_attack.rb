@@ -11,6 +11,12 @@ module RackAttackClient
     request.get_header("HTTP_CF_CONNECTING_IP").presence || request.ip
   end
 
+  def self.user_or_ip(request)
+    user_id = request.session[:user_id]
+
+    user_id.present? ? "user:#{user_id}" : "ip:#{ip(request)}"
+  end
+
   def self.static_request?(request)
     request.path.match?(STATIC_PATHS)
   end
@@ -62,6 +68,26 @@ end
 
 Rack::Attack.throttle("auth callbacks/ip", limit: 20, period: 5.minutes) do |req|
   RackAttackClient.ip(req) if RackAttackClient.auth_request?(req)
+end
+
+Rack::Attack.throttle("user follows", limit: 10, period: 1.minute) do |req|
+  RackAttackClient.user_or_ip(req) if req.post? && req.path.match?(%r{\A/users/[^/]+/follow\z})
+end
+
+Rack::Attack.throttle("project follows", limit: 10, period: 1.minute) do |req|
+  RackAttackClient.user_or_ip(req) if req.post? && req.path.match?(%r{\A/projects/[^/]+/follow\z})
+end
+
+Rack::Attack.throttle("devlog likes", limit: 30, period: 1.minute) do |req|
+  RackAttackClient.user_or_ip(req) if req.post? && req.path.match?(%r{\A/devlogs/[^/]+/like\z})
+end
+
+Rack::Attack.throttle("devlog comments", limit: 5, period: 1.minute) do |req|
+  RackAttackClient.user_or_ip(req) if req.post? && req.path.match?(%r{\A/devlogs/[^/]+/comments\z})
+end
+
+Rack::Attack.throttle("post reposts", limit: 10, period: 1.minute) do |req|
+  RackAttackClient.user_or_ip(req) if req.post? && req.path.match?(%r{\A/posts/[^/]+/repost\z})
 end
 
 Rack::Attack.throttled_responder = lambda do |req|

@@ -1,0 +1,58 @@
+@use "config/fonts";
+
+.insights-disclosure {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: hsl(356, 49%, 43%);
+  color: white;
+  font-family: "Exo 2", sans-serif;
+
+  &__content {
+    min-width: 0;
+  }
+
+  &__title {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  &__body {
+    max-width: 80ch;
+    margin: 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  &__dismiss {
+    flex: 0 0 auto;
+    margin: -0.25rem -0.25rem 0 0;
+    padding: 0.125rem 0.375rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: rgb(255 255 255 / 15%);
+      outline: 2px solid white;
+      outline-offset: 1px;
+    }
+  }
+}

@@ -109,6 +109,8 @@
   border-radius: var(--profile-radius, var(--border-radius));
   background: rgba(5, 4, 24, 0.35);
   color: var(--color-space-text);
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .empty-project-banner {
@@ -227,6 +229,7 @@
     text-decoration: none;
     line-height: 1;
     white-space: nowrap;
+    max-width: 100%;
 
     &:hover,
     &:focus-visible,
@@ -327,6 +330,7 @@
   &__field {
     min-width: 0;
     flex: 1;
+    position: relative;
   }
 
   &__label {
@@ -363,6 +367,21 @@
 
   &__textarea-field {
     display: none;
+  }
+
+  &__error {
+    margin: var(--space-xs) 0 0 var(--feed-content-offset);
+    color: var(--color-brand-salmon);
+    font-size: var(--font-size-s);
+    line-height: 1.3;
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      margin-left: 0;
+    }
   }
 
   // The post being quoted, shown below the text box while composing a quote
@@ -503,14 +522,8 @@
     height: 22px;
   }
 
-  &__emoji-wrap {
-    position: relative;
-  }
-
   &__emoji-popover {
     position: absolute;
-    top: calc(100% + var(--space-xs));
-    left: 0;
     z-index: 100;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -645,9 +658,8 @@
     }
 
     &__info-text {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     &__submit-group {
@@ -2359,6 +2371,7 @@
   // project story. Only a returned request breaks out of it.
   --funding-accent: var(--color-brand-highlight);
 
+  position: relative;
   background: var(--color-set-4-bg);
   border-color: var(--funding-accent);
   gap: var(--space-xxs);
@@ -2400,6 +2413,51 @@
 
     p + p {
       margin-top: var(--space-xs);
+    }
+
+    // Reviewer feedback with photos: the whole block opens the feedback modal.
+    &--openable {
+      cursor: pointer;
+    }
+  }
+
+  // One "expand" control for the whole review, anchored bottom-right. Opens the
+  // same feedback modal as clicking the review body. `!important` overrides the
+  // broad `.feed-post-card button { position: relative }` reset, which would
+  // otherwise keep this in flow and stretch it across the flex column.
+  &__expand {
+    position: absolute !important;
+    right: var(--space-m);
+    bottom: var(--space-m);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: var(--space-xxs) var(--space-s);
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    background: rgba(5, 4, 24, 0.35);
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-mint-soft);
+      border-color: var(--color-brand-mint);
+      color: var(--color-space-text);
+      outline: none;
     }
   }
 

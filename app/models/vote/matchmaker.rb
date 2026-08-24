@@ -18,11 +18,15 @@ class Vote::Matchmaker
   end
 
   def next_ship_event
-    next_unpaid_ship_event || paid_fallback_ship_event
+    next_unpaid_ship_event || (paid_fallback_ship_event if paid_fallback_allowed?)
   end
 
   def next_unpaid_ship_event
     pick_from(gated_pool) || pick_from(ungated_pool)
+  end
+
+  def paid_fallback_allowed?
+    @user.vote_balance.negative?
   end
 
   private

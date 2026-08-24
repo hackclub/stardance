@@ -102,4 +102,20 @@ class StreakActivityTest < ActiveSupport::TestCase
     assert cal.any? { |d| d[:completed] }
     assert cal.any? { |d| d[:streak_left] || d[:streak_right] }
   end
+
+  test "calendar and week can reuse preloaded activities without querying" do
+    today = @user.streak_today_date
+    activity = StreakActivity.create!(user: @user, activity_date: today, coded_seconds: 400)
+    activities = { today => activity }
+    queries = []
+    record_query = ->(*args) { queries << args.last[:sql] if args.last[:sql].match?(/streak_activities/i) }
+
+    ActiveSupport::Notifications.subscribed(record_query, "sql.active_record") do
+      assert @user.streak_week_activities(activities: activities, today: today).find { |day| day[:today] }[:completed]
+      assert @user.streak_month_calendar(today.year, today.month, activities: activities, today: today)
+        .find { |day| day[:today] }[:completed]
+    end
+
+    assert_empty queries
+  end
 end

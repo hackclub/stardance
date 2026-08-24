@@ -9,5 +9,9 @@ class Vote::AutoDiscardJob < ApplicationJob
     return if vote.nil? || vote.discarded?
 
     vote_auto_discarder.call(vote: vote)
+    return if vote.discarded?
+
+    vote.update!(auto_discard_checked_at: Time.current)
+    ShipEventPayoutRefreshJob.perform_later(vote.ship_event_id)
   end
 end

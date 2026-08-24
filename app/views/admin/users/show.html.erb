@@ -241,7 +241,7 @@
         </script>
       <% end %>
 
-      <% if policy(current_user).view_order_full_details? %>
+      <% if policy(@user).reject_orders? %>
         <% if @user.shop_orders.where(aasm_state: %w[pending awaiting_periodical_fulfillment]).any? %>
           <button type="button" onclick="document.getElementById('reject-modal-orders').showModal()">
             ✗ Reject Orders
@@ -250,8 +250,20 @@
             <form action="<%= admin_user_order_rejection_path(@user) %>" method="post">
               <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
               <div>
-                <%= label_tag :reason, "Rejection Reason (optional)" %>
-                <%= text_area_tag :reason, "", placeholder: "Enter reason..." %>
+                <%= label_tag :reason, "Public Rejection Reason (optional)" %>
+                <%= text_area_tag :reason, "", placeholder: "Shown to the user..." %>
+              </div>
+              <div>
+                <%= label_tag :internal_rejection_reason, "Internal Reason (required, staff only)" %>
+                <%= text_area_tag :internal_rejection_reason, "", placeholder: "Detailed internal reason for these rejections...", required: true %>
+              </div>
+              <div>
+                <%= label_tag :fraud_related_project_id, "Related Project ID (required)" %>
+                <%= number_field_tag :fraud_related_project_id, nil, placeholder: "e.g. 1234", required: true, autocomplete: "off" %>
+              </div>
+              <div>
+                <%= label_tag :joe_case_url, "Telescreen case URL (optional)" %>
+                <%= url_field_tag :joe_case_url, nil, placeholder: "https://telescreen.hackclub.com/cases/...", autocomplete: "off" %>
               </div>
               <div>
                 <button type="submit">Confirm Reject</button>

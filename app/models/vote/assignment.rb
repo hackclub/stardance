@@ -83,8 +83,10 @@ class Vote::Assignment < ApplicationRecord
     elsif ship_event.payout.present? || ship_event.votes.payout_countable.count >= Post::ShipEvent::VOTES_TO_LEAVE_POOL
       if replacement = matchmaker.next_unpaid_ship_event
         replace_with(replacement)
-      else
+      elsif matchmaker.paid_fallback_allowed?
         self
+      else
+        replace_with(nil)
       end
     else
       self

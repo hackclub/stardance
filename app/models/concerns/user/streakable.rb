@@ -65,31 +65,29 @@ module User::Streakable
     streak_activities.where("coded_seconds > 0").maximum(:activity_date)
   end
 
-  def streak_week_activities
-    today = streak_today_date
+  def streak_week_activities(activities: nil, today: streak_today_date)
     week_start = today.beginning_of_week(:sunday)
-    build_day_list(week_start, week_start + 6.days, today)
+    build_day_list(week_start, week_start + 6.days, today, activities: activities)
   end
 
-  def streak_month_calendar(year, month)
-    today = streak_today_date
+  def streak_month_calendar(year, month, activities: nil, today: streak_today_date)
     first = Date.new(year, month, 1)
     cal_start = first.beginning_of_week(:sunday)
     cal_end = first.end_of_month.end_of_week(:sunday)
 
-    activities = streak_activities.for_range(cal_start..cal_end).index_by(&:activity_date)
-
     # +/- 1 day so streak bars connect across grid boundaries
-    completed = streak_activities.completed
-      .for_range((cal_start - 1.day)..(cal_end + 1.day))
-      .pluck(:activity_date).to_set
+    activities_by_date = index_streak_activities(
+      activities,
+      (cal_start - 1.day)..(cal_end + 1.day)
+    )
+    completed = activities_by_date.values.select(&:completed?).map(&:activity_date).to_set
 
     (cal_start..cal_end).map do |date|
       done = completed.include?(date)
       {
         date: date,
         in_month: date.month == month,
-        coded_seconds: activities[date]&.coded_seconds || 0,
+        coded_seconds: activities_by_date[date]&.coded_seconds || 0,
         completed: done,
         today: date == today,
         future: date > today,
@@ -126,17 +124,23 @@ module User::Streakable
     count
   end
 
-  def build_day_list(from, to, today)
-    activities = streak_activities.for_range(from..to).index_by(&:activity_date)
+  def build_day_list(from, to, today, activities: nil)
+    activities_by_date = index_streak_activities(activities, from..to)
     (from..to).map do |date|
       {
         date: date,
         day_letter: Date::ABBR_DAYNAMES[date.wday][0],
-        coded_seconds: activities[date]&.coded_seconds || 0,
-        completed: activities[date]&.completed? || false,
+        coded_seconds: activities_by_date[date]&.coded_seconds || 0,
+        completed: activities_by_date[date]&.completed? || false,
         today: date == today,
         future: date > today
       }
     end
+  end
+
+  def index_streak_activities(activities, range)
+    return activities if activities.is_a?(Hash)
+
+    (activities || streak_activities.for_range(range)).index_by(&:activity_date)
   end
 end

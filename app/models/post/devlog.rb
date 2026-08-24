@@ -41,6 +41,7 @@ class Post::Devlog < ApplicationRecord
 
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
+  ATTACHMENT_MAX_SIZE = 50.megabytes
   ACCEPTED_CONTENT_TYPES = %w[
     image/jpeg
     image/png
@@ -89,7 +90,7 @@ class Post::Devlog < ApplicationRecord
 
   validates :attachments,
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
-            size: { less_than: 50.megabytes, message: "is too large (max 50 MB)" },
+            size: { less_than: ATTACHMENT_MAX_SIZE, message: "is too large (max 50 MB)" },
             processable_file: true
   validate :at_least_one_attachment
   validate :at_most_max_attachments

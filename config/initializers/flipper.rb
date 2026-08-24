@@ -36,13 +36,15 @@ Rails.application.config.after_initialize do
         gorse_recommendations
         gorse_personalized_feed
         gorse_project_recommendations
+        feed_seen_mixer
         week_1_release
         hardware_flow
+        public_hardware_reviews
         ship_event_payouts
         payout_recommendations
         disable_internal_sw_dash_reviews
         sharable_purchase
-        shigimi_eyes
+        no_shigimi_eyes
         devlog_review_pace
         reviewer_progress_panel
         mac_analysis

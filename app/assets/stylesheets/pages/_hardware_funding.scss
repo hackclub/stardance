@@ -282,6 +282,103 @@
   opacity: 0.75;
 }
 
+// Reviewer feedback-image upload: a dashed drop target plus a client-side
+// preview grid of the files queued for this verdict (controller:
+// review_feedback_images_controller.js).
+.review-form__images-heading {
+  margin: var(--space-s) 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.review-form__image-drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-xs);
+  padding: var(--space-m);
+  border: 2px dashed var(--color-space-border);
+  border-radius: var(--border-radius);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--color-space-accent);
+  }
+
+  &--dragover {
+    border-color: var(--color-brand-mint);
+    background: var(--color-space-card);
+  }
+}
+
+.review-form__image-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.review-form__image-drop-text {
+  font-size: 0.85rem;
+  color: var(--color-space-text-muted);
+  pointer-events: none;
+}
+
+.review-form__image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-form__image-preview {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: calc(var(--border-radius) * 0.5);
+  overflow: hidden;
+  border: 1px solid var(--color-space-border);
+}
+
+.review-form__image-preview-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-form__image-preview-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.85);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // /guides/tiers — tier table.
 // ---------------------------------------------------------------------------

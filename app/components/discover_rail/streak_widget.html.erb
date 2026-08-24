@@ -2,8 +2,8 @@
          data-controller="streak"
          data-streak-next-day-value="<%= next_day_at_iso %>"
          data-streak-timezone-value="<%= user_timezone %>"
-         data-streak-month-value="<%= user.streak_today_date.month %>"
-         data-streak-year-value="<%= user.streak_today_date.year %>"
+         data-streak-month-value="<%= calendar_date.month %>"
+         data-streak-year-value="<%= calendar_date.year %>"
          data-streak-month-url-value="<%= helpers.streak_month_path %>">
   <div class="streak-widget__header">
     <%= image_tag "streak/comet.svg", class: "streak-widget__comet", alt: "" %>
@@ -60,12 +60,11 @@
     <%# ── Expanded month calendar (hidden by default) ── %>
     <div class="streak-widget__calendar" data-streak-target="calendarView" hidden>
       <div data-streak-target="calendarContent">
-        <% cal_date = user.streak_today_date.beginning_of_month %>
         <%= render partial: "streaks/month_grid",
-              locals: { date: cal_date,
+              locals: { date: calendar_date,
                         calendar_days: calendar_days,
                         show_next: false,
-                        show_prev: cal_date > Date.new(2026, 6, 1) } %>
+                        show_prev: calendar_date > Date.new(2026, 6, 1) } %>
       </div>
     </div>
 

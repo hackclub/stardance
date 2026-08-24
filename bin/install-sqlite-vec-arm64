@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+require "rubygems/package"
+require "tmpdir"
+
+target_platform = Gem::Platform.local
+exit unless target_platform.to_s == "aarch64-linux"
+
+lockfile = File.expand_path("../Gemfile.lock", __dir__)
+version = File.read(lockfile).match(/^    sqlite-vec \(([^-)]+)/)&.captures&.first
+abort "Could not find the locked sqlite-vec version" unless version
+
+installed = Gem::Specification.find_all_by_name("sqlite-vec", version).any? do |spec|
+  spec.platform == target_platform
+end
+exit if installed
+
+Dir.mktmpdir("sqlite-vec-aarch64") do |work_dir|
+  Dir.chdir(work_dir) do
+    source_platform = "arm64-linux"
+    source_gem = "sqlite-vec-#{version}-#{source_platform}.gem"
+
+    system("gem", "fetch", "sqlite-vec", "--version", version, "--platform", source_platform, exception: true)
+    system("gem", "unpack", source_gem, exception: true)
+
+    source_dir = File.basename(source_gem, ".gem")
+    source_path = File.expand_path(source_gem)
+
+    Dir.chdir(source_dir) do
+      spec = Gem::Package.new(source_path).spec
+      spec.platform = target_platform
+      rebuilt_gem = Gem::Package.build(spec, true)
+
+      system("gem", "install", rebuilt_gem, "--no-document", exception: true)
+    end
+  end
+end

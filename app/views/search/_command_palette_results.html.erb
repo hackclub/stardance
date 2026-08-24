@@ -19,7 +19,8 @@
               id="cp-result-<%= label.parameterize %>-<%= index %>"
               data-command-palette-target="item"
               data-action="click->command-palette#select mouseenter->command-palette#highlight"
-              data-path="<%= item[:path] %>"
+              <% if item[:path].present? %> data-path="<%= item[:path] %>"<% end %>
+              <% if item[:focus].present? %> data-focus="<%= item[:focus] %>"<% end %>
               <% if item[:method] == "post" %> data-method="post"<% end %>>
             <span class="command-palette__item-title"><%= item[:title] %></span>
             <span class="command-palette__item-meta"><%= item[:subtitle].presence || item[:type] %></span>

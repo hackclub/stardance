@@ -23,19 +23,18 @@ class User::DataExportJob < ApplicationJob
         write_readme(zip, user)
       end
 
-      # Attach first so a failed upload never leaves a completed export
-      # without a downloadable file.
+      # Upload synchronously before entering a transaction.
+      blob = ActiveStorage::Blob.create_and_upload!(
+        io: File.open(temp_zip.path),
+        filename: zip_filename,
+        content_type: "application/zip"
+      )
+
       @data_export.with_lock do
         # The user may delete an export while it is being generated.
         return unless @data_export.processing?
 
-        File.open(temp_zip.path) do |file|
-          @data_export.zip_file.attach(
-            io: file,
-            filename: zip_filename,
-            content_type: "application/zip"
-          )
-        end
+        @data_export.zip_file.attach(blob)
         @data_export.update!(status: "completed", zip_filename: zip_filename)
       end
     rescue ActiveRecord::RecordNotFound
@@ -118,12 +117,12 @@ class User::DataExportJob < ApplicationJob
   end
 
   # Streams the blob straight into the ZIP entry instead of loading the whole file into memory
-  def download_attachment(zip, attachment, entry_name)
-    blob = attachment.is_a?(ActiveStorage::Attached) ? attachment.blob : attachment
-    return unless blob
+  def download_attachment(zip, attachable, entry_name)
+    attachment = attachable.try(:attachment) || attachable
+    return unless attachment&.blob
 
     zip.put_next_entry(entry_name)
-    blob.open { |file| IO.copy_stream(file, zip) }
+    attachment.open { |file| IO.copy_stream(file, zip) }
   end
 
   def write_readme(zip, user)

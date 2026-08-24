@@ -4,9 +4,9 @@ module Posts
   class CardComponent < ViewComponent::Base
     delegate :inline_svg_tag, to: :helpers
 
-    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :source, :position, :page, :feed_request_id, :track_engagement, :current_user_reposted_post_ids, :show_views, :media_variant, :lazy_media
+    attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :source, :position, :page, :feed_request_id, :track_engagement, :current_user_reposted_post_ids, :show_views, :media_variant, :lazy_media, :clickable
 
-    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, source: nil, position: nil, page: nil, feed_request_id: nil, track_engagement: true, current_user_reposted_post_ids: nil, show_views: nil, media_variant: :large, lazy_media: false)
+    def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, source: nil, position: nil, page: nil, feed_request_id: nil, track_engagement: true, current_user_reposted_post_ids: nil, show_views: nil, media_variant: :large, lazy_media: false, clickable: true)
       @post = post
       @current_user = current_user
       @theme = theme
@@ -24,6 +24,7 @@ module Posts
       @show_views = show_views
       @media_variant = media_variant
       @lazy_media = lazy_media
+      @clickable = clickable
     end
 
     def render?
@@ -60,7 +61,7 @@ module Posts
     def card_classes
       class_names(
         "feed-post-card",
-        "feed-post-card--linked": card_link_url.present? && request.path != card_link_url,
+        "feed-post-card--linked": card_link_url.present? && request.path != card_link_url && clickable,
         "feed-post-card--compact": compact,
         "feed-post-card--quote-repost": quote_repost?,
         "feed-post-card--fire": fire_event?,
@@ -71,7 +72,7 @@ module Posts
     def card_data
       url = card_link_url
       data = engagement_data
-      return data if url.blank?
+      return data if url.blank? || !clickable
 
       controllers = [ data[:controller], "card-link" ].compact.join(" ")
       actions = [ data[:action], "click->card-link#navigate auxclick->card-link#navigate" ].compact.join(" ")

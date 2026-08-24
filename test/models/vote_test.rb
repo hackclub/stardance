@@ -3,6 +3,7 @@
 # Table name: votes
 #
 #  id                            :bigint           not null, primary key
+#  auto_discard_checked_at       :datetime
 #  demo_opened                   :boolean          default(FALSE), not null
 #  discarded                     :boolean          default(FALSE), not null
 #  originality_score             :integer

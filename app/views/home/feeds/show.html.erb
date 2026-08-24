@@ -1,4 +1,5 @@
 <% feed_params = @current_tab.present? && @current_tab != "for_you" ? { tab: @current_tab } : {} %>
+<% feed_params[:feed_session_id] = @feed_session_id if @feed_session_id.present? %>
 <% if @pagy.page > 1 %>
   <%= turbo_frame_tag "home_feed_page_#{@pagy.page}", target: "_top", class: "feed-home__frame" do %>
     <%= render "home/feed_pages/feed_page", feed_params: feed_params %>

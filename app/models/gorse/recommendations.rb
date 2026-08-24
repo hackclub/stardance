@@ -18,6 +18,14 @@ class Gorse::Recommendations
     end
   end
 
+  def post_candidates(limit: DEFAULT_LIMIT)
+    if post_recommendations_enabled?
+      recommended_post_candidates(limit)
+    else
+      []
+    end
+  end
+
   def projects(limit: DEFAULT_LIMIT)
     if enabled?(:gorse_project_recommendations)
       recommended_projects(limit)
@@ -44,14 +52,17 @@ class Gorse::Recommendations
     end
 
     def recommended_posts(limit)
+      diversify_posts(recommended_post_candidates(limit), limit:)
+    end
+
+    def recommended_post_candidates(limit)
       ids =
         if user.present?
           recommendation_ids(category: "feed", count: limit * 3)
         else
           guest_recommendation_ids(category: "feed", count: limit * 3)
         end
-      posts = posts_from_ids(ids)
-      diversify_posts(posts, limit:)
+      posts_from_ids(ids)
     end
 
     def diversify_posts(posts, limit:)

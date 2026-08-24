@@ -20,6 +20,10 @@ class FeedPresentationComponentsTest < ViewComponent::TestCase
     assert_text "What are you working on?"
     assert_selector "form[action='#{project_devlogs_path(@project)}']"
     assert_link @project.title
+    assert_selector ".feed-composer[data-composer-body-max-length-value='#{Post::Devlog::BODY_MAX_LENGTH}']"
+    assert_selector ".feed-composer[data-composer-max-file-size-value='#{Post::Devlog::ATTACHMENT_MAX_SIZE}']"
+    assert_selector ".feed-composer__textarea[data-composer-target='editor']"
+    assert_selector ".feed-composer__error[data-composer-target='error'][role='alert']", visible: :all
   end
 
   test "home composer (show_record) renders the record-a-timelapse button for a hardware project" do
@@ -95,6 +99,17 @@ class FeedPresentationComponentsTest < ViewComponent::TestCase
     assert_selector "#{card_selector}[data-controller~='card-link'][data-card-link-url-value='#{href}']"
     assert_selector ".feed-post-card#{action_selector}"
     assert_selector "a.feed-post-card__overlay-link[href='#{href}']", visible: :all
+  end
+
+  test "post card can render without navigation data" do
+    render_inline Posts::CardComponent.new(post: @post, current_user: @user, clickable: false)
+
+    assert_selector ".feed-post-card[data-controller~='feed-engagement']"
+    assert_no_selector ".feed-post-card--linked"
+    assert_no_selector ".feed-post-card[data-controller~='card-link']"
+    assert_no_selector ".feed-post-card[data-card-link-url-value]"
+    assert_no_selector ".feed-post-card[data-action*='card-link#navigate']"
+    assert_no_selector ".feed-post-card__overlay-link", visible: :all
   end
 
   test "post card can render without passive feed engagement tracking" do

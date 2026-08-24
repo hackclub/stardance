@@ -5,7 +5,9 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
 
   def update
     authorize @funding_request
-    if @funding_request.update(funding_request_params)
+    @funding_request.assign_attributes(funding_request_params)
+    attach_feedback_images
+    if @funding_request.save
       count = ::Certification::FundingRequest.reviewed_today(current_user)
       notice = "#{verdict_sentence} That's #{count} reviewed today. Keep going!"
       # Straight on to the next design review; `next` claims it, and falls back
@@ -106,5 +108,13 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
 
   def funding_request_params
     params.require(:certification_funding_request).permit(:verdict, :feedback, :approved_amount_dollars)
+  end
+
+  # Reviewer-attached feedback photos. Mirrors ships_controller's attach guard:
+  # only touch the association when files are actually present, so submitting a
+  # verdict without picking any images leaves the request's images untouched.
+  def attach_feedback_images
+    images = params.dig(:certification_funding_request, :feedback_images)&.reject(&:blank?)
+    @funding_request.feedback_images.attach(images) if images.present?
   end
 end

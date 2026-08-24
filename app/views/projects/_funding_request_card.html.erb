@@ -6,10 +6,10 @@
     status means, what happens next) moves into a "?" tooltip on the byline,
     and only falls back to being the body when there is no feedback to show.
 
-    Reviewer feedback is shown to the project owner only. The card itself is
-    already members-and-admins (see ProjectsController#visible_funding_requests),
-    but feedback names a reviewer and explains a rejection, so it stays with the
-    person who has to act on it.
+    Reviewer feedback names a reviewer and explains a rejection, so it stays with
+    the person who has to act on it: the project owner, plus reviewers who can
+    always see review history. When the public_hardware_reviews flag is on it
+    goes public along with the card (see ProjectsController#visible_funding_requests).
 
     Locals: funding_request, project, owner (required); resubmit_modal_id
     (optional - when present a returned request offers a resubmit button). %>
@@ -17,7 +17,8 @@
   decided_on = funding_request.decided_at || funding_request.created_at
   reviewer = funding_request.reviewer
   viewer_is_owner = owner.present? && owner == current_user
-  show_feedback = funding_request.feedback.present? && !funding_request.pending? && (viewer_is_owner || current_user&.admin?)
+  feedback_visible = viewer_is_owner || current_user&.can_review? || Flipper.enabled?(:public_hardware_reviews)
+  show_feedback = funding_request.feedback.present? && !funding_request.pending? && feedback_visible
 
   kit_mission = funding_request.kit_mission?
   awards_kit = funding_request.awards_design_kit?
@@ -89,13 +90,25 @@
     <% end %>
   </header>
 
-  <div class="feed-post-card__body funding-request-card__message">
+  <%
+    has_feedback_photos = show_feedback && funding_request.feedback_images.any?(&:persisted?)
+    message_class = class_names("feed-post-card__body", "funding-request-card__message",
+                                "funding-request-card__message--openable" => has_feedback_photos)
+    # The whole review opens the feedback modal; guarded so a thumbnail click
+    # (which opens it too) doesn't re-call showModal on an already-open dialog.
+    open_modal_js =
+      if has_feedback_photos
+        "var d=document.getElementById('feedback-images-#{funding_request.id}'); if (d && !d.open) d.showModal()"
+      end
+  %>
+  <%= tag.div class: message_class, onclick: open_modal_js do %>
     <% if show_feedback %>
       <%= render "projects/review_feedback", review: funding_request %>
+      <%= render "admin/certification/funding_requests/feedback_images", funding_request: funding_request %>
     <% else %>
       <p><%= message %></p>
     <% end %>
-  </div>
+  <% end %>
 
   <% if funding_request.returned? && viewer_is_owner && resubmit_modal_id.present? %>
     <div class="funding-request-card__actions">
@@ -114,5 +127,16 @@
               class: "action-btn action-btn--small action-btn--primary" %>
       <% end %>
     </div>
+  <% end %>
+
+  <% if has_feedback_photos %>
+    <%= tag.button type: "button", class: "funding-request-card__expand",
+          onclick: open_modal_js, aria: { label: "Expand reviewer feedback" } do %>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
+      </svg>
+      <span>Expand</span>
+    <% end %>
   <% end %>
 </article>

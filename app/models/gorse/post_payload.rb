@@ -19,7 +19,7 @@ class Gorse::PostPayload
             .where(project_id: Project.not_deleted)
             .select("posts.*"),
         Post.of_ship_events(join: true)
-            .where.not(post_ship_events: { certification_status: Post::ShipEvent::HIDDEN_STATUSES })
+            .where(post_ship_events: { certification_status: "approved" })
             .where(project_id: Project.not_deleted)
             .select("posts.*"),
         # Collapse a viral post's reposts: keep only the most recent repost per
@@ -90,7 +90,7 @@ class Gorse::PostPayload
     end
 
     def hidden_ship_event?
-      post.postable_type == "Post::ShipEvent" && post.postable.certification_status.in?(Post::ShipEvent::HIDDEN_STATUSES)
+      post.postable_type == "Post::ShipEvent" && post.postable.certification_status != "approved"
     end
 
     def has_media?

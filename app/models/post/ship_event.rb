@@ -100,6 +100,9 @@ class Post::ShipEvent < ApplicationRecord
 
   before_save :stamp_rating_lifecycle
   after_update :sync_mission_submission_status, if: :saved_change_to_certification_status?
+  after_commit :sync_post_to_gorse_after_certification_change,
+               on: :update,
+               if: :saved_change_to_certification_status?
 
   scope :voteable, -> {
     where(certification_status: "approved", payout: nil)
@@ -247,6 +250,10 @@ class Post::ShipEvent < ApplicationRecord
         submission.fail_certification!
       end
     end
+  end
+
+  def sync_post_to_gorse_after_certification_change
+    post&.sync_to_gorse_later
   end
 
   # A submission certification knocked back, as opposed to one a mission

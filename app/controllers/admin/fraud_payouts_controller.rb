@@ -69,9 +69,9 @@ module Admin
 
     private
 
-    # Builds the live bracket standings from all reviewer activity recorded in
-    # PaperTrail. Returns the BracketCalculator result hash (or nil when nobody
-    # has reviewed anything yet).
+    # Builds the live bracket standings from the orders the automatic payout
+    # job would process. Returns the BracketCalculator result hash (or nil when
+    # nobody has an attributable unpaid review).
     def current_bracket
       counts = reviewer_order_counts
       return nil if counts.empty?
@@ -99,12 +99,9 @@ module Admin
     end
 
     def reviewer_order_counts
-      counts = Hash.new(0)
-      FraudPayoutRun.reviewer_versions.each do |v|
-        uid = FraudPayoutRun.reviewer_from_version(v)
-        counts[uid] += 1 if uid
-      end
-      counts
+      FraudPayoutRun
+        .orders_by_reviewer(FraudPayoutRun.payout_eligible_orders)
+        .transform_values(&:size)
     end
   end
 end

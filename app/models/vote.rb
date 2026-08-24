@@ -3,6 +3,7 @@
 # Table name: votes
 #
 #  id                            :bigint           not null, primary key
+#  auto_discard_checked_at       :datetime
 #  demo_opened                   :boolean          default(FALSE), not null
 #  discarded                     :boolean          default(FALSE), not null
 #  originality_score             :integer
@@ -34,7 +35,7 @@
 #
 class Vote < ApplicationRecord
   FLAG_COST = 5
-  MAX_BANKED_VOTES = 30
+  MAX_BANKED_VOTES = 6
   MIN_SCORE = 1
   MAX_SCORE = 9
 
@@ -99,6 +100,7 @@ class Vote < ApplicationRecord
 
   scope :payout_countable, -> {
     where(discarded: false)
+      .where.not(auto_discard_checked_at: nil)
       .where.not(id: Vote::Event.accepted_vote_flags.select(:vote_id))
   }
 
@@ -194,8 +196,10 @@ class Vote < ApplicationRecord
   def discarded? = discarded || events.exists?(event_type: "vote_flag_accepted")
 
   def auto_discard!(properties: {})
+    credit_reversed = false
+
     with_lock do
-      return if discarded?
+      return false if discarded?
 
       update!(discarded: true)
       events.create!(
@@ -205,9 +209,16 @@ class Vote < ApplicationRecord
         ship_event: ship_event,
         properties: properties.to_h.merge(automated: true)
       )
+
+      if Flipper.enabled?(:discarded_vote_credit_reversal, user)
+        user.increment!(:vote_balance, -1)
+        credit_reversed = true
+      end
     end
 
+    Notifications::Votes::Discarded.notify(recipient: user) if credit_reversed
     ShipEventPayoutRefreshJob.perform_later(ship_event_id)
+    true
   end
 
   private

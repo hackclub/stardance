@@ -52,6 +52,49 @@
     font-size: 0.95rem;
   }
 
+  &__ship-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+    margin-bottom: var(--space-l);
+  }
+
+  &__ship-nav-label {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__ship-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs);
+  }
+
+  &__ship-link {
+    padding: 4px 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    &.is-active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--color-set-1-bg);
+    }
+  }
+
   &__tabs {
     display: flex;
     gap: var(--space-xxs);

@@ -20,7 +20,7 @@ module HardwareReviewQueue
     before_action :set_body_class
     before_action :release_other_claims, only: [ :next ]
     helper_method :hardware_review_path, :hardware_queue_path, :hardware_next_path,
-                  :hardware_queue_title, :hardware_back_link
+                  :hardware_queue_title, :hardware_back_link, :hardware_flag_for_fraud_path
   end
 
   def design
@@ -59,6 +59,37 @@ module HardwareReviewQueue
     authorize_hardware_review(@project)
     load_review_context
     render "admin/certification/hardware_reviews/show"
+  end
+
+  # Flags the project for the fraud team. Reuses Project::Report's existing fraud
+  # machinery — the model's after_commit fires the Slack notify and PaperTrail
+  # records the flag. No verdict is recorded and the project stays visible;
+  # this is a heads-up, not a review action. Idempotent on the unique
+  # (reporter_id, project_id) index.
+  def flag_for_fraud
+    authorize_hardware_review(@project)
+
+    report = ::Project::Report.new(
+      project: @project,
+      reporter: current_user,
+      reason: "fraud",
+      details: params[:details].to_s.strip,
+      status: :pending
+    )
+
+    if report.save
+      redirect_to hardware_review_path(@project),
+                  notice: "Flagged for fraud review. The fraud team has been notified."
+    elsif report.errors.of_kind?(:reporter_id, :taken)
+      redirect_to hardware_review_path(@project),
+                  notice: "You've already flagged this project for fraud."
+    else
+      redirect_to hardware_review_path(@project),
+                  alert: report.errors.full_messages.to_sentence
+    end
+  rescue ActiveRecord::RecordNotUnique
+    redirect_to hardware_review_path(@project),
+                notice: "You've already flagged this project for fraud."
   end
 
   private

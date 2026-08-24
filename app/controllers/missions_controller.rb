@@ -2,8 +2,14 @@ class MissionsController < ApplicationController
   before_action :set_body_class
   before_action :set_mission, only: [ :show, :guide, :gallery ]
   before_action -> { @active_nav_slug = "missions" }
-
   discover_rail_widgets :certificate, :upcoming_events
+
+  def search
+    authorize Mission, :index?
+    q = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].to_s)}%"
+    missions = Mission.available.where("name ILIKE ?", q).order(:name).limit(8)
+    render json: missions.map { |m| { id: m.id, name: m.name, slug: m.slug } }
+  end
 
   def index
     authorize Mission

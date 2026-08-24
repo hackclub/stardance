@@ -6,7 +6,7 @@
 <article id="<%= dom_id(post) %>" class="<%= card_classes %>"
   <%= tag.attributes(data: card_data) %>>
 <% end %>
-  <% if card_link_url.present? && !on_card_link_target %>
+  <% if clickable && card_link_url.present? && !on_card_link_target %>
     <%= link_to card_link_url,
           class: "feed-post-card__overlay-link",
           aria: { label: "Open comments for this post" } do %>

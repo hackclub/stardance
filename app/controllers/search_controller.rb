@@ -56,8 +56,8 @@ class SearchController < ApplicationController
     results = {
       query: q,
       semantic: SemanticSearch.enabled?,
-      commands: command_results(q, surface),
-      projects: semantic_results.fetch("project", []),
+      commands: command_results(q, surface, current_path: params[:current_path]),
+      projects: merged_project_results(q, semantic_results.fetch("project", [])),
       posts: semantic_results.fetch("devlog", []) + semantic_results.fetch("ship", []),
       users: merged_user_results(q, semantic_results.fetch("user", []))
     }
@@ -72,10 +72,10 @@ class SearchController < ApplicationController
 
   private
 
-  def command_results(query, surface)
+  def command_results(query, surface, current_path: nil)
     return [] unless surface == "command_palette"
 
-    Command.search(query, current_user).first(GLOBAL_MAX_RESULTS).map do |command|
+    Command.search(query, current_user, current_path: current_path).first(GLOBAL_MAX_RESULTS).map do |command|
       {
         type: "command",
         id: command.id,
@@ -83,9 +83,27 @@ class SearchController < ApplicationController
         subtitle: "Command",
         preview: command.keywords.join(" "),
         path: command.path,
+        focus: command.focus,
         method: command.post? ? "post" : "get"
       }
     end
+  end
+
+  def merged_project_results(query, semantic_projects)
+    (prefix_project_results(query) + semantic_projects)
+      .uniq { |r| r[:id] || r["id"] }
+      .first(GLOBAL_MAX_RESULTS)
+  end
+
+  def prefix_project_results(query)
+    q = query.to_s.strip.downcase
+    return [] if q.blank?
+
+    Project.not_deleted
+      .where("LOWER(title) LIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(q)}%")
+      .order(created_at: :desc)
+      .limit(GLOBAL_MAX_RESULTS)
+      .map { |p| { id: p.id, title: p.title, subtitle: "Project", path: "/projects/#{p.id}", admin_path: "/admin/projects/#{p.id}" } }
   end
 
   def merged_user_results(query, semantic_users)
@@ -105,7 +123,7 @@ class SearchController < ApplicationController
       .where("LOWER(display_name) LIKE ?", "#{ActiveRecord::Base.sanitize_sql_like(q)}%")
       .order(:display_name)
       .limit(GLOBAL_MAX_RESULTS)
-      .map { |user| SemanticSearch::Document.for(user)&.to_result }
+      .map { |user| SemanticSearch::Document.for(user)&.to_result&.merge(admin_path: "/admin/users/#{user.id}") }
       .compact
   end
 

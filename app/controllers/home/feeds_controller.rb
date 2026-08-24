@@ -38,6 +38,12 @@ class Home::FeedsController < ApplicationController
   end
 
   def load_for_you_feed
+    return load_seen_mixer_feed if seen_mixer_enabled?
+
+    load_legacy_for_you_feed
+  end
+
+  def load_legacy_for_you_feed
     recommended = recommended_posts
     backfill = filtered_feed_scope(Gorse::PostPayload.recommendable_feed_scope(current_user))
       .where.not(id: recommended.map(&:id))
@@ -47,6 +53,105 @@ class Home::FeedsController < ApplicationController
     @pagy.next = @pagy.page + 1 if has_next
 
     preload_feed_associations(@feed_posts)
+  end
+
+  def load_seen_mixer_feed
+    @pagy = feed_pagy
+    store = Feed::SessionStore.new(user: current_user)
+    session = store.read_session(params[:feed_session_id]) if @pagy.page > 1
+    session_status = session.present? ? "hit" : "miss"
+
+    if session.present?
+      @feed_session_id = params[:feed_session_id]
+    else
+      @feed_session_id = SecureRandom.uuid
+      session = build_mixed_feed_session(store, base_offset: @pagy.offset)
+      store.write_session(
+        @feed_session_id,
+        entries: session[:entries],
+        base_offset: session[:base_offset]
+      )
+    end
+
+    entries = session[:entries] || session["entries"] || []
+    base_offset = (session[:base_offset] || session["base_offset"] || 0).to_i
+    local_offset = [ @pagy.offset - base_offset, 0 ].max
+    page_entries = Array(entries[local_offset, @pagy.limit + 1])
+    page_posts = posts_for_session_entries(page_entries)
+    posts_by_id = page_posts.index_by(&:id)
+    visible_entries = page_entries.filter_map do |entry|
+      post_id = (entry[:post_id] || entry["post_id"]).to_i
+      post = posts_by_id[post_id]
+      [ post, entry[:source] || entry["source"] ] if post.present? && visible_post?(post)
+    end
+
+    selected_entries = visible_entries.first(@pagy.limit)
+    @feed_posts = selected_entries.map(&:first)
+    @feed_post_sources = selected_entries.to_h
+    @pagy.next = @pagy.page + 1 if visible_entries.size > @pagy.limit || local_offset + page_entries.size < entries.size
+
+    store.mark_served(@feed_posts.map { |post| Feed::Mixer.canonical_content_id(post) })
+    preload_feed_associations(@feed_posts)
+    instrument_feed_mix(store:, session_status:)
+  end
+
+  def build_mixed_feed_session(store, base_offset:)
+    gorse_posts = recommendations.post_candidates(limit: RECOMMENDATION_POOL)
+    fresh_posts = filtered_feed_scope(Gorse::PostPayload.recommendable_feed_scope(current_user))
+      .limit(RECOMMENDATION_POOL)
+      .to_a
+    preload(fresh_posts, :postable)
+
+    candidates = (gorse_posts + fresh_posts).uniq(&:id)
+    canonical_ids = candidates.filter_map { |post| Feed::Mixer.canonical_content_id(post) }
+    candidate_ids = candidates.map(&:id)
+    posts_by_id = candidates.index_by(&:id)
+    read_post_ids = PostView.where(user: current_user, post_id: candidate_ids + canonical_ids)
+                            .where.not(read_at: nil)
+                            .pluck(:post_id)
+    blocked_content_ids = store.suppressed_ids
+    read_post_ids.each do |post_id|
+      blocked_content_ids << (Feed::Mixer.canonical_content_id(posts_by_id[post_id]) || post_id)
+    end
+
+    result = Feed::Mixer.new(
+      gorse_posts:,
+      fresh_posts:,
+      blocked_content_ids:,
+      served_at: store.served_at,
+      seed: @feed_session_id,
+      max_items: RECOMMENDATION_POOL
+    ).call
+    @feed_mixer_metrics = result.metrics
+
+    {
+      entries: result.entries.map { |entry| { post_id: entry.post.id, source: entry.source } },
+      base_offset:
+    }
+  end
+
+  def posts_for_session_entries(entries)
+    ids = entries.map { |entry| (entry[:post_id] || entry["post_id"]).to_i }
+    Gorse::PostPayload.recommendable_feed_scope(current_user)
+      .where(id: ids)
+      .includes(:user, :project, :postable)
+      .to_a
+  end
+
+  def instrument_feed_mix(store:, session_status:)
+    metrics = (@feed_mixer_metrics || {}).merge(
+      user_id: current_user.id,
+      session_status:,
+      cache_healthy: store.cache_healthy,
+      page: @pagy.page,
+      rendered: @feed_posts.size,
+      rendered_ships: @feed_posts.count { |post| post.postable_type == "Post::ShipEvent" }
+    )
+    ActiveSupport::Notifications.instrument("feed.mixed", metrics)
+  end
+
+  def seen_mixer_enabled?
+    current_user.present? && Flipper.enabled?(:feed_seen_mixer, current_user)
   end
 
   def filtered_feed_scope(scope)

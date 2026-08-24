@@ -22,6 +22,7 @@ module Notifications
       Notifications::StardustBalanceChanged
       Notifications::Payouts::ShipEventIssued
       Notifications::Payouts::VoteDeficitBlocked
+      Notifications::Votes::Discarded
       Notifications::ShopOrders::StatusChanged
       Notifications::Hardware::FundingRequestReviewed
       Notifications::Hardware::BuildReviewed

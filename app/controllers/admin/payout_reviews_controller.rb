@@ -58,6 +58,9 @@ class Admin::PayoutReviewsController < Admin::ApplicationController
     @votes = @ship_event.votes
                         .includes(:user, :events)
                         .order(:created_at)
+    @project_ship_events = @ship_event.project&.ship_events
+                                      &.where.not(certification_status: "misfiled")
+                                      &.to_a || []
   end
 
   private
