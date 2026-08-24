@@ -1238,6 +1238,27 @@ body:has(.certification-ysws) {
 
     &__player {
       background: #000;
+      width: 100%;
+      border-radius: var(--profile-radius);
+    }
+
+    // Reships never mint their own ship cert, so the player falls back to the
+    // previous ship's video — flagged so a reviewer doesn't read a stale
+    // recording as proof of the ship they're looking at.
+    &__source-note {
+      color: var(--color-brand-peach);
+      background: rgba(255, 213, 152, 0.1);
+      border-left: 3px solid var(--color-brand-peach);
+      border-radius: 0 var(--profile-radius) var(--profile-radius) 0;
+      font-size: var(--font-size-s);
+      font-family: var(--font-family-sans);
+      padding: var(--space-s) var(--space-m);
+      margin: 0 0 var(--space-s);
+    }
+
+    &__source-date {
+      color: var(--color-space-text-muted);
+      font-size: var(--font-size-xs);
     }
 
     .video-placeholder {
@@ -1514,6 +1535,87 @@ body:has(.certification-ysws) {
         padding: var(--space-s);
         border-radius: var(--profile-radius);
         border: 1px solid var(--color-brand-salmon);
+      }
+
+      // Devlog bodies render through `md()`, same as the main feed. The admin
+      // bundle doesn't ship components/_markdown_content.scss, so without these
+      // the output falls through to .admin-content's page-scale element rules —
+      // 128px Slack emotes, xxxl headings, and code blocks overflowing the card.
+      &.markdown-content {
+        p {
+          color: inherit;
+          margin: 0 0 var(--space-s);
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+          color: var(--color-brand-off-white);
+          font-weight: 700;
+          line-height: var(--line-height-headers);
+          margin: var(--space-l) 0 var(--space-s);
+
+          &:first-child {
+            margin-top: 0;
+          }
+        }
+
+        h1 {
+          font-size: var(--font-size-xl);
+        }
+
+        h2 {
+          font-size: var(--font-size-l);
+        }
+
+        h3,
+        h4,
+        h5,
+        h6 {
+          font-size: var(--font-size-m);
+        }
+
+        ul,
+        ol {
+          margin: var(--space-s) 0;
+          padding-left: var(--space-l);
+
+          li {
+            color: inherit;
+            margin-bottom: var(--space-xxs);
+          }
+        }
+
+        pre {
+          background: var(--color-space-bg-2);
+          border: 1px solid var(--color-space-border);
+          border-radius: var(--profile-radius);
+          padding: var(--space-s);
+          margin: var(--space-s) 0;
+          overflow-x: auto;
+          font-size: var(--font-size-s);
+        }
+
+        // Slack custom emotes survive `allow_images: false` — the renderer
+        // strips author images before substituting shortcodes. Sizing mirrors
+        // components/_markdown_content.scss so the queue matches the feed.
+        img.slack-emote {
+          display: inline-block;
+          width: 1.35em;
+          height: 1.35em;
+          max-width: 1.35em;
+          margin: 0 0.08em;
+          border-radius: 4px;
+          vertical-align: -0.25em;
+          object-fit: contain;
+        }
       }
     }
 
@@ -2869,6 +2971,26 @@ body:has(.certification-ysws) {
     margin: 0;
     color: var(--color-set-1-fg-secondary);
     font-size: var(--font-size-xs);
+  }
+
+  // What the week is worth, sitting under the pace hero it depends on. Kept
+  // outside the hero so the --on-pace gradient's colour flip doesn't apply to it.
+  &__progress-payout {
+    margin: var(--space-s) 0 0;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+
+  &__progress-payout-amount {
+    color: var(--color-brand-highlight);
+    font-size: var(--font-size-s);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__progress-payout--halved {
+    .ysws-dashboard__progress-payout-amount {
+      color: var(--color-brand-salmon);
+    }
   }
 
   &__progress-tier {

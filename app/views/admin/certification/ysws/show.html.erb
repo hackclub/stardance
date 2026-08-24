@@ -111,9 +111,17 @@
       <!-- Ship Cert Video Section -->
       <section class="review-card video-card">
         <h3>Ship Cert Video</h3>
-        <% if (ship_cert_video_src = certification_verdict_video_src(@review.ship_cert)) %>
+        <% ship_cert = @review.effective_ship_cert %>
+        <% if (ship_cert_video_src = certification_verdict_video_src(ship_cert)) %>
+          <% if @review.ship_cert_from_earlier_ship? %>
+            <p class="video-card__source-note">
+              No video for reships — showing video from last ship<% if ship_cert.decided_at %>
+                <span class="video-card__source-date">(certified <%= ship_cert.decided_at.strftime("%b %-d, %Y") %>)</span>
+              <% end %>
+            </p>
+          <% end %>
           <video class="video-card__player" src="<%= ship_cert_video_src %>"
-                 controls playsinline preload="metadata" style="width:100%;border-radius:var(--profile-radius)"></video>
+                 controls playsinline preload="metadata"></video>
         <% else %>
           <div class="video-placeholder">
             <div class="placeholder-text">No review video recorded</div>
@@ -139,7 +147,10 @@
       <% end %>
 
       <!-- Time Stats Section -->
-      <section class="review-card stats-card">
+      <section class="review-card stats-card"
+               data-controller="certification--ysws--review-totals"
+               data-certification--ysws--review-totals-frozen-minutes-value="<%= @stats[:frozen_deducted_minutes] %>"
+               data-action="devlog-review:saved@window->certification--ysws--review-totals#refresh">
         <h3>Time Stats</h3>
         <div class="stats-grid">
           <div class="stat-box">
@@ -161,9 +172,9 @@
             </div>
           </div>
           <div class="stat-box">
-            <div class="stat-label">Devlogs ≥1hr</div>
-            <div class="stat-value">
-              <%= @stats[:one_hour_plus_count] %>
+            <div class="stat-label">Time Deducted</div>
+            <div class="stat-value" data-certification--ysws--review-totals-target="deducted">
+              <%= (@stats[:deducted_minutes] / 60.0).round(1) %>h
             </div>
           </div>
         </div>

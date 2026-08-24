@@ -3,6 +3,13 @@
   # tile is { value:, label:, note: } so the grid stays one loop.
   best_day = progress[:best_day]
   rank     = progress[:rank]
+  payout   = progress[:weekly_payout]
+
+  payout_amount = number_with_precision(payout[:payout], precision: 2, strip_insignificant_zeros: true)
+  payout_full   = number_with_precision(payout[:full], precision: 2, strip_insignificant_zeros: true)
+  goal_amount   = number_with_precision(payout[:goal_payout], precision: 2, strip_insignificant_zeros: true)
+  goal_halved   = number_with_precision(payout[:goal_payout_halved], precision: 2, strip_insignificant_zeros: true)
+  weekly_goal   = number_with_delimiter(::Certification::Ysws::WEEKLY_DEVLOG_GOAL)
 
   stats = [
     { value: number_with_delimiter(progress[:hours_certified]),
@@ -45,6 +52,29 @@
         <%= pluralize progress[:pace][:needed_today], "more" %> today to reach your goal!
       <% end %>
     </p>
+  <% end %>
+
+  <% if payout[:projected_devlogs].zero? %>
+    <p class="ysws-dashboard__progress-payout">
+      Review <%= weekly_goal %> devlogs this week for the full
+      <strong class="ysws-dashboard__progress-payout-amount"><%= goal_amount %> ✦</strong>
+      — <%= goal_halved %> ✦ if you fall short.
+    </p>
+  <% else %>
+    <%= tag.p class: [ "ysws-dashboard__progress-payout",
+                       ("ysws-dashboard__progress-payout--halved" unless payout[:locked_in]) ] do %>
+      Projected payout this week —
+      <strong class="ysws-dashboard__progress-payout-amount"><%= payout_amount %> ✦</strong>
+      <% if payout[:locked_in] %>
+        at your current pace, from the
+        <%= pluralize number_with_delimiter(payout[:projected_devlogs]), "devlog" %>
+        you're on track to review.
+      <% else %>
+        — halved, since you're on track for
+        <%= number_with_delimiter payout[:projected_devlogs] %> of the <%= weekly_goal %>
+        devlogs a full week needs. Hold the goal pace for the full <%= payout_full %> ✦.
+      <% end %>
+    <% end %>
   <% end %>
 
   <dl class="ysws-dashboard__progress-stats">

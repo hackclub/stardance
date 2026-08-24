@@ -20,6 +20,7 @@ import { Controller } from "@hotwired/stimulus";
 //   - approve: Approves the devlog
 //   - reject: Rejects the devlog
 //   - updateNotes: Saves notes when textarea changes (debounced)
+//   - autogrow: Grows the notes textarea to fit its content
 //   - quickAdjust: Handles quick adjust buttons (50%, 25%, -30min, -1hr, Reset)
 
 export default class extends Controller {
@@ -47,6 +48,9 @@ export default class extends Controller {
 
     // Set initial visual state
     this.updateVisualState(this.statusValue);
+
+    // Saved notes should render at full height, not just after a keystroke
+    this.autogrow();
   }
 
   disconnect() {
@@ -134,6 +138,18 @@ export default class extends Controller {
     }, 1000);
   }
 
+  // Grow the notes textarea to fit its content so long justifications aren't
+  // trapped behind an inner scrollbar. CSS min-height sets the floor.
+  autogrow() {
+    const el = this.notesTextareaTarget;
+
+    el.style.height = "auto";
+    // scrollHeight covers content + padding but not the border, and textareas
+    // are border-box here, so add the border back or the last line clips.
+    const border = el.offsetHeight - el.clientHeight;
+    el.style.height = `${el.scrollHeight + border}px`;
+  }
+
   // Handle quick adjust buttons
   quickAdjust(event) {
     const action = event.target.dataset.adjustAction;
@@ -214,6 +230,11 @@ export default class extends Controller {
           this.minutesInputTarget.value = data.approved_minutes;
           this.updateHoursDisplay(data.approved_minutes);
         }
+
+        // The Time Stats card is server-rendered and this endpoint answers with
+        // JSON, so it can't know a decision changed unless we say so. Dispatched
+        // last, once the status value and input hold the saved state.
+        this.dispatch("saved", { prefix: "devlog-review" });
       } else {
         console.error(
           `DevlogReview #${this.idValue}: Update failed`,

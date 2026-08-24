@@ -145,18 +145,39 @@ module Certification
     # certified on an earlier ship. Fall back the same way #return_to_ship_cert
     # does — match the ship event first, then the project's most recent approved
     # cert — so reship reviews still point somewhere real.
+    # Memoised on `defined?` rather than `||=` so a project with no cert at all
+    # doesn't re-run both fallback queries on every call.
     def effective_ship_cert
-      return ship_cert if ship_cert
+      return @effective_ship_cert if defined?(@effective_ship_cert)
 
-      project_certs = Certification::Ship.where(project_id: project_id)
-      project_certs.find_by(post_ship_event_id: post_ship_event_id) ||
-        project_certs.approved.order(Arel.sql("decided_at DESC NULLS LAST"), id: :desc).first
+      @effective_ship_cert = ship_cert || begin
+        project_certs = Certification::Ship.where(project_id: project_id)
+        project_certs.find_by(post_ship_event_id: post_ship_event_id) ||
+          project_certs.approved.order(Arel.sql("decided_at DESC NULLS LAST"), id: :desc).first
+      end
+    end
+
+    # True when #effective_ship_cert resolved to a cert minted for a different
+    # (earlier) ship event than this review's — the reviewer is looking at the
+    # previous ship's proof video, not one recorded for this ship.
+    #
+    # Keyed on post_ship_event_id rather than a null ship_cert_id because the
+    # middle fallback can resolve a cert belonging to *this* review's own ship
+    # event, which must not be labelled as coming from an earlier ship.
+    def ship_cert_from_earlier_ship?
+      cert = effective_ship_cert
+      cert.present? && cert.post_ship_event_id != post_ship_event_id
     end
 
     # Per-reviewer target for completed devlog reviews: a daily rate that
     # reviewers are expected to average across the review week, rather than hit
     # every single day. Drives the pace widget on the review queue.
     DEVLOG_REVIEW_GOAL_PER_DAY = 30
+
+    # Length of a review week, and the devlog total a reviewer has to reach
+    # across it to take their week's payout in full rather than halved.
+    REVIEW_WEEK_DAYS = 7
+    WEEKLY_DEVLOG_GOAL = DEVLOG_REVIEW_GOAL_PER_DAY * REVIEW_WEEK_DAYS
 
     # Rolling window the reviewer leaderboard ranks on. Deliberately independent
     # of the review week: it's always this full span, so a reviewer's standing
@@ -247,6 +268,59 @@ module Certification
         # crossed into a tier starts near empty rather than three-quarters full.
         percent: ((count - floor) / (threshold - floor).to_f * 100).clamp(0, 100).round
       }
+    end
+
+    # Stardust a reviewer is on track to earn from the current review week: the
+    # devlogs their pace so far projects across the whole week, priced at the
+    # DEVLOG_STARDUST_TIERS rates.
+    #
+    # The week only pays in full once that projection reaches
+    # WEEKLY_DEVLOG_GOAL; short of it the week pays half. Reaching the weekly
+    # goal on a projection is the same bar as clearing the daily goal on average
+    # — round(reviewed * REVIEW_WEEK_DAYS / day_number) >= WEEKLY_DEVLOG_GOAL
+    # holds for exactly the counts where `needed_today` is zero — so `locked_in`
+    # reads that flag rather than re-testing the projection. The panel can then
+    # never call a reviewer on pace and halve their week in the same breath.
+    #
+    # Tier rates only: BONUS_WINDOWS stardust is keyed to each review's own
+    # reviewed_at in SQL, so there are no per-devlog timestamps to price a
+    # projection against. Exact while no bonus window overlaps the review week,
+    # and understates the week if one is added.
+    # `goal_payout` is what a full week pays from the same starting point, for the
+    # reviewer who hasn't started theirs yet and so has no pace to extrapolate.
+    #   => { projected_devlogs:, locked_in:, full:, payout:, goal_payout:,
+    #        goal_payout_halved: }
+    def self.weekly_payout_projection(lifetime_devlogs:, pace:)
+      projected = (pace[:daily_average] * REVIEW_WEEK_DAYS).round
+
+      # Price both figures on top of what the reviewer banked before this week, so
+      # a week that crosses a tier boundary pays each part at its own rate.
+      banked      = lifetime_devlogs - pace[:reviewed]
+      full        = stardust_for_devlogs_after(banked, projected)
+      goal_payout = stardust_for_devlogs_after(banked, WEEKLY_DEVLOG_GOAL)
+
+      locked_in = pace[:needed_today].zero?
+
+      {
+        projected_devlogs: projected,
+        locked_in: locked_in,
+        full: full,
+        payout: locked_in ? full : halve_payout(full),
+        goal_payout: goal_payout,
+        goal_payout_halved: halve_payout(goal_payout)
+      }
+    end
+
+    # Stardust the next `count` devlogs pay a reviewer who has already banked
+    # `banked` of them. Both tier lookups round internally, so the difference is
+    # rounded too rather than passing on the float noise of subtracting them.
+    def self.stardust_for_devlogs_after(banked, count)
+      (stardust_for_devlog_count(banked + count) - stardust_for_devlog_count(banked)).round(2)
+    end
+
+    # What a week pays once its devlog total falls short of WEEKLY_DEVLOG_GOAL.
+    def self.halve_payout(amount)
+      (amount / 2.0).round(2)
     end
 
     # Devlog-review leaderboard for the trailing LEADERBOARD_WINDOW. A devlog
@@ -346,7 +420,7 @@ module Certification
       local     = now.in_time_zone(PROGRAM_ZONE)
       day_start = local.hour < REVIEW_WEEK_START_HOUR ? local.to_date - 1 : local.to_date
 
-      (day_start - review_week_start(now).to_date).to_i.clamp(0, 6) + 1
+      (day_start - review_week_start(now).to_date).to_i.clamp(0, REVIEW_WEEK_DAYS - 1) + 1
     end
 
     # A reviewer's pace against the daily goal for the current review week.
@@ -507,7 +581,8 @@ module Certification
         share_of_week: crew_weekly.zero? ? 0.0 : (my_weekly / crew_weekly.to_f * 100),
         rank: ranking.index(reviewer_id)&.succ,
         crew_size: ranking.size,
-        next_tier: next_stardust_tier(lifetime_devlogs)
+        next_tier: next_stardust_tier(lifetime_devlogs),
+        weekly_payout: weekly_payout_projection(lifetime_devlogs: lifetime_devlogs, pace: pace)
       }
     end
 
@@ -550,7 +625,7 @@ module Certification
       unified_record_id = record&.[]("Automation - YSWS Record ID").presence
 
       update_column(:in_unified_db, unified_record_id) if unified_record_id.present? && in_unified_db != unified_record_id
-    rescue Faraday::Error => e
+    rescue Faraday::Error, Norairrecord::RecordNotFoundError => e
       Rails.logger.warn "[Certification::Ysws] Could not check unified DB status for ##{id}: #{e.message}"
     end
   end

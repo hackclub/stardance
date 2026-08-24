@@ -116,11 +116,17 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
     devlog_minutes = @all_devlog_reviews.map(&:original_minutes).compact
 
+    deducted_minutes = @all_devlog_reviews.sum(&:deducted_minutes)
+
     @stats = {
       total_minutes: devlog_minutes.sum,
       avg_minutes: devlog_minutes.any? ? (devlog_minutes.sum.to_f / devlog_minutes.count) : 0,
       max_minutes: devlog_minutes.max || 0,
-      one_hour_plus_count: devlog_minutes.count { |m| m >= 60 }
+      deducted_minutes: deducted_minutes,
+      # Prior reviews render read-only and can't change on this page, so the
+      # live recompute treats their share as a constant and only re-sums the
+      # editable cards.
+      frozen_deducted_minutes: deducted_minutes - @review.devlog_reviews.sum(&:deducted_minutes)
     }
 
     @repo_info = helpers.parse_repo_info(@review.project.repo_url)
@@ -279,10 +285,15 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
   end
 
   # Returns { devlog_id => { since: iso8601, before: iso8601 } } for every
-  # devlog post on this project, using the same window logic as the chart:
-  #   first devlog  → [review_start .. devlog.created_at]
-  #   middle devlog → [prev.created_at .. devlog.created_at]
-  #   last devlog   → [devlog.created_at .. ship_time]
+  # devlog post on this project. Each devlog's window is its own calendar day
+  # (clamped to the review window), not the interval since the previous post —
+  # devlogs are logged retrospectively, so commits from a work session can
+  # predate an earlier devlog's post time and would otherwise never show up
+  # under the devlog they belong to. Devlogs posted the same day will show the
+  # same day's commits on both cards, which is fine — reviewers judge each card
+  # independently. The last devlog's window still extends all the way to
+  # ship_time (not just its own day) so commits made after the last devlog but
+  # before shipping aren't lost.
   def devlog_windows_for_review(review)
     project = review.project
 
@@ -297,13 +308,14 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     all_posts = project.posts
       .where(postable_type: "Post::Devlog")
       .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND post_devlogs.deleted_at IS NULL")
-      .order("posts.created_at ASC")
+      .order("posts.created_at ASC").to_a
 
     last_idx = all_posts.size - 1
 
     all_posts.each_with_index.with_object({}) do |(post, idx), windows|
-      since  = idx == 0         ? review_start               : all_posts[idx - 1].created_at
-      before = idx == last_idx  ? ship_time                  : post.created_at
+      day    = post.created_at.in_time_zone.all_day
+      since  = [ day.begin, review_start ].max
+      before = idx == last_idx ? ship_time : [ day.end, ship_time ].min
       windows[post.postable_id] = { since: since.iso8601, before: before.iso8601 }
     end
   end
@@ -398,7 +410,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
   end
 
   def resync
-    @review = ::Certification::Ysws.find(params[:id])
+    @review  = ::Certification::Ysws.find(params[:id])
     authorize @review
 
     unless @review.reviewed_at?

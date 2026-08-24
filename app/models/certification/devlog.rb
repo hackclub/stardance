@@ -91,5 +91,17 @@ module Certification
     def display_minutes
       reviewed? ? approved_minutes : original_minutes
     end
+
+    # Minutes cut from the maker's claim on this devlog. Nothing is deducted
+    # until a decision is made, and the figure is clamped because the approved
+    # minutes field accepts an increase — a negative deduction is a lie.
+    #
+    # Distinct from Certification::Integrity#deduction_minutes, which is the
+    # fraud-department penalty on a whole review; this is the reviewer's trim.
+    def deducted_minutes
+      return 0 unless reviewed?
+
+      [ (original_minutes || 0) - approved_minutes.to_i, 0 ].max
+    end
   end
 end

@@ -121,6 +121,12 @@ application.register(
   Certification__Ysws__ReviewSidebarController,
 );
 
+import Certification__Ysws__ReviewTotalsController from "./certification/ysws/review_totals_controller";
+application.register(
+  "certification--ysws--review-totals",
+  Certification__Ysws__ReviewTotalsController,
+);
+
 import Certification__Ysws__ReviewerChartController from "./certification/ysws/reviewer_chart_controller";
 application.register(
   "certification--ysws--reviewer-chart",
