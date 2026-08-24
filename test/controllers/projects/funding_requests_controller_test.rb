@@ -3,6 +3,7 @@ require "test_helper"
 class Projects::FundingRequestsControllerTest < ActionDispatch::IntegrationTest
   setup do
     Flipper.enable(:hardware_flow)
+    Flipper.enable(:hardware_action_items)
 
     @owner = create_user(slack_id: "U_FRC_OWNER", display_name: "frc-owner", verified: true)
     @project = Project.create!(title: "Funding bot")
@@ -13,7 +14,10 @@ class Projects::FundingRequestsControllerTest < ActionDispatch::IntegrationTest
     sign_in @owner
   end
 
-  teardown { Flipper.disable(:hardware_flow) }
+  teardown do
+    Flipper.disable(:hardware_flow)
+    Flipper.disable(:hardware_action_items)
+  end
 
   # Vote debt is the price of shipping (Post::ShipEvent::VOTE_COST_PER_SHIP).
   # Asking for funding is not shipping - the builder hasn't produced anything for

@@ -54,7 +54,7 @@
       <div class="ship-decision-card__feedback-body">
         <%# Action items are a hardware-only affordance; software feedback stays
             plain prose, bullets and all. %>
-        <% if project.hardware? %>
+        <% if action_items_enabled? && project.hardware? %>
           <%= render "projects/review_feedback", review: decision %>
         <% else %>
           <%= simple_format(decision.feedback, {}, sanitize: true) %>
@@ -79,7 +79,7 @@
   <% if returned %>
     <% if is_member || current_user&.can_review? %>
       <% recert_modal_id = local_assigns[:recert_modal_id] %>
-      <% if is_member && decision.gates_resubmission? && recert_modal_id.present? %>
+      <% if action_items_enabled? && is_member && decision.gates_resubmission? && recert_modal_id.present? %>
         <button type="button"
                 class="recert-modal__btn recert-modal__btn--primary"
                 onclick="document.getElementById(<%= recert_modal_id.to_json %>).showModal()">

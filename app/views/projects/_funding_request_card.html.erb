@@ -103,7 +103,11 @@
   %>
   <%= tag.div class: message_class, onclick: open_modal_js do %>
     <% if show_feedback %>
-      <%= render "projects/review_feedback", review: funding_request %>
+      <% if action_items_enabled? %>
+        <%= render "projects/review_feedback", review: funding_request %>
+      <% else %>
+        <%= simple_format(funding_request.feedback, {}, sanitize: true) %>
+      <% end %>
       <%= render "admin/certification/funding_requests/feedback_images", funding_request: funding_request %>
     <% else %>
       <p><%= message %></p>

@@ -2,6 +2,8 @@ require "test_helper"
 
 class Projects::RecertificationsControllerTest < ActionDispatch::IntegrationTest
   setup do
+    Flipper.enable(:hardware_action_items)
+
     @owner = create_user(slack_id: "U_REC_OWNER", display_name: "rec-owner", verified: true)
     # The action-item gate is hardware-only, so the gated tests below need a
     # hardware project — as the "Returned build" name always intended.
@@ -11,6 +13,8 @@ class Projects::RecertificationsControllerTest < ActionDispatch::IntegrationTest
 
     sign_in @owner
   end
+
+  teardown { Flipper.disable(:hardware_action_items) }
 
   test "a recert that ticks nothing is refused" do
     returned_review(feedback: "nearly there\n- photograph the solder joints")

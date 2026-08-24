@@ -39,6 +39,7 @@ Rails.application.config.after_initialize do
         feed_seen_mixer
         week_1_release
         hardware_flow
+        hardware_action_items
         public_hardware_reviews
         ship_event_payouts
         payout_recommendations

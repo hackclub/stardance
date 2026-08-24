@@ -1,5 +1,5 @@
 <% recert_review = project.latest_ship_review %>
-<% gated = is_member && recert_review&.returned? && recert_review.gates_resubmission? %>
+<% gated = action_items_enabled? && is_member && recert_review&.returned? && recert_review.gates_resubmission? %>
 <dialog id="recert-modal-<%= project.id %>"
         class="recert-modal"
         data-controller="modal"

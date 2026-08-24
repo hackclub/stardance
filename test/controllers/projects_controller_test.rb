@@ -332,6 +332,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
 
   test "hardware ship feedback renders reviewer action items as a checklist" do
     Flipper.enable(:week_1_release)
+    Flipper.enable(:hardware_action_items)
     @project.update!(hardware_stage: "build", ship_status: "submitted")
     @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- add a BOM")
     sign_in @owner

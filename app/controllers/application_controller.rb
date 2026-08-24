@@ -98,6 +98,16 @@ class ApplicationController < ActionController::Base
     impersonating? ? real_user : current_user
   end
 
+  # Gates the hardware "action items" checklist: reviewers turning a returned
+  # review's "- " bullets into a checklist a builder must tick before resubmitting.
+  # Memoized per request since several review cards and the resubmission gate all
+  # ask, and Flipper memoization is disabled app-wide.
+  def action_items_enabled?
+    return @action_items_enabled if defined?(@action_items_enabled)
+    @action_items_enabled = Flipper.enabled?(:hardware_action_items, current_user)
+  end
+  helper_method :action_items_enabled?
+
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
   private

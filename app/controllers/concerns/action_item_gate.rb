@@ -11,6 +11,7 @@ module ActionItemGate
   private
 
   def action_items_block_resubmission?(review)
+    return false unless action_items_enabled?
     return false unless review&.returned?
     # A reviewer acting on a builder's behalf isn't the person being asked to
     # confirm the work, so the checklist isn't theirs to tick.

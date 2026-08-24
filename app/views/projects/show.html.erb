@@ -1203,7 +1203,7 @@
             data-controller="modal"
             aria-label="Request project funding">
       <% returned_design = @project.latest_funding_request %>
-      <% design_gated = returned_design&.returned? && returned_design.gates_resubmission? %>
+      <% design_gated = action_items_enabled? && returned_design&.returned? && returned_design.gates_resubmission? %>
       <% if @project.awards_design_kit? %>
       <%= form_with url: project_funding_request_path(@project),
                     method: :post,
