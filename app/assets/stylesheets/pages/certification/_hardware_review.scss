@@ -577,3 +577,143 @@
     color: var(--color-brand-mint);
   }
 }
+
+// Undo control for the newest decided review, and its confirm dialog. The
+// reversal is destructive (real grant money), so the trigger and confirm are
+// salmon per docs/branding.md §4, and the ledger colour-codes each outcome.
+.review-undo {
+  margin-top: var(--space-s);
+
+  &__dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(560px, calc(100vw - 48px));
+    max-height: fit-content;
+    padding: 0;
+    border: none;
+    background: transparent;
+    overflow: visible;
+
+    &::backdrop {
+      background: rgba(8, 6, 30, 0.75);
+      backdrop-filter: blur(4px);
+    }
+  }
+
+  &__card {
+    position: relative;
+    display: grid;
+    gap: var(--space-m);
+    padding: var(--space-xl);
+    background: var(--color-set-2-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 24px 60px var(--color-shadow-deep);
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xxs);
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    svg {
+      width: 1.15rem;
+      height: 1.15rem;
+    }
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__title {
+    margin: 0;
+    padding-right: var(--space-l);
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-space-text);
+  }
+
+  &__lede {
+    margin: 0;
+    font-size: var(--font-size-m);
+    color: var(--color-space-text-muted);
+  }
+
+  &__group {
+    display: grid;
+    gap: var(--space-xs);
+
+    &--block {
+      padding: var(--space-s) var(--space-m);
+      border: 1px solid var(--color-brand-salmon);
+      border-radius: var(--profile-radius);
+      background: var(--color-brand-salmon-soft);
+    }
+  }
+
+  &__group-label {
+    margin: 0;
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    color: var(--color-space-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  // Plain icon + text rows — no cards or left-stripe accents (that pattern reads
+  // as AI-slop and doesn't match the rest of the program). Colour lives in the
+  // small leading icon only.
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    font-size: var(--font-size-m);
+    color: var(--color-space-text);
+  }
+
+  &__icon {
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.15rem;
+    color: var(--color-space-text-muted);
+  }
+
+  &__row--reverse &__icon {
+    color: var(--color-brand-mint);
+  }
+
+  &__row--block &__icon {
+    color: var(--color-brand-salmon);
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-s);
+    margin-top: var(--space-s);
+  }
+
+  &__confirm-form {
+    display: inline;
+  }
+}

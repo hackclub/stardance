@@ -1,4 +1,6 @@
 class Admin::Certification::FundingRequestsController < Admin::Certification::ApplicationController
+  include HardwareReviewUndoable
+
   before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_funding_request
   before_action :set_body_class
@@ -55,6 +57,9 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
   def set_funding_request
     @funding_request = ::Certification::FundingRequest.find(params[:id])
   end
+
+  # Names the record HardwareReviewUndoable#undo reverses.
+  def review_for_undo = @funding_request
 
   # Both fetches below fan out to live HTTP (per Hackatime key / Lookout session)
   # on every render, including the re-render after a failed verdict submit. The

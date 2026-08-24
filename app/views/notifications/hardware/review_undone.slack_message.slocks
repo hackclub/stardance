@@ -1,0 +1,11 @@
+header ":arrows_counterclockwise: A review decision was reversed"
+
+if project_url.present?
+  section "The #{review_type} decision on *<#{project_url}|#{project_title}>* was undone by a reviewer. It's back in the queue for another look - no action is needed from you right now.", markdown: true
+else
+  section "The #{review_type} decision on *#{project_title}* was undone by a reviewer. It's back in the queue for another look - no action is needed from you right now.", markdown: true
+end
+
+actions [
+  button("View project", "view_project", url: project_url)
+] if project_url.present?

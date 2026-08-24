@@ -104,7 +104,7 @@ module Shop::HCBGrantFulfillable
   end
 
   def topupable?(grant_rec)
-    HCBService.show_card_grant(hashid: grant_rec.hcb_grant_hashid)["status"] != "canceled"
+    !grant_rec.canceled?
   rescue StandardError => e
     Rails.logger.error "Error checking grant status: #{e.message}"
     false

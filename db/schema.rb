@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_25_002911) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -193,6 +193,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_002911) do
     t.boolean "prizes_waived", default: false, null: false
     t.bigint "project_id", null: false
     t.integer "requested_amount_cents", null: false
+    t.datetime "reversed_at"
     t.bigint "reviewer_id"
     t.integer "stardust_earned"
     t.integer "status", default: 0, null: false
@@ -261,6 +262,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_002911) do
     t.string "proof_video_url"
     t.text "recert_reason"
     t.bigint "returned_by_id"
+    t.datetime "reversed_at"
     t.bigint "reviewer_id"
     t.float "stardust_earned"
     t.integer "status", default: 0, null: false

@@ -27,6 +27,7 @@ module Notifications
       Notifications::Hardware::FundingRequestReviewed
       Notifications::Hardware::BuildReviewed
       Notifications::Hardware::ReviewQueueMismatch
+      Notifications::Hardware::ReviewUndone
       Notifications::Workshops::StartingSoon
     ].freeze
 

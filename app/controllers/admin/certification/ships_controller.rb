@@ -1,7 +1,9 @@
 class Admin::Certification::ShipsController < Admin::Certification::ApplicationController
+  include HardwareReviewUndoable
+
   before_action :release_other_claims, only: [ :next ]
   before_action :set_ship, only: [ :show, :update, :set_project_type, :set_bonus_stardust, :report_fraud,
-                                   :flag_queue_mismatch ]
+                                   :flag_queue_mismatch, :undo ]
   before_action :set_submitter_context, only: [ :show, :update ]
   before_action :set_body_class, only: [ :index, :show, :update, :logs ]
 
@@ -196,6 +198,9 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   def set_ship
     @ship = ::Certification::Ship.find(params[:id])
   end
+
+  # Names the record HardwareReviewUndoable#undo reverses.
+  def review_for_undo = @ship
 
   def set_milestone_context
     @reviews_today = ::Certification::Ship.reviewed_today(current_user)

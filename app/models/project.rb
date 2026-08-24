@@ -330,13 +330,18 @@ class Project < ApplicationRecord
   # correction - see Certification::Reviewable#confirm_queue_conversion!.
   attr_accessor :converting_review_queue
 
+  # Set when a reviewer undoes a decided hardware review and the funding approval
+  # that moved the project design -> build is being reversed. The lock has to
+  # open for the rewind - see Certification::ReviewUndoer.
+  attr_accessor :reverting_hardware_review
+
   # Once a project has asked for funding or shipped, its stage decides real
   # money: hardware pays a flat rate and skips the payout review window, so an
   # owner must not be able to flip an already-shipped software project to
   # hardware and change how it gets paid.
   def hardware_stage_locked_once_committed
     return unless hardware_stage_changed?
-    return if advancing_via_funding_approval || converting_review_queue
+    return if advancing_via_funding_approval || converting_review_queue || reverting_hardware_review
 
     if has_any_funding_request?
       errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")

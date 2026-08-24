@@ -15,6 +15,11 @@ class Admin::Certification::FundingRequestPolicy < ApplicationPolicy
   # Same bar as a verdict: only the reviewer holding the claim may re-route it.
   def flag_queue_mismatch? = update?
 
+  # Reversing a decided review is an admin-only correction: it rewinds a verdict
+  # and can cancel a live HCB grant, so it sits above the ordinary reviewer bar.
+  # Still never on your own project.
+  def undo? = user&.admin? && not_own_project?
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless user&.can_review?

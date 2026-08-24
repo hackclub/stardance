@@ -21,7 +21,7 @@ module HardwareReviewQueue
     before_action :release_other_claims, only: [ :next ]
     helper_method :hardware_review_path, :hardware_queue_path, :hardware_next_path,
                   :hardware_skip_path, :hardware_queue_title, :hardware_back_link,
-                  :hardware_flag_for_fraud_path
+                  :hardware_flag_for_fraud_path, :undo_review_path
   end
 
   def design
@@ -215,17 +215,52 @@ module HardwareReviewQueue
       when ::Certification::Ship then :ship
       end
     @past_reviews = past_reviews
+    load_undo_context
     @lapse_timelapses = lapse_timelapses_for_review
     @lookout_recordings = lookout_recordings_for_review
   end
 
+  # Only the newest decided review is reversible, so the undo affordance and its
+  # preflight ledger are computed for @past_reviews.first alone. The preflight
+  # can make an HCB round trip (to check a grant), so it's skipped entirely for
+  # anyone not allowed to undo.
+  def load_undo_context
+    latest_decided = @past_reviews.first
+    return unless latest_decided&.decided?
+    return unless can_undo_review?(latest_decided)
+
+    @undo_review = latest_decided
+    @undo_preflight = ::Certification::ReviewUndoer.new(latest_decided).preflight
+  end
+
+  def can_undo_review?(review)
+    undo_policy_for(review).undo?
+  end
+
+  def undo_policy_for(review)
+    klass = review.is_a?(::Certification::FundingRequest) ?
+      Admin::Certification::FundingRequestPolicy : Admin::Certification::ShipPolicy
+    klass.new(current_user, review)
+  end
+
+  def undo_review_path(review)
+    if review.is_a?(::Certification::FundingRequest)
+      undo_admin_certification_funding_request_path(review)
+    else
+      undo_admin_certification_ship_path(review)
+    end
+  end
+
   # Every decided funding request and ship for this project, newest first. The
-  # active (pending) review is left out - it's the thing being decided.
+  # active (pending) review is left out - it's the thing being decided - except a
+  # reversed one: a funding undo sends the record back to pending, so it would be
+  # the active review, yet we still want it in the history with a "Reversed" badge
+  # rather than silently vanishing.
   def past_reviews
     reviews = @project.certification_funding_requests.includes(:reviewer).to_a +
               @project.ship_reviews.includes(:reviewer).to_a
     reviews
-      .reject { |review| review.pending? || review == @active_review }
+      .reject { |review| (review.pending? || review == @active_review) && review.reversed_at.blank? }
       .sort_by(&:created_at)
       .reverse
   end

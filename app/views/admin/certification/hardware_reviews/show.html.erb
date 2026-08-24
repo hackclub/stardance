@@ -90,13 +90,21 @@
                 <li class="hardware-review__history-item">
                   <div class="hardware-review__history-head">
                     <span class="hardware-review__timeline-label"><%= is_funding ? "Design funding" : "Build certification" %></span>
-                    <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
+                    <%# A reversed review keeps its history slot but wears a purple
+                        "Reversed" badge instead of its (now rewound) verdict. %>
+                    <% if review.reversed_at.present? %>
+                      <span class="status-pill status-pill--reversed">Reversed</span>
+                    <% else %>
+                      <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
+                    <% end %>
                     <span class="hardware-review__timeline-meta">
                       <%# A routing correction has no verdict to report, so it says
-                          what happened to it instead of an amount or a kit. %>
-                      <% if review.misfiled? %>
+                          what happened to it instead of an amount or a kit. A
+                          reversed review skips that wording and shows what the
+                          rewound verdict had been. %>
+                      <% if review.misfiled? && review.reversed_at.blank? %>
                         Wrong queue, waiting on the builder
-                      <% elsif review.withdrawn? %>
+                      <% elsif review.withdrawn? && review.reversed_at.blank? %>
                         Withdrawn, wrong queue
                       <% elsif is_funding %>
                         <% if review.awards_design_kit? %>
@@ -110,7 +118,9 @@
                         <% end %>
                       <% end %>
                     </span>
-                    <% if review.decided_at %>
+                    <% if review.reversed_at %>
+                      <span class="hardware-review__timeline-meta">reversed <%= l(review.reversed_at.to_date, format: :short) %></span>
+                    <% elsif review.decided_at %>
                       <span class="hardware-review__timeline-meta"><%= l(review.decided_at.to_date, format: :short) %></span>
                     <% end %>
                     <% if review.reviewer %>
@@ -127,6 +137,12 @@
                     <p class="hardware-review__history-feedback hardware-review__history-feedback--internal">
                       Reviewer note: <%= review.internal_reason %>
                     </p>
+                  <% end %>
+                  <%# Only the newest decided review is reversible; the controller
+                      sets @undo_review to it and @undo_preflight to its ledger. %>
+                  <% if @undo_review && review == @undo_review && @undo_preflight %>
+                    <%= render "admin/certification/hardware_reviews/undo_review",
+                          review: review, preflight: @undo_preflight %>
                   <% end %>
                 </li>
               <% end %>

@@ -870,6 +870,7 @@ Rails.application.routes.draw do
         patch :set_bonus_stardust, on: :member
         post :report_fraud, on: :member
         post :flag_queue_mismatch, on: :member
+        post :undo, on: :member
         scope module: :ships do
           resource :claim, only: [ :create, :destroy ]
         end
@@ -877,6 +878,7 @@ Rails.application.routes.draw do
 
       resources :funding_requests, path: "funding", only: [ :update ] do
         post :flag_queue_mismatch, on: :member
+        post :undo, on: :member
         scope module: :funding_requests do
           resource :claim, only: [ :create, :destroy ]
         end

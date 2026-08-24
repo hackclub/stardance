@@ -1,0 +1,77 @@
+<%# The undo control for the newest decided review, plus its confirm modal.
+    The modal shows the preflight ledger so a reviewer sees exactly what the
+    reversal does before committing to it.
+    Locals: review (required), preflight (required, a ReviewUndoer::Outcome). %>
+<%
+  dialog_id = "undo-review-#{review.model_name.param_key}-#{review.id}"
+  # Every concrete reversal, grant cancellation included (it's a :reverse effect),
+  # under one "Things this will do" heading.
+  things = preflight.reversals
+  blockers = preflight.blockers
+%>
+
+<div class="review-undo" data-controller="modal">
+  <%# Admin-only correction, so it carries the orange dashed admin-tool marker. %>
+  <%= admin_tool do %>
+    <button type="button" class="action-btn action-btn--small action-btn--destructive review-undo__trigger"
+            data-action="click->modal#open">
+      Undo review
+    </button>
+  <% end %>
+
+  <dialog data-modal-target="dialog" class="review-undo__dialog"
+          aria-labelledby="<%= dialog_id %>-title">
+    <div class="review-undo__card">
+      <button type="button" class="review-undo__close" data-action="click->modal#close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <h2 class="review-undo__title" id="<%= dialog_id %>-title">Undo this review?</h2>
+      <p class="review-undo__lede">This rewinds the latest verdict. Here's exactly what happens.</p>
+
+      <% if blockers.any? %>
+        <div class="review-undo__group review-undo__group--block" role="alert">
+          <p class="review-undo__group-label">Can't be undone yet</p>
+          <ul class="review-undo__list">
+            <% blockers.each do |effect| %>
+              <li class="review-undo__row review-undo__row--block">
+                <svg class="review-undo__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+                <span><%= effect.detail %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <% if things.any? %>
+        <div class="review-undo__group">
+          <p class="review-undo__group-label">Things this will do</p>
+          <ul class="review-undo__list">
+            <% things.each do |effect| %>
+              <li class="review-undo__row review-undo__row--reverse">
+                <svg class="review-undo__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><%= effect.detail %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="review-undo__actions">
+        <button type="button" class="action-btn action-btn--small action-btn--secondary"
+                data-action="click->modal#close">Cancel</button>
+        <% if preflight.undoable? %>
+          <%= button_to "Undo review", undo_review_path(review), method: :post,
+                class: "action-btn action-btn--small action-btn--destructive",
+                form_class: "review-undo__confirm-form",
+                data: { turbo: false } %>
+        <% else %>
+          <button type="button" class="action-btn action-btn--small action-btn--destructive" disabled
+                  aria-disabled="true">Undo review</button>
+        <% end %>
+      </div>
+    </div>
+  </dialog>
+</div>

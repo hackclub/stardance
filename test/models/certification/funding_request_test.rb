@@ -15,6 +15,7 @@
 #  lock_version              :integer          default(0), not null
 #  prizes_waived             :boolean          default(FALSE), not null
 #  requested_amount_cents    :integer          not null
+#  reversed_at               :datetime
 #  stardust_earned           :integer
 #  status                    :integer          default(0), not null
 #  created_at                :datetime         not null

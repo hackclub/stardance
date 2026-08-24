@@ -12,6 +12,7 @@
 #  lock_version              :integer          default(0), not null
 #  proof_video_url           :string
 #  recert_reason             :text
+#  reversed_at               :datetime
 #  stardust_earned           :float
 #  status                    :integer          default(0), not null
 #  created_at                :datetime         not null
@@ -506,6 +507,8 @@ module Certification
 
     def stamp_decided_at
       self.decided_at = Time.current
+      # A fresh verdict clears any prior reversal marker.
+      self.reversed_at = nil
     end
 
     def apply_verdict_to_project!

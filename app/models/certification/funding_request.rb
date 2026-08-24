@@ -15,6 +15,7 @@
 #  lock_version              :integer          default(0), not null
 #  prizes_waived             :boolean          default(FALSE), not null
 #  requested_amount_cents    :integer          not null
+#  reversed_at               :datetime
 #  stardust_earned           :integer
 #  status                    :integer          default(0), not null
 #  created_at                :datetime         not null
@@ -489,6 +490,8 @@ module Certification
 
     def stamp_decided_at
       self.decided_at = Time.current
+      # A fresh verdict clears any prior reversal marker.
+      self.reversed_at = nil
     end
 
     # On a decision, advance the project. approved_amount_cents is defaulted in a
