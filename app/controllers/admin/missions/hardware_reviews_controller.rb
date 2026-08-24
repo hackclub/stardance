@@ -10,7 +10,7 @@ module Admin
 
       skip_before_action :authorize_mission_management
       before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
-      before_action :set_project, only: [ :show ]
+      before_action :set_project, only: [ :show, :flag_for_fraud ]
 
       def index
         authorize_hardware_queue
@@ -35,6 +35,10 @@ module Admin
 
       def hardware_review_path(project)
         admin_mission_hardware_review_path(@mission.slug, project)
+      end
+
+      def hardware_flag_for_fraud_path(project)
+        flag_for_fraud_admin_mission_hardware_review_path(@mission.slug, project)
       end
 
       def hardware_queue_path(stage)

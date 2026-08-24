@@ -328,6 +328,120 @@
     font-size: var(--font-size-s);
     resize: vertical;
   }
+
+  // Fraud flag lives inside the review's secondary-actions card as a button;
+  // reporting notifies the fraud team but doesn't hide the project.
+  &__fraud-flagged {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__fraud-flagged-badge {
+    padding: 0.15rem 0.6rem;
+    font-weight: 700;
+    color: var(--color-brand-salmon);
+    background: var(--color-brand-salmon-soft);
+    border: 1px solid var(--color-brand-salmon);
+    border-radius: 999px;
+  }
+
+  &__fraud-modal {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(460px, calc(100vw - 48px));
+    max-height: fit-content;
+    padding: 0;
+    border: none;
+    background: transparent;
+    overflow: visible;
+
+    &::backdrop {
+      background: rgba(8, 6, 30, 0.75);
+      backdrop-filter: blur(4px);
+    }
+  }
+
+  &__fraud-modal-card {
+    position: relative;
+    display: grid;
+    gap: var(--space-m);
+    padding: var(--space-xl);
+    background: var(--color-set-2-bg);
+    border: 1px solid var(--color-brand-salmon);
+    border-radius: var(--border-radius);
+    box-shadow: 0 24px 60px var(--color-shadow-deep);
+  }
+
+  &__fraud-modal-close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    appearance: none;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__fraud-modal-title {
+    margin: 0;
+    padding-right: var(--space-l);
+    font-size: var(--font-size-l);
+    color: var(--color-space-text);
+  }
+
+  &__fraud-modal-note {
+    margin: 0;
+    font-size: var(--font-size-s);
+    line-height: 1.4;
+    color: var(--color-space-text-muted);
+  }
+
+  &__fraud-form {
+    display: grid;
+    gap: var(--space-s);
+  }
+
+  &__fraud-form-input {
+    width: 100%;
+    padding: var(--space-s);
+    font-family: inherit;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+    background: var(--color-set-1-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: 8px;
+    resize: vertical;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-salmon);
+      outline-offset: 1px;
+    }
+  }
+
+  &__fraud-form-actions {
+    display: flex;
+    gap: var(--space-s);
+    justify-content: flex-end;
+  }
 }
 
 // Reviewer's own hardware numbers, shown in place on the queue rather than

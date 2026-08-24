@@ -1,0 +1,48 @@
+<%# Fraud flag control — a button that sits inside the review's secondary-actions
+    card (not its own panel). Reuses Project::Report's existing fraud machinery
+    (Slack notify + PaperTrail on create); the flagged state is derived from a
+    pending fraud report, not a column.
+    Locals:
+      project    (required) the project being reviewed
+      fraud_flag (required) the open fraud Project::Report, or nil %>
+<% if fraud_flag %>
+  <p class="hardware-review__fraud-flagged">
+    <span class="hardware-review__fraud-flagged-badge">Flagged for fraud review</span>
+    reported by <%= fraud_flag.reporter.display_name %> · pending
+  </p>
+<% else %>
+  <button type="button" class="action-btn action-btn--small action-btn--destructive"
+          onclick="document.getElementById('hardware-fraud-flag').showModal()">
+    Flag for fraud
+  </button>
+
+  <dialog id="hardware-fraud-flag" class="hardware-review__fraud-modal"
+          data-controller="modal" aria-labelledby="hardware-fraud-flag-title">
+    <div class="hardware-review__fraud-modal-card">
+      <button type="button" class="hardware-review__fraud-modal-close"
+              data-action="click->modal#close" aria-label="Close">&times;</button>
+      <h3 class="hardware-review__fraud-modal-title" id="hardware-fraud-flag-title">
+        Flag for fraud
+      </h3>
+      <p class="hardware-review__fraud-modal-note">
+        This notifies the fraud team and is recorded in the audit log. It does
+        not hide the project or change its review.
+      </p>
+      <%= form_with url: hardware_flag_for_fraud_path(project), method: :post,
+            class: "hardware-review__fraud-form" do |form| %>
+        <%= form.text_area :details, rows: 4, required: true,
+              minlength: ::Project::Report::DETAILS_MIN_LENGTH,
+              class: "hardware-review__fraud-form-input",
+              "aria-label": "Fraud details (at least #{::Project::Report::DETAILS_MIN_LENGTH} characters)",
+              placeholder: "What looks suspicious? (at least #{::Project::Report::DETAILS_MIN_LENGTH} characters)" %>
+        <div class="hardware-review__fraud-form-actions">
+          <button type="button" class="action-btn action-btn--small action-btn--secondary"
+                  data-action="click->modal#close">Cancel</button>
+          <%= form.submit "Flag for fraud",
+                class: "action-btn action-btn--small action-btn--destructive",
+                data: { disable_with: "Flagging…" } %>
+        </div>
+      <% end %>
+    </div>
+  </dialog>
+<% end %>

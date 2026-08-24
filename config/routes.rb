@@ -842,6 +842,7 @@ Rails.application.routes.draw do
           get :build
           get :next
         end
+        post :flag_for_fraud, on: :member
       end
     end
     get "mission_reviews", to: "missions/submissions#overview", as: :mission_reviews
@@ -891,6 +892,7 @@ Rails.application.routes.draw do
           get :build
           get :next
         end
+        post :flag_for_fraud, on: :member
       end
 
       resources :devlog_reviews, only: [ :update ]

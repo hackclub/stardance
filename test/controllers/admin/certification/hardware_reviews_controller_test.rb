@@ -258,6 +258,107 @@ class Admin::Certification::HardwareReviewsControllerTest < ActionDispatch::Inte
     assert_response :forbidden
   end
 
+  # --- Flag for fraud ---------------------------------------------------------
+
+  test "flagging a project for fraud creates a pending fraud report and notifies the fraud team" do
+    assert_difference -> { ::Project::Report.where(reason: "fraud").count }, 1 do
+      assert_enqueued_with(job: SendSlackDmJob) do
+        post flag_for_fraud_admin_certification_hardware_review_path(@design_project),
+             params: { details: "This looks like a resold kit rather than a real build." }
+      end
+    end
+
+    report = ::Project::Report.where(reason: "fraud").order(:created_at).last
+    assert_equal @design_project.id, report.project_id
+    assert_equal @reviewer.id, report.reporter_id
+    assert report.pending?
+    assert_redirected_to admin_certification_hardware_review_path(@design_project)
+  end
+
+  test "flagging without details is rejected — a reason is required" do
+    assert_no_difference -> { ::Project::Report.where(reason: "fraud").count } do
+      post flag_for_fraud_admin_certification_hardware_review_path(@design_project)
+    end
+
+    assert_redirected_to admin_certification_hardware_review_path(@design_project)
+  end
+
+  test "flagging with a too-short typed reason is rejected" do
+    assert_no_difference -> { ::Project::Report.where(reason: "fraud").count } do
+      post flag_for_fraud_admin_certification_hardware_review_path(@design_project),
+           params: { details: "too short" }
+    end
+
+    assert_redirected_to admin_certification_hardware_review_path(@design_project)
+  end
+
+  test "flagging the same project twice is idempotent on the unique index" do
+    post flag_for_fraud_admin_certification_hardware_review_path(@design_project),
+         params: { details: "First pass: the demo video looks staged and reused." }
+    assert_equal 1, ::Project::Report.where(reason: "fraud", project: @design_project).count
+
+    assert_no_difference -> { ::Project::Report.count } do
+      post flag_for_fraud_admin_certification_hardware_review_path(@design_project),
+           params: { details: "Second pass: same reviewer flags it again by mistake." }
+    end
+
+    assert_redirected_to admin_certification_hardware_review_path(@design_project)
+  end
+
+  test "a non-reviewer can't flag a project for fraud" do
+    sign_in @owner
+
+    assert_no_difference -> { ::Project::Report.count } do
+      post flag_for_fraud_admin_certification_hardware_review_path(@design_project),
+           params: { details: "A non-reviewer should never reach this action at all." }
+    end
+
+    assert_response :forbidden
+  end
+
+  test "the review page shows a flag-for-fraud button when the project is not flagged" do
+    ::Certification::FundingRequest.atomic_claim!(@funding.id, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select "form[action=?]", flag_for_fraud_admin_certification_hardware_review_path(@design_project)
+    assert_select "button", text: /Flag for fraud/
+    assert_select ".hardware-review__fraud-flagged", count: 0
+  end
+
+  test "the review page shows the flagged state while a pending fraud report exists" do
+    @design_project.reports.create!(
+      reporter: @reviewer, reason: "fraud", status: :pending,
+      details: "Looks like a resold kit, not a real build."
+    )
+    ::Certification::FundingRequest.atomic_claim!(@funding.id, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select ".hardware-review__fraud-flagged-badge", text: /Flagged for fraud review/
+    assert_select ".hardware-review__fraud-flagged", text: /#{@reviewer.display_name}/
+    # The button and its modal give way to the flagged state.
+    assert_select "form[action=?]", flag_for_fraud_admin_certification_hardware_review_path(@design_project), count: 0
+  end
+
+  test "the fraud-report status card is always shown in the details column" do
+    # No claim held: the status card lives in the details column, not the
+    # claim-gated sidebar, so it renders regardless of who holds the review.
+    get admin_certification_hardware_review_path(@design_project)
+    assert_response :success
+    assert_select ".hardware-review__fraud-status", text: /No fraud report on this project/
+
+    @design_project.reports.create!(
+      reporter: @reviewer, reason: "fraud", status: :pending,
+      details: "Looks like a resold kit, not a real build."
+    )
+    get admin_certification_hardware_review_path(@design_project)
+    assert_select ".hardware-review__fraud-status .hardware-review__fraud-flagged-badge",
+          text: /Flagged for fraud review/
+  end
+
   private
 
   # A second reviewer, to prove a released claim is actually offered onward.

@@ -198,6 +198,23 @@
             </div>
           <% end %>
         </details>
+
+        <%# Read-only fraud-report status — always visible in the details column
+            (unlike the flag control in the sidebar, which needs the claim), so
+            any reviewer can see at a glance whether this project is flagged. %>
+        <div class="ship-review__panel hardware-review__fraud-status">
+          <h2 class="ship-review__panel-title">Fraud report</h2>
+          <% if (fraud_report = @project.pending_fraud_report) %>
+            <p class="hardware-review__fraud-flagged">
+              <span class="hardware-review__fraud-flagged-badge">Flagged for fraud review</span>
+              reported by <%= fraud_report.reporter.display_name %> ·
+              <%= l(fraud_report.created_at.to_date, format: :short) %> · pending
+            </p>
+            <p class="ship-review__description"><%= fraud_report.details %></p>
+          <% else %>
+            <p class="ship-review__description">No fraud report on this project.</p>
+          <% end %>
+        </div>
       </section>
 
       <aside class="ship-review__sidebar hardware-review__sidebar">
@@ -278,6 +295,10 @@
                     class="action-btn action-btn--small action-btn--destructive">
               Unclaim review
             </button>
+
+            <%# Flag for fraud — a button in this same secondary-actions card. %>
+            <%= render "admin/certification/hardware_reviews/fraud_flag",
+                  project: @project, fraud_flag: @project.pending_fraud_report %>
           </div>
         <% end %>
 

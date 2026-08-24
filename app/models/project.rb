@@ -508,6 +508,12 @@ class Project < ApplicationRecord
     @_latest_funding_request = certification_funding_requests.order(created_at: :desc).first
   end
 
+  # The open fraud flag on this project, if any. The hardware review page derives
+  # its "flagged for fraud" state from this rather than a dedicated column.
+  def pending_fraud_report
+    reports.pending.where(reason: "fraud").order(created_at: :desc).first
+  end
+
   # Name of the Hackatime project this project's time is filed under (and which
   # Project::EnsureHackatimeProjectsJob seeds for hardware builders to pick in
   # Lapse): the project title, so timelapse time lands under the same Hackatime
