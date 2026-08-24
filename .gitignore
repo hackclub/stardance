@@ -47,7 +47,7 @@
 /config/credentials/production.key
 db/seeds/shop_items.csv
 # Ignore key files for decrypting credentials and more.
-/config/credentials/*.key
+/config/credentials/
 
 # Ignore files from JetBrains IDEs
 /.idea
