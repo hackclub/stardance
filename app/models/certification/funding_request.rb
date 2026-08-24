@@ -67,6 +67,46 @@ module Certification
 
     has_paper_trail
 
+    # Reviewers can attach annotated photos (wiring shots, schematics) to their
+    # written feedback, shown to the builder beside the feedback text. Images
+    # only, and always optional: mirrors HasPostAttachments' webp variants and
+    # content-type/size validations without its "at least one attachment" rule.
+    MAX_FEEDBACK_IMAGES = 6
+    FEEDBACK_IMAGE_CONTENT_TYPES = %w[
+      image/jpeg
+      image/png
+      image/webp
+      image/heic
+      image/heif
+      image/gif
+    ].freeze
+
+    has_many_attached :feedback_images do |attachable|
+      attachable.variant :large,
+                         resize_to_limit: [ 1600, 900 ],
+                         format: :webp,
+                         preprocessed: true,
+                         saver: { strip: true, quality: 75 }
+
+      attachable.variant :medium,
+                         resize_to_limit: [ 800, 800 ],
+                         format: :webp,
+                         preprocessed: false,
+                         saver: { strip: true, quality: 75 }
+
+      attachable.variant :thumb,
+                         resize_to_limit: [ 400, 400 ],
+                         format: :webp,
+                         preprocessed: false,
+                         saver: { strip: true, quality: 75 }
+    end
+
+    validates :feedback_images,
+              content_type: { in: FEEDBACK_IMAGE_CONTENT_TYPES, spoofing_protection: true },
+              size: { less_than: 15.megabytes, message: "is too large (max 15 MB)" },
+              processable_file: true
+    validate :feedback_images_within_limit
+
     # misfiled: a reviewer says this belongs in the build queue and the builder
     # hasn't answered yet. withdrawn: the builder agreed, so the request is done
     # with and the project moves on to the build stage. Neither is a verdict, so
@@ -393,6 +433,14 @@ module Certification
         errors.add(:base, "Verify your identity before requesting funding.")
       elsif !owner.ysws_eligible?
         errors.add(:base, "You're not eligible for YSWS prizes yet, so we can't fund this build. Check the Hack Club portal for details.")
+      end
+    end
+
+    def feedback_images_within_limit
+      return unless feedback_images.attached?
+
+      if feedback_images.size > MAX_FEEDBACK_IMAGES
+        errors.add(:feedback_images, "can't exceed #{MAX_FEEDBACK_IMAGES} images")
       end
     end
 

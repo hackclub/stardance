@@ -8,7 +8,7 @@
   <% end %>
 <% end %>
 
-<%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form" do |f| %>
+<%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form", multipart: true do |f| %>
 <% if local_assigns[:redirect_to_hardware] %>
   <%# Sends the verdict back to the combined hardware review page. %>
   <%= hidden_field_tag :redirect_to_hardware, funding_request.project_id %>
@@ -71,6 +71,33 @@
   <div class="review-form__field">
     <%= f.label :feedback, "Feedback for the user (visible to the project owner)" %>
     <%= f.text_area :feedback, rows: 6, maxlength: 10_000 %>
+  </div>
+
+  <div class="review-form__field review-form__images"
+       data-controller="review-feedback-images"
+       data-review-feedback-images-max-value="<%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %>">
+    <%= f.label :feedback_images, "Attach images (optional)" %>
+    <p class="review-form__hint">
+      Add annotated photos — wiring shots, schematics — to go with your feedback. Up to <%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %> images, shown to the builder.
+    </p>
+
+    <% if funding_request.feedback_images.any?(&:persisted?) %>
+      <p class="review-form__images-heading">Already attached</p>
+      <%= render "admin/certification/funding_requests/feedback_images", funding_request: funding_request %>
+    <% end %>
+
+    <label class="review-form__image-drop"
+           data-review-feedback-images-target="dropZone"
+           data-action="dragover->review-feedback-images#dragover dragleave->review-feedback-images#dragleave drop->review-feedback-images#drop">
+      <%= f.file_field :feedback_images,
+            multiple: true,
+            accept: Certification::FundingRequest::FEEDBACK_IMAGE_CONTENT_TYPES.join(","),
+            class: "review-form__image-input",
+            data: { review_feedback_images_target: "input", action: "change->review-feedback-images#select" } %>
+      <span class="review-form__image-drop-text">Drag images here, or click to choose</span>
+    </label>
+
+    <ul class="review-form__image-grid" data-review-feedback-images-target="grid" hidden></ul>
   </div>
 
   <div class="review-form__actions">

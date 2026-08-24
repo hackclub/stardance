@@ -9,3 +9,10 @@ section ":yay: brand new #{review_type} review!! #{emoji}
  *#{verdict}:* *<#{project_url}|#{project_title}>* by #{owner_mention}", markdown: true
 
 section "*feedback from #{reviewer_mention}:* #{feedback}", markdown: true if feedback.present?
+
+# Reviewer-attached feedback photos (funding reviews only), one image block each.
+if defined?(feedback_image_urls)
+  Array(feedback_image_urls).each do |feedback_image_url|
+    image(feedback_image_url, "Reviewer feedback photo")
+  end
+end

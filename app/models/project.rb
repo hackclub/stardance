@@ -514,6 +514,36 @@ class Project < ApplicationRecord
     reports.pending.where(reason: "fraud").order(created_at: :desc).first
   end
 
+  # Funding reviews to interleave into the project timeline: every request the
+  # owner has a standing outcome for - pending (awaiting a verdict), approved,
+  # or returned. Showing all of them, rather than only the latest, lets an older
+  # returned review keep its chronological place in the feed (see
+  # +timeline_sort_key+) and scroll down as newer devlogs land above it.
+  # Misfiled requests are surfaced by the queue-mismatch card instead, and
+  # withdrawn ones carry no verdict, so both stay off the feed.
+  def timeline_funding_requests
+    certification_funding_requests
+      .where(status: [ :pending, :approved, :returned ])
+      .order(created_at: :desc)
+  end
+
+  # Orders a project's timeline entries (devlog posts, ship decisions, and
+  # funding reviews) newest-first for the project feed.
+  def self.sort_timeline_entries(entries)
+    entries.sort_by { |entry| timeline_sort_key(entry) }.reverse
+  end
+
+  # Where a timeline entry sits in the feed: a review at the moment it was
+  # decided, everything else at its creation. Falling back to +created_at+ keeps
+  # a still-pending review at the point it was submitted.
+  def self.timeline_sort_key(entry)
+    case entry
+    when Certification::Ship then entry.decided_on
+    when Certification::FundingRequest then entry.decided_at || entry.created_at
+    else entry.created_at
+    end
+  end
+
   # Name of the Hackatime project this project's time is filed under (and which
   # Project::EnsureHackatimeProjectsJob seeds for hardware builders to pick in
   # Lapse): the project title, so timelapse time lands under the same Hackatime

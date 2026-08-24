@@ -120,6 +120,9 @@
                   <% if review.feedback.present? %>
                     <p class="hardware-review__history-feedback"><%= review.feedback %></p>
                   <% end %>
+                  <% if is_funding %>
+                    <%= render "admin/certification/funding_requests/feedback_images", funding_request: review %>
+                  <% end %>
                   <% if review.internal_reason.present? %>
                     <p class="hardware-review__history-feedback hardware-review__history-feedback--internal">
                       Reviewer note: <%= review.internal_reason %>
@@ -309,6 +312,7 @@
               <div class="ship-review__verdict-feedback">
                 <h3>Funding feedback</h3>
                 <p><%= @funding_request.feedback %></p>
+                <%= render "admin/certification/funding_requests/feedback_images", funding_request: @funding_request %>
               </div>
             <% end %>
             <% if @ship&.feedback.present? %>
