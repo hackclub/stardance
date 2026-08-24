@@ -38,6 +38,7 @@ Rails.application.config.after_initialize do
         gorse_project_recommendations
         week_1_release
         hardware_flow
+        public_hardware_reviews
         ship_event_payouts
         payout_recommendations
         disable_internal_sw_dash_reviews

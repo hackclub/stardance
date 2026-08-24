@@ -130,13 +130,9 @@ class ProjectsController < ApplicationController
 
     # Shipwright verdicts are rendered straight from the review records —
     # they're private to project members, so they never become Post rows.
-    @timeline_entries = (@posts + visible_ship_decisions + visible_funding_requests).sort_by do |entry|
-      case entry
-      when Certification::Ship then entry.decided_on
-      when Certification::FundingRequest then entry.decided_at || entry.created_at
-      else entry.created_at
-      end
-    end.reverse
+    @timeline_entries = Project.sort_timeline_entries(
+      @posts + visible_ship_decisions + visible_funding_requests
+    )
 
     @show_project_onboarding = @is_member && @timeline_entries.empty?
     @project_onboarding_mission = @project.current_mission
@@ -218,12 +214,27 @@ class ProjectsController < ApplicationController
   end
   private :prepare_project_show_context
 
-  # Decided Shipwright reviews, shown only to project members (and admins)
-  # while the release flag is on.
+  # Who can see a project's hardware review history (funding requests + ship
+  # verdicts) on its page:
+  #   - reviewers always can - they need the history to do their job;
+  #   - the project's own members and admins can while the surface's rollout flag
+  #     is on for them (the amount asked for and the reviewer's feedback are
+  #     otherwise the team's business);
+  #   - and when the +public_hardware_reviews+ flag is on, anyone viewing the
+  #     project can - logged in or not.
+  def hardware_review_history_visible?(rollout_flag)
+    return true if Flipper.enabled?(:public_hardware_reviews)
+    return false unless current_user
+    return true if current_user.can_review?
+    return false unless Flipper.enabled?(rollout_flag, current_user)
+
+    @is_member || current_user.admin?
+  end
+  private :hardware_review_history_visible?
+
+  # Decided Shipwright reviews. Same audience as the funding history below.
   def visible_ship_decisions
-    return [] unless current_user
-    return [] unless @is_member || current_user.admin?
-    return [] unless Flipper.enabled?(:week_1_release, current_user)
+    return [] unless hardware_review_history_visible?(:week_1_release)
 
     @project.ship_reviews
             .decided
@@ -233,16 +244,13 @@ class ProjectsController < ApplicationController
   end
   private :visible_ship_decisions
 
-  # Funding requests, shown only to project members (and admins): the amount
-  # asked for and the reviewer's feedback are the team's business, not public.
-  # Only the most recent request appears on the timeline - a resubmission
-  # supersedes the returned one it replaces.
+  # Funding requests interleaved into the feed (see
+  # Project#timeline_funding_requests), so a returned review keeps its place as
+  # newer devlogs are posted rather than only the latest request showing.
   def visible_funding_requests
-    return [] unless current_user
-    return [] unless @is_member || current_user.admin?
-    return [] unless Flipper.enabled?(:hardware_flow, current_user)
+    return [] unless hardware_review_history_visible?(:hardware_flow)
 
-    @project.certification_funding_requests.includes(:reviewer).order(created_at: :desc).limit(1).to_a
+    @project.timeline_funding_requests.includes(:reviewer).to_a
   end
   private :visible_funding_requests
 

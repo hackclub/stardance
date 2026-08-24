@@ -938,8 +938,11 @@
             <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
             <%# The resubmit button reuses the funding modal, which only renders
-                while the project is still in the design stage. %>
-            <% resubmit_id = (Flipper.enabled?(:hardware_flow, current_user) && @project.design_stage?) ? "funding-request-modal-#{@project.id}" : nil %>
+                while the project is still in the design stage. It belongs on the
+                latest review only - older returned reviews are history the
+                builder has already moved past. %>
+            <% resubmit_available = Flipper.enabled?(:hardware_flow, current_user) && @project.design_stage? %>
+            <% resubmit_id = (resubmit_available && entry == @project.latest_funding_request) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
                        resubmit_modal_id: resubmit_id %>
