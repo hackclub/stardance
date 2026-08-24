@@ -156,8 +156,8 @@
                     change and a live control here would only fail validation. %>
                 <% if @project.hardware_stage_locked? %>
                   <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project type (locked)">
-                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked">Software</span>
-                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked project-show__stage-choice-label--selected">Hardware</span>
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked <%= "project-show__stage-choice-label--selected" unless @project.hardware? %>">Software</span>
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked <%= "project-show__stage-choice-label--selected" if @project.hardware? %>">Hardware</span>
                   </div>
                 <% else %>
                   <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project type">
