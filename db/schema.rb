@@ -196,6 +196,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_002911) do
     t.bigint "reviewer_id"
     t.integer "stardust_earned"
     t.integer "status", default: 0, null: false
+    t.text "submitter_note"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["decided_at"], name: "index_certification_funding_requests_on_decided_at"

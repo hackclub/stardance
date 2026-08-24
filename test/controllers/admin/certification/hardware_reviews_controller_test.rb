@@ -248,6 +248,29 @@ class Admin::Certification::HardwareReviewsControllerTest < ActionDispatch::Inte
     assert_select "button[form=?]", "unclaim-form-#{@ship.id}", count: 1
   end
 
+  # The builder's note is context for the verdict, so it renders read-only on
+  # the claimed design review form.
+  test "the builder's submitter note shows on the design review form" do
+    @funding.update!(submitter_note: "The display is a stretch goal.")
+    ::Certification::FundingRequest.atomic_claim!(@funding.id, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select ".review-form__submitter-note-label", text: /Note from/
+    assert_select ".review-form__submitter-note-body", text: /display is a stretch goal/
+  end
+
+  # No note, no empty block.
+  test "the design review form omits the note block when there is none" do
+    ::Certification::FundingRequest.atomic_claim!(@funding.id, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select ".review-form__submitter-note", count: 0
+  end
+
   test "non-reviewers can't reach either queue" do
     sign_in @owner
 

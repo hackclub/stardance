@@ -72,6 +72,24 @@ class Projects::FundingRequestsControllerTest < ActionDispatch::IntegrationTest
     assert_equal(-5, @owner.reload.vote_balance)
   end
 
+  # --- submitter note --------------------------------------------------------
+
+  test "an optional note to the reviewer is saved on the request" do
+    post project_funding_request_path(@project),
+         params: { complexity_tier: 2, requested_amount: 40, submitter_note: "Display is a stretch goal." }
+
+    request = @project.certification_funding_requests.order(:created_at).last
+    assert_equal "Display is a stretch goal.", request.submitter_note
+  end
+
+  test "a blank note to the reviewer leaves the field empty" do
+    post project_funding_request_path(@project),
+         params: { complexity_tier: 2, requested_amount: 40, submitter_note: "" }
+
+    request = @project.certification_funding_requests.order(:created_at).last
+    assert_nil request.submitter_note
+  end
+
   # --- identity verification -------------------------------------------------
 
   # The grant is real money paid to a real person, so the same identity and YSWS

@@ -591,6 +591,30 @@
     }
   }
 
+  // The builder's own note, shown read-only above the verdict controls.
+  &__submitter-note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-s) var(--space-m);
+    background: var(--color-overlay-light-soft);
+    border: 1px solid var(--color-overlay-light);
+    border-radius: 8px;
+  }
+
+  &__submitter-note-label {
+    margin: 0;
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--color-space-text-muted);
+  }
+
+  &__submitter-note-body {
+    margin: 0;
+    color: var(--color-space-text);
+    white-space: pre-wrap;
+  }
+
   &__claim-banner {
     display: flex;
     justify-content: space-between;

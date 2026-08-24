@@ -1221,6 +1221,13 @@
             Once a reviewer approves your design, your kit becomes available to redeem and your project moves to the build stage.
           </p>
 
+          <label class="funding-modal__reviewer-note">
+            <span>Note to reviewer <span class="funding-modal__reviewer-note-optional">(optional)</span></span>
+            <%= form.text_area :submitter_note, rows: 3, maxlength: 10_000,
+                  class: "funding-modal__reviewer-note-input",
+                  placeholder: "Anything you'd like the reviewer to know about your design?" %>
+          </label>
+
           <% if design_gated %>
             <%= render "projects/action_items", review: returned_design %>
           <% end %>
@@ -1293,6 +1300,13 @@
             Get your design approved and we'll issue a grant card for the approved amount. Higher tiers fund more.
             <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
           </p>
+
+          <label class="funding-modal__reviewer-note">
+            <span>Note to reviewer <span class="funding-modal__reviewer-note-optional">(optional)</span></span>
+            <%= form.text_area :submitter_note, rows: 3, maxlength: 10_000,
+                  class: "funding-modal__reviewer-note-input",
+                  placeholder: "Anything you'd like the reviewer to know about your design?" %>
+          </label>
 
           <% if design_gated %>
             <%= render "projects/action_items", review: returned_design %>
