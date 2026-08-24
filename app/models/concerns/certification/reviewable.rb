@@ -30,6 +30,14 @@ module Certification
         )
       end
 
+      # Projects with an unresolved (pending) fraud report. They're held back
+      # from the review queue and the "next" hand-out so a flagged build isn't
+      # served to a reviewer until the fraud team clears it — the project stays
+      # reachable directly, it's just not auto-offered.
+      def fraud_flagged_project_ids
+        ::Project::Report.pending.where(reason: "fraud").select(:project_id)
+      end
+
       def atomic_claim!(record_id, user)
         now = Time.current
         expires = now + CLAIM_TTL

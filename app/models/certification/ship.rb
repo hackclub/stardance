@@ -186,7 +186,11 @@ module Certification
     scope :in_hardware_mission_queue, -> { joins(:project).merge(::Project.hardware.with_hardware_mission) }
 
     def self.available_for(user)
-      super.merge(for_reviewer(user))
+      # Chained AFTER the merge on purpose: `merge` would replace this project_id
+      # filter with for_reviewer's own project_id condition and drop the fraud
+      # hold-back. A pending fraud report keeps the project out of the queue
+      # until the fraud team clears it.
+      super.merge(for_reviewer(user)).where.not(project_id: fraud_flagged_project_ids)
     end
 
     # Claim-next for the software queue. The hardware queue has its own

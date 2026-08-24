@@ -64,6 +64,24 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
     Post.create!(project: @project, user: @owner, postable: devlog)
   end
 
+  test "available_for holds back projects with an unresolved fraud report" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
+    )
+    assert_includes ::Certification::FundingRequest.available_for(@reviewer), fr
+
+    report = @project.reports.create!(
+      reporter: @reviewer, reason: "fraud", status: :pending,
+      details: "Looks like a resold kit, not a real build."
+    )
+    assert_not_includes ::Certification::FundingRequest.available_for(@reviewer), fr,
+      "a project with a pending fraud report should be held back from the review queue"
+
+    report.update!(status: :dismissed)
+    assert_includes ::Certification::FundingRequest.available_for(@reviewer), fr,
+      "clearing the fraud report should return the project to the queue"
+  end
+
   test "rejects a requested amount above the tier maximum" do
     fr = @project.certification_funding_requests.new(user: @owner, complexity_tier: 1, requested_amount_cents: 5_000)
     assert_not fr.valid?
