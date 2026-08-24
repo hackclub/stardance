@@ -1192,6 +1192,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_002911) do
     t.string "hcb_keyword_lock"
     t.string "hcb_merchant_lock"
     t.boolean "hcb_one_time_use", default: false
+    t.string "hcb_org_slug"
     t.text "hcb_preauthorization_instructions"
     t.string "internal_description"
     t.boolean "limited"

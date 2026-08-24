@@ -193,6 +193,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         :hcb_merchant_lock,
         :hcb_preauthorization_instructions,
         :hcb_one_time_use,
+        :hcb_org_slug,
         :agh_contents,
         :image,
         :buyable_by_self,

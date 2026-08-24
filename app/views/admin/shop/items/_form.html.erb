@@ -319,6 +319,24 @@
 
         <% if shop_item.type.in?(%w[ShopItem::HCBGrant ShopItem::HCBPreauthGrant]) %>
           <div class="card">
+            <h3>HCB Source Organization</h3>
+            <div class="shop-item-form__field">
+              <span class="shop-item-form__hint">Which HCB organization this grant's card is drawn from.</span>
+              <% selected_org = shop_item.hcb_org_slug.presence || Shop::HCBGrantFulfillable::HCB_ORG_SLUGS.first %>
+              <div class="shop-item-form__segmented" role="radiogroup" aria-label="HCB source organization">
+                <% Shop::HCBGrantFulfillable::HCB_ORG_SLUGS.each do |org| %>
+                  <label class="shop-item-form__segmented-option">
+                    <%= f.radio_button :hcb_org_slug, org, checked: selected_org == org, class: "shop-item-form__segmented-input" %>
+                    <span class="shop-item-form__segmented-label">
+                      <%= org %><% if org == Shop::HCBGrantFulfillable::HCB_ORG_SLUGS.first %> (default)<% end %>
+                    </span>
+                  </label>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
             <h3>HCB Locks</h3>
             <div class="shop-item-form__field">
               <%= f.label :hcb_merchant_lock, "HCB Merchant Lock", class: "shop-item-form__label" %>

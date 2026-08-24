@@ -1,9 +1,15 @@
 module Shop::HCBGrantFulfillable
   extend ActiveSupport::Concern
 
+  # The HCB organizations a grant item may draw its card grant from. Blank means
+  # the app-wide default (HCBService::DEFAULT_SLUG); "stardance-hardware" targets
+  # the hardware sub-org, matching Certification::FundingRequest#issue_hcb_grant!.
+  HCB_ORG_SLUGS = %w[stardance stardance-hardware].freeze
+
   included do
     has_many :shop_card_grants, through: :shop_orders
     after_save :enqueue_hcb_locks_update, if: :hcb_locks_changed?
+    validates :hcb_org_slug, inclusion: { in: HCB_ORG_SLUGS }, allow_blank: true
   end
 
   def fulfill!(shop_order)
@@ -73,6 +79,7 @@ module Shop::HCBGrantFulfillable
         category_lock: hcb_category_lock,
         purpose: name,
         one_time_use: hcb_one_time_use?,
+        organization: effective_hcb_org_slug,
         **extra_grant_options
       )
     rescue HCBError
@@ -122,6 +129,10 @@ module Shop::HCBGrantFulfillable
   def grant_label = "grant"
 
   def extra_grant_options = {}
+
+  # The org this item's card grant is drawn from, defaulting to the app-wide HCB
+  # org when the admin hasn't chosen one.
+  def effective_hcb_org_slug = hcb_org_slug.presence || HCBService::DEFAULT_SLUG
 
   def hcb_locks_changed?
     saved_change_to_hcb_merchant_lock? ||
