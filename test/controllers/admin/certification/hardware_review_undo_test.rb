@@ -72,12 +72,12 @@ class Admin::Certification::HardwareReviewUndoTest < ActionDispatch::Integration
     assert @funding.reload.approved?
   end
 
-  test "a non-admin reviewer cannot undo - it is admin only" do
+  test "a reviewer cannot undo a review another reviewer decided" do
     certifier = create_user(slack_id: "U_UNDO_CERT", display_name: "undo-certifier")
     certifier.grant_role!(:project_certifier)
     sign_in certifier
 
-    # A plain reviewer can open the review page, but the undo control is hidden...
+    # @funding was decided by @reviewer, so to this reviewer the control is hidden...
     HCBService.stub(:show_card_grant, unspent_grant) do
       get admin_certification_hardware_review_path(@project)
     end
@@ -88,6 +88,54 @@ class Admin::Certification::HardwareReviewUndoTest < ActionDispatch::Integration
     post undo_admin_certification_funding_request_path(@funding)
     assert_response :forbidden
     assert @funding.reload.approved?
+  end
+
+  test "a reviewer undoes their own funding review" do
+    certifier = create_user(slack_id: "U_UNDO_OWN_FR", display_name: "undo-own-fr")
+    certifier.grant_role!(:project_certifier)
+    @funding.update_columns(reviewer_id: certifier.id)
+    sign_in certifier
+
+    HCBService.stub(:show_card_grant, unspent_grant) do
+      HCBService.stub(:cancel_card_grant!, ->(hashid:) { { "status" => "canceled" } }) do
+        post undo_admin_certification_funding_request_path(@funding)
+      end
+    end
+
+    assert_redirected_to admin_certification_hardware_review_path(@project)
+    assert @funding.reload.pending?, "the reviewer's own verdict is reversed"
+  end
+
+  test "a reviewer sees the undo control on a review they decided" do
+    certifier = create_user(slack_id: "U_UNDO_OWN_VIEW", display_name: "undo-own-view")
+    certifier.grant_role!(:project_certifier)
+    @funding.update_columns(reviewer_id: certifier.id)
+    sign_in certifier
+
+    HCBService.stub(:show_card_grant, unspent_grant) do
+      get admin_certification_hardware_review_path(@project)
+    end
+
+    assert_response :success
+    assert_select ".review-undo__trigger", text: /Undo review/
+  end
+
+  test "a reviewer undoes their own ship certification" do
+    certifier = create_user(slack_id: "U_UNDO_OWN_SHIP", display_name: "undo-own-ship")
+    certifier.grant_role!(:project_certifier)
+    project = Project.create!(title: "Undo Own Ship #{SecureRandom.hex(3)}", hardware_stage: "build")
+    project.memberships.create!(user: @owner, role: :owner)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true, hours_at_ship: 4)
+    Post.create!(project: project, user: @owner, postable: ship_event)
+    project.update_columns(ship_status: "submitted", shipped_at: Time.current)
+    cert = project.ship_reviews.create!(status: :pending, post_ship_event: ship_event)
+    cert.update!(status: :approved, reviewer: certifier)
+    sign_in certifier
+
+    post undo_admin_certification_ship_path(cert)
+
+    assert_redirected_to admin_certification_hardware_review_path(project)
+    assert cert.reload.withdrawn?, "the reviewer's own ship verdict is withdrawn"
   end
 
   test "a reviewer undoes an approved ship certification" do

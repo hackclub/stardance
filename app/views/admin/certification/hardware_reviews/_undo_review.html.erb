@@ -11,13 +11,15 @@
 %>
 
 <div class="review-undo" data-controller="modal">
-  <%# Admin-only correction, so it carries the orange dashed admin-tool marker. %>
-  <%= admin_tool do %>
+  <%# Only rendered for someone the undo policy lets reverse this review — its own
+      reviewer or an admin — so it wears the orange dashed "manageable-by-viewer"
+      marker for all of them. %>
+  <div class="admin tools-do">
     <button type="button" class="action-btn action-btn--small action-btn--destructive review-undo__trigger"
             data-action="click->modal#open">
       Undo review
     </button>
-  <% end %>
+  </div>
 
   <dialog data-modal-target="dialog" class="review-undo__dialog"
           aria-labelledby="<%= dialog_id %>-title">
