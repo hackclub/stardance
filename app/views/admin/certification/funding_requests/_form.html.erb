@@ -8,6 +8,14 @@
   <% end %>
 <% end %>
 
+<%# Skip form, rendered outside the verdict form for the same nesting reason as
+    unclaim; the button in the actions row submits it via the `form` attribute.
+    A persisted skip keeps this request out of the reviewer's next-up for the
+    cooldown window instead of bouncing them straight back to it. %>
+<%= form_with url: hardware_skip_path(stage: "design"), method: :post, id: "skip-form-#{funding_request.id}" do %>
+  <%= hidden_field_tag :token, "funding:#{funding_request.id}" %>
+<% end %>
+
 <%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form", multipart: true do |f| %>
 <% if local_assigns[:redirect_to_hardware] %>
   <%# Sends the verdict back to the combined hardware review page. %>
@@ -102,8 +110,8 @@
 
   <div class="review-form__actions">
     <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary" %>
-    <%= link_to "Skip and get next", hardware_next_path(stage: "design", skip: "funding:#{funding_request.id}"),
-          class: "action-btn action-btn--small action-btn--secondary" %>
+    <button type="submit" form="skip-form-<%= funding_request.id %>"
+            class="action-btn action-btn--small action-btn--secondary">Skip and get next</button>
     <%= link_to "Back to queue", hardware_queue_path("design"), class: "review-form__back" %>
   </div>
 <% end %>

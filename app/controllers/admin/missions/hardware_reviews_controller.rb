@@ -53,6 +53,10 @@ module Admin
         next_admin_mission_hardware_reviews_path(@mission.slug, stage: stage, skip: skip)
       end
 
+      def hardware_skip_path(stage:)
+        skip_admin_mission_hardware_reviews_path(@mission.slug, stage: stage)
+      end
+
       def hardware_queue_title(design)
         "#{@mission.name} #{design ? 'design' : 'build'} review queue"
       end

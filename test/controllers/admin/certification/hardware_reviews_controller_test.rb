@@ -316,6 +316,86 @@ class Admin::Certification::HardwareReviewsControllerTest < ActionDispatch::Inte
     assert_response :forbidden
   end
 
+  # Skipping a build review records a per-reviewer skip and moves on, rather
+  # than bouncing the reviewer straight back to the same submission.
+  test "skipping a build review records a skip and advances" do
+    post skip_admin_certification_hardware_reviews_path, params: { stage: "build", token: "ship:#{@ship.id}" }
+
+    assert ::Certification::ReviewSkip.exists?(user: @reviewer, reviewable: @ship)
+    assert_redirected_to next_admin_certification_hardware_reviews_path(stage: "build")
+  end
+
+  test "skipping a design review records a skip and advances" do
+    post skip_admin_certification_hardware_reviews_path, params: { stage: "design", token: "funding:#{@funding.id}" }
+
+    assert ::Certification::ReviewSkip.exists?(user: @reviewer, reviewable: @funding)
+    assert_redirected_to next_admin_certification_hardware_reviews_path(stage: "design")
+  end
+
+  # The whole point of the fix: a skipped build review is not handed back to the
+  # skipper (their only build item is now hidden, so the queue is empty), but a
+  # different reviewer is still offered it right away.
+  test "a skipped build review is hidden from the skipper yet offered to others" do
+    ::Certification::ReviewSkip.record!(user: @reviewer, reviewable: @ship)
+
+    get next_admin_certification_hardware_reviews_path(stage: "build")
+    assert_redirected_to build_admin_certification_hardware_reviews_path
+
+    sign_in other_reviewer
+    get next_admin_certification_hardware_reviews_path(stage: "build")
+    assert_redirected_to admin_certification_hardware_review_path(@build_project)
+  end
+
+  # End to end through the button: skipping a review you hold hands the claim
+  # back (via next's release), so another reviewer is offered it right away.
+  test "skipping a claimed build review releases it for another reviewer" do
+    ::Certification::Ship.atomic_claim!(@ship.id, @reviewer)
+
+    post skip_admin_certification_hardware_reviews_path, params: { stage: "build", token: "ship:#{@ship.id}" }
+    follow_redirect!
+
+    assert_nil @ship.reload.reviewer_id, "skipping must hand the claim back"
+    assert ::Certification::Ship.available_for(other_reviewer).exists?(id: @ship.id)
+  end
+
+  test "a skipped design review is hidden from the skipper" do
+    ::Certification::ReviewSkip.record!(user: @reviewer, reviewable: @funding)
+
+    get next_admin_certification_hardware_reviews_path(stage: "design")
+    assert_redirected_to design_admin_certification_hardware_reviews_path
+  end
+
+  # The skip is a cooldown, not a permanent pass: once it lapses the submission
+  # comes back to the reviewer.
+  test "a skip stops hiding the review once its cooldown lapses" do
+    ::Certification::ReviewSkip.record!(user: @reviewer, reviewable: @ship)
+
+    travel_to(::Certification::ReviewSkip::SKIP_COOLDOWN.from_now + 1.minute) do
+      get next_admin_certification_hardware_reviews_path(stage: "build")
+      assert_redirected_to admin_certification_hardware_review_path(@build_project)
+    end
+  end
+
+  test "a claimed build review offers a skip button posting to the skip path" do
+    ::Certification::Ship.atomic_claim!(@ship.id, @reviewer)
+
+    get admin_certification_hardware_review_path(@build_project)
+
+    assert_response :success
+    assert_select "button[form=?]", "skip-form-#{@ship.id}", count: 1
+    assert_select "form[action=?]", skip_admin_certification_hardware_reviews_path(stage: "build")
+  end
+
+  test "a claimed design review offers a skip button posting to the skip path" do
+    ::Certification::FundingRequest.atomic_claim!(@funding.id, @reviewer)
+
+    get admin_certification_hardware_review_path(@design_project)
+
+    assert_response :success
+    assert_select "button[form=?]", "skip-form-#{@funding.id}", count: 1
+    assert_select "form[action=?]", skip_admin_certification_hardware_reviews_path(stage: "design")
+  end
+
   test "the review page shows a flag-for-fraud button when the project is not flagged" do
     ::Certification::FundingRequest.atomic_claim!(@funding.id, @reviewer)
 

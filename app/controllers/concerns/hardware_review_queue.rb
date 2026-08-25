@@ -20,7 +20,8 @@ module HardwareReviewQueue
     before_action :set_body_class
     before_action :release_other_claims, only: [ :next ]
     helper_method :hardware_review_path, :hardware_queue_path, :hardware_next_path,
-                  :hardware_queue_title, :hardware_back_link, :hardware_flag_for_fraud_path
+                  :hardware_skip_path, :hardware_queue_title, :hardware_back_link,
+                  :hardware_flag_for_fraud_path
   end
 
   def design
@@ -53,6 +54,20 @@ module HardwareReviewQueue
     else
       redirect_to hardware_next_path(stage: stage, skip: (skip[:tokens] + [ candidate[:token] ]).join(","))
     end
+  end
+
+  # A reviewer passing on a submission. Records a per-reviewer skip so the queue
+  # keeps it out of *their* next-up for the cooldown window, then rejoins the
+  # normal `next` flow — whose release_other_claims hands the claim back so
+  # another reviewer can pick it up right away.
+  def skip
+    authorize_hardware_queue
+
+    stage = params[:stage].presence_in(%w[design build]) || "design"
+    record = skip_target
+    ::Certification::ReviewSkip.record!(user: current_user, reviewable: record) if record
+
+    redirect_to hardware_next_path(stage: stage)
   end
 
   def show
@@ -216,11 +231,13 @@ module HardwareReviewQueue
   end
 
   def hardware_funding_scope
-    ::Certification::FundingRequest.available_for(current_user).joins(:project).where(project: reviewable_projects)
+    ::Certification::FundingRequest.available_for(current_user).not_skipped_by(current_user)
+      .joins(:project).where(project: reviewable_projects)
   end
 
   def hardware_ship_scope
-    ::Certification::Ship.available_for(current_user).joins(:project).where(project: reviewable_projects)
+    ::Certification::Ship.available_for(current_user).not_skipped_by(current_user)
+      .joins(:project).where(project: reviewable_projects)
   end
 
   def hardware_funding_list_scope
@@ -315,6 +332,15 @@ module HardwareReviewQueue
     Date.parse(value.to_s)
   rescue ArgumentError, TypeError
     nil
+  end
+
+  # The submission behind a "funding:ID" / "ship:ID" skip token.
+  def skip_target
+    type, id = params[:token].to_s.split(":", 2)
+    case type
+    when "funding" then ::Certification::FundingRequest.find_by(id: id)
+    when "ship" then ::Certification::Ship.find_by(id: id)
+    end
   end
 
   def parse_skip_tokens

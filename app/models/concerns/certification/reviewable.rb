@@ -52,6 +52,18 @@ module Certification
           .update_all(reviewer_id: nil, claim_expires_at: nil, updated_at: Time.current)
       end
 
+      # Drops the submissions this reviewer skipped within the cooldown window.
+      # Per-reviewer: another reviewer's queue is unaffected, so a skip hides a
+      # submission from the skipper without taking it out of circulation.
+      def not_skipped_by(user)
+        return all if user.blank?
+
+        skipped = Certification::ReviewSkip.active
+          .where(user_id: user.id, reviewable_type: polymorphic_name)
+          .select(:reviewable_id)
+        where.not(id: skipped)
+      end
+
       # Records this queue may hand out next. Defaults to everything claimable;
       # override to narrow when one model backs more than one queue.
       def next_eligible_scope(user)

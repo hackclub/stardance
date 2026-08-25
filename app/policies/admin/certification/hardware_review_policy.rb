@@ -21,6 +21,10 @@ class Admin::Certification::HardwareReviewPolicy < ApplicationPolicy
     index?
   end
 
+  def skip?
+    index?
+  end
+
   def show?
     user&.can_review? && not_own_project?
   end

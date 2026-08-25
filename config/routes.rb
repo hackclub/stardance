@@ -841,6 +841,7 @@ Rails.application.routes.draw do
           get :design
           get :build
           get :next
+          post :skip
         end
         post :flag_for_fraud, on: :member
       end
@@ -891,6 +892,7 @@ Rails.application.routes.draw do
           get :design
           get :build
           get :next
+          post :skip
         end
         post :flag_for_fraud, on: :member
       end

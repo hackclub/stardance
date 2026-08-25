@@ -3,7 +3,8 @@ class Admin::Certification::ApplicationController < Admin::ApplicationController
   # global dash and the funding/ship verdict controllers use the global routes;
   # the per-mission dash overrides them (see Admin::Missions::HardwareReviews).
   helper_method :hardware_review_path, :hardware_queue_path, :hardware_next_path,
-                :hardware_queue_title, :hardware_back_link, :hardware_flag_for_fraud_path
+                :hardware_skip_path, :hardware_queue_title, :hardware_back_link,
+                :hardware_flag_for_fraud_path
 
   private
 
@@ -21,6 +22,10 @@ class Admin::Certification::ApplicationController < Admin::ApplicationController
 
   def hardware_next_path(stage:, skip: nil)
     next_admin_certification_hardware_reviews_path(stage: stage, skip: skip)
+  end
+
+  def hardware_skip_path(stage:)
+    skip_admin_certification_hardware_reviews_path(stage: stage)
   end
 
   def hardware_queue_title(design)

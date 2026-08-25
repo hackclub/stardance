@@ -8,6 +8,16 @@
   <% end %>
 <% end %>
 
+<%# Skip form (hardware queue only), rendered outside the verdict form for the
+    same nesting reason as unclaim; the button in the actions row submits it via
+    the `form` attribute. A persisted skip keeps this ship out of the reviewer's
+    next-up for the cooldown window instead of bouncing them straight back. %>
+<% if local_assigns[:redirect_to_hardware] %>
+  <%= form_with url: hardware_skip_path(stage: "build"), method: :post, id: "skip-form-#{ship.id}" do %>
+    <%= hidden_field_tag :token, "ship:#{ship.id}" %>
+  <% end %>
+<% end %>
+
 <div data-controller="certification--verdict-preview"
      data-action="submit->certification--verdict-preview#intercept">
 
@@ -125,8 +135,8 @@
     <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary",
           data: { "certification--video-drop-target": "submitBtn" } %>
     <% if local_assigns[:redirect_to_hardware] %>
-      <%= link_to "Skip and get next", hardware_next_path(stage: "build", skip: "ship:#{ship.id}"),
-            class: "action-btn action-btn--small action-btn--secondary" %>
+      <button type="submit" form="skip-form-<%= ship.id %>"
+              class="action-btn action-btn--small action-btn--secondary">Skip and get next</button>
     <% else %>
       <%= link_to "Skip and get next", next_admin_certification_ships_path(skip: ship.id),
             class: "action-btn action-btn--small action-btn--secondary" %>
