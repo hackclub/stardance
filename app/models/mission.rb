@@ -369,6 +369,7 @@ class Mission < ApplicationRecord
       .or(Project.where(deleted_at: nil, id: shipped_ids))
       .joins("LEFT JOIN (#{devlog_likes.to_sql}) mission_devlog_likes ON mission_devlog_likes.project_id = projects.id")
       .left_joins(:project_follows, :banner_attachment)
+      .includes(mission_attachments: :mission)
       .group("projects.id", "mission_devlog_likes.devlog_likes_count", "active_storage_attachments.id")
       .order(Arel.sql(<<~SQL))
         (active_storage_attachments.id IS NULL) ASC,
