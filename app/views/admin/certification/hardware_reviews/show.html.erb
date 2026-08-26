@@ -37,6 +37,9 @@
       <div class="hardware-review__links">
         <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
           <%= link_to "Repo ↗", safe_repo_url, class: "hardware-review__link", target: "_blank", rel: "noopener noreferrer" %>
+          <%# HURT reviewer tooling, preloaded with this project's repo, until it's
+              integrated directly. Only shown when there's a repo to point it at. %>
+          <%= link_to "HURT ↗", "https://hurt-xi.vercel.app/?#{ { repo: safe_repo_url }.to_query }", class: "hardware-review__link", target: "_blank", rel: "noopener noreferrer" %>
         <% end %>
         <% if (safe_demo_url = safe_external_url(@project.demo_url)) %>
           <%= link_to "Demo ↗", safe_demo_url, class: "hardware-review__link", target: "_blank", rel: "noopener noreferrer" %>
