@@ -35,6 +35,9 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         @shop_item.draft = true
         @shop_item.enabled = false
         @shop_item.created_by_user_id = current_user.id
+      elsif warehouse_item_requires_amber_approval?(@shop_item)
+        @shop_item.enabled = false
+        Shop::Regionalizable::REGION_CODES.each { |c| @shop_item.public_send("enabled_#{c.downcase}=", false) }
       end
 
       if @shop_item.save
@@ -121,6 +124,11 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
 
     def shop_manager?
       current_user.shop_manager? && !current_user.admin?
+    end
+
+    def warehouse_item_requires_amber_approval?(item)
+      return false if Rails.env.development?
+      item.type == "ShopItem::WarehouseItem" && current_user.id != ShopItem::AMBER_USER_ID
     end
 
     def authorize_shop_item_access!(must_be_draft: false)

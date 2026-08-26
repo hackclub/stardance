@@ -261,6 +261,10 @@ class ShopItem < ApplicationRecord
     instance_variable_defined?(:@recommended_price) ? @recommended_price : ticket_cost
   end
 
+  # User allowed to create/enable shop items without the "check with Amber
+  # first" guard in the admin item form.
+  AMBER_USER_ID = 355
+
   MANUAL_FULFILLMENT_TYPES = [
     "ShopItem::HCBGrant",
     "ShopItem::HCBPreauthGrant",

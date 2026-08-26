@@ -349,6 +349,9 @@ application.register("share-purchase", SharePurchaseController);
 import ShopController from "./shop_controller";
 application.register("shop", ShopController);
 
+import ShopItemEnableGuardController from "./shop_item_enable_guard_controller";
+application.register("shop-item-enable-guard", ShopItemEnableGuardController);
+
 import ShopWishlistController from "./shop_wishlist_controller";
 application.register("shop-wishlist", ShopWishlistController);
 
