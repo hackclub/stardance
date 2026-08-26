@@ -497,7 +497,7 @@
           <div class="shop-item-form__actions">
             <%= f.submit shop_item.persisted? ? "Update Item" : "Create Item", class: "btn-primary", data: { shop_item_enable_guard_target: "primaryButton" } %>
             <% if show_enable_guard && !is_warehouse_item %>
-              <button type="button" class="btn-secondary shop-item-form__hold-button" data-shop-item-enable-guard-target="overrideButton" data-action="mouseenter->shop-item-enable-guard#startHold mouseleave->shop-item-enable-guard#cancelHold click->shop-item-enable-guard#proceed" disabled>Hold to confirm…</button>
+              <button type="button" class="btn-secondary shop-item-form__hold-button" data-shop-item-enable-guard-target="overrideButton" data-action="mouseenter->shop-item-enable-guard#startHold mouseleave->shop-item-enable-guard#cancelHold click->shop-item-enable-guard#proceed" aria-disabled="true">Hold to confirm…</button>
             <% end %>
             <%= link_to "Cancel", admin_shop_path, class: "btn-secondary" %>
           </div>
@@ -860,7 +860,7 @@
         font-size: 0.8125rem;
     }
 
-    .shop-item-form__hold-button:disabled {
+    .shop-item-form__hold-button[aria-disabled="true"] {
         cursor: not-allowed;
         opacity: 0.6;
     }

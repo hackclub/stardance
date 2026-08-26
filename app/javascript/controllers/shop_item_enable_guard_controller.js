@@ -54,32 +54,35 @@ export default class extends Controller {
       this.primaryButtonTarget.disabled = disabled;
   }
 
+  // The override button is intentionally never given the native `disabled`
+  // attribute: disabled elements don't fire mouseenter/mouseleave/click in
+  // browsers, which would make the hover-to-confirm timer unreachable.
+  // "Armed" state is tracked via aria-disabled + a flag instead.
   resetOverride() {
     this.clearHoldTimer();
+    this.overrideArmed = false;
     if (this.hasOverrideButtonTarget) {
-      this.overrideButtonTarget.disabled = true;
+      this.overrideButtonTarget.setAttribute("aria-disabled", "true");
       this.overrideButtonTarget.textContent = "Hold to confirm…";
     }
   }
 
   startHold() {
-    if (!this.hasOverrideButtonTarget || !this.overrideButtonTarget.disabled)
-      return;
+    if (!this.hasOverrideButtonTarget || this.overrideArmed) return;
 
     this.clearHoldTimer();
     this.holdTimer = window.setTimeout(() => {
-      this.overrideButtonTarget.disabled = false;
+      this.overrideArmed = true;
+      this.overrideButtonTarget.setAttribute("aria-disabled", "false");
       this.overrideButtonTarget.textContent = "Create anyway";
     }, this.holdSecondsValue * 1000);
   }
 
   cancelHold() {
     this.clearHoldTimer();
-    if (
-      this.hasOverrideButtonTarget &&
-      this.overrideButtonTarget.disabled === false
-    ) {
-      this.overrideButtonTarget.disabled = true;
+    if (this.hasOverrideButtonTarget && this.overrideArmed) {
+      this.overrideArmed = false;
+      this.overrideButtonTarget.setAttribute("aria-disabled", "true");
       this.overrideButtonTarget.textContent = "Hold to confirm…";
     }
   }
@@ -92,8 +95,7 @@ export default class extends Controller {
   }
 
   proceed() {
-    if (!this.hasOverrideButtonTarget || this.overrideButtonTarget.disabled)
-      return;
+    if (!this.hasOverrideButtonTarget || !this.overrideArmed) return;
     this.setPrimaryDisabled(false);
     if (this.hasPrimaryButtonTarget) this.primaryButtonTarget.click();
   }
