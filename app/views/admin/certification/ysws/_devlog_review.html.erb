@@ -127,14 +127,16 @@
       <%= Certification::CommitGraphBuilder.new(dl_commits).svg %>
     </div>
 
-    <%# Timelapses recorded within this devlog's time window — the recordings
-        that produced its logged time. Only shown when there are any; every
-        lapse still appears in the page-level gallery. %>
+    <%# Recordings made within this devlog's time window — the Lapse timelapses
+        and Lookout screen recordings that produced its logged time. Only shown
+        when there are any; every recording still appears in the page-level
+        gallery. Only Lapse recordings carry a Telescreen link. %>
     <% dl_lapses = @devlog_lapses&.dig(devlog_review.post_devlog_id) || [] %>
-    <% if dl_lapses.any? %>
+    <% dl_lookouts = @devlog_lookouts&.dig(devlog_review.post_devlog_id) || [] %>
+    <% if dl_lapses.any? || dl_lookouts.any? %>
       <div class="devlog-recordings-section">
         <%= render "admin/certification/funding_requests/recordings",
-              timelapses: dl_lapses, recordings: [], title: "Timelapses",
+              timelapses: dl_lapses, recordings: dl_lookouts, title: "Recordings",
               telescreen_uid: @lapse_owner_uid %>
       </div>
     <% end %>
