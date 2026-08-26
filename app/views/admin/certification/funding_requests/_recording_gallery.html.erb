@@ -2,7 +2,8 @@
       title:      panel heading
       empty_text: shown when items is blank
       items:      array of { source:, video_url:, poster_url:, processing:,
-                  name:, duration: (seconds), recorded_at: (Time or nil) } %>
+                  name:, duration: (seconds), recorded_at: (Time or nil),
+                  telescreen_url: (optional Telescreen deep-link) } %>
 <div class="ship-review__panel recording-gallery">
   <h2 class="ship-review__panel-title"><%= title %></h2>
 
@@ -33,6 +34,11 @@
               <%= [ format_clock(item[:duration]),
                     (item[:recorded_at] && l(item[:recorded_at].to_date, format: :short)) ].compact.join(" · ") %>
             </span>
+            <% if item[:telescreen_url].present? %>
+              <%= link_to "Open in Telescreen", item[:telescreen_url],
+                    class: "recording-gallery__telescreen",
+                    target: "_blank", rel: "noopener noreferrer" %>
+            <% end %>
           </div>
         </li>
       <% end %>

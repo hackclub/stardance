@@ -2,7 +2,12 @@
     screen recordings merged into one gallery, newest-first. The capture tool
     doesn't matter to a reviewer, so they're shown as a single list. Locals:
       timelapses: Lapse API hashes (LapseService)
-      recordings: Lookout hashes (LookoutService) %>
+      recordings: Lookout hashes (LookoutService)
+      title:      optional panel heading (default "Recordings")
+      telescreen_uid: optional owner Hackatime uid; when present, each Lapse gets
+                  an "Open in Telescreen" deep-link (Lookout recordings never do) %>
+<% title ||= "Recordings" %>
+<% telescreen_uid ||= nil %>
 <%
   items = Array(timelapses).map do |tl|
     {
@@ -12,7 +17,8 @@
       name: tl[:name].presence || "Untitled recording",
       duration: tl[:duration],
       recorded_at: tl[:createdAt].present? ? Time.zone.at(tl[:createdAt].to_i / 1000) : nil,
-      processing: tl[:visibility] == "FAILED_PROCESSING" ? "Processing failed" : "Still processing…"
+      processing: tl[:visibility] == "FAILED_PROCESSING" ? "Processing failed" : "Still processing…",
+      telescreen_url: telescreen_lapse_url(hackatime_uid: telescreen_uid, lapse_id: tl[:id])
     }
   end
 
@@ -34,6 +40,6 @@
     correctly from controllers outside funding_requests, e.g. the combined
     hardware review page. %>
 <%= render "admin/certification/funding_requests/recording_gallery",
-      title: "Recordings",
+      title: title,
       empty_text: "No recordings found for this project.",
       items: items %>

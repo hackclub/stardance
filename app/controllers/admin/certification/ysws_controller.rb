@@ -136,8 +136,17 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
     @lapse_timelapses = lapse_timelapses_for_ysws_review
     @lookout_recordings = lookout_recordings_for_ysws_review
+    # Owner Hackatime uid for Telescreen deep-links on Lapse recordings.
+    @lapse_owner_uid = @review.project.memberships.owner.first&.user&.hackatime_identity&.uid
 
     @devlog_windows = devlog_windows_for_review(@review)
+    # Attach each timelapse to the devlog whose time window it was recorded in,
+    # so a reviewer sees the recordings that produced a devlog's logged time
+    # right beside it. The top gallery still lists every lapse.
+    @devlog_lapses = ::Certification::DevlogLapseBucketer.call(
+      timelapses: @lapse_timelapses,
+      windows:    @devlog_windows
+    )
     @devlog_commits = begin
       load_commits_with_stats(
         @devlog_windows,

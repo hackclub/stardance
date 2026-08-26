@@ -37,4 +37,15 @@ class TelescreenHelperTest < ActionView::TestCase
     url = "https://example.com/cases/2518"
     assert_equal url, displayed_telescreen_url(url)
   end
+
+  test "lapse url points at the workbench with the owner uid and lapse id" do
+    assert_equal "https://telescreen.hackclub.com/workbench/lapse?u=51046&t=abc123",
+                 telescreen_lapse_url(hackatime_uid: "51046", lapse_id: "abc123")
+  end
+
+  test "lapse url is blank without a uid or a lapse id" do
+    assert_nil telescreen_lapse_url(hackatime_uid: nil, lapse_id: "abc123")
+    assert_nil telescreen_lapse_url(hackatime_uid: "51046", lapse_id: nil)
+    assert_nil telescreen_lapse_url(hackatime_uid: "", lapse_id: "")
+  end
 end

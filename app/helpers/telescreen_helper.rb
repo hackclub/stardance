@@ -32,6 +32,14 @@ module TelescreenHelper
     "#{telescreen_base_url}/workbench/hackatime?slack=#{ERB::Util.url_encode(slack)}"
   end
 
+  # Deep-links a single Lapse timelapse into Telescreen's lapse workbench, which
+  # keys on the owner's Hackatime uid (u) and the lapse id (t).
+  def telescreen_lapse_url(hackatime_uid:, lapse_id:)
+    return if hackatime_uid.blank? || lapse_id.blank?
+
+    "#{telescreen_base_url}/workbench/lapse?u=#{ERB::Util.url_encode(hackatime_uid.to_s)}&t=#{ERB::Util.url_encode(lapse_id.to_s)}"
+  end
+
   def displayed_telescreen_url(url)
     uri = URI.parse(url.to_s)
     return url unless uri.is_a?(URI::HTTP) && uri.host.present?

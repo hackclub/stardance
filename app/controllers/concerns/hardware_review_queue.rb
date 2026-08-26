@@ -203,6 +203,8 @@ module HardwareReviewQueue
     @funding_request = @project.latest_funding_request
     @ship = @project.latest_ship_review
     @owner = review_owner
+    # Owner Hackatime uid for Telescreen deep-links on Lapse recordings.
+    @lapse_owner_uid = @owner&.hackatime_identity&.uid
     @active_review =
       if @funding_request&.pending?
         @funding_request

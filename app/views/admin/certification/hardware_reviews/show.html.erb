@@ -58,7 +58,8 @@
         <% end %>
 
         <%= render "admin/certification/funding_requests/recordings",
-              timelapses: @lapse_timelapses, recordings: @lookout_recordings %>
+              timelapses: @lapse_timelapses, recordings: @lookout_recordings,
+              telescreen_uid: @lapse_owner_uid %>
 
         <div class="ship-review__panel hardware-review__history-panel">
           <h2 class="ship-review__panel-title">Review history</h2>

@@ -124,7 +124,8 @@
       <!-- Lapse / Lookout Recordings -->
       <section class="review-card recordings-card">
         <%= render "admin/certification/funding_requests/recordings",
-              timelapses: @lapse_timelapses, recordings: @lookout_recordings %>
+              timelapses: @lapse_timelapses, recordings: @lookout_recordings,
+              telescreen_uid: @lapse_owner_uid %>
       </section>
 
       <% if @review.project.update_description.present? %>

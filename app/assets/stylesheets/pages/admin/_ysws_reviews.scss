@@ -1635,6 +1635,31 @@ body:has(.certification-ysws) {
       }
     }
 
+    .devlog-recordings-section {
+      padding-top: var(--space-m);
+      border-top: 1px solid var(--color-space-border);
+
+      // The shared recordings partial wraps itself in .ship-review__panel card
+      // chrome (surface + large heading). Nested inside a devlog that reads as
+      // a competing card, so strip it back to a compact, labelled gallery that
+      // matches the git/media labels above it.
+      .recording-gallery {
+        padding: 0;
+        background: none;
+        border: none;
+      }
+
+      .ship-review__panel-title {
+        margin: 0 0 var(--space-xs);
+        color: var(--color-space-text-muted);
+        font-family: var(--font-family-sans);
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+
     .empty-devlogs {
       text-align: center;
       padding: var(--space-xxl);
