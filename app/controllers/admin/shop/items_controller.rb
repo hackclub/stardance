@@ -246,6 +246,11 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         :requires_ship, :required_ships_count, :required_ships_start_date, :required_ships_end_date,
         :source_region, :buyable_by_self, :accessory_tag, :show_image_in_shop,
         :mission_prize_only,
+        :enabled_us, :enabled_ca, :enabled_eu, :enabled_uk, :enabled_in, :enabled_au, :enabled_xx,
+        :usd_offset_us, :usd_offset_ca, :usd_offset_eu, :usd_offset_uk, :usd_offset_in, :usd_offset_au, :usd_offset_xx,
+        :default_assigned_user_id,
+        :default_assigned_user_id_us, :default_assigned_user_id_eu, :default_assigned_user_id_uk,
+        :default_assigned_user_id_ca, :default_assigned_user_id_au, :default_assigned_user_id_in, :default_assigned_user_id_xx,
         requires_achievement: [], blocked_countries: [],
         unlocking_mission_ids: [],
         shop_category_ids: []

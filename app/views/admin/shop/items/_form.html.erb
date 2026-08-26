@@ -27,15 +27,13 @@
           <div class="shop-item-form__field">
             <label class="shop-item-form__label">Type</label>
             <% if shop_item.persisted? %>
-              <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;" data-controller="shop-item-type-converter" data-shop-item-type-converter-url-value="<%= admin_shop_item_path(shop_item) %>">
                 <code><%= shop_item.type %></code>
                 <details style="position: relative;">
                   <summary class="btn-secondary" style="cursor: pointer; font-size: 0.8rem; padding: 2px 8px;">Convert…</summary>
                   <div style="position: absolute; z-index: 10; background: var(--color-tan-400); border: 1px solid var(--color-brown-500); border-radius: 0.5rem; padding: 0.75rem; margin-top: 0.25rem; min-width: 280px;">
-                    <%= form_with url: admin_shop_item_path(shop_item), method: :patch, scope: :shop_item, local: true do |cf| %>
-                      <%= cf.select :type, @shop_item_types, {}, { class: "form-control", style: "margin-bottom: 0.5rem;" } %>
-                      <%= cf.submit "Convert type", class: "btn-primary", style: "width: 100%;" %>
-                    <% end %>
+                    <%= select_tag nil, options_for_select(@shop_item_types), class: "form-control", style: "margin-bottom: 0.5rem;", data: { shop_item_type_converter_target: "select" } %>
+                    <button type="button" class="btn-primary" style="width: 100%;" data-shop-item-type-converter-target="button" data-action="shop-item-type-converter#convert">Convert type</button>
                   </div>
                 </details>
               </div>
