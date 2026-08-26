@@ -197,6 +197,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
     t.bigint "reviewer_id"
     t.integer "stardust_earned"
     t.integer "status", default: 0, null: false
+    t.text "submitter_note"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["decided_at"], name: "index_certification_funding_requests_on_decided_at"
@@ -233,6 +234,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
     t.datetime "updated_at", null: false
     t.bigint "ysws_review_id", null: false
     t.index ["ysws_review_id"], name: "index_certification_mac_analyses_on_ysws_review_id", unique: true
+  end
+
+  create_table "certification_review_notes", force: :cascade do |t|
+    t.bigint "author_id", null: false
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_certification_review_notes_on_author_id"
+    t.index ["project_id"], name: "index_certification_review_notes_on_project_id"
   end
 
   create_table "certification_review_skips", force: :cascade do |t|
@@ -1194,6 +1205,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
     t.string "hcb_keyword_lock"
     t.string "hcb_merchant_lock"
     t.boolean "hcb_one_time_use", default: false
+    t.string "hcb_org_slug"
     t.text "hcb_preauthorization_instructions"
     t.string "internal_description"
     t.boolean "limited"
@@ -1702,6 +1714,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
   add_foreign_key "certification_integrities", "users", column: "claimed_by_id"
   add_foreign_key "certification_integrities", "users", column: "reviewer_id"
   add_foreign_key "certification_mac_analyses", "certification_ysws_reviews", column: "ysws_review_id"
+  add_foreign_key "certification_review_notes", "projects"
+  add_foreign_key "certification_review_notes", "users", column: "author_id"
   add_foreign_key "certification_review_skips", "users"
   add_foreign_key "certification_ship_reviews", "post_ship_events", on_delete: :nullify
   add_foreign_key "certification_ship_reviews", "projects"

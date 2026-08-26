@@ -153,6 +153,7 @@ class Project < ApplicationRecord
   has_many :reports, class_name: "Project::Report", dependent: :destroy
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
   has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
+  has_many :review_notes, class_name: "Certification::ReviewNote", dependent: :destroy
   has_many :integrity_checks, through: :ship_events, source: :integrity_check
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy

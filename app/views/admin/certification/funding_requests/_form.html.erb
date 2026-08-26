@@ -39,6 +39,14 @@
     </div>
   <% end %>
 
+  <%# Read-only context the builder left for the reviewer at submission. %>
+  <% if funding_request.submitter_note.present? %>
+    <div class="review-form__submitter-note">
+      <p class="review-form__submitter-note-label">Note from <%= funding_request.owner.display_name %></p>
+      <p class="review-form__submitter-note-body"><%= funding_request.submitter_note %></p>
+    </div>
+  <% end %>
+
   <fieldset class="review-form__fieldset">
     <legend>Verdict</legend>
     <label class="review-form__option">

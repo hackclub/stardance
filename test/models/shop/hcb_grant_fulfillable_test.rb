@@ -127,4 +127,51 @@ class Shop::HCBGrantFulfillableTest < ActiveSupport::TestCase
     assert @order.reload.fulfilled?
     assert_equal 2600, ShopCardGrant.find_by(hcb_grant_hashid: "grt_live").expected_amount_cents
   end
+
+  test "the chosen hcb org is passed through to create_card_grant" do
+    @item.update!(hcb_org_slug: "stardance-hardware")
+
+    captured = nil
+    grant = ->(**kwargs) { captured = kwargs; GRANT_RESPONSE }
+    HCBService.stub(:create_card_grant, grant) do
+      HCBService.stub(:rename_transaction, true) { @item.fulfill!(@order) }
+    end
+
+    assert_equal "stardance-hardware", captured[:organization]
+  end
+
+  test "a blank hcb org falls back to the default slug" do
+    assert_nil @item.hcb_org_slug
+
+    captured = nil
+    grant = ->(**kwargs) { captured = kwargs; GRANT_RESPONSE }
+    HCBService.stub(:create_card_grant, grant) do
+      HCBService.stub(:rename_transaction, true) { @item.fulfill!(@order) }
+    end
+
+    assert_equal HCBService::DEFAULT_SLUG, captured[:organization]
+  end
+
+  test "hcb_org_slug is limited to the allowed orgs, with blank allowed" do
+    @item.hcb_org_slug = "some-other-org"
+    assert_not @item.valid?
+    assert_includes @item.errors[:hcb_org_slug], "is not included in the list"
+
+    %w[stardance stardance-hardware].each do |org|
+      @item.hcb_org_slug = org
+      assert @item.valid?, "#{org} should be an allowed HCB org"
+    end
+
+    @item.hcb_org_slug = ""
+    assert @item.valid?, "blank must be allowed and treated as the default"
+  end
+
+  test "a non-grant item neither validates nor exposes hcb_org_slug" do
+    item = ShopItem::ThirdPartyPhysical.new(hcb_org_slug: "nonsense")
+    item.valid?
+
+    assert_empty item.errors[:hcb_org_slug], "non-grant items must not validate hcb_org_slug"
+    assert_not item.respond_to?(:effective_hcb_org_slug, true),
+               "non-grant items must not mix in grant fulfillment behavior"
+  end
 end

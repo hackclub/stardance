@@ -20,6 +20,7 @@
   viewer_follow = @viewer_follow
   total_hours = @total_hours || (@project.duration_seconds / 3600.0).round
   can_edit_project = @can_edit_project
+  is_owner = @is_owner
   admin_editing_project = @admin_editing_project
   # Only highlight the unfinished sections when the user arrived via the
   # "Complete project info" button (which adds ?complete=1).
@@ -498,6 +499,13 @@
                   <% else %>
                     <%= edit_project_link %>
                   <% end %>
+                <% elsif is_owner && !can_edit_project %>
+                  <button type="button" class="project-show__pill project-show__pill--outline" aria-disabled="true"
+                          data-controller="tooltip"
+                          data-tooltip-message-value="Your project is under review. Editing is locked until it's decided."
+                          data-tooltip-position-value="top">
+                    Edit project
+                  </button>
                 <% end %>
 
                 <% if current_user && !is_member %>
@@ -1221,6 +1229,13 @@
             Once a reviewer approves your design, your kit becomes available to redeem and your project moves to the build stage.
           </p>
 
+          <label class="funding-modal__reviewer-note">
+            <span>Note to reviewer <span class="funding-modal__reviewer-note-optional">(optional)</span></span>
+            <%= form.text_area :submitter_note, rows: 3, maxlength: 10_000,
+                  class: "funding-modal__reviewer-note-input",
+                  placeholder: "Anything you'd like the reviewer to know about your design?" %>
+          </label>
+
           <% if design_gated %>
             <%= render "projects/action_items", review: returned_design %>
           <% end %>
@@ -1293,6 +1308,13 @@
             Get your design approved and we'll issue a grant card for the approved amount. Higher tiers fund more.
             <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
           </p>
+
+          <label class="funding-modal__reviewer-note">
+            <span>Note to reviewer <span class="funding-modal__reviewer-note-optional">(optional)</span></span>
+            <%= form.text_area :submitter_note, rows: 3, maxlength: 10_000,
+                  class: "funding-modal__reviewer-note-input",
+                  placeholder: "Anything you'd like the reviewer to know about your design?" %>
+          </label>
 
           <% if design_gated %>
             <%= render "projects/action_items", review: returned_design %>

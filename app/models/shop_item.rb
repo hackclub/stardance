@@ -30,6 +30,7 @@
 #  hcb_keyword_lock                  :string
 #  hcb_merchant_lock                 :string
 #  hcb_one_time_use                  :boolean          default(FALSE)
+#  hcb_org_slug                      :string
 #  hcb_preauthorization_instructions :text
 #  internal_description              :string
 #  limited                           :boolean
@@ -259,6 +260,10 @@ class ShopItem < ApplicationRecord
   def recommended_price
     instance_variable_defined?(:@recommended_price) ? @recommended_price : ticket_cost
   end
+
+  # User allowed to create/enable shop items without the "check with Amber
+  # first" guard in the admin item form.
+  AMBER_USER_ID = 355
 
   MANUAL_FULFILLMENT_TYPES = [
     "ShopItem::HCBGrant",

@@ -216,6 +216,7 @@ module HardwareReviewQueue
       end
     @past_reviews = past_reviews
     load_undo_context
+    @review_notes = @project.review_notes.includes(:author).newest_first
     @lapse_timelapses = lapse_timelapses_for_review
     @lookout_recordings = lookout_recordings_for_review
   end

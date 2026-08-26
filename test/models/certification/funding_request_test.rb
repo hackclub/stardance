@@ -18,6 +18,7 @@
 #  reversed_at               :datetime
 #  stardust_earned           :integer
 #  status                    :integer          default(0), not null
+#  submitter_note            :text
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
 #  project_id                :bigint           not null
@@ -87,6 +88,22 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
     fr = @project.certification_funding_requests.new(user: @owner, complexity_tier: 1, requested_amount_cents: 5_000)
     assert_not fr.valid?
     assert fr.errors[:requested_amount_cents].any?
+  end
+
+  test "accepts and persists an optional submitter note" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000,
+      submitter_note: "Parts list is in BOM.csv; the display is a stretch goal."
+    )
+    assert_equal "Parts list is in BOM.csv; the display is a stretch goal.", fr.reload.submitter_note
+  end
+
+  test "is valid without a submitter note" do
+    fr = @project.certification_funding_requests.new(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000
+    )
+    assert fr.valid?
+    assert_nil fr.submitter_note
   end
 
   test "approval switches the project to build and issues the HCB grant" do

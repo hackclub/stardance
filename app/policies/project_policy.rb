@@ -12,11 +12,11 @@ class ProjectPolicy < ApplicationPolicy
     end
 
     def edit?
-        owns? || user&.admin?
+        editable_by_owner? || user&.admin?
     end
 
     def update?
-        owns? || user&.admin?
+        editable_by_owner? || user&.admin?
     end
 
     def destroy?
@@ -74,5 +74,9 @@ class ProjectPolicy < ApplicationPolicy
     def owns?
         return false unless user && record
         user.memberships.exists?(project: record, role: "owner")
+    end
+
+    def editable_by_owner?
+        owns? && !record.awaiting_ship_review?
     end
 end

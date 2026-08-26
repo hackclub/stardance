@@ -18,6 +18,7 @@
 #  reversed_at               :datetime
 #  stardust_earned           :integer
 #  status                    :integer          default(0), not null
+#  submitter_note            :text
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
 #  project_id                :bigint           not null
@@ -158,6 +159,8 @@ module Certification
     validates :approved_amount_cents,
               numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
     validates :feedback, length: { maximum: 10_000 }, allow_blank: true
+    # Optional free-text note the builder writes for the reviewer at submission.
+    validates :submitter_note, length: { maximum: 10_000 }, allow_blank: true
     validates :verdict, inclusion: { in: VERDICTS }, allow_nil: true
     validate :requested_within_tier_max
     validate :approved_within_tier_max

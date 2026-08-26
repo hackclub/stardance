@@ -16,6 +16,7 @@ class Projects::FundingRequestsController < ApplicationController
     funding_request = @project.certification_funding_requests.new(user: current_user, status: :pending)
     funding_request.complexity_tier = params[:complexity_tier] if params[:complexity_tier].present?
     funding_request.requested_amount_cents = params[:requested_amount].to_i * 100 if params[:requested_amount].present?
+    funding_request.submitter_note = params[:submitter_note] if params[:submitter_note].present?
     funding_request.save!
 
     track_event "funding_requested", { project_id: @project.id, complexity_tier: params[:complexity_tier] }

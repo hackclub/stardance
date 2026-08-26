@@ -212,6 +212,42 @@
   color: var(--color-space-text-muted);
 }
 
+.funding-modal__reviewer-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-space-text);
+}
+
+.funding-modal__reviewer-note-optional {
+  font-weight: 400;
+  color: var(--color-space-text-muted);
+}
+
+.funding-modal__reviewer-note-input {
+  width: 100%;
+  padding: var(--space-s) var(--space-m);
+  background-color: var(--color-set-1-bg);
+  color: var(--color-space-text);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--border-radius);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-m);
+  font-weight: 400;
+  resize: vertical;
+
+  &:hover {
+    border-color: var(--color-border-input-focus);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+  }
+}
+
 .funding-modal__guide-link {
   font-weight: 600;
   color: var(--color-brand-lilac);
