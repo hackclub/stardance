@@ -42,15 +42,15 @@ Rack::Attack.safelist("allow static assets") do |req|
   RackAttackClient.static_request?(req)
 end
 
-Rack::Attack.throttle("requests/ip", limit: 600, period: 5.minutes) do |req|
+Rack::Attack.throttle("requests/ip", limit: 1200, period: 5.minutes) do |req|
   RackAttackClient.ip(req) unless RackAttackClient.admin_request?(req)
 end
 
-Rack::Attack.throttle("request bursts/ip", limit: 120, period: 1.minute) do |req|
+Rack::Attack.throttle("request bursts/ip", limit: 480, period: 1.minute) do |req|
   RackAttackClient.ip(req) unless RackAttackClient.admin_request?(req)
 end
 
-Rack::Attack.throttle("state-changing requests/ip", limit: 60, period: 1.minute) do |req|
+Rack::Attack.throttle("state-changing requests/ip", limit: 120, period: 1.minute) do |req|
   RackAttackClient.ip(req) if !(req.get? || req.head? || req.options?) && !RackAttackClient.admin_request?(req)
 end
 
