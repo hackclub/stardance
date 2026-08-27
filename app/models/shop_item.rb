@@ -287,6 +287,7 @@ class ShopItem < ApplicationRecord
     "ShopItem::SpecialFulfillmentItem",
     "ShopItem::HackClubberItem",
     "ShopItem::FreeStickers",
+    "ShopItem::StickyStreakSticker",
     "ShopItem::SillyItemType",
     "ShopItem::OutpostTicket"
   ].freeze

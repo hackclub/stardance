@@ -5,7 +5,7 @@ class Shop::UpdatePostageCostsJob < ApplicationJob
 
   def perform
     orders = ShopOrder.joins(:shop_item)
-                      .where(shop_items: { type: [ "ShopItem::LetterMail", "ShopItem::NonmachinableLetterMail" ] })
+                      .where(shop_items: { type: ShopItem::LetterMail::TYPES })
                       .where(aasm_state: "fulfilled")
                       .where(fulfillment_cost: nil)
                       .where.not(external_ref: nil)

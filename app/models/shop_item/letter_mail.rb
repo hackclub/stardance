@@ -87,4 +87,19 @@
 class ShopItem::LetterMail < ShopItem
   THESEUS_QUEUE = "stardance-orders".freeze
   MAX_ITEMS_PER_LETTER = 10
+
+  # Every STI type that ships as letter mail. The batching, postage and admin
+  # queue code filters on the `type` string, which does not match subclasses on
+  # its own, so a new subclass is registered here once instead of in each of
+  # those lists.
+  TYPES = %w[
+    ShopItem::LetterMail
+    ShopItem::NonmachinableLetterMail
+    ShopItem::StickyStreakSticker
+  ].freeze
+
+  # Types the "batch send letter mail" sweep picks up. Sticky Streak stickers
+  # ship through the same Theseus queue but are left out of the sweep, so they
+  # only ever go out when someone sends them from the order itself.
+  BULK_BATCHED_TYPES = (TYPES - %w[ShopItem::StickyStreakSticker]).freeze
 end

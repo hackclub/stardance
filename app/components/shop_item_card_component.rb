@@ -86,7 +86,8 @@ class ShopItemCardComponent < ViewComponent::Base
     case item_type
     when "ShopItem::HCBGrant", "ShopItem::HCBPreauthGrant"
       cats << "Grants" << "Digital"
-    when "ShopItem::WarehouseItem", "ShopItem::HQMailItem", "ShopItem::LetterMail", "ShopItem::NonmachinableLetterMail", "ShopItem::FreeStickers"
+    when "ShopItem::WarehouseItem", "ShopItem::HQMailItem", "ShopItem::LetterMail",
+         "ShopItem::NonmachinableLetterMail", "ShopItem::StickyStreakSticker", "ShopItem::FreeStickers"
       cats << "HQ"
     when "ShopItem::ThirdPartyDigital"
       cats << "Digital"

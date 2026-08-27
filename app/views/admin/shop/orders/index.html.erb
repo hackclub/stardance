@@ -18,7 +18,7 @@
       <%= render ActionButtonComponent.new(text: "Pending Fulfillment", href: admin_shop_orders_path(view: 'fulfillment'), size: :small, variant: @view == 'fulfillment' ? :primary : :secondary) %>
     <% end %>
     <% if @view == 'fulfillment' && policy(ShopOrder).update? %>
-      <%= button_to "📬 Batch send letter mail to Theseus", admin_shop_letter_mail_batch_path, method: :post, class: "btn-secondary", form: { onsubmit: "return confirm('Bundle all pending letter mail into envelopes and send to Theseus?')" } %>
+      <%= button_to "📬 Batch send letter mail to Theseus", admin_shop_letter_mail_batch_path, method: :post, class: "btn-secondary", form: { onsubmit: "return confirm('Bundle all pending letter mail into envelopes and send to Theseus? Sticky Streak stickers are not included.')" } %>
     <% end %>
   </div>
 

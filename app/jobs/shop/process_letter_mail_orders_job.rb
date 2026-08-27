@@ -3,7 +3,7 @@
 class Shop::ProcessLetterMailOrdersJob < ApplicationJob
   queue_as :default
 
-  LETTER_TYPES = [ "ShopItem::LetterMail", "ShopItem::NonmachinableLetterMail" ].freeze
+  LETTER_TYPES = ShopItem::LetterMail::BULK_BATCHED_TYPES
 
   def perform
     orders = ShopOrder.joins(:shop_item)

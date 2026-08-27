@@ -17,6 +17,7 @@ class ShopOrderDailySummaryJob < ApplicationJob
     "ShopItem::HQMailItem" => "HQ Mail",
     "ShopItem::LetterMail" => "Letter Mail",
     "ShopItem::NonmachinableLetterMail" => "Nonmachinable Letter Mail",
+    "ShopItem::StickyStreakSticker" => "Sticky Streak Sticker",
     "ShopItem::WarehouseItem" => "Warehouse",
     "ShopItem::FreeStickers" => "Free Stickers",
     "ShopItem::HCBGrant" => "HCB Grant",

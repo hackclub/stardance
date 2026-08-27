@@ -520,7 +520,7 @@
         <div class="aorder__row">
           <span class="aorder__row-label">Tracking / Ref</span>
           <span class="aorder__row-value">
-            <% if @order.shop_item.type.in?(%w[ShopItem::LetterMail ShopItem::NonmachinableLetterMail ShopItem::FreeStickers]) %>
+            <% if @order.shop_item.type.in?(ShopItem::LetterMail::TYPES + %w[ShopItem::FreeStickers]) %>
               <a href="https://mail.hackclub.com/back_office/letters/<%= @order.external_ref %>" target="_blank"><%= @order.external_ref %></a>
             <% else %>
               <%= @order.external_ref %>

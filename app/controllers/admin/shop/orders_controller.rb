@@ -19,16 +19,12 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   # FreeStickers needs no human work and WarehouseItem is fulfilled by the
   # external warehouse, so those start folded away. Mail is packed by hand and
   # stays visible — HQ mail and letter mail share a single toggle because
-  # they're worked as one pile. Add new LetterMail subclasses to the mail group
-  # so they fold with the rest of it.
+  # they're worked as one pile. New LetterMail subclasses join the mail group
+  # through ShopItem::LetterMail::TYPES, so they fold with the rest of it.
   ITEM_TYPE_TOGGLES = [
     { label: "Free Stickers", hidden_by_default: true, types: %w[ShopItem::FreeStickers] },
     { label: "Warehouse Item", hidden_by_default: true, types: %w[ShopItem::WarehouseItem] },
-    { label: "HQ Mail", hidden_by_default: false, types: %w[
-      ShopItem::HQMailItem
-      ShopItem::LetterMail
-      ShopItem::NonmachinableLetterMail
-    ] }
+    { label: "HQ Mail", hidden_by_default: false, types: %w[ShopItem::HQMailItem] + ShopItem::LetterMail::TYPES }
   ].freeze
 
   TOGGLEABLE_ITEM_TYPES = ITEM_TYPE_TOGGLES.flat_map { |toggle| toggle[:types] }.freeze
