@@ -98,7 +98,10 @@ module Admin
       "ReviewerPayoutRequest" => "ReviewerPayoutRequest",
       "Raffle::Participant" => "Raffle::Participant",
       "Raffle::Referral" => "Raffle::Referral",
-      "Raffle::Week" => "Raffle::Week"
+      "Raffle::Week" => "Raffle::Week",
+      "StickyStreak" => "StickyStreak",
+      "StickyStreakReward" => "StickyStreakReward",
+      "StickyStreakClaim" => "StickyStreakClaim"
     }.freeze
 
     def generate_csv(versions)

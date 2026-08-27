@@ -1,0 +1,93 @@
+<% content_for :title, "Sticky Streak Rewards" %>
+<div class="shop-dashboard">
+  <header class="shop-dashboard__header">
+    <h1 class="shop-dashboard__title">Sticky Streak Rewards</h1>
+    <div class="shop-dashboard__header-actions">
+      <%= link_to "Back to Shop", admin_shop_path, class: "btn-secondary" %>
+    </div>
+  </header>
+
+  <div class="shop-dashboard__panel">
+    <div class="shop-dashboard__section-header">
+      <h3>Runs by day</h3>
+      <span><%= pluralize(@total_runs, "run") %></span>
+    </div>
+
+    <% if @total_runs.zero? %>
+      <p>Nobody has started a Sticky Streak yet.</p>
+    <% else %>
+      <p>
+        Each bar is everyone who had not broken their run before that day, so the bars
+        shrink as people drop out. Segments are drawn as a share of all <%= @total_runs %> runs.
+        Hover a bar for that day's numbers.
+      </p>
+
+      <ul class="sticky-funnel__legend">
+        <li class="sticky-funnel__key sticky-funnel__key--successful">Successful</li>
+        <li class="sticky-funnel__key sticky-funnel__key--in-progress">In progress</li>
+        <li class="sticky-funnel__key sticky-funnel__key--potential">Potential</li>
+      </ul>
+
+      <ol class="sticky-funnel">
+        <% @day_stats.each do |stat| %>
+          <li class="sticky-funnel__row">
+            <span class="sticky-funnel__day">Day <%= stat.day %></span>
+            <span class="sticky-funnel__track"
+                  data-controller="tooltip"
+                  data-tooltip-title-value="Day <%= stat.day %>"
+                  data-tooltip-message-value="<%= sticky_streak_day_stat_tooltip(stat) %>">
+              <% { successful: "successful", in_progress: "in-progress", potential: "potential" }.each do |field, name| %>
+                <% count = stat.public_send(field) %>
+                <% next if count.zero? %>
+                <span class="sticky-funnel__bar sticky-funnel__bar--<%= name %>"
+                      style="width: <%= sticky_streak_bar_width(count, @total_runs) %>"></span>
+              <% end %>
+            </span>
+          </li>
+        <% end %>
+      </ol>
+    <% end %>
+  </div>
+
+  <div class="shop-dashboard__panel">
+    <p>
+      Pick the shop item each of the <%= StickyStreak::LENGTH %> Sticky Streak days pays out.
+      Days left blank show as a question mark on everyone's board. Clearing a day that has
+      already been claimed does not affect the orders already placed.
+    </p>
+
+    <%= form_with url: admin_shop_sticky_streak_rewards_path, method: :patch do |f| %>
+      <table class="table-data">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th></th>
+            <th>Shop item</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% (1..StickyStreak::LENGTH).each do |day| %>
+            <% reward = @rewards[day] %>
+            <tr>
+              <td><strong><%= day %></strong></td>
+              <td>
+                <% if reward&.shop_item&.image&.attached? %>
+                  <%= image_tag reward.shop_item.image.variant(:carousel_sm), class: "shop-dashboard__thumb" %>
+                <% else %>
+                  <div class="shop-dashboard__thumb-placeholder">?</div>
+                <% end %>
+              </td>
+              <td>
+                <%= select_tag "days[#{day}]",
+                      options_from_collection_for_select(@shop_items, :id, :name, reward&.shop_item_id),
+                      include_blank: "Not set" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <%= f.submit "Save rewards", class: "btn-primary" %>
+    <% end %>
+  </div>
+</div>

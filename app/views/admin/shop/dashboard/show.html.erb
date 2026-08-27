@@ -3,6 +3,7 @@
   <header class="shop-dashboard__header">
     <h1 class="shop-dashboard__title">Manage Shop</h1>
     <div class="shop-dashboard__header-actions">
+      <%= link_to "Sticky Streak Rewards", admin_shop_sticky_streak_rewards_path, class: "btn-secondary" if admin_policy(StickyStreakReward).show? %>
       <%= link_to current_user.shop_manager? && !current_user.admin? ? "New Draft" : "New Product", new_admin_shop_item_path, class: "btn-primary" %>
     </div>
   </header>

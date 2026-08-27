@@ -45,6 +45,7 @@
       <%= admin_page_button "Projects", admin_projects_path, enabled: policy(Project).index? %>
       <%= admin_page_button "Missions", admin_missions_path, enabled: policy(Mission).index? %>
       <%= admin_page_button "Certificates", admin_certificates_path, enabled: policy(Certificate).index? %>
+      <%= admin_page_button "Sticky Streak Rewards", admin_shop_sticky_streak_rewards_path, enabled: policy(StickyStreakReward).show? %>
       <%= admin_page_button "Workshops", admin_workshops_path, enabled: policy(:admin).access_workshops? %>
       <%= admin_page_button "Funnel", admin_funnel_path, enabled: policy(:admin).access_funnel? %>
       <%= admin_page_button "Super Stars", admin_super_stars_path,
