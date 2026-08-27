@@ -21,6 +21,12 @@
     border-color 200ms ease,
     color 200ms ease;
 
+  // Setting display above beats the UA sheet's [hidden] { display: none }, so
+  // restore it or hiding an action button via the attribute silently fails.
+  &[hidden] {
+    display: none;
+  }
+
   &__label {
     display: inline-block;
   }

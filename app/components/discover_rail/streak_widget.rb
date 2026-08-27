@@ -80,6 +80,16 @@ module DiscoverRail
     def next_day_at_iso = user.streak_next_day_at.iso8601
     def user_timezone = user.timezone.presence || "UTC"
 
+    # Calendar paging bounds, as sortable YYYYMM keys for the Stimulus controller.
+    def first_calendar_month = month_key(StreakActivity::CALENDAR_FIRST_MONTH)
+    def last_calendar_month = month_key(StreakActivity::CALENDAR_LAST_MONTH)
+
+    def sticky_streak = @sticky_streak ||= user.sticky_streak
+
+    def sticky_started? = sticky_streak.present?
+
+    def sticky_claimable_count = sticky_started? ? sticky_streak.claimable_days.size : 0
+
     private
 
     def today_coded_seconds
@@ -93,6 +103,8 @@ module DiscoverRail
 
       [ week_start, calendar_start - 1.day ].min..[ week_start + 6.days, calendar_end + 1.day ].max
     end
+
+    def month_key(date) = (date.year * 100) + date.month
 
     def linked_projects?
       user.hackatime_projects.where.not(project_id: nil).exists?

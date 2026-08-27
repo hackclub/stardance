@@ -67,12 +67,6 @@
     }
   }
 
-  &__star-img {
-    width: 28px;
-    height: 28px;
-    display: block;
-  }
-
   &__day-label {
     font-family: var(--font-family-text);
     font-size: var(--font-size-xs);
@@ -246,11 +240,15 @@
     }
   }
 
-  &__cal-star {
-    width: 24px;
-    height: 24px;
-    position: relative;
-    z-index: 1;
+  // ── Sticky Streak ──
+
+  &__toggle-badge {
+    padding: 1px 6px;
+    border-radius: 99px;
+    background: var(--color-brand-yellow);
+    color: var(--color-space-bg);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
   }
 
   &__setup {

@@ -6,6 +6,7 @@ module User::Streakable
 
   included do
     has_many :streak_activities, dependent: :destroy
+    has_one :sticky_streak, dependent: :destroy
   end
 
   def streak_today_date
@@ -82,6 +83,8 @@ module User::Streakable
     )
     completed = activities_by_date.values.select(&:completed?).map(&:activity_date).to_set
 
+    sticky = sticky_streak
+
     (cal_start..cal_end).map do |date|
       done = completed.include?(date)
       {
@@ -92,7 +95,8 @@ module User::Streakable
         today: date == today,
         future: date > today,
         streak_left: done && completed.include?(date - 1.day) && date.wday != 0,
-        streak_right: done && completed.include?(date + 1.day) && date.wday != 6
+        streak_right: done && completed.include?(date + 1.day) && date.wday != 6,
+        **sticky_day_fields(sticky, date)
       }
     end
   end
@@ -126,6 +130,9 @@ module User::Streakable
 
   def build_day_list(from, to, today, activities: nil)
     activities_by_date = index_streak_activities(activities, from..to)
+    sticky = sticky_streak
+
+
     (from..to).map do |date|
       {
         date: date,
@@ -133,7 +140,8 @@ module User::Streakable
         coded_seconds: activities_by_date[date]&.coded_seconds || 0,
         completed: activities_by_date[date]&.completed? || false,
         today: date == today,
-        future: date > today
+        future: date > today,
+        **sticky_day_fields(sticky, date)
       }
     end
   end
@@ -142,5 +150,14 @@ module User::Streakable
     return activities if activities.is_a?(Hash)
 
     (activities || streak_activities.for_range(range)).index_by(&:activity_date)
+  end
+
+  # Sticky Streak decoration for one calendar day: which challenge day it is,
+  # the sticker it pays out, and whether it is ready to claim.
+  def sticky_day_fields(sticky, date)
+    return { sticky_day: nil, sticky_reward: nil, sticky_claimable: false } unless sticky&.covers?(date)
+
+    day = sticky.day_for(date)
+    { sticky_day: day, sticky_reward: sticky.rewards_by_day[day], sticky_claimable: sticky.claimable_day?(day) }
   end
 end

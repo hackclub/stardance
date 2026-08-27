@@ -547,6 +547,7 @@ Rails.application.routes.draw do
   get "daily_roll/reroll_status", to: "daily_rolls#reroll_status", as: :reroll_status_daily_roll
   patch "streaks/timezone", to: "streaks#update_timezone"
   get "streaks/month", to: "streaks#month", as: :streak_month
+  resource :sticky_streak, only: [ :create ]
   get "rng", to: "daily_rolls#leaderboard", as: :rng
   get "rng/history", to: "daily_rolls#history", as: :rng_history
   delete "daily_roll/clear", to: "daily_rolls#clear", as: :clear_daily_roll if Rails.env.development? || Rails.env.test?
@@ -746,6 +747,7 @@ Rails.application.routes.draw do
         end
       end
       resource :letter_mail_batch, only: [ :create ]
+      resource :sticky_streak_rewards, only: [ :show, :update ], controller: "sticky_streak_rewards"
       resources :orders, only: [ :index, :show ] do
         collection do
           post :bulk_approve

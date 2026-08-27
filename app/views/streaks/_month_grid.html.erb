@@ -18,10 +18,14 @@
   <% end %>
 
   <% calendar_days.each do |day| %>
-    <div class="streak-widget__cal-cell <%= "streak-widget__cal-cell--outside" unless day[:in_month] %>"
-         <% if day[:in_month] && day[:coded_seconds] > 0 && !day[:future] %>
+    <% tooltip = day[:in_month] ? streak_day_tooltip(day) : nil %>
+    <div class="<%= class_names(
+                     "streak-widget__cal-cell",
+                     "streak-widget__cal-cell--outside" => !day[:in_month]
+                   ) %>"
+         <% if tooltip %>
            data-controller="tooltip"
-           data-tooltip-message-value="<%= day[:coded_seconds] / 60 %> minutes"
+           data-tooltip-message-value="<%= tooltip %>"
          <% end %>>
       <% if day[:streak_left] || day[:streak_right] %>
         <div class="streak-widget__cal-bar
@@ -29,11 +33,7 @@
                     <%= "streak-widget__cal-bar--right" if day[:streak_right] %>"></div>
       <% end %>
       <% if day[:in_month] %>
-        <% if day[:completed] %>
-          <%= image_tag "streak/star_filled.svg", class: "streak-widget__cal-star", alt: "" %>
-        <% else %>
-          <%= image_tag "streak/star_empty.svg", class: "streak-widget__cal-star", alt: "" %>
-        <% end %>
+        <%= render "streaks/day_mark", day: day, size: "month" %>
       <% end %>
     </div>
   <% end %>

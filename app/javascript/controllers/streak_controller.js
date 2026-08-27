@@ -16,6 +16,8 @@ export default class extends Controller {
     month: Number,
     year: Number,
     monthUrl: String,
+    firstMonth: Number,
+    lastMonth: Number,
   };
 
   connect() {
@@ -69,28 +71,24 @@ export default class extends Controller {
       m = 12;
       y -= 1;
     }
-    if (y < 2026 || (y === 2026 && m < 6)) return;
+    if (y * 100 + m < this.firstMonthValue) return;
+
     this.monthValue = m;
     this.yearValue = y;
     this.fetchMonth();
   }
 
   nextMonth() {
-    const now = new Date();
-    const nextMonth = this.monthValue + 1;
-    const nextYear = nextMonth > 12 ? this.yearValue + 1 : this.yearValue;
-    const normalizedMonth = nextMonth > 12 ? 1 : nextMonth;
-
-    if (nextYear > 2026 || (nextYear === 2026 && normalizedMonth > 9)) return;
-    if (
-      nextYear > now.getFullYear() ||
-      (nextYear === now.getFullYear() && normalizedMonth > now.getMonth() + 1)
-    ) {
-      return;
+    let m = this.monthValue + 1;
+    let y = this.yearValue;
+    if (m > 12) {
+      m = 1;
+      y += 1;
     }
+    if (y * 100 + m > this.lastMonthValue) return;
 
-    this.monthValue = normalizedMonth;
-    this.yearValue = nextYear;
+    this.monthValue = m;
+    this.yearValue = y;
     this.fetchMonth();
   }
 

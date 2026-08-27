@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_26_155258) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1401,6 +1401,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
     t.index ["payout_given_by_id"], name: "index_show_and_tell_payout_records_on_payout_given_by_id"
   end
 
+  create_table "sticky_streak_claims", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "day_number", null: false
+    t.bigint "shop_order_id", null: false
+    t.bigint "sticky_streak_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_order_id"], name: "index_sticky_streak_claims_on_shop_order_id", unique: true
+    t.index ["sticky_streak_id", "day_number"], name: "index_sticky_streak_claims_on_sticky_streak_id_and_day_number", unique: true
+    t.index ["sticky_streak_id"], name: "index_sticky_streak_claims_on_sticky_streak_id"
+  end
+
+  create_table "sticky_streak_rewards", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "day_number", null: false
+    t.bigint "shop_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["day_number"], name: "index_sticky_streak_rewards_on_day_number", unique: true
+    t.index ["shop_item_id"], name: "index_sticky_streak_rewards_on_shop_item_id"
+  end
+
+  create_table "sticky_streaks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "started_on", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_sticky_streaks_on_user_id", unique: true
+  end
+
   create_table "streak_activities", force: :cascade do |t|
     t.date "activity_date", null: false
     t.integer "coded_seconds", default: 0, null: false
@@ -1814,7 +1842,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
   add_foreign_key "shop_item_sources", "shop_items"
   add_foreign_key "shop_item_sources", "shop_sources"
   add_foreign_key "shop_items", "users"
-  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
+  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"
@@ -1836,6 +1864,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_184443) do
   add_foreign_key "show_and_tell_attendances", "users"
   add_foreign_key "show_and_tell_attendances", "users", column: "payout_given_by_id"
   add_foreign_key "show_and_tell_payout_records", "users", column: "payout_given_by_id"
+  add_foreign_key "sticky_streak_claims", "shop_orders"
+  add_foreign_key "sticky_streak_claims", "sticky_streaks"
+  add_foreign_key "sticky_streak_rewards", "shop_items"
+  add_foreign_key "sticky_streaks", "users"
   add_foreign_key "streak_activities", "users"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_data_exports", "users"

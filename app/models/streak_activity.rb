@@ -21,6 +21,10 @@
 class StreakActivity < ApplicationRecord
   DAILY_GOAL_SECONDS = 300 # 5 minutes
 
+  # The months the streak calendar can page through, program start to end.
+  CALENDAR_FIRST_MONTH = Date.new(2026, 6, 1)
+  CALENDAR_LAST_MONTH = Date.new(2026, 9, 1)
+
   belongs_to :user
 
   validates :activity_date, presence: true

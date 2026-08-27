@@ -1,0 +1,13 @@
+<%# Explain-then-start control in the expanded calendar, for users who have not
+    begun their one and only Sticky Streak run. %>
+<details class="sticky-start">
+  <summary class="sticky-start__summary">Start Sticky Streak</summary>
+  <p class="sticky-start__body">
+    <%= StickyStreak::LENGTH %> days, <%= StickyStreak::LENGTH %> stickers. Hit your daily coding
+    goal and that day's sticker is yours to claim. Miss a day and the run ends there, and you only
+    get one run, so start it when you know you can keep it going.
+  </p>
+  <%= button_to "Start my #{StickyStreak::LENGTH} days", sticky_streak_path,
+        class: "action-btn action-btn--primary action-btn--small sticky-start__btn",
+        data: { turbo: false } %>
+</details>

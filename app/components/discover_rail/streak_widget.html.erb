@@ -1,10 +1,12 @@
 <section class="rail-widget streak-widget"
-         data-controller="streak"
+         data-controller="streak sticker-zoom"
          data-streak-next-day-value="<%= next_day_at_iso %>"
          data-streak-timezone-value="<%= user_timezone %>"
          data-streak-month-value="<%= calendar_date.month %>"
          data-streak-year-value="<%= calendar_date.year %>"
-         data-streak-month-url-value="<%= helpers.streak_month_path %>">
+         data-streak-month-url-value="<%= helpers.streak_month_path %>"
+         data-streak-first-month-value="<%= first_calendar_month %>"
+         data-streak-last-month-value="<%= last_calendar_month %>">
   <div class="streak-widget__header">
     <%= image_tag "streak/comet.svg", class: "streak-widget__comet", alt: "" %>
     <div class="streak-widget__header-text">
@@ -42,16 +44,13 @@
     <%# ── Compact week view (default) ── %>
     <div class="streak-widget__week" data-streak-target="weekView">
       <% week_days.each do |day| %>
+        <% tooltip = helpers.streak_day_tooltip(day) %>
         <div class="streak-widget__day <%= "streak-widget__day--today" if day[:today] %>"
-             <% if !day[:future] && day[:coded_seconds] > 0 %>
+             <% if tooltip %>
                data-controller="tooltip"
-               data-tooltip-message-value="<%= day[:coded_seconds] / 60 %> minutes"
+               data-tooltip-message-value="<%= tooltip %>"
              <% end %>>
-          <% if day[:completed] %>
-            <%= image_tag "streak/star_filled.svg", class: "streak-widget__star-img", alt: "Completed" %>
-          <% else %>
-            <%= image_tag "streak/star_empty.svg", class: "streak-widget__star-img", alt: "Incomplete" %>
-          <% end %>
+          <%= render "streaks/day_mark", day: day, size: "week" %>
           <span class="streak-widget__day-label"><%= day[:day_letter] %></span>
         </div>
       <% end %>
@@ -63,10 +62,18 @@
         <%= render partial: "streaks/month_grid",
               locals: { date: calendar_date,
                         calendar_days: calendar_days,
-                        show_next: false,
-                        show_prev: calendar_date > Date.new(2026, 6, 1) } %>
+                        show_next: calendar_date < StreakActivity::CALENDAR_LAST_MONTH,
+                        show_prev: calendar_date > StreakActivity::CALENDAR_FIRST_MONTH } %>
       </div>
+
+      <% if sticky_started? %>
+        <%= render "sticky_streaks/claim", sticky_streak: sticky_streak %>
+      <% else %>
+        <%= render "sticky_streaks/start" %>
+      <% end %>
     </div>
+
+    <%= render "sticky_streaks/sticker_zoom" %>
 
     <div class="streak-widget__today">
       <span class="streak-widget__progress-label"
@@ -88,6 +95,11 @@
 
     <button type="button" class="streak-widget__toggle" data-action="streak#toggleCalendar" data-streak-target="toggleBtn">
       <span data-streak-target="toggleText">View calendar</span>
+      <% if sticky_claimable_count > 0 %>
+        <span class="streak-widget__toggle-badge">
+          <%= pluralize(sticky_claimable_count, "sticker") %> to claim
+        </span>
+      <% end %>
       <span class="streak-widget__toggle-arrow" data-streak-target="toggleArrow">▼</span>
     </button>
   <% end %>

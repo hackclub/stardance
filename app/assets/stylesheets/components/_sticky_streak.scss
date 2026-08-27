@@ -1,0 +1,345 @@
+// Sticky Streak surfaces that live inside the streak calendar: the mark shown
+// in a day cell, the sticker lightbox, the claim control and the start prompt.
+
+.streak-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+
+  &--week {
+    width: 28px;
+    height: 28px;
+  }
+
+  &--month {
+    width: 24px;
+    height: 24px;
+  }
+
+  // Waves at you while its sticker is still waiting to be claimed. The wiggle
+  // lives on the button and the hover scale on the image, so the two transforms
+  // compose instead of one overriding the other.
+  &--claimable {
+    cursor: pointer;
+    animation: streak-mark-wiggle 2.4s ease-in-out infinite;
+  }
+
+  &--unknown {
+    font-family: var(--font-family-text);
+    font-weight: 700;
+    color: var(--color-space-text-muted);
+    background: var(--color-overlay-light-soft);
+    border-radius: 50%;
+  }
+
+  &__star {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &__sticker {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    cursor: zoom-in;
+    transition: transform 0.15s ease;
+
+    &--claimable {
+      cursor: pointer;
+    }
+
+    // Traces the sticker's own silhouette rather than boxing it, so the outline
+    // follows die-cut art. Chained drop-shadows compound, so these four dilate
+    // the shape by 1px in both axes and the corners come along with it. Adding
+    // diagonal passes on top only makes the outline thicker.
+    //
+    // Yellow means the day is banked; purple means it is banked and the sticker
+    // is still waiting to be claimed.
+    &--earned {
+      filter: drop-shadow(1px 0 0 var(--color-brand-yellow))
+        drop-shadow(-1px 0 0 var(--color-brand-yellow))
+        drop-shadow(0 1px 0 var(--color-brand-yellow))
+        drop-shadow(0 -1px 0 var(--color-brand-yellow));
+    }
+
+    &--claimable {
+      filter: drop-shadow(1px 0 0 var(--color-brand-lilac))
+        drop-shadow(-1px 0 0 var(--color-brand-lilac))
+        drop-shadow(0 1px 0 var(--color-brand-lilac))
+        drop-shadow(0 -1px 0 var(--color-brand-lilac));
+    }
+  }
+
+  &:hover &__sticker,
+  &:focus-visible &__sticker {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes streak-mark-wiggle {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  75% {
+    transform: rotate(-9deg);
+  }
+
+  80% {
+    transform: rotate(9deg);
+  }
+
+  85% {
+    transform: rotate(-6deg);
+  }
+
+  90% {
+    transform: rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-mark--claimable {
+    animation: none;
+  }
+}
+
+.sticker-zoom {
+  // Explicit centering: a global reset (margin: 0) overrides the UA sheet's
+  // margin: auto, so showModal() would otherwise pin the dialog top-left.
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+  max-width: calc(100vw - var(--space-l));
+  max-height: calc(100vh - var(--space-l));
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--color-space-text);
+
+  &::backdrop {
+    background: rgba(8, 6, 30, 0.8);
+  }
+
+  &__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-l) var(--space-l) var(--space-m);
+    border: 2px solid var(--color-brand-lilac);
+    border-radius: 12px;
+    background: var(--color-space-bg);
+  }
+
+  &__close {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    background: none;
+    border: 0;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__image {
+    width: min(320px, 70vw);
+    height: auto;
+    object-fit: contain;
+  }
+
+  &__name {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    color: var(--color-brand-cream);
+    margin: 0;
+    text-align: center;
+  }
+
+  &__claim {
+    margin-top: var(--space-xxs);
+  }
+}
+
+.sticky-claim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+  margin-top: var(--space-xs);
+  text-align: center;
+
+  &--idle {
+    padding: var(--space-xs);
+    border: 1px dashed var(--color-overlay-light);
+    border-radius: 8px;
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+  }
+
+  &__day {
+    font-weight: 700;
+  }
+
+  &__item {
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    opacity: 0.85;
+  }
+}
+
+.sticky-start {
+  border-top: 1px solid var(--color-overlay-light);
+  padding-top: var(--space-xs);
+  margin-top: var(--space-xs);
+
+  &__summary {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-brand-cream);
+    cursor: pointer;
+    list-style: none;
+    text-align: center;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-off-white);
+    }
+  }
+
+  &__body {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+    line-height: 1.45;
+    margin: var(--space-xs) 0;
+  }
+
+  &__btn {
+    width: 100%;
+  }
+}
+
+// Site-wide one-time announcement that the challenge exists.
+.sticky-promo {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: none;
+  padding: 0;
+  background: transparent;
+  width: min(34rem, 90vw);
+  max-height: fit-content;
+
+  &::backdrop {
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  &__content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-xl) var(--space-l) var(--space-l);
+    border: 2px solid var(--color-brand-lilac);
+    border-radius: var(--profile-radius);
+    background: var(--color-set-2-bg);
+    text-align: center;
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-xs);
+    right: var(--space-s);
+    background: none;
+    border: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__hero {
+    width: 88px;
+    height: auto;
+  }
+
+  &__heading {
+    font-family: var(--font-family-text);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    color: var(--color-brand-cream);
+    margin: 0;
+  }
+
+  &__text {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    color: var(--color-brand-off-white);
+    line-height: 1.5;
+    margin: 0;
+
+    &--warning {
+      color: var(--color-brand-salmon);
+    }
+  }
+
+  &__hint {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+    margin: 0;
+  }
+
+  &__cta {
+    margin-top: var(--space-xs);
+    padding: var(--space-xs) var(--space-xl);
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-brand-lilac);
+    color: var(--color-space-bg);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-off-white);
+    }
+  }
+}

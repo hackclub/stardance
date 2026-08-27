@@ -382,6 +382,9 @@ application.register("sticker-promo", StickerPromoController);
 import StreakController from "./streak_controller";
 application.register("streak", StreakController);
 
+import StickerZoomController from "./sticker_zoom_controller";
+application.register("sticker-zoom", StickerZoomController);
+
 import SubmitOnMetaEnterController from "./submit_on_meta_enter_controller";
 application.register("submit-on-meta-enter", SubmitOnMetaEnterController);
 

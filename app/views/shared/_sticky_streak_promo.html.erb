@@ -1,0 +1,36 @@
+<%# One-time announcement that the Sticky Streak challenge exists. Shown site
+    wide to anyone who could start one, until they dismiss it or begin a run.
+    Dismissal persists per account through User::StateFlags. %>
+<% if current_user&.onboarded? &&
+      !current_user.has_dismissed?("sticky_streak_intro") &&
+      current_user.sticky_streak.nil? &&
+      current_user.hackatime_identity.present? %>
+  <dialog class="sticky-promo"
+          data-controller="dismissable"
+          data-dismissable-thing-value="sticky_streak_intro"
+          data-dismissable-open-value="true"
+          aria-labelledby="sticky-promo-heading">
+    <div class="sticky-promo__content">
+      <button type="button" class="sticky-promo__close"
+              data-action="click->dismissable#dismiss" aria-label="Close">&times;</button>
+
+      <%= image_tag "streak/comet.svg", class: "sticky-promo__hero", alt: "" %>
+
+      <h2 class="sticky-promo__heading" id="sticky-promo-heading">Sticky Streaks are here</h2>
+
+      <p class="sticky-promo__text">
+        Start a <strong><%= StickyStreak::LENGTH %> day</strong> run and every day you keep your
+        coding streak alive unlocks that day's sticker, free.
+      </p>
+      <p class="sticky-promo__text sticky-promo__text--warning">
+        Miss a single day and the run ends there. You only get one, so start it when you know
+        you can keep it going.
+      </p>
+      <p class="sticky-promo__hint">Open the calendar on your streak widget to begin.</p>
+
+      <button type="button" class="sticky-promo__cta" data-action="click->dismissable#dismiss">
+        Got it!
+      </button>
+    </div>
+  </dialog>
+<% end %>

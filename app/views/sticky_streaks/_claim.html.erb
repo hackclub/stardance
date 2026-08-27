@@ -1,0 +1,17 @@
+<%# Always-present claim control under the streak calendar. A claimable day
+    links into the normal shop item page, carrying the day as the redemption
+    gate, so the usual address picker and checkout apply. %>
+<% claimable_day = sticky_streak.latest_claimable_day %>
+<% if claimable_day %>
+  <% item = sticky_streak.rewards_by_day[claimable_day].shop_item %>
+  <%= link_to shop_item_path(item, sticky_streak_day: claimable_day),
+        class: "action-btn action-btn--primary action-btn--small sticky-claim",
+        data: { turbo: false } do %>
+    <span class="sticky-claim__day">Claim day <%= claimable_day %></span>
+    <span class="sticky-claim__item"><%= item.name %></span>
+  <% end %>
+<% else %>
+  <span class="sticky-claim sticky-claim--idle">
+    <%= sticky_streak_idle_claim_label(sticky_streak) %>
+  </span>
+<% end %>
