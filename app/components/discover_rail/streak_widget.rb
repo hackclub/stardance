@@ -84,9 +84,11 @@ module DiscoverRail
     def first_calendar_month = month_key(StreakActivity::CALENDAR_FIRST_MONTH)
     def last_calendar_month = month_key(StreakActivity::CALENDAR_LAST_MONTH)
 
-    def sticky_streak = @sticky_streak ||= user.sticky_streak
+    def sticky_streak = @sticky_streak ||= user.current_sticky_streak
 
     def sticky_started? = sticky_streak.present?
+
+    def sticky_streaks_enabled? = user.sticky_streaks_enabled?
 
     def sticky_claimable_count = sticky_started? ? sticky_streak.claimable_days.size : 0
 

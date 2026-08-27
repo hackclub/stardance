@@ -68,7 +68,7 @@
 
       <% if sticky_started? %>
         <%= render "sticky_streaks/claim", sticky_streak: sticky_streak %>
-      <% else %>
+      <% elsif sticky_streaks_enabled? %>
         <%= render "sticky_streaks/start" %>
       <% end %>
     </div>

@@ -6,6 +6,7 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
   PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=".freeze
 
   setup do
+    Flipper.enable(:sticky_streaks)
     @user = create_user(slack_id: "U-rail-sticky", display_name: "railsticky", verified: true)
     @user.update!(onboarded_at: Time.current, has_gotten_free_stickers: true)
     @user.identities.create!(provider: "hackatime", uid: "ht-rail", access_token: "fake")
@@ -13,6 +14,8 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     @user.hackatime_projects.create!(name: "orbit", project_id: project.id)
     sign_in @user
   end
+
+  teardown { Flipper.disable(:sticky_streaks) }
 
   test "the start control shows before the challenge is started" do
     get streak_home_discover_rail_path
@@ -44,6 +47,23 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select ".streak-widget__week .streak-mark--unknown", minimum: 1
     assert_select ".streak-widget__week .streak-mark__star", minimum: 1
     assert_select ".streak-widget__cal-grid .streak-mark__sticker--claimable"
+  end
+
+  test "the calendar keeps its plain stars while the challenge is switched off" do
+    Flipper.disable(:sticky_streaks)
+    today = @user.streak_today_date
+    StickyStreak.create!(user: @user, started_on: today)
+    StreakActivity.create!(user: @user, activity_date: today,
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+    StickyStreakReward.create!(day_number: 1, shop_item: sticker)
+
+    get streak_home_discover_rail_path
+
+    assert_response :success
+    assert_select ".streak-mark__sticker", count: 0
+    assert_select ".sticky-claim", count: 0
+    assert_select ".sticky-start__summary", count: 0
+    assert_select ".streak-widget__week .streak-mark__star", minimum: 1
   end
 
   test "clicking a sticker opens the shared zoom dialog" do

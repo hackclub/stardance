@@ -4,6 +4,10 @@ class StickyStreaksController < ApplicationController
   def create
     authorize :sticky_streak, :start?
 
+    unless current_user.sticky_streaks_enabled?
+      return redirect_back fallback_location: root_path, alert: "Sticky Streaks aren't available yet."
+    end
+
     if current_user.sticky_streak.present?
       return redirect_back fallback_location: root_path, alert: "You have already started your Sticky Streak."
     end

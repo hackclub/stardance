@@ -3,6 +3,7 @@
     Dismissal persists per account through User::StateFlags. %>
 <% if current_user&.onboarded? &&
       !current_user.has_dismissed?("sticky_streak_intro") &&
+      current_user.sticky_streaks_enabled? &&
       current_user.sticky_streak.nil? &&
       current_user.hackatime_identity.present? %>
   <dialog class="sticky-promo"
@@ -16,17 +17,22 @@
 
       <%= image_tag "streak/comet.svg", class: "sticky-promo__hero", alt: "" %>
 
-      <h2 class="sticky-promo__heading" id="sticky-promo-heading">Sticky Streaks are here</h2>
+      <h2 class="sticky-promo__heading" id="sticky-promo-heading">Sticky streaks are here!</h2>
 
       <p class="sticky-promo__text">
-        Start a <strong><%= StickyStreak::LENGTH %> day</strong> run and every day you keep your
-        coding streak alive unlocks that day's sticker, free.
+        When you're ready, you can now start a new challenge to stay coding for as many days as
+        you can! Each day you keep up your streak, you'll get a free exclusive sticker.
+        <strong>If you stop at all, you'll lose the challenge and can't claim anything more.</strong>
       </p>
-      <p class="sticky-promo__text sticky-promo__text--warning">
-        Miss a single day and the run ends there. You only get one, so start it when you know
-        you can keep it going.
+      <%# Literal 21: the plushie is the day 21 reward, so extending the run
+          must not move this number. %>
+      <p class="sticky-promo__text">
+        After 21 days, you'll be able to claim a free starling plushie!
       </p>
-      <p class="sticky-promo__hint">Open the calendar on your streak widget to begin.</p>
+      <p class="sticky-promo__hint">
+        To get started, just open the calendar widget on the right of the home screen, and
+        activate your challenge :D
+      </p>
 
       <button type="button" class="sticky-promo__cta" data-action="click->dismissable#dismiss">
         Got it!

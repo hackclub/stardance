@@ -116,7 +116,7 @@ class Shop::BaseController < ApplicationController
     day = params[:sticky_streak_day].to_i
     return nil if day.zero?
 
-    sticky_streak = current_user.sticky_streak
+    sticky_streak = current_user.current_sticky_streak
     # Each day is claimable once, and only for the sticker it was set to.
     return nil unless sticky_streak&.claimable_day?(day)
     return nil unless sticky_streak.rewards_by_day[day]&.shop_item_id == shop_item.id

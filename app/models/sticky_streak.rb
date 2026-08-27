@@ -42,6 +42,11 @@ class StickyStreak < ApplicationRecord
   validates :user_id, uniqueness: true
   validates :started_on, presence: true
 
+  # Whether the challenge is switched on for someone. Every surface that shows
+  # or redeems a run goes through User#current_sticky_streak, which reads this,
+  # so the flag has one gate rather than a check per surface.
+  def self.enabled_for?(user) = user.present? && Flipper.enabled?(:sticky_streaks, user)
+
   def date_for(day) = started_on + (day - 1)
 
   def day_for(date) = (date.to_date - started_on).to_i + 1
