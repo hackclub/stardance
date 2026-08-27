@@ -228,6 +228,8 @@ module HardwareReviewQueue
   # can make an HCB round trip (to check a grant), so it's skipped entirely for
   # anyone not allowed to undo.
   def load_undo_context
+    return unless Flipper.enabled?(:hardware_review_undo, current_user)
+
     latest_decided = @past_reviews.first
     return unless latest_decided&.decided?
     return unless can_undo_review?(latest_decided)

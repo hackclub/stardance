@@ -16,6 +16,7 @@ class Admin::Certification::HardwareReviewUndoTest < ActionDispatch::Integration
 
   setup do
     Flipper.enable(:hardware_flow)
+    Flipper.enable(:hardware_review_undo)
     @reviewer = create_user(slack_id: "U_UNDO_C_REV", display_name: "undo-c-rev")
     @reviewer.grant_role!(:admin)
     @owner = create_user(slack_id: "U_UNDO_C_OWNER", display_name: "undo-c-owner", verified: true)
@@ -28,7 +29,10 @@ class Admin::Certification::HardwareReviewUndoTest < ActionDispatch::Integration
     sign_in @reviewer
   end
 
-  teardown { Flipper.disable(:hardware_flow) }
+  teardown do
+    Flipper.disable(:hardware_flow)
+    Flipper.disable(:hardware_review_undo)
+  end
 
   test "a reviewer undoes an approved funding request" do
     HCBService.stub(:show_card_grant, unspent_grant) do

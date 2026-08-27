@@ -40,6 +40,7 @@ Rails.application.config.after_initialize do
         week_1_release
         hardware_flow
         hardware_action_items
+        hardware_review_undo
         public_hardware_reviews
         ship_event_payouts
         payout_recommendations

@@ -9,6 +9,10 @@
 module HardwareReviewUndoable
   extend ActiveSupport::Concern
 
+  included do
+    before_action :require_hardware_review_undo_flag, only: :undo
+  end
+
   def undo
     review = review_for_undo
     authorize review, :undo?
@@ -31,6 +35,12 @@ module HardwareReviewUndoable
   end
 
   private
+
+  # Reversing a decided hardware review is gated behind a flag while the
+  # stardust-payout clawback for reversed builds is still being sorted out.
+  def require_hardware_review_undo_flag
+    head :not_found unless Flipper.enabled?(:hardware_review_undo, current_user)
+  end
 
   def undo_success_notice(result)
     notice = "Review reversed — it's back in the pending queue."
