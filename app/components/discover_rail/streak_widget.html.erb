@@ -68,8 +68,6 @@
 
       <% if sticky_started? %>
         <%= render "sticky_streaks/claim", sticky_streak: sticky_streak %>
-      <% elsif sticky_streaks_enabled? %>
-        <%= render "sticky_streaks/start" %>
       <% end %>
     </div>
 
@@ -92,6 +90,10 @@
         </div>
       <% end %>
     </div>
+
+    <% if !sticky_started? && sticky_streaks_enabled? %>
+      <%= render "sticky_streaks/start" %>
+    <% end %>
 
     <button type="button" class="streak-widget__toggle" data-action="streak#toggleCalendar" data-streak-target="toggleBtn">
       <span data-streak-target="toggleText">View calendar</span>

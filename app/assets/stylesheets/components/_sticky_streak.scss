@@ -211,26 +211,17 @@
 }
 
 .sticky-start {
-  border-top: 1px solid var(--color-overlay-light);
-  padding-top: var(--space-xs);
-  margin-top: var(--space-xs);
+  padding: 0 var(--space-m) var(--space-xs);
 
+  // The summary carries the action-btn look, so it needs the marker gone and
+  // full width; `display` comes from action-btn, which also drops the marker.
   &__summary {
-    font-family: var(--font-family-text);
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    color: var(--color-brand-cream);
+    width: 100%;
     cursor: pointer;
     list-style: none;
-    text-align: center;
 
     &::-webkit-details-marker {
       display: none;
-    }
-
-    &:hover,
-    &:focus-visible {
-      color: var(--color-brand-off-white);
     }
   }
 

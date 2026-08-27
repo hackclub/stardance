@@ -21,7 +21,7 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     get streak_home_discover_rail_path
 
     assert_response :success
-    assert_select ".sticky-start__summary", "Start Sticky Streak"
+    assert_select ".sticky-start__summary", "Sticky Streak"
   end
 
   test "a started challenge swaps stars for stickers and offers the claim" do
