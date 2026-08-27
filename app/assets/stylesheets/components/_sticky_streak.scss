@@ -21,6 +21,12 @@
     height: 24px;
   }
 
+  // Today, in both the week strip and the month grid.
+  &--today {
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--color-brand-off-white);
+  }
+
   // Waves at you while its sticker is still waiting to be claimed. The wiggle
   // lives on the button and the hover scale on the image, so the two transforms
   // compose instead of one overriding the other.

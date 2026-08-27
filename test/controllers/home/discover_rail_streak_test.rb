@@ -45,6 +45,8 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     # the week is outside the run.
     assert_select ".streak-widget__week .streak-mark__sticker--claimable"
     assert_select ".streak-widget__week .streak-mark--unknown", minimum: 1
+    assert_select ".streak-widget__week .streak-mark--today", 1
+    assert_select ".streak-widget__cal-grid .streak-mark--today", 1
     assert_select ".streak-widget__week .streak-mark__star", minimum: 1
     assert_select ".streak-widget__cal-grid .streak-mark__sticker--claimable"
   end

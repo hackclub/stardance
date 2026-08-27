@@ -1,12 +1,12 @@
 <%# The mark inside a streak calendar day. Days inside a Sticky Streak run show
     that day's sticker (clickable, zooms), or a question mark while no sticker
     has been picked for it. Every other day keeps the usual star. %>
+<% mark_classes = class_names("streak-mark", "streak-mark--#{size}", "streak-mark--today" => day[:today]) %>
 <% if day[:sticky_day] %>
   <% item = day[:sticky_reward]&.shop_item %>
   <% if item&.image&.attached? %>
     <button type="button"
-            class="<%= class_names("streak-mark", "streak-mark--#{size}",
-                                   "streak-mark--claimable" => day[:sticky_claimable]) %>"
+            class="<%= class_names(mark_classes, "streak-mark--claimable" => day[:sticky_claimable]) %>"
             data-action="sticker-zoom#open"
             data-sticker-zoom-src-param="<%= url_for(item.image.variant(:carousel_lg)) %>"
             data-sticker-zoom-name-param="<%= item.name %>"
@@ -18,11 +18,11 @@
             alt: item.name %>
     </button>
   <% else %>
-    <span class="streak-mark streak-mark--<%= size %> streak-mark--unknown"
+    <span class="<%= mark_classes %> streak-mark--unknown"
           aria-label="Sticky Streak day <%= day[:sticky_day] %>, sticker not picked yet">?</span>
   <% end %>
 <% else %>
-  <span class="streak-mark streak-mark--<%= size %>">
+  <span class="<%= mark_classes %>">
     <%= image_tag day[:completed] ? "streak/star_filled.svg" : "streak/star_empty.svg",
           class: "streak-mark__star", alt: day[:completed] ? "Completed" : "Incomplete" %>
   </span>
