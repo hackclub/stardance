@@ -1,0 +1,14 @@
+<%# The wrong-queue flag in a review's history: that it was sent back once as
+    belonging in the other hardware queue, and who raised it when. Reconstructed
+    from PaperTrail (a dispute rewinds the reviewer, a later verdict overwrites
+    it), so the flagger survives only in the versions. Rendered on the bounced
+    active review and merged into a decided review that had been sent back once.
+    Locals: review (required). %>
+<% flag = review.misfiling_flag %>
+<span class="hardware-review__timeline-meta">Flagged as the wrong queue</span>
+<% if flag&.dig(:reviewer) %>
+  <span class="hardware-review__timeline-meta">by <%= flag[:reviewer].display_name %></span>
+<% end %>
+<% if flag&.dig(:at) %>
+  <span class="hardware-review__timeline-meta"><%= l(flag[:at].to_date, format: :short) %></span>
+<% end %>

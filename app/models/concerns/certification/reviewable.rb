@@ -288,22 +288,26 @@ module Certification
     def awaiting_queue_answer? = misfiled?
 
     # True when this review was flagged as wrong-queue at some point, even if it
-    # has since been rewound to pending by the builder disputing it. Read from
-    # PaperTrail because disputing restores the status in place, so the record
-    # itself keeps no trace - and the next reviewer to pick it up needs to know
-    # it has already been round this loop once. `internal_reason` holds why.
+    # has since been rewound to pending by the builder disputing it, or decided
+    # by a later reviewer. Read from PaperTrail because disputing restores the
+    # status in place and a later verdict overwrites the reviewer, so the record
+    # itself keeps no trace - and whoever picks it up next needs to know it has
+    # already been round this loop once. `internal_reason` holds why;
+    # `misfiling_flag` holds who raised it and when.
     def previously_misfiled?
-      # PaperTrail records enum changes by name ("pending" -> "misfiled"), except
-      # the create version, which carries the raw integer. Accept either.
-      misfiled_value = self.class.statuses["misfiled"]
-      versions.any? do |version|
-        change = version.changeset["status"]
-        next false unless change.is_a?(Array)
+      misfiling_version.present?
+    end
 
-        change.last.to_s == "misfiled" || change.last == misfiled_value
-      end
-    rescue StandardError
-      false
+    # Who flagged this review as belonging in the other hardware queue, and when,
+    # reconstructed from PaperTrail. `nil` unless previously_misfiled?. The flag
+    # is raised behind the reviewer's claim, so the flagger is the record's
+    # reviewer at the moment of the flag - which the live record no longer holds
+    # once the flag is disputed away or a later verdict reassigns it.
+    def misfiling_flag
+      version = misfiling_version
+      return nil unless version
+
+      { reviewer: misfiling_reviewer(version), at: version.created_at }
     end
 
     # Read by Notifications::Hardware::ReviewQueueMismatch to render the Slack
@@ -326,6 +330,34 @@ module Certification
     end
 
     private
+
+    # The most recent PaperTrail version that flipped this record into `misfiled`.
+    # Memoized: previously_misfiled? and misfiling_flag both read it on the same
+    # instance, and each read otherwise scans the whole version list.
+    def misfiling_version
+      return @misfiling_version if defined?(@misfiling_version)
+
+      # PaperTrail records enum changes by name ("pending" -> "misfiled"), except
+      # the create version, which carries the raw integer. Accept either.
+      misfiled_value = self.class.statuses["misfiled"]
+      @misfiling_version = versions.reverse_each.find do |version|
+        change = version.changeset["status"]
+        change.is_a?(Array) && (change.last.to_s == "misfiled" || change.last == misfiled_value)
+      end
+    rescue StandardError
+      @misfiling_version = nil
+    end
+
+    # The reviewer on the record at the moment it was flagged. Prefer the change
+    # itself (set when a reviewer flags without holding the claim); otherwise the
+    # reviewer was already claimed and unchanged by the flag, so reify the
+    # pre-flag snapshot to recover it.
+    def misfiling_reviewer(version)
+      reviewer_id = version.changeset.dig("reviewer_id", 1) || version.reify&.reviewer_id
+      reviewer_id && User.find_by(id: reviewer_id)
+    rescue StandardError
+      nil
+    end
 
     # action_items and feedback_prose each scan the feedback with the regex, and
     # both are read several times per timeline render. Parse once and memoize,

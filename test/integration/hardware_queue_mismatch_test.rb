@@ -313,7 +313,7 @@ class HardwareQueueMismatchTest < ActionDispatch::IntegrationTest
     get admin_certification_hardware_review_path(project)
 
     assert_select ".hardware-review__history-item--bounced" do
-      assert_select ".status-pill--misfiled", text: "Sent back once"
+      assert_select ".hardware-review__timeline-meta", text: /Flagged as the wrong queue/
       assert_select ".hardware-review__history-feedback--internal", text: /Get a parts grant first/
     end
     assert_select ".ship-review__description", text: /first review on this project/, count: 0
