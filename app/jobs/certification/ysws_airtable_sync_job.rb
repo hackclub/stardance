@@ -430,7 +430,11 @@ module Certification
         end
       end
 
-      # List the Hackatime project names linked to this project
+      # Identify the Hackatime account behind the hours so reviewers can look it
+      # up directly, then list the project names linked to this project.
+      hackatime_uid = review.user&.hackatime_identity&.uid
+      justification += "\n\nUser's Hackatime ID: #{hackatime_uid.presence || "none linked"}"
+
       hackatime_project_names = review.project&.hackatime_projects&.distinct&.pluck(:name) || []
       justification += if hackatime_project_names.any?
         "\n\nUser's Hackatime Project Names: #{hackatime_project_names.join(", ")}"
