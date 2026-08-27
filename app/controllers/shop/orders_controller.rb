@@ -26,7 +26,7 @@ class Shop::OrdersController < Shop::BaseController
     end
 
     if @redeemable.nil? && @shop_item.mission_prize_only?
-      redirect_to shop_path, alert: "This item can only be claimed by redeeming a mission prize."
+      redirect_to shop_path, alert: "This item can only be claimed by redeeming a prize you have earned."
       return
     end
 
@@ -116,7 +116,7 @@ class Shop::OrdersController < Shop::BaseController
         @order.aasm_state = "pending" if @order.respond_to?(:aasm_state=)
         @order.save!
 
-        Mission::PrizeRedemption.record!(shop_order: @order, gate: @redeemable) if @redeemable
+        record_redemption!(@order, @redeemable) if @redeemable
 
         unless @redeemable
           @accessories.each do |accessory|
@@ -199,6 +199,16 @@ class Shop::OrdersController < Shop::BaseController
     case gate
     when Mission::Submission           then order.redeeming_mission_submission = gate
     when Certification::FundingRequest then order.redeeming_funding_request = gate
+    when StickyStreak::DayClaim        then order.redeeming_sticky_streak = gate.sticky_streak
+    end
+  end
+
+  # Ties the placed order back to whatever unlocked it, so a gate cannot be
+  # spent twice.
+  def record_redemption!(order, gate)
+    case gate
+    when StickyStreak::DayClaim then gate.sticky_streak.record_claim!(shop_order: order, day: gate.day)
+    else Mission::PrizeRedemption.record!(shop_order: order, gate: gate)
     end
   end
 

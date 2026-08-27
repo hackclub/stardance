@@ -100,13 +100,22 @@ class ShopOrder < ApplicationRecord
   validate :check_mission_unlock_requirement, on: :create
   validate :check_mission_prize_requires_redemption, on: :create
 
-  # A free mission-prize redemption is gated by one of two approvals: a
-  # Mission::Submission (after-ship prize) or a Certification::FundingRequest
-  # (after-design kit). Either one makes the order free.
-  attr_accessor :redeeming_mission_submission, :redeeming_funding_request
+  # A free redemption is gated by one of three approvals: a Mission::Submission
+  # (after-ship prize), a Certification::FundingRequest (after-design kit) or a
+  # StickyStreak (a completed challenge day). Any one makes the order free.
+  #
+  # A redemption also waives the "you have not earned the right to buy this"
+  # checks (achievement, ship count, mission unlock), because the prize itself
+  # is how the item was earned and the surface offering it has already said
+  # yes. Nothing else is waived: the item must still be enabled, and stock,
+  # one-per-person, region, identity verification and the shop tutorial all
+  # still apply.
+  attr_accessor :redeeming_mission_submission, :redeeming_funding_request, :redeeming_sticky_streak
 
   def redeeming_prize?
-    redeeming_mission_submission.present? || redeeming_funding_request.present?
+    redeeming_mission_submission.present? ||
+      redeeming_funding_request.present? ||
+      redeeming_sticky_streak.present?
   end
 
   validates :internal_rejection_reason, presence: true, if: :rejected?
@@ -420,10 +429,10 @@ class ShopOrder < ApplicationRecord
     return unless shop_item
     return if frozen_item_price.present?
 
-    # Redeeming an approved mission prize is free regardless of the item's
-    # normal price: freezing 0 skips the balance check, the negative payout,
-    # and any refund-on-reject (all gated on frozen_item_price > 0), so a
-    # regular shop item given as a static prize never touches the ledger.
+    # Redeeming an approved prize is free regardless of the item's normal
+    # price: freezing 0 skips the balance check, the negative payout, and any
+    # refund-on-reject (all gated on frozen_item_price > 0), so a regular shop
+    # item given as a prize never touches the ledger.
     if redeeming_prize?
       self.frozen_item_price = 0
       return
@@ -475,6 +484,7 @@ class ShopOrder < ApplicationRecord
   end
 
   def check_mission_unlock_requirement
+    return if redeeming_prize?
     return unless shop_item&.mission_locked_for?(user)
     errors.add(:base, "This item is locked behind a mission you haven't completed yet.")
   end
@@ -482,7 +492,7 @@ class ShopOrder < ApplicationRecord
   def check_mission_prize_requires_redemption
     return unless shop_item&.mission_prize_only?
     return if redeeming_prize?
-    errors.add(:base, "This item can only be claimed by redeeming an approved mission prize.")
+    errors.add(:base, "This item can only be claimed by redeeming a prize you have earned.")
   end
 
   USPS_SUSPENDED_COUNTRIES = %w[
@@ -555,6 +565,7 @@ class ShopOrder < ApplicationRecord
   end
 
   def check_ship_requirement
+    return if redeeming_prize?
     return unless shop_item&.requires_ship?
     return if shop_item.meet_ship_require?(user)
 
@@ -566,6 +577,7 @@ class ShopOrder < ApplicationRecord
   end
 
   def check_achievement_requirement
+    return if redeeming_prize?
     return unless shop_item&.requires_achievement?
     return if shop_item.meet_achievement_require?(user)
 

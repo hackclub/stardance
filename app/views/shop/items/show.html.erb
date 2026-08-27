@@ -101,6 +101,8 @@
                         <%= form.hidden_field :mission_submission_id, value: @redeemable.id %>
                     <% elsif @redeemable.is_a?(Certification::FundingRequest) %>
                         <%= form.hidden_field :funding_request_id, value: @redeemable.id %>
+                    <% elsif @redeemable.is_a?(StickyStreak::DayClaim) %>
+                        <%= form.hidden_field :sticky_streak_day, value: @redeemable.day %>
                     <% end %>
                 <% elsif not @shop_item.one_per_person_ever %>
                     <div class="shop-order__quantity">

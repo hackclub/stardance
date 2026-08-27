@@ -23,7 +23,7 @@ class Shop::ItemsController < Shop::BaseController
     @redeemable = load_redeemable_gate(@shop_item)
 
     if @redeemable.nil? && @shop_item.mission_prize_only?
-      redirect_to shop_path, alert: "This item can only be claimed by redeeming a mission prize."
+      redirect_to shop_path, alert: "This item can only be claimed by redeeming a prize you have earned."
       return
     end
 

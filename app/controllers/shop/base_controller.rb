@@ -69,11 +69,13 @@ class Shop::BaseController < ApplicationController
     }
   end
 
-  # The approval that unlocks a free prize redemption for this item: an
-  # after-ship submission or an after-design funding kit. Returns the gate
-  # record (used as the PrizeRedemption source) or nil.
+  # The approval that unlocks a free redemption for this item: an after-ship
+  # submission, an after-design funding kit, or a completed Sticky Streak day.
+  # Returns the gate record or nil.
   def load_redeemable_gate(shop_item)
-    load_redeemable_submission(shop_item) || load_redeemable_funding_request(shop_item)
+    load_redeemable_submission(shop_item) ||
+      load_redeemable_funding_request(shop_item) ||
+      load_redeemable_sticky_streak_day(shop_item)
   end
 
   def load_redeemable_submission(shop_item)
@@ -107,5 +109,18 @@ class Shop::BaseController < ApplicationController
     return nil unless funding_request.redeemable_prize_for(shop_item)
 
     funding_request
+  end
+
+  def load_redeemable_sticky_streak_day(shop_item)
+    return nil unless current_user
+    day = params[:sticky_streak_day].to_i
+    return nil if day.zero?
+
+    sticky_streak = current_user.sticky_streak
+    # Each day is claimable once, and only for the sticker it was set to.
+    return nil unless sticky_streak&.claimable_day?(day)
+    return nil unless sticky_streak.rewards_by_day[day]&.shop_item_id == shop_item.id
+
+    StickyStreak::DayClaim.new(sticky_streak: sticky_streak, day: day)
   end
 end
