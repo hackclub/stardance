@@ -2,6 +2,7 @@ class Api::V1::PublicApiController < ActionController::API
   include Pagy::Method
 
   before_action :authenticate_api_user!
+  after_action :set_query_count_headers
 
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
@@ -29,5 +30,10 @@ class Api::V1::PublicApiController < ActionController::API
 
     def render_not_found
       render json: { error: "Resource not found" }, status: :not_found
+    end
+
+    def set_query_count_headers
+      response.set_header("X-DB-Queries", QueryCount::Counter.counter.to_s)
+      response.set_header("X-DB-Cached", QueryCount::Counter.counter_cache.to_s)
     end
 end
