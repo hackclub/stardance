@@ -1,6 +1,15 @@
 // Sticky Streak surfaces that live inside the streak calendar: the mark shown
 // in a day cell, the sticker lightbox, the claim control and the start prompt.
 
+// Outlines whatever is drawn rather than boxing it, so the ring follows a
+// die-cut sticker or a star instead of its bounding box. Chained drop-shadows
+// compound, so these four dilate the shape by 1px in both axes and the corners
+// come along with it; adding diagonal passes only makes the outline thicker.
+@mixin silhouette-outline($color) {
+  filter: drop-shadow(1px 0 0 $color) drop-shadow(-1px 0 0 $color)
+    drop-shadow(0 1px 0 $color) drop-shadow(0 -1px 0 $color);
+}
+
 .streak-mark {
   display: flex;
   align-items: center;
@@ -21,10 +30,10 @@
     height: 24px;
   }
 
-  // Today, in both the week strip and the month grid.
+  // Today, in both the week strip and the month grid. Sits on the wrapper so it
+  // traces whatever the day drew: a star, a sticker, or the question mark.
   &--today {
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--color-brand-off-white);
+    @include silhouette-outline(var(--color-brand-off-white));
   }
 
   // Waves at you while its sticker is still waiting to be claimed. The wiggle
@@ -61,25 +70,14 @@
       cursor: pointer;
     }
 
-    // Traces the sticker's own silhouette rather than boxing it, so the outline
-    // follows die-cut art. Chained drop-shadows compound, so these four dilate
-    // the shape by 1px in both axes and the corners come along with it. Adding
-    // diagonal passes on top only makes the outline thicker.
-    //
     // Yellow means the day is banked; purple means it is banked and the sticker
     // is still waiting to be claimed.
     &--earned {
-      filter: drop-shadow(1px 0 0 var(--color-brand-yellow))
-        drop-shadow(-1px 0 0 var(--color-brand-yellow))
-        drop-shadow(0 1px 0 var(--color-brand-yellow))
-        drop-shadow(0 -1px 0 var(--color-brand-yellow));
+      @include silhouette-outline(var(--color-brand-yellow));
     }
 
     &--claimable {
-      filter: drop-shadow(1px 0 0 var(--color-brand-lilac))
-        drop-shadow(-1px 0 0 var(--color-brand-lilac))
-        drop-shadow(0 1px 0 var(--color-brand-lilac))
-        drop-shadow(0 -1px 0 var(--color-brand-lilac));
+      @include silhouette-outline(var(--color-brand-lilac));
     }
   }
 
