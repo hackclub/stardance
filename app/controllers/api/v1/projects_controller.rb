@@ -18,7 +18,7 @@ class Api::V1::ProjectsController < Api::V1::PublicApiController
 
   private
     def api_scope
-      Project.where(deleted_at: nil).preload(:devlog_posts, banner_attachment: :blob)
+      Project.preload(:devlog_posts, banner_attachment: :blob)
     end
 
     def pagination_meta
