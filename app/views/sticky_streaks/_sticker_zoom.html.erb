@@ -1,11 +1,12 @@
 <%# Shared lightbox for the calendar's Sticky Streak stickers. One dialog per
-    widget; the clicked day fills in the image, the name, and the claim link
-    when that day is still waiting to be redeemed. %>
+    widget; the clicked day fills in the image, the name, the description, and
+    the claim link when that day is still waiting to be redeemed. %>
 <dialog class="sticker-zoom" data-sticker-zoom-target="dialog" aria-labelledby="sticker-zoom-name">
   <div class="sticker-zoom__panel">
     <button type="button" class="sticker-zoom__close" data-action="sticker-zoom#close" aria-label="Close">&times;</button>
     <img class="sticker-zoom__image" data-sticker-zoom-target="image" src="" alt="">
     <p class="sticker-zoom__name" id="sticker-zoom-name" data-sticker-zoom-target="name"></p>
+    <p class="sticker-zoom__description" data-sticker-zoom-target="description" hidden></p>
     <a class="action-btn action-btn--primary action-btn--small sticker-zoom__claim"
        data-sticker-zoom-target="claim" data-turbo="false" hidden>Claim this sticker</a>
   </div>

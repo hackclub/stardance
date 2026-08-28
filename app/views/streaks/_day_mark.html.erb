@@ -10,6 +10,7 @@
             data-action="sticker-zoom#open"
             data-sticker-zoom-src-param="<%= url_for(item.image.variant(:carousel_lg)) %>"
             data-sticker-zoom-name-param="<%= item.name %>"
+            data-sticker-zoom-description-param="<%= item.description %>"
             data-sticker-zoom-claim-href-param="<%= shop_item_path(item, sticky_streak_day: day[:sticky_day]) if day[:sticky_claimable] %>">
       <%= image_tag item.image.variant(:carousel_sm),
             class: class_names("streak-mark__sticker",
