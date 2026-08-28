@@ -353,6 +353,7 @@ export default class extends Controller {
   _renderResults(data) {
     const groups = [
       ["Commands", data.commands ?? []],
+      ["Shop Orders", data.shop_orders ?? []],
       ["Projects", data.projects ?? []],
       ["Posts", data.posts ?? []],
       ["Users", data.users ?? []],

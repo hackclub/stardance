@@ -59,7 +59,8 @@ class SearchController < ApplicationController
       commands: command_results(q, surface, current_path: params[:current_path]),
       projects: merged_project_results(q, semantic_results.fetch("project", [])),
       posts: semantic_results.fetch("devlog", []) + semantic_results.fetch("ship", []),
-      users: merged_user_results(q, semantic_results.fetch("user", []))
+      users: merged_user_results(q, semantic_results.fetch("user", [])),
+      shop_orders: shop_order_results(q)
     }
 
     respond_to do |format|
@@ -125,6 +126,29 @@ class SearchController < ApplicationController
       .limit(GLOBAL_MAX_RESULTS)
       .map { |user| SemanticSearch::Document.for(user)&.to_result&.merge(admin_path: "/admin/users/#{user.id}") }
       .compact
+  end
+
+  def shop_order_results(query)
+    return [] unless current_user&.admin?
+
+    q = query.to_s.strip
+    return [] if q.blank?
+
+    sanitized = ActiveRecord::Base.sanitize_sql_like(q)
+    scope = ShopOrder.where("tracking_number ILIKE ?", "%#{sanitized}%")
+    scope = scope.or(ShopOrder.where(id: q)) if q.match?(/\A\d+\z/)
+
+    scope
+      .order(created_at: :desc)
+      .limit(GLOBAL_MAX_RESULTS)
+      .includes(:user, :shop_item)
+      .map do |order|
+        item_name = order.shop_item&.name || "Unknown item"
+        user_name = order.user&.display_name || "Unknown user"
+        subtitle = "Order ##{order.id} · #{item_name} · #{user_name} · #{order.aasm_state}"
+
+        { id: order.id, title: order.tracking_number.presence || "Order ##{order.id}", subtitle: subtitle, path: "/admin/shop/orders/#{order.id}" }
+      end
   end
 
   def avatar_for(slack_id)
