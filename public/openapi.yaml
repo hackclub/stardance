@@ -3,7 +3,7 @@ info:
   title: Stardance API
   version: "1"
   description: |
-    A public API for reading and managing projects. You need an API key to
+    A read-only public API for Stardance projects. You need an API key to
     use this! Go to your [account settings](/?settings=1) to get one.
 servers:
   - url: /api/v1
@@ -47,12 +47,6 @@ components:
       type: object
       properties:
         error: { type: string }
-    ValidationErrors:
-      type: object
-      properties:
-        errors:
-          type: array
-          items: { type: string }
   parameters:
     id:
       name: id
@@ -84,16 +78,6 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
           example: { error: "Resource not found" }
-    Forbidden:
-      description: Permission denied
-      content:
-        application/json:
-          schema: { $ref: "#/components/schemas/Error" }
-    UnprocessableEntity:
-      description: Validation failed
-      content:
-        application/json:
-          schema: { $ref: "#/components/schemas/ValidationErrors" }
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -137,34 +121,6 @@ paths:
                   pagination: { $ref: "#/components/schemas/Pagination" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
-    post:
-      summary: Create a project
-      tags: [ Projects ]
-      description: Create a new project.
-      operationId: createProject
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                title: { type: string, description: Project title }
-                description: { type: string, description: Project description }
-                demo_url: { type: string, description: URL to the live demo }
-                repo_url: { type: string, description: URL to the source code repository }
-                readme_url: { type: string, description: URL to the README }
-                ai_declaration: { type: string, description: Declaration of AI tools used in this project }
-              required: [ title ]
-      responses:
-        "201":
-          description: Project created
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Project" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "422": { $ref: "#/components/responses/UnprocessableEntity" }
-        "429": { $ref: "#/components/responses/TooManyRequests" }
   /projects/{id}:
     parameters:
       - $ref: "#/components/parameters/id"
@@ -181,32 +137,4 @@ paths:
               schema: { $ref: "#/components/schemas/Project" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "429": { $ref: "#/components/responses/TooManyRequests" }
-    patch:
-      summary: Update a project
-      tags: [ Projects ]
-      description: Update an existing project.
-      operationId: updateProject
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                title: { type: string, description: Project title }
-                description: { type: string, description: Project description }
-                demo_url: { type: string, description: URL to the live demo }
-                repo_url: { type: string, description: URL to the source code repository }
-                readme_url: { type: string, description: URL to the README }
-                ai_declaration: { type: string, description: Declaration of AI tools used in this project }
-      responses:
-        "200":
-          description: Project updated
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Project" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "422": { $ref: "#/components/responses/UnprocessableEntity" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
