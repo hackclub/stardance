@@ -180,6 +180,16 @@
     text-align: center;
   }
 
+  &__description {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    color: var(--color-brand-off-white);
+    line-height: 1.45;
+    margin: 0;
+    max-width: 34ch;
+    text-align: center;
+  }
+
   &__claim {
     margin-top: var(--space-xxs);
   }

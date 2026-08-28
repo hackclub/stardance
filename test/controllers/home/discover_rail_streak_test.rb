@@ -83,6 +83,8 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select ".streak-widget__week [data-action='sticker-zoom#open'][data-sticker-zoom-name-param=?]",
                   item.name
     assert_select "[data-sticker-zoom-claim-href-param=?]", shop_item_path(item, sticky_streak_day: 1)
+    assert_select "[data-sticker-zoom-description-param=?]", item.description
+    assert_select "dialog.sticker-zoom [data-sticker-zoom-target='description']", 1
   end
 
   test "the week view names sticky days in the tooltip" do
