@@ -1861,7 +1861,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
   add_foreign_key "shop_item_sources", "shop_items"
   add_foreign_key "shop_item_sources", "shop_sources"
   add_foreign_key "shop_items", "users"
-  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify
+  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"

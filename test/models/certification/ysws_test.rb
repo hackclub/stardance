@@ -1,3 +1,49 @@
+# == Schema Information
+#
+# Table name: certification_ysws_reviews
+#
+#  id                    :bigint           not null, primary key
+#  airtable_synced_at    :datetime
+#  approved_minutes      :integer
+#  claimed_at            :datetime
+#  demo_checked_at       :datetime
+#  in_unified_db         :string
+#  original_minutes      :integer
+#  repo_checked_at       :datetime
+#  returned_at           :datetime
+#  reviewed_at           :datetime
+#  spotchecked_at        :datetime
+#  summary_justification :text
+#  created_at            :datetime         not null
+#  updated_at            :datetime         not null
+#  claimed_by_id         :bigint
+#  post_ship_event_id    :bigint           not null
+#  project_id            :bigint           not null
+#  reviewer_id           :bigint
+#  ship_cert_id          :bigint
+#  spotchecked_by_id     :bigint
+#  user_id               :bigint           not null
+#
+# Indexes
+#
+#  index_certification_ysws_reviews_on_claimed_by_id       (claimed_by_id)
+#  index_certification_ysws_reviews_on_post_ship_event_id  (post_ship_event_id)
+#  index_certification_ysws_reviews_on_project_id          (project_id)
+#  index_certification_ysws_reviews_on_reviewer_id         (reviewer_id)
+#  index_certification_ysws_reviews_on_ship_cert_id        (ship_cert_id)
+#  index_certification_ysws_reviews_on_spotchecked_by_id   (spotchecked_by_id)
+#  index_certification_ysws_reviews_on_user_id             (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (claimed_by_id => users.id)
+#  fk_rails_...  (post_ship_event_id => post_ship_events.id)
+#  fk_rails_...  (project_id => projects.id)
+#  fk_rails_...  (reviewer_id => users.id)
+#  fk_rails_...  (ship_cert_id => certification_ship_reviews.id)
+#  fk_rails_...  (spotchecked_by_id => users.id)
+#  fk_rails_...  (user_id => users.id)
+#
 require "test_helper"
 
 class Certification::YswsTest < ActiveSupport::TestCase
