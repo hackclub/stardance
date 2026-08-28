@@ -35,7 +35,8 @@ components:
         devlog_ids:
           type: array
           items: { type: integer }
-        banner_url: { type: string, nullable: true }
+        banner_url: { type: string, format: uri, nullable: true, description: Full-size banner image }
+        banner_thumb_url: { type: string, format: uri, nullable: true, description: 400x210 webp thumbnail }
     Pagination:
       type: object
       properties:

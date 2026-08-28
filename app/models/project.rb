@@ -584,6 +584,8 @@ class Project < ApplicationRecord
   end
 
   def api_payload
+    routes = Rails.application.routes.url_helpers
+
     {
       id: id,
       title: title,
@@ -596,7 +598,8 @@ class Project < ApplicationRecord
       created_at: created_at,
       updated_at: updated_at,
       devlog_ids: devlog_posts.map(&:postable_id),
-      banner_url: banner.attached? ? Rails.application.routes.url_helpers.rails_blob_path(banner, only_path: true) : nil
+      banner_url: banner.attached? ? routes.rails_blob_url(banner) : nil,
+      banner_thumb_url: banner.attached? ? routes.rails_representation_url(banner.variant(:thumb)) : nil
     }
   end
 
