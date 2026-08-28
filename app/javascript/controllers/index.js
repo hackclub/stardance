@@ -139,6 +139,9 @@ application.register("confirm", ConfirmController);
 import CopyController from "./copy_controller";
 application.register("copy", CopyController);
 
+import CopyApiKeyController from "./copy_api_key_controller";
+application.register("copy-api-key", CopyApiKeyController);
+
 import CountUpController from "./count_up_controller";
 application.register("count-up", CountUpController);
 
@@ -321,6 +324,9 @@ application.register("read-more", ReadMoreController);
 
 import ReadmeImageController from "./readme_image_controller";
 application.register("readme-image", ReadmeImageController);
+
+import RegenerateApiKeyController from "./regenerate_api_key_controller";
+application.register("regenerate-api-key", RegenerateApiKeyController);
 
 import RerollPollController from "./reroll_poll_controller";
 application.register("reroll-poll", RerollPollController);

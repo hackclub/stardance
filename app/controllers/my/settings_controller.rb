@@ -39,6 +39,22 @@ class My::SettingsController < ApplicationController
     end
   end
 
+  def regenerate_api_key
+    current_user.regenerate_api_key
+    warning = "API key regenerated."
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:warning] = warning
+        render turbo_stream: [
+          turbo_stream.replace("api-key-section", partial: "my/settings/api_key", locals: { user: current_user }),
+          turbo_stream.update("flash-region", partial: "shared/flash")
+        ]
+      end
+      format.html { redirect_back fallback_location: root_path, flash: { warning: warning } }
+    end
+  end
+
   private
 
   def require_login

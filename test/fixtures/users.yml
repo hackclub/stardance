@@ -6,6 +6,7 @@
 #
 #  id                           :bigint           not null, primary key
 #  age_attestation              :string
+#  api_key                      :string
 #  approx_balance               :integer          default(0), not null
 #  approx_total_earned          :integer          default(0), not null
 #  banned                       :boolean          default(FALSE), not null
@@ -60,6 +61,7 @@
 #
 # Indexes
 #
+#  index_users_on_api_key                    (api_key) UNIQUE
 #  index_users_on_approx_balance             (approx_balance)
 #  index_users_on_approx_total_earned        (approx_total_earned)
 #  index_users_on_email                      (email)

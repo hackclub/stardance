@@ -461,11 +461,17 @@ Rails.application.routes.draw do
           post :decision
         end
       end
+
+      # Public API: authenticated with a user's personal API key (see
+      # Api::V1::PublicApiController).
+      resources :projects, only: [ :index, :create, :show, :update ]
     end
     namespace :slack do
       post "events", to: "events#create"
     end
   end
+
+  get "api/v1/docs", to: "api/v1/docs#index", as: :api_v1_docs
 
   # Shop
   get "shop", to: "shop/items#index", as: :shop
@@ -580,6 +586,7 @@ Rails.application.routes.draw do
     resource :balance, only: [ :show ]
     resource :settings, only: [ :update ] do
       post :streamer_mode, on: :member, action: :toggle_streamer_mode
+      post :regenerate_api_key, on: :member
     end
     resources :dismissals, only: [ :create ]
     resources :reports, only: [ :index ]

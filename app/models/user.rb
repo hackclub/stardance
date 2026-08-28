@@ -4,6 +4,7 @@
 #
 #  id                           :bigint           not null, primary key
 #  age_attestation              :string
+#  api_key                      :string
 #  approx_balance               :integer          default(0), not null
 #  approx_total_earned          :integer          default(0), not null
 #  banned                       :boolean          default(FALSE), not null
@@ -58,6 +59,7 @@
 #
 # Indexes
 #
+#  index_users_on_api_key                    (api_key) UNIQUE
 #  index_users_on_approx_balance             (approx_balance)
 #  index_users_on_approx_total_earned        (approx_total_earned)
 #  index_users_on_email                      (email)
@@ -299,6 +301,14 @@ class User < ApplicationRecord
         revoke_achievement!(slug)
       end
     end
+  end
+
+  API_KEY_PREFIX = "sd_sk_".freeze
+
+  # Public-API key. Not auto-assigned on create — only ever set when the user
+  # clicks "Generate"/"Regenerate" in Settings (see My::SettingsController).
+  def regenerate_api_key
+    update!(api_key: "#{API_KEY_PREFIX}#{SecureRandom.hex(20)}")
   end
 
   def ambassador_referral_payload(hours_logged:, hours_approved:)

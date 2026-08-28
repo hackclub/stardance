@@ -124,6 +124,20 @@ export default class extends Controller {
         break;
     }
 
+    // `rect`/`pop` are viewport-relative. That's correct when the popover
+    // lives in <body>, but #container() puts it inside an open <dialog>
+    // instead so it shares the dialog's stacking context — and this app's
+    // dialogs are centered with `transform: translate(...)`, which makes the
+    // dialog the containing block for its `position: fixed` children. Offset
+    // back by the dialog's own rect so the math still lines up with the
+    // trigger.
+    const container = this.popover.parentElement;
+    if (container && container !== document.body) {
+      const containerRect = container.getBoundingClientRect();
+      top -= containerRect.top;
+      left -= containerRect.left;
+    }
+
     this.popover.style.top = `${Math.max(8, top)}px`;
     this.popover.style.left = `${Math.max(8, left)}px`;
   }

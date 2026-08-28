@@ -583,6 +583,23 @@ class Project < ApplicationRecord
     description.to_s
   end
 
+  def api_payload
+    {
+      id: id,
+      title: title,
+      description: description,
+      ship_status: ship_status,
+      repo_url: repo_url,
+      demo_url: demo_url,
+      readme_url: readme_url,
+      ai_declaration: ai_declaration,
+      created_at: created_at,
+      updated_at: updated_at,
+      devlog_ids: devlogs.pluck(:id),
+      banner_url: banner.attached? ? Rails.application.routes.url_helpers.rails_blob_path(banner, only_path: true) : nil
+    }
+  end
+
   # Deduplicated because every member of a hardware project gets their own
   # User::HackatimeProject row under the same name, and callers treat this as a
   # set: it's joined into the Airtable sync and the devlog key snapshot, and

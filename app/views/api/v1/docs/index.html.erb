@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Stardance API Reference</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      .dark-mode-toggle { display: none !important; }
+      .section-flare { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference('#app', {
+        spec: { url: '/openapi.yaml' },
+        theme: 'deepSpace',
+        hideClientButton: true,
+        hideDarkModeToggle: true,
+        forceDarkModeState: 'dark',
+        showDeveloperTools: 'never',
+        agent: { disabled: true }
+      })
+    </script>
+  </body>
+</html>

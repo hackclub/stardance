@@ -1,0 +1,28 @@
+<div class="settings-form__field" id="api-key-section">
+  <label class="settings-form__label">API Key</label>
+
+  <% if user.api_key.present? %>
+    <div class="settings-form__api-key-row">
+      <code class="settings-form__api-key-value"
+            data-controller="copy-api-key"
+            data-copy-api-key-text-value="<%= user.api_key %>"
+            data-action="click->copy-api-key#copy keydown.enter->copy-api-key#copy"
+            tabindex="0" role="button"><%= user.api_key %></code>
+      <button type="button" class="settings-form__api-key-regen-btn" aria-label="Regenerate API key"
+              data-controller="regenerate-api-key"
+              data-regenerate-api-key-url-value="<%= regenerate_api_key_my_settings_path %>"
+              data-action="click->regenerate-api-key#regenerate">
+        <%= inline_svg_tag "icons/repost.svg", class: "settings-form__api-key-regen-icon" %>
+      </button>
+    </div>
+  <% else %>
+    <button type="button" class="settings-form__hackatime-btn"
+            data-controller="regenerate-api-key"
+            data-regenerate-api-key-url-value="<%= regenerate_api_key_my_settings_path %>"
+            data-action="click->regenerate-api-key#regenerate">Generate API Key</button>
+  <% end %>
+
+  <small class="settings-form__hint">
+    Your API key for accessing <%= link_to "Stardance's API", api_v1_docs_path, class: "settings-form__hint-link--primary" %>. Keep it secret!
+  </small>
+</div>

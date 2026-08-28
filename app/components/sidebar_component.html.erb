@@ -120,7 +120,7 @@
       <div class="settings-form__field">
         <p class="settings-form__hint">
           Per-category notification controls (Slack, email) moved to a dedicated page:
-          <%= link_to "Manage notifications →", my_notification_settings_path %>
+          <%= link_to "Manage notifications →", my_notification_settings_path, class: "settings-form__hint-link--primary" %>
         </p>
       </div>
 
@@ -172,6 +172,8 @@
         <%= link_to "Export Data", my_data_exports_path, class: "settings-form__hackatime-btn settings-form__export-btn" %>
         <small class="settings-form__hint">Download a ZIP of your projects, devlogs, and images</small>
       </div>
+
+      <%= render "my/settings/api_key", user: user %>
 
       <div class="modal__actions">
         <button type="button" class="modal__actions-close" onclick="document.getElementById('settings-form').reset(); document.getElementById('settings-modal').close()">Cancel</button>

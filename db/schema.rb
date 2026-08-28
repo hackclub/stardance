@@ -1546,6 +1546,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_155258) do
 
   create_table "users", force: :cascade do |t|
     t.string "age_attestation"
+    t.string "api_key"
     t.integer "approx_balance", default: 0, null: false
     t.integer "approx_total_earned", default: 0, null: false
     t.boolean "banned", default: false, null: false
@@ -1600,6 +1601,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_155258) do
     t.boolean "ysws_eligible", default: false, null: false
     t.index "lower((display_name)::text)", name: "index_users_on_lower_display_name_unique", unique: true, where: "((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))"
     t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
+    t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["approx_balance"], name: "index_users_on_approx_balance", order: :desc
     t.index ["approx_total_earned"], name: "index_users_on_approx_total_earned", order: :desc
     t.index ["email"], name: "index_users_on_email"
