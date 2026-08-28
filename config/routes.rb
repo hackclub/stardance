@@ -465,13 +465,13 @@ Rails.application.routes.draw do
       # Public API: authenticated with a user's personal API key (see
       # Api::V1::PublicApiController).
       resources :projects, only: [ :index, :show ]
+
+      get "docs", to: "docs#index"
     end
     namespace :slack do
       post "events", to: "events#create"
     end
   end
-
-  get "api/v1/docs", to: "api/v1/docs#index", as: :api_v1_docs
 
   # Shop
   get "shop", to: "shop/items#index", as: :shop
