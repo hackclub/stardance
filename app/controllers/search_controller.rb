@@ -135,7 +135,9 @@ class SearchController < ApplicationController
     return [] if q.blank?
 
     sanitized = ActiveRecord::Base.sanitize_sql_like(q)
-    scope = ShopOrder.where("tracking_number ILIKE ?", "%#{sanitized}%")
+    scope = ShopOrder
+      .where("tracking_number ILIKE ?", "%#{sanitized}%")
+      .or(ShopOrder.where("external_ref ILIKE ?", "%#{sanitized}%"))
     scope = scope.or(ShopOrder.where(id: q)) if q.match?(/\A\d+\z/)
 
     scope
