@@ -595,7 +595,7 @@ class Project < ApplicationRecord
       ai_declaration: ai_declaration,
       created_at: created_at,
       updated_at: updated_at,
-      devlog_ids: devlogs.pluck(:id),
+      devlog_ids: devlog_posts.map(&:postable_id),
       banner_url: banner.attached? ? Rails.application.routes.url_helpers.rails_blob_path(banner, only_path: true) : nil
     }
   end
