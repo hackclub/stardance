@@ -1,4 +1,5 @@
 class Api::V1::PublicApiController < ActionController::API
+  include ApiAuthenticatable
   include Pagy::Method
 
   before_action :authenticate_api_user!
@@ -21,10 +22,6 @@ class Api::V1::PublicApiController < ActionController::API
       unless Flipper.enabled?(:"public_api_2026-08-28", @current_api_user)
         render json: { error: "API access is not enabled for your account" }, status: :forbidden
       end
-    end
-
-    def bearer_token
-      request.authorization.to_s[/\ABearer (.+)\z/, 1]
     end
 
     def render_not_found
