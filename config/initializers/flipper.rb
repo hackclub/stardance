@@ -51,6 +51,7 @@ Rails.application.config.after_initialize do
         reviewer_progress_panel
         mac_analysis
         sticky_streaks
+        public_api_2026-08-28
       ].each { |flag| Flipper.add(flag) }
     end
   rescue StandardError => e

@@ -14,7 +14,13 @@ class Api::V1::PublicApiController < ActionController::API
       end
 
       @current_api_user = User.find_by(api_key: bearer_token)
-      render json: { error: "Invalid API key" }, status: :unauthorized unless @current_api_user
+      unless @current_api_user
+        return render json: { error: "Invalid API key" }, status: :unauthorized
+      end
+
+      unless Flipper.enabled?(:"public_api_2026-08-28", @current_api_user)
+        render json: { error: "API access is not enabled for your account" }, status: :forbidden
+      end
     end
 
     def bearer_token
