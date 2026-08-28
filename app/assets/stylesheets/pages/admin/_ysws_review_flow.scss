@@ -1,0 +1,174 @@
+// Continuous YSWS review flow (addon, gated by the ysws_review_flow flag).
+//
+// Kept out of _ysws_reviews.scss so the queue and review pages keep their
+// existing stylesheet untouched. Loaded after it in admin.scss, so rules here
+// win ties against it.
+//
+// Brand rules (docs/branding.md): set-2 surface with a 2px border matching the
+// set's secondary foreground (§3), buttons are small-action pills — primary
+// filled with --color-brand-highlight, secondary white-outlined, salmon reserved
+// for the leave-this action (§4.2). No --color-brand-orange: §1.5 says /admin/
+// pages don't carry the admin marker.
+//
+// SPECIFICITY. Most elements only need one level of nesting
+// (.block .block__element, (0,2,0)) to clear the .admin-content baseline. The
+// buttons need one more: admin.scss:233 styles `.admin-content
+// button:not(.action-btn)`, which is (0,2,1) and so beats (0,2,0) no matter
+// which stylesheet loads last. Scoping those under .admin-content reaches
+// (0,3,0) and wins — same arithmetic and same fix as the note in
+// pages/certification/ships/_show.scss:888-899.
+
+// ============================================================================
+// SESSION BAR (review page)
+// ============================================================================
+
+.ysws-flow-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xxs) var(--space-s);
+  max-width: 760px;
+  min-height: 40px;
+  margin: 0 0 var(--space-m);
+  padding: var(--space-xxs) var(--space-s);
+  border: 1px solid var(--color-set-2-fg-secondary);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--color-shadow-deep);
+  background: var(--color-set-2-bg);
+
+  & &__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  & &__label {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0;
+
+    // The "you are in a session" tell, so the bar reads as a mode and not as
+    // one more piece of page furniture.
+    &::before {
+      content: "●";
+      margin-right: var(--space-xxs);
+      color: var(--color-brand-mint);
+    }
+  }
+
+  & &__position {
+    color: var(--color-brand-highlight);
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  & &__tally {
+    margin: 0;
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 720px) {
+    justify-content: flex-start;
+  }
+}
+
+// Written out in full rather than with `&` nesting: these need the third class
+// to beat admin.scss's button baseline (see the header note).
+.admin-content .ysws-flow-bar {
+  .ysws-flow-bar__form {
+    display: inline;
+    margin: 0;
+  }
+
+  .ysws-flow-bar__btn {
+    min-height: 0;
+    padding: 2px 10px;
+    border: 1px solid var(--color-brand-off-white);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-overlay-light);
+    }
+
+    &:active {
+      border-color: var(--color-brand-highlight);
+      color: var(--color-brand-highlight);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+
+  // Leaving the session — salmon is the warn/stop accent (§1.3).
+  .ysws-flow-bar__btn--end {
+    border-color: var(--color-brand-salmon);
+    color: var(--color-brand-salmon);
+
+    &:hover {
+      background: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+
+    &:active {
+      border-color: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+  }
+}
+
+// ============================================================================
+// QUEUE ENTRY POINT (index page)
+// ============================================================================
+
+// The .ysws-queue__header row that holds this button is laid out in
+// _ysws_reviews.scss alongside the rest of the queue's own furniture.
+.admin-content .ysws-queue {
+  .ysws-queue__flow-form {
+    display: inline;
+    margin: 0;
+  }
+
+  // Small action, primary: the one button on this page that starts a workflow.
+  .ysws-queue__flow-btn {
+    padding: 3px 16px;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-brand-highlight-secondary);
+    }
+
+    &:active {
+      background: var(--color-brand-off-white);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+}

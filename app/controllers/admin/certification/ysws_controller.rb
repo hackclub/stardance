@@ -43,35 +43,58 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @dir            = filters["dir"] == "asc" ? "asc" : "desc"
     @with_integrity = filters["with_integrity"] != "0"
 
-    scope = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
-    scope = scope.with_integrity_check if @with_integrity
+    @search = params[:search].to_s.strip
+
+    queue = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
+    queue = queue.with_integrity_check if @with_integrity
 
     # Type filter options are whatever project types are actually present in the
-    # pending queue (plus an "unclassified" bucket) — never hardcoded.
-    @type_counts = scope.joins(:project).group("projects.project_type").count
+    # pending queue (plus an "unclassified" bucket) — never hardcoded. Always
+    # computed off the unsearched queue so the header select keeps its real
+    # counts while a search is on screen.
+    @type_counts = queue.joins(:project).group("projects.project_type").count
 
-    scope = scope.by_project_type(@project_type) if @project_type
+    # Search is a lookup tool, not a queue view: it overrides the saved type and
+    # integrity filters, and deliberately reaches past `pending` and the claim
+    # visibility rule so an id pasted from Slack always resolves. Rows it turns
+    # up that aren't in the queue are badged in the table.
+    scope =
+      if @search.present?
+        ::Certification::Ysws.search(@search)
+      else
+        @project_type ? queue.by_project_type(@project_type) : queue
+      end
 
-    scope = scope.with_todo_devlog_count.includes(:project, :user, :integrity_check)
+    scope = scope.with_todo_devlog_count.includes(:project, :user, :integrity_check, :claimed_by)
+
+    # With no column sort chosen: oldest-first is right for working the queue, but
+    # a search is a lookup, where the most recent match is nearly always the one
+    # being looked for.
+    default_dir = @search.present? ? :desc : :asc
 
     scope =
       case @sort
       when "length" then scope.order(Arel.sql("certification_ysws_reviews.original_minutes #{@dir}"))
       when "todo"   then scope.order(Arel.sql("todo_devlog_count #{@dir}"))
-      else               scope.order(created_at: :asc)
+      else               scope.order(created_at: default_dir)
       end
 
     # Loaded eagerly so the view can count the collection without re-running the
     # custom-select query as a COUNT(*), which the aliased column would break.
     @reviews = scope.to_a
 
-    # Per-reviewer pace against the daily devlog-review goal, averaged across the
-    # current review week (Wednesday 4pm to the following Wednesday 4pm). Left nil
-    # when the flag is off so the queue skips both the query and the widget — and
-    # when the progress panel is on, since that panel leads with the same figure.
-    @devlog_pace = ::Certification::Ysws.reviewer_devlog_pace(current_user.id) if
-      Flipper.enabled?(:devlog_review_pace, current_user) &&
-      !Flipper.enabled?(:reviewer_progress_panel, current_user)
+    # Per-reviewer pace against both daily review goals, averaged across the current
+    # review week (Wednesday 4pm to the following Wednesday 4pm). Left nil when the
+    # flag is off so the queue skips both the queries and the widget — and when the
+    # progress panel is on, since that panel leads with the same figures. Also
+    # skipped for a turbo-frame render: live search replaces only the results
+    # table, so re-running these on every keystroke would be pure waste.
+    if !turbo_frame_request? &&
+       Flipper.enabled?(:devlog_review_pace, current_user) &&
+       !Flipper.enabled?(:reviewer_progress_panel, current_user)
+      @devlog_pace  = ::Certification::Ysws.reviewer_devlog_pace(current_user.id)
+      @project_pace = ::Certification::Ysws.reviewer_project_pace(current_user.id)
+    end
   end
 
   def show
@@ -144,6 +167,16 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @lookout_recordings = lookout_recordings_for_ysws_review
     # Owner Hackatime uid for Telescreen deep-links on Lapse recordings.
     @lapse_owner_uid = @review.project.memberships.owner.first&.user&.hackatime_identity&.uid
+
+    # The same already-fetched recordings the project-wide gallery renders, also
+    # bucketed per devlog so each devlog card can show the clips that back its
+    # claimed time. No extra upstream calls.
+    @devlog_recordings = ::Certification::RecordingList.by_devlog(
+      items: ::Certification::RecordingList.build(
+        timelapses: @lapse_timelapses, recordings: @lookout_recordings
+      ),
+      windows: devlog_time_windows(@review)
+    )
 
     @devlog_windows = devlog_windows_for_review(@review)
     # Attach each recording to the devlog whose time window it was recorded in, so
@@ -305,12 +338,8 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       .order("posts.created_at DESC").first
     review_start = prior_ship&.created_at || Time.utc(2026, 5, 30)
 
-    all_posts = project.posts
-      .where(postable_type: "Post::Devlog")
-      .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND post_devlogs.deleted_at IS NULL")
-      .order("posts.created_at ASC").to_a
-
-    last_idx = all_posts.size - 1
+    all_posts = ordered_devlog_posts(project)
+    last_idx  = all_posts.size - 1
 
     all_posts.each_with_index.with_object({}) do |(post, idx), windows|
       day    = post.created_at.in_time_zone.all_day
@@ -318,6 +347,44 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       before = idx == last_idx ? ship_time : [ day.end, ship_time ].min
       windows[post.postable_id] = { since: since.iso8601, before: before.iso8601 }
     end
+  end
+
+  # Returns { devlog_id => Range of Time } — the window each devlog's claimed
+  # time was actually computed over: everything since the previous devlog, up to
+  # the moment it was posted. This is what a build recording has to fall inside
+  # to be evidence for that devlog's minutes, so it's the bucketing the
+  # per-devlog timelapse strip uses (Certification::RecordingList.by_devlog).
+  #
+  # Mirrors Project#devlog_window_start, including its first-devlog fallback,
+  # but derived from the ordered post list already in hand rather than one query
+  # per devlog. Kept separate from #devlog_windows_for_review on purpose: those
+  # are calendar-day buckets, deliberately different (see its comment), and
+  # would drop any recording made on a day between two devlogs.
+  #
+  # End-exclusive so consecutive windows can't overlap and a recording can never
+  # surface on two devlog cards. A clip stamped at the exact instant a devlog was
+  # posted therefore counts towards the next one — recording timestamps are
+  # second-precision and post times aren't, so that tie is theoretical.
+  def devlog_time_windows(review)
+    project = review.project
+    posts   = ordered_devlog_posts(project)
+
+    season_start = Date.parse(HackatimeService::START_DATE).beginning_of_day
+    first_since  = [ project.created_at, season_start ].min
+
+    posts.each_with_index.with_object({}) do |(post, idx), windows|
+      since = idx.zero? ? first_since : posts[idx - 1].created_at
+      windows[post.postable_id] = since...post.created_at
+    end
+  end
+
+  # Every live devlog post on the project, oldest-first. Memoized because both
+  # window builders walk the same list on a single #show.
+  def ordered_devlog_posts(project)
+    @ordered_devlog_posts ||= project.posts
+      .where(postable_type: "Post::Devlog")
+      .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND post_devlogs.deleted_at IS NULL")
+      .order("posts.created_at ASC").to_a
   end
 
   public

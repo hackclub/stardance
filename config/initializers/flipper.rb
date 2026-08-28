@@ -52,6 +52,7 @@ Rails.application.config.after_initialize do
         mac_analysis
         sticky_streaks
         public_api_2026-08-28
+        ysws_review_flow
       ].each { |flag| Flipper.add(flag) }
     end
   rescue StandardError => e

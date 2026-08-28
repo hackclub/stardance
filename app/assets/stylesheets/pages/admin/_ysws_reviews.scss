@@ -19,6 +19,24 @@
 // each cell's data-label attribute.
 
 .ysws-queue {
+  // Page title and the review-session entry point on one row. The button is
+  // here rather than in __summary because that row is a two-child
+  // space-between layout: a third child drags the integrity toggle into the
+  // middle of it. The h1's own bottom margin moves to the row so spacing is
+  // unchanged when no button renders.
+  & &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-m);
+    margin-bottom: var(--space-s);
+
+    h1 {
+      margin: 0;
+    }
+  }
+
   // Queue total on the left, integrity toggle pushed out to the right so it
   // lines up with the trailing edge of the table below.
   & &__summary {
@@ -132,9 +150,134 @@
     }
   }
 
-  // Per-reviewer pace widget, sits beside the queue filters and shows the
-  // running devlogs-per-day average for this review week plus the catch-up count.
-  // Superseded by the dashboard's progress panel when that flag is on.
+  // Wide enough for a typical query and free to stretch across the filter row,
+  // while still shrinking cleanly on narrow viewports.
+  // Bottom-aligned because the filter row's other occupant (the pace widget) is
+  // much taller and sets its own align-self, so the default stretch would leave
+  // the input floating at the top of a tall row.
+  & &__filter--search {
+    flex: 1 1 48rem;
+    min-width: 0;
+    align-self: flex-end;
+  }
+
+  // Positioning context for the leading magnifier and the trailing clear button,
+  // both of which sit inside the input's padding.
+  & &__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  // Pill-shaped rather than the queue's usual --profile-radius: the rounded form
+  // is what reads as "search" at a glance, and it sets this control apart from
+  // the boxed filter dropdowns beside it.
+  & &__search-input[type="search"] {
+    width: 100%;
+    border-radius: 999px;
+    // Symmetric inline padding clears the magnifier on one side and the clear
+    // button on the other. Held constant rather than tightened while the button
+    // is hidden, so the text doesn't shift the moment you start typing.
+    padding: var(--space-xs) var(--space-xl);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text);
+    border: 2px solid var(--color-border-input);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-s);
+
+    &::placeholder {
+      color: var(--color-space-text);
+      opacity: 0.5;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-brand-blue);
+      box-shadow: 0 0 0 2px var(--color-brand-blue-soft);
+    }
+
+    // Chrome paints its own clear affordance, which would double up with ours.
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+
+  // Same inset as the clear button, so the magnifier and the × sit symmetrically
+  // about the text between them.
+  & &__search-icon {
+    position: absolute;
+    left: var(--space-xs);
+    width: 1rem;
+    height: 1rem;
+    pointer-events: none;
+    color: var(--color-space-text-muted);
+  }
+
+  & &__search-clear {
+    position: absolute;
+    right: var(--space-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    &[hidden] {
+      display: none;
+    }
+
+    svg {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+
+    &:hover {
+      color: var(--color-brand-highlight);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+
+  // `<turbo-frame>` is a custom element, so browsers render it `display: inline`
+  // by default — which collapses this frame around the summary row and table it
+  // wraps and drops their block margins. Same fix as turbo-frame#profile_card.
+  & turbo-frame#ysws_queue_results {
+    display: block;
+  }
+
+  // In-flight search: fade the outgoing rows so a slow query reads as pending
+  // rather than frozen, without shifting any layout.
+  &.is-searching &__table-container,
+  &.is-searching &__empty {
+    opacity: 0.45;
+    transition: opacity 120ms ease-in;
+  }
+
+  // Search reaches past the queue's claim-visibility rule, so a result someone
+  // else is holding says so instead of silently looking available.
+  & &__claimed-by {
+    display: block;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  & &__empty-hint {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  // Per-reviewer pace widget, sits beside the queue filters and shows the running
+  // devlogs- and projects-per-day averages for this review week plus the catch-up
+  // count. Superseded by the dashboard's progress panel when that flag is on.
   & &__goal {
     display: flex;
     flex-direction: column;
@@ -145,6 +288,14 @@
     background: var(--color-set-1-bg);
     border: 2px solid var(--color-set-1-fg-secondary);
     border-radius: var(--profile-radius);
+  }
+
+  // The two paths to locked in, side by side rather than stacked — the widget is a
+  // column, and two full-size figures under each other make it twice as tall.
+  & &__goal-paces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs) var(--space-l);
   }
 
   & &__goal-primary {
@@ -158,10 +309,10 @@
     font-size: var(--font-size-xs);
   }
 
-  // Hitting the daily average earns the same top-spot gradient the #1 leaderboard
-  // row wears. It's a light surface, so every label inside flips to the dark
-  // set-1 background colour to stay legible.
-  & &__goal--on-pace {
+  // Locked in — clearing either daily average — earns the same top-spot gradient
+  // the #1 leaderboard row wears. It's a light surface, so every label inside
+  // flips to the dark set-1 background colour to stay legible.
+  & &__goal--locked-in {
     background: var(--gradient-extra-highlight) center / cover no-repeat;
 
     .ysws-queue__goal-count,
@@ -1631,8 +1782,9 @@ body:has(.certification-ysws) {
         letter-spacing: 0.05em;
       }
 
-      // Thumbnails share a row with the MAC pre-screen note (.mac-hint--aside),
-      // which wraps below them on narrow viewports.
+      // Thumbnails share a row with the devlog's timelapse strip and the MAC
+      // pre-screen note (.mac-hint--aside), which wrap below them on narrow
+      // viewports.
       .media-row {
         align-items: flex-start;
         display: flex;
@@ -1641,9 +1793,17 @@ body:has(.certification-ysws) {
 
         // Sized to its thumbnails so the note can take the width left over
         // after the last one; shrinks (re-wrapping the grid) when space is tight.
-        &__media {
+        &__media,
+        &__timelapses {
           flex: 0 1 auto;
           min-width: 0;
+        }
+
+        // Separated from the devlog's own media so a reviewer can't mistake a
+        // build recording for something the builder attached to the post.
+        &__timelapses {
+          border-left: 1px solid var(--color-space-border);
+          padding-left: var(--space-s);
         }
       }
 
@@ -1689,6 +1849,35 @@ body:has(.certification-ysws) {
           font-family: var(--font-family-sans);
           text-transform: uppercase;
           letter-spacing: 0.05em;
+        }
+      }
+
+      // One build recording in the per-devlog timelapse strip: a media-grid
+      // tile with its duration and capture date captioned underneath.
+      .timelapse-tile {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xxs);
+
+        &__meta {
+          color: var(--color-space-text-muted);
+          font-size: var(--font-size-xxs);
+          font-family: var(--font-family-sans);
+        }
+
+        // Still-processing clips have nothing to play, so the tile isn't a link
+        // and must not offer a link's hover feedback.
+        &__processing {
+          align-items: center;
+          display: flex;
+          justify-content: center;
+          padding: var(--space-xs);
+          text-align: center;
+
+          &:hover {
+            transform: none;
+            border-color: var(--color-space-border);
+          }
         }
       }
     }
@@ -2773,8 +2962,9 @@ body:has(.certification-ysws) {
 .ysws-dashboard {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-m);
-  margin-block: var(--space-l);
+  align-items: stretch;
+  gap: var(--space-s);
+  margin-block: var(--space-m);
 
   @media (max-width: 960px) {
     grid-template-columns: 1fr;
@@ -2784,13 +2974,21 @@ body:has(.certification-ysws) {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
-    padding: var(--space-m);
+    padding: var(--space-s);
   }
 
   &__heading {
-    margin: 0 0 var(--space-s);
-    font-size: var(--font-size-l);
+    margin: 0 0 var(--space-xs);
+    font-size: var(--font-size-m);
     color: var(--color-brand-off-white);
+  }
+
+  &__heading-note {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   &__table {
@@ -2799,9 +2997,10 @@ body:has(.certification-ysws) {
 
     th,
     td {
-      padding: var(--space-xs) var(--space-s);
+      padding: var(--space-xxs) var(--space-xs);
       text-align: left;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      line-height: 1.25;
     }
 
     th {
@@ -2822,9 +3021,41 @@ body:has(.certification-ysws) {
     font-variant-numeric: tabular-nums;
   }
 
-  // Reviewers meeting the daily average wear the leaderboard top-spot gradient.
-  // It's a light surface, so cell text flips to the dark navy set-1 background
-  // colour instead of the pale yellow the admin link/table styles use.
+  // Sortable leaderboard header: the column title doubles as a rank-by link.
+  // Descending only, so the active column renders as a plain <span> and its arrow
+  // is a state indicator rather than a toggle.
+  &__sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-brand-off-white);
+      text-decoration: none;
+    }
+  }
+
+  &__sort-arrow {
+    font-size: var(--font-size-xs);
+    opacity: 0.4;
+  }
+
+  &__sort--active {
+    color: var(--color-brand-off-white);
+    cursor: default;
+
+    .ysws-dashboard__sort-arrow {
+      opacity: 1;
+    }
+  }
+
+  // Reviewers on pace — clearing the devlog daily average — wear the leaderboard
+  // top-spot gradient. It's a light surface, so cell text flips to the dark navy
+  // set-1 background colour instead of the pale yellow the admin link/table
+  // styles use.
   //
   // The selector is deliberately heavy: the global admin table styles in
   // admin.scss set a background on both `tbody tr:nth-child(odd)` and
@@ -2866,33 +3097,34 @@ body:has(.certification-ysws) {
 
   &__chart {
     position: relative;
-    height: 280px;
+    height: clamp(190px, 18vw, 230px);
   }
 
   // "See your progress" — the reviewer's own numbers, sitting under the crew-wide
   // chart in the same panel. Ruled off from the canvas so the two read as
   // separate ideas rather than one long block.
   &__progress {
-    margin-block-start: var(--space-m);
-    padding-block-start: var(--space-m);
+    margin-block-start: var(--space-s);
+    padding-block-start: var(--space-s);
     border-block-start: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   &__progress-hero {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-xxxs);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
     padding: var(--space-xs) var(--space-s);
     background: var(--color-set-1-bg);
     border: 2px solid var(--color-set-1-fg-secondary);
     border-radius: var(--profile-radius);
   }
 
-  // Hitting the daily average earns the same top-spot gradient the #1 leaderboard
-  // row wears — the one loud surface on this panel. It's a light background, so
-  // every label inside flips to the dark set-1 colour to stay legible.
-  &__progress-hero--on-pace {
+  // Locked in — clearing either daily average — earns the same top-spot gradient
+  // the #1 leaderboard row wears, the one loud surface on this panel. It's a light
+  // background, so every label inside flips to the dark set-1 colour to stay legible.
+  &__progress-hero--locked-in {
     background: var(--gradient-extra-highlight) center / cover no-repeat;
     border-color: transparent;
 
@@ -2901,6 +3133,14 @@ body:has(.certification-ysws) {
     .ysws-dashboard__progress-note {
       color: var(--color-set-1-bg);
     }
+  }
+
+  // The two paths to locked in, side by side rather than stacked — the hero is a
+  // column, and two full-size figures under each other make it twice as tall.
+  &__progress-paces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs) var(--space-m);
   }
 
   &__progress-primary {
@@ -2912,7 +3152,7 @@ body:has(.certification-ysws) {
 
   &__progress-count {
     color: var(--color-brand-highlight);
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-l);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
@@ -2934,8 +3174,8 @@ body:has(.certification-ysws) {
   &__progress-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-s);
-    margin-block: var(--space-m) 0;
+    gap: var(--space-xs) var(--space-s);
+    margin-block: var(--space-s) 0;
 
     @media (max-width: 1200px) {
       grid-template-columns: repeat(2, 1fr);
@@ -2949,7 +3189,7 @@ body:has(.certification-ysws) {
   &__progress-stat {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xxxs);
+    gap: 0.1rem;
   }
 
   &__progress-stat-label {
@@ -2962,7 +3202,7 @@ body:has(.certification-ysws) {
   &__progress-stat-value {
     margin: 0;
     color: var(--color-brand-off-white);
-    font-size: var(--font-size-l);
+    font-size: var(--font-size-m);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
@@ -2974,9 +3214,9 @@ body:has(.certification-ysws) {
   }
 
   // What the week is worth, sitting under the pace hero it depends on. Kept
-  // outside the hero so the --on-pace gradient's colour flip doesn't apply to it.
+  // outside the hero so the --locked-in gradient's colour flip doesn't apply to it.
   &__progress-payout {
-    margin: var(--space-s) 0 0;
+    margin: var(--space-xs) 0 0;
     color: var(--color-set-1-fg-secondary);
     font-size: var(--font-size-xs);
   }
@@ -2987,14 +3227,8 @@ body:has(.certification-ysws) {
     font-variant-numeric: tabular-nums;
   }
 
-  &__progress-payout--halved {
-    .ysws-dashboard__progress-payout-amount {
-      color: var(--color-brand-salmon);
-    }
-  }
-
   &__progress-tier {
-    margin-block-start: var(--space-m);
+    margin-block-start: var(--space-xs);
   }
 
   &__progress-tier-note {

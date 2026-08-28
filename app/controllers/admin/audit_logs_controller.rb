@@ -88,6 +88,7 @@ module Admin
       "Post::Devlog" => "Post::Devlog",
       "Post::ShipEvent" => "Post::ShipEvent",
       "Post::FireEvent" => "Post::FireEvent",
+      "Certification::Ysws" => "Certification::Ysws",
       "Comment" => "Comment",
       "LedgerEntry" => "LedgerEntry",
       "Vote" => "Vote",

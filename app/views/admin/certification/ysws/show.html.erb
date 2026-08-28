@@ -1,6 +1,26 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
 
-<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>">
+<%# Continuous review flow (addon). Two different scopes on purpose:
+    - the session bar shows for any live session, so the page's own sticky panels
+      have to clear it whenever it is on screen — that is what the modifier tracks;
+    - swapping the Complete Review button is narrower, and needs this review to
+      actually be in the list, so a "prior reviews" history link (and any reviewer
+      without the flag, since ysws_flow reads as inactive then) keeps the ordinary
+      page and the ordinary button. %>
+<% ysws_session   = ysws_flow %>
+<% in_review_flow = ysws_session.position(@review.id).present? %>
+
+<main class="certification-ysws<%= " certification-ysws--in-flow" if ysws_session.active? %>"
+      role="main"
+      data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert<%= " certification--ysws--review-flow" if in_review_flow %>"
+      data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>"
+      data-certification--ysws--complete-review-review-id-value="<%= @review.id %>"
+      data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>"
+      <% if in_review_flow %>
+        data-certification--ysws--review-flow-submit-url-value="<%= admin_certification_ysws_flow_submit_path(@review) %>"
+        data-certification--ysws--review-flow-next-url-value="<%= admin_certification_ysws_flow_next_path(@review) %>"
+      <% end %>>
+  <%= render "flow_bar", review: @review %>
   <%= render Admin::Certification::MACAnalysisBannerComponent.new(analysis: @mac_analysis, repo_url: @review.project&.repo_url, total_minutes: @review.original_minutes) %>
 
   <!-- Header Section -->
@@ -403,14 +423,30 @@
                 data-action="click->certification--ysws--return-to-ship-cert#open">
           Return to Ship Certs
         </button>
-        <button class="action-btn btn-complete"
-                data-certification--ysws--complete-review-target="button"
-                data-action="click->certification--ysws--complete-review#complete">
-          Complete Review
-        </button>
+        <%# In a review session this submits and carries the reviewer to the next
+            project. Outside one it is the untouched queue button, which completes
+            and returns to the queue. %>
+        <% if in_review_flow %>
+          <button class="action-btn btn-complete"
+                  data-certification--ysws--review-flow-target="button"
+                  data-action="click->certification--ysws--review-flow#submit">
+            Complete &amp; next →
+          </button>
+        <% else %>
+          <button class="action-btn btn-complete"
+                  data-certification--ysws--complete-review-target="button"
+                  data-action="click->certification--ysws--complete-review#complete">
+            Complete Review
+          </button>
+        <% end %>
       </div>
     </section>
   <% end %>
+
+  <%# Reviewer-visible audit trail for this review — Certification::Ysws is
+      has_paper_trail, so every verdict, claim, and resync already leaves a
+      version behind. Same partial the reports page uses. %>
+  <%= render "admin/shared/audit_log", record: @review, item_type: "Certification::Ysws" %>
 
   <!-- Return to Ship Cert Modal -->
   <div class="return-ship-cert-modal" data-certification--ysws--return-to-ship-cert-target="modal">

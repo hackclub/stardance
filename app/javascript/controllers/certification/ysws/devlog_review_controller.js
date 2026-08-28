@@ -138,6 +138,42 @@ export default class extends Controller {
     }, 1000);
   }
 
+  // Sends any debounced edit straight away instead of waiting its timer out, and
+  // hands the in-flight request back through event.detail.pending. The review
+  // flow awaits those before it submits, so a justification typed a moment
+  // earlier can't be missed by the server's completion checks.
+  //
+  // The timer handles are never cleared once they fire, so a card the reviewer
+  // touched at any point re-sends its current field values here even when
+  // nothing is actually outstanding. That is deliberate: the resend carries
+  // exactly what is on screen, Rails issues no UPDATE when nothing changed, and
+  // all the cards flush concurrently — so over-sending costs a round trip, while
+  // under-sending would lose a justification.
+  flush(event) {
+    const pending = event?.detail?.pending;
+    const collect = (save) => {
+      if (pending) pending.push(save);
+    };
+
+    if (this.minutesDebounceTimer) {
+      clearTimeout(this.minutesDebounceTimer);
+      this.minutesDebounceTimer = null;
+
+      const minutes = parseInt(this.minutesInputTarget.value, 10);
+      if (!Number.isNaN(minutes) && minutes >= 0) {
+        collect(this.sendUpdate({ approved_minutes: minutes }));
+      }
+    }
+
+    if (this.notesDebounceTimer) {
+      clearTimeout(this.notesDebounceTimer);
+      this.notesDebounceTimer = null;
+      collect(
+        this.sendUpdate({ justification: this.notesTextareaTarget.value }),
+      );
+    }
+  }
+
   // Grow the notes textarea to fit its content so long justifications aren't
   // trapped behind an inner scrollbar. CSS min-height sets the floor.
   autogrow() {

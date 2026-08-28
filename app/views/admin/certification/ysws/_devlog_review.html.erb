@@ -13,7 +13,8 @@
                       suggested no reduction.
                       Read-only: it suggests minutes, it never sets them.
 
-  Relies on the page-level @repo_info and @devlog_commits for the git graph.
+  Relies on the page-level @repo_info and @devlog_commits for the git graph, and
+  on @devlog_recordings for the per-devlog timelapse strip.
 %>
 <% frozen ||= false %>
 <% sidebar_trigger ||= false %>
@@ -25,6 +26,7 @@
        data-certification--ysws--devlog-review-id-value="<%= devlog_review.id %>"
        data-certification--ysws--devlog-review-original-minutes-value="<%= devlog_review.original_minutes || 0 %>"
        data-certification--ysws--devlog-review-status-value="<%= devlog_review.status %>"
+       data-action="devlog-review:flush@window->certification--ysws--devlog-review#flush"
      <% end %>
      <%= 'data-certification--ysws--review-sidebar-target="trigger"'.html_safe if sidebar_trigger %>>
   <div class="devlog-main">
@@ -76,6 +78,10 @@
         </div>
       <% end %>
         </div>
+
+        <% if (devlog_timelapses = @devlog_recordings[devlog_review.post_devlog_id]).present? %>
+          <%= render "devlog_timelapses", items: devlog_timelapses %>
+        <% end %>
 
         <%# Read-only on purpose: the pre-screen suggests, the reviewer decides.
             The reasoning leads — it's what the decision turns on; the suggested

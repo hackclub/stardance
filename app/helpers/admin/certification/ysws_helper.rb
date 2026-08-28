@@ -15,6 +15,23 @@ module Admin::Certification::YswsHelper
     )
   end
 
+  # Queue header link that toggles the sort direction for a column. First click
+  # sorts descending (highest first); clicking the active column again flips it.
+  # Every other piece of queue state rides along so sorting doesn't silently drop
+  # the caller's filters or their active search.
+  def ysws_sort_link(column, label)
+    active   = @sort == column
+    next_dir = (active && @dir == "desc") ? "asc" : "desc"
+    arrow    = active ? (@dir == "asc" ? "▲" : "▼") : "▾"
+
+    link_to admin_certification_ysws_reviews_path(project_type: @project_type, sort: column,
+                                                  dir: next_dir, search: @search.presence,
+                                                  with_integrity: @with_integrity ? nil : "0"),
+            class: [ "ysws-queue__sort", ("ysws-queue__sort--active" if active) ] do
+      safe_join([ label, tag.span(arrow, class: "ysws-queue__sort-arrow", aria: { hidden: true }) ], " ")
+    end
+  end
+
   # The devlog pre-screen hint borrows the banner's severity tones: a suggested
   # time cut reads the same as a yellow banner flag, while a recommendation with
   # nothing to compare against stays neutral blue. The "deduction" key is set by

@@ -4,6 +4,7 @@
 @use "pages/admin/mega_dashboard";
 @use "pages/admin/missions_edit";
 @use "pages/admin/ysws_reviews";
+@use "pages/admin/ysws_review_flow";
 @use "pages/admin/integrity_reviews";
 @use "pages/admin/email_templates";
 @use "pages/admin/fraud_dashboard";
@@ -74,8 +75,8 @@ body.admin-page {
   }
 
   a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn):not(
-      .ysws-dashboard__reviewer-link--on-pace
-    ):not(.ship-queue__row-link) {
+      .ysws-dashboard__reviewer-link--locked-in
+    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 

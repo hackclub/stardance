@@ -5,22 +5,50 @@
   rank     = progress[:rank]
   payout   = progress[:weekly_payout]
 
-  payout_amount = number_with_precision(payout[:payout], precision: 2, strip_insignificant_zeros: true)
-  payout_full   = number_with_precision(payout[:full], precision: 2, strip_insignificant_zeros: true)
+  devlog_pace  = progress[:pace]
+  project_pace = progress[:project_pace]
+  devlog_goal  = ::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY
+  project_goal = ::Certification::Ysws::PROJECT_REVIEW_GOAL_PER_DAY
+
+  # Short of both goals, point at the nearer one rather than listing both — one
+  # number to chase reads as a target, two read as a scolding.
+  nearer_count, nearer_unit =
+    if devlog_pace[:needed_today] <= project_pace[:needed_today]
+      [ devlog_pace[:needed_today], "more devlog" ]
+    else
+      [ project_pace[:needed_today], "more project" ]
+    end
+
+  earned_amount = number_with_precision(payout[:earned], precision: 2, strip_insignificant_zeros: true)
   goal_amount   = number_with_precision(payout[:goal_payout], precision: 2, strip_insignificant_zeros: true)
-  goal_halved   = number_with_precision(payout[:goal_payout_halved], precision: 2, strip_insignificant_zeros: true)
   weekly_goal   = number_with_delimiter(::Certification::Ysws::WEEKLY_DEVLOG_GOAL)
+
+  # Short of the goal, the gap is the story; past it, the rate is — every extra
+  # devlog still pays. One clause either way, so the payout stays a sentence.
+  # "more" is invariant, so it's never passed through `pluralize` — that would
+  # read "118 mores".
+  goal_note =
+    if payout[:devlogs_to_goal].positive?
+      "#{number_with_delimiter payout[:devlogs_to_goal]} more to lock in your " \
+      "week at #{goal_amount} ✦."
+    elsif payout[:devlogs_past_goal].positive?
+      "That's #{number_with_delimiter payout[:devlogs_past_goal]} past the " \
+      "#{weekly_goal}-devlog goal, and every extra one still pays #{payout[:rate]} ✦."
+    else
+      "That's the #{weekly_goal}-devlog goal met exactly — every devlog from " \
+      "here still pays #{payout[:rate]} ✦."
+    end
 
   stats = [
     { value: number_with_delimiter(progress[:hours_certified]),
       label: "Hours certified",
       note: "of building, signed off by you" },
     { value: number_with_delimiter(progress[:people_reviewed]),
-      label: "People's projects you've reviewed",
+      label: "People reviewed",
       note: "different people, all time" },
-    { value: progress[:streak],
-      label: "Day streak",
-      note: "days in a row with a review" },
+    { value: progress[:projects_today],
+      label: "Projects today",
+      note: "since 4pm ET — #{project_goal}/day locks you in" },
     { value: progress[:best_day_devlogs] || 0,
       label: "Best day",
       note: best_day ? "your record, set #{best_day.strftime('%-m/%-d')}" : "no reviews yet" },
@@ -36,45 +64,48 @@
 <section class="ysws-dashboard__progress" aria-labelledby="ysws-progress-heading">
   <h3 class="ysws-dashboard__heading" id="ysws-progress-heading">See your progress</h3>
 
-  <%= tag.div class: [ "ysws-dashboard__progress-hero", ("ysws-dashboard__progress-hero--on-pace" if progress[:on_pace]) ],
+  <%= tag.div class: [ "ysws-dashboard__progress-hero", ("ysws-dashboard__progress-hero--locked-in" if progress[:locked_in]) ],
               role: "status", aria: { live: "polite" } do %>
-    <p class="ysws-dashboard__progress-primary">
-      <span class="ysws-dashboard__progress-count">
-        <%= number_with_precision progress[:pace][:daily_average], precision: 1, strip_insignificant_zeros: true %>
-      </span>
-      <span class="ysws-dashboard__progress-label">devlogs / day this week</span>
-    </p>
+    <%# Both paths to locked in, side by side — holding either one is enough. %>
+    <div class="ysws-dashboard__progress-paces">
+      <p class="ysws-dashboard__progress-primary">
+        <span class="ysws-dashboard__progress-count">
+          <%= number_with_precision devlog_pace[:daily_average], precision: 1, strip_insignificant_zeros: true %>
+        </span>
+        <span class="ysws-dashboard__progress-label">devlogs / day this week</span>
+      </p>
+
+      <p class="ysws-dashboard__progress-primary">
+        <span class="ysws-dashboard__progress-count">
+          <%= number_with_precision project_pace[:daily_average], precision: 1, strip_insignificant_zeros: true %>
+        </span>
+        <span class="ysws-dashboard__progress-label">projects / day this week</span>
+      </p>
+    </div>
 
     <p class="ysws-dashboard__progress-note">
-      <% if progress[:on_pace] %>
-        On pace — <%= ::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY %>/day average met
+      <% if devlog_pace[:needed_today].zero? %>
+        Locked in — <%= devlog_goal %> devlogs/day average met
+      <% elsif project_pace[:needed_today].zero? %>
+        Locked in — <%= project_goal %> projects/day average met
       <% else %>
-        <%= pluralize progress[:pace][:needed_today], "more" %> today to reach your goal!
+        <%= pluralize nearer_count, nearer_unit %> today to lock in!
       <% end %>
     </p>
   <% end %>
 
-  <% if payout[:projected_devlogs].zero? %>
+  <% if payout[:devlogs].zero? %>
     <p class="ysws-dashboard__progress-payout">
-      Review <%= weekly_goal %> devlogs this week for the full
-      <strong class="ysws-dashboard__progress-payout-amount"><%= goal_amount %> ✦</strong>
-      — <%= goal_halved %> ✦ if you fall short.
+      Nothing earned yet this week — review <%= weekly_goal %> devlogs for
+      <strong class="ysws-dashboard__progress-payout-amount"><%= goal_amount %> ✦</strong>.
     </p>
   <% else %>
-    <%= tag.p class: [ "ysws-dashboard__progress-payout",
-                       ("ysws-dashboard__progress-payout--halved" unless payout[:locked_in]) ] do %>
-      Projected payout this week —
-      <strong class="ysws-dashboard__progress-payout-amount"><%= payout_amount %> ✦</strong>
-      <% if payout[:locked_in] %>
-        at your current pace, from the
-        <%= pluralize number_with_delimiter(payout[:projected_devlogs]), "devlog" %>
-        you're on track to review.
-      <% else %>
-        — halved, since you're on track for
-        <%= number_with_delimiter payout[:projected_devlogs] %> of the <%= weekly_goal %>
-        devlogs a full week needs. Hold the goal pace for the full <%= payout_full %> ✦.
-      <% end %>
-    <% end %>
+    <p class="ysws-dashboard__progress-payout">
+      <strong class="ysws-dashboard__progress-payout-amount"><%= earned_amount %> ✦</strong>
+      earned this week — from the
+      <%= pluralize number_with_delimiter(payout[:devlogs]), "devlog" %> you've
+      reviewed. <%= goal_note %>
+    </p>
   <% end %>
 
   <dl class="ysws-dashboard__progress-stats">
@@ -91,7 +122,7 @@
     <div class="ysws-dashboard__progress-tier">
       <p class="ysws-dashboard__progress-tier-note">
         <strong><%= number_with_delimiter progress[:lifetime_devlogs] %></strong> devlogs reviewed, all time —
-        <%= pluralize number_with_delimiter(tier[:devlogs_needed]), "more" %>
+        <%= number_with_delimiter tier[:devlogs_needed] %> more
         to earn <%= tier[:rate] %> ✦ each, up from <%= tier[:current_rate] %> ✦.
       </p>
       <div class="ysws-dashboard__progress-tier-track" style="--tier-fill: <%= tier[:percent] %>%"

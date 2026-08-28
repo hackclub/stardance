@@ -927,6 +927,19 @@ Rails.application.routes.draw do
       delete "review/:id/claim", to: "ysws#unclaim", as: "ysws_claim"
       post "review/:id/complete", to: "ysws#complete", as: "complete_ysws_review"
       post "review/:id/undo", to: "ysws#undo", as: "undo_ysws_review"
+
+      # Continuous review flow (addon, gated by the ysws_review_flow flag): a
+      # session that carries a reviewer from one pending review to the next
+      # without a trip back through the queue. Purely additive — the queue's own
+      # View/Complete path above is untouched and still works on its own.
+      #
+      # "review/flow" is POST/DELETE only, and the :id routes are four segments
+      # deep, so none of these can be swallowed by `get "review/:id"` above.
+      post   "review/flow",            to: "ysws/flow#create",  as: "ysws_flow"
+      delete "review/flow",            to: "ysws/flow#destroy"
+      get    "review/:id/flow/next",   to: "ysws/flow#next",    as: "ysws_flow_next"
+      post   "review/:id/flow/skip",   to: "ysws/flow#skip",    as: "ysws_flow_skip"
+      post   "review/:id/flow/submit", to: "ysws/flow#submit",  as: "ysws_flow_submit"
       post "review/:id/return_to_ship_cert", to: "ysws#return_to_ship_cert", as: "return_to_ship_cert_ysws_review"
       post "review/:id/resync", to: "ysws#resync", as: "resync_ysws_review"
 

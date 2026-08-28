@@ -13,6 +13,7 @@
 ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
   enable_extension "vector"
 
   # Custom types defined in this database.
@@ -957,8 +958,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
     t.text "update_description"
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_projects_on_deleted_at"
+    t.index ["demo_url"], name: "index_projects_on_demo_url_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["marked_fire_by_id"], name: "index_projects_on_marked_fire_by_id"
     t.index ["nominated_fire_by_id"], name: "index_projects_on_nominated_fire_by_id"
+    t.index ["repo_url"], name: "index_projects_on_repo_url_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["title"], name: "index_projects_on_title_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "raffle_draws", force: :cascade do |t|
@@ -1614,6 +1618,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
     t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["approx_balance"], name: "index_users_on_approx_balance", order: :desc
     t.index ["approx_total_earned"], name: "index_users_on_approx_total_earned", order: :desc
+    t.index ["display_name"], name: "index_users_on_display_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["email"], name: "index_users_on_email"
     t.index ["guest_email"], name: "index_users_on_guest_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
