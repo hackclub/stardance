@@ -760,8 +760,6 @@ module Certification
     end
 
     def check_and_update_unified_db_status!
-      return if Rails.env.development?
-
       record = ::Certification::YswsAirtable.record_for(id)
       unified_record_id = record&.[]("Automation - YSWS Record ID").presence
 
