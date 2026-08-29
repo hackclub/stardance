@@ -1,5 +1,5 @@
 module Certification
-  class ClearInsufficientMacAnalysesJob < ApplicationJob
+  class ClearInsufficientMACAnalysesJob < ApplicationJob
     queue_as :literally_whenever
 
     STALENESS_THRESHOLD = 3.days
