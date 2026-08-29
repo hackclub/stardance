@@ -9,6 +9,28 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.4.3
+ARG LIBHEIF_VERSION=1.23.2
+ARG LIBHEIF_SHA256=8bd5d41d19dc84536d118b04774709f244df6104ef66d623dad5fa4650143405
+
+FROM docker.io/library/ruby:$RUBY_VERSION-slim AS libheif-build
+ARG LIBHEIF_VERSION
+ARG LIBHEIF_SHA256
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential cmake pkg-config \
+    libde265-dev libaom-dev libdav1d-dev libx265-dev zlib1g-dev \
+    curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://github.com/strukturag/libheif/releases/download/v${LIBHEIF_VERSION}/libheif-${LIBHEIF_VERSION}.tar.gz \
+    -o libheif.tar.gz && \
+    echo "${LIBHEIF_SHA256}  libheif.tar.gz" | sha256sum -c && \
+    tar xzf libheif.tar.gz && \
+    cd libheif-${LIBHEIF_VERSION} && \
+    cmake --preset=release -DWITH_EXAMPLES=OFF -DENABLE_PLUGIN_LOADING=NO && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
+
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -33,6 +55,9 @@ RUN apt-get update -qq && \
     ffmpeg \
     nodejs && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+COPY --from=libheif-build /usr/local/lib/libheif* /usr/local/lib/
+RUN ldconfig
 
 # Set production environment
 ENV RAILS_ENV="production" \
