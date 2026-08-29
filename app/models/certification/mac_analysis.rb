@@ -55,6 +55,10 @@ class Certification::MACAnalysis < ApplicationRecord
 
   has_paper_trail
 
+  scope :with_insufficient_data, -> {
+    where("report->'flags' @> ?", [ { type: "insufficient_data" } ].to_json)
+  }
+
   belongs_to :ysws_review, class_name: "Certification::Ysws",
     foreign_key: :ysws_review_id
 

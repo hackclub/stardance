@@ -158,6 +158,12 @@ production:
     concurrency: 1
     description: "Recalculate approx_balance and approx_total_earned from ledger entries"
 
+  clear_insufficient_mac_analyses:
+    class: Certification::ClearInsufficientMacAnalysesJob
+    schedule: every day at 6am UTC
+    concurrency: 1
+    description: "Destroy MAC analyses flagged insufficient_data older than 3 days so they re-enter the pending queue"
+
   certification_ysws_airtable_resync:
     class: Certification::YswsAirtableResyncJob
     schedule: every day at 4pm America/New_York
