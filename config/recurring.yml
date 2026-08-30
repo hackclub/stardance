@@ -187,3 +187,9 @@ production:
     schedule: every 15 minutes
     concurrency: 1
     description: "Mirror Jelly support conversations locally for the mega dashboard"
+
+  flush_extension_usage:
+    class: FlushExtensionUsageJob
+    schedule: every 5 minutes
+    concurrency: 1
+    description: "Drain Redis buffer of extension usage events into the database"

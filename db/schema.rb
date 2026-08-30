@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_26_155258) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -360,6 +360,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_155258) do
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_email_templates_on_name", unique: true
+  end
+
+  create_table "extension_usages", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["project_id", "created_at"], name: "index_extension_usages_on_project_id_and_created_at"
+    t.index ["project_id"], name: "index_extension_usages_on_project_id"
+    t.index ["user_id"], name: "index_extension_usages_on_user_id"
   end
 
   create_table "flipper_features", force: :cascade do |t|
@@ -1761,6 +1771,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_155258) do
   add_foreign_key "daily_rolls", "users"
   add_foreign_key "devlog_versions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "users"
+  add_foreign_key "extension_usages", "projects"
+  add_foreign_key "extension_usages", "users"
   add_foreign_key "follows", "users", column: "followed_id"
   add_foreign_key "follows", "users", column: "follower_id"
   add_foreign_key "fraud_payout_lines", "fraud_payout_runs"

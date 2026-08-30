@@ -1,5 +1,6 @@
 class Api::V1::PublicApiController < ActionController::API
   include ApiAuthenticatable
+  include ExtensionUsageTrackable
   include Pagy::Method
 
   before_action :authenticate_api_user!

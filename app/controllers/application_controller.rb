@@ -7,6 +7,7 @@ class ApplicationController < ActionController::Base
   include Pagy::Method
   include Achievementable
   include Trackable
+  include ExtensionUsageTrackable
 
   before_action :store_referral_code
   before_action :remember_page
