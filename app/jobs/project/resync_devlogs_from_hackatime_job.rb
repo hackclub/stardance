@@ -1,5 +1,5 @@
 class Project::ResyncDevlogsFromHackatimeJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
   retry_on WithAdvisoryLock::FailedToAcquireLock, wait: :polynomially_longer, attempts: 5
 
   def perform(project)

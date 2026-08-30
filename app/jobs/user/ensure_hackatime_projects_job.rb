@@ -11,7 +11,7 @@
 # Fans out one seeding job per project so every guard stays in one place: this
 # job decides which projects to look at, that one decides what to do with each.
 class User::EnsureHackatimeProjectsJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform(user_id)
     user = User.find_by(id: user_id)

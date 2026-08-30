@@ -1,5 +1,5 @@
 class RefreshApproxBalancesJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     User.connection.execute(<<~SQL)

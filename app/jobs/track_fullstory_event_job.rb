@@ -1,5 +1,5 @@
 class TrackFullstoryEventJob < ApplicationJob
-  queue_as :default
+  queue_as :latency_5m
 
   def perform(user_id:, name:, properties:)
     api_key = Rails.application.credentials.dig(:fullstory, :api_key)

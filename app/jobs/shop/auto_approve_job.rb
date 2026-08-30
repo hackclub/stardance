@@ -4,7 +4,7 @@
 # safe to run late: ShopOrder#auto_approvable? re-checks every condition,
 # including that the order is still awaiting review.
 class Shop::AutoApproveJob < ApplicationJob
-  queue_as :default
+  queue_as :latency_5m
 
   # Fulfilment reaches HCB, which goes down and loses its authorization from
   # time to time, so a failure is backed off rather than abandoned. Retrying is

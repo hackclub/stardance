@@ -2,7 +2,7 @@ module ExternalDashboard
   class WebhookJob < ::ApplicationJob
     class RetriableServerError < StandardError; end
 
-    queue_as :default
+    queue_as :latency_5m
 
     self.enqueue_after_transaction_commit = true
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::ProcessWarehouseOrdersJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
   def perform
     warehouse_orders = ShopOrder
       .joins(:shop_item)

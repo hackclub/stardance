@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Fraud::CalculatePayoutsJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform(manual: false)
     orders = eligible_orders(manual)

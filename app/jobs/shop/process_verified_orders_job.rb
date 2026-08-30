@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::ProcessVerifiedOrdersJob < ApplicationJob
-  queue_as :default
+  queue_as :latency_5m
 
   def perform(user_id)
     user = User.find(user_id)

@@ -1,5 +1,5 @@
 class CleanupGuestUsersJob < ApplicationJob
-  queue_as :background
+  queue_as :literally_whenever
 
   RETENTION = 30.days
   MAX_PER_RUN = 500

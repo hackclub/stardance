@@ -1,7 +1,7 @@
 require "zip"
 
 class User::DataExportJob < ApplicationJob
-  queue_as :background
+  queue_as :latency_5m
 
   def perform(data_export_id)
     @data_export = User::DataExport.find_by(id: data_export_id)

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::ProcessLetterMailOrdersJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   LETTER_TYPES = ShopItem::LetterMail::BULK_BATCHED_TYPES
 

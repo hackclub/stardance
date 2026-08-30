@@ -1,5 +1,5 @@
 class JellySyncJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   # Ceiling on how far one run will page. The first run backfills over several
   # runs rather than trying to walk the whole mailbox inside one job.

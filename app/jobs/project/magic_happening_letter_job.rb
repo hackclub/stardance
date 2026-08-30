@@ -1,5 +1,5 @@
 class Project::MagicHappeningLetterJob < ApplicationJob
-  queue_as :default
+  queue_as :latency_5m
   notify_maintainers_on_exhaustion StandardError, maintainers_slack_ids: [ "U0823F39GV8", "U07L45W79E1" ], wait: :polynomially_longer, attempts: 3
 
   def perform(project)

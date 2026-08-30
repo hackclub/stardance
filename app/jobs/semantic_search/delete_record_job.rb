@@ -2,7 +2,7 @@
 
 module SemanticSearch
   class DeleteRecordJob < ApplicationJob
-    queue_as :default
+    queue_as :latency_5m
 
     def perform(type, record_id)
       SemanticSearch.delete(type, record_id)

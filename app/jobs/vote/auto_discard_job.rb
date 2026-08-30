@@ -1,5 +1,5 @@
 class Vote::AutoDiscardJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform(vote_id)
     vote_auto_discarder = "Secrets::VoteAutoDiscarder".safe_constantize

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class RefreshAllUsersVerificationJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     User.joins(:identities)

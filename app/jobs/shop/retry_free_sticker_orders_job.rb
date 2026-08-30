@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::RetryFreeStickerOrdersJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     orders = ShopOrder.where(aasm_state: "pending")

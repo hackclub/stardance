@@ -1,5 +1,5 @@
 class ShopOrderDailySummaryJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   SHOP_ORDER_CHANNEL_ID = "C09N1P69GKZ"
 

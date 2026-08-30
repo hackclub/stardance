@@ -1,5 +1,5 @@
 class Mission::MigrateProjectsToHardwareJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   # When a mission is switched to hardware, its already-attached software
   # projects are converted to hardware so they match the mission's type. They

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::RefreshVerificationStatusJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     user_ids = ShopOrder.where(aasm_state: "awaiting_verification")

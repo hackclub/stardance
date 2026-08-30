@@ -1,5 +1,5 @@
 class ActivityDailySummaryJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   CHANNEL_ID = "C0AR0M43H61" # stardance-construction
 

@@ -14,7 +14,7 @@
 # old one instead of moving the link, so time already recorded under the old
 # name keeps counting toward the project.
 class Project::EnsureHackatimeProjectsJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   # Far enough back to cover any Hackatime history, so the existence check
   # can't mistake an old project for a missing one.
