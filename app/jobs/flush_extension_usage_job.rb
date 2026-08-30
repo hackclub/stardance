@@ -2,7 +2,7 @@ class FlushExtensionUsageJob < ApplicationJob
   BUFFER_KEY = "stardance:extension_usage_buffer"
   BATCH_SIZE = 1000
 
-  queue_as :default
+  queue_as :latency_5m
 
   def perform
     return unless Rails.cache.respond_to?(:redis) && Rails.cache.redis.present?
