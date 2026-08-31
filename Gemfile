@@ -133,7 +133,7 @@ gem "sentry-ruby", "~> 6.7"
 gem "sentry-rails", "~> 6.7"
 
 # for pagination
-gem "pagy", "~> 43.5"
+gem "pagy", "~> 43.6"
 gem "norairrecord"
 gem "anthropic", "~> 1.62"
 
