@@ -18,7 +18,7 @@ class Project::MagicHappeningLetterJob < ApplicationJob
     end
 
     response = TheseusService.create_letter_v1(
-      "instant/stardance-magic-happening",
+      "stardance-magic-happening-queue",
       {
         recipient_email: owner.email,
         address: address,
