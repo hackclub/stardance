@@ -72,7 +72,7 @@ body.app-layout-page.signed-in {
   }
 
   @media (max-width: 1280px) {
-    --aside-reserved: 0px; // rail hidden at this breakpoint
+    --aside-reserved: 0px; // rail becomes a floating drawer at this breakpoint
     margin-right: var(--layout-gap);
   }
 

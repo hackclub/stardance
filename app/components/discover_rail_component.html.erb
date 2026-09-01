@@ -1,40 +1,52 @@
 <aside class="discover-rail"
        aria-label="Discover"
-       data-controller="discover-rail-search"
+       data-controller="discover-rail-panel discover-rail-search"
        data-discover-rail-search-url-value="<%= helpers.global_search_path %>">
-  <div class="discover-rail__search">
-    <input type="search"
-           class="discover-rail__search-input"
-           placeholder="Search…"
-           aria-label="Search"
-           autocomplete="off"
-           data-discover-rail-search-target="input"
-           data-action="input->discover-rail-search#search">
-    <%= helpers.inline_svg_tag "icons/search.svg", class: "discover-rail__search-icon" %>
-    <button type="button"
-            class="discover-rail__search-clear"
-            aria-label="Clear search"
-            data-discover-rail-search-target="clearButton"
-            data-action="discover-rail-search#clear"
-            hidden>
-      <%= helpers.inline_svg_tag "icons/close.svg", class: "discover-rail__search-clear-icon" %>
-    </button>
-  </div>
+  <button type="button"
+          class="discover-rail__toggle"
+          aria-controls="discover-rail-panel"
+          aria-expanded="false"
+          aria-label="Open discover panel"
+          data-discover-rail-panel-target="toggle"
+          data-action="discover-rail-panel#toggle">
+    <%= helpers.inline_svg_tag "icons/chevron-down.svg", class: "discover-rail__toggle-icon" %>
+  </button>
 
-  <turbo-frame id="discover-rail-results" data-discover-rail-search-target="results" hidden></turbo-frame>
+  <div id="discover-rail-panel" class="discover-rail__panel">
+    <div class="discover-rail__search">
+      <input type="search"
+             class="discover-rail__search-input"
+             placeholder="Search…"
+             aria-label="Search"
+             autocomplete="off"
+             data-discover-rail-search-target="input"
+             data-action="input->discover-rail-search#search">
+      <%= helpers.inline_svg_tag "icons/search.svg", class: "discover-rail__search-icon" %>
+      <button type="button"
+              class="discover-rail__search-clear"
+              aria-label="Clear search"
+              data-discover-rail-search-target="clearButton"
+              data-action="discover-rail-search#clear"
+              hidden>
+        <%= helpers.inline_svg_tag "icons/close.svg", class: "discover-rail__search-clear-icon" %>
+      </button>
+    </div>
 
-  <div class="discover-rail__widgets" data-discover-rail-search-target="widgets">
-    <% widgets.each do |widget| %>
-      <% if widget.deferred? %>
-        <% if widget.render? %>
-          <%= helpers.turbo_frame_tag widget.deferred_frame_id,
-                src: helpers.public_send(widget.deferred_path_helper),
-                loading: :lazy,
-                class: "discover-rail__widget-frame" %>
+    <turbo-frame id="discover-rail-results" data-discover-rail-search-target="results" hidden></turbo-frame>
+
+    <div class="discover-rail__widgets" data-discover-rail-search-target="widgets">
+      <% widgets.each do |widget| %>
+        <% if widget.deferred? %>
+          <% if widget.render? %>
+            <%= helpers.turbo_frame_tag widget.deferred_frame_id,
+                  src: helpers.public_send(widget.deferred_path_helper),
+                  loading: :lazy,
+                  class: "discover-rail__widget-frame" %>
+          <% end %>
+        <% else %>
+          <%= render widget %>
         <% end %>
-      <% else %>
-        <%= render widget %>
       <% end %>
-    <% end %>
+    </div>
   </div>
 </aside>

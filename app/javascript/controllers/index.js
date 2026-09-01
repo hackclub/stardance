@@ -169,6 +169,9 @@ application.register("devlog-edit", DevlogEditController);
 import DiscoverRailSearchController from "./discover_rail_search_controller";
 application.register("discover-rail-search", DiscoverRailSearchController);
 
+import DiscoverRailPanelController from "./discover_rail_panel_controller";
+application.register("discover-rail-panel", DiscoverRailPanelController);
+
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
 
