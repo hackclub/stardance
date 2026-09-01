@@ -58,7 +58,54 @@ class Admin::Shop::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /Fraud Review/
   end
 
+  test "streak stickers are left out of the fulfillment stats but stay in the queue" do
+    packer = buyer("packer", integrity: :auto_passed)
+    real_order = order_for(packer, at: 2.hours.ago)
+    real_order.update_columns(aasm_state: "awaiting_periodical_fulfillment")
+
+    sticker_order = packer.shop_orders.create!(
+      shop_item: streak_sticker, quantity: 1, frozen_address: @address
+    )
+    sticker_order.update_columns(aasm_state: "awaiting_periodical_fulfillment")
+
+    sign_in @admin
+    get admin_shop_orders_path(view: "fulfillment")
+
+    assert_response :success
+    assert_select ".badge-awaiting_periodical_fulfillment .shop-orders__stat-count",
+                  text: "1", message: "the headline count must ignore the sticker"
+    assert_includes rendered_order_ids, sticker_order.id,
+                    "the sticker still has to be packed, so it stays in the queue"
+    assert_select ".shop-orders__stats-note"
+  end
+
+  test "streak stickers get their own toggle instead of inflating the mail pile" do
+    packer = buyer("mailer", integrity: :auto_passed)
+    packer.shop_orders.create!(shop_item: streak_sticker, quantity: 1, frozen_address: @address)
+                      .update_columns(aasm_state: "awaiting_periodical_fulfillment")
+
+    sign_in @admin
+    get admin_shop_orders_path(view: "fulfillment", hidden_types: [ "ShopItem::StickyStreakSticker" ])
+
+    assert_select ".shop-orders__type-toggle-count", text: "1",
+                  message: "the folded-away stickers report their own count"
+    assert_not_includes Admin::Shop::OrdersController::ITEM_TYPE_TOGGLES
+                          .find { |toggle| toggle[:label] == "HQ Mail" }[:types],
+                        "ShopItem::StickyStreakSticker"
+  end
+
   private
+
+  def streak_sticker
+    item = ShopItem.new(
+      name: "Streak Sticker", description: "Earned by keeping the streak",
+      ticket_cost: 0, usd_cost: 1, type: "ShopItem::StickyStreakSticker", enabled: true,
+      mission_prize_only: false
+    )
+    item.image.attach(io: StringIO.new(Base64.decode64(PIXEL)), filename: "px.png", content_type: "image/png")
+    item.save!
+    item
+  end
 
   # Ids in the order the table rendered them.
   def rendered_order_ids

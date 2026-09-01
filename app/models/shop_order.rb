@@ -414,6 +414,7 @@ class ShopOrder < ApplicationRecord
   def notify_user_of_status_change
     # Don't notify the user when an order is placed on hold — they shouldn't know
     return if aasm_state == "on_hold"
+    return if silent_status_change?
 
     Notifications::ShopOrders::StatusChanged.notify(
       recipient: user,

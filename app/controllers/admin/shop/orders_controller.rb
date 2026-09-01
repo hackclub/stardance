@@ -21,11 +21,22 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   # stays visible — HQ mail and letter mail share a single toggle because
   # they're worked as one pile. New LetterMail subclasses join the mail group
   # through ShopItem::LetterMail::TYPES, so they fold with the rest of it.
+  # Sticky Streak stickers get their own toggle rather than folding in with the
+  # mail: they are sent one at a time from the order, not swept up in a batch,
+  # so the mail pile's count means nothing with them mixed in.
   ITEM_TYPE_TOGGLES = [
     { label: "Free Stickers", hidden_by_default: true, types: %w[ShopItem::FreeStickers] },
     { label: "Warehouse Item", hidden_by_default: true, types: %w[ShopItem::WarehouseItem] },
-    { label: "HQ Mail", hidden_by_default: false, types: %w[ShopItem::HQMailItem] + ShopItem::LetterMail::TYPES }
+    { label: "HQ Mail", hidden_by_default: false, types: %w[ShopItem::HQMailItem] + ShopItem::LetterMail::BULK_BATCHED_TYPES },
+    { label: "Streak Stickers", hidden_by_default: false, types: %w[ShopItem::StickyStreakSticker] }
   ].freeze
+
+  # Sticky Streak stickers clear review on their own and ship outside the batch
+  # sweep, and one 21-day run adds 21 of them per person, so counting them
+  # alongside the orders a human actually works buries that work. They stay in
+  # the queue below and keep their own toggle count; they just leave the
+  # headline numbers alone.
+  STATS_EXCLUDED_ITEM_TYPES = %w[ShopItem::StickyStreakSticker].freeze
 
   TOGGLEABLE_ITEM_TYPES = ITEM_TYPE_TOGGLES.flat_map { |toggle| toggle[:types] }.freeze
 
@@ -154,6 +165,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     # Apply shared filters to both the orders query and the stats base query
     orders = apply_shared_filters(orders)
     base = apply_shared_filters(ShopOrder.includes(:shop_item, :user))
+             .where.not(shop_item_id: ShopItem.where(type: STATS_EXCLUDED_ITEM_TYPES))
 
     # Folded-away item types only come off the list itself — the stats below and
     # the counts on the toggles stay whole so nothing vanishes silently.

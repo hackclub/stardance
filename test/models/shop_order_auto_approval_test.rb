@@ -211,6 +211,30 @@ class ShopOrderAutoApprovalTest < ActiveSupport::TestCase
     assert_equal order.shop_item_id, version.object_changes["shop_item_id"]
   end
 
+  test "a streak claim tells the claimer nothing on its way to fulfilment" do
+    order = claim_streak_day
+
+    assert_empty status_notifications_for(order),
+                 "neither landing in review nor clearing it is news to the claimer"
+  end
+
+  test "a streak sticker still notifies once it is fulfilled" do
+    order = claim_streak_day
+
+    perform_enqueued_jobs { order.mark_fulfilled! }
+
+    assert_equal [ "fulfilled" ], status_notifications_for(order).map { |n| n.params["state"] }
+  end
+
+  test "an ordinary approval still notifies" do
+    ship_with_integrity(:auto_passed)
+
+    order = place_order
+
+    assert_equal [ "awaiting_periodical_fulfillment", "pending" ],
+                 status_notifications_for(order).map { |n| n.params["state"] }.sort
+  end
+
   test "the batch predicate agrees with the per-order one" do
     ship_with_integrity(:auto_passed)
     clean = @user.shop_orders.create!(shop_item: @item, quantity: 1, frozen_address: @address)
@@ -277,6 +301,10 @@ class ShopOrderAutoApprovalTest < ActiveSupport::TestCase
 
   def build_streak_sticker
     build_item(usd_cost: 1, type: "ShopItem::StickyStreakSticker")
+  end
+
+  def status_notifications_for(order)
+    Notifications::ShopOrders::StatusChanged.where(record: order)
   end
 
   def ship_at(time)

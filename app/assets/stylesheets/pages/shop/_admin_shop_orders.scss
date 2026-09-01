@@ -122,6 +122,13 @@
     margin: 0;
   }
 
+  &__stats-note {
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-xs);
+    font-style: italic;
+    margin: 0;
+  }
+
   &__stat-grid {
     display: flex;
     flex-wrap: wrap;

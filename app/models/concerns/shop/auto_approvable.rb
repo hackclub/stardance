@@ -18,6 +18,10 @@ module Shop
 
     WHODUNNIT = "Shop::AutoApprovable".freeze
 
+    # States a Sticky Streak sticker moves through unattended, which the
+    # claimer is never notified about. See #silent_status_change?.
+    SILENT_STREAK_STATES = %w[pending awaiting_periodical_fulfillment].freeze
+
     # Raised when an unattended fulfilment blew up, so the job can back off and
     # try again rather than abandoning the order on a transient HCB fault.
     FulfilmentFailed = Class.new(StandardError)
@@ -66,6 +70,15 @@ module Shop
     # whatever the buyer's ship history says.
     def sticky_streak_sticker?
       shop_item.is_a?(ShopItem::StickyStreakSticker)
+    end
+
+    # A streak sticker is claimed and cleared in one motion, so neither the
+    # order landing in review nor clearing it is news: the claimer already
+    # watched the sticker land in the streak calendar, and there is nothing for
+    # them to do in either state. Everything that does need them (verification,
+    # fulfilment, rejection) still notifies, as does every other item type.
+    def silent_status_change?
+      sticky_streak_sticker? && SILENT_STREAK_STATES.include?(aasm_state)
     end
 
     # `ships` lets a caller hand over a buyer's already-loaded ship history;
