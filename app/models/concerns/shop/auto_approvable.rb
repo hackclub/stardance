@@ -1,7 +1,8 @@
 module Shop
-  # Clears a shop order through fraud review without a human when the buyer's
-  # shipping history is already vouched for and the order is cheap enough that
-  # a mistake is affordable.
+  # Clears a shop order through fraud review without a human: either the buyer's
+  # shipping history is already vouched for and the order is cheap enough that a
+  # mistake is affordable, or the order is a Sticky Streak sticker, which the
+  # streak itself has already earned.
   module AutoApprovable
     extend ActiveSupport::Concern
 
@@ -60,11 +61,19 @@ module Shop
       end
     end
 
+    # A Sticky Streak sticker is earned by keeping the streak and costs a stamp,
+    # so there is nothing for a reviewer to decide. These clear on their own
+    # whatever the buyer's ship history says.
+    def sticky_streak_sticker?
+      shop_item.is_a?(ShopItem::StickyStreakSticker)
+    end
+
     # `ships` lets a caller hand over a buyer's already-loaded ship history;
     # left out, the order fetches its own.
     def auto_approvable?(ships: nil)
-      return false unless Flipper.enabled?(:shop_auto_approve)
       return false unless pending?
+      return true if sticky_streak_sticker?
+      return false unless Flipper.enabled?(:shop_auto_approve)
       # Accessories are approved alongside whatever they ride on, and their
       # value is already counted against the parent's ceiling.
       return false if parent_order_id.present?
@@ -185,13 +194,22 @@ module Shop
         item_id: id,
         event: "auto_approved",
         whodunnit: WHODUNNIT,
-        object_changes: {
+        object_changes: auto_approval_evidence.merge(result_state: aasm_state)
+      )
+    end
+
+    # What the verdict rested on. A streak sticker was cleared by its item type,
+    # so recording a ship history it never consulted would misreport the reason.
+    def auto_approval_evidence
+      if sticky_streak_sticker?
+        { reason: "sticky_streak_sticker", shop_item_id: shop_item_id }
+      else
+        {
           usd_total: auto_approval_usd_total.to_s,
           usd_ceiling: MAX_AUTO_APPROVE_USD,
-          cleared_ship_event_ids: prior_ship_event_ids,
-          result_state: aasm_state
+          cleared_ship_event_ids: prior_ship_event_ids
         }
-      )
+      end
     end
   end
 end

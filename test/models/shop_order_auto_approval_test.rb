@@ -185,6 +185,32 @@ class ShopOrderAutoApprovalTest < ActiveSupport::TestCase
     assert_empty ShopOrder.leaderboard(:alltime)
   end
 
+  test "a sticky streak sticker clears with no ship history and no flag" do
+    Flipper.disable(:shop_auto_approve)
+
+    assert claim_streak_day.reload.awaiting_periodical_fulfillment?
+  end
+
+  test "a streak sticker sold outright clears on its type alone" do
+    Flipper.disable(:shop_auto_approve)
+    @item = build_streak_sticker
+    @item.update!(mission_prize_only: false)
+
+    assert place_order.reload.awaiting_periodical_fulfillment?
+  end
+
+  test "a streak approval records the item it rested on" do
+    order = claim_streak_day
+
+    version = PaperTrail::Version.find_by(
+      item_type: "ShopOrder", item_id: order.id, event: "auto_approved"
+    )
+
+    assert version, "an unattended approval must be auditable"
+    assert_equal "sticky_streak_sticker", version.object_changes["reason"]
+    assert_equal order.shop_item_id, version.object_changes["shop_item_id"]
+  end
+
   test "the batch predicate agrees with the per-order one" do
     ship_with_integrity(:auto_passed)
     clean = @user.shop_orders.create!(shop_item: @item, quantity: 1, frozen_address: @address)
@@ -226,6 +252,31 @@ class ShopOrderAutoApprovalTest < ActiveSupport::TestCase
       order = @user.shop_orders.create!(shop_item: @item, quantity: quantity, frozen_address: @address)
     end
     order
+  end
+
+  # Mirrors Shop::OrdersController: the order and the claim that unlocked it
+  # are saved in one transaction, so the verdict sees the claim.
+  def claim_streak_day
+    streak = StickyStreak.create!(user: @user, started_on: @user.streak_today_date - 1)
+    StreakActivity.create!(user: @user, activity_date: streak.date_for(1),
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+    sticker = build_streak_sticker
+    StickyStreakReward.create!(day_number: 1, shop_item: sticker)
+
+    order = nil
+    perform_enqueued_jobs do
+      ActiveRecord::Base.transaction do
+        order = @user.shop_orders.new(shop_item: sticker, quantity: 1, frozen_address: @address)
+        order.redeeming_sticky_streak = streak
+        order.save!
+        streak.record_claim!(shop_order: order, day: 1)
+      end
+    end
+    order
+  end
+
+  def build_streak_sticker
+    build_item(usd_cost: 1, type: "ShopItem::StickyStreakSticker")
   end
 
   def ship_at(time)
