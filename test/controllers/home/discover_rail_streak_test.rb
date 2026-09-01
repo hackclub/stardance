@@ -5,7 +5,15 @@ require "test_helper"
 class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
   PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=".freeze
 
+  # The widget renders a real calendar month, and two of its shapes only exist
+  # away from the edges of the program: a run started yesterday sits outside the
+  # grid on the 1st, and the next-month arrow is gone once the last calendar
+  # month is on screen. Pin a mid-month Tuesday so the clock cannot decide
+  # whether these pass.
+  FROZEN_NOW = Time.utc(2026, 8, 18, 12, 0, 0)
+
   setup do
+    travel_to FROZEN_NOW
     Flipper.enable(:sticky_streaks)
     @user = create_user(slack_id: "U-rail-sticky", display_name: "railsticky", verified: true)
     @user.update!(onboarded_at: Time.current, has_gotten_free_stickers: true)

@@ -109,6 +109,7 @@ class StreakActivityTest < ActiveSupport::TestCase
   test "current_streak with consecutive days" do
     today = @user.streak_today_date
     (-3..0).each { |d| StreakActivity.create!(user: @user, activity_date: today + d.days, coded_seconds: 400) }
+    @user.recalculate_streak!
     assert_equal 4, @user.current_streak
   end
 
@@ -117,6 +118,7 @@ class StreakActivityTest < ActiveSupport::TestCase
     StreakActivity.create!(user: @user, activity_date: today, coded_seconds: 400)
     StreakActivity.create!(user: @user, activity_date: today - 1.day, coded_seconds: 400)
     StreakActivity.create!(user: @user, activity_date: today - 3.days, coded_seconds: 400)
+    @user.recalculate_streak!
     assert_equal 2, @user.current_streak
   end
 
@@ -125,6 +127,7 @@ class StreakActivityTest < ActiveSupport::TestCase
     StreakActivity.create!(user: @user, activity_date: today, coded_seconds: 100)
     StreakActivity.create!(user: @user, activity_date: today - 1.day, coded_seconds: 400)
     StreakActivity.create!(user: @user, activity_date: today - 2.days, coded_seconds: 400)
+    @user.recalculate_streak!
     assert_equal 2, @user.current_streak
   end
 
