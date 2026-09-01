@@ -53,6 +53,26 @@ class StickyStreakTest < ActiveSupport::TestCase
     assert @streak.active?
   end
 
+  test "crediting a missed day repairs a broken run" do
+    complete_days(1, 2, 4)
+    StickyStreakReward.create!(day_number: 4, shop_item: @item)
+
+    assert_predicate @streak, :failed?
+    assert_equal 3, @streak.missed_day
+
+    StreakActivity.credit!(
+      user: @user, date: @streak.date_for(3),
+      granted_by: create_user(slack_id: "U-sticky-helper", display_name: "stickyhelper"),
+      reason: "Hackatime lost the day"
+    )
+
+    repaired = StickyStreak.find(@streak.id)
+    assert_not_predicate repaired, :failed?
+    assert_nil repaired.missed_day
+    assert_includes repaired.completed_days, 3
+    assert repaired.claimable_day?(4), "the day after the repaired one is claimable again"
+  end
+
   test "a day is claimable once completed and a reward is configured" do
     complete_days(1, 2)
     StickyStreakReward.create!(day_number: 2, shop_item: @item)

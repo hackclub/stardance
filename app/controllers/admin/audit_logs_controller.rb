@@ -101,7 +101,8 @@ module Admin
       "Raffle::Week" => "Raffle::Week",
       "StickyStreak" => "StickyStreak",
       "StickyStreakReward" => "StickyStreakReward",
-      "StickyStreakClaim" => "StickyStreakClaim"
+      "StickyStreakClaim" => "StickyStreakClaim",
+      "StreakActivity" => "StreakActivity"
     }.freeze
 
     def generate_csv(versions)

@@ -27,6 +27,7 @@ class Admin::UsersController < Admin::ApplicationController
       .includes(:reviewer, ship_event: { post: :project })
       .by_status_priority
       .order(created_at: :desc)
+    @streak_credits = @user.streak_activities.manually_credited.includes(:manual_credit_by).order(activity_date: :desc)
     @audit_pagy, @audit_versions = pagy(:offset, @user.versions.order(created_at: :desc), limit: 25)
   end
 

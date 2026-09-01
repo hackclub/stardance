@@ -66,6 +66,13 @@ class Admin::UserPolicy < ApplicationPolicy
     user&.admin? || user&.fraud_dept?
   end
 
+  # Deliberately wider than the other write actions: helpers work the support
+  # queue where a wrongly missed streak day is reported, and a credited day
+  # hands out nothing but a sticker.
+  def credit_streak_days?
+    user&.admin? || user&.helper?
+  end
+
   def view_votes?
     user&.admin? || user&.nda_helper?
   end

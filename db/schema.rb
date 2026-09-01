@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_01_035529) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -1443,8 +1443,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
     t.date "activity_date", null: false
     t.integer "coded_seconds", default: 0, null: false
     t.datetime "created_at", null: false
+    t.datetime "manual_credit_at"
+    t.bigint "manual_credit_by_id"
+    t.string "manual_credit_reason"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["manual_credit_by_id"], name: "index_streak_activities_on_manual_credit_by_id"
     t.index ["user_id", "activity_date"], name: "index_streak_activities_on_user_id_and_activity_date", unique: true
     t.index ["user_id"], name: "index_streak_activities_on_user_id"
   end
@@ -1883,6 +1887,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_203658) do
   add_foreign_key "sticky_streak_rewards", "shop_items"
   add_foreign_key "sticky_streaks", "users"
   add_foreign_key "streak_activities", "users"
+  add_foreign_key "streak_activities", "users", column: "manual_credit_by_id", on_delete: :nullify
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_data_exports", "users"
   add_foreign_key "user_hackatime_projects", "projects"

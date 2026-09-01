@@ -676,6 +676,7 @@ Rails.application.routes.draw do
         resource  :vote_balance,        only: [ :update ]
         resource  :ysws_override,       only: [ :update ]
         resources :identities,          only: [ :destroy ]
+        resources :streak_credits,      only: [ :create, :destroy ]
         resources :votes,               only: [ :index ]
       end
     end

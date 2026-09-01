@@ -162,6 +162,39 @@
                     method: :post,
                     title: "Sync Hackatime Data" %>
       <% end %>
+      <% if policy(@user).credit_streak_days? %>
+        <button type="button" onclick="document.getElementById('credit-streak-day-modal').showModal()">⭐ Credit Streak Day</button>
+        <%= render layout: "shared/modal", locals: { id: "credit-streak-day-modal", title: "Credit a streak day", description: "Marks a day as kept when Hackatime missed the coding time. Streak progress is worked out from these days, so crediting a missed one also repairs the run behind it, including a Sticky Streak that had already broken." } do %>
+          <form action="<%= admin_user_streak_credits_path(@user) %>" method="post">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <%= label_tag :activity_date, "Day to credit" %>
+            <%= date_field_tag :activity_date, @user.streak_today_date - 1.day, max: @user.streak_today_date, required: true, autocomplete: "off" %>
+            <%= label_tag :reason, "Reason" %>
+            <%= text_area_tag :reason, "", placeholder: "Why this day is being credited...", required: true %>
+            <button type="submit">Credit day</button>
+            <button type="button" onclick="document.getElementById('credit-streak-day-modal').close()">Cancel</button>
+          </form>
+
+          <% if @streak_credits.any? %>
+            <h4 class="admin-user-show__section-title">Already credited</h4>
+            <ul class="admin-user-show__streak-credits">
+              <% @streak_credits.each do |credit| %>
+                <li class="admin-user-show__streak-credit">
+                  <div>
+                    <strong><%= credit.activity_date.to_fs(:long) %></strong>
+                    <span class="admin-user-show__streak-credit-meta">
+                      <%= credit.manual_credit_reason %> (<%= credit.manual_credit_by&.display_name || "unknown" %>)
+                    </span>
+                  </div>
+                  <%= button_to "Revoke", admin_user_streak_credit_path(@user, credit), method: :delete,
+                      class: "admin-user-show__inline-action",
+                      form: { onsubmit: "return confirm(#{("Remove the credit for #{credit.activity_date.to_fs(:long)}?").to_json})" } %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        <% end %>
+      <% end %>
       <% if policy(@user).refresh_verification? %>
       <%= button_to "🔄 Refresh Verification",
                     admin_user_verification_path(@user),

@@ -2,20 +2,25 @@
 #
 # Table name: streak_activities
 #
-#  id            :bigint           not null, primary key
-#  activity_date :date             not null
-#  coded_seconds :integer          default(0), not null
-#  created_at    :datetime         not null
-#  updated_at    :datetime         not null
-#  user_id       :bigint           not null
+#  id                   :bigint           not null, primary key
+#  activity_date        :date             not null
+#  coded_seconds        :integer          default(0), not null
+#  manual_credit_at     :datetime
+#  manual_credit_reason :string
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  manual_credit_by_id  :bigint
+#  user_id              :bigint           not null
 #
 # Indexes
 #
+#  index_streak_activities_on_manual_credit_by_id        (manual_credit_by_id)
 #  index_streak_activities_on_user_id                    (user_id)
 #  index_streak_activities_on_user_id_and_activity_date  (user_id,activity_date) UNIQUE
 #
 # Foreign Keys
 #
+#  fk_rails_...  (manual_credit_by_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
 class StreakActivity < ApplicationRecord
@@ -26,22 +31,51 @@ class StreakActivity < ApplicationRecord
   CALENDAR_LAST_MONTH = Date.new(2026, 9, 1)
 
   belongs_to :user
+  belongs_to :manual_credit_by, class_name: "User", optional: true
 
   validates :activity_date, presence: true
   validates :activity_date, uniqueness: { scope: :user_id }
   validates :coded_seconds, numericality: { greater_than_or_equal_to: 0 }
+  validates :manual_credit_reason, presence: true, if: :manually_credited?
 
-  scope :completed, -> { where("coded_seconds >= ?", DAILY_GOAL_SECONDS) }
+  scope :completed, -> { where("coded_seconds >= ? OR manual_credit_at IS NOT NULL", DAILY_GOAL_SECONDS) }
+  scope :manually_credited, -> { where.not(manual_credit_at: nil) }
   scope :for_date, ->(date) { where(activity_date: date) }
   scope :for_range, ->(range) { where(activity_date: range) }
 
   has_paper_trail
 
   def completed?
-    coded_seconds >= DAILY_GOAL_SECONDS
+    coded_seconds >= DAILY_GOAL_SECONDS || manually_credited?
+  end
+
+  def manually_credited?
+    manual_credit_at.present?
+  end
+
+  # Leaves the row behind holding whatever coding time it always had, so
+  # revoking a credit granted in error cannot destroy real Hackatime data.
+  def revoke_credit!
+    update!(manual_credit_at: nil, manual_credit_by: nil, manual_credit_reason: nil)
+    user.recalculate_streak!
   end
 
   class << self
+    # Hands someone a day they did not code, for a helper fixing a day
+    # Hackatime got wrong. The credit lives beside coded_seconds rather than in
+    # it because sync_for_user! rewrites coded_seconds from Hackatime every
+    # sync, which would quietly undo the fix.
+    #
+    # Nothing about a streak is stored, so crediting a missed day repairs it
+    # everywhere at once: the run count, the calendar, and a Sticky Streak that
+    # had already broken on that day.
+    def credit!(user:, date:, granted_by:, reason:)
+      activity = find_or_initialize_by(user: user, activity_date: date)
+      activity.update!(manual_credit_at: Time.current, manual_credit_by: granted_by, manual_credit_reason: reason)
+      user.recalculate_streak!
+      activity
+    end
+
     def sync_for_user!(user)
       return nil unless user.hackatime_identity.present?
 
