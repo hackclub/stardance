@@ -76,6 +76,28 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select ".streak-widget__week .streak-mark__star", minimum: 1
   end
 
+  test "a broken run goes back to plain stars from the miss onwards" do
+    today = @user.streak_today_date
+    streak = StickyStreak.create!(user: @user, started_on: today - 3)
+    # Day 1 kept, day 2 missed, so days 2 and on are no longer part of the run.
+    StreakActivity.create!(user: @user, activity_date: streak.date_for(1),
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+    StickyStreakReward.create!(day_number: 1, shop_item: sticker)
+    StickyStreakReward.create!(day_number: 3, shop_item: sticker)
+
+    get streak_home_discover_rail_path
+
+    assert_response :success
+    assert_predicate streak, :failed?
+    assert_select ".streak-widget__cal-grid .streak-mark__sticker", 1,
+                  "only the day banked before the miss keeps its sticker"
+    assert_select ".streak-widget__week .streak-mark__sticker", { count: 0 },
+                  "this week is all past the miss, so it is ordinary streak days"
+    assert_select ".streak-widget__week .streak-mark__star", minimum: 1
+    assert_select ".streak-mark--unknown", { count: 0 },
+                  "a dead day must not render as a sticker slot waiting for art"
+  end
+
   test "clicking a sticker opens the shared zoom dialog" do
     today = @user.streak_today_date
     StickyStreak.create!(user: @user, started_on: today)
