@@ -174,6 +174,16 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       Rails.logger.error("CommitGraph load failed: #{e.message}")
       {}
     end
+
+    # The same already-fetched recordings the project-wide gallery renders, also
+    # bucketed per devlog so each devlog card can show the clips that back its
+    # claimed time. No extra upstream calls.
+    @devlog_recordings = ::Certification::RecordingList.by_devlog(
+      items: ::Certification::RecordingList.build(
+        timelapses: @lapse_timelapses, recordings: @lookout_recordings
+      ),
+      windows: devlog_time_windows(@review)
+    )
   end
 
   # Whether this repo is already in the unified DB under another YSWS program.
