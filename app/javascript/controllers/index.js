@@ -115,6 +115,12 @@ application.register(
   Certification__Ysws__ReturnToShipCertController,
 );
 
+import Certification__Ysws__ReviewFlowController from "./certification/ysws/review_flow_controller";
+application.register(
+  "certification--ysws--review-flow",
+  Certification__Ysws__ReviewFlowController,
+);
+
 import Certification__Ysws__ReviewSidebarController from "./certification/ysws/review_sidebar_controller";
 application.register(
   "certification--ysws--review-sidebar",
