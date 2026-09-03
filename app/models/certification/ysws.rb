@@ -271,6 +271,54 @@ module Certification
       }
     end
 
+    # The per-devlog rate a reviewer on `count` lifetime devlogs is currently
+    # earning — what their next devlog pays. `next_stardust_tier` reports the
+    # same figure as `current_rate:`, but returns nil on the top tier, so copy
+    # that always needs a rate reads this instead.
+    def self.stardust_rate_for(count)
+      _threshold, rate = DEVLOG_STARDUST_TIERS.reverse_each.find { |threshold, _rate| count >= threshold }
+      rate
+    end
+
+    # What the devlogs a reviewer has actually completed this review week are
+    # worth, priced at the DEVLOG_STARDUST_TIERS rates.
+    #
+    # `earned` is deliberately uncapped: devlogs past WEEKLY_DEVLOG_GOAL keep
+    # paying their tier rate rather than topping out at the goal. The goal is a
+    # milestone the panel shows alongside, not a ceiling — hence both
+    # `devlogs_to_goal` and `devlogs_past_goal`, exactly one of which is
+    # non-zero unless the week landed on the goal precisely.
+    #
+    # Tier rates only: BONUS_WINDOWS stardust is keyed to each review's own
+    # reviewed_at in SQL (see #bonus_stardust_case_sql), so pricing it here would
+    # need a second query. Exact while no bonus window overlaps the review week,
+    # and understates the week if one is added.
+    #   => { devlogs:, earned:, goal_payout:, devlogs_to_goal:,
+    #        devlogs_past_goal:, rate: }
+    def self.weekly_payout(lifetime_devlogs:, pace:)
+      reviewed = pace[:reviewed]
+
+      # Price on top of what the reviewer banked before this week, so a week that
+      # crosses a tier boundary pays each part at its own rate.
+      banked = lifetime_devlogs - reviewed
+
+      {
+        devlogs: reviewed,
+        earned: stardust_for_devlogs_after(banked, reviewed),
+        goal_payout: stardust_for_devlogs_after(banked, WEEKLY_DEVLOG_GOAL),
+        devlogs_to_goal: [ WEEKLY_DEVLOG_GOAL - reviewed, 0 ].max,
+        devlogs_past_goal: [ reviewed - WEEKLY_DEVLOG_GOAL, 0 ].max,
+        rate: stardust_rate_for(lifetime_devlogs)
+      }
+    end
+
+    # Stardust the next `count` devlogs pay a reviewer who has already banked
+    # `banked` of them. Both tier lookups round internally, so the difference is
+    # rounded too rather than passing on the float noise of subtracting them.
+    def self.stardust_for_devlogs_after(banked, count)
+      (stardust_for_devlog_count(banked + count) - stardust_for_devlog_count(banked)).round(2)
+    end
+
     # Devlog-review leaderboard for the trailing LEADERBOARD_WINDOW. A devlog
     # counts as reviewed once its parent YSWS review is completed (reviewed_at
     # present); completion already forces every child devlog out of :pending.
