@@ -47,6 +47,9 @@ export default class extends Controller {
 
     // Set initial visual state
     this.updateVisualState(this.statusValue);
+
+    // Saved notes should render at full height, not just after a keystroke
+    this.autogrow();
   }
 
   disconnect() {
@@ -135,6 +138,18 @@ export default class extends Controller {
   }
 
   // Handle quick adjust buttons
+  // Grow the notes textarea to fit its content so long justifications aren't
+  // trapped behind an inner scrollbar. CSS min-height sets the floor.
+  autogrow() {
+    const el = this.notesTextareaTarget;
+
+    el.style.height = "auto";
+    // scrollHeight covers content + padding but not the border, and textareas
+    // are border-box here, so add the border back or the last line clips.
+    const border = el.offsetHeight - el.clientHeight;
+    el.style.height = `${el.scrollHeight + border}px`;
+  }
+
   quickAdjust(event) {
     const action = event.target.dataset.adjustAction;
     const parsed = parseInt(this.minutesInputTarget.value, 10);

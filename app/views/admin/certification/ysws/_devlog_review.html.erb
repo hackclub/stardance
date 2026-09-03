@@ -44,7 +44,7 @@
     </div>
 
     <% if devlog_review.post_devlog.body.present? %>
-      <p class="devlog-desc"><%= devlog_review.post_devlog.body %></p>
+      <div class="devlog-desc markdown-content"><%= md(devlog_review.post_devlog.body, allow_images: false) %></div>
     <% else %>
       <p class="devlog-desc empty-body-warning">body was empty, contact @AVD, this shouldn't happen</p>
     <% end %>
@@ -221,7 +221,7 @@
                 placeholder="notes..."
                 <% unless frozen %>
                   data-certification--ysws--devlog-review-target="notesTextarea"
-                  data-action="input->certification--ysws--devlog-review#updateNotes"
+                  data-action="input->certification--ysws--devlog-review#updateNotes input->certification--ysws--devlog-review#autogrow"
                 <% end %>
                 <%= "disabled" if frozen %>><%= devlog_review.justification %></textarea>
     </div>
