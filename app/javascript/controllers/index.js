@@ -109,6 +109,12 @@ application.register(
   Certification__Ysws__MediaViewerController,
 );
 
+import Certification__Ysws__QueueSearchController from "./certification/ysws/queue_search_controller";
+application.register(
+  "certification--ysws--queue-search",
+  Certification__Ysws__QueueSearchController,
+);
+
 import Certification__Ysws__ReturnToShipCertController from "./certification/ysws/return_to_ship_cert_controller";
 application.register(
   "certification--ysws--return-to-ship-cert",
