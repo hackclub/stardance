@@ -116,11 +116,17 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
     devlog_minutes = @all_devlog_reviews.map(&:original_minutes).compact
 
+    deducted_minutes = @all_devlog_reviews.sum(&:deducted_minutes)
+
     @stats = {
       total_minutes: devlog_minutes.sum,
       avg_minutes: devlog_minutes.any? ? (devlog_minutes.sum.to_f / devlog_minutes.count) : 0,
       max_minutes: devlog_minutes.max || 0,
-      one_hour_plus_count: devlog_minutes.count { |m| m >= 60 }
+      deducted_minutes: deducted_minutes,
+      # Prior reviews render read-only and can't change on this page, so the
+      # live recompute treats their share as a constant and only re-sums the
+      # editable cards.
+      frozen_deducted_minutes: deducted_minutes - @review.devlog_reviews.sum(&:deducted_minutes)
     }
 
     @repo_info = helpers.parse_repo_info(@review.project.repo_url)
