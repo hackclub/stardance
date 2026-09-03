@@ -319,60 +319,79 @@ module Certification
       (stardust_for_devlog_count(banked + count) - stardust_for_devlog_count(banked)).round(2)
     end
 
-    # Devlog-review leaderboard for the trailing LEADERBOARD_WINDOW. A devlog
-    # counts as reviewed once its parent YSWS review is completed (reviewed_at
-    # present); completion already forces every child devlog out of :pending.
+    # Reviewer leaderboard for the trailing LEADERBOARD_WINDOW, rankable on either
+    # locked-in metric. `rank_by` only reorders — every row carries every figure, so
+    # the table never hides a column to change its ranking.
     #
-    # `devlogs` — and the ranking — cover only the window, and reviewers with
-    # nothing in it are left off entirely. `stardust` stays all-time projected
-    # payout: it scales with each reviewer's lifetime total via the
-    # DEVLOG_STARDUST_TIERS rate tiers, plus the per-devlog bonus for any devlogs
-    # reviewed within a BONUS_WINDOWS window.
-    # `reviews` counts the distinct YSWS reviews completed in the same window —
-    # one per ship review, however many devlogs it covered.
-    #   => [{ reviewer_id:, name:, devlogs:, reviews:, stardust: }, ...] desc by devlogs
-    def self.reviewer_devlog_leaderboard(now: Time.current)
-      window_start = now - LEADERBOARD_WINDOW
+    # Membership is every reviewer who completed a project review in the window. A
+    # devlog is only credited once its parent review completes, so that set is a
+    # superset of the reviewers with a devlog in the window — and it's the only one
+    # that can rank on projects, since a review carrying no devlogs would otherwise
+    # be invisible here. Reviewers with nothing in the window are left off entirely.
+    #
+    # `devlogs` and `projects` cover the window, `projects_today` the current review
+    # day. `stardust` stays all-time projected payout: it scales with each reviewer's
+    # lifetime total via the DEVLOG_STARDUST_TIERS rate tiers, plus the per-devlog
+    # bonus for any devlogs reviewed within a BONUS_WINDOWS window.
+    #   => [{ reviewer_id:, name:, devlogs:, projects:, projects_today:, stardust: }, ...]
+    def self.reviewer_leaderboard(now: Time.current, rank_by: DEFAULT_LEADERBOARD_METRIC)
+      window_start      = now - LEADERBOARD_WINDOW
+      windowed_projects = completed_since(window_start).group(:reviewer_id).count
 
-      windowed_counts = Certification::Devlog
+      return [] if windowed_projects.empty?
+
+      reviewer_ids = windowed_projects.keys
+
+      windowed_devlogs = Certification::Devlog
         .joins(:ysws_review)
-        .where(certification_ysws_reviews: { reviewed_at: window_start.. })
-        .where.not(certification_ysws_reviews: { reviewer_id: nil })
+        .where(certification_ysws_reviews: { reviewed_at: window_start.., reviewer_id: reviewer_ids })
         .group("certification_ysws_reviews.reviewer_id")
         .count
 
-      return [] if windowed_counts.empty?
-
-      windowed_review_counts = where(reviewed_at: window_start..)
-        .where(reviewer_id: windowed_counts.keys)
+      projects_today = completed_since(review_day_start(now))
+        .where(reviewer_id: reviewer_ids)
         .group(:reviewer_id)
         .count
 
-      bonus_case = bonus_stardust_case_sql
+      # Names come from users directly rather than from the all-time devlog join
+      # below: a reviewer who has only ever closed devlog-less reviews has no row in
+      # it, and would otherwise land on the board nameless.
+      names    = User.where(id: reviewer_ids).pluck(:id, :display_name).to_h
+      stardust = all_time_stardust_for(reviewer_ids)
 
-      # All-time counts for the ranked reviewers, split by their per-devlog bonus
-      # amount, so tier rates apply to the lifetime total while each bonus applies
-      # only to the devlogs reviewed in its window.
+      rank_key = rank_by.to_s == "projects" ? :projects : :devlogs
+
+      reviewer_ids.map { |reviewer_id|
+        {
+          reviewer_id: reviewer_id,
+          name: names[reviewer_id],
+          devlogs: windowed_devlogs.fetch(reviewer_id, 0),
+          projects: windowed_projects[reviewer_id],
+          projects_today: projects_today.fetch(reviewer_id, 0),
+          stardust: stardust.fetch(reviewer_id, 0.0)
+        }
+      }.sort_by { |row| [ -row[rank_key], row[:name].to_s ] }
+    end
+
+    # All-time projected stardust for each of `reviewer_ids`: the tier rates priced
+    # on their lifetime devlog total, plus the per-devlog bonus for devlogs reviewed
+    # inside a BONUS_WINDOWS window. Counts are split by bonus amount in SQL so the
+    # tiers see the lifetime total while each bonus only touches its own window's
+    # devlogs. Reviewers with no reviewed devlogs at all are simply absent.
+    #   => { reviewer_id => stardust, ... }
+    def self.all_time_stardust_for(reviewer_ids)
       Certification::Devlog
-        .joins(ysws_review: :reviewer)
+        .joins(:ysws_review)
         .where.not(certification_ysws_reviews: { reviewed_at: nil })
-        .where(certification_ysws_reviews: { reviewer_id: windowed_counts.keys })
-        .group("users.id", "users.display_name", Arel.sql(bonus_case))
+        .where(certification_ysws_reviews: { reviewer_id: reviewer_ids })
+        .group("certification_ysws_reviews.reviewer_id", Arel.sql(bonus_stardust_case_sql))
         .count
-        .group_by { |(reviewer_id, name, _bonus), _count| [ reviewer_id, name ] }
-        .map do |(reviewer_id, name), entries|
+        .group_by { |(reviewer_id, _bonus), _count| reviewer_id }
+        .transform_values do |entries|
           all_time_devlogs = entries.sum { |_key, count| count }
-          bonus_stardust   = entries.sum { |(_id, _name, bonus), count| bonus.to_f * count }
-          stardust         = (stardust_for_devlog_count(all_time_devlogs) + bonus_stardust).round(2)
-          {
-            reviewer_id: reviewer_id,
-            name: name,
-            devlogs: windowed_counts[reviewer_id],
-            reviews: windowed_review_counts.fetch(reviewer_id, 0),
-            stardust: stardust
-          }
+          bonus_stardust   = entries.sum { |(_id, bonus), count| bonus.to_f * count }
+          (stardust_for_devlog_count(all_time_devlogs) + bonus_stardust).round(2)
         end
-        .sort_by { |row| [ -row[:devlogs], row[:name].to_s ] }
     end
 
     # Devlog reviews credited to a reviewer, applying the counting rule the whole
@@ -605,29 +624,15 @@ module Certification
         .transform_keys(&:to_date)
     end
 
-    # Consecutive days ending today with at least one devlog reviewed. Today only
-    # anchors the streak once there's work on it, so a morning before the first
-    # review of the day doesn't read as a break.
-    def self.reviewer_streak(devlogs_by_day, now: Time.current)
-      day = now.in_time_zone(PROGRAM_ZONE).to_date
-      day -= 1 unless devlogs_by_day.key?(day)
-
-      streak = 0
-      while devlogs_by_day.key?(day)
-        streak += 1
-        day -= 1
-      end
-      streak
-    end
-
     # Everything the reviewer progress panel shows for one reviewer: their pace
-    # against the daily goal, what their reviewing adds up to all-time, their
+    # against both daily goals, what their reviewing adds up to all-time, their
     # momentum, and where they stand in the crew this review week.
     #
     # Deliberately no approval/rejection rate: shown as a number to improve, it
     # rewards rubber-stamping.
     def self.reviewer_progress(reviewer_id, now: Time.current)
       pace           = reviewer_devlog_pace(reviewer_id, now: now)
+      project_pace   = reviewer_project_pace(reviewer_id, now: now)
       weekly_counts  = reviewer_weekly_devlog_counts(now: now)
       devlogs_by_day = reviewer_devlogs_by_day(reviewer_id)
 
@@ -648,20 +653,22 @@ module Certification
 
       {
         pace: pace,
-        on_pace: pace[:needed_today].zero?,
+        project_pace: project_pace,
+        locked_in: locked_in?(devlog_pace: pace, project_pace: project_pace),
         lifetime_devlogs: lifetime_devlogs,
         hours_certified: (approved_minutes / 60.0).round,
         # Distinct people, not projects — one maker with three reviewed projects
         # counts once.
         people_reviewed: people,
-        streak: reviewer_streak(devlogs_by_day, now: now),
+        projects_today: reviewer_projects_today(reviewer_id, now: now),
         best_day: best_day,
         best_day_devlogs: best_day_devlogs,
         weekly_devlogs: my_weekly,
         share_of_week: crew_weekly.zero? ? 0.0 : (my_weekly / crew_weekly.to_f * 100),
         rank: ranking.index(reviewer_id)&.succ,
         crew_size: ranking.size,
-        next_tier: next_stardust_tier(lifetime_devlogs)
+        next_tier: next_stardust_tier(lifetime_devlogs),
+        weekly_payout: weekly_payout(lifetime_devlogs: lifetime_devlogs, pace: pace)
       }
     end
 
