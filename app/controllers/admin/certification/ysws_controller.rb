@@ -43,33 +43,35 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @dir            = filters["dir"] == "asc" ? "asc" : "desc"
     @with_integrity = filters["with_integrity"] != "0"
 
-    scope = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
-    scope = scope.with_integrity_check if @with_integrity
+    @search = params[:search].to_s.strip
 
-    # Type filter options are whatever project types are actually present in the
-    # pending queue (plus an "unclassified" bucket) — never hardcoded.
-    @type_counts = scope.joins(:project).group("projects.project_type").count
+    queue = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
+    queue = queue.with_integrity_check if @with_integrity
 
-    scope = scope.by_project_type(@project_type) if @project_type
+    @type_counts = queue.joins(:project).group("projects.project_type").count
 
-    scope = scope.with_todo_devlog_count.includes(:project, :user, :integrity_check)
+    scope =
+      if @search.present?
+        ::Certification::Ysws.search(@search)
+      else
+        @project_type ? queue.by_project_type(@project_type) : queue
+      end
+
+    scope = scope.with_todo_devlog_count.includes(:project, :user, :integrity_check, :claimed_by)
+
+    default_dir = @search.present? ? :desc : :asc
 
     scope =
       case @sort
       when "length" then scope.order(Arel.sql("certification_ysws_reviews.original_minutes #{@dir}"))
       when "todo"   then scope.order(Arel.sql("todo_devlog_count #{@dir}"))
-      else               scope.order(created_at: :asc)
+      else               scope.order(created_at: default_dir)
       end
 
-    # Loaded eagerly so the view can count the collection without re-running the
-    # custom-select query as a COUNT(*), which the aliased column would break.
     @reviews = scope.to_a
 
-    # Per-reviewer pace against the daily devlog-review goal, averaged across the
-    # current review week (Wednesday 4pm to the following Wednesday 4pm). Left nil
-    # when the flag is off so the queue skips both the query and the widget — and
-    # when the progress panel is on, since that panel leads with the same figure.
-    if Flipper.enabled?(:devlog_review_pace, current_user) &&
+    if !turbo_frame_request? &&
+       Flipper.enabled?(:devlog_review_pace, current_user) &&
        !Flipper.enabled?(:reviewer_progress_panel, current_user)
       @devlog_pace  = ::Certification::Ysws.reviewer_devlog_pace(current_user.id)
       @project_pace = ::Certification::Ysws.reviewer_project_pace(current_user.id)

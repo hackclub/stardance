@@ -1,8 +1,15 @@
-<% if @reviews.any? %>
+<%# The live-search target: the search controller drives this frame's src, so a
+    keystroke swaps only the results table and leaves the reviewer-stats frame
+    and the filter row alone. %>
+<%= turbo_frame_tag "ysws_queue_results",
+      data: { certification__ysws__queue_search_target: "frame" } do %>
+  <% if @reviews.any? %>
     <div class="ysws-queue__summary" role="status" aria-live="polite">
       <div class="ysws-queue__summary-total">
-        <span class="ysws-queue__summary-label">Pending reviews</span>
-        <span class="ysws-queue__summary-count"><%= @reviews.count %></span>
+        <span class="ysws-queue__summary-label">
+          <%= @search.present? ? "Matching reviews" : "Pending reviews" %>
+        </span>
+        <span class="ysws-queue__summary-count"><%= @reviews.size %></span>
       </div>
 
       <div class="ysws-queue__filter ysws-queue__filter--toggle">
@@ -26,6 +33,11 @@
         <thead>
           <tr>
             <th>Review ID</th>
+            <%# Search reaches past the queue, so its results need to say which of
+                them aren't actually pending and which someone else is holding. %>
+            <% if @search.present? %>
+              <th>Status</th>
+            <% end %>
             <th>Certification Integrity</th>
             <th>
               <%# Doubles as the column title: the blank option reads "All types (N)". %>
@@ -48,6 +60,16 @@
           <% @reviews.each do |review| %>
             <tr class="<%= "ysws-queue__row--claimed" if review.claimed_by?(current_user) %>">
               <td data-label="ID">#<%= review.id %></td>
+              <% if @search.present? %>
+                <td data-label="Status">
+                  <%= review_status_badge(review) %>
+                  <% if review.claimed_by && !review.claimed_by?(current_user) %>
+                    <span class="ysws-queue__claimed-by">
+                      claimed by <%= review.claimed_by.display_name || "another reviewer" %>
+                    </span>
+                  <% end %>
+                </td>
+              <% end %>
               <td data-label="Integrity">
                 <% if review.integrity_check %>
                   <%= link_to review.integrity_check.status.humanize,
@@ -96,6 +118,14 @@
         </tbody>
       </table>
     </div>
+  <% elsif @search.present? %>
+    <div class="ysws-queue__empty" role="status">
+      <p>Nothing matches "<%= @search %>".</p>
+      <p class="ysws-queue__empty-hint">
+        Searches cover project name, review or project ID, the submitter's name,
+        email or Slack ID, and the repo or demo URL.
+      </p>
+    </div>
   <% else %>
     <div class="ysws-queue__empty" role="status">
       <p>No pending reviews. Great job!</p>
@@ -109,3 +139,4 @@
       <% end %>
     </div>
   <% end %>
+<% end %>

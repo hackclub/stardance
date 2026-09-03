@@ -1,7 +1,11 @@
 <% content_for :title, "YSWS Review Queue" %>
 
-<main class="ysws-queue" role="main">
-  <h1>YSWS Review Queue</h1>
+<main class="ysws-queue" role="main"
+      data-controller="certification--ysws--queue-search"
+      data-certification--ysws--queue-search-url-value="<%= admin_certification_ysws_reviews_path %>">
+  <header class="ysws-queue__header">
+    <h1>YSWS Review Queue</h1>
+  </header>
 
   <%= turbo_frame_tag "ysws_dashboard", src: admin_certification_ysws_dashboard_path, loading: "lazy" do %>
     <p class="ysws-dashboard__loading">Loading reviewer stats…</p>
@@ -16,6 +20,33 @@
       <%= hidden_field_tag :sort, @sort %>
       <%= hidden_field_tag :dir, @dir %>
     <% end %>
+
+    <%# Submitting this form is the no-JS path; with JS the controller intercepts
+        typing and swaps the results frame instead of reloading the page. %>
+    <div class="ysws-queue__filter ysws-queue__filter--search">
+      <label for="filter-search">Search</label>
+
+      <div class="ysws-queue__search">
+        <%= inline_svg_tag "icons/search.svg", class: "ysws-queue__search-icon",
+              aria: { hidden: true }, focusable: "false" %>
+
+        <%= search_field_tag :search, @search, id: "filter-search",
+              class: "ysws-queue__search-input", autocomplete: "off",
+              placeholder: "project, id, submitter, or repo url",
+              data: {
+                certification__ysws__queue_search_target: "input",
+                action: "input->certification--ysws--queue-search#search " \
+                        "keydown.enter->certification--ysws--queue-search#submit"
+              } %>
+
+        <button type="button" class="ysws-queue__search-clear" hidden
+                title="Clear search" aria-label="Clear search"
+                data-certification--ysws--queue-search-target="clear"
+                data-action="certification--ysws--queue-search#clear">
+          <%= inline_svg_tag "icons/close.svg", aria: { hidden: true }, focusable: "false" %>
+        </button>
+      </div>
+    </div>
 
     <%# Both paths to locked in: holding either the devlog or the project average
         clears it, so the widget shows both figures and reads its state off both. %>
