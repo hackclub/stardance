@@ -163,7 +163,7 @@ module User::Streakable
   # Sticky Streak decoration for one calendar day: which challenge day it is,
   # the sticker it pays out, and whether it is ready to claim.
   def sticky_day_fields(sticky, date)
-    return { sticky_day: nil, sticky_reward: nil, sticky_claimable: false } unless sticky&.covers?(date)
+    return { sticky_day: nil, sticky_reward: nil, sticky_claimable: false } unless sticky&.decorates?(date)
 
     day = sticky.day_for(date)
     { sticky_day: day, sticky_reward: sticky.rewards_by_day[day], sticky_claimable: sticky.claimable_day?(day) }

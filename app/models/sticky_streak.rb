@@ -55,6 +55,17 @@ class StickyStreak < ApplicationRecord
 
   def covers?(date) = (started_on..last_date).cover?(date)
 
+  # Dates the run still dresses up in the calendar. A missed day ends the
+  # challenge, so it and everything after it go back to being ordinary streak
+  # days rather than showing stickers that can never be earned. Derived from
+  # missed_day like everything else, so a late Hackatime backfill that rescues
+  # the day brings the stickers back with it.
+  def decorates?(date)
+    return false unless covers?(date)
+
+    missed_day.nil? || day_for(date) < missed_day
+  end
+
   # The day the user is on right now, clamped into the window.
   def current_day = day_for(today).clamp(1, LENGTH)
 
