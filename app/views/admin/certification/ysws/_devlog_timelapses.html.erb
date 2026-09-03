@@ -1,0 +1,47 @@
+<%#
+  The build recordings that fall inside one devlog's time window — the Lapse
+  timelapses (and historical Lookout captures) that produced the minutes this
+  devlog is claiming. Sits beside the devlog's own media so a reviewer can check
+  the evidence without scrolling back to the project-wide gallery, which still
+  lists every recording including the ones no devlog window covers.
+
+  Locals:
+    items - Certification::RecordingList item hashes for this devlog, newest-first
+
+  Tiles reuse the devlog media-grid classes so both grids match, and the
+  page-level media viewer picks the links up from `.video-item` alone.
+%>
+<div class="media-row__timelapses">
+  <div class="media-label">Timelapses (<%= items.size %>)</div>
+  <div class="media-grid">
+    <% items.each do |item| %>
+      <div class="timelapse-tile">
+        <% if item[:video_url].present? %>
+          <a href="<%= item[:video_url] %>"
+             class="media-item video-item"
+             data-action="click->certification--ysws--media-viewer#open">
+            <% if item[:poster_url].present? %>
+              <%= image_tag item[:poster_url], class: "media-thumbnail", loading: "lazy",
+                    alt: "#{item[:source]} recording thumbnail" %>
+            <% else %>
+              <%# No poster from the capture tool, so the clip is its own thumbnail.
+                  preload="metadata" keeps this to a first frame, not the whole file. %>
+              <video class="media-thumbnail" muted playsinline preload="metadata">
+                <source src="<%= item[:video_url] %>" type="video/mp4">
+              </video>
+            <% end %>
+            <div class="media-type-badge"><%= item[:source] %></div>
+          </a>
+        <% else %>
+          <div class="media-item timelapse-tile__processing">
+            <span class="placeholder-text"><%= item[:processing] %></span>
+          </div>
+        <% end %>
+        <span class="timelapse-tile__meta">
+          <%= [ format_clock(item[:duration]),
+                item[:recorded_at]&.strftime("%b %-d") ].compact.join(" · ") %>
+        </span>
+      </div>
+    <% end %>
+  </div>
+</div>

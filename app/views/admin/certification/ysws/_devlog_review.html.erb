@@ -77,6 +77,10 @@
       <% end %>
         </div>
 
+        <% if (devlog_timelapses = @devlog_recordings[devlog_review.post_devlog_id]).present? %>
+          <%= render "devlog_timelapses", items: devlog_timelapses %>
+        <% end %>
+
         <%# Read-only on purpose: the pre-screen suggests, the reviewer decides.
             The reasoning leads — it's what the decision turns on; the suggested
             number follows it. %>
