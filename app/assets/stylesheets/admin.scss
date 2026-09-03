@@ -74,8 +74,8 @@ body.admin-page {
   }
 
   a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn):not(
-      .ysws-dashboard__reviewer-link--on-pace
-    ):not(.ship-queue__row-link) {
+      .ysws-dashboard__reviewer-link--locked-in
+    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 

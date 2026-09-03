@@ -1,3 +1,26 @@
+<%
+  window       = ::Certification::Ysws::LEADERBOARD_WINDOW.inspect
+  devlog_goal  = ::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY
+  project_goal = ::Certification::Ysws::PROJECT_REVIEW_GOAL_PER_DAY
+
+  # Column header that re-ranks the board on its own metric. Descending only — a
+  # leaderboard ranked ascending is nonsense — so the active column renders as a
+  # plain label rather than a link that would flip the direction.
+  rank_link = ->(metric, label) do
+    active  = rank_by == metric
+    arrow   = tag.span(active ? "▼" : "▾", class: "ysws-dashboard__sort-arrow", "aria-hidden": true)
+    content = safe_join([ label, arrow ], " ")
+
+    if active
+      tag.span content, class: "ysws-dashboard__sort ysws-dashboard__sort--active",
+                        aria: { current: "true" }
+    else
+      link_to content, admin_certification_ysws_dashboard_path(rank_by: metric),
+              class: "ysws-dashboard__sort", title: "Rank the leaderboard by #{label}"
+    end
+  end
+%>
+
 <section class="ysws-dashboard" aria-label="Reviewer stats">
   <div class="ysws-dashboard__panel ysws-dashboard__panel--leaderboard">
     <h2 class="ysws-dashboard__heading">Reviewer leaderboard</h2>
@@ -9,42 +32,49 @@
             <th class="ysws-dashboard__col-rank">#</th>
             <th>Reviewer</th>
             <th class="ysws-dashboard__col-num"
-                title="Devlogs reviewed in the last <%= ::Certification::Ysws::LEADERBOARD_WINDOW.inspect %> — reviewers with none in that window aren't ranked">
-              Devlogs reviewed (<%= ::Certification::Ysws::LEADERBOARD_WINDOW.inspect %>)
+                title="Devlogs reviewed in the last <%= window %> — reviewers with nothing in that window aren't ranked">
+              <%= rank_link.call("devlogs", "Devlogs (#{window})") %>
             </th>
-            <% if daily_averages %>
+            <% if show_pace_column %>
               <th class="ysws-dashboard__col-num"
-                  title="Devlogs reviewed per day so far this review week (goal: <%= ::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY %>/day)">
-                Locked In?
+                  title="Devlogs reviewed per day so far this review week (goal: <%= devlog_goal %>/day)">
+                Locked in?
               </th>
             <% end %>
             <th class="ysws-dashboard__col-num"
-                title="Distinct reviews completed in the last <%= ::Certification::Ysws::LEADERBOARD_WINDOW.inspect %>">
-              Reviews (<%= ::Certification::Ysws::LEADERBOARD_WINDOW.inspect %>)
+                title="Projects completed since 4pm ET today (goal: <%= project_goal %>/day)">
+              Projects (today)
+            </th>
+            <th class="ysws-dashboard__col-num"
+                title="Projects completed in the last <%= window %> — one per ship review, however many devlogs it covered">
+              <%= rank_link.call("projects", "Projects (#{window})") %>
             </th>
             <th class="ysws-dashboard__col-num" title="Projected payout across all devlogs reviewed, all time">
-              Stardust ✦
+              Stardust
             </th>
           </tr>
         </thead>
         <tbody>
           <% leaderboard.each_with_index do |row, index| %>
-            <% on_pace = on_pace_reviewer_ids.include?(row[:reviewer_id]) %>
+            <%
+              on_pace = on_pace_reviewer_ids.include?(row[:reviewer_id])
+            %>
             <%= tag.tr class: ("ysws-dashboard__row--on-pace" if on_pace),
-                       title: ("Meeting the #{::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY}/day average this week" if on_pace) do %>
+                       title: ("Meeting the #{devlog_goal}/day average this week" if on_pace) do %>
               <td class="ysws-dashboard__col-rank"><%= index + 1 %></td>
               <td>
                 <%= link_to row[:name].presence || "Unknown", admin_user_path(row[:reviewer_id]),
                             class: ("ysws-dashboard__reviewer-link--on-pace" if on_pace) %>
               </td>
               <td class="ysws-dashboard__col-num"><%= row[:devlogs] %></td>
-              <% if daily_averages %>
+              <% if show_pace_column %>
                 <td class="ysws-dashboard__col-num">
                   <%= number_with_precision daily_averages[row[:reviewer_id]].to_f,
                                             precision: 1, strip_insignificant_zeros: true %>
                 </td>
               <% end %>
-              <td class="ysws-dashboard__col-num"><%= row[:reviews] %></td>
+              <td class="ysws-dashboard__col-num"><%= row[:projects_today] %></td>
+              <td class="ysws-dashboard__col-num"><%= row[:projects] %></td>
               <td class="ysws-dashboard__col-num"><%= row[:stardust] %></td>
             <% end %>
           <% end %>
@@ -52,13 +82,16 @@
       </table>
     <% else %>
       <p class="ysws-dashboard__empty">
-        No devlogs reviewed in the last <%= ::Certification::Ysws::LEADERBOARD_WINDOW.inspect %>.
+        No reviews completed in the last <%= window %>.
       </p>
     <% end %>
   </div>
 
   <div class="ysws-dashboard__panel ysws-dashboard__panel--chart">
-    <h2 class="ysws-dashboard__heading">Devlogs reviewed per day</h2>
+    <h2 class="ysws-dashboard__heading">
+      Devlogs reviewed per day
+      <span class="ysws-dashboard__heading-note">top 10</span>
+    </h2>
     <div class="ysws-dashboard__chart"
       data-controller="certification--ysws--reviewer-chart"
       data-certification--ysws--reviewer-chart-chart-value="<%= chart_data %>">

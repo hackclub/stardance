@@ -32,26 +32,38 @@
       <%= hidden_field_tag :dir, @dir %>
     <% end %>
 
+    <%# Both paths to locked in: holding either the devlog or the project average
+        clears it, so the widget shows both figures and reads its state off both. %>
     <% if @devlog_pace %>
-      <% on_pace = @devlog_pace[:needed_today].zero? %>
-      <%= tag.div class: [ "ysws-queue__goal", ("ysws-queue__goal--on-pace" if on_pace) ],
+      <% locked_in = ::Certification::Ysws.locked_in?(devlog_pace: @devlog_pace, project_pace: @project_pace) %>
+      <%= tag.div class: [ "ysws-queue__goal", ("ysws-queue__goal--locked-in" if locked_in) ],
                   role: "status", aria: { live: "polite" } do %>
-        <div class="ysws-queue__goal-primary">
-          <span class="ysws-queue__goal-count">
-            <%= number_with_precision @devlog_pace[:daily_average], precision: 1, strip_insignificant_zeros: true %>
-          </span>
-          <span class="ysws-queue__goal-label">devlogs / day this week</span>
+        <div class="ysws-queue__goal-paces">
+          <div class="ysws-queue__goal-primary">
+            <span class="ysws-queue__goal-count">
+              <%= number_with_precision @devlog_pace[:daily_average], precision: 1, strip_insignificant_zeros: true %>
+            </span>
+            <span class="ysws-queue__goal-label">devlogs / day this week</span>
+          </div>
+
+          <div class="ysws-queue__goal-primary">
+            <span class="ysws-queue__goal-count">
+              <%= number_with_precision @project_pace[:daily_average], precision: 1, strip_insignificant_zeros: true %>
+            </span>
+            <span class="ysws-queue__goal-label">projects / day this week</span>
+          </div>
         </div>
 
-        <% if on_pace %>
-          <span class="ysws-queue__goal-note">
-            On pace — <%= ::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY %>/day average met
-          </span>
-        <% else %>
-          <span class="ysws-queue__goal-note">
-            <%= @devlog_pace[:needed_today] %> more needed today to reach your goal!
-          </span>
-        <% end %>
+        <span class="ysws-queue__goal-note">
+          <% if @devlog_pace[:needed_today].zero? %>
+            Locked in — <%= ::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY %> devlogs/day average met
+          <% elsif @project_pace[:needed_today].zero? %>
+            Locked in — <%= ::Certification::Ysws::PROJECT_REVIEW_GOAL_PER_DAY %> projects/day average met
+          <% else %>
+            <%= @devlog_pace[:needed_today] %> more devlogs
+            or <%= @project_pace[:needed_today] %> more projects today to lock in!
+          <% end %>
+        </span>
       <% end %>
     <% end %>
 
