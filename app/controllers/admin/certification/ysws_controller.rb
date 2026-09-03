@@ -80,7 +80,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
   def show
     @review = ::Certification::Ysws
-      .includes(:project, :user, :reviewer, :mac_analysis, devlog_reviews: { post_devlog: [ :post, :attachments_attachments ] })
+      .includes(:project, :user, :reviewer, :ship_cert, :mac_analysis, devlog_reviews: { post_devlog: [ :post, :attachments_attachments ] })
       .find(params[:id])
     authorize @review
 
@@ -92,6 +92,9 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     # Claim this review for the current admin so it drops off everyone else's
     # queue. Already-decided reviews (reached via "prior reviews" history
     # links) are read-only and aren't claimed.
+    @ship_cert = @review.effective_ship_cert
+    @ship_cert_from_earlier_ship = @review.ship_cert_from_earlier_ship?
+
     if @review.pending?
       claimed = ::Certification::Ysws.atomic_claim!(@review.id, current_user)
       if claimed.nil?
