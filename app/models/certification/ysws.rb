@@ -122,6 +122,32 @@ module Certification
     # anyone claimed them carry no reviewer_id and must not be credited to a row.
     scope :completed_since, ->(time) { where(reviewed_at: time..).where.not(reviewer_id: nil) }
 
+    SEARCH_LIKE_COLUMNS = %w[
+      projects.title
+      projects.repo_url
+      projects.demo_url
+      users.display_name
+    ].freeze
+
+    scope :search, ->(term) {
+      term = term.to_s.strip
+      next all if term.blank?
+
+      escaped = sanitize_sql_like(term)
+      clauses = SEARCH_LIKE_COLUMNS.map { "#{_1} ILIKE :like" }
+      clauses << "LOWER(users.email) LIKE :email"
+      clauses << "users.slack_id = :term"
+      binds = { like: "%#{escaped}%", email: "#{escaped.downcase}%", term: term }
+
+      if term.match?(/\A\d+\z/)
+        clauses << "certification_ysws_reviews.id = :id"
+        clauses << "projects.id = :id"
+        binds[:id] = term.to_i
+      end
+
+      joins(:project, :user).where(clauses.map { "(#{_1})" }.join(" OR "), binds)
+    }
+
     # Claims (or refreshes an existing claim on) a pending review for the
     # given user, unless someone else already holds an active claim on it.
     # Conditioned atomically in the UPDATE itself so two reviewers opening the
