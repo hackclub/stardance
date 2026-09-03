@@ -145,12 +145,28 @@ module Certification
     # certified on an earlier ship. Fall back the same way #return_to_ship_cert
     # does — match the ship event first, then the project's most recent approved
     # cert — so reship reviews still point somewhere real.
+    # Memoised on `defined?` rather than `||=` so a project with no cert at all
+    # doesn't re-run both fallback queries on every call.
     def effective_ship_cert
-      return ship_cert if ship_cert
+      return @effective_ship_cert if defined?(@effective_ship_cert)
 
-      project_certs = Certification::Ship.where(project_id: project_id)
-      project_certs.find_by(post_ship_event_id: post_ship_event_id) ||
-        project_certs.approved.order(Arel.sql("decided_at DESC NULLS LAST"), id: :desc).first
+      @effective_ship_cert = ship_cert || begin
+        project_certs = Certification::Ship.where(project_id: project_id)
+        project_certs.find_by(post_ship_event_id: post_ship_event_id) ||
+          project_certs.approved.order(Arel.sql("decided_at DESC NULLS LAST"), id: :desc).first
+      end
+    end
+
+    # True when #effective_ship_cert resolved to a cert minted for a different
+    # (earlier) ship event than this review's — the reviewer is looking at the
+    # previous ship's proof video, not one recorded for this ship.
+    #
+    # Keyed on post_ship_event_id rather than a null ship_cert_id because the
+    # middle fallback can resolve a cert belonging to *this* review's own ship
+    # event, which must not be labelled as coming from an earlier ship.
+    def ship_cert_from_earlier_ship?
+      cert = effective_ship_cert
+      cert.present? && cert.post_ship_event_id != post_ship_event_id
     end
 
     # Per-reviewer target for completed devlog reviews: a daily rate that
