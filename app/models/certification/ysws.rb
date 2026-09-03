@@ -117,6 +117,11 @@ module Certification
         : joins(:project).where(projects: { project_type: type })
     }
 
+    # Project reviews completed from `time` onwards, with a reviewer attached — the
+    # shared base for every per-reviewer project count. Reviews auto-rejected before
+    # anyone claimed them carry no reviewer_id and must not be credited to a row.
+    scope :completed_since, ->(time) { where(reviewed_at: time..).where.not(reviewer_id: nil) }
+
     # Claims (or refreshes an existing claim on) a pending review for the
     # given user, unless someone else already holds an active claim on it.
     # Conditioned atomically in the UPDATE itself so two reviewers opening the
@@ -158,10 +163,27 @@ module Certification
     # every single day. Drives the pace widget on the review queue.
     DEVLOG_REVIEW_GOAL_PER_DAY = 30
 
+    # Length of a review week, and the devlog total a reviewer has to reach
+    # across it to take their week's payout in full rather than halved.
+    REVIEW_WEEK_DAYS = 7
+    WEEKLY_DEVLOG_GOAL = DEVLOG_REVIEW_GOAL_PER_DAY * REVIEW_WEEK_DAYS
+
+    # The second path to locked-in status: a reviewer averaging this many completed
+    # project reviews a day across the review week is locked in whatever their
+    # devlog count, and vice versa. Deliberately the same shape as
+    # DEVLOG_REVIEW_GOAL_PER_DAY so the two paths read alike everywhere.
+    PROJECT_REVIEW_GOAL_PER_DAY = 20
+    WEEKLY_PROJECT_GOAL = PROJECT_REVIEW_GOAL_PER_DAY * REVIEW_WEEK_DAYS
+
     # Rolling window the reviewer leaderboard ranks on. Deliberately independent
     # of the review week: it's always this full span, so a reviewer's standing
     # doesn't reset to zero every Wednesday 4pm.
     LEADERBOARD_WINDOW = 3.days
+
+    # Metrics the leaderboard can rank on — one per locked-in path — and the one an
+    # absent or unrecognised choice falls back to.
+    LEADERBOARD_METRICS = %w[devlogs projects].freeze
+    DEFAULT_LEADERBOARD_METRIC = "devlogs"
 
     # Program-facing time zone. The app's default zone is UTC, but reviewers,
     # review weeks and bonus windows all run on Eastern wall-clock time.
@@ -235,13 +257,13 @@ module Certification
       index = DEVLOG_STARDUST_TIERS.index { |threshold, _rate| threshold > count }
       return nil if index.nil?
 
-      threshold, rate         = DEVLOG_STARDUST_TIERS[index]
-      floor,     current_rate = DEVLOG_STARDUST_TIERS[index - 1]
+      threshold, rate = DEVLOG_STARDUST_TIERS[index]
+      floor           = DEVLOG_STARDUST_TIERS[index - 1].first
 
       {
         threshold: threshold,
         rate: rate,
-        current_rate: current_rate,
+        current_rate: stardust_rate_for(count),
         devlogs_needed: threshold - count,
         # Progress through the current tier's own span, so a reviewer who just
         # crossed into a tier starts near empty rather than three-quarters full.
@@ -334,6 +356,16 @@ module Certification
       cutoff <= now ? cutoff : cutoff - 1.week
     end
 
+    # Start of the review day containing `now`. Days run on the same 4pm Eastern
+    # boundary as the review week itself, so "today" means one thing to the daily
+    # goals, the leaderboard's projects-today column and the progress panel alike.
+    def self.review_day_start(now = Time.current)
+      local = now.in_time_zone(PROGRAM_ZONE)
+      date  = local.hour < REVIEW_WEEK_START_HOUR ? local.to_date - 1 : local.to_date
+
+      PROGRAM_ZONE.local(date.year, date.month, date.day, REVIEW_WEEK_START_HOUR)
+    end
+
     # 1-based day within the review week containing `now`. Days run on the same
     # 4pm boundary as the week itself, so this is 1 on the first 4pm-to-4pm day
     # and 7 on the last.
@@ -343,10 +375,9 @@ module Certification
     # would report an 8th day in the week the clocks fall back, and shift every
     # boundary by an hour in the week they spring forward.
     def self.review_week_day_number(now = Time.current)
-      local     = now.in_time_zone(PROGRAM_ZONE)
-      day_start = local.hour < REVIEW_WEEK_START_HOUR ? local.to_date - 1 : local.to_date
+      day_start = review_day_start(now).to_date
 
-      (day_start - review_week_start(now).to_date).to_i.clamp(0, 6) + 1
+      (day_start - review_week_start(now).to_date).to_i.clamp(0, REVIEW_WEEK_DAYS - 1) + 1
     end
 
     # A reviewer's pace against the daily goal for the current review week.
@@ -364,12 +395,6 @@ module Certification
         daily_average: reviewed / day_number.to_f,
         needed_today: [ (DEVLOG_REVIEW_GOAL_PER_DAY * day_number) - reviewed, 0 ].max
       }
-    end
-
-    # Whether a single reviewer clears the daily goal averaged across the review
-    # week so far — the single-reviewer form of `reviewers_on_pace`.
-    def self.reviewer_on_pace?(reviewer_id, now: Time.current)
-      reviewer_devlog_pace(reviewer_id, now: now)[:needed_today].zero?
     end
 
     # Devlogs each reviewer has reviewed so far this review week, in one query.
@@ -405,6 +430,87 @@ module Certification
         .select { |_reviewer_id, average| average >= DEVLOG_REVIEW_GOAL_PER_DAY }
         .keys
         .to_set
+    end
+
+    # ---- Project-review pace ---------------------------------------------
+    #
+    # The second locked-in path, mirroring the devlog helpers above one for one so
+    # the two read alike wherever they sit side by side. A project counts as
+    # reviewed once its own reviewed_at is stamped, so these read straight off this
+    # table and need no join.
+
+    # Completed project reviews credited to a reviewer, optionally only those from
+    # `since` onwards.
+    def self.reviewer_project_count(reviewer_id, since: nil)
+      scope = where(reviewer_id: reviewer_id).where.not(reviewed_at: nil)
+      scope = scope.where(reviewed_at: since..) if since
+      scope.count
+    end
+
+    # Projects each reviewer has completed so far this review week, in one query.
+    #   => { reviewer_id => count, ... }
+    def self.reviewer_weekly_project_counts(now: Time.current)
+      completed_since(review_week_start(now)).group(:reviewer_id).count
+    end
+
+    # Projects each reviewer has completed so far today, in one query.
+    #   => { reviewer_id => count, ... }
+    def self.reviewer_project_counts_today(now: Time.current)
+      completed_since(review_day_start(now)).group(:reviewer_id).count
+    end
+
+    # Every reviewer's projects-per-day for the current review week — the figure
+    # `reviewer_project_pace` reports as `daily_average`, for all reviewers at once
+    # so the leaderboard doesn't need a query per row.
+    #   => { reviewer_id => average, ... }
+    def self.reviewer_project_daily_averages(now: Time.current)
+      day_number = review_week_day_number(now)
+
+      reviewer_weekly_project_counts(now: now)
+        .transform_values { |reviewed| reviewed / day_number.to_f }
+    end
+
+    # A reviewer's pace against the daily project goal. Shaped exactly like
+    # `reviewer_devlog_pace` — including `needed_today` as the catch-up figure — so
+    # `locked_in?` can read either without caring which it was handed.
+    def self.reviewer_project_pace(reviewer_id, now: Time.current)
+      day_number = review_week_day_number(now)
+      reviewed   = reviewer_project_count(reviewer_id, since: review_week_start(now))
+
+      {
+        reviewed: reviewed,
+        day_number: day_number,
+        daily_average: reviewed / day_number.to_f,
+        needed_today: [ (PROJECT_REVIEW_GOAL_PER_DAY * day_number) - reviewed, 0 ].max
+      }
+    end
+
+    # Projects a reviewer has completed since today's 4pm boundary.
+    def self.reviewer_projects_today(reviewer_id, now: Time.current)
+      reviewer_project_count(reviewer_id, since: review_day_start(now))
+    end
+
+    # ---- Locked in -------------------------------------------------------
+    #
+    # A reviewer is locked in once they clear EITHER daily goal on the review week's
+    # running average: DEVLOG_REVIEW_GOAL_PER_DAY devlogs or
+    # PROJECT_REVIEW_GOAL_PER_DAY projects. The paths are equivalent and holding one
+    # is enough.
+
+    def self.locked_in?(devlog_pace:, project_pace:)
+      devlog_pace[:needed_today].zero? || project_pace[:needed_today].zero?
+    end
+
+    # Reviewer ids clearing either goal this review week, as a Set so the
+    # leaderboard can mark rows without a query per row. Callers that already hold
+    # the averages pass them in to avoid re-querying.
+    def self.reviewers_locked_in(now: Time.current,
+                                 daily_averages: reviewer_daily_averages(now: now),
+                                 project_daily_averages: reviewer_project_daily_averages(now: now))
+      reviewers_on_pace(now: now, daily_averages: daily_averages) |
+        project_daily_averages
+          .select { |_reviewer_id, average| average >= PROJECT_REVIEW_GOAL_PER_DAY }
+          .keys
     end
 
     # Devlogs reviewed per reviewer per day over the trailing window, bucketed by
