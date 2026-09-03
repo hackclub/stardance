@@ -1547,9 +1547,15 @@ body:has(.certification-ysws) {
 
         // Sized to its thumbnails so the note can take the width left over
         // after the last one; shrinks (re-wrapping the grid) when space is tight.
-        &__media {
+        &__media,
+        &__timelapses {
           flex: 0 1 auto;
           min-width: 0;
+        }
+
+        &__timelapses {
+          border-left: 1px solid var(--color-space-border);
+          padding-left: var(--space-s);
         }
       }
 
@@ -1595,6 +1601,31 @@ body:has(.certification-ysws) {
           font-family: var(--font-family-sans);
           text-transform: uppercase;
           letter-spacing: 0.05em;
+        }
+      }
+
+      .timelapse-tile {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xxs);
+
+        &__meta {
+          color: var(--color-space-text-muted);
+          font-size: var(--font-size-xxs);
+          font-family: var(--font-family-sans);
+        }
+
+        &__processing {
+          align-items: center;
+          display: flex;
+          justify-content: center;
+          padding: var(--space-xs);
+          text-align: center;
+
+          &:hover {
+            transform: none;
+            border-color: var(--color-space-border);
+          }
         }
       }
     }
