@@ -91,6 +91,62 @@
     }
   }
 
+  & &__filter--search {
+    flex: 1 1 48rem;
+    min-width: 0;
+    align-self: flex-end;
+  }
+
+  & &__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  & &__search-input[type="search"] {
+    width: 100%;
+    border-radius: 999px;
+    padding: var(--space-xs) var(--space-xl);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text);
+    border: 2px solid var(--color-border-input);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-s);
+  }
+
+  & &__search-icon {
+    position: absolute;
+    left: var(--space-xs);
+    width: 1rem;
+    height: 1rem;
+    pointer-events: none;
+    color: var(--color-space-text-muted);
+  }
+
+  & &__search-clear {
+    position: absolute;
+    right: var(--space-xs);
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    &:not([hidden]) {
+      display: flex;
+    }
+
+    svg {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+  }
+
   & &__select {
     background: var(--color-set-1-bg);
     color: var(--color-space-text);
