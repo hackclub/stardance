@@ -1,0 +1,39 @@
+<%# Sticky session bar for the continuous review flow (addon, gated by the
+    ysws_review_flow flag). Renders nothing at all unless a session is running,
+    so the review page is exactly as it was for everyone else.
+
+    Locals:
+      review — the Certification::Ysws currently on screen. %>
+<% flow = ysws_flow %>
+<% if flow.active? %>
+  <%# nil when this review isn't part of the session — a "prior reviews" history
+      link, say — in which case there is no position to show and nothing to skip. %>
+  <% position = flow.position(review.id) %>
+
+  <nav class="ysws-flow-bar" aria-label="Review session">
+    <div class="ysws-flow-bar__group">
+      <span class="ysws-flow-bar__label">Review session</span>
+      <% if position %>
+        <span class="ysws-flow-bar__position"><%= position %> of <%= flow.total %></span>
+      <% end %>
+    </div>
+
+    <p class="ysws-flow-bar__tally" role="status" aria-live="polite">
+      <%= pluralize(flow.projects, "project") %> · <%= pluralize(flow.devlogs, "devlog") %> reviewed
+    </p>
+
+    <div class="ysws-flow-bar__group">
+      <% if position %>
+        <%= button_to "Skip", admin_certification_ysws_flow_skip_path(review),
+                      method: :post,
+                      class: "ysws-flow-bar__btn",
+                      form_class: "ysws-flow-bar__form" %>
+      <% end %>
+
+      <%= button_to "End session", admin_certification_ysws_flow_path(review_id: review.id),
+                    method: :delete,
+                    class: "ysws-flow-bar__btn ysws-flow-bar__btn--end",
+                    form_class: "ysws-flow-bar__form" %>
+    </div>
+  </nav>
+<% end %>
