@@ -196,29 +196,22 @@ class Vote < ApplicationRecord
   def discarded? = discarded || events.exists?(event_type: "vote_flag_accepted")
 
   def auto_discard!(properties: {})
-    credit_reversed = false
+    discard(
+      event_type: "vote_auto_discarded",
+      actor: user,
+      properties: properties.to_h.merge(automated: true)
+    )
+  end
 
-    with_lock do
-      return false if discarded?
-
-      update!(discarded: true)
-      events.create!(
-        event_type: "vote_auto_discarded",
-        user: user,
-        project: project,
-        ship_event: ship_event,
-        properties: properties.to_h.merge(automated: true)
-      )
-
-      if Flipper.enabled?(:discarded_vote_credit_reversal, user)
-        user.increment!(:vote_balance, -1)
-        credit_reversed = true
-      end
-    end
-
-    Notifications::Votes::Discarded.notify(recipient: user) if credit_reversed
-    ShipEventPayoutRefreshJob.perform_later(ship_event_id)
-    true
+  # Manual counterpart to the automated discarder, for a rating it passed on
+  # that a reviewer knows is bad. The reason rides on the event so the audit
+  # log says why the call was made.
+  def discard_by!(reviewer:, reason:)
+    discard(
+      event_type: "vote_discarded",
+      actor: reviewer,
+      properties: { reason: reason, automated: false }
+    )
   end
 
   private
@@ -243,6 +236,32 @@ class Vote < ApplicationRecord
     return if expected_project_id.blank?
 
     errors.add(:project, "does not match ship event") if project_id != expected_project_id
+  end
+
+  def discard(event_type:, actor:, properties:)
+    credit_reversed = false
+
+    with_lock do
+      return false if discarded?
+
+      update!(discarded: true)
+      events.create!(
+        event_type: event_type,
+        user: actor,
+        project: project,
+        ship_event: ship_event,
+        properties: properties
+      )
+
+      if Flipper.enabled?(:discarded_vote_credit_reversal, user)
+        user.increment!(:vote_balance, -1)
+        credit_reversed = true
+      end
+    end
+
+    Notifications::Votes::Discarded.notify(recipient: user) if credit_reversed
+    ShipEventPayoutRefreshJob.perform_later(ship_event_id)
+    true
   end
 
   # Callback

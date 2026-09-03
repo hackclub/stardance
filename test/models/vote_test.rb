@@ -93,6 +93,43 @@ class VoteTest < ActiveSupport::TestCase
     assert_includes Post::ShipEvent.voteable, vote.ship_event
   end
 
+  test "manual discard records the reviewer and reason" do
+    _owner, vote = create_reviewable_vote
+    reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
+
+    assert_difference -> { Vote::Event.of_type("vote_discarded").count }, 1 do
+      assert vote.discard_by!(reviewer: reviewer, reason: "Pasted the same feedback on ten ships")
+    end
+
+    event = vote.events.find_by(event_type: "vote_discarded")
+    assert vote.discarded?
+    assert_equal reviewer, event.user
+    assert_equal "Pasted the same feedback on ten ships", event.properties["reason"]
+    assert_equal false, event.properties["automated"]
+  end
+
+  test "manual discard reverses the voter credit when the flag is on" do
+    _owner, vote = create_reviewable_vote
+    reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
+    Flipper.enable(:discarded_vote_credit_reversal)
+
+    assert_difference -> { vote.user.reload.vote_balance }, -1 do
+      vote.discard_by!(reviewer: reviewer, reason: "Pasted the same feedback on ten ships")
+    end
+  ensure
+    Flipper.disable(:discarded_vote_credit_reversal)
+  end
+
+  test "manual discard is a no op on an already discarded vote" do
+    _owner, vote = create_reviewable_vote
+    reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
+    vote.auto_discard!
+
+    assert_no_difference -> { Vote::Event.of_type("vote_discarded").count } do
+      assert_not vote.discard_by!(reviewer: reviewer, reason: "Too late")
+    end
+  end
+
   test "rejected flag charges owner and releases payout" do
     owner, vote = create_reviewable_vote
     reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")

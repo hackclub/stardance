@@ -41,7 +41,31 @@
             <td><%= vote.usability_score || "—" %></td>
             <td><%= vote.storytelling_score || "—" %></td>
             <td><%= vote_duration_in_words(vote.time_taken_to_vote_in_seconds) %></td>
-            <td><%= vote.discarded? ? "Discarded" : "Counted" %></td>
+            <td class="admin-vote-status">
+              <% if vote.discarded? %>
+                <span class="admin-vote-status__state admin-vote-status__state--discarded">Discarded</span>
+                <% if (note = vote_discard_note(vote)) %>
+                  <span class="admin-vote-status__note"><%= note %></span>
+                <% end %>
+                <%= link_to "Audit trail", admin_audit_logs_path(item_type: "Vote", item_id: vote.id),
+                    class: "admin-vote-status__audit" %>
+              <% else %>
+                <span class="admin-vote-status__state">Counted</span>
+                <% if policy([ :admin, vote ]).discard? %>
+                  <details class="admin-vote-status__discard">
+                    <summary class="admin-vote-status__discard-toggle">Discard</summary>
+                    <%= form_with url: admin_user_vote_discard_path(@user, vote), method: :post, local: true,
+                        class: "admin-vote-status__discard-form" do |f| %>
+                      <%= f.label :reason, "Reason", class: "admin-vote-status__discard-label" %>
+                      <%= f.text_area :reason, rows: 2, required: true,
+                          placeholder: "Why this rating is being thrown out...",
+                          class: "admin-vote-status__discard-input" %>
+                      <%= f.submit "Discard rating", class: "btn-danger slim" %>
+                    <% end %>
+                  </details>
+                <% end %>
+              <% end %>
+            </td>
             <td class="vote-reasons">
               <% if vote.reason.present? %>
                 <details>
