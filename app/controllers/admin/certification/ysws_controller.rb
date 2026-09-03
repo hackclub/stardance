@@ -283,6 +283,16 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
   #   first devlog  → [review_start .. devlog.created_at]
   #   middle devlog → [prev.created_at .. devlog.created_at]
   #   last devlog   → [devlog.created_at .. ship_time]
+  # Returns { post_devlog_id => { since:, before: } } — one commit-graph window per
+  # devlog post on this project. Each devlog's window is its own calendar day
+  # (clamped to the review window), not the interval since the previous post —
+  # devlogs are logged retrospectively, so commits from a work session can
+  # predate an earlier devlog's post time and would otherwise never show up
+  # under the devlog they belong to. Devlogs posted the same day will show the
+  # same day's commits on both cards, which is fine — reviewers judge each card
+  # independently. The last devlog's window still extends all the way to
+  # ship_time (not just its own day) so commits made after the last devlog but
+  # before shipping aren't lost.
   def devlog_windows_for_review(review)
     project = review.project
 
@@ -294,18 +304,53 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       .order("posts.created_at DESC").first
     review_start = prior_ship&.created_at || Time.utc(2026, 5, 30)
 
-    all_posts = project.posts
-      .where(postable_type: "Post::Devlog")
-      .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND post_devlogs.deleted_at IS NULL")
-      .order("posts.created_at ASC")
-
-    last_idx = all_posts.size - 1
+    all_posts = ordered_devlog_posts(project)
+    last_idx  = all_posts.size - 1
 
     all_posts.each_with_index.with_object({}) do |(post, idx), windows|
-      since  = idx == 0         ? review_start               : all_posts[idx - 1].created_at
-      before = idx == last_idx  ? ship_time                  : post.created_at
+      day    = post.created_at.in_time_zone.all_day
+      since  = [ day.begin, review_start ].max
+      before = idx == last_idx ? ship_time : [ day.end, ship_time ].min
       windows[post.postable_id] = { since: since.iso8601, before: before.iso8601 }
     end
+  end
+
+  # Returns { devlog_id => Range of Time } — the window each devlog's claimed
+  # time was actually computed over: everything since the previous devlog, up to
+  # the moment it was posted. This is what a build recording has to fall inside
+  # to be evidence for that devlog's minutes, so it's the bucketing the
+  # per-devlog timelapse strip uses (Certification::RecordingList.by_devlog).
+  #
+  # Mirrors Project#devlog_window_start, including its first-devlog fallback,
+  # but derived from the ordered post list already in hand rather than one query
+  # per devlog. Kept separate from #devlog_windows_for_review on purpose: those
+  # are calendar-day buckets, deliberately different (see its comment), and
+  # would drop any recording made on a day between two devlogs.
+  #
+  # End-exclusive so consecutive windows can't overlap and a recording can never
+  # surface on two devlog cards. A clip stamped at the exact instant a devlog was
+  # posted therefore counts towards the next one — recording timestamps are
+  # second-precision and post times aren't, so that tie is theoretical.
+  def devlog_time_windows(review)
+    project = review.project
+    posts   = ordered_devlog_posts(project)
+
+    season_start = Date.parse(HackatimeService::START_DATE).beginning_of_day
+    first_since  = [ project.created_at, season_start ].min
+
+    posts.each_with_index.with_object({}) do |(post, idx), windows|
+      since = idx.zero? ? first_since : posts[idx - 1].created_at
+      windows[post.postable_id] = since...post.created_at
+    end
+  end
+
+  # Every live devlog post on the project, oldest-first. Memoized because both
+  # window builders walk the same list on a single #show.
+  def ordered_devlog_posts(project)
+    @ordered_devlog_posts ||= project.posts
+      .where(postable_type: "Post::Devlog")
+      .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND post_devlogs.deleted_at IS NULL")
+      .order("posts.created_at ASC").to_a
   end
 
   public
