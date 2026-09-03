@@ -25,6 +25,7 @@
        data-certification--ysws--devlog-review-id-value="<%= devlog_review.id %>"
        data-certification--ysws--devlog-review-original-minutes-value="<%= devlog_review.original_minutes || 0 %>"
        data-certification--ysws--devlog-review-status-value="<%= devlog_review.status %>"
+       data-action="devlog-review:flush@window->certification--ysws--devlog-review#flush"
      <% end %>
      <%= 'data-certification--ysws--review-sidebar-target="trigger"'.html_safe if sidebar_trigger %>>
   <div class="devlog-main">
