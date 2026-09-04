@@ -556,6 +556,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
           aasm_state: [ old_state, @order.aasm_state ]
         }
       )
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order") if fraud_subject
+
       redirect_to shop_orders_return_path, notice: "Order placed on hold"
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to place order on hold: #{@order.errors.full_messages.join(', ')}"
@@ -576,6 +578,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
           aasm_state: [ old_state, @order.aasm_state ]
         }
       )
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order") if fraud_subject
+
       redirect_to shop_orders_return_path, notice: "Order released from hold"
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to release order from hold: #{@order.errors.full_messages.join(', ')}"

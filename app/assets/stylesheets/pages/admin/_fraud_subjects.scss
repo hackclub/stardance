@@ -294,7 +294,9 @@
     width: 5rem;
   }
 
-  .fraud-subject__reject {
-    margin-top: var(--space-xs);
+  // Closed it is one more chip in the actions row; open it takes the whole row
+  // so the rejection form has room without stretching the buttons beside it.
+  .fraud-subject__reject[open] {
+    flex-basis: 100%;
   }
 }

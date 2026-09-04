@@ -45,4 +45,15 @@ module FraudSubjectVerdict
 
     render turbo_stream: streams
   end
+
+  # For a change that leaves the item in the queue, like putting an order on
+  # hold: the row is re-rendered in place rather than swapped for a note.
+  def render_fraud_subject_item(record, partial:)
+    render turbo_stream: turbo_stream.replace(
+      ActionView::RecordIdentifier.dom_id(record),
+      partial: partial,
+      object: record,
+      locals: { user: fraud_subject }
+    )
+  end
 end

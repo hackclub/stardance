@@ -7,6 +7,7 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
   include UserFactory
 
   TURBO_STREAM = { "Accept" => "text/vnd.turbo-stream.html" }.freeze
+  PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=".freeze
 
   setup do
     @admin = create_user(slack_id: "U_FRAUD_VERDICT_ADMIN", display_name: "verdictadmin")
@@ -85,7 +86,48 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     assert_match ActionView::RecordIdentifier.dom_id(check), response.body
   end
 
+  test "putting an order on hold keeps it in the queue and re-renders the row" do
+    order = pending_order
+
+    post place_on_hold_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_equal "on_hold", order.reload.aasm_state
+    assert_match "Release hold", response.body
+  end
+
+  test "releasing a hold puts the order back to pending" do
+    order = pending_order
+    order.update_columns(aasm_state: "on_hold")
+
+    post release_from_hold_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_equal "pending", order.reload.aasm_state
+    assert_no_match "Release hold", response.body
+  end
+
   private
+
+  def pending_order
+    @subject.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
+    order = @subject.shop_orders.create!(shop_item: shop_item, quantity: 1,
+                                         frozen_address: { "country" => "US" })
+    order.update_columns(aasm_state: "pending")
+    order
+  end
+
+  def shop_item
+    @shop_item ||= begin
+      item = ShopItem.new(name: "Verdict patch #{SecureRandom.hex(4)}", description: "Test item",
+                          ticket_cost: 0, usd_cost: 7, type: "ShopItem::ThirdPartyPhysical", enabled: true)
+      item.image.attach(io: StringIO.new(Base64.decode64(PIXEL)), filename: "px.png", content_type: "image/png")
+      item.save!
+      item
+    end
+  end
 
   def flag_a_project
     project = Project.create!(title: "Flagged #{SecureRandom.hex(4)}")
