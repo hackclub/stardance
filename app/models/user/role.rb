@@ -8,6 +8,7 @@ class User
       new(1, :admin, "Can do everything except assign or remove admin"),
       new(10, :fraud_lead, "Senior fraud team member"),
       new(2, :fraud_dept, "Can issue negative payouts, cancel grants & shop orders, but not reject or ban users; access to Blazer; access to read-only admin User w/o PII"),
+      new(13, :fraud_squad, "Can work the unified fraud review dashboard: integrity checks, shop orders and fraud flags, per person"),
       new(3, :project_certifier, "Approve/reject if project work meets Shipwright standards"),
       new(4, :guardian_of_integrity, "Can approve/reject projects for YSWS DB"),
       new(5, :fulfillment_person, "Can approve/reject/on-hold shop orders, fulfill them, and see addresses; access to read-only admin User w/ pII"),

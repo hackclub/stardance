@@ -1,0 +1,14 @@
+<li class="fraud-subject__item fraud-subject__item--order">
+  <div class="fraud-subject__item-head">
+    <span class="fraud-subject__item-title">
+      <%= order.quantity %> × <%= order.shop_item.name %>
+    </span>
+    <span class="fraud-subject__item-age"><%= time_ago_in_words(order.created_at) %> ago</span>
+  </div>
+
+  <p class="fraud-subject__item-meta">
+    <%= order.aasm_state.humanize %> · <%= order.shop_item.type.demodulize.underscore.humanize %>
+  </p>
+
+  <%= link_to "Open order", admin_shop_order_path(order), class: "fraud-subject__item-action" %>
+</li>

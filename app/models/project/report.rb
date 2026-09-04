@@ -42,6 +42,18 @@ class Project::Report < ApplicationRecord
     ].freeze
     USER_REASONS = %w[low_effort undeclared_ai demo_broken other].freeze # fraud is internal
 
+    # Reasons the fraud queue owns. The review teams' own flags plus
+    # undeclared_ai, which is a fraud claim even though anyone can file it.
+    # low_effort, demo_broken and other are quality complaints about a shipped
+    # project, so they stay with the reports queue.
+    FRAUD_REVIEW_REASONS = [
+      "fraud",
+      "undeclared_ai",
+      "External flag",
+      "YSWS project flag",
+      "Shipwrights project flag"
+    ].freeze
+
     DETAILS_MIN_LENGTH = 20
 
     # These four never save a Project::Report row — Slack-only ping instead.

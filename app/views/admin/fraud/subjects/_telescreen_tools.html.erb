@@ -1,0 +1,30 @@
+<% hackatime_uid = @user.hackatime_identity&.uid %>
+
+<section class="fraud-subject__tools" aria-labelledby="fraud-subject-tools">
+  <h2 class="fraud-subject__section-title" id="fraud-subject-tools">Telescreen</h2>
+
+  <% if hackatime_uid.present? %>
+    <div class="fraud-subject__tool-links">
+      <%= link_to "Subject ↗", telescreen_subject_url(hackatime_uid),
+                  target: "_blank", rel: "noopener noreferrer", class: "fraud-subject__tool-link" %>
+      <%= link_to "Hackatime ↗", telescreen_hackatime_overview_url(hackatime_uid),
+                  target: "_blank", rel: "noopener noreferrer", class: "fraud-subject__tool-link" %>
+    </div>
+
+    <% if @hackatime_projects.any? %>
+      <div class="fraud-subject__tool-links">
+        <% @hackatime_projects.each do |hackatime_project| %>
+          <%= link_to "#{hackatime_project.project.title} ↗",
+                      telescreen_hackatime_overview_url(hackatime_uid, project: hackatime_project.name),
+                      target: "_blank", rel: "noopener noreferrer", class: "fraud-subject__tool-link" %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="fraud-subject__empty">No Hackatime projects linked to a Stardance project.</p>
+    <% end %>
+  <% else %>
+    <p class="fraud-subject__empty">
+      No Hackatime identity, so there is nothing to look up in Telescreen.
+    </p>
+  <% end %>
+</section>

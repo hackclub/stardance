@@ -1,0 +1,16 @@
+<% project = check.project_including_deleted %>
+
+<li class="fraud-subject__item fraud-subject__item--integrity">
+  <div class="fraud-subject__item-head">
+    <span class="fraud-subject__item-title">
+      <%= project ? link_to(project.title, admin_project_path(project)) : "Deleted project" %>
+    </span>
+    <span class="fraud-subject__item-age"><%= time_ago_in_words(check.created_at) %> ago</span>
+  </div>
+
+  <p class="fraud-subject__item-meta">ship event #<%= check.ship_event_id %></p>
+
+  <%= render "admin/certification/integrity/flags", review: check %>
+
+  <%= link_to "Open check", admin_certification_integrity_review_path(check), class: "fraud-subject__item-action" %>
+</li>

@@ -717,6 +717,12 @@ Rails.application.routes.draw do
     get "user-perms", to: "users#user_perms"
     resource :support, only: [ :show ], controller: "support/dashboards"
     resource :fraud, only: [ :show ], controller: "fraud/dashboards"
+    namespace :fraud do
+      # One page per person with fraud work waiting: their flags, shop orders
+      # and integrity checks together, ranked by whoever has waited longest on
+      # the thing that matters most.
+      resources :subjects, only: [ :index, :show ]
+    end
 
     # Referral raffle management (reads the Raffle engine's models).
     get "raffles", to: "raffles/dashboard#show", as: :raffles
