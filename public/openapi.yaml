@@ -3,8 +3,9 @@ info:
   title: Stardance API
   version: "1"
   description: |
-    A read-only public API for Stardance projects. You need an API key to
-    use this! Go to your [account settings](/?settings=1) to get one.
+    A read-only public API for Stardance projects and devlogs. You need an
+    API key to use this! Go to your [account settings](/?settings=1) to get
+    one.
 servers:
   - url: /api/v1
 security:
@@ -37,6 +38,40 @@ components:
           items: { type: integer }
         banner_url: { type: string, format: uri, nullable: true, description: Full-size banner image }
         banner_thumb_url: { type: string, format: uri, nullable: true, description: 400x210 webp thumbnail }
+    Comment:
+      type: object
+      properties:
+        id: { type: integer }
+        body: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        author:
+          type: object
+          properties:
+            id: { type: integer }
+            display_name: { type: string }
+            avatar: { type: string, format: uri }
+    Devlog:
+      type: object
+      properties:
+        id: { type: integer }
+        body: { type: string }
+        duration_seconds: { type: integer, nullable: true, description: Time logged for this devlog }
+        likes_count: { type: integer }
+        comments_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        media:
+          type: array
+          description: Images and videos attached to the devlog
+          items:
+            type: object
+            properties:
+              url: { type: string, format: uri }
+              content_type: { type: string }
+        comments:
+          type: array
+          items: { $ref: "#/components/schemas/Comment" }
     Pagination:
       type: object
       properties:
@@ -65,8 +100,14 @@ components:
       in: query
       required: false
       schema: { type: integer, maximum: 100 }
-      description: Number of results per page (max 100)
+      description: Number of results per page (defaults to 25, max 100)
   responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: "Limit cannot exceed 100" }
     Unauthorized:
       description: Missing or invalid API key
       content:
@@ -74,7 +115,7 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
           example: { error: "Invalid API key" }
     NotFound:
-      description: Project not found
+      description: Resource not found
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -120,6 +161,7 @@ paths:
                     type: array
                     items: { $ref: "#/components/schemas/Project" }
                   pagination: { $ref: "#/components/schemas/Pagination" }
+        "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
   /projects/{id}:
@@ -136,6 +178,74 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Project" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /projects/{id}/devlogs:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      summary: List project devlogs
+      tags: [ Projects ]
+      description: "Fetch a page of devlogs for a specific project, newest first. Ratelimit: 20 reqs/min."
+      operationId: listProjectDevlogs
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: A page of the project's devlogs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devlogs:
+                    type: array
+                    items: { $ref: "#/components/schemas/Devlog" }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /devlogs:
+    get:
+      summary: List devlogs
+      tags: [ Devlogs ]
+      description: "Fetch a page of devlogs across all projects, newest first. Ratelimit: 5 reqs/min."
+      operationId: listDevlogs
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: A page of devlogs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devlogs:
+                    type: array
+                    items: { $ref: "#/components/schemas/Devlog" }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /devlogs/{id}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      summary: Get a devlog
+      tags: [ Devlogs ]
+      description: "Fetch a specific devlog by ID. Ratelimit: 30 reqs/min."
+      operationId: getDevlog
+      responses:
+        "200":
+          description: A single devlog
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Devlog" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
