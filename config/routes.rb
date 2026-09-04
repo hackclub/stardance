@@ -449,6 +449,11 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
       resources :ambassador_referrals, only: [ :index, :show ]
+
+      namespace :certification do
+        resources :ships, only: [ :index ]
+      end
+
       resources :certification_decisions, only: [ :create ]
       resources :mac_analyses, only: [ :create, :update ] do
         collection do
@@ -466,6 +471,7 @@ Rails.application.routes.draw do
       # Api::V1::PublicApiController).
       resources :projects, only: [ :index, :show ]
     end
+
     namespace :slack do
       post "events", to: "events#create"
     end
