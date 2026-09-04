@@ -22,13 +22,14 @@
 
       <div class="fraud-subject__item-actions">
         <%= button_tag "Pass", name: "decision", value: "pass",
-                       class: "fraud-subject__verdict fraud-subject__verdict--primary" %>
+                       class: "fraud-subject__verdict fraud-subject__verdict--accept" %>
         <%= button_tag "Fraud", name: "decision", value: "fraud",
-                       class: "fraud-subject__verdict fraud-subject__verdict--danger" %>
+                       class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
         <span class="fraud-subject__verdict-group">
           <%= f.number_field :deduction_hours, step: 0.25, min: 0, placeholder: "hrs",
                              class: "fraud-subject__field fraud-subject__field--narrow" %>
-          <%= button_tag "Deduct", name: "decision", value: "deduct", class: "fraud-subject__verdict" %>
+          <%= button_tag "Deduct", name: "decision", value: "deduct",
+                         class: "fraud-subject__verdict fraud-subject__verdict--hold" %>
         </span>
         <%= link_to "Open check", admin_certification_integrity_review_path(check), class: "fraud-subject__item-action" %>
       </div>

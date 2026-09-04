@@ -256,24 +256,44 @@
     gap: var(--space-xxs);
   }
 
+  // One shape for every verdict control, whether it renders as a <button> or
+  // as the <summary> that opens the rejection form. font/line-height are set
+  // rather than inherited so the two agree.
   .fraud-subject__verdict {
     background: var(--color-set-3-bg);
     border: none;
     border-radius: 999px;
     color: var(--color-brand-off-white);
     cursor: pointer;
+    display: inline-block;
+    font-family: inherit;
     font-size: var(--font-size-s);
+    line-height: 1.5;
     list-style: none;
     padding: var(--space-xxxs) var(--space-s);
+
+    // Safari draws its own disclosure triangle on a summary regardless of
+    // list-style.
+    &::-webkit-details-marker {
+      display: none;
+    }
   }
 
-  .fraud-subject__verdict--primary {
-    background: var(--color-brand-highlight);
+  // Verdict colours are consistent across all three kinds of work: purple
+  // clears the person, red acts against them, yellow is the outcome in
+  // between (hold, deduct, handled).
+  .fraud-subject__verdict--accept {
+    background: var(--color-brand-lilac);
     color: var(--color-space-bg);
   }
 
-  .fraud-subject__verdict--danger {
+  .fraud-subject__verdict--reject {
     background: var(--color-brand-salmon);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject__verdict--hold {
+    background: var(--color-brand-yellow);
     color: var(--color-space-bg);
   }
 

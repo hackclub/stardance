@@ -15,14 +15,14 @@
       <% if policy(order).approve? && order.approvable? && order.user_id != current_user.id %>
         <%= button_to "Approve", approve_admin_shop_order_path(order),
                       params: { fraud_subject_id: user.id },
-                      class: "fraud-subject__verdict fraud-subject__verdict--primary" %>
+                      class: "fraud-subject__verdict fraud-subject__verdict--accept" %>
       <% end %>
 
       <% if policy(order).reject? %>
         <%# Closed, this sits inline with the other buttons; open, the SCSS gives
             it the full row so the form has somewhere to go. %>
         <details class="fraud-subject__reject">
-          <summary class="fraud-subject__verdict fraud-subject__verdict--danger">Reject</summary>
+          <summary class="fraud-subject__verdict fraud-subject__verdict--reject">Reject</summary>
 
           <%= form_with url: reject_admin_shop_order_path(order), class: "fraud-subject__verdict-form" do |f| %>
             <%= hidden_field_tag :fraud_subject_id, user.id %>
@@ -38,7 +38,7 @@
                          user.projects.with_deleted.order(created_at: :desc).map { |p| [ p.title, p.id ] },
                          { include_blank: "Pick a project" }, class: "fraud-subject__field" %>
 
-            <%= f.submit "Reject order", class: "fraud-subject__verdict fraud-subject__verdict--danger" %>
+            <%= f.submit "Reject order", class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
           <% end %>
         </details>
       <% end %>
@@ -47,11 +47,11 @@
         <% if order.on_hold? %>
           <%= button_to "Release hold", release_from_hold_admin_shop_order_path(order),
                         params: { fraud_subject_id: user.id },
-                        class: "fraud-subject__verdict" %>
+                        class: "fraud-subject__verdict fraud-subject__verdict--hold" %>
         <% elsif order.may_place_on_hold? %>
           <%= button_to "Hold", place_on_hold_admin_shop_order_path(order),
                         params: { fraud_subject_id: user.id },
-                        class: "fraud-subject__verdict" %>
+                        class: "fraud-subject__verdict fraud-subject__verdict--hold" %>
         <% end %>
       <% end %>
 
