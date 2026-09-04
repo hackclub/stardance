@@ -86,6 +86,19 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     assert_match ActionView::RecordIdentifier.dom_id(check), response.body
   end
 
+  test "an order row shows its fulfillment cost, stardust cost and the buyer's country" do
+    order = pending_order
+    @subject.update!(geocoded_country: "CA")
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__facts" do
+      assert_select "dd", text: /\$7\.00/
+      assert_select "dd", text: /CA/
+    end
+  end
+
   test "putting an order on hold keeps it in the queue and re-renders the row" do
     order = pending_order
 

@@ -396,6 +396,20 @@ class ShopItem < ApplicationRecord
     price_for_region(region)
   end
 
+  # What this item costs Hack Club to fulfill into a region, in USD: the base
+  # cost plus that region's offset, falling back to the catch-all offset. A
+  # blank region means no offset rather than the catch-all, since we do not
+  # know yet where it is going.
+  def usd_cost_for_region(region)
+    (usd_cost || 0) + usd_offset_for_region(region)
+  end
+
+  def usd_offset_for_region(region)
+    return 0 if region.blank?
+
+    send("usd_offset_#{region.downcase}") || usd_offset_xx || 0
+  end
+
   def fixed_estimate(price)
     return 0 unless price.present? && price > 0
     price / (Rails.configuration.game_constants.tickets_per_dollar * Rails.configuration.game_constants.dollars_per_mean_hour)

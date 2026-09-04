@@ -11,6 +11,36 @@
       <%= order.aasm_state.humanize %> · <%= order.shop_item.type.demodulize.underscore.humanize %>
     </p>
 
+    <dl class="fraud-subject__facts">
+      <% if policy(current_user).view_usd_cost? %>
+        <div class="fraud-subject__fact">
+          <dt class="fraud-subject__fact-label">Fulfillment</dt>
+          <dd class="fraud-subject__fact-value">
+            $<%= number_with_precision(order.shop_item.usd_cost_for_region(order.region), precision: 2) %>
+          </dd>
+        </div>
+      <% end %>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Stardust</dt>
+        <dd class="fraud-subject__fact-value">
+          <%= number_with_delimiter(order.total_cost_with_modifiers.to_i) %>
+        </dd>
+      </div>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Country</dt>
+        <dd class="fraud-subject__fact-value">
+          <%# Geocoded from the signup IP, so it needs no address decryption and
+              a mismatch against the shipping region is itself worth seeing. %>
+          <%= user.geocoded_country.presence || "unknown" %>
+          <% if order.region.present? %>
+            <span class="fraud-subject__fact-note">ships <%= order.region %></span>
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+
     <div class="fraud-subject__item-actions">
       <% if policy(order).approve? && order.approvable? && order.user_id != current_user.id %>
         <%= button_to "Approve", approve_admin_shop_order_path(order),

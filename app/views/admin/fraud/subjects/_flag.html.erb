@@ -13,12 +13,12 @@
     <p class="fraud-subject__item-body"><%= flag.details %></p>
 
     <div class="fraud-subject__item-actions">
-      <%= button_to "Reviewed", review_admin_certification_report_path(flag),
-                    params: { fraud_subject_id: user.id },
-                    class: "fraud-subject__verdict fraud-subject__verdict--hold" %>
       <%= button_to "Dismiss", dismiss_admin_certification_report_path(flag),
                     params: { fraud_subject_id: user.id },
                     class: "fraud-subject__verdict fraud-subject__verdict--accept" %>
+      <%= button_to "Reviewed", review_admin_certification_report_path(flag),
+                    params: { fraud_subject_id: user.id },
+                    class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
       <%= link_to "Open flag", admin_certification_report_path(flag), class: "fraud-subject__item-action" %>
     </div>
   </div>

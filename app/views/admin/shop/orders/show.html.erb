@@ -337,11 +337,11 @@
           </span>
         </div>
         <% if policy(current_user).view_usd_cost? %>
-          <% regional_usd_offset = @order.region.present? ? (item.send("usd_offset_#{@order.region.downcase}") || item.send("usd_offset_xx") || 0) : 0 %>
+          <% regional_usd_offset = item.usd_offset_for_region(@order.region) %>
           <div class="aorder__row">
             <span class="aorder__row-label">USD cost</span>
             <span class="aorder__row-value">
-              $<%= number_with_precision((item.usd_cost || 0) + regional_usd_offset, precision: 2) %>
+              $<%= number_with_precision(item.usd_cost_for_region(@order.region), precision: 2) %>
               <% if regional_usd_offset != 0 %>
                 <small style="color: var(--color-space-text-muted);">(+<%= @order.region %> offset)</small>
               <% end %>

@@ -256,47 +256,6 @@
     gap: var(--space-xxs);
   }
 
-  // One shape for every verdict control, whether it renders as a <button> or
-  // as the <summary> that opens the rejection form. font/line-height are set
-  // rather than inherited so the two agree.
-  .fraud-subject__verdict {
-    background: var(--color-set-3-bg);
-    border: none;
-    border-radius: 999px;
-    color: var(--color-brand-off-white);
-    cursor: pointer;
-    display: inline-block;
-    font-family: inherit;
-    font-size: var(--font-size-s);
-    line-height: 1.5;
-    list-style: none;
-    padding: var(--space-xxxs) var(--space-s);
-
-    // Safari draws its own disclosure triangle on a summary regardless of
-    // list-style.
-    &::-webkit-details-marker {
-      display: none;
-    }
-  }
-
-  // Verdict colours are consistent across all three kinds of work: purple
-  // clears the person, red acts against them, yellow is the outcome in
-  // between (hold, deduct, handled).
-  .fraud-subject__verdict--accept {
-    background: var(--color-brand-lilac);
-    color: var(--color-space-bg);
-  }
-
-  .fraud-subject__verdict--reject {
-    background: var(--color-brand-salmon);
-    color: var(--color-space-bg);
-  }
-
-  .fraud-subject__verdict--hold {
-    background: var(--color-brand-yellow);
-    color: var(--color-space-bg);
-  }
-
   .fraud-subject__verdict-form {
     margin-top: var(--space-xs);
   }
@@ -318,5 +277,85 @@
   // so the rejection form has room without stretching the buttons beside it.
   .fraud-subject__reject[open] {
     flex-basis: 100%;
+  }
+}
+
+// Scoped to .admin-content on purpose. The admin button baseline in admin.scss
+// is `.admin-content button:not(.action-btn)`, which outranks a single nested
+// class, so without this the verdict controls fall back to the generic admin
+// button and only the <summary> keeps its own styling.
+//
+// The box below matches that baseline, so a <button>, an input[type="submit"]
+// and the <summary> that opens the rejection form all come out the same shape
+// as every other button in the admin. Only the colour differs.
+.admin-content .fraud-subject {
+  .fraud-subject__verdict {
+    align-items: center;
+    background: var(--color-set-3-bg);
+    border: none;
+    border-radius: 8px;
+    color: var(--color-brand-off-white);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    gap: 0.5em;
+    justify-content: center;
+    line-height: 1.5;
+    list-style: none;
+    min-height: 2.25rem;
+    padding: 0.5rem 1rem;
+
+    // Safari draws its own disclosure triangle regardless of list-style.
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  // One colour scheme across all three kinds of work: purple clears the
+  // person, red acts against them, yellow is the outcome in between.
+  .fraud-subject__verdict--accept {
+    background: var(--color-brand-lilac);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject__verdict--reject {
+    background: var(--color-brand-salmon);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject__verdict--hold {
+    background: var(--color-brand-yellow);
+    color: var(--color-space-bg);
+  }
+}
+
+.fraud-subject {
+  .fraud-subject__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    margin: var(--space-xs) 0 0;
+  }
+
+  .fraud-subject__fact {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fraud-subject__fact-label {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+  }
+
+  .fraud-subject__fact-value {
+    margin: 0;
+  }
+
+  .fraud-subject__fact-note {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
   }
 }
