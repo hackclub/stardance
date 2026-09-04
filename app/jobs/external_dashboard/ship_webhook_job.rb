@@ -37,22 +37,11 @@ module ExternalDashboard
       end
 
       def chain_pending_return(cert, backfill_run_id)
-        return unless cert.approved? && cert.external_certification_id.present?
-        return if cert.post_ship_event_id.nil?
-
-        project = cert.project
-        return unless project
-
-        active_return = project.ship_reviews.pending.where.not(returned_by_id: nil)
-                               .find_by(post_ship_event_id: cert.post_ship_event_id)
+        active_return = cert.chain_pending_return
         return unless active_return
 
-        Certification::Ship.transaction do
-          if cert.transfer_external_certification_id_to!(active_return)
-            BackfillRun.record_enqueued(backfill_run_id)
-            ExternalDashboard::CertReturnJob.perform_later(active_return.id, backfill_run_id: backfill_run_id)
-          end
-        end
+        BackfillRun.record_enqueued(backfill_run_id)
+        ExternalDashboard::CertReturnJob.perform_later(active_return.id, backfill_run_id: backfill_run_id)
       end
   end
 end

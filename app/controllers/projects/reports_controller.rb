@@ -3,7 +3,7 @@ class Projects::ReportsController < ApplicationController
     authorize :report
     @project = ::Project.find(params[:project_id])
 
-    return flag_should_not_have_been_approved if report_params[:reason] == Project::Report::SHOULD_NOT_HAVE_BEEN_APPROVED_REASON
+    return flag_via_slack if Project::Report::SLACK_ONLY_REASONS.include?(report_params[:reason])
 
     if current_user.reports.exists?(project: @project)
       redirect_back_or_to project_path(@project), alert: "You have already reported this project."
@@ -21,8 +21,8 @@ class Projects::ReportsController < ApplicationController
 
   private
 
-    def flag_should_not_have_been_approved
-      result = Project::Report.flag_should_not_have_been_approved!(project: @project, reporter: current_user, details: report_params[:details])
+    def flag_via_slack
+      result = Project::Report.flag_via_slack!(project: @project, reporter: current_user, details: report_params[:details], reason: report_params[:reason])
 
       case result
       when :ok

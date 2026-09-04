@@ -1,5 +1,6 @@
 <%= turbo_frame_tag "ysws_dashboard" do %>
   <%= render "banner", leaderboard: @leaderboard, chart_data: @chart_data,
              on_pace_reviewer_ids: @on_pace_reviewer_ids, daily_averages: @daily_averages,
-             progress: @progress %>
+             show_pace_column: @show_pace_column,
+             rank_by: @rank_by, progress: @progress %>
 <% end %>

@@ -109,6 +109,12 @@ application.register(
   Certification__Ysws__MediaViewerController,
 );
 
+import Certification__Ysws__QueueSearchController from "./certification/ysws/queue_search_controller";
+application.register(
+  "certification--ysws--queue-search",
+  Certification__Ysws__QueueSearchController,
+);
+
 import Certification__Ysws__ReturnToShipCertController from "./certification/ysws/return_to_ship_cert_controller";
 application.register(
   "certification--ysws--return-to-ship-cert",
@@ -119,6 +125,12 @@ import Certification__Ysws__ReviewSidebarController from "./certification/ysws/r
 application.register(
   "certification--ysws--review-sidebar",
   Certification__Ysws__ReviewSidebarController,
+);
+
+import Certification__Ysws__ReviewTotalsController from "./certification/ysws/review_totals_controller";
+application.register(
+  "certification--ysws--review-totals",
+  Certification__Ysws__ReviewTotalsController,
 );
 
 import Certification__Ysws__ReviewerChartController from "./certification/ysws/reviewer_chart_controller";

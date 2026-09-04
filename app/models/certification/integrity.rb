@@ -137,6 +137,10 @@ module Certification
       !skip_decision_cascade && saved_change_to_status? && status.in?(CASCADING_STATUSES)
     }
 
+    # Deliberately not guarded by skip_decision_cascade: a sibling the cascade
+    # rewrites has its own review to bring back in line.
+    after_commit :resync_completed_review_to_airtable, if: :saved_change_to_status?
+
     def claim_active?
       claimed_by_id.present? && claimed_at.present? && claimed_at > CLAIM_TTL.ago
     end
@@ -174,6 +178,20 @@ module Certification
 
       cascade_to_pending_siblings(decided_project)
       Certification::YswsReviewRejector.reject_pending_for_project!(decided_project) if banned?
+    end
+
+    # The submission payload is written once, when a reviewer completes the YSWS
+    # review. Integrity runs on its own clock and usually lands afterwards, so
+    # without this the Airtable row keeps the status and the un-deducted hours it
+    # was given at completion time.
+    def resync_completed_review_to_airtable
+      review = Certification::Ysws.find_by(post_ship_event_id: ship_event_id)
+      return if review.nil? || review.reviewed_at.nil?
+      # A submission the unified base has already picked up cannot be rewritten:
+      # YswsAirtableSyncJob refuses it, and that record is corrected by hand.
+      return if review.in_unified_db.present?
+
+      Certification::YswsAirtableSyncJob.perform_later(review.id)
     end
 
     def cascade_to_pending_siblings(decided_project)

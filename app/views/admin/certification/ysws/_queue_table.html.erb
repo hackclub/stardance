@@ -1,0 +1,142 @@
+<%# The live-search target: the search controller drives this frame's src, so a
+    keystroke swaps only the results table and leaves the reviewer-stats frame
+    and the filter row alone. %>
+<%= turbo_frame_tag "ysws_queue_results",
+      data: { certification__ysws__queue_search_target: "frame" } do %>
+  <% if @reviews.any? %>
+    <div class="ysws-queue__summary" role="status" aria-live="polite">
+      <div class="ysws-queue__summary-total">
+        <span class="ysws-queue__summary-label">
+          <%= @search.present? ? "Matching reviews" : "Pending reviews" %>
+        </span>
+        <span class="ysws-queue__summary-count"><%= @reviews.size %></span>
+      </div>
+
+      <div class="ysws-queue__filter ysws-queue__filter--toggle">
+        <%= hidden_field_tag :with_integrity, "0", id: nil, form: "ysws-queue-filters" %>
+        <%= check_box_tag :with_integrity, "1", @with_integrity, id: "filter-with-integrity",
+              class: "ysws-queue__checkbox", form: "ysws-queue-filters",
+              onchange: "this.form.requestSubmit()" %>
+        <label for="filter-with-integrity">Only with certification integrity</label>
+      </div>
+    </div>
+
+    <%
+      type_total   = @type_counts.values.sum
+      unclassified = @type_counts[nil].to_i
+      type_options = @type_counts.keys.compact.sort.map { |t| [ "#{t} (#{@type_counts[t]})", t ] }
+      type_options << [ "Unclassified (#{unclassified})", "unclassified" ] if unclassified.positive?
+    %>
+
+    <div class="ysws-queue__table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Review ID</th>
+            <%# Search reaches past the queue, so its results need to say which of
+                them aren't actually pending and which someone else is holding. %>
+            <% if @search.present? %>
+              <th>Status</th>
+            <% end %>
+            <th>Certification Integrity</th>
+            <th>
+              <%# Doubles as the column title: the blank option reads "All types (N)". %>
+              <%= select_tag :project_type,
+                    options_for_select(type_options, @project_type),
+                    include_blank: "All types (#{type_total})", id: "filter-type",
+                    class: "ysws-queue__select ysws-queue__select--header",
+                    form: "ysws-queue-filters", aria: { label: "Filter by project type" },
+                    onchange: "this.form.requestSubmit()" %>
+            </th>
+            <th>Project Name</th>
+            <th>User</th>
+            <th><%= ysws_sort_link("length", "Length (hours)") %></th>
+            <th><%= ysws_sort_link("todo", "Todo reviews") %></th>
+            <th>Age</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @reviews.each do |review| %>
+            <tr class="<%= "ysws-queue__row--claimed" if review.claimed_by?(current_user) %>">
+              <td data-label="ID">#<%= review.id %></td>
+              <% if @search.present? %>
+                <td data-label="Status">
+                  <%= review_status_badge(review) %>
+                  <% if review.claimed_by && !review.claimed_by?(current_user) %>
+                    <span class="ysws-queue__claimed-by">
+                      claimed by <%= review.claimed_by.display_name || "another reviewer" %>
+                    </span>
+                  <% end %>
+                </td>
+              <% end %>
+              <td data-label="Integrity">
+                <% if review.integrity_check %>
+                  <%= link_to review.integrity_check.status.humanize,
+                              admin_certification_integrity_review_path(review.integrity_check) %>
+                <% else %>
+                  <span class="ysws-queue__placeholder">—</span>
+                <% end %>
+              </td>
+              <td data-label="Type">
+                <%= review.project&.project_type.presence || tag.span("—", class: "ysws-queue__placeholder") %>
+              </td>
+              <td data-label="Project">
+                <% if review.project %>
+                  <%= link_to review.project.title, admin_project_path(review.project) %>
+                <% else %>
+                  <span class="ysws-queue__placeholder">—</span>
+                <% end %>
+              </td>
+              <td data-label="User">
+                <%= link_to review.user.display_name || "Unknown", admin_user_path(review.user) %>
+              </td>
+              <td data-label="Hours">
+                <% hours = review.original_minutes ? (review.original_minutes / 60.0).round(1) : 0 %>
+                <%= hours %> hrs
+              </td>
+              <td data-label="pending devlogs">
+                <span class="ysws-queue__todo-count<%= " ysws-queue__todo-count--zero" if review.todo_devlog_count.zero? %>">
+                  <%= review.todo_devlog_count %>
+                </span>
+              </td>
+              <td data-label="Age">
+                <% age_in_days = ((Time.current - review.created_at) / 1.day).floor %>
+                <% if age_in_days == 0 %>
+                  <span class="ysws-queue__age ysws-queue__age--today">Today</span>
+                <% elsif age_in_days < 7 %>
+                  <span class="ysws-queue__age ysws-queue__age--recent"><%= pluralize(age_in_days, "day") %> ago</span>
+                <% else %>
+                  <span class="ysws-queue__age ysws-queue__age--old"><%= pluralize(age_in_days, "day") %> ago</span>
+                <% end %>
+              </td>
+              <td data-label="Actions">
+                <%= link_to "View", admin_certification_ysws_review_path(review), class: "ysws-queue__view-btn" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% elsif @search.present? %>
+    <div class="ysws-queue__empty" role="status">
+      <p>Nothing matches "<%= @search %>".</p>
+      <p class="ysws-queue__empty-hint">
+        Searches cover project name, review or project ID, the submitter's name,
+        email or Slack ID, and the repo or demo URL.
+      </p>
+    </div>
+  <% else %>
+    <div class="ysws-queue__empty" role="status">
+      <p>No pending reviews. Great job!</p>
+
+      <%# The type filter lives in the table header, which isn't rendered when the
+          queue is empty — so an emptied-out filter needs its own way back. %>
+      <% if @project_type.present? %>
+        <%= link_to "Show all types",
+                    admin_certification_ysws_reviews_path(project_type: "", sort: @sort, dir: @dir,
+                                                          with_integrity: @with_integrity ? nil : "0") %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

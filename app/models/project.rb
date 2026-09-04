@@ -32,8 +32,11 @@
 # Indexes
 #
 #  index_projects_on_deleted_at            (deleted_at)
+#  index_projects_on_demo_url_trgm         (demo_url) USING gin
 #  index_projects_on_marked_fire_by_id     (marked_fire_by_id)
 #  index_projects_on_nominated_fire_by_id  (nominated_fire_by_id)
+#  index_projects_on_repo_url_trgm         (repo_url) USING gin
+#  index_projects_on_title_trgm            (title) USING gin
 #
 # Foreign Keys
 #

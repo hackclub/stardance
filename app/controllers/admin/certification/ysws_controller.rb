@@ -43,40 +43,44 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @dir            = filters["dir"] == "asc" ? "asc" : "desc"
     @with_integrity = filters["with_integrity"] != "0"
 
-    scope = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
-    scope = scope.with_integrity_check if @with_integrity
+    @search = params[:search].to_s.strip
 
-    # Type filter options are whatever project types are actually present in the
-    # pending queue (plus an "unclassified" bucket) — never hardcoded.
-    @type_counts = scope.joins(:project).group("projects.project_type").count
+    queue = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
+    queue = queue.with_integrity_check if @with_integrity
 
-    scope = scope.by_project_type(@project_type) if @project_type
+    @type_counts = queue.joins(:project).group("projects.project_type").count
 
-    scope = scope.with_todo_devlog_count.includes(:project, :user, :integrity_check)
+    scope =
+      if @search.present?
+        ::Certification::Ysws.search(@search)
+      else
+        @project_type ? queue.by_project_type(@project_type) : queue
+      end
+
+    scope = scope.with_todo_devlog_count.includes(:project, :user, :integrity_check, :claimed_by)
+
+    default_dir = @search.present? ? :desc : :asc
 
     scope =
       case @sort
       when "length" then scope.order(Arel.sql("certification_ysws_reviews.original_minutes #{@dir}"))
       when "todo"   then scope.order(Arel.sql("todo_devlog_count #{@dir}"))
-      else               scope.order(created_at: :asc)
+      else               scope.order(created_at: default_dir)
       end
 
-    # Loaded eagerly so the view can count the collection without re-running the
-    # custom-select query as a COUNT(*), which the aliased column would break.
     @reviews = scope.to_a
 
-    # Per-reviewer pace against the daily devlog-review goal, averaged across the
-    # current review week (Wednesday 4pm to the following Wednesday 4pm). Left nil
-    # when the flag is off so the queue skips both the query and the widget — and
-    # when the progress panel is on, since that panel leads with the same figure.
-    @devlog_pace = ::Certification::Ysws.reviewer_devlog_pace(current_user.id) if
-      Flipper.enabled?(:devlog_review_pace, current_user) &&
-      !Flipper.enabled?(:reviewer_progress_panel, current_user)
+    if !turbo_frame_request? &&
+       Flipper.enabled?(:devlog_review_pace, current_user) &&
+       !Flipper.enabled?(:reviewer_progress_panel, current_user)
+      @devlog_pace  = ::Certification::Ysws.reviewer_devlog_pace(current_user.id)
+      @project_pace = ::Certification::Ysws.reviewer_project_pace(current_user.id)
+    end
   end
 
   def show
     @review = ::Certification::Ysws
-      .includes(:project, :user, :reviewer, :mac_analysis, devlog_reviews: { post_devlog: [ :post, :attachments_attachments ] })
+      .includes(:project, :user, :reviewer, :ship_cert, :mac_analysis, devlog_reviews: { post_devlog: [ :post, :attachments_attachments ] })
       .find(params[:id])
     authorize @review
 
@@ -88,6 +92,9 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     # Claim this review for the current admin so it drops off everyone else's
     # queue. Already-decided reviews (reached via "prior reviews" history
     # links) are read-only and aren't claimed.
+    @ship_cert = @review.effective_ship_cert
+    @ship_cert_from_earlier_ship = @review.ship_cert_from_earlier_ship?
+
     if @review.pending?
       claimed = ::Certification::Ysws.atomic_claim!(@review.id, current_user)
       if claimed.nil?
@@ -116,11 +123,17 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
     devlog_minutes = @all_devlog_reviews.map(&:original_minutes).compact
 
+    deducted_minutes = @all_devlog_reviews.sum(&:deducted_minutes)
+
     @stats = {
       total_minutes: devlog_minutes.sum,
       avg_minutes: devlog_minutes.any? ? (devlog_minutes.sum.to_f / devlog_minutes.count) : 0,
       max_minutes: devlog_minutes.max || 0,
-      one_hour_plus_count: devlog_minutes.count { |m| m >= 60 }
+      deducted_minutes: deducted_minutes,
+      # Prior reviews render read-only and can't change on this page, so the
+      # live recompute treats their share as a constant and only re-sums the
+      # editable cards.
+      frozen_deducted_minutes: deducted_minutes - @review.devlog_reviews.sum(&:deducted_minutes)
     }
 
     @repo_info = helpers.parse_repo_info(@review.project.repo_url)

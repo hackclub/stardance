@@ -7,8 +7,9 @@ module ExternalDashboard
     def self.call(scope: nil, rate_per_second: DEFAULT_RATE_PER_SECOND)
       return Result.new(status: :not_configured, enqueued: 0, error: Client::NOT_CONFIGURED_ERROR) unless Client.configured?
 
-      active_returns = Certification::Ship.pending.where.not(returned_by_id: nil)
-      scope ||= Certification::Ship.where(external_certification_id: nil).where.not(id: active_returns.select(:id))
+      hw_project_ids = hardware_project_ids
+      active_returns = Certification::Ship.pending.where.not(returned_by_id: nil).where.not(project_id: hw_project_ids)
+      scope ||= Certification::Ship.where(external_certification_id: nil).where.not(project_id: hw_project_ids).where.not(id: active_returns.select(:id))
       link_ship_events(scope)
       cert_ids = scope.pluck(:id)
       return_ids = active_returns.where.not(external_certification_id: nil).pluck(:id)
@@ -41,6 +42,11 @@ module ExternalDashboard
       reset_external_ids!
       call(rate_per_second: rate_per_second)
     end
+
+    def self.hardware_project_ids
+      Project.unscoped.where.not(hardware_stage: nil).pluck(:id)
+    end
+    private_class_method :hardware_project_ids
 
     def self.link_ship_events(scope)
       linked = 0

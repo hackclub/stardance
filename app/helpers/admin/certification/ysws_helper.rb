@@ -7,6 +7,18 @@ module Admin::Certification::YswsHelper
     pending: "pending"
   }.freeze
 
+  def ysws_sort_link(column, label)
+    active   = @sort == column
+    next_dir = (active && @dir == "desc") ? "asc" : "desc"
+    arrow    = active ? (@dir == "asc" ? "▲" : "▼") : "▾"
+    link_to admin_certification_ysws_reviews_path(project_type: @project_type, sort: column,
+                                                  dir: next_dir, search: @search.presence,
+                                                  with_integrity: @with_integrity ? nil : "0"),
+            class: [ "ysws-queue__sort", ("ysws-queue__sort--active" if active) ] do
+      safe_join([ label, tag.span(arrow, class: "ysws-queue__sort-arrow", aria: { hidden: true }) ], " ")
+    end
+  end
+
   def review_status_badge(review)
     status = review.review_status
     tag.span(

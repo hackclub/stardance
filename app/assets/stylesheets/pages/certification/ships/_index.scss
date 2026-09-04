@@ -601,56 +601,6 @@
     }
   }
 
-  // Pagy series_nav renders <nav class="pagy series-nav"> with <a> links; the
-  // current page and gaps are marked with aria attributes, not classes.
-  &__pagination {
-    margin-top: var(--space-l);
-
-    .pagy {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: var(--space-xxs);
-    }
-
-    a {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 36px;
-      height: 36px;
-      padding: 0 var(--space-xs);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      color: var(--color-space-text);
-      font-size: 0.9rem;
-      font-variant-numeric: tabular-nums;
-      text-decoration: none;
-      transition:
-        border-color 150ms ease,
-        color 150ms ease;
-    }
-
-    a[href]:hover,
-    a[href]:focus-visible {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    a[aria-current="page"] {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--color-set-1-bg, #1a1633);
-      font-weight: 700;
-    }
-
-    a[aria-disabled="true"]:not([aria-current="page"]) {
-      color: var(--muted);
-      border-color: transparent;
-      cursor: default;
-    }
-  }
-
   &__project-id {
     color: var(--muted);
     font-size: 0.8rem;

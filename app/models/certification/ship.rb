@@ -89,6 +89,7 @@ module Certification
     EXTERNAL_CERTIFICATION_ID_PATTERN = /\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\z/
     PROOF_VIDEO_URL_MAX_LENGTH = 2_048
     PROOF_VIDEO_URL_PATTERN = %r{\Ahttps?://\S+\z}
+    FEEDBACK_MAX_LENGTH = 10_000
 
     def assign_external_certification_id!(cert_id)
       cert_id = cert_id.to_s
@@ -119,6 +120,19 @@ module Certification
       false
     end
 
+    def chain_pending_return
+      return nil unless approved? && external_certification_id.present? && post_ship_event_id.present?
+
+      proj = project
+      return nil unless proj
+
+      active_return = proj.ship_reviews.pending.where.not(returned_by_id: nil)
+                          .find_by(post_ship_event_id: post_ship_event_id)
+      return nil unless active_return
+
+      transfer_external_certification_id_to!(active_return) ? active_return : nil
+    end
+
     ACCEPTED_VIDEO_TYPES = %w[video/mp4 video/webm video/quicktime].freeze
 
     # Canned request-changes responses offered on the review form. The opener
@@ -146,7 +160,7 @@ module Certification
       }
     ].freeze
 
-    validates :feedback, length: { maximum: 10_000 }, allow_blank: true
+    validates :feedback, length: { maximum: FEEDBACK_MAX_LENGTH }, allow_blank: true
     validates :proof_video_url, length: { maximum: PROOF_VIDEO_URL_MAX_LENGTH },
                                 format: { with: PROOF_VIDEO_URL_PATTERN, message: "must be an http(s) URL" },
                                 allow_blank: true
@@ -185,6 +199,29 @@ module Certification
     scope :in_global_hardware_queue, -> { joins(:project).merge(::Project.hardware.without_hardware_mission) }
     # The other half: certifications a hardware mission reviews on its own dash.
     scope :in_hardware_mission_queue, -> { joins(:project).merge(::Project.hardware.with_hardware_mission) }
+
+    def self.find_by_external(uuid: nil, external_id: nil)
+      cert = resolve_external(uuid: uuid, external_id: external_id)
+      return nil if cert.nil? || cert.project&.hardware?
+
+      cert
+    end
+
+    def self.resolve_external(uuid:, external_id:)
+      if uuid.present? && uuid.to_s.match?(EXTERNAL_CERTIFICATION_ID_PATTERN)
+        by_uuid = find_by(external_certification_id: uuid)
+        return by_uuid if by_uuid
+      end
+
+      return nil unless external_id.present? && external_id.to_s.match?(ExternalDashboard::Client::EXTERNAL_ID_PATTERN)
+
+      # external_certification_id: nil - a cert that already has a UUID on file
+      # must match on that UUID; the bare-id fallback only resolves certs we
+      # haven't linked yet, so a mismatched/forged uuid can't hijack one that's
+      # already correctly identified.
+      find_by(id: external_id.to_s.to_i, external_certification_id: nil)
+    end
+    private_class_method :resolve_external
 
     def self.available_for(user)
       # Chained AFTER the merge on purpose: `merge` would replace this project_id

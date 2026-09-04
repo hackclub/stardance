@@ -54,6 +54,7 @@ class Vote::Event < ApplicationRecord
     vote_flag_accepted
     vote_flag_rejected
     vote_auto_discarded
+    vote_discarded
   ].freeze
 
   CLIENT_EVENT_TYPES = %w[

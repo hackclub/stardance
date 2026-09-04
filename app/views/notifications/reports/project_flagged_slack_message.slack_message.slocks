@@ -8,9 +8,9 @@ owner = project.memberships.owner.first&.user
 owner_slack_id = owner&.slack_id
 owner_mention = owner_slack_id.present? ? "<@#{owner_slack_id}>" : (owner&.display_name || "Unknown")
 
-header "Ship Approval Flagged"
+header "Project Flagged"
 
-section "*<https://stardance.hackclub.com/projects/#{project.id}|#{project.title}>* was flagged: \"Project should not have been approved\"", markdown: true
+section "*<https://stardance.hackclub.com/projects/#{project.id}|#{project.title}>* was flagged: \"#{reason_label}\"", markdown: true
 
 section "Most recent approving reviewer: #{reviewer_mention}", markdown: true
 

@@ -2,8 +2,6 @@ module ExternalDashboard
   class DecisionProcessor
     DECISION_EVENT = "certification.decision".freeze
     TEST_EVENT = "test".freeze
-    COMMENT_MAX_LENGTH = 10_000
-    REPLAY_CLOCK_SKEW = 5.minutes
 
     Result = Struct.new(:status, :body, keyword_init: true)
 
@@ -21,12 +19,12 @@ module ExternalDashboard
       return error(:bad_request, "missing certification object") unless certification.is_a?(Hash)
       return error(:unprocessable_entity, "unsupported status: #{decision_status.inspect}") unless Certification::Ship::EXTERNAL_DECISION_MAP.key?(decision_status)
 
-      cert = find_cert
+      cert = Certification::Ship.find_by_external(uuid: certification[:id], external_id: certification[:externalId])
       return error(:not_found, "cert not found (externalId=#{certification[:externalId].inspect} id=#{certification[:id].inspect})") if cert.nil?
       return ignored("project is deleted") if cert.project.nil? || cert.project.deleted_at.present?
       return ignored("project owner is banned") if cert.owner&.banned?
       return error(:bad_request, "missing or invalid timestamp") if decision_timestamp.nil?
-      return error(:conflict, "decision predates this review cycle (timestamp=#{payload[:timestamp].inspect})") if cert.pending? && stale_decision?(cert)
+      return error(:conflict, "implausible decision timestamp (timestamp=#{payload[:timestamp].inspect})") if cert.pending? && VerdictApplier.stale?(cert: cert, decided_at: decision_timestamp)
 
       if proof_video_url
         return error(:bad_request, "proofVideoUrl must be an http(s) URL") unless proof_video_url.match?(Certification::Ship::PROOF_VIDEO_URL_PATTERN)
@@ -42,19 +40,28 @@ module ExternalDashboard
 
     def apply(cert)
       target_status = Certification::Ship::EXTERNAL_DECISION_MAP.fetch(decision_status)
+      outcome = VerdictApplier.call(
+        cert: cert,
+        target_status: target_status,
+        reviewer: reviewer,
+        reviewer_slack_id: certification[:reviewerSlackId].to_s.presence,
+        comment: reviewer_comment,
+        proof_video_url: proof_video_url,
+        external_uuid: certification[:id],
+        decided_at: decision_timestamp
+      )
 
-      PaperTrail.request(whodunnit: whodunnit) do
-        cert.with_lock do
-          if cert.pending?
-            apply_decision!(cert, target_status)
-            ok(decision_payload(cert, idempotent: false))
-          elsif cert.status.to_sym == target_status
-            cert.assign_external_certification_id!(certification[:id])
-            ok(decision_payload(cert, idempotent: true))
-          else
-            error(:conflict, "cert #{cert.id} is already #{cert.status} locally — refusing to apply remote #{decision_status}")
-          end
-        end
+      case outcome.status
+      when :applied
+        ok(decision_payload(outcome.cert, idempotent: false))
+      when :idempotent
+        ok(decision_payload(outcome.cert, idempotent: true))
+      when :stale
+        error(:conflict, "implausible decision timestamp (timestamp=#{payload[:timestamp].inspect})")
+      when :divergent
+        error(:conflict, "cert #{outcome.cert.id} is already #{outcome.cert.status} locally — refusing to apply remote #{decision_status}")
+      else
+        error(:internal_server_error, "unexpected verdict outcome: #{outcome.status.inspect}")
       end
     end
 
@@ -68,22 +75,6 @@ module ExternalDashboard
 
     def decision_status
       certification[:status].to_s
-    end
-
-    def find_cert
-      uuid = certification[:id].to_s
-      if uuid.match?(Certification::Ship::EXTERNAL_CERTIFICATION_ID_PATTERN)
-        by_uuid = Certification::Ship.find_by(external_certification_id: uuid)
-        return by_uuid if by_uuid
-      end
-
-      cert_id = parse_cert_id
-      cert_id && Certification::Ship.find_by(id: cert_id)
-    end
-
-    def parse_cert_id
-      raw = certification[:externalId].to_s
-      raw.match?(Client::EXTERNAL_ID_PATTERN) ? raw.to_i : nil
     end
 
     def reviewer
@@ -102,25 +93,12 @@ module ExternalDashboard
       end
     end
 
-    def stale_decision?(cert)
-      decision_timestamp.present? && decision_timestamp < (cert.created_at - REPLAY_CLOCK_SKEW)
-    end
-
-    def whodunnit
-      reviewer&.id&.to_s || "external_dashboard"
-    end
-
     def reviewer_comment
-      certification[:reviewerComment].to_s.presence&.truncate(COMMENT_MAX_LENGTH, omission: "")
+      certification[:reviewerComment].to_s.presence&.truncate(Certification::Ship::FEEDBACK_MAX_LENGTH, omission: "")
     end
 
     def proof_video_url
       certification[:proofVideoUrl].to_s.presence
-    end
-
-    def apply_decision!(cert, target_status)
-      cert.update!(status: target_status, feedback: reviewer_comment, reviewer_id: reviewer&.id, proof_video_url: proof_video_url)
-      cert.assign_external_certification_id!(certification[:id])
     end
 
     def decision_payload(cert, idempotent:)

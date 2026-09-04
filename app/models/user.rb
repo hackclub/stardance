@@ -62,6 +62,7 @@
 #  index_users_on_api_key                    (api_key) UNIQUE
 #  index_users_on_approx_balance             (approx_balance)
 #  index_users_on_approx_total_earned        (approx_total_earned)
+#  index_users_on_display_name_trgm          (display_name) USING gin
 #  index_users_on_email                      (email)
 #  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))

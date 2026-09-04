@@ -199,3 +199,15 @@ production:
     schedule: every 5 minutes
     concurrency: 1
     description: "Drain Redis buffer of extension usage events into the database"
+
+  external_dashboard_decision_poll:
+    class: ExternalDashboard::DecisionPollJob
+    schedule: every 15 minutes
+    concurrency: 1
+    description: "Catch up on certification decisions the inbound webhook may have missed"
+
+  external_dashboard_outbound_audit:
+    class: ExternalDashboard::OutboundAuditJob
+    schedule: every day at 4am UTC
+    concurrency: 1
+    description: "Recover missing certification UUIDs from the dashboard and retry outbound pushes/returns that never landed"

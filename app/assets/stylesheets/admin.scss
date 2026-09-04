@@ -10,6 +10,7 @@
 @use "pages/admin/ledger_entries";
 @use "pages/admin/vote_flags";
 @use "pages/admin/certificates";
+@use "pages/admin/user_votes";
 @use "pages/shop/admin_shop_shared";
 @use "pages/shop/admin_shop_dashboard";
 @use "pages/shop/sticky_funnel";
@@ -74,8 +75,8 @@ body.admin-page {
   }
 
   a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn):not(
-      .ysws-dashboard__reviewer-link--on-pace
-    ):not(.ship-queue__row-link) {
+      .ysws-dashboard__reviewer-link--locked-in
+    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 
@@ -568,11 +569,6 @@ button.btn-danger {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-}
-
-.pagy {
-  display: flex;
-  gap: 0.25rem;
 }
 
 /* Dialog / Modal */

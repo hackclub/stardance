@@ -1,0 +1,51 @@
+.admin-vote-status {
+  &__state {
+    display: block;
+    font-weight: 600;
+  }
+
+  &__state--discarded {
+    color: var(--color-brand-salmon);
+  }
+
+  &__note {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+    max-width: 16rem;
+  }
+
+  &__audit {
+    font-size: var(--font-size-xs);
+  }
+
+  &__discard {
+    margin-top: var(--space-xxs);
+  }
+
+  &__discard-toggle {
+    font-size: var(--font-size-xs);
+    color: var(--color-brand-salmon);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  &__discard-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin-top: var(--space-xs);
+    width: 16rem;
+  }
+
+  &__discard-label {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-space-text-muted);
+  }
+
+  &__discard-input {
+    font-size: var(--font-size-s);
+  }
+}
