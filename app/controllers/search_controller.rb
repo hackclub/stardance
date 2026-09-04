@@ -155,6 +155,6 @@ class SearchController < ApplicationController
 
   def avatar_for(slack_id)
     return nil if slack_id.blank?
-    "https://cachet.dunkirk.sh/users/#{slack_id}/r"
+    "https://cachet.hackclub.com/users/#{slack_id}/r"
   end
 end
