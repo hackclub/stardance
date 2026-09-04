@@ -1132,7 +1132,7 @@ body:has(.certification-ysws) {
   // Main Grid Layout
   .review-detail-grid {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: minmax(0, 1fr) 400px;
     gap: var(--space-l);
     align-items: start;
   }
@@ -1141,6 +1141,7 @@ body:has(.certification-ysws) {
     display: flex;
     flex-direction: column;
     gap: var(--space-l);
+    min-width: 0;
   }
 
   .review-detail-right {
@@ -1302,6 +1303,13 @@ body:has(.certification-ysws) {
 
     &__player {
       background: #000;
+      display: block;
+      width: 100%;
+      max-width: 72rem;
+      max-height: min(65vh, 42rem);
+      margin-inline: auto;
+      border-radius: var(--profile-radius);
+      object-fit: contain;
     }
 
     .video-placeholder {
