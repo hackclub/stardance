@@ -19,21 +19,9 @@ class Admin::Fraud::SubjectsController < Admin::ApplicationController
     @user = User.find(params[:id])
     authorize :fraud_subject, policy_class: Admin::Fraud::SubjectPolicy
 
-    @flags = ::Project::Report.pending
-      .where(project: @user.projects, reason: ::Project::Report::FRAUD_REVIEW_REASONS)
-      .includes(:reporter, :project)
-      .order(created_at: :asc)
-
-    @orders = @user.shop_orders
-      .where(aasm_state: ShopOrder::FRAUD_REVIEW_STATES)
-      .includes(:shop_item)
-      .order(created_at: :asc)
-
-    @integrity_checks = ::Certification::Integrity.pending
-      .joins(ship_event: :post)
-      .where(posts: { user_id: @user.id })
-      .includes(ship_event: { post: :project })
-      .order(created_at: :asc)
+    @flags = Admin::Fraud::SubjectQueue.flags_for(@user)
+    @orders = Admin::Fraud::SubjectQueue.orders_for(@user)
+    @integrity_checks = Admin::Fraud::SubjectQueue.integrity_checks_for(@user)
 
     # Only Hackatime projects tied to a Stardance project can be deep-linked
     # into Telescreen's per-project view; the rest have no project to name.

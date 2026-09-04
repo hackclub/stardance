@@ -1,14 +1,46 @@
-<li class="fraud-subject__item fraud-subject__item--order">
-  <div class="fraud-subject__item-head">
-    <span class="fraud-subject__item-title">
-      <%= order.quantity %> × <%= order.shop_item.name %>
-    </span>
-    <span class="fraud-subject__item-age"><%= time_ago_in_words(order.created_at) %> ago</span>
+<%= turbo_frame_tag order do %>
+  <div class="fraud-subject__item fraud-subject__item--order">
+    <div class="fraud-subject__item-head">
+      <span class="fraud-subject__item-title">
+        <%= order.quantity %> × <%= order.shop_item.name %>
+      </span>
+      <span class="fraud-subject__item-age"><%= time_ago_in_words(order.created_at) %> ago</span>
+    </div>
+
+    <p class="fraud-subject__item-meta">
+      <%= order.aasm_state.humanize %> · <%= order.shop_item.type.demodulize.underscore.humanize %>
+    </p>
+
+    <div class="fraud-subject__item-actions">
+      <% if policy(order).approve? && order.approvable? && order.user_id != current_user.id %>
+        <%= button_to "Approve", approve_admin_shop_order_path(order),
+                      params: { fraud_subject_id: user.id },
+                      class: "fraud-subject__verdict fraud-subject__verdict--primary" %>
+      <% end %>
+      <%= link_to "Open order", admin_shop_order_path(order), class: "fraud-subject__item-action" %>
+    </div>
+
+    <% if policy(order).reject? %>
+      <details class="fraud-subject__reject">
+        <summary class="fraud-subject__verdict fraud-subject__verdict--danger">Reject</summary>
+
+        <%= form_with url: reject_admin_shop_order_path(order), class: "fraud-subject__verdict-form" do |f| %>
+          <%= hidden_field_tag :fraud_subject_id, user.id %>
+
+          <%= f.label :reason, "Reason shown to the buyer", class: "fraud-subject__field-label" %>
+          <%= f.text_field :reason, class: "fraud-subject__field" %>
+
+          <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
+          <%= f.text_area :internal_rejection_reason, rows: 2, class: "fraud-subject__field" %>
+
+          <%= f.label :fraud_related_project_id, "Related project", class: "fraud-subject__field-label" %>
+          <%= f.select :fraud_related_project_id,
+                       user.projects.with_deleted.order(created_at: :desc).map { |p| [ p.title, p.id ] },
+                       { include_blank: "Pick a project" }, class: "fraud-subject__field" %>
+
+          <%= f.submit "Reject order", class: "fraud-subject__verdict fraud-subject__verdict--danger" %>
+        <% end %>
+      </details>
+    <% end %>
   </div>
-
-  <p class="fraud-subject__item-meta">
-    <%= order.aasm_state.humanize %> · <%= order.shop_item.type.demodulize.underscore.humanize %>
-  </p>
-
-  <%= link_to "Open order", admin_shop_order_path(order), class: "fraud-subject__item-action" %>
-</li>
+<% end %>

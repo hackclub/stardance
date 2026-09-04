@@ -1,16 +1,37 @@
 <% project = check.project_including_deleted %>
 
-<li class="fraud-subject__item fraud-subject__item--integrity">
-  <div class="fraud-subject__item-head">
-    <span class="fraud-subject__item-title">
-      <%= project ? link_to(project.title, admin_project_path(project)) : "Deleted project" %>
-    </span>
-    <span class="fraud-subject__item-age"><%= time_ago_in_words(check.created_at) %> ago</span>
+<%= turbo_frame_tag check do %>
+  <div class="fraud-subject__item fraud-subject__item--integrity">
+    <div class="fraud-subject__item-head">
+      <span class="fraud-subject__item-title">
+        <%= project ? link_to(project.title, admin_project_path(project)) : "Deleted project" %>
+      </span>
+      <span class="fraud-subject__item-age"><%= time_ago_in_words(check.created_at) %> ago</span>
+    </div>
+
+    <p class="fraud-subject__item-meta">ship event #<%= check.ship_event_id %></p>
+
+    <%= render "admin/certification/integrity/flags", review: check %>
+
+    <%= form_with url: admin_certification_integrity_review_path(check), method: :patch,
+                  class: "fraud-subject__verdict-form" do |f| %>
+      <%= hidden_field_tag :fraud_subject_id, user.id %>
+
+      <%= f.label :decision_justification, "Justification", class: "fraud-subject__field-label" %>
+      <%= f.text_area :decision_justification, rows: 2, class: "fraud-subject__field" %>
+
+      <div class="fraud-subject__item-actions">
+        <%= button_tag "Pass", name: "decision", value: "pass",
+                       class: "fraud-subject__verdict fraud-subject__verdict--primary" %>
+        <%= button_tag "Fraud", name: "decision", value: "fraud",
+                       class: "fraud-subject__verdict fraud-subject__verdict--danger" %>
+        <span class="fraud-subject__verdict-group">
+          <%= f.number_field :deduction_hours, step: 0.25, min: 0, placeholder: "hrs",
+                             class: "fraud-subject__field fraud-subject__field--narrow" %>
+          <%= button_tag "Deduct", name: "decision", value: "deduct", class: "fraud-subject__verdict" %>
+        </span>
+        <%= link_to "Open check", admin_certification_integrity_review_path(check), class: "fraud-subject__item-action" %>
+      </div>
+    <% end %>
   </div>
-
-  <p class="fraud-subject__item-meta">ship event #<%= check.ship_event_id %></p>
-
-  <%= render "admin/certification/integrity/flags", review: check %>
-
-  <%= link_to "Open check", admin_certification_integrity_review_path(check), class: "fraud-subject__item-action" %>
-</li>
+<% end %>

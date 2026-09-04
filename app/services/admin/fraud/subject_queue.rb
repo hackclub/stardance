@@ -73,6 +73,31 @@ module Admin
           .select("posts.user_id AS user_id, certification_integrities.created_at AS created_at")
       end
 
+      # The same three sources, narrowed to one person. The subject page and the
+      # verdict responses both read them from here so a filter can never drift
+      # between the queue and the page it opens.
+      def self.flags_for(user)
+        ::Project::Report.pending
+          .where(project: user.projects, reason: ::Project::Report::FRAUD_REVIEW_REASONS)
+          .includes(:reporter, :project)
+          .order(created_at: :asc)
+      end
+
+      def self.orders_for(user)
+        user.shop_orders
+            .where(aasm_state: ::ShopOrder::FRAUD_REVIEW_STATES)
+            .includes(:shop_item)
+            .order(created_at: :asc)
+      end
+
+      def self.integrity_checks_for(user)
+        ::Certification::Integrity.pending
+          .joins(ship_event: :post)
+          .where(posts: { user_id: user.id })
+          .includes(ship_event: { post: :project })
+          .order(created_at: :asc)
+      end
+
       def self.items_sql
         [
           branch_sql(flags, "flag", FLAG_WEIGHT),

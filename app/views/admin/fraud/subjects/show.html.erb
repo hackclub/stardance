@@ -8,47 +8,37 @@
     <%= link_to "full admin profile", admin_user_path(@user), class: "fraud-subject__profile-link" %>
   </p>
 
+  <%= render "counts", user: @user %>
+
   <%= render "telescreen_tools" %>
 
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-flags">
-    <h2 class="fraud-subject__section-title" id="fraud-subject-flags">
-      Flags <span class="fraud-subject__section-count"><%= @flags.size %></span>
-    </h2>
+    <h2 class="fraud-subject__section-title" id="fraud-subject-flags">Flags</h2>
 
     <% if @flags.any? %>
-      <ul class="fraud-subject__items">
-        <%= render partial: "flag", collection: @flags, as: :flag %>
-      </ul>
+      <div class="fraud-subject__items">
+        <%= render partial: "flag", collection: @flags, as: :flag, locals: { user: @user } %>
+      </div>
     <% else %>
       <p class="fraud-subject__empty">No flags waiting.</p>
     <% end %>
   </section>
 
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-orders">
-    <h2 class="fraud-subject__section-title" id="fraud-subject-orders">
-      Shop orders <span class="fraud-subject__section-count"><%= @orders.size %></span>
-    </h2>
+    <h2 class="fraud-subject__section-title" id="fraud-subject-orders">Shop orders</h2>
 
     <% if @orders.any? %>
-      <ul class="fraud-subject__items">
-        <%= render partial: "order", collection: @orders, as: :order %>
-      </ul>
+      <div class="fraud-subject__items">
+        <%= render partial: "order", collection: @orders, as: :order, locals: { user: @user } %>
+      </div>
     <% else %>
       <p class="fraud-subject__empty">No orders waiting.</p>
     <% end %>
   </section>
 
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-integrity">
-    <h2 class="fraud-subject__section-title" id="fraud-subject-integrity">
-      Integrity checks <span class="fraud-subject__section-count"><%= @integrity_checks.size %></span>
-    </h2>
+    <h2 class="fraud-subject__section-title" id="fraud-subject-integrity">Integrity checks</h2>
 
-    <% if @integrity_checks.any? %>
-      <ul class="fraud-subject__items">
-        <%= render partial: "integrity_check", collection: @integrity_checks, as: :check %>
-      </ul>
-    <% else %>
-      <p class="fraud-subject__empty">No integrity checks waiting.</p>
-    <% end %>
+    <%= render "integrity_items", user: @user %>
   </section>
 </main>

@@ -1,4 +1,6 @@
 class Admin::Shop::OrdersController < Admin::ApplicationController
+  include FraudSubjectVerdict
+
   before_action :set_paper_trail_whodunnit
   before_action :set_order, except: [ :index, :bulk_approve ]
 
@@ -398,6 +400,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     result = Admin::ShopOrderApprover.new(@order, actor: current_user, tracking_number: params[:tracking_number]).call
 
     if result.approved?
+      return render_fraud_subject_verdict(@order, result.message) if fraud_subject
+
       redirect_to shop_orders_return_path, notice: result.message
     else
       redirect_to admin_shop_order_path(@order), alert: result.message
@@ -529,6 +533,9 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
       notice = "Order rejected"
       notice += " (#{n} #{'accessory'.pluralize(n)} also rejected)" if n > 0
+
+      return render_fraud_subject_verdict(@order, notice) if fraud_subject
+
       redirect_to shop_orders_return_path, notice: notice
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to reject order: #{@order.errors.full_messages.join(', ')}"

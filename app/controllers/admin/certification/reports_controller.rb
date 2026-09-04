@@ -1,4 +1,6 @@
 class Admin::Certification::ReportsController < Admin::Certification::ApplicationController
+    include FraudSubjectVerdict
+
     before_action :set_report, only: [ :show, :review, :dismiss ]
 
     def index
@@ -102,6 +104,9 @@ class Admin::Certification::ReportsController < Admin::Certification::Applicatio
             status: [ old_status, @report.status ]
           }
         )
+
+        return render_fraud_subject_verdict(@report, notice_message) if fraud_subject
+
         redirect_to admin_certification_reports_path, notice: notice_message
       else
         redirect_to admin_certification_report_path(@report), alert: "Failed to update report"

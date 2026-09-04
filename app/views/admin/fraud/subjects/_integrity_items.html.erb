@@ -1,0 +1,10 @@
+<%= turbo_frame_tag "fraud-subject-integrity-items" do %>
+  <% checks = Admin::Fraud::SubjectQueue.integrity_checks_for(user) %>
+  <% if checks.any? %>
+    <div class="fraud-subject__items">
+      <%= render partial: "admin/fraud/subjects/integrity_check", collection: checks, as: :check, locals: { user: user } %>
+    </div>
+  <% else %>
+    <p class="fraud-subject__empty">No integrity checks waiting.</p>
+  <% end %>
+<% end %>
