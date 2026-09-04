@@ -53,6 +53,53 @@
     color: var(--color-space-text-muted);
     font-size: var(--font-size-s);
   }
+
+  // Fixes the pagination bug mentioned in issue #1236
+  .pagy {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-xxs);
+    margin-top: var(--space-l);
+  }
+
+  .pagy a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 var(--space-xs);
+    border: 1px solid var(--color-space-border);
+    border-radius: 8px;
+    color: var(--color-space-text);
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+    transition:
+      border-color 150ms ease,
+      color 150ms ease,
+      background 150ms ease;
+  }
+
+  .pagy a[href]:hover,
+  .pagy a[href]:focus-visible {
+    border-color: var(--color-brand-highlight);
+    color: var(--color-brand-highlight);
+  }
+
+  .pagy a[aria-current="page"] {
+    background: var(--color-brand-highlight);
+    border-color: var(--color-brand-highlight);
+    color: var(--color-set-1-bg, #1a1633);
+    font-weight: 700;
+  }
+
+  .pagy a[aria-disabled="true"]:not([aria-current="page"]) {
+    color: var(--color-space-text-muted);
+    border-color: transparent;
+    cursor: default;
+  }
 }
 
 .notifications-item {
