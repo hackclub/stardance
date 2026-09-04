@@ -53,6 +53,31 @@ class Admin::FraudPayoutsControllerTest < ActionDispatch::IntegrationTest
     assert_select "td", text: @admin.display_name, count: 0
   end
 
+  test "trigger with a month param queues the job scoped to that calendar month" do
+    sign_in @admin
+
+    assert_enqueued_with(job: Fraud::CalculatePayoutsJob, args: [ {
+      manual: true,
+      period_start: Date.new(2026, 6, 1).beginning_of_day,
+      period_end: Date.new(2026, 6, 30).end_of_day
+    } ]) do
+      post trigger_admin_fraud_payouts_path, params: { month: "2026-06" }
+    end
+
+    assert_redirected_to admin_fraud_payouts_path
+  end
+
+  test "trigger rejects an unparseable month" do
+    sign_in @admin
+
+    assert_no_enqueued_jobs do
+      post trigger_admin_fraud_payouts_path, params: { month: "not-a-month" }
+    end
+
+    assert_redirected_to admin_fraud_payouts_path
+    assert_equal "Couldn't understand that month.", flash[:alert]
+  end
+
   private
 
   def create_order

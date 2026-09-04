@@ -36,6 +36,10 @@ class FraudPayoutRun < ApplicationRecord
     ::PaperTrail::Version
       .where(item_type: "ShopOrder")
       .where.not(whodunnit: nil)
+      # Unattended approvals (e.g. Shop::AutoApprovable) stamp a class name
+      # rather than a user id; they belong in the audit log, not in a
+      # ranking of reviewers.
+      .where("whodunnit ~ '^[0-9]+$'")
       .where("object_changes ? 'aasm_state'")
   end
 
