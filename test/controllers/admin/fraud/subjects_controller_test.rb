@@ -53,6 +53,16 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_match "No Hackatime identity", response.body
   end
 
+  test "the dashboard count badge reports how many people are waiting" do
+    flag_the_project
+
+    sign_in @squad
+    get admin_dashboard_count_path("fraud_subjects")
+
+    assert_response :success
+    assert_match "1", response.body
+  end
+
   test "a helper cannot reach the queue" do
     helper = create_user(slack_id: "U_FRAUD_HELPER", display_name: "helper")
     helper.grant_role!(:helper)

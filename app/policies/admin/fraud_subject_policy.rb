@@ -1,4 +1,4 @@
-class Admin::Fraud::SubjectPolicy < ApplicationPolicy
+class Admin::FraudSubjectPolicy < ApplicationPolicy
   def index?
     user&.admin? || user&.fraud_lead? || user&.fraud_dept? || user&.fraud_squad?
   end

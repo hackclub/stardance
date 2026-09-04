@@ -14,6 +14,11 @@ module Admin
         ::ShopOrder.where(aasm_state: "pending").count +
           ::Project::Report.pending.where(reason: "fraud").count
       },
+      # People waiting on a fraud verdict, not items: the per-person queue works
+      # one person at a time, so its depth is the number of people in it.
+      "fraud_subjects" => -> {
+        ::Admin::Fraud::SubjectQueue.subjects.size
+      },
       "ship_certifications" => -> {
         policy_scope(::Certification::Ship).where(status: "pending").count
       },
