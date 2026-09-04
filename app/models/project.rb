@@ -607,14 +607,25 @@ class Project < ApplicationRecord
     (total_seconds / 3600.0).round(1)
   end
 
-  def seconds_coded_in_devlog_window(hackatime_uid, at: Time.current, access_token: nil)
-    HackatimeService.fetch_total_seconds_for_projects(
+  # Query the whole event so heartbeats uploaded after an earlier devlog can
+  # still be claimed, then remove the time this author has already logged.
+  def unlogged_hackatime_seconds(hackatime_uid, user:, at: Time.current, access_token: nil)
+    total_seconds = HackatimeService.fetch_total_seconds_for_projects(
       hackatime_uid,
       hackatime_keys,
-      start_date: devlog_window_start(at).iso8601,
+      start_date: HackatimeService::START_DATE,
       end_date: at.iso8601,
       access_token: access_token
     )
+    return unless total_seconds
+
+    logged_seconds = posts.of_devlogs(join: true)
+      .where(user: user, post_devlogs: { deleted_at: nil })
+      .where("post_devlogs.hackatime_projects_key_snapshot IS DISTINCT FROM ?", "test")
+      .where("post_devlogs.created_at < ?", at)
+      .sum("post_devlogs.duration_seconds")
+
+    [ total_seconds - logged_seconds, 0 ].max
   end
 
   # Where the current devlog window opened: the previous devlog, or for the
