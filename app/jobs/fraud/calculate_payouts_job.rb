@@ -3,15 +3,17 @@
 class Fraud::CalculatePayoutsJob < ApplicationJob
   queue_as :literally_whenever
 
-  def perform(manual: false)
-    orders = eligible_orders(manual)
+  # `period_start`/`period_end` scope the run to a specific window (e.g. a
+  # past month picked from the admin UI) instead of "everything since the
+  # last run." Already-paid orders are still excluded via
+  # `payout_eligible_orders`, so re-running an old month never double-pays.
+  def perform(manual: false, period_start: nil, period_end: nil)
+    orders = eligible_orders(manual: manual, period_start: period_start, period_end: period_end)
     return if orders.empty?
 
-    now = Time.current
-
     run = FraudPayoutRun.new(
-      period_start: manual ? last_run_end : nil,
-      period_end: now,
+      period_start: period_start || (manual ? last_run_end : nil),
+      period_end: period_end || Time.current,
       total_orders: 0,
       total_amount: 0
     )
@@ -49,10 +51,16 @@ class Fraud::CalculatePayoutsJob < ApplicationJob
 
   private
 
-  def eligible_orders(manual)
+  def eligible_orders(manual:, period_start:, period_end:)
     scope = FraudPayoutRun.payout_eligible_orders
 
-    scope = scope.where("shop_orders.created_at >= ?", last_run_end) if manual && last_run_end
+    if period_start || period_end
+      scope = scope.where("shop_orders.created_at >= ?", period_start) if period_start
+      scope = scope.where("shop_orders.created_at <= ?", period_end) if period_end
+    elsif manual && last_run_end
+      scope = scope.where("shop_orders.created_at >= ?", last_run_end)
+    end
+
     scope.to_a
   end
 

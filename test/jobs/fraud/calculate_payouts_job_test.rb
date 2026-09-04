@@ -102,6 +102,26 @@ class Fraud::CalculatePayoutsJobTest < ActiveJob::TestCase
     assert_equal 1, second_run.total_orders
   end
 
+  test "explicit period bounds override the last-run window" do
+    in_window = travel_to(2.months.ago) { create_order(@buyer, @item) }
+    review!(in_window, @reviewer1, "rejected")
+
+    before_window = travel_to(4.months.ago) { create_order(@buyer, @item) }
+    review!(before_window, @reviewer2, "rejected")
+
+    Fraud::CalculatePayoutsJob.perform_now(
+      manual: true,
+      period_start: 3.months.ago,
+      period_end: 1.month.ago
+    )
+
+    run = FraudPayoutRun.last
+    assert_equal 1, run.total_orders
+    assert_not_nil in_window.reload.fraud_payout_line_id
+    assert_nil before_window.reload.fraud_payout_line_id
+    assert_nil @order1.reload.fraud_payout_line_id
+  end
+
   test "manual run only includes orders created since the last run" do
     Fraud::CalculatePayoutsJob.perform_now
 

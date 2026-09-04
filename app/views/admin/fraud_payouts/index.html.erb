@@ -7,10 +7,17 @@
       <p class="aorder__subtitle">Monthly bracket-based payouts for fraud reviewers</p>
     </div>
     <% if policy(FraudPayoutRun).trigger? %>
-      <%= button_to "Trigger Manual Run", trigger_admin_fraud_payouts_path,
-          method: :post,
-          class: "aorder__btn aorder__btn--secondary",
-          data: { confirm: "Calculate payouts for all unpaid reviewed orders since the last run. Continue?" } %>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap: var(--space-xs);">
+        <%= button_to "Trigger Manual Run", trigger_admin_fraud_payouts_path,
+            method: :post,
+            class: "aorder__btn aorder__btn--secondary",
+            data: { confirm: "Calculate payouts for all unpaid reviewed orders since the last run. Continue?" } %>
+        <%= form_with url: trigger_admin_fraud_payouts_path, method: :post, local: true, class: "aorder__tracking-form" do %>
+          <%= month_field_tag :month, nil, class: "aorder__input", required: true %>
+          <%= button_tag "Run For Month", type: :submit, class: "aorder__btn aorder__btn--secondary",
+              data: { confirm: "Calculate and disburse payouts for unpaid orders created in the selected month. This immediately credits reviewers' balances and cannot be undone. Continue?" } %>
+        <% end %>
+      </div>
     <% end %>
   </div>
 
