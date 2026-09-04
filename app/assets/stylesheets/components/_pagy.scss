@@ -1,0 +1,45 @@
+.pagy {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xxs);
+  margin-top: var(--space-l);
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 var(--space-xs);
+    border: 1px solid var(--color-space-border);
+    border-radius: 8px;
+    color: var(--color-space-text);
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+    transition:
+      border-color 150ms ease,
+      color 150ms ease,
+      background 150ms ease;
+  }
+
+  a[href]:hover,
+  a[href]:focus-visible {
+    border-color: var(--color-brand-highlight);
+    color: var(--color-brand-highlight);
+  }
+
+  a[aria-current="page"] {
+    background: var(--color-brand-highlight);
+    border-color: var(--color-brand-highlight);
+    color: var(--color-set-1-bg, #1a1633);
+    font-weight: 700;
+  }
+
+  a[aria-disabled="true"]:not([aria-current="page"]) {
+    color: var(--color-space-text-muted);
+    border-color: transparent;
+    cursor: default;
+  }
+}
