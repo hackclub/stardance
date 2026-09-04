@@ -31,14 +31,14 @@ module ExternalDashboard
 
     attr_reader :cert
 
+    # Only the fields the dashboard actually rejects a payload for. description, readme
+    # and username are optional over there, so gating on them just skipped certs that
+    # would have ingested fine.
     def missing_required_fields
       @missing_required_fields ||= {
         "projectName" => project.title,
-        "description" => project.description,
         "demo" => project.demo_url,
-        "repo" => project.repo_url,
-        "readme" => project.readme_url,
-        "username" => cert.owner&.display_name
+        "repo" => project.repo_url
       }.select { |_field, value| value.blank? }.keys
     end
 

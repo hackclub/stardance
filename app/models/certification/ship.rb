@@ -462,12 +462,18 @@ module Certification
     # Stardust earned per completed review
     REVIEW_BOUNTY = 1.25 # This will be updated once we add the project types.
 
+    # Set when a verdict is mirrored back from the external dashboard for a project we
+    # can't act on any more - deleted, or the owner is banned. The status still gets
+    # recorded so both queues agree on what happened, but nothing downstream fires: no
+    # bounty, no project transition, no DM to the builder.
+    attr_accessor :record_verdict_only
+
     before_save :stamp_claimed_at, if: -> { will_save_change_to_reviewer_id? && reviewer_id.present? && claimed_at.nil? }
     before_save :stamp_decided_at, if: -> { will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && decided_at.nil? }
-    before_save :assign_stardust_earned, if: -> { will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
-    after_save :apply_verdict_to_project!, if: :saved_change_to_status?
-    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? }
-    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? && project&.hardware? }
+    before_save :assign_stardust_earned, if: -> { !record_verdict_only && will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
+    after_save :apply_verdict_to_project!, if: -> { saved_change_to_status? && !record_verdict_only }
+    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? && !record_verdict_only }
+    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? && project&.hardware? && !record_verdict_only }
     after_create_commit :post_submission_to_hardware_review_channel!, if: -> { project&.hardware? }
 
     # Timeline cards for decided reviews sort by when the verdict landed.

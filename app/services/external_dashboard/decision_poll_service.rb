@@ -69,7 +69,6 @@ module ExternalDashboard
 
       cert = Certification::Ship.find_by_external(uuid: ship["id"], external_id: ship["externalId"])
       return :not_found unless cert
-      return :ignored if cert.project.nil? || cert.project.deleted_at.present? || cert.owner&.banned?
 
       proof_video_url = ship.dig("links", "proofVideo").presence
       return :invalid if proof_video_url && !valid_proof_video_url?(proof_video_url)
