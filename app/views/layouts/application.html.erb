@@ -116,6 +116,7 @@
     <%= render "shared/sticky_streak_promo" %>
     <%= render "shared/post_panel" %>
     <%= render "shared/idv_verify_modal" %>
+    <%= render VisualNovelComponent.new(user: current_user) %>
     <% unless @hide_footer %>
       <footer class="dev-footer">
         <p>

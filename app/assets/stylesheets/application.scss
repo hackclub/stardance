@@ -60,6 +60,9 @@
 @use "components/slack_doodle";
 @use "components/sticker_promo";
 @use "components/sticker_promo_widget";
+@use "components/vega_sprite";
+@use "components/visual_novel";
+@use "components/rocket_progress";
 
 // Pages
 @use "pages/onboarding" as onboarding_pages;

@@ -6,6 +6,7 @@
 
 <div class="app-layout">
   <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
+    <%= render RocketProgressComponent.new(user: current_user) %>
     <%= render "shared/raffle_referral_banner" %>
     <% if current_user.present? %>
       <%= render Posts::ComposerComponent.new(

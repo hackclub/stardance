@@ -1,0 +1,333 @@
+// Visual-novel intro scene (:bukux2). Blurred veil over the whole page, a
+// portrait standing bottom-left, and a dialogue bar along the bottom edge.
+//
+// The bar's left end runs *behind* the portrait and its chrome — fill, border,
+// corner — dissolves to nothing under him, so the bar reads as growing out of
+// him rather than as a box he stands next to. Fading rather than hiding is
+// deliberate: his linework is brushed, with semi-transparent texture all
+// through it, so a hard border tucked behind him would speckle through the
+// gaps. `--visual-novel-tuck` sets how far back the bar starts; everything
+// else derives from the portrait's size, so the blend holds at every viewport
+// size. Below the mobile breakpoint the portrait steps above the bar instead,
+// since there isn't the width to dissolve an edge behind him.
+//
+// Surface follows docs/branding.md §3: set-2 fill, 2px cream highlight border,
+// 8px radius.
+
+// Scroll lock while the scene is open — toggled by visual_novel_controller.
+.visual-novel-open {
+  overflow: hidden;
+}
+
+.visual-novel {
+  // Gap between the dialogue bar and the bottom of the viewport.
+  --visual-novel-inset: var(--space-l);
+  // Portrait geometry. Deriving the width from the sprite's frame ratio (see
+  // _vega_sprite.scss) is what lets the tuck and the text column stay put
+  // without hardcoded pixel offsets.
+  --visual-novel-portrait-height: clamp(260px, 46vh, 500px);
+  --visual-novel-portrait-width: calc(
+    var(--visual-novel-portrait-height) * var(--vega-sprite-ratio)
+  );
+  --visual-novel-portrait-inset: clamp(0px, 2vw, var(--space-xl));
+  // How far into the portrait the bar starts, as a fraction of his width. The
+  // chrome fades in from here to the text column, so a smaller value buys a
+  // longer, softer dissolve; too small and the fade starts outside his
+  // silhouette, where there's nothing to emerge from.
+  --visual-novel-tuck: 0.35;
+  // Left edge of the bar: inset by the hidden slice of the portrait.
+  --visual-novel-box-offset: calc(
+    var(--visual-novel-portrait-inset) + var(--visual-novel-portrait-width) *
+      var(--visual-novel-tuck)
+  );
+  // Where the text column and name tag start — clear of the portrait's
+  // remaining, visible half.
+  --visual-novel-portrait-gutter: calc(
+    var(--visual-novel-portrait-width) * (1 - var(--visual-novel-tuck)) +
+      var(--space-l)
+  );
+
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 320ms ease;
+
+  &--ready {
+    opacity: 1;
+  }
+
+  &__veil {
+    position: absolute;
+    inset: 0;
+    // Backdrop tint plus a vignette that deepens toward the bottom, so the
+    // portrait and dialogue bar sit on something rather than floating.
+    background:
+      linear-gradient(to top, var(--color-shadow-deep), transparent 45%),
+      var(--color-backdrop);
+    backdrop-filter: blur(14px);
+    cursor: pointer;
+  }
+
+  &__stage {
+    position: relative;
+    width: min(1500px, calc(100vw - var(--space-xxl)));
+    pointer-events: none;
+  }
+
+  // In front of the bar, standing on its bottom edge: his feet land on the
+  // same line the bar ends on, so the corner he covers is gone completely.
+  // Purely decorative — it's a background (see .vega-sprite), so it carries no
+  // alt text and takes no pointer events.
+  &__portrait {
+    --vega-sprite-height: var(--visual-novel-portrait-height);
+
+    position: absolute;
+    left: var(--visual-novel-portrait-inset);
+    bottom: var(--visual-novel-inset);
+    z-index: 2;
+    transform: translateY(24px);
+    transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1) 100ms;
+    // Kept tight and downward: a wide halo would betray the hidden edge.
+    filter: drop-shadow(0 6px 16px var(--color-shadow-deep));
+  }
+
+  // He idles while a line is typing itself out and settles back to the resting
+  // drawing once it's finished — so the cycle restarts with each new line.
+  &--speaking &__portrait {
+    animation: vega-idle 1.1s step-end infinite;
+  }
+
+  &--ready &__portrait {
+    transform: translateY(0);
+  }
+
+  &__box {
+    position: relative;
+    z-index: 1;
+    margin-left: var(--visual-novel-box-offset);
+    margin-bottom: var(--visual-novel-inset);
+    padding: var(--space-l) var(--space-l) var(--space-m)
+      var(--visual-novel-portrait-gutter);
+    pointer-events: auto;
+    cursor: pointer;
+    transform: translateY(20px);
+    transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  // The bar's chrome sits on its own layer so it can fade out on the left
+  // without taking the text with it (a mask applies to an element's children
+  // too). Fill and border are gone where the portrait stands and fully back by
+  // the time the text column starts.
+  &__box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: color-mix(in srgb, var(--color-set-2-bg) 92%, transparent);
+    border: 2px solid var(--color-brand-highlight);
+    border-radius: var(--profile-radius);
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--visual-novel-portrait-gutter)
+    );
+  }
+
+  &--ready &__box {
+    transform: translateY(0);
+  }
+
+  // Name tag — straddles the bar's top edge at the head of the text column.
+  &__speaker {
+    position: absolute;
+    top: 0;
+    left: var(--visual-novel-portrait-gutter);
+    transform: translateY(-50%);
+    margin: 0;
+    padding: var(--space-xxxs) var(--space-m);
+    background: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+    border-radius: 999px;
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  &__skip {
+    position: absolute;
+    top: var(--space-xs);
+    right: var(--space-s);
+    appearance: none;
+    background: none;
+    border: none;
+    padding: var(--space-xxxs) var(--space-xs);
+    color: var(--color-set-3-fg-secondary);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    cursor: pointer;
+    transition: color 150ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__line {
+    // Holds two lines so the bar doesn't resize as the text types out. The
+    // script's longest box wraps to two at this measure.
+    min-height: calc(2 * 1.6em);
+    // The bar spans the screen, but the text keeps a readable measure.
+    max-width: 78ch;
+    margin: var(--space-xxs) 0 0;
+    color: var(--color-space-text);
+    font-family: var(--font-family-text);
+    font-size: var(--font-body);
+    line-height: 1.6;
+  }
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    margin-top: var(--space-xs);
+  }
+
+  &__progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-space-surface-strong);
+    transition:
+      background 200ms ease,
+      transform 200ms ease;
+
+    &--active {
+      background: var(--color-brand-yellow);
+      transform: scale(1.15);
+    }
+  }
+
+  // The blinking corner triangle every visual novel uses to say "keep going".
+  &__advance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    appearance: none;
+    background: none;
+    border: none;
+    border-radius: var(--profile-radius);
+    padding: var(--space-xxs);
+    color: var(--color-brand-yellow);
+    cursor: pointer;
+    transition: color 150ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-brand-highlight-secondary);
+    }
+  }
+
+  &__advance-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    animation: visual-novel-blink 1.4s ease-in-out infinite;
+  }
+
+  // Last line: the marker stops nudging you onward and sits still.
+  &--final &__advance {
+    color: var(--color-brand-highlight);
+  }
+
+  &--final &__advance-icon {
+    animation: none;
+  }
+
+  // Narrow screens: no room to dissolve an edge behind him, so instead he sits
+  // behind the bar and peeps over its top edge, cut off by it. The bar takes
+  // back the full width — zeroing the tuck cancels both its offset and the
+  // text column's indent.
+  @media (max-width: 720px) {
+    --visual-novel-inset: var(--space-xs);
+    --visual-novel-portrait-height: clamp(190px, 30vh, 260px);
+    --visual-novel-portrait-inset: 0px;
+    --visual-novel-tuck: 0;
+    --visual-novel-portrait-gutter: var(--space-m);
+    // Fraction of him that clears the bar's top edge. The star takes up his
+    // top third, so 0.7 is what puts the rim just under his chin — lower
+    // values start cutting across his face.
+    --visual-novel-peek: 0.7;
+
+    &__stage {
+      width: calc(100vw - var(--space-m));
+    }
+
+    &__portrait {
+      left: auto;
+      right: var(--space-s);
+      // Sunk by the part that should stay hidden, and behind the bar so the
+      // bar's top edge does the cutting.
+      bottom: calc(
+        100% - var(--visual-novel-portrait-height) *
+          (1 - var(--visual-novel-peek))
+      );
+      z-index: 0;
+    }
+
+    &__box {
+      padding: var(--space-l) var(--space-m) var(--space-s);
+    }
+
+    // Solid fill and a hard edge all round: he's behind the bar here, so a
+    // translucent one would leave his shoulders ghosting through the text.
+    &__box::before {
+      background: var(--color-set-2-bg);
+      mask-image: none;
+    }
+
+    &__line {
+      min-height: calc(3 * 1.6em);
+    }
+  }
+}
+
+@keyframes visual-novel-blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  50% {
+    opacity: 0.35;
+    transform: translateX(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visual-novel,
+  .visual-novel__box,
+  .visual-novel__portrait {
+    transition: none;
+  }
+
+  .visual-novel__advance-icon,
+  .visual-novel--speaking .visual-novel__portrait {
+    animation: none;
+  }
+}

@@ -1,0 +1,19 @@
+<section class="rocket-progress">
+  <span class="vega-sprite rocket-progress__avatar" aria-hidden="true"></span>
+
+  <div class="rocket-progress__body">
+    <div class="rocket-progress__header">
+      <h2 class="rocket-progress__eyebrow">Rocket repair</h2>
+      <p class="rocket-progress__count">
+        <span class="rocket-progress__hours"><%= display_hours %></span>
+        <span class="rocket-progress__goal">/ <%= display_goal %> hours</span>
+      </p>
+    </div>
+
+    <%= render "shared/progress_bar",
+               value: hours,
+               max: goal,
+               label: "#{display_hours} of #{display_goal} hours logged toward fixing the rocket",
+               class_name: "rocket-progress__bar" %>
+  </div>
+</section>
