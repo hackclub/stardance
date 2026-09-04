@@ -17,9 +17,7 @@ _^^ hit this button to record your progress! it'll redirect you to lapse.hackclu
 
 Once you're in lapse, you can start recording your work! Keep working along your project. Make sure to make devlogs often.
 
-For demo links, Onshape urls or [KiCanvas](https://kicanvas.org) work great! Google drive links will be returned
-
-Once your design is done, you'll need to submit it to 1 of 4 tiers to get funding! You can read more about that [here](/guides/tiers)
+Once your design is done, you'll need to submit it to 1 of 4 tiers to get funding! You can read more about that [here](/guides/tiers).
 
 ![image](https://cdn.hackclub.com/019fb48d-8522-7443-8954-372744a2affe/paste-1785440600748.png)
 _^^ hit this button to get your project funded!_
