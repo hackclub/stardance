@@ -181,6 +181,9 @@ application.register("devlog-edit", DevlogEditController);
 import DiscoverRailSearchController from "./discover_rail_search_controller";
 application.register("discover-rail-search", DiscoverRailSearchController);
 
+import DiscoverRailPanelController from "./discover_rail_panel_controller";
+application.register("discover-rail-panel", DiscoverRailPanelController);
+
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
 
@@ -426,6 +429,9 @@ application.register("username-availability", UsernameAvailabilityController);
 
 import VimeoPlayerController from "./vimeo_player_controller";
 application.register("vimeo-player", VimeoPlayerController);
+
+import VisualNovelController from "./visual_novel_controller";
+application.register("visual-novel", VisualNovelController);
 
 import VoteScorecardController from "./vote_scorecard_controller";
 application.register("vote-scorecard", VoteScorecardController);

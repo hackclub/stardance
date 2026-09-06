@@ -9,10 +9,81 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  z-index: 20;
+
+  @media (max-width: 1280px) {
+    top: var(--space-m);
+    right: 0;
+    bottom: var(--space-m);
+    width: min(360px, calc(100vw - 64px));
+    max-height: none;
+    padding: var(--space-m);
+    border: 2px solid var(--color-border-input);
+    border-right: 0;
+    border-radius: var(--profile-radius) 0 0 var(--profile-radius);
+    background: var(--color-space-bg);
+    box-shadow: 0 16px 40px var(--color-shadow-deep);
+    overflow: visible;
+    transform: translateX(100%);
+    transition: transform 180ms ease;
+
+    &--open {
+      transform: translateX(0);
+    }
+  }
+
+  @media (max-width: 960px) {
+    bottom: 84px;
+  }
+}
+
+.discover-rail__toggle {
+  display: none;
+
+  @media (max-width: 1280px) {
+    position: absolute;
+    top: 18px;
+    left: -48px;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 2px solid var(--color-border-input);
+    border-right: 0;
+    border-radius: var(--profile-radius) 0 0 var(--profile-radius);
+    background: var(--color-set-2-bg);
+    color: var(--color-brand-off-white);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-brand-blue);
+      outline: 0;
+    }
+  }
+}
+
+.discover-rail__toggle-icon {
+  width: 18px;
+  height: 18px;
+  transform: rotate(90deg);
+  transition: transform 180ms ease;
+
+  .discover-rail--open & {
+    transform: rotate(-90deg);
+  }
+}
+
+.discover-rail__panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
   gap: 14px;
 
   @media (max-width: 1280px) {
-    display: none;
+    overflow-y: auto;
   }
 }
 
