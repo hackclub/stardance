@@ -163,9 +163,34 @@ class DailyRoll < ApplicationRecord
     "day #{number}"
   end
 
+  # Date range daily-roll leaderboards are considered final for the
+  # rng_winner achievement: from launch through the last fully-elapsed day
+  # (today's board is still open).
+  def self.winnable_range
+    Date.new(2026, 7, 1)...(Date.current - 1)
+  end
+
   def self.topped_a_day(user)
-    where(user: user)
-      .where(rolled_on: (Date.new(2026, 7, 1)...(Date.current - 1)))
-      .any? { |roll| roll.rank == 1 }
+    where(user: user).where(rolled_on: winnable_range).any? { |roll| roll.rank == 1 }
+  end
+
+  # Grants the rng_winner achievement to whoever topped each day's board.
+  # Runs daily (see RngWinnerNotificationJob) so winners who never load
+  # /achievements still get it — that page only grants lazily on visit.
+  def self.grant_winner_achievements!
+    winnable_range.each do |date|
+      winner = leaderboard(date, limit: 1).first
+      winner&.user&.award_achievement!(:rng_winner)
+    end
+  end
+
+  # The user's earliest #1 finish, or nil — the actual day they won, which
+  # can differ from when the achievement was granted.
+  def self.first_win(user)
+    winnable_range.each do |date|
+      top = leaderboard(date, limit: 1).first
+      return top if top&.user_id == user.id
+    end
+    nil
   end
 end

@@ -194,6 +194,12 @@ production:
     concurrency: 1
     description: "Mirror Jelly support conversations locally for the mega dashboard"
 
+  rng_winner_notification:
+    class: RngWinnerNotificationJob
+    schedule: every day at 9am America/New_York
+    concurrency: 1
+    description: "Send a one-time notification to any user holding the RNG Winner achievement who hasn't been notified yet"
+
   flush_extension_usage:
     class: FlushExtensionUsageJob
     schedule: every 5 minutes
