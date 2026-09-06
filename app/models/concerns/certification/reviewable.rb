@@ -4,6 +4,7 @@ module Certification
 
     CLAIM_TTL = 30.minutes
     HARDWARE_REVIEW_CHANNEL = "C0BPN8XPSPN"
+    HARDWARE_APPROVAL_FEED_CHANNEL = "C0BUR6M0ZQT"
 
     # A reviewer's actual verdicts. The queue-routing corrections (misfiled,
     # withdrawn) are not decisions: they earn no bounty, stamp no decided_at,
@@ -125,6 +126,30 @@ module Certification
       return if owner.hardware_channel_invited_at.present?
 
       InviteToSlackChannelJob.perform_later(owner.id, HARDWARE_REVIEW_CHANNEL)
+    end
+
+    def post_approval_to_hardware_feed!
+      return unless approved?
+
+      locals = notification_locals.slice(:project_title, :project_url)
+      locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
+      locals[:owner_slack_id] = owner&.slack_id
+      locals[:owner_name] = owner&.display_name
+
+      if is_a?(Certification::FundingRequest)
+        locals[:awards_kit] = awards_design_kit?
+        locals[:issues_grant] = issues_grant?
+        locals[:amount_dollars] = final_amount_dollars
+      end
+
+      SendSlackDmJob.perform_later(
+        HARDWARE_APPROVAL_FEED_CHANNEL,
+        nil,
+        blocks_path: "notifications/hardware/approval_feed",
+        locals: locals
+      )
+    rescue StandardError => e
+      Rails.logger.error("#{self.class.name} ##{id} post_approval_to_hardware_feed! failed: #{e.message}")
     end
 
     def post_verdict_to_hardware_review_channel!

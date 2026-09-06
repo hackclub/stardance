@@ -1,0 +1,16 @@
+emoji = ":stardance_star:"
+owner_mention = owner_slack_id.present? ? "<@#{owner_slack_id}>" : owner_name
+
+if review_type == "design"
+  amount_line = if awards_kit
+    " (design kit)"
+  elsif issues_grant
+    " ($#{amount_dollars} grant)"
+  else
+    ""
+  end
+
+  section "#{emoji} *Design approved#{amount_line}:* *<#{project_url}|#{project_title}>* by #{owner_mention}", markdown: true
+else
+  section "#{emoji} *Build approved:* *<#{project_url}|#{project_title}>* by #{owner_mention}", markdown: true
+end
