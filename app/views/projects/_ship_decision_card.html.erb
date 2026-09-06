@@ -79,7 +79,17 @@
   <% if returned %>
     <% if is_member || current_user&.can_review? %>
       <% recert_modal_id = local_assigns[:recert_modal_id] %>
-      <% if action_items_enabled? && is_member && decision.gates_resubmission? && recert_modal_id.present? %>
+      <% link_blocker = local_assigns[:link_blocker] %>
+      <% if link_blocker %>
+        <button type="button"
+                class="recert-modal__btn recert-modal__btn--primary"
+                aria-disabled="true"
+                data-controller="tooltip"
+                data-tooltip-message-value="<%= link_blocker %>"
+                data-tooltip-position-value="top">
+          Request re-certification
+        </button>
+      <% elsif action_items_enabled? && is_member && decision.gates_resubmission? && recert_modal_id.present? %>
         <button type="button"
                 class="recert-modal__btn recert-modal__btn--primary"
                 onclick="document.getElementById(<%= recert_modal_id.to_json %>).showModal()">
