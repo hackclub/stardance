@@ -27,7 +27,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       end
     end
     if params.key?(:sort)
-      sort = params[:sort].presence_in(%w[length todo])
+      sort = params[:sort].presence_in(%w[length todo age])
       if sort
         filters["sort"] = sort
         filters["dir"] = params[:dir] == "asc" ? "asc" : "desc"
@@ -39,7 +39,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     session[FILTER_SESSION_KEY] = filters
 
     @project_type   = filters["project_type"].presence
-    @sort           = filters["sort"].presence_in(%w[length todo])
+    @sort           = filters["sort"].presence_in(%w[length todo age])
     @dir            = filters["dir"] == "asc" ? "asc" : "desc"
     @with_integrity = filters["with_integrity"] != "0"
 
@@ -64,7 +64,8 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     scope =
       case @sort
       when "length" then scope.order(Arel.sql("certification_ysws_reviews.original_minutes #{@dir}"))
-      when "todo"   then scope.order(Arel.sql("todo_devlog_count #{@dir}"))
+      when "todo"   then scope.order(Arel.sql("todo_devlog_count #{@dir}")) 
+      when "age"    then scope.order(Arel.sql("certification_ysws_reviews.created_at #{@dir}"))
       else               scope.order(created_at: default_dir)
       end
 
