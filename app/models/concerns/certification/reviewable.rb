@@ -131,10 +131,12 @@ module Certification
     def post_approval_to_hardware_feed!
       return unless approved?
 
-      locals = notification_locals.slice(:project_title, :project_url)
+      locals = notification_locals.slice(:project_title, :project_url, :reviewer_name, :feedback)
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
       locals[:owner_slack_id] = owner&.slack_id
       locals[:owner_name] = owner&.display_name
+      locals[:reviewer_slack_id] = reviewer&.slack_id
+      locals[:repo_url] = project.repo_url
 
       if is_a?(Certification::FundingRequest)
         locals[:awards_kit] = awards_design_kit?
