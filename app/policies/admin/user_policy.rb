@@ -74,7 +74,7 @@ class Admin::UserPolicy < ApplicationPolicy
   end
 
   def view_votes?
-    user&.admin? || user&.nda_helper?
+    user&.admin? || user&.helper? || user&.nda_helper?
   end
 
   def view_order_full_details?
