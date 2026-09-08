@@ -279,7 +279,7 @@ module Post::ShipEvent::Payouts
     preview_hours = payout_basis_locked_at? ? hours_at_payout.to_f : hours
     preview_percentile = payout_basis_locked_at? ? payout_basis_percentile : scores[:overall_percentile]
     preview_multiplier = multiplier ||
-      (hardware_payout? ? HARDWARE_STARDUST_PER_HOUR : payout_multiplier_for_percentile(preview_percentile))
+      (hardware_payout? ? (hardware_payout_multiplier_override || HARDWARE_STARDUST_PER_HOUR) : payout_multiplier_for_percentile(preview_percentile))
     preview_blessing = payout_basis_locked_at? ? payout_blessing : payout_blessing_for_snapshot
     preview_votes_count = votes_count || votes.payout_countable.count
     preview_pending_flags_count = pending_flags_count || votes.joins(:events).merge(Vote::Event.pending_vote_flags).count
@@ -418,11 +418,21 @@ module Post::ShipEvent::Payouts
     end
 
     def payout_multiplier
-      return HARDWARE_STARDUST_PER_HOUR if hardware_payout?
+      if hardware_payout?
+        return hardware_payout_multiplier_override || HARDWARE_STARDUST_PER_HOUR
+      end
 
       percentile = payout_basis_percentile || overall_percentile
 
       payout_multiplier_for_percentile(percentile)
+    end
+
+    def hardware_payout_multiplier_override
+      Certification::Ship
+        .where(post_ship_event_id: id)
+        .where.not(payout_multiplier: nil)
+        .order(decided_at: :desc)
+        .pick(:payout_multiplier)
     end
 
     # A hardware build's payout is the flat rate, not the vote curve.

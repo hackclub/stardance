@@ -10,6 +10,7 @@
 #  feedback                  :text
 #  internal_reason           :text
 #  lock_version              :integer          default(0), not null
+#  payout_multiplier         :float
 #  proof_video_url           :string
 #  recert_reason             :text
 #  reversed_at               :datetime
@@ -169,6 +170,10 @@ module Certification
               content_type: { in: ACCEPTED_VIDEO_TYPES, spoofing_protection: true }
     validates :bonus_stardust,
               numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 },
+              allow_nil: true
+
+    validates :payout_multiplier,
+              numericality: { greater_than: 0, less_than_or_equal_to: 100 },
               allow_nil: true
 
     scope :for_reviewer, ->(user) {

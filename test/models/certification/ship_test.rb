@@ -12,6 +12,7 @@
 #  feedback                  :text
 #  internal_reason           :text
 #  lock_version              :integer          default(0), not null
+#  payout_multiplier         :float
 #  proof_video_url           :string
 #  recert_reason             :text
 #  reversed_at               :datetime
