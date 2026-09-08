@@ -8,6 +8,8 @@
     <%= link_to "full admin profile", admin_user_path(@user), class: "fraud-subject__profile-link" %>
   </p>
 
+  <%= render "identity", user: @user %>
+
   <%= render "counts", user: @user %>
 
   <%= render "telescreen_tools" %>

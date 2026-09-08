@@ -1,3 +1,5 @@
+@use "../../config/mixins" as *;
+
 // Unified fraud review queue (admin/fraud/subjects).
 // References: config/_variables.scss for design tokens.
 //
@@ -216,6 +218,110 @@
     color: var(--color-set-3-fg-secondary);
   }
 
+  .fraud-subject__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    margin: var(--space-xs) 0 0;
+  }
+
+  .fraud-subject__fact {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fraud-subject__fact-label {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+  }
+
+  .fraud-subject__fact-value {
+    margin: 0;
+  }
+
+  .fraud-subject__fact-value--alert {
+    color: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__fact-note {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  // Rhythm inside an integrity card: the review evidence is one group with
+  // generous air around it, the detection findings are a second tight group,
+  // and a rule separates both from the verdict form.
+  .fraud-subject__review {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    margin-top: var(--space-m);
+  }
+
+  .fraud-subject__vitals {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs) var(--space-l);
+    margin: 0;
+  }
+
+  // Label above value would stack four columns and cost a row of height on a
+  // page that lists a dozen of these, so the label is read-only context.
+  .fraud-subject__vital-label {
+    @include visually-hidden;
+  }
+
+  .fraud-subject__vital-value {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+    margin: 0;
+  }
+
+  .fraud-subject__vital--lead .fraud-subject__vital-value {
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  .fraud-subject__blurb {
+    margin: 0;
+    max-width: 68ch;
+  }
+
+  .fraud-subject__tool-links-split {
+    color: var(--color-set-3-fg-secondary);
+  }
+
+  // Inside the review group the flex gap already spaces the rows.
+  .fraud-subject__review .fraud-subject__tool-links {
+    margin-bottom: 0;
+  }
+
+  .fraud-subject__detection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin-top: var(--space-l);
+  }
+
+  .fraud-subject__reasoning-summary {
+    color: var(--color-set-3-fg-secondary);
+    cursor: pointer;
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__reasoning .integrity-review {
+    margin-top: var(--space-xs);
+  }
+
+  .fraud-subject__verdict-form--ruled {
+    border-top: 1px solid var(--color-overlay-light);
+    margin-top: var(--space-l);
+    padding-top: var(--space-s);
+  }
+
   .fraud-subject__counts {
     display: flex;
     flex-wrap: wrap;
@@ -328,34 +434,5 @@
   .fraud-subject__verdict--hold {
     background: var(--color-brand-yellow);
     color: var(--color-space-bg);
-  }
-}
-
-.fraud-subject {
-  .fraud-subject__facts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-m);
-    margin: var(--space-xs) 0 0;
-  }
-
-  .fraud-subject__fact {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .fraud-subject__fact-label {
-    color: var(--color-set-3-fg-secondary);
-    font-size: var(--font-size-xs);
-    text-transform: uppercase;
-  }
-
-  .fraud-subject__fact-value {
-    margin: 0;
-  }
-
-  .fraud-subject__fact-note {
-    color: var(--color-set-3-fg-secondary);
-    font-size: var(--font-size-s);
   }
 }

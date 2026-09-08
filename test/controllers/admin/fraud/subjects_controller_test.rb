@@ -2,6 +2,8 @@ require "test_helper"
 
 class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
   include UserFactory
+  include TelescreenHelper
+  include FraudDetectionDataStub
 
   setup do
     @squad = create_user(slack_id: "U_FRAUD_SQUAD", display_name: "squaddie")
@@ -63,6 +65,83 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_match "1", response.body
   end
 
+  test "the subject page identifies the person being reviewed" do
+    flag_the_project
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_match @subject.email, response.body
+    assert_match "U_FRAUD_SUBJECT", response.body
+    assert_match "Needs submission", response.body
+  end
+
+  test "the subject page describes the project behind each integrity check" do
+    project = Project.create!(title: "Shipped build", project_type: "Web App",
+                              ship_status: "submitted", duration_seconds: 3.hours.to_i,
+                              shipped_at: 2.days.ago,
+                              description: "What the ship actually does",
+                              repo_url: "https://github.com/example/repo",
+                              demo_url: "https://example.com/demo")
+    pending_integrity_check(project)
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_match "##{project.id}", response.body
+    assert_match "Web App", response.body
+    assert_match "Submitted", response.body
+    assert_match "3.0 hours", response.body
+    assert_match "What the ship actually does", response.body
+    assert_select "a[href=?]", "https://github.com/example/repo"
+    assert_select "a[href=?]", "https://example.com/demo"
+  end
+
+  test "each integrity check links its Hackatime projects into Telescreen" do
+    project = Project.create!(title: "Shipped build")
+    pending_integrity_check(project)
+    @subject.identities.create!(provider: "hackatime", uid: "4242", access_token: "t")
+    User::HackatimeProject.insert_all([
+      { user_id: @subject.id, project_id: project.id, name: "orbit-os", created_at: Time.current, updated_at: Time.current },
+      { user_id: @subject.id, project_id: project.id, name: "orbit os v2", created_at: Time.current, updated_at: Time.current }
+    ])
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__item--integrity a[href=?]",
+                  telescreen_hackatime_overview_url("4242", project: "orbit-os")
+    assert_select ".fraud-subject__item--integrity a[href=?]",
+                  telescreen_hackatime_overview_url("4242", project: "orbit os v2")
+  end
+
+  test "the subject page shows the detection signals behind an integrity check" do
+    pending_integrity_check(@project)
+
+    with_detection_data("percentage_of_something" => 0.42) do
+      sign_in @squad
+      get admin_fraud_subject_path(@subject)
+    end
+
+    assert_response :success
+    assert_match "Review reasoning", response.body
+    assert_match "Percentage of something", response.body
+    assert_match "42.0%", response.body
+  end
+
+  test "the subject page leaves out review reasoning when nothing was detected" do
+    pending_integrity_check(@project)
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_no_match "Review reasoning", response.body
+  end
+
   test "a helper cannot reach the queue" do
     helper = create_user(slack_id: "U_FRAUD_HELPER", display_name: "helper")
     helper.grant_role!(:helper)
@@ -74,6 +153,14 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def pending_integrity_check(project)
+    Project::Membership.create!(project: project, user: @subject, role: :owner) unless
+      Project::Membership.exists?(project: project, user: @subject)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    Post.create!(project: project, user: @subject, postable: ship_event)
+    Certification::Integrity.create!(ship_event: ship_event, status: :pending)
+  end
 
   def flag_the_project(reason: "fraud")
     Project::Report.create!(project: @project, reporter: @reporter, reason: reason,
