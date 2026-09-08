@@ -29,6 +29,7 @@
 #  index_certification_ship_reviews_on_decided_at                 (decided_at)
 #  index_certification_ship_reviews_on_external_certification_id  (external_certification_id) UNIQUE
 #  index_certification_ship_reviews_on_post_ship_event_id         (post_ship_event_id)
+#  index_certification_ship_reviews_on_project_id                 (project_id)
 #  index_certification_ship_reviews_on_reviewer_id                (reviewer_id)
 #  index_ship_reviews_unique_pending_project                      (project_id) UNIQUE WHERE (status = 0)
 #
