@@ -11,7 +11,7 @@
 class VisualNovelComponent < ViewComponent::Base
   DISMISS_THING = "bukux2_intro"
 
-  SPEAKER = "meghana"
+  SPEAKER = "■ ■ ■"
 
   # %{name} is the viewer's display name. These run through format, so a literal
   # percent sign in the copy has to be escaped as %%.

@@ -10,10 +10,12 @@
 .rocket-progress {
   --rocket-progress-avatar-height: 132px;
   --rocket-progress-avatar-inset: var(--space-xs);
+  // wrench-buddy.png is 1504x1438.
+  --rocket-progress-avatar-ratio: 1.0459;
   // Where the portrait stops and the strip's chrome (and its text) begin.
   --rocket-progress-gutter: calc(
     var(--rocket-progress-avatar-inset) + var(--rocket-progress-avatar-height) *
-      var(--vega-sprite-ratio) + var(--space-m)
+      var(--rocket-progress-avatar-ratio) + var(--space-m)
   );
 
   position: relative;
@@ -41,19 +43,17 @@
 }
 
 .rocket-progress__avatar {
-  --vega-sprite-height: var(--rocket-progress-avatar-height);
+  height: var(--rocket-progress-avatar-height);
+  width: calc(var(--rocket-progress-avatar-height) * var(--rocket-progress-avatar-ratio));
+  object-fit: contain;
 
   position: absolute;
   left: var(--rocket-progress-avatar-inset);
-  // Feet on the strip's bottom edge, head clear of its top.
-  bottom: 0;
+  // Centered on the strip rather than feet-on-the-bottom-edge — this art
+  // isn't the tall standing pose the old sprite was.
+  top: 50%;
+  transform: translateY(-50%);
   filter: drop-shadow(0 6px 14px var(--color-shadow-deep));
-}
-
-// He blinks and his star swings while you're looking at him, rather than
-// idling permanently in the corner of a page people read every day.
-.rocket-progress:hover .rocket-progress__avatar {
-  animation: vega-idle 1.1s step-end infinite;
 }
 
 .rocket-progress__body {
