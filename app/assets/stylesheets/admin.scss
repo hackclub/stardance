@@ -76,7 +76,7 @@ body.admin-page {
 
   a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn):not(
       .ysws-dashboard__reviewer-link--locked-in
-    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link) {
+    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link):not(.ship-queue__tab) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 

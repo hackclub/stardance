@@ -862,7 +862,10 @@ Rails.application.routes.draw do
           get :next
           post :skip
         end
-        post :flag_for_fraud, on: :member
+        member do
+          post :flag_for_fraud
+          get :recordings
+        end
       end
     end
     get "mission_reviews", to: "missions/submissions#overview", as: :mission_reviews
@@ -915,7 +918,10 @@ Rails.application.routes.draw do
           get :next
           post :skip
         end
-        post :flag_for_fraud, on: :member
+        member do
+          post :flag_for_fraud
+          get :recordings
+        end
       end
 
       # Reviewer-only internal notes about a project, shared across its funding

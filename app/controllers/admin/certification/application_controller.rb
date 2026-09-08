@@ -4,7 +4,7 @@ class Admin::Certification::ApplicationController < Admin::ApplicationController
   # the per-mission dash overrides them (see Admin::Missions::HardwareReviews).
   helper_method :hardware_review_path, :hardware_queue_path, :hardware_next_path,
                 :hardware_skip_path, :hardware_queue_title, :hardware_back_link,
-                :hardware_flag_for_fraud_path
+                :hardware_flag_for_fraud_path, :hardware_recordings_path
 
   private
 
@@ -16,8 +16,16 @@ class Admin::Certification::ApplicationController < Admin::ApplicationController
     flag_for_fraud_admin_certification_hardware_review_path(project)
   end
 
-  def hardware_queue_path(stage)
-    stage.to_s == "build" ? build_admin_certification_hardware_reviews_path : design_admin_certification_hardware_reviews_path
+  def hardware_recordings_path(project)
+    recordings_admin_certification_hardware_review_path(project)
+  end
+
+  def hardware_queue_path(stage, **params)
+    if stage.to_s == "build"
+      build_admin_certification_hardware_reviews_path(**params)
+    else
+      design_admin_certification_hardware_reviews_path(**params)
+    end
   end
 
   def hardware_next_path(stage:, skip: nil)

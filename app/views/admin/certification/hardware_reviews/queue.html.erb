@@ -10,8 +10,7 @@
 
 <div class="app-layout app-layout--wide"
      data-controller="certification--queue"
-     data-certification--queue-server-now-value="<%= Time.current.iso8601 %>"
-     data-certification--queue-period-value="<%= @lb_period %>">
+     data-certification--queue-server-now-value="<%= Time.current.iso8601 %>">
   <div class="app-layout__main app-layout__main--wide ship-queue hardware-queue">
     <%= link_to hardware_back_link[:label], hardware_back_link[:path], class: "ship-queue__back" %>
 
@@ -197,6 +196,8 @@
           <% end %>
         <% end %>
       </div>
+
+      <%== @pagy.series_nav %>
     <% end %>
 
     <%# Reviewer counts feed the payout process, so they stay - just below the
@@ -204,37 +205,28 @@
     <section class="ship-queue__leaderboard hardware-queue__leaderboard">
       <div class="ship-queue__leaderboard-head">
         <h2>Reviewer leaderboard</h2>
-        <div class="ship-queue__tabs" role="tablist">
+        <div class="ship-queue__tabs">
           <% %w[daily weekly alltime].each do |period| %>
-            <button type="button"
-                    class="ship-queue__tab <%= "is-active" if period == @lb_period %>"
-                    data-certification--queue-target="tab"
-                    data-period="<%= period %>"
-                    data-action="certification--queue#switch">
-              <%= period == "alltime" ? "All time" : period.capitalize %>
-            </button>
+            <%= link_to(period == "alltime" ? "All time" : period.capitalize,
+                  hardware_queue_path(@stage, **params.permit(:status, :sort, :search, :from, :to).to_h.symbolize_keys.merge(lb: period)),
+                  class: class_names("ship-queue__tab", "is-active" => period == @lb_period)) %>
           <% end %>
         </div>
       </div>
 
-      <% %w[daily weekly alltime].each do |period| %>
-        <ol class="ship-queue__ranks <%= "is-hidden" unless period == @lb_period %>"
-            data-certification--queue-target="panel"
-            data-period="<%= period %>">
-          <% rows = @leaderboards[period] %>
-          <% if rows.empty? %>
-            <li class="ship-queue__ranks-empty">No reviews yet.</li>
-          <% else %>
-            <% rows.each_with_index do |row, i| %>
-              <li class="ship-queue__rank">
-                <span class="ship-queue__rank-pos"><%= i + 1 %></span>
-                <span class="ship-queue__rank-name"><%= row[:name] %></span>
-                <span class="ship-queue__rank-count"><%= row[:count] %></span>
-              </li>
-            <% end %>
+      <ol class="ship-queue__ranks">
+        <% if @leaderboard.empty? %>
+          <li class="ship-queue__ranks-empty">No reviews yet.</li>
+        <% else %>
+          <% @leaderboard.each_with_index do |row, i| %>
+            <li class="ship-queue__rank">
+              <span class="ship-queue__rank-pos"><%= i + 1 %></span>
+              <span class="ship-queue__rank-name"><%= row[:name] %></span>
+              <span class="ship-queue__rank-count"><%= row[:count] %></span>
+            </li>
           <% end %>
-        </ol>
-      <% end %>
+        <% end %>
+      </ol>
     </section>
 
     <%= render "admin/certification/hardware_reviews/my_stats_modal", stats: @my_stats %>
