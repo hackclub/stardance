@@ -133,6 +133,79 @@ class Admin::ProjectsController < Admin::ApplicationController
     )
   end
 
+  def export_devlogs
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project, :reset_devlogs?
+
+    devlogs = @project.devlogs.includes(:attachments_attachments => :blob).where(deleted_at: nil)
+    posts_by_devlog = @project.posts.where(postable_type: "Post::Devlog").index_by(&:postable_id)
+
+    entries = devlogs.map do |devlog|
+      post = posts_by_devlog[devlog.id]
+      attachment = devlog.attachments.first
+
+      entry = {
+        project_id: @project.id,
+        body: devlog.body,
+        hours: (devlog.duration_seconds.to_f / 3600).round(4),
+        image: attachment ? rails_blob_url(attachment, host: request.base_url) : nil,
+        created_at: (post || devlog).created_at.iso8601
+      }
+      entry[:phase] = devlog.phase if devlog.phase.present?
+      entry
+    end
+
+    send_data JSON.pretty_generate(entries),
+              filename: "project_#{@project.id}_devlogs_#{Date.current}.json",
+              type: "application/json",
+              disposition: "attachment"
+  end
+
+  def reset_devlogs
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project
+
+    devlog_posts = @project.posts.where(postable_type: "Post::Devlog")
+    devlog_count = devlog_posts.count
+
+    if devlog_count.zero?
+      redirect_to admin_project_path(@project), alert: "This project has no devlogs to reset."
+      return
+    end
+
+    ActiveRecord::Base.transaction do
+      post_ids = devlog_posts.pluck(:id)
+      devlog_ids = devlog_posts.pluck(:postable_id)
+
+      PostView.where(post_id: post_ids).delete_all
+      Post::Repost.where(original_post_id: post_ids).delete_all
+      Like.where(likeable_type: "Post::Devlog", likeable_id: devlog_ids).delete_all
+      Comment.where(commentable_type: "Post::Devlog", commentable_id: devlog_ids).delete_all
+      DevlogVersion.where(devlog_id: devlog_ids).delete_all
+      Certification::Devlog.where(post_devlog_id: devlog_ids).delete_all
+
+      blobs = ActiveStorage::Blob.where(
+        id: ActiveStorage::Attachment.where(record_type: "Post::Devlog", record_id: devlog_ids).select(:blob_id)
+      )
+      ActiveStorage::Attachment.where(record_type: "Post::Devlog", record_id: devlog_ids).delete_all
+      blobs.delete_all
+
+      devlog_posts.delete_all
+      ::Post::Devlog.unscoped.where(id: devlog_ids).delete_all
+
+      @project.update_columns(devlogs_count: 0, duration_seconds: 0)
+
+      ::PaperTrail::Version.create!(
+        item: @project,
+        event: "update",
+        whodunnit: current_user.id.to_s,
+        object_changes: { devlogs_reset: [ devlog_count, 0 ] }
+      )
+    end
+
+    redirect_to admin_project_path(@project), notice: "Reset #{devlog_count} devlog(s) for this project."
+  end
+
   def force_state
     @project = ::Project.unscoped.find(params[:id])
     authorize @project, :update?

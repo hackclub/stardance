@@ -695,6 +695,8 @@ Rails.application.routes.draw do
         post :delete
         post :update_ship_status
         post :force_state
+        post :reset_devlogs
+        get  :export_devlogs
         get  :votes
       end
     end
