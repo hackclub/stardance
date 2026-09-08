@@ -26,4 +26,8 @@ class Admin::ProjectPolicy < ApplicationPolicy
   def reset_devlogs?
     user&.admin?
   end
+
+  def convert_to_software?
+    user&.admin?
+  end
 end

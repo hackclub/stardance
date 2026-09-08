@@ -206,6 +206,42 @@ class Admin::ProjectsController < Admin::ApplicationController
     redirect_to admin_project_path(@project), notice: "Reset #{devlog_count} devlog(s) for this project."
   end
 
+  def convert_to_software
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project
+
+    unless @project.hardware?
+      redirect_to admin_project_path(@project), alert: "Project is not a hardware project."
+      return
+    end
+
+    old_stage = @project.hardware_stage
+    destroyed_funding = 0
+    destroyed_ships = 0
+
+    ActiveRecord::Base.transaction do
+      destroyed_funding = @project.certification_funding_requests.destroy_all.size
+      destroyed_ships = @project.ship_reviews.destroy_all.size
+      @project.update_column(:hardware_stage, nil)
+
+      ::PaperTrail::Version.create!(
+        item: @project,
+        event: "update",
+        whodunnit: current_user.id.to_s,
+        object_changes: {
+          hardware_stage: [ old_stage, nil ],
+          converted_to_software: {
+            funding_requests_deleted: destroyed_funding,
+            ship_reviews_deleted: destroyed_ships
+          }
+        }
+      )
+    end
+
+    redirect_to admin_project_path(@project),
+      notice: "Converted to software project. Deleted #{destroyed_funding} funding request(s) and #{destroyed_ships} ship review(s)."
+  end
+
   def force_state
     @project = ::Project.unscoped.find(params[:id])
     authorize @project, :update?
