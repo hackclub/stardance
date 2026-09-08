@@ -23,7 +23,7 @@ class RocketProgressComponent < ViewComponent::Base
   def remaining = progress.remaining_hours
   def complete? = progress.complete?
 
-  # Whole hours read better on a 500-hour goal; the exact figure still goes to
+  # Whole hours read better on a 5000-hour goal; the exact figure still goes to
   # the progress bar's aria-valuenow.
   def display_hours = helpers.number_with_delimiter(hours.round)
   def display_goal = helpers.number_with_delimiter(goal)

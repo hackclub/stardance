@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# The rocket-repair goal behind the :bukux2 flag: 500 hours of coding, counted
+# The rocket-repair goal behind the :bukux2 flag: 5000 hours of coding, counted
 # from approved YSWS submissions as they land in the unified base.
 #
 # Read-only by design. Nothing stores a running total and nothing writes to the
@@ -35,7 +35,7 @@
 #   ) per_review;
 #
 module RocketProgress
-  GOAL_HOURS = 500
+  GOAL_HOURS = 5000
 
   # Campaign window, in the program's own time zone (reviews and review weeks
   # all run on Eastern wall clock). Only submissions synced inside it count, so
@@ -44,7 +44,7 @@ module RocketProgress
   WINDOW_END   = Certification::Ysws::PROGRAM_ZONE.parse("2026-09-24 23:59").freeze
 
   # The sum walks one row per synced review, so it's cached rather than run on
-  # every home page render. A few minutes stale is fine for a 500-hour goal.
+  # every home page render. A few minutes stale is fine for a 5000-hour goal.
   CACHE_KEY = "rocket_progress/approved_hours"
   CACHE_TTL = 5.minutes
 
