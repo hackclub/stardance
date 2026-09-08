@@ -48,7 +48,10 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     queue = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
     queue = queue.with_integrity_check if @with_integrity
 
-    @type_counts = queue.joins(:project).group("projects.project_type").count
+    software_counts = queue.joins(:project).where(projects: { hardware_stage: nil }).group("projects.project_type").count
+    hardware_count = queue.joins(:project).where.not(projects: { hardware_stage: nil }).count
+    software_counts.delete("Hardware")
+    @type_counts = software_counts.merge("Hardware" => hardware_count).reject { |_k, v| v.zero? }
 
     scope =
       if @search.present?
