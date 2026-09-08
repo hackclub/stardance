@@ -355,10 +355,56 @@
         border: none;
         border-radius: 0;
         margin: 0;
+        // .admin-content sets `overflow: hidden` on tables to clip their rounded
+        // corners. Here the wrapper owns the radius, and that clip would make the
+        // table its own scroll context — stopping the sticky Actions column below
+        // from anchoring to the scroll wrapper. Hand scrolling back to the wrapper.
+        overflow: visible;
       }
 
       th {
         border-bottom: 2px solid var(--color-set-1-fg-secondary);
+      }
+
+      // Pin the Actions column to the right edge of the scroll wrapper so the
+      // View button is always reachable — however wide the other columns get,
+      // the reviewer never has to scroll the table sideways to reach it. The
+      // opaque backing hides cells sliding underneath; the soft left shadow
+      // reads as elevation once the table actually overflows.
+      th:last-child,
+      td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        background: var(--color-set-1-bg);
+        box-shadow: -8px 0 8px -8px rgba(0, 0, 0, 0.35);
+      }
+
+      // Re-composite the thead / zebra / hover tints over the pinned backing so
+      // the sticky cell matches the row it belongs to instead of showing a seam.
+      th:last-child {
+        z-index: 2;
+        background:
+          linear-gradient(
+            var(--color-overlay-light-soft),
+            var(--color-overlay-light-soft)
+          ),
+          var(--color-set-1-bg);
+      }
+
+      tbody tr:nth-child(odd) td:last-child {
+        background:
+          linear-gradient(hsla(228, 18%, 45%, 0.06), hsla(228, 18%, 45%, 0.06)),
+          var(--color-set-1-bg);
+      }
+
+      tbody tr:hover td:last-child {
+        background:
+          linear-gradient(
+            var(--color-overlay-light-soft),
+            var(--color-overlay-light-soft)
+          ),
+          var(--color-set-1-bg);
       }
     }
 
