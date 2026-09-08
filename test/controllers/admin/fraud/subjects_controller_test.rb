@@ -116,6 +116,23 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
                   telescreen_hackatime_overview_url("4242", project: "orbit-os")
     assert_select ".fraud-subject__item--integrity a[href=?]",
                   telescreen_hackatime_overview_url("4242", project: "orbit os v2")
+    assert_select ".fraud-subject__item--integrity a[href=?]",
+                  telescreen_hackatime_overview_url("4242", project: [ "orbit-os", "orbit os v2" ])
+  end
+
+  test "a single Hackatime project gets no all-projects link" do
+    project = Project.create!(title: "Shipped build")
+    pending_integrity_check(project)
+    @subject.identities.create!(provider: "hackatime", uid: "4242", access_token: "t")
+    User::HackatimeProject.insert_all([
+      { user_id: @subject.id, project_id: project.id, name: "orbit-os", created_at: Time.current, updated_at: Time.current }
+    ])
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__tool-link--all", count: 0
   end
 
   test "the subject page shows the detection signals behind an integrity check" do

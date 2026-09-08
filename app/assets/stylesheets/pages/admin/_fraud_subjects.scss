@@ -294,6 +294,12 @@
     color: var(--color-set-3-fg-secondary);
   }
 
+  // Reads as the summary of the keys beside it rather than another key name.
+  .fraud-subject__tool-link--all {
+    border-color: var(--color-brand-cream);
+    color: var(--color-brand-cream);
+  }
+
   // Inside the review group the flex gap already spaces the rows.
   .fraud-subject__review .fraud-subject__tool-links {
     margin-bottom: 0;

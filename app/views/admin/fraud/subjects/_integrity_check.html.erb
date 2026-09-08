@@ -75,6 +75,13 @@
                           telescreen_hackatime_overview_url(hackatime_uid, project: hackatime_project.name),
                           target: "_blank", rel: "noopener noreferrer", class: "fraud-subject__tool-link" %>
             <% end %>
+
+            <% if hackatime_projects.many? %>
+              <%= link_to "All #{hackatime_projects.size} ↗",
+                          telescreen_hackatime_overview_url(hackatime_uid, project: hackatime_projects.map(&:name)),
+                          target: "_blank", rel: "noopener noreferrer",
+                          class: "fraud-subject__tool-link fraud-subject__tool-link--all" %>
+            <% end %>
           </div>
         <% end %>
       </div>
