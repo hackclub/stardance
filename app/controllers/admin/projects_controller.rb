@@ -137,7 +137,7 @@ class Admin::ProjectsController < Admin::ApplicationController
     @project = ::Project.unscoped.find(params[:id])
     authorize @project, :reset_devlogs?
 
-    devlogs = @project.devlogs.includes(:attachments_attachments => :blob).where(deleted_at: nil)
+    devlogs = @project.devlogs.includes(attachments_attachments: :blob).where(deleted_at: nil)
     posts_by_devlog = @project.posts.where(postable_type: "Post::Devlog").index_by(&:postable_id)
 
     entries = devlogs.map do |devlog|
