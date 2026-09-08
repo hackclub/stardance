@@ -20,7 +20,7 @@ class VisualNovelComponent < ViewComponent::Base
     "we're FINALLY going to space!",
     "except, there's a problem. the ship is in pieces!!!",
     "we need enough time to fix the rocket- every hour that YOU or any stardancer codes speeds up the build process!",
-    "and once the ship is done, everyone who's contributed at least five hours - gets a LIMITED-EDITION sticker :0 !!!!!!!!!! woah",
+    "and once the ship is done, everyone who's contributed at least five hours - gets LIMITED-EDITION stickers :0 !!!!!!!!!! woah",
     "what do you think? let's get stardancing :D"
   ].freeze
 
