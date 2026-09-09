@@ -6,7 +6,8 @@
 # it.
 #
 # The figure comes from RocketProgress, which derives it from approved YSWS
-# submissions inside the campaign window — nothing here writes anything.
+# submissions whose ship landed inside the campaign window — nothing here
+# writes anything.
 class RocketProgressComponent < ViewComponent::Base
   attr_reader :user
 

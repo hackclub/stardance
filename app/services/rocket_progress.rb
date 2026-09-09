@@ -1,20 +1,22 @@
 # frozen_string_literal: true
 
 # The rocket-repair goal behind the :bukux2 flag: 5000 hours of coding, counted
-# from approved YSWS submissions as they land in the unified base.
+# from approved YSWS submissions whose ship landed inside the campaign window.
 #
 # Read-only by design. Nothing stores a running total and nothing writes to the
-# review pipeline — the figure is derived on demand from reviews whose
-# airtable_synced_at falls inside the campaign window, which is what makes the
-# bar start at zero on launch day without a migration or a backfill. It also
-# self-corrects: Certification::YswsReviewUndoer nils airtable_synced_at, so an
-# undone review drops straight out of the total.
+# review pipeline — the figure is derived on demand from reviews whose ship
+# event was posted inside the campaign window, which is what makes the bar
+# start at zero on launch day without a migration or a backfill. Windowing on
+# the ship rather than Certification::YswsAirtableSyncJob's airtable_synced_at
+# means the bar moves as soon as a submission is reviewed and approved, not
+# whenever the sync job next runs.
 #
-# The arithmetic mirrors Certification::YswsAirtableSyncJob#build_airtable_fields
-# so the bar counts the same hours the base received: each review's
+# The arithmetic still mirrors Certification::YswsAirtableSyncJob#build_airtable_fields
+# so the bar counts the same hours the base eventually receives: each review's
 # reviewer-approved devlog minutes, less any fraud deduction on its ship event,
 # floored at zero. Reviews the job would have marked rejected (banned user, or
-# under the approved-minutes floor) are left out.
+# under the approved-minutes floor) are left out — so unreviewed devlogs don't
+# move the bar, only ones a reviewer has actually approved.
 #
 # To reconcile by hand after the campaign, this is the same sum in SQL:
 #
@@ -26,9 +28,10 @@
 #                                    THEN ci.deduction_minutes END), 0), 0) AS net_minutes
 #     FROM certification_ysws_reviews r
 #     JOIN users u ON u.id = r.user_id
+#     JOIN post_ship_events se ON se.id = r.post_ship_event_id
 #     LEFT JOIN certification_devlog_reviews dr ON dr.ysws_review_id = r.id
 #     LEFT JOIN certification_integrities ci ON ci.ship_event_id = r.post_ship_event_id
-#     WHERE r.airtable_synced_at BETWEEN '<start>' AND '<end>'
+#     WHERE se.created_at BETWEEN '<start>' AND '<end>'
 #       AND u.banned = FALSE
 #     GROUP BY r.id
 #     HAVING COALESCE(SUM(dr.approved_minutes), 0) >= 6
@@ -38,13 +41,13 @@ module RocketProgress
   GOAL_HOURS = 5000
 
   # Campaign window, in the program's own time zone (reviews and review weeks
-  # all run on Eastern wall clock). Only submissions synced inside it count, so
+  # all run on Eastern wall clock). Only ships posted inside it count, so
   # these two dates are what "starts at 0" means — set them to the real run.
   WINDOW_START = Certification::Ysws::PROGRAM_ZONE.parse("2026-09-03 00:00").freeze
   WINDOW_END   = Certification::Ysws::PROGRAM_ZONE.parse("2026-09-24 23:59").freeze
 
-  # The sum walks one row per synced review, so it's cached rather than run on
-  # every home page render. A few minutes stale is fine for a 5000-hour goal.
+  # The sum walks one row per review, so it's cached rather than run on every
+  # home page render. A few minutes stale is fine for a 5000-hour goal.
   CACHE_KEY = "rocket_progress/approved_hours"
   CACHE_TTL = 5.minutes
 
@@ -73,8 +76,8 @@ module RocketProgress
       # totalled here so the CASE/GREATEST arithmetic stays legible.
       def approved_minutes
         Certification::Ysws
-          .where(airtable_synced_at: window)
-          .joins(:user)
+          .joins(:user, :post_ship_event)
+          .where(post_ship_events: { created_at: window })
           .where(users: { banned: false })
           .left_joins(:devlog_reviews, :integrity_check)
           .group(:id)
