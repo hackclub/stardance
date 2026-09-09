@@ -34,6 +34,12 @@ application.register(
   Certification__FeedbackTemplatesController,
 );
 
+import Certification__LapsePlayerController from "./certification/lapse_player_controller";
+application.register(
+  "certification--lapse-player",
+  Certification__LapsePlayerController,
+);
+
 import Certification__QueueController from "./certification/queue_controller";
 application.register("certification--queue", Certification__QueueController);
 
