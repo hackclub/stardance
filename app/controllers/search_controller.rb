@@ -3,14 +3,25 @@ class SearchController < ApplicationController
   GLOBAL_MAX_RESULTS = 6
 
   # GET /search/users.json?q=...
+  # `q` matches the start of a display name, or an exact id. `id` looks up one
+  # user directly — the bio editor uses it to resolve an existing @mention chip.
   def users
     authorize :search
 
-    q = params[:q].to_s.strip.delete_prefix("@")
+    q = params[:q].to_s.strip.delete_prefix("@").delete_prefix("#")
 
-    scope = User.discoverable.where.not(display_name: [ nil, "" ])
-    scope = scope.where(verification_status: "verified") unless current_user&.admin?
-    scope = scope.where("LOWER(display_name) LIKE ?", "#{q.downcase}%") if q.present?
+    # Admins see every user. The audit log's "Performed By" filter has to be
+    # able to name an actor who is banned or has no Hack Club identity, and
+    # `discoverable` excludes both.
+    scope = current_user&.admin? ? User.all : User.discoverable.where(verification_status: "verified")
+    scope = scope.where.not(display_name: [ nil, "" ])
+
+    if params[:id].present?
+      scope = scope.where(id: params[:id])
+    elsif q.present?
+      by_name = scope.where("LOWER(display_name) LIKE ?", "#{ActiveRecord::Base.sanitize_sql_like(q.downcase)}%")
+      scope = q.match?(/\A\d+\z/) ? by_name.or(scope.where(id: q)) : by_name
+    end
 
     results = scope
       .order(:display_name)
