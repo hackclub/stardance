@@ -4,13 +4,6 @@ class VisualNovelComponentTest < ViewComponent::TestCase
   setup do
     @user = users(:one)
     @user.update!(onboarded_at: Time.current)
-    # The replay switch is a temporary testing affordance; these cover the
-    # shipping behaviour, so turn it off for all but the replay test.
-    VisualNovelComponent.replay_every_load = false
-  end
-
-  teardown do
-    VisualNovelComponent.replay_every_load = true
   end
 
   test "renders the dialogue scene when the flag is on" do
@@ -62,16 +55,6 @@ class VisualNovelComponentTest < ViewComponent::TestCase
     end
 
     assert_no_selector ".visual-novel"
-  end
-
-  test "replay mode ignores the dismissal and suppresses the dismissal POST" do
-    Flipper.enable(:bukux2)
-    @user.dismiss_thing!(VisualNovelComponent::DISMISS_THING)
-    VisualNovelComponent.replay_every_load = true
-
-    render_inline VisualNovelComponent.new(user: @user)
-
-    assert_selector ".visual-novel[data-visual-novel-dismiss-thing-value='']"
   end
 
   test "renders nothing for guests" do

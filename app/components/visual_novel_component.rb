@@ -24,14 +24,6 @@ class VisualNovelComponent < ViewComponent::Base
     "what do you think? let's get stardancing :D"
   ].freeze
 
-  # TEMPORARY, for testing the scene: while this is true the dialogue replays on
-  # every page load and finishing it records no dismissal. Set it to false (or
-  # delete this accessor and its two callers below) before shipping the flag.
-  class << self
-    attr_accessor :replay_every_load
-  end
-  self.replay_every_load = true
-
   attr_reader :user
 
   def initialize(user:)
@@ -42,20 +34,15 @@ class VisualNovelComponent < ViewComponent::Base
     user.present? &&
       user.onboarded? &&
       Flipper.enabled?(:bukux2, user) &&
-      (replaying? || !user.has_dismissed?(DISMISS_THING)) &&
+      !user.has_dismissed?(DISMISS_THING) &&
       !welcome_tour_running?
   end
 
   def speaker = SPEAKER
   def lines = LINES.map { |line| format(line, name: greeting_name) }
-
-  # Blank while replaying, which is the controller's signal to skip the
-  # dismissal POST — so a test run never marks the scene as seen.
-  def dismiss_thing = replaying? ? "" : DISMISS_THING
+  def dismiss_thing = DISMISS_THING
 
   private
-    def replaying? = self.class.replay_every_load
-
     # display_name is nullable, so fall back rather than greeting a blank.
     def greeting_name = user.display_name.presence || "stardancer"
 
