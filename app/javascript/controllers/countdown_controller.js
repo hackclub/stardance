@@ -27,6 +27,7 @@ export default class extends Controller {
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
     const mins = Math.floor((secs % 3600) / 60);
-    this.element.textContent = days > 0 ? `${days}d ${hours}h ${mins}min` : `${hours}h ${mins}min`;
+    this.element.textContent =
+      days > 0 ? `${days}d ${hours}h ${mins}min` : `${hours}h ${mins}min`;
   }
 }
