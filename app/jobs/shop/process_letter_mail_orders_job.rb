@@ -9,7 +9,7 @@ class Shop::ProcessLetterMailOrdersJob < ApplicationJob
     orders = ShopOrder.joins(:shop_item)
                       .where(shop_items: { type: LETTER_TYPES })
                       .where(aasm_state: "awaiting_periodical_fulfillment")
-                      .includes(:shop_item, :user)
+                      .includes(:shop_item, :user, :selected_modifiers)
                       .order(:id) # deterministic chunks on retry, so the idempotency key dedupes
 
     return if orders.empty?

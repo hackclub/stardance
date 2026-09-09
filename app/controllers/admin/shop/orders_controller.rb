@@ -797,6 +797,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     @order.user.with_advisory_lock("theseus_send/#{@order.user_id}", timeout_seconds: 10) do
       orders_to_send = ShopOrder.joins(:shop_item)
                                 .where(id: order_ids, shop_items: { type: @order.shop_item.type }, aasm_state: "awaiting_periodical_fulfillment")
+                                .includes(:selected_modifiers)
                                 .to_a
 
       stale_ids = order_ids - orders_to_send.map(&:id)
