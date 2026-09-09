@@ -62,12 +62,29 @@ module Admin
     def trigger
       authorize FraudPayoutRun
 
-      Fraud::CalculatePayoutsJob.perform_later(manual: true)
+      period_start, period_end = month_bounds(params[:month])
+      if params[:month].present? && period_start.nil?
+        return redirect_to admin_fraud_payouts_path, alert: "Couldn't understand that month."
+      end
 
-      redirect_to admin_fraud_payouts_path, notice: "Manual payout calculation has been queued."
+      Fraud::CalculatePayoutsJob.perform_later(manual: true, period_start: period_start, period_end: period_end)
+
+      notice = period_start ? "Payout calculation for #{period_start.strftime('%B %Y')} has been queued." : "Manual payout calculation has been queued."
+      redirect_to admin_fraud_payouts_path, notice: notice
     end
 
     private
+
+    # Parses a "YYYY-MM" `<input type="month">` value into the start/end of
+    # that calendar month. Returns [nil, nil] when blank or unparseable.
+    def month_bounds(month_param)
+      return [ nil, nil ] if month_param.blank?
+
+      month = Date.strptime(month_param, "%Y-%m")
+      [ month.beginning_of_month.beginning_of_day, month.end_of_month.end_of_day ]
+    rescue ArgumentError
+      [ nil, nil ]
+    end
 
     # Builds the live bracket standings from the orders the automatic payout
     # job would process. Returns the BracketCalculator result hash (or nil when
