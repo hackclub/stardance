@@ -229,6 +229,40 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type='hidden'][name='project[hardware_stage]']"
   end
 
+  test "locked software project shows Software as the selected type" do
+    ship = Post::ShipEvent.new(body: "shipped", uploading_attachments: true)
+    ActiveRecord::Base.transaction do
+      ship.save!(validate: false)
+      Post.create!(project: @project, user: @owner, postable: ship)
+    end
+
+    sign_in @owner
+
+    get project_path(@project, editing: true)
+
+    assert_response :success
+    assert_select ".project-show__stage-choice-label--selected", text: "Software", count: 1
+    assert_select ".project-show__stage-choice-label--selected", text: "Hardware", count: 0
+  end
+
+  test "locked hardware project shows Hardware as the selected type" do
+    @project.update!(hardware_stage: "build")
+
+    ship = Post::ShipEvent.new(body: "shipped", uploading_attachments: true)
+    ActiveRecord::Base.transaction do
+      ship.save!(validate: false)
+      Post.create!(project: @project, user: @owner, postable: ship)
+    end
+
+    sign_in @owner
+
+    get project_path(@project, editing: true)
+
+    assert_response :success
+    assert_select ".project-show__stage-choice-label--selected", text: "Hardware", count: 1
+    assert_select ".project-show__stage-choice-label--selected", text: "Software", count: 0
+  end
+
   test "new project dialog offers the hardware project option and stage chooser" do
     sign_in @owner
 
