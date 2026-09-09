@@ -19,8 +19,11 @@
         <li class="fraud-queue__item">
           <%= link_to admin_fraud_subject_path(subject.user_id), class: "fraud-subject-card" do %>
             <span class="fraud-subject-card__identity">
-              <span class="fraud-subject-card__name"><%= user.display_name %></span>
-              <span class="fraud-subject-card__id">#<%= user.id %></span>
+              <%= image_tag user.avatar, alt: "", class: "fraud-subject-card__avatar", loading: "lazy" %>
+              <span class="fraud-subject-card__identity-copy">
+                <span class="fraud-subject-card__name"><%= user.display_name %></span>
+                <span class="fraud-subject-card__id">#<%= user.id %></span>
+              </span>
             </span>
 
             <span class="fraud-subject-card__counts">
@@ -32,11 +35,6 @@
               <% if subject.order_count.positive? %>
                 <span class="fraud-subject-card__count fraud-subject-card__count--order">
                   <%= pluralize(subject.order_count, "order") %>
-                </span>
-              <% end %>
-              <% if subject.integrity_count.positive? %>
-                <span class="fraud-subject-card__count fraud-subject-card__count--integrity">
-                  <%= pluralize(subject.integrity_count, "check") %>
                 </span>
               <% end %>
             </span>

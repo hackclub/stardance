@@ -1,8 +1,8 @@
 require "test_helper"
 
-# The order a fraud reviewer works people in. Flags outrank shop orders outrank
-# integrity checks, because the first two hold up something the person can see
-# happening to them and the third does not.
+# The order a fraud reviewer works people in. Reports outrank shop orders;
+# integrity checks remain available as detail-page context but do not put a
+# person into the default queue.
 class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
   include UserFactory
 
@@ -12,29 +12,32 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     @reporter = create_user(slack_id: "u-reporter", display_name: "reporter")
   end
 
-  test "a fresher flag outranks an older integrity check" do
-    flagged = user_with_flag(age: 10.days.ago)
-    checked = user_with_integrity(age: 25.days.ago)
+  test "an integrity check alone does not enter the default queue" do
+    user_with_integrity(age: 25.days.ago)
 
-    assert_equal [ flagged.id, checked.id ], ranked_ids
+    assert_empty subjects
   end
 
-  test "a shop order outranks an integrity check of the same age" do
+  test "a report outranks an order with the same age" do
+    flagged = user_with_flag(age: 5.days.ago)
     ordered = user_with_order(age: 5.days.ago)
-    checked = user_with_integrity(age: 5.days.ago)
 
-    assert_equal [ ordered.id, checked.id ], ranked_ids
+    assert_equal [ flagged.id, ordered.id ], ranked_ids
   end
 
   test "priority is the single highest scoring item, not the sum" do
-    one_old_flag = user_with_flag(age: 20.days.ago)
-    many_fresh_checks = create_user(slack_id: "u-many", display_name: "many")
-    5.times { pending_integrity_for(many_fresh_checks, age: 1.day.ago) }
+    one_old_order = user_with_order(age: 20.days.ago)
+    many_fresh_flags = create_user(slack_id: "u-many", display_name: "many")
+    5.times do
+      project = Project.create!(title: "Flagged #{SecureRandom.hex(4)}")
+      Project::Membership.create!(project:, user: many_fresh_flags, role: :owner)
+      flag_for(project, age: 1.day.ago)
+    end
 
-    assert_equal [ one_old_flag.id, many_fresh_checks.id ], ranked_ids
+    assert_equal [ one_old_order.id, many_fresh_flags.id ], ranked_ids
   end
 
-  test "counts each source separately for one person" do
+  test "counts reports and orders for one person" do
     user = user_with_flag(age: 3.days.ago)
     user.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
     order_for(user, age: 2.days.ago)
@@ -43,8 +46,8 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     subject = subjects.sole
 
     assert_equal user.id, subject.user_id
-    assert_equal [ 1, 1, 1 ], [ subject.flag_count, subject.order_count, subject.integrity_count ]
-    assert_equal 3, subject.item_count
+    assert_equal [ 1, 1 ], [ subject.flag_count, subject.order_count ]
+    assert_equal 2, subject.item_count
   end
 
   test "leaves out quality reports, buyer-side orders, decided checks and banned people" do

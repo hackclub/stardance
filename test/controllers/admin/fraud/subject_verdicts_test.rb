@@ -99,6 +99,46 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the subject page offers bulk order verdicts" do
+    pending_order
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select "form[action=?] button", bulk_approve_admin_shop_orders_path, text: "Approve all 1 order"
+    assert_select "form[action=?] input[type=submit]", bulk_reject_admin_shop_orders_path, value: "Reject all orders"
+  end
+
+  test "the subject page shows previously approved orders" do
+    order = pending_order
+    order.update_columns(aasm_state: "awaiting_periodical_fulfillment", awaiting_periodical_fulfillment_at: Time.current)
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select "#fraud-subject-approved-orders", text: /Previously approved orders/
+    assert_match order.shop_item.name, response.body
+    assert_match "Awaiting periodical fulfillment", response.body
+  end
+
+  test "bulk rejection rejects every selected subject order and audits each verdict" do
+    order = pending_order
+    project = Project.create!(title: "Fraud source")
+
+    post bulk_reject_admin_shop_orders_path,
+         params: {
+           order_ids: [ order.id ],
+           reason: "Fraud review failed",
+           internal_rejection_reason: "Matching evidence",
+           fraud_related_project_id: project.id
+         },
+         headers: { "HTTP_REFERER" => admin_fraud_subject_url(@subject) }
+
+    assert_redirected_to admin_fraud_subject_path(@subject)
+    assert_predicate order.reload, :rejected?
+    assert PaperTrail::Version.where(item_type: "ShopOrder", item_id: order.id, whodunnit: @admin.id.to_s).exists?
+  end
+
   test "putting an order on hold keeps it in the queue and re-renders the row" do
     order = pending_order
 

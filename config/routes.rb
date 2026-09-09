@@ -721,9 +721,9 @@ Rails.application.routes.draw do
     resource :support, only: [ :show ], controller: "support/dashboards"
     resource :fraud, only: [ :show ], controller: "fraud/dashboards"
     namespace :fraud do
-      # One page per person with fraud work waiting: their flags, shop orders
-      # and integrity checks together, ranked by whoever has waited longest on
-      # the thing that matters most.
+      # One page per person with fraud work waiting: reports and shop orders are
+      # ranked by whoever has waited longest on the thing that matters most.
+      # Integrity checks remain supporting context on the subject page.
       resources :subjects, only: [ :index, :show ]
     end
 
@@ -775,6 +775,7 @@ Rails.application.routes.draw do
       resources :orders, only: [ :index, :show ] do
         collection do
           post :bulk_approve
+          post :bulk_reject
         end
         member do
           post :reveal_address

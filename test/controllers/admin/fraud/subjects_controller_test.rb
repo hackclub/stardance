@@ -23,6 +23,17 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "a[href=?]", admin_fraud_subject_path(@subject)
+    assert_select ".fraud-subject-card__avatar[src=?]", @subject.avatar
+  end
+
+  test "the queue leaves out someone with only an integrity check" do
+    pending_integrity_check(@project)
+
+    sign_in @squad
+    get admin_fraud_subjects_path
+
+    assert_response :success
+    assert_select "a[href=?]", admin_fraud_subject_path(@subject), count: 0
   end
 
   test "the queue leaves out quality reports the fraud team does not own" do
@@ -75,6 +86,26 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_match @subject.email, response.body
     assert_match "U_FRAUD_SUBJECT", response.body
     assert_match "Needs submission", response.body
+    assert_select ".fraud-subject__avatar[src=?]", @subject.avatar
+  end
+
+  test "the subject page breaks submitted projects down by payout, keys and credited time" do
+    ship = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    ship.update_columns(certification_status: "approved", payout: 42)
+    Post.create!(project: @project, user: @subject, postable: ship)
+
+    devlog = Post::Devlog.create!(body: "Built the thing", duration_seconds: 90.minutes.to_i,
+                                  hackatime_projects_key_snapshot: "api,web", uploading_attachments: true)
+    Post.create!(project: @project, user: @subject, postable: devlog)
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select "#fraud-subject-projects", text: /Submitted projects/
+    assert_match "42.0", response.body
+    assert_match "api + web", response.body
+    assert_match "1.5 hours logged", response.body
   end
 
   test "the subject page describes the project behind each integrity check" do

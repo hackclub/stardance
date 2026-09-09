@@ -68,8 +68,24 @@
   }
 
   .fraud-subject-card__identity {
+    align-items: center;
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .fraud-subject-card__avatar {
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 3rem;
+    object-fit: cover;
+    width: 3rem;
+  }
+
+  .fraud-subject-card__identity-copy {
     align-items: baseline;
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-xs);
   }
 
@@ -216,6 +232,21 @@
   .fraud-subject__item--resolved {
     border-left: 6px solid var(--color-brand-mint);
     color: var(--color-set-3-fg-secondary);
+  }
+
+  .fraud-subject__identity {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--space-m);
+  }
+
+  .fraud-subject__avatar {
+    border: 2px solid var(--color-set-3-fg-secondary);
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 6rem;
+    object-fit: cover;
+    width: 6rem;
   }
 
   .fraud-subject__facts {
@@ -389,6 +420,93 @@
   // so the rejection form has room without stretching the buttons beside it.
   .fraud-subject__reject[open] {
     flex-basis: 100%;
+  }
+
+  .fraud-subject__bulk-actions {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-m);
+  }
+
+  .fraud-subject__bulk-reject[open] {
+    flex-basis: 100%;
+  }
+
+  .fraud-subject__bulk-reject-form {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-brand-salmon);
+    border-radius: var(--profile-radius);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+    max-width: 42rem;
+    padding: var(--space-m);
+  }
+
+  .fraud-subject__projects {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .fraud-subject__project {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-m);
+  }
+
+  .fraud-subject__mapping-title {
+    font-size: var(--font-size-s);
+    margin: var(--space-m) 0 var(--space-xs);
+  }
+
+  .fraud-subject__key-mappings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin: 0;
+  }
+
+  .fraud-subject__key-mapping {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+
+    dd {
+      color: var(--color-set-3-fg-secondary);
+      margin: 0;
+    }
+  }
+
+  .fraud-subject__approved-orders {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-subject__approved-order {
+    align-items: center;
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    display: flex;
+    gap: var(--space-m);
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-s);
+  }
+
+  @media (max-width: 40rem) {
+    .fraud-subject__identity {
+      flex-direction: column;
+    }
   }
 }
 

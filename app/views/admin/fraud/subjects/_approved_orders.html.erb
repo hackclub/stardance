@@ -1,0 +1,26 @@
+<section class="fraud-subject__section" aria-labelledby="fraud-subject-approved-orders">
+  <h2 class="fraud-subject__section-title" id="fraud-subject-approved-orders">
+    Previously approved orders
+    <span class="fraud-subject__section-count"><%= approved_orders_count %></span>
+  </h2>
+
+  <% if approved_orders.any? %>
+    <ul class="fraud-subject__approved-orders">
+      <% approved_orders.each do |order| %>
+        <li class="fraud-subject__approved-order">
+          <span>
+            <strong><%= order.quantity %> × <%= order.shop_item.name %></strong>
+            <span class="fraud-subject__fact-note">#<%= order.id %> · <%= order.aasm_state.humanize %></span>
+          </span>
+          <%= link_to "Open order", admin_shop_order_path(order), class: "fraud-subject__item-action" %>
+        </li>
+      <% end %>
+    </ul>
+
+    <% if approved_orders_count > approved_orders.size %>
+      <p class="fraud-subject__fact-note">Showing the latest <%= approved_orders.size %>.</p>
+    <% end %>
+  <% else %>
+    <p class="fraud-subject__empty">No previously approved orders.</p>
+  <% end %>
+</section>

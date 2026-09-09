@@ -14,6 +14,8 @@
 
   <%= render "telescreen_tools" %>
 
+  <%= render "project_history", project_summaries: @project_summaries %>
+
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-flags">
     <h2 class="fraud-subject__section-title" id="fraud-subject-flags">Flags</h2>
 
@@ -29,6 +31,9 @@
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-orders">
     <h2 class="fraud-subject__section-title" id="fraud-subject-orders">Shop orders</h2>
 
+    <%= render "order_bulk_actions", user: @user, orders: @orders,
+               approvable_orders: @approvable_orders, projects: @projects_for_rejection %>
+
     <% if @orders.any? %>
       <div class="fraud-subject__items">
         <%= render partial: "order", collection: @orders, as: :order, locals: { user: @user } %>
@@ -37,6 +42,9 @@
       <p class="fraud-subject__empty">No orders waiting.</p>
     <% end %>
   </section>
+
+  <%= render "approved_orders", approved_orders: @approved_orders,
+             approved_orders_count: @approved_orders_count %>
 
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-integrity">
     <h2 class="fraud-subject__section-title" id="fraud-subject-integrity">Integrity checks</h2>
