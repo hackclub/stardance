@@ -37,7 +37,7 @@
                   <% user = users_by_id[version.whodunnit.to_s] %>
                   <% if user %>
                     <div class="audit-log__user">
-                      <img src="<%= user.avatar %>" alt="" class="audit-log__avatar">
+                      <img src="<%= user.avatar %>" alt="" class="audit-log__avatar" loading="lazy">
                       <span class="audit-log__username"><%= user.display_name %></span>
                     </div>
                   <% else %>

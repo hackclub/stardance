@@ -85,11 +85,11 @@
               <td>
                 <% if order.assigned_to_user.present? %>
                   <div>
-                    <%= image_tag order.assigned_to_user.avatar, alt: order.assigned_to_user.display_name, class: "space-table__avatar" %>
+                    <%= image_tag order.assigned_to_user.avatar, alt: order.assigned_to_user.display_name, class: "space-table__avatar", loading: "lazy" %>
                     <span><%= order.assigned_to_user.display_name %></span>
                   </div>
                 <% end %>
-                <div data-controller="searchable-select">
+                <div class="searchable-select" data-controller="searchable-select">
                   <%= form_with url: assign_user_admin_shop_order_path(order), method: :post, local: true, data: { turbo: false } do |f| %>
                     <%= f.hidden_field :assigned_to_user_id, value: order.assigned_to_user_id, data: { searchable_select_target: "hiddenField" } %>
                     <input
@@ -98,8 +98,9 @@
                       data-searchable-select-target="input"
                       data-action="focus->searchable-select#open input->searchable-select#filter"
                       autocomplete="off">
-                    <div data-searchable-select-target="dropdown">
+                    <div class="searchable-select-dropdown" data-searchable-select-target="dropdown">
                       <div
+                        class="searchable-select-option"
                         data-searchable-select-target="option"
                         data-action="click->searchable-select#selectAndSubmit"
                         data-value=""
@@ -109,12 +110,13 @@
                       </div>
                       <% @fulfillment_users.each do |user| %>
                         <div
+                          class="searchable-select-option"
                           data-searchable-select-target="option"
                           data-action="click->searchable-select#selectAndSubmit"
                           data-value="<%= user.id %>"
                           data-label="<%= user.display_name %>"
                           data-search-text="<%= "#{user.display_name} #{user.regions.join(' ')} #{user.id}".downcase %>">
-                          <img src="<%= user.avatar %>" alt="">
+                          <img src="<%= user.avatar %>" alt="" class="searchable-select-avatar" loading="lazy">
                           <span><%= user.display_name %></span>
                           <% if user.has_regions? %>
                             <span><%= user.regions.join(", ") %></span>

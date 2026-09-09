@@ -475,7 +475,7 @@
           </span>
         </div>
         <div class="aorder__assign-form">
-          <div data-controller="searchable-select">
+          <div class="searchable-select" data-controller="searchable-select">
             <%= form_with url: assign_user_admin_shop_order_path(@order), method: :post, local: true, data: { turbo: false } do |f| %>
               <%= f.hidden_field :assigned_to_user_id, value: @order.assigned_to_user_id, data: { searchable_select_target: "hiddenField" } %>
               <input
@@ -486,8 +486,9 @@
                 autocomplete="off"
                 class="aorder__input"
                 style="width: 100%; box-sizing: border-box;">
-              <div data-searchable-select-target="dropdown">
+              <div class="searchable-select-dropdown" data-searchable-select-target="dropdown">
                 <div
+                  class="searchable-select-option"
                   data-searchable-select-target="option"
                   data-action="click->searchable-select#selectAndSubmit"
                   data-value=""
@@ -497,12 +498,13 @@
                 </div>
                 <% @fulfillment_users.each do |user| %>
                   <div
+                    class="searchable-select-option"
                     data-searchable-select-target="option"
                     data-action="click->searchable-select#selectAndSubmit"
                     data-value="<%= user.id %>"
                     data-label="<%= user.display_name %>"
                     data-search-text="<%= "#{user.display_name} #{user.regions.join(' ')} #{user.id}".downcase %>">
-                    <img src="<%= user.avatar %>" alt="" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;">
+                    <img src="<%= user.avatar %>" alt="" class="searchable-select-avatar" loading="lazy">
                     <span><%= user.display_name %></span>
                     <% if user.has_regions? %>
                       <small style="color: var(--color-space-text-muted);"><%= user.regions.join(", ") %></small>

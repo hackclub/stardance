@@ -128,7 +128,7 @@
                 </td>
                 <td>
                   <%= link_to admin_user_path(entry.user), class: "admin-ledger__user" do %>
-                    <%= image_tag entry.user.avatar, alt: "", class: "admin-ledger__avatar" %>
+                    <%= image_tag entry.user.avatar, alt: "", class: "admin-ledger__avatar", loading: "lazy" %>
                     <span><%= entry.user.display_name %> <span class="admin-ledger__muted">#<%= entry.user_id %></span></span>
                   <% end %>
                 </td>

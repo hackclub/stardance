@@ -92,7 +92,7 @@
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
               <td style="padding: var(--space-s) var(--space-m);">
                 <div style="display:flex; align-items:center; gap: var(--space-s);">
-                  <img src="<%= line.user.avatar %>" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                  <img src="<%= line.user.avatar %>" alt="" loading="lazy" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
                   <%= link_to line.user.display_name, admin_user_path(line.user), style: "color: var(--color-space-text);" %>
                 </div>
               </td>

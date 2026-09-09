@@ -5,7 +5,7 @@
 <%= tag.li class: li_classes, data: card_data do %>
   <span class="<%= class_names("notifications-item__icon", "notifications-item__icon--avatar": avatar_icon?) %>" aria-hidden="true">
     <% if avatar_icon? %>
-      <%= image_tag avatar_actor.avatar, alt: "", class: "notifications-item__icon-avatar" %>
+      <%= image_tag avatar_actor.avatar, alt: "", class: "notifications-item__icon-avatar", loading: "lazy" %>
     <% else %>
       <%= inline_svg_tag type_icon_path, class: "notifications-item__icon-svg" %>
     <% end %>
@@ -15,7 +15,7 @@
     <% if header_avatars.any? && !avatar_icon? %>
       <span class="notifications-item__actors">
         <% header_avatars.each do |face| %>
-          <%= image_tag face.avatar, alt: "", class: "notifications-item__avatar" %>
+          <%= image_tag face.avatar, alt: "", class: "notifications-item__avatar", loading: "lazy" %>
         <% end %>
 
         <% if expandable? %>
@@ -51,7 +51,7 @@
         <% aggregated_actors.each do |actor| %>
           <li>
             <%= link_to user_path(actor), class: "notifications-item__others-row" do %>
-              <%= image_tag actor.avatar, alt: "", class: "notifications-item__others-avatar" %>
+              <%= image_tag actor.avatar, alt: "", class: "notifications-item__others-avatar", loading: "lazy" %>
               <span class="notifications-item__others-name">@<%= actor.display_name %></span>
             <% end %>
           </li>
