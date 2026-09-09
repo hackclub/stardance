@@ -1,0 +1,282 @@
+// Reusable JKL timelapse viewer for the shared recording gallery (hardware
+// funding review + YSWS review). The lightbox is appended to document.body so
+// it overlays admin chrome; z-index stays high. Scrim uses set-1 (#08061E) per
+// branding — never pure black — and lilac is the accent (branding's default
+// primary).
+
+.lapse-player {
+  // ── Modal lightbox ───────────────────────────────────────────────────────
+  &__lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-s);
+    padding: var(--space-xl);
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  &__lightbox-close {
+    position: absolute;
+    top: var(--space-m);
+    right: var(--space-l);
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: var(--font-size-xxl);
+    line-height: 1;
+    color: var(--color-space-text);
+    background: var(--color-set-2-bg);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  &__lightbox-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: min(90vw, 1400px);
+    max-height: 80vh;
+  }
+
+  &__lightbox-media {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: var(--profile-radius);
+  }
+
+  &__lightbox-caption {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  // ── Custom video player chrome (Vimeo/Plyr-style; overlays the video) ─────
+  // Always visible; the scrim keeps it legible over any frame.
+  &__player {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-xl) var(--space-m) var(--space-s);
+    border-radius: 0 0 var(--profile-radius) var(--profile-radius);
+    background: linear-gradient(to top, hsl(245 55% 8% / 0.96) 25%, hsl(245 55% 8% / 0));
+    color: var(--color-space-text);
+    font-size: var(--font-size-xs);
+  }
+
+  &__player-scrub {
+    position: relative;
+    height: 0.35rem;
+    border-radius: 999px;
+    background: var(--color-overlay-light);
+    cursor: pointer;
+    transition: height 0.12s ease;
+
+    &:hover {
+      height: 0.55rem;
+    }
+  }
+
+  &__player-buffered {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 999px;
+    background: var(--color-overlay-light);
+  }
+
+  &__player-progress {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 999px;
+    background: var(--color-brand-lilac);
+  }
+
+  &__player-handle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    background: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px hsl(245 55% 8% / 0.6);
+    transform: translate(50%, -50%) scale(0);
+    transition: transform 0.12s ease;
+  }
+
+  &__player-scrub:hover &__player-handle {
+    transform: translate(50%, -50%) scale(1);
+  }
+
+  &__player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+  }
+
+  &__player-cluster {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xxs);
+  }
+
+  &__player-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.9rem;
+    height: 1.9rem;
+    padding: 0 var(--space-xs);
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-space-text);
+    font-size: var(--font-size-m);
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--color-overlay-light);
+    }
+  }
+
+  &__player-time {
+    margin-left: var(--space-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-space-text-muted);
+  }
+
+  &__player-speed {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--color-overlay-light-soft);
+  }
+
+  &__player-speed-label {
+    padding: 0 var(--space-xs);
+    color: var(--color-space-text-muted);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  &__player-pill {
+    padding: 3px 7px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-space-text-muted);
+    font-size: 0.68rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition:
+      background 0.12s ease,
+      color 0.12s ease;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+
+    &.is-active {
+      background: var(--color-brand-lilac);
+      color: var(--color-set-1-bg);
+      font-weight: 700;
+    }
+  }
+}
+
+// ── Gallery tile as a clickable video thumbnail ──────────────────────────────
+// The recording gallery tile becomes an <a> wired to the lapse-player
+// controller; make it read as a play-on-click video thumbnail.
+.recording-gallery {
+  &__thumb {
+    width: 100%;
+    height: 100%;
+    // contain, not cover: show the whole frame at its true aspect ratio. The
+    // dark card background fills the letterbox bars cleanly.
+    object-fit: contain;
+    background: var(--color-set-1-bg);
+  }
+
+  // Each grid cell now stacks the clickable media tile above its meta block;
+  // the anchor holds only the media, so the column gap lives on the <li>.
+  &__list > li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  // Clickable tile: the anchor wraps the media frame. Focus-visible ring uses
+  // the lilac accent to match the player.
+  &__item[href] {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-lilac);
+      outline-offset: 2px;
+    }
+
+    &:hover .recording-gallery__play {
+      background: var(--color-brand-lilac);
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  // Centered play affordance over the poster.
+  &__play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding-left: 0.15rem;
+    border-radius: 50%;
+    background: hsl(245 55% 8% / 0.7);
+    color: var(--color-space-text);
+    font-size: var(--font-size-l);
+    line-height: 1;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+  }
+
+  // Clip duration badge, bottom-right of the frame (mirrors the source badge).
+  &__duration {
+    position: absolute;
+    right: var(--space-xs);
+    bottom: var(--space-xs);
+    z-index: 1;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: hsl(245 55% 8% / 0.78);
+    color: var(--color-space-text);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+}

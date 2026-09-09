@@ -1,6 +1,12 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
 
-<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>">
+<%
+  # Base Stimulus controllers for the review page; the keyboard-shortcut layer
+  # is appended only when its flag is on so no keydown listener is bound off.
+  ysws_controllers = "certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert"
+  ysws_controllers += " certification--ysws--keyboard-shortcuts" if @ysws_review_shortcuts
+%>
+<main class="certification-ysws" role="main" data-controller="<%= ysws_controllers %>" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>">
   <%= render Admin::Certification::MACAnalysisBannerComponent.new(analysis: @mac_analysis, repo_url: @review.project&.repo_url, total_minutes: @review.original_minutes) %>
 
   <!-- Header Section -->

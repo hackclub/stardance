@@ -34,6 +34,12 @@ application.register(
   Certification__FeedbackTemplatesController,
 );
 
+import Certification__LapsePlayerController from "./certification/lapse_player_controller";
+application.register(
+  "certification--lapse-player",
+  Certification__LapsePlayerController,
+);
+
 import Certification__QueueController from "./certification/queue_controller";
 application.register("certification--queue", Certification__QueueController);
 
@@ -101,6 +107,12 @@ import Certification__Ysws__GithubCalendarController from "./certification/ysws/
 application.register(
   "certification--ysws--github-calendar",
   Certification__Ysws__GithubCalendarController,
+);
+
+import Certification__Ysws__KeyboardShortcutsController from "./certification/ysws/keyboard_shortcuts_controller";
+application.register(
+  "certification--ysws--keyboard-shortcuts",
+  Certification__Ysws__KeyboardShortcutsController,
 );
 
 import Certification__Ysws__MediaViewerController from "./certification/ysws/media_viewer_controller";
