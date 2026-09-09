@@ -110,6 +110,9 @@
           <span class="aorder__row-label">Status</span>
           <span class="aorder__row-value">
             <span class="aorder__state-badge aorder__state-badge--<%= display_s %>"><%= display_s.humanize %></span>
+            <% if policy(@order).view_on_hold_state? %>
+              <%= render "admin/shop/orders/hold_countdown", order: @order %>
+            <% end %>
           </span>
         </div>
         <% unless policy(current_user).view_order_full_details? %>

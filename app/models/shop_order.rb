@@ -133,7 +133,15 @@ class ShopOrder < ApplicationRecord
   before_create :freeze_item_price
   before_create :set_region_from_address
   after_commit :notify_user_of_status_change, if: :saved_change_to_aasm_state?
+  after_commit :schedule_hold_release, if: :placed_on_hold?
 
+  HOLD_DURATION = 7.days
+
+  scope :expired_holds, ->(now = Time.current) {
+    cutoff = now - HOLD_DURATION
+    where(aasm_state: "on_hold")
+      .where("on_hold_at <= :cutoff OR (on_hold_at IS NULL AND updated_at <= :cutoff)", cutoff: cutoff)
+  }
   scope :worth_counting, -> { where.not(aasm_state: %w[rejected refunded]) }
   scope :real, -> { without_item_type("ShopItem::FreeStickers") }
   scope :manually_fulfilled, -> { joins(:shop_item).merge(ShopItem.where(type: ShopItem::MANUAL_FULFILLMENT_TYPES)) }
@@ -278,6 +286,17 @@ class ShopOrder < ApplicationRecord
         create_refund_payout
       end
     end
+  end
+
+  def hold_expires_at
+    return unless on_hold?
+
+    (on_hold_at || updated_at) + HOLD_DURATION
+  end
+
+  def hold_expired?(now = Time.current)
+    expiration = hold_expires_at
+    expiration.present? && expiration <= now
   end
 
   def digital?
@@ -439,6 +458,15 @@ class ShopOrder < ApplicationRecord
   end
 
   private
+
+  def placed_on_hold?
+    saved_change_to_aasm_state? && on_hold?
+  end
+
+  def schedule_hold_release
+    expiration = hold_expires_at
+    Shop::ReleaseExpiredOrderHoldsJob.set(wait_until: expiration).perform_later(expiration)
+  end
 
   def freeze_item_price
     return unless shop_item

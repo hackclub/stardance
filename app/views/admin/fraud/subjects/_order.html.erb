@@ -9,6 +9,7 @@
 
     <p class="fraud-subject__item-meta">
       <%= order.aasm_state.humanize %> · <%= order.shop_item.type.demodulize.underscore.humanize %>
+      <%= render "admin/shop/orders/hold_countdown", order: order %>
     </p>
 
     <dl class="fraud-subject__facts">

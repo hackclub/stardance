@@ -1123,3 +1123,17 @@
     }
   }
 }
+
+.hold-countdown {
+  display: block;
+  margin-top: var(--space-xxs);
+  color: var(--color-space-text-muted);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+
+  strong {
+    color: var(--color-brand-yellow);
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -102,12 +102,16 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
   test "putting an order on hold keeps it in the queue and re-renders the row" do
     order = pending_order
 
-    post place_on_hold_admin_shop_order_path(order),
-         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+    assert_enqueued_with(job: Shop::ReleaseExpiredOrderHoldsJob) do
+      post place_on_hold_admin_shop_order_path(order),
+           params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+    end
 
     assert_response :success
     assert_equal "on_hold", order.reload.aasm_state
     assert_match "Release hold", response.body
+    assert_match "Automatically releases in", response.body
+    assert_select "[data-controller='countdown'][data-countdown-reset-at-value]"
   end
 
   test "releasing a hold puts the order back to pending" do

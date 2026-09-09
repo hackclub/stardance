@@ -1,0 +1,8 @@
+<% if order.on_hold? && order.hold_expires_at.present? %>
+  <span class="hold-countdown">
+    Automatically releases in
+    <strong data-controller="countdown"
+            data-countdown-reset-at-value="<%= order.hold_expires_at.iso8601 %>"
+            data-countdown-expired-text-value="release queued"><%= distance_of_time_in_words(Time.current, order.hold_expires_at) %></strong>
+  </span>
+<% end %>
