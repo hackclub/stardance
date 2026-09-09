@@ -44,7 +44,9 @@
 
 .rocket-progress__avatar {
   height: var(--rocket-progress-avatar-height);
-  width: calc(var(--rocket-progress-avatar-height) * var(--rocket-progress-avatar-ratio));
+  width: calc(
+    var(--rocket-progress-avatar-height) * var(--rocket-progress-avatar-ratio)
+  );
   object-fit: contain;
 
   position: absolute;
