@@ -1539,6 +1539,19 @@ body:has(.certification-ysws) {
       }
     }
 
+    // Keyboard-shortcut cursor (:ysws_review_shortcuts): marks the current devlog
+    // the j/k nav and verdict keys act on. A soft mint-tinted panel with a left
+    // accent rail frames the whole row; negative inline margins let it bleed into
+    // the card's padding and the matching inline padding keeps the content from
+    // shifting as the cursor moves.
+    .devlog-item--kbd-active {
+      margin-inline: calc(-1 * var(--space-s));
+      padding-inline: var(--space-s);
+      border-radius: var(--space-xs);
+      background: color-mix(in srgb, var(--color-brand-mint) 8%, transparent);
+      box-shadow: inset 3px 0 0 0 var(--color-brand-mint);
+    }
+
     .devlog-status.status-frozen {
       background: rgba(255, 255, 255, 0.08);
       color: var(--color-space-text-muted);
@@ -3063,5 +3076,62 @@ body:has(.certification-ysws) {
   &__loading {
     color: rgba(255, 255, 255, 0.6);
     font-style: italic;
+  }
+}
+
+// Keyboard-shortcut affordances (:ysws_review_shortcuts). The controller injects
+// <kbd class="kbd-hint"> badges onto the controls each key drives and pins a
+// fixed legend for the navigation keys — both exist only while the flag is on.
+// Top-level (not nested under .certification-ysws) because the legend mounts on
+// <body>.
+.kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--space-xxs);
+  padding: 0 0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  // Inherit the host control's text colour so the badge stays legible on any
+  // surface — dark panels, the mint approve button, the salmon reject button —
+  // and read as a subtle hint rather than a filled chip.
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  font-family: "Exo 2", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.ysws-kbd-legend {
+  position: fixed;
+  right: var(--space-m);
+  bottom: var(--space-m);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-xs) var(--space-s);
+  border: 1px solid var(--color-space-border);
+  border-radius: 999px;
+  background: var(--color-set-2-bg);
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-xs);
+  box-shadow: 0 4px 16px hsl(245 55% 4% / 0.5);
+
+  &__title {
+    color: var(--color-brand-mint);
+    font-weight: 700;
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
   }
 }

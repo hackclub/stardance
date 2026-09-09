@@ -109,6 +109,12 @@ application.register(
   Certification__Ysws__GithubCalendarController,
 );
 
+import Certification__Ysws__KeyboardShortcutsController from "./certification/ysws/keyboard_shortcuts_controller";
+application.register(
+  "certification--ysws--keyboard-shortcuts",
+  Certification__Ysws__KeyboardShortcutsController,
+);
+
 import Certification__Ysws__MediaViewerController from "./certification/ysws/media_viewer_controller";
 application.register(
   "certification--ysws--media-viewer",

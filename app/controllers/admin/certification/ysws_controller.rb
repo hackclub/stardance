@@ -147,6 +147,11 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     # banner and the per-devlog notes both disappear from a single check.
     @mac_analysis = @review.mac_analysis if Flipper.enabled?(:mac_analysis, current_user)
 
+    # Flag-gated keyboard-shortcut layer for the review GUI (j/k nav, verdict
+    # keys, lapse lightbox). Off by default; attaches its Stimulus controller
+    # only when enabled for this reviewer.
+    @ysws_review_shortcuts = Flipper.enabled?(:ysws_review_shortcuts, current_user)
+
     @lapse_timelapses = lapse_timelapses_for_ysws_review
     @lookout_recordings = lookout_recordings_for_ysws_review
     # Owner Hackatime uid for Telescreen deep-links on Lapse recordings.
