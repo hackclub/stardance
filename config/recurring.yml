@@ -122,6 +122,12 @@ production:
     concurrency: 1
     description: "Retry fulfillment for free sticker orders stuck in pending"
 
+  shop_release_expired_order_holds:
+    class: Shop::ReleaseExpiredOrderHoldsJob
+    schedule: every minute
+    concurrency: 1
+    description: "Release shop orders after they have been on hold for seven days"
+
   shop_calculate_fulfillment_payouts:
     class: Shop::CalculateFulfillmentPayoutsJob
     schedule: every Friday at 12pm Europe/London

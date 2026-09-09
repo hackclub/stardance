@@ -1,0 +1,129 @@
+<% project = check.project_including_deleted %>
+
+<%= turbo_frame_tag check do %>
+  <div class="fraud-subject__item fraud-subject__item--integrity">
+    <div class="fraud-subject__item-head">
+      <span class="fraud-subject__item-title">
+        <%= project ? link_to(project.title, admin_project_path(project)) : "Deleted project" %>
+      </span>
+      <span class="fraud-subject__item-age"><%= time_ago_in_words(check.created_at) %> ago</span>
+    </div>
+
+    <%# Identifiers decide nothing on their own, so they sit with the title as
+        one quiet line rather than competing with the review facts below. %>
+    <p class="fraud-subject__item-meta">
+      <% if project %>#<%= project.id %> &middot; <% end %>ship event <%= check.ship_event_id %>
+    </p>
+
+    <% if project %>
+      <div class="fraud-subject__review">
+        <dl class="fraud-subject__vitals">
+          <% if project.project_type.present? %>
+            <div class="fraud-subject__vital">
+              <dt class="fraud-subject__vital-label">Type</dt>
+              <dd class="fraud-subject__vital-value"><%= project.project_type %></dd>
+            </div>
+          <% end %>
+
+          <div class="fraud-subject__vital">
+            <dt class="fraud-subject__vital-label">Ship status</dt>
+            <dd class="fraud-subject__vital-value"><%= project.ship_status.to_s.humanize %></dd>
+          </div>
+
+          <%# The number a fraud verdict actually turns on, so it carries the
+              weight the rest of the row gives up. %>
+          <div class="fraud-subject__vital fraud-subject__vital--lead">
+            <dt class="fraud-subject__vital-label">Tracked time</dt>
+            <dd class="fraud-subject__vital-value">
+              <%= pluralize((project.duration_seconds / 3600.0).round(1), "hour") %>
+            </dd>
+          </div>
+
+          <div class="fraud-subject__vital">
+            <dt class="fraud-subject__vital-label">Shipped</dt>
+            <dd class="fraud-subject__vital-value">
+              <%= project.shipped_at ? l(project.shipped_at.to_date, format: :long) : "never" %>
+            </dd>
+          </div>
+        </dl>
+
+        <% if project.description.present? %>
+          <p class="fraud-subject__blurb"><%= project.description %></p>
+        <% end %>
+
+        <% hackatime_uid = user.hackatime_identity&.uid %>
+        <% hackatime_projects = hackatime_uid.present? ? project.hackatime_projects : [] %>
+        <% if project.repo_url.present? || project.demo_url.present? || hackatime_projects.any? %>
+          <div class="fraud-subject__tool-links">
+            <% if project.repo_url.present? %>
+              <%= link_to "Repo ↗", project.repo_url,
+                          target: "_blank", rel: "noopener noreferrer", class: "fraud-subject__tool-link" %>
+            <% end %>
+            <% if project.demo_url.present? %>
+              <%= link_to "Demo ↗", project.demo_url,
+                          target: "_blank", rel: "noopener noreferrer", class: "fraud-subject__tool-link" %>
+            <% end %>
+
+            <% if hackatime_projects.any? && (project.repo_url.present? || project.demo_url.present?) %>
+              <span class="fraud-subject__tool-links-split" aria-hidden="true">&middot;</span>
+            <% end %>
+
+            <%# The Hackatime keys whose heartbeats back this ship, each opening
+                Telescreen narrowed to that one key rather than the whole account. %>
+            <% hackatime_projects.each do |hackatime_project| %>
+              <%= link_to "#{hackatime_project.name} ↗",
+                          telescreen_hackatime_overview_url(hackatime_uid, project: hackatime_project.name),
+                          target: "_blank", rel: "noopener noreferrer", class: "fraud-subject__tool-link" %>
+            <% end %>
+
+            <% if hackatime_projects.many? %>
+              <%= link_to "All #{hackatime_projects.size} ↗",
+                          telescreen_hackatime_overview_url(hackatime_uid, project: hackatime_projects.map(&:name)),
+                          target: "_blank", rel: "noopener noreferrer",
+                          class: "fraud-subject__tool-link fraud-subject__tool-link--all" %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="fraud-subject__detection">
+      <%= render "admin/certification/integrity/flags", review: check %>
+
+      <% signal_rows = integrity_signal_rows(check) %>
+      <% if signal_rows.any? %>
+        <%# Collapsed by default: a treemap per check would bury the verdict
+            buttons on anyone with more than a couple of ships waiting. %>
+        <details class="fraud-subject__reasoning">
+          <summary class="fraud-subject__reasoning-summary">Review reasoning</summary>
+
+          <div class="integrity-review">
+            <%= render "admin/certification/integrity/signals", rows: signal_rows %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+
+    <%= form_with url: admin_certification_integrity_review_path(check), method: :patch,
+                  class: "fraud-subject__verdict-form fraud-subject__verdict-form--ruled" do |f| %>
+      <%= hidden_field_tag :fraud_subject_id, user.id %>
+
+      <%= f.label :decision_justification, "Justification", class: "fraud-subject__field-label" %>
+      <%= f.text_area :decision_justification, rows: 2, class: "fraud-subject__field" %>
+
+      <div class="fraud-subject__item-actions">
+        <%= button_tag "Pass", name: "decision", value: "pass",
+                       class: "fraud-subject__verdict fraud-subject__verdict--accept" %>
+        <%= button_tag "Fraud", name: "decision", value: "fraud",
+                       class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
+        <span class="fraud-subject__verdict-group">
+          <%= f.number_field :deduction_hours, step: 0.25, min: 0, placeholder: "hrs",
+                             class: "fraud-subject__field fraud-subject__field--narrow" %>
+          <%= button_tag "Deduct", name: "decision", value: "deduct",
+                         class: "fraud-subject__verdict fraud-subject__verdict--hold" %>
+        </span>
+        <%= link_to "Open check", admin_certification_integrity_review_path(check), class: "fraud-subject__item-action" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

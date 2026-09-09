@@ -74,7 +74,7 @@ class Admin::UserPolicy < ApplicationPolicy
   end
 
   def view_votes?
-    user&.admin? || user&.nda_helper?
+    user&.admin? || user&.helper? || user&.nda_helper?
   end
 
   def view_order_full_details?
@@ -85,8 +85,11 @@ class Admin::UserPolicy < ApplicationPolicy
     view_order_full_details? || user&.helper?
   end
 
+  # Fraud reviewers judge an order partly on what it costs to fulfill, so the
+  # roles that can work the fraud queue see the figure too.
   def view_usd_cost?
-    user&.admin? || user&.fulfillment_person? || user&.shop_manager?
+    user&.admin? || user&.fulfillment_person? || user&.shop_manager? ||
+      user&.fraud_lead? || user&.fraud_dept? || user&.fraud_squad?
   end
 
   def shop_order_action?

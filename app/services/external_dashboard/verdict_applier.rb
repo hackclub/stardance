@@ -59,9 +59,25 @@ module ExternalDashboard
     end
 
     def apply!
+      reason = record_only_reason
+      cert.record_verdict_only = reason.present?
       cert.update!(status: target_status, feedback: comment, reviewer_id: reviewer&.id, proof_video_url: proof_video_url, decided_at: decided_at)
       cert.assign_external_certification_id!(external_uuid)
-      log_dropped_reviewer
+      reason ? log_record_only(reason) : log_dropped_reviewer
+    end
+
+    # Both of these used to drop the verdict on the floor, which left the cert pending
+    # here forever while the dashboard had it decided - and the poller re-skipped it on
+    # every run, so nothing ever reconciled it. Record the status, skip what's downstream.
+    def record_only_reason
+      return "project deleted" if cert.project.nil? || cert.project.deleted_at.present?
+      return "owner banned" if cert.owner&.banned?
+
+      nil
+    end
+
+    def log_record_only(reason)
+      Rails.logger.info "[ExternalDashboard::VerdictApplier]#{dry_run_tag} cert=#{cert.id} verdict recorded only (#{reason})"
     end
 
     def log_dropped_reviewer

@@ -79,7 +79,7 @@
                 <% end %>
               </td>
               <td data-label="Type">
-                <%= review.project&.project_type.presence || tag.span("—", class: "ysws-queue__placeholder") %>
+                <%= review.project&.hardware? ? "Hardware" : (review.project&.project_type.presence || tag.span("—", class: "ysws-queue__placeholder")) %>
               </td>
               <td data-label="Project">
                 <% if review.project %>

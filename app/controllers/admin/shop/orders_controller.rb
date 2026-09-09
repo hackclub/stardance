@@ -1,6 +1,8 @@
 class Admin::Shop::OrdersController < Admin::ApplicationController
+  include FraudSubjectVerdict
+
   before_action :set_paper_trail_whodunnit
-  before_action :set_order, except: [ :index, :bulk_approve ]
+  before_action :set_order, except: [ :index, :bulk_approve, :bulk_reject ]
 
   # Filter/search params that should survive navigation between the status
   # chips, the group-by-user toggle, and pagination. Centralised here so the
@@ -398,6 +400,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     result = Admin::ShopOrderApprover.new(@order, actor: current_user, tracking_number: params[:tracking_number]).call
 
     if result.approved?
+      return render_fraud_subject_verdict(@order, result.message) if fraud_subject
+
       redirect_to shop_orders_return_path, notice: result.message
     else
       redirect_to admin_shop_order_path(@order), alert: result.message
@@ -419,6 +423,36 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
     if approved.any?
       flash[:notice] = "Approved #{helpers.pluralize(approved.size, 'order')}: #{approved.map { |result| "##{result.order.id}" }.to_sentence}"
+    end
+    if failed.any?
+      flash[:alert] = failed.map { |result| "##{result.order.id}: #{result.message}" }.join(" ")
+    end
+
+    redirect_back fallback_location: admin_shop_orders_path
+  end
+
+  def bulk_reject
+    authorize ShopOrder, :reject?
+
+    orders = ShopOrder.includes(:reviews, :accessory_orders).where(id: params[:order_ids])
+
+    if orders.empty?
+      redirect_back fallback_location: admin_shop_orders_path, alert: "No orders to reject." and return
+    end
+
+    rejected, failed = orders.map { |order|
+      Admin::ShopOrderRejector.new(
+        order,
+        actor: current_user,
+        reason: params[:reason],
+        internal_reason: params[:internal_rejection_reason],
+        joe_case_url: params[:joe_case_url],
+        fraud_project_id: params[:fraud_related_project_id]
+      ).call
+    }.partition(&:rejected?)
+
+    if rejected.any?
+      flash[:notice] = "Rejected #{helpers.pluralize(rejected.size, 'order')}: #{rejected.map { |result| "##{result.order.id}" }.to_sentence}"
     end
     if failed.any?
       flash[:alert] = failed.map { |result| "##{result.order.id}: #{result.message}" }.join(" ")
@@ -479,59 +513,21 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   def reject
     authorize @order, :reject?
 
-    if @order.requires_additional_review?
-      redirect_to admin_shop_order_path(@order), alert: "This is a high-value order and requires 2 fraud dept reviews before rejection (#{@order.reviews.count}/2 so far)." and return
-    end
+    result = Admin::ShopOrderRejector.new(
+      @order,
+      actor: current_user,
+      reason: params[:reason],
+      internal_reason: params[:internal_rejection_reason],
+      joe_case_url: params[:joe_case_url],
+      fraud_project_id: params[:fraud_related_project_id]
+    ).call
 
-    reason = params[:reason].presence || "No reason provided"
+    if result.rejected?
+      return render_fraud_subject_verdict(@order, result.message) if fraud_subject
 
-    if current_user.fraud_dept?
-      internal_reason = params[:internal_rejection_reason]
-      joe_case_url = params[:joe_case_url]
-      fraud_project_id = params[:fraud_related_project_id]
+      redirect_to shop_orders_return_path, notice: result.message
     else
-      internal_reason = reason
-      joe_case_url = nil
-      fraud_project_id = 1
-    end
-    old_state = @order.aasm_state
-
-    @order.internal_rejection_reason = internal_reason
-    @order.joe_case_url = joe_case_url.presence
-    @order.fraud_related_project_id = fraud_project_id.presence
-
-    if @order.mark_rejected(reason) && @order.save
-      ::PaperTrail::Version.create!(
-        item_type: "ShopOrder",
-        item_id: @order.id,
-        event: "update",
-        whodunnit: current_user.id,
-        object_changes: {
-          aasm_state: [ old_state, @order.aasm_state ],
-          rejection_reason: [ nil, reason ],
-          internal_rejection_reason: [ nil, internal_reason ],
-          joe_case_url: [ nil, joe_case_url.presence ],
-          fraud_related_project_id: [ nil, fraud_project_id.presence ]
-        }.compact_blank
-      )
-
-      n = @order.accessory_orders.select(&:may_mark_rejected?).count { |a|
-        old = a.aasm_state
-        a.internal_rejection_reason = internal_reason
-        a.joe_case_url = joe_case_url.presence
-        a.fraud_related_project_id = fraud_project_id.presence
-        next unless a.mark_rejected(reason) && a.save
-        ::PaperTrail::Version.create!(
-          item_type: "ShopOrder", item_id: a.id, event: "update", whodunnit: current_user.id,
-          object_changes: { aasm_state: [ old, a.aasm_state ], rejection_reason: [ nil, reason ], parent_order_cancelled: [ nil, @order.id ] }
-        )
-      }
-
-      notice = "Order rejected"
-      notice += " (#{n} #{'accessory'.pluralize(n)} also rejected)" if n > 0
-      redirect_to shop_orders_return_path, notice: notice
-    else
-      redirect_to admin_shop_order_path(@order), alert: "Failed to reject order: #{@order.errors.full_messages.join(', ')}"
+      redirect_to admin_shop_order_path(@order), alert: result.message
     end
   end
 
@@ -549,6 +545,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
           aasm_state: [ old_state, @order.aasm_state ]
         }
       )
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order") if fraud_subject
+
       redirect_to shop_orders_return_path, notice: "Order placed on hold"
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to place order on hold: #{@order.errors.full_messages.join(', ')}"
@@ -569,6 +567,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
           aasm_state: [ old_state, @order.aasm_state ]
         }
       )
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order") if fraud_subject
+
       redirect_to shop_orders_return_path, notice: "Order released from hold"
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to release order from hold: #{@order.errors.full_messages.join(', ')}"

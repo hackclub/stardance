@@ -383,16 +383,15 @@ class Project < ApplicationRecord
     GitRepoService.is_cloneable? repo_url
   end
 
+  # A predicate for shipping_requirements, not a registered validation. It must
+  # stay free of errors.add: projects/show renders its edit form whenever
+  # @project.errors.any?, so polluting them here would flip the page into edit
+  # mode on a plain GET.
   def validate_repo_url_format
     return true if repo_url.blank?
 
-    # Check if repo_url ends with .git or contains /tree/main
     repo_url.strip!
-    if repo_url.end_with?(".git") || repo_url.include?("/tree/main")
-      errors.add(:repo_url, "should not end with .git or contain /tree/main. Please use the root GitHub repository URL.")
-      return false
-    end
-    true
+    !repo_url.end_with?(".git") && !repo_url.include?("/tree/main")
   end
 
   def calculate_duration_seconds
@@ -656,7 +655,7 @@ class Project < ApplicationRecord
     end
 
     event :resubmit_for_review do
-      transitions from: :needs_changes, to: :submitted
+      transitions from: :needs_changes, to: :submitted, guard: :links_complete?
     end
 
     # A ship that was withdrawn rather than judged (see
@@ -687,6 +686,8 @@ class Project < ApplicationRecord
   # designed, so demo_url is dropped from the funding gate. It stays in
   # INFO_REQUIREMENT_KEYS, so it's still required to ship.
   FUNDING_INFO_REQUIREMENT_KEYS = (INFO_REQUIREMENT_KEYS - FIELD_REQUIREMENT_MAP[:demo_url]).freeze
+
+  LINK_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.fetch_values(:demo_url, :repo_url, :readme_url).flatten.freeze
 
   def shipping_requirements
     owner_vote_balance = memberships.owner.first&.user&.vote_balance.to_i
@@ -896,10 +897,13 @@ class Project < ApplicationRecord
   # design-stage builder is never nagged about a demo link they don't yet need.
   def info_blocker_message
     keys = design_stage? ? FUNDING_INFO_REQUIREMENT_KEYS : INFO_REQUIREMENT_KEYS
-    req = shipping_requirements
-      .select { |r| keys.include?(r[:key]) }
-      .find { |r| !r[:passed] }
-    req&.dig(:label)
+    first_unmet_requirement(keys)&.dig(:label)
+  end
+
+  def links_complete? = link_blocker_message.nil?
+
+  def link_blocker_message
+    first_unmet_requirement(LINK_REQUIREMENT_KEYS)&.dig(:label)
   end
 
   # The editable info fields (see FIELD_REQUIREMENT_MAP) that still have an
@@ -1044,6 +1048,12 @@ class Project < ApplicationRecord
     shipping_requirements
       .select { |r| keys.include?(r[:key]) }
       .all? { |r| r[:passed] }
+  end
+
+  def first_unmet_requirement(keys)
+    shipping_requirements
+      .select { |r| keys.include?(r[:key]) }
+      .find { |r| !r[:passed] }
   end
 
   def do_url_probe(url)

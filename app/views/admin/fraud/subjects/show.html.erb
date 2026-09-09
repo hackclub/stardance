@@ -1,0 +1,54 @@
+<% content_for :title, "Fraud review: #{@user.display_name}" %>
+
+<main class="fraud-subject" role="main">
+  <%= render HeadingComponent.new(title: @user.display_name, tone: :blue, size: :full) %>
+
+  <p class="fraud-subject__back">
+    <%= link_to "← back to the queue", admin_fraud_subjects_path %>
+    <%= link_to "full admin profile", admin_user_path(@user), class: "fraud-subject__profile-link" %>
+  </p>
+
+  <%= render "identity", user: @user %>
+
+  <%= render "counts", user: @user %>
+
+  <%= render "telescreen_tools" %>
+
+  <%= render "project_history", project_summaries: @project_summaries %>
+
+  <section class="fraud-subject__section" aria-labelledby="fraud-subject-flags">
+    <h2 class="fraud-subject__section-title" id="fraud-subject-flags">Flags</h2>
+
+    <% if @flags.any? %>
+      <div class="fraud-subject__items">
+        <%= render partial: "flag", collection: @flags, as: :flag, locals: { user: @user } %>
+      </div>
+    <% else %>
+      <p class="fraud-subject__empty">No flags waiting.</p>
+    <% end %>
+  </section>
+
+  <section class="fraud-subject__section" aria-labelledby="fraud-subject-orders">
+    <h2 class="fraud-subject__section-title" id="fraud-subject-orders">Shop orders</h2>
+
+    <%= render "order_bulk_actions", user: @user, orders: @orders,
+               approvable_orders: @approvable_orders, projects: @projects_for_rejection %>
+
+    <% if @orders.any? %>
+      <div class="fraud-subject__items">
+        <%= render partial: "order", collection: @orders, as: :order, locals: { user: @user } %>
+      </div>
+    <% else %>
+      <p class="fraud-subject__empty">No orders waiting.</p>
+    <% end %>
+  </section>
+
+  <%= render "approved_orders", approved_orders: @approved_orders,
+             approved_orders_count: @approved_orders_count %>
+
+  <section class="fraud-subject__section" aria-labelledby="fraud-subject-integrity">
+    <h2 class="fraud-subject__section-title" id="fraud-subject-integrity">Integrity checks</h2>
+
+    <%= render "integrity_items", user: @user %>
+  </section>
+</main>

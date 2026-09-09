@@ -8,6 +8,9 @@ module RackAttackClient
   ADMIN_PATHS = %r{\A/admin(/|\z)}.freeze
   API_V1_PROJECTS_PATH = %r{\A/api/v1/projects\z}.freeze
   API_V1_PROJECT_PATH = %r{\A/api/v1/projects/\d+\z}.freeze
+  API_V1_PROJECT_DEVLOGS_PATH = %r{\A/api/v1/projects/\d+/devlogs\z}.freeze
+  API_V1_DEVLOGS_PATH = %r{\A/api/v1/devlogs\z}.freeze
+  API_V1_DEVLOG_PATH = %r{\A/api/v1/devlogs/\d+\z}.freeze
 
   def self.ip(request)
     request.get_header("HTTP_CF_CONNECTING_IP").presence || request.ip
@@ -106,6 +109,18 @@ end
 
 Rack::Attack.throttle("api/v1/projects show", limit: 30, period: 1.minute) do |req|
   RackAttackClient.api_client(req) if req.get? && req.path.match?(RackAttackClient::API_V1_PROJECT_PATH)
+end
+
+Rack::Attack.throttle("api/v1/projects devlogs", limit: 20, period: 1.minute) do |req|
+  RackAttackClient.api_client(req) if req.get? && req.path.match?(RackAttackClient::API_V1_PROJECT_DEVLOGS_PATH)
+end
+
+Rack::Attack.throttle("api/v1/devlogs list", limit: 5, period: 1.minute) do |req|
+  RackAttackClient.api_client(req) if req.get? && req.path.match?(RackAttackClient::API_V1_DEVLOGS_PATH)
+end
+
+Rack::Attack.throttle("api/v1/devlogs show", limit: 30, period: 1.minute) do |req|
+  RackAttackClient.api_client(req) if req.get? && req.path.match?(RackAttackClient::API_V1_DEVLOG_PATH)
 end
 
 Rack::Attack.throttled_responder = lambda do |req|

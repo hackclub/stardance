@@ -122,6 +122,21 @@
               data: { confirm: "Delete this project?" } %>
         <% end %>
       <% end %>
+      <% if policy(@project).convert_to_software? && @project.hardware? %>
+        <%= button_to "Convert to Software",
+              convert_to_software_admin_project_path(@project),
+              method: :post,
+              data: { confirm: "This will convert the project from hardware (#{@project.hardware_stage}) to software, deleting all funding requests and ship reviews. This cannot be undone. Are you sure?" } %>
+      <% end %>
+      <% if policy(@project).reset_devlogs? && @project.devlogs_count > 0 %>
+        <%= link_to "Export Devlogs (#{@project.devlogs_count})",
+              export_devlogs_admin_project_path(@project),
+              class: "btn btn--small btn--secondary" %>
+        <%= button_to "Reset Devlogs (#{@project.devlogs_count})",
+              reset_devlogs_admin_project_path(@project),
+              method: :post,
+              data: { confirm: "This will permanently delete ALL #{@project.devlogs_count} devlog(s) for this project. This cannot be undone. Are you sure?" } %>
+      <% end %>
     </div>
   </div>
 

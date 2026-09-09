@@ -7,6 +7,7 @@
 @use "pages/admin/integrity_reviews";
 @use "pages/admin/email_templates";
 @use "pages/admin/fraud_dashboard";
+@use "pages/admin/fraud_subjects";
 @use "pages/admin/ledger_entries";
 @use "pages/admin/vote_flags";
 @use "pages/admin/certificates";
@@ -76,7 +77,9 @@ body.admin-page {
 
   a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn):not(
       .ysws-dashboard__reviewer-link--locked-in
-    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link) {
+    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link):not(
+      .ship-queue__tab
+    ) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 
@@ -520,6 +523,13 @@ button.btn-danger {
 }
 
 /* Searchable Select Dropdown */
+
+/* Positioning context for the absolutely-positioned dropdown. Belongs on the
+   same element as data-controller="searchable-select". */
+.searchable-select {
+  position: relative;
+}
+
 .searchable-select-dropdown {
   display: none;
   position: absolute;

@@ -118,8 +118,12 @@ class ShopOrder < ApplicationRecord
       redeeming_sticky_streak.present?
   end
 
+  # A ban rejects every order the user has open at once, so there is no single
+  # project behind it the way there is for a reviewer's rejection.
+  attr_accessor :system_rejection
+
   validates :internal_rejection_reason, presence: true, if: :rejected?
-  validates :fraud_related_project_id, presence: true, if: :rejected?
+  validates :fraud_related_project_id, presence: true, if: -> { rejected? && !system_rejection }
   validate :fraud_related_project_exists, if: -> { fraud_related_project_id.present? }
 
   after_create :create_negative_payout
@@ -129,7 +133,15 @@ class ShopOrder < ApplicationRecord
   before_create :freeze_item_price
   before_create :set_region_from_address
   after_commit :notify_user_of_status_change, if: :saved_change_to_aasm_state?
+  after_commit :schedule_hold_release, if: :placed_on_hold?
 
+  HOLD_DURATION = 7.days
+
+  scope :expired_holds, ->(now = Time.current) {
+    cutoff = now - HOLD_DURATION
+    where(aasm_state: "on_hold")
+      .where("on_hold_at <= :cutoff OR (on_hold_at IS NULL AND updated_at <= :cutoff)", cutoff: cutoff)
+  }
   scope :worth_counting, -> { where.not(aasm_state: %w[rejected refunded]) }
   scope :real, -> { without_item_type("ShopItem::FreeStickers") }
   scope :manually_fulfilled, -> { joins(:shop_item).merge(ShopItem.where(type: ShopItem::MANUAL_FULFILLMENT_TYPES)) }
@@ -276,6 +288,17 @@ class ShopOrder < ApplicationRecord
     end
   end
 
+  def hold_expires_at
+    return unless on_hold?
+
+    (on_hold_at || updated_at) + HOLD_DURATION
+  end
+
+  def hold_expired?(now = Time.current)
+    expiration = hold_expires_at
+    expiration.present? && expiration <= now
+  end
+
   def digital?
     DIGITAL_ITEM_TYPES.include?(shop_item.type)
   end
@@ -326,6 +349,16 @@ class ShopOrder < ApplicationRecord
   # States that still need a fraud/shop-manager verdict, mirroring the
   # Certification::Ship review queue for the fraud dashboard overview.
   REVIEW_QUEUE_STATES = %w[pending awaiting_verification awaiting_verification_call on_hold].freeze
+
+  # The states the fraud queue can actually act on. Narrower than
+  # REVIEW_QUEUE_STATES on purpose: an awaiting_verification order is waiting on
+  # the buyer, not on a reviewer, so it would sit at the top of an age-sorted
+  # queue that nobody can clear.
+  FRAUD_REVIEW_STATES = %w[pending on_hold].freeze
+
+  # Every state mark_rejected can leave. Banning a user has to clear all of
+  # them, not just the two an order passes through on the way to fulfillment.
+  REJECTABLE_STATES = %w[pending awaiting_verification awaiting_verification_call awaiting_periodical_fulfillment on_hold].freeze
 
   # Health target for the review queue, same shape as Certification::Ship::QUEUE_TARGET.
   QUEUE_TARGET = 25
@@ -425,6 +458,15 @@ class ShopOrder < ApplicationRecord
   end
 
   private
+
+  def placed_on_hold?
+    saved_change_to_aasm_state? && on_hold?
+  end
+
+  def schedule_hold_release
+    expiration = hold_expires_at
+    Shop::ReleaseExpiredOrderHoldsJob.set(wait_until: expiration).perform_later(expiration)
+  end
 
   def freeze_item_price
     return unless shop_item

@@ -464,7 +464,10 @@ Rails.application.routes.draw do
 
       # Public API: authenticated with a user's personal API key (see
       # Api::V1::PublicApiController).
-      resources :projects, only: [ :index, :show ]
+      resources :projects, only: [ :index, :show ] do
+        resources :devlogs, only: [ :index ]
+      end
+      resources :devlogs, only: [ :index, :show ]
     end
     namespace :slack do
       post "events", to: "events#create"
@@ -692,6 +695,9 @@ Rails.application.routes.draw do
         post :delete
         post :update_ship_status
         post :force_state
+        post :reset_devlogs
+        post :convert_to_software
+        get  :export_devlogs
         get  :votes
       end
     end
@@ -714,6 +720,12 @@ Rails.application.routes.draw do
     get "user-perms", to: "users#user_perms"
     resource :support, only: [ :show ], controller: "support/dashboards"
     resource :fraud, only: [ :show ], controller: "fraud/dashboards"
+    namespace :fraud do
+      # One page per person with fraud work waiting: reports and shop orders are
+      # ranked by whoever has waited longest on the thing that matters most.
+      # Integrity checks remain supporting context on the subject page.
+      resources :subjects, only: [ :index, :show ]
+    end
 
     # Referral raffle management (reads the Raffle engine's models).
     get "raffles", to: "raffles/dashboard#show", as: :raffles
@@ -763,6 +775,7 @@ Rails.application.routes.draw do
       resources :orders, only: [ :index, :show ] do
         collection do
           post :bulk_approve
+          post :bulk_reject
         end
         member do
           post :reveal_address
@@ -857,7 +870,10 @@ Rails.application.routes.draw do
           get :next
           post :skip
         end
-        post :flag_for_fraud, on: :member
+        member do
+          post :flag_for_fraud
+          get :recordings
+        end
       end
     end
     get "mission_reviews", to: "missions/submissions#overview", as: :mission_reviews
@@ -910,7 +926,10 @@ Rails.application.routes.draw do
           get :next
           post :skip
         end
-        post :flag_for_fraud, on: :member
+        member do
+          post :flag_for_fraud
+          get :recordings
+        end
       end
 
       # Reviewer-only internal notes about a project, shared across its funding

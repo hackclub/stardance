@@ -1,0 +1,92 @@
+<%= turbo_frame_tag order do %>
+  <div class="fraud-subject__item fraud-subject__item--order">
+    <div class="fraud-subject__item-head">
+      <span class="fraud-subject__item-title">
+        <%= order.quantity %> × <%= order.shop_item.name %>
+      </span>
+      <span class="fraud-subject__item-age"><%= time_ago_in_words(order.created_at) %> ago</span>
+    </div>
+
+    <p class="fraud-subject__item-meta">
+      <%= order.aasm_state.humanize %> · <%= order.shop_item.type.demodulize.underscore.humanize %>
+      <%= render "admin/shop/orders/hold_countdown", order: order %>
+    </p>
+
+    <dl class="fraud-subject__facts">
+      <% if policy(current_user).view_usd_cost? %>
+        <div class="fraud-subject__fact">
+          <dt class="fraud-subject__fact-label">Fulfillment</dt>
+          <dd class="fraud-subject__fact-value">
+            $<%= number_with_precision(order.shop_item.usd_cost_for_region(order.region), precision: 2) %>
+          </dd>
+        </div>
+      <% end %>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Stardust</dt>
+        <dd class="fraud-subject__fact-value">
+          <%= number_with_delimiter(order.total_cost_with_modifiers.to_i) %>
+        </dd>
+      </div>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Country</dt>
+        <dd class="fraud-subject__fact-value">
+          <%# Geocoded from the signup IP, so it needs no address decryption and
+              a mismatch against the shipping region is itself worth seeing. %>
+          <%= user.geocoded_country.presence || "unknown" %>
+          <% if order.region.present? %>
+            <span class="fraud-subject__fact-note">ships <%= order.region %></span>
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="fraud-subject__item-actions">
+      <% if policy(order).approve? && order.approvable? && order.user_id != current_user.id %>
+        <%= button_to "Approve", approve_admin_shop_order_path(order),
+                      params: { fraud_subject_id: user.id },
+                      class: "fraud-subject__verdict fraud-subject__verdict--accept" %>
+      <% end %>
+
+      <% if policy(order).reject? %>
+        <%# Closed, this sits inline with the other buttons; open, the SCSS gives
+            it the full row so the form has somewhere to go. %>
+        <details class="fraud-subject__reject">
+          <summary class="fraud-subject__verdict fraud-subject__verdict--reject">Reject</summary>
+
+          <%= form_with url: reject_admin_shop_order_path(order), class: "fraud-subject__verdict-form" do |f| %>
+            <%= hidden_field_tag :fraud_subject_id, user.id %>
+
+            <%= f.label :reason, "Reason shown to the buyer", class: "fraud-subject__field-label" %>
+            <%= f.text_field :reason, class: "fraud-subject__field" %>
+
+            <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
+            <%= f.text_area :internal_rejection_reason, rows: 2, class: "fraud-subject__field" %>
+
+            <%= f.label :fraud_related_project_id, "Related project", class: "fraud-subject__field-label" %>
+            <%= f.select :fraud_related_project_id,
+                         user.projects.with_deleted.order(created_at: :desc).map { |p| [ p.title, p.id ] },
+                         { include_blank: "Pick a project" }, class: "fraud-subject__field" %>
+
+            <%= f.submit "Reject order", class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
+          <% end %>
+        </details>
+      <% end %>
+
+      <% if policy(order).update? %>
+        <% if order.on_hold? %>
+          <%= button_to "Release hold", release_from_hold_admin_shop_order_path(order),
+                        params: { fraud_subject_id: user.id },
+                        class: "fraud-subject__verdict fraud-subject__verdict--hold" %>
+        <% elsif order.may_place_on_hold? %>
+          <%= button_to "Hold", place_on_hold_admin_shop_order_path(order),
+                        params: { fraud_subject_id: user.id },
+                        class: "fraud-subject__verdict fraud-subject__verdict--hold" %>
+        <% end %>
+      <% end %>
+
+      <%= link_to "Open order", admin_shop_order_path(order), class: "fraud-subject__item-action" %>
+    </div>
+  </div>
+<% end %>

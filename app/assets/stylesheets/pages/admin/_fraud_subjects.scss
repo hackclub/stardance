@@ -1,0 +1,562 @@
+@use "../../config/mixins" as *;
+
+// Unified fraud review queue (admin/fraud/subjects).
+// References: config/_variables.scss for design tokens.
+//
+// Brand rules (docs/branding.md): set-2 surfaces for the clickable person
+// cards with 8px radius and a 2px secondary-foreground border (§1.1, §3),
+// accents used only to distinguish the three kinds of waiting work (§1.3).
+//
+// Selectors are nested one level (.fraud-queue .fraud-queue__*) so they win
+// over the .admin-content element baseline declared later in admin.scss.
+
+.fraud-queue {
+  .fraud-queue__summary {
+    align-items: baseline;
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-m);
+  }
+
+  .fraud-queue__summary-count {
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+  }
+
+  .fraud-queue__summary-label {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  .fraud-queue__empty {
+    background: var(--color-set-1-bg);
+    border: 2px solid var(--color-set-1-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-l);
+    text-align: center;
+  }
+
+  .fraud-queue__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-queue__pagination {
+    margin-top: var(--space-l);
+  }
+}
+
+.fraud-subject-card {
+  align-items: center;
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-set-2-fg-secondary);
+  border-radius: var(--profile-radius);
+  color: inherit;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+  justify-content: space-between;
+  padding: var(--space-s) var(--space-m);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-brand-cream);
+  }
+
+  .fraud-subject-card__identity {
+    align-items: center;
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .fraud-subject-card__avatar {
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 3rem;
+    object-fit: cover;
+    width: 3rem;
+  }
+
+  .fraud-subject-card__identity-copy {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .fraud-subject-card__name {
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  .fraud-subject-card__id {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject-card__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs);
+  }
+
+  .fraud-subject-card__count {
+    border-radius: var(--profile-radius);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxxs) var(--space-xs);
+  }
+
+  .fraud-subject-card__count--flag {
+    background: var(--color-brand-salmon);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject-card__count--order {
+    background: var(--color-brand-peach);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject-card__count--integrity {
+    background: var(--color-brand-lilac);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject-card__age {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+}
+
+.fraud-subject {
+  .fraud-subject__back {
+    display: flex;
+    gap: var(--space-m);
+    margin-bottom: var(--space-l);
+  }
+
+  .fraud-subject__section,
+  .fraud-subject__tools {
+    margin-bottom: var(--space-xl);
+  }
+
+  .fraud-subject__section-title {
+    align-items: baseline;
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .fraud-subject__section-count {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-m);
+  }
+
+  .fraud-subject__empty {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  .fraud-subject__tool-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xs);
+  }
+
+  .fraud-subject__tool-link {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxxs) var(--space-xs);
+    text-decoration: none;
+  }
+
+  .fraud-subject__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-subject__item {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-s) var(--space-m);
+  }
+
+  .fraud-subject__item--flag {
+    border-left: 6px solid var(--color-brand-salmon);
+  }
+
+  .fraud-subject__item--order {
+    border-left: 6px solid var(--color-brand-peach);
+  }
+
+  .fraud-subject__item--integrity {
+    border-left: 6px solid var(--color-brand-lilac);
+  }
+
+  .fraud-subject__item-head {
+    align-items: baseline;
+    display: flex;
+    gap: var(--space-s);
+    justify-content: space-between;
+  }
+
+  .fraud-subject__item-title {
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  .fraud-subject__item-age,
+  .fraud-subject__item-meta {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__item-body {
+    margin: var(--space-xs) 0;
+  }
+
+  .fraud-subject__item-action {
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__item--resolved {
+    border-left: 6px solid var(--color-brand-mint);
+    color: var(--color-set-3-fg-secondary);
+  }
+
+  .fraud-subject__identity {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--space-m);
+  }
+
+  .fraud-subject__avatar {
+    border: 2px solid var(--color-set-3-fg-secondary);
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 6rem;
+    object-fit: cover;
+    width: 6rem;
+  }
+
+  .fraud-subject__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    margin: var(--space-xs) 0 0;
+  }
+
+  .fraud-subject__fact {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fraud-subject__fact-label {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+  }
+
+  .fraud-subject__fact-value {
+    margin: 0;
+  }
+
+  .fraud-subject__fact-value--alert {
+    color: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__fact-note {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  // Rhythm inside an integrity card: the review evidence is one group with
+  // generous air around it, the detection findings are a second tight group,
+  // and a rule separates both from the verdict form.
+  .fraud-subject__review {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    margin-top: var(--space-m);
+  }
+
+  .fraud-subject__vitals {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs) var(--space-l);
+    margin: 0;
+  }
+
+  // Label above value would stack four columns and cost a row of height on a
+  // page that lists a dozen of these, so the label is read-only context.
+  .fraud-subject__vital-label {
+    @include visually-hidden;
+  }
+
+  .fraud-subject__vital-value {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+    margin: 0;
+  }
+
+  .fraud-subject__vital--lead .fraud-subject__vital-value {
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  .fraud-subject__blurb {
+    margin: 0;
+    max-width: 68ch;
+  }
+
+  .fraud-subject__tool-links-split {
+    color: var(--color-set-3-fg-secondary);
+  }
+
+  // Reads as the summary of the keys beside it rather than another key name.
+  .fraud-subject__tool-link--all {
+    border-color: var(--color-brand-cream);
+    color: var(--color-brand-cream);
+  }
+
+  // Inside the review group the flex gap already spaces the rows.
+  .fraud-subject__review .fraud-subject__tool-links {
+    margin-bottom: 0;
+  }
+
+  .fraud-subject__detection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin-top: var(--space-l);
+  }
+
+  .fraud-subject__reasoning-summary {
+    color: var(--color-set-3-fg-secondary);
+    cursor: pointer;
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__reasoning .integrity-review {
+    margin-top: var(--space-xs);
+  }
+
+  .fraud-subject__verdict-form--ruled {
+    border-top: 1px solid var(--color-overlay-light);
+    margin-top: var(--space-l);
+    padding-top: var(--space-s);
+  }
+
+  .fraud-subject__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-l);
+  }
+
+  .fraud-subject__count {
+    border-radius: var(--profile-radius);
+    color: var(--color-space-bg);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxxs) var(--space-xs);
+  }
+
+  .fraud-subject__count--flag {
+    background: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__count--order {
+    background: var(--color-brand-peach);
+  }
+
+  .fraud-subject__count--integrity {
+    background: var(--color-brand-lilac);
+  }
+
+  .fraud-subject__item-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+  }
+
+  .fraud-subject__verdict-group {
+    align-items: center;
+    display: flex;
+    gap: var(--space-xxs);
+  }
+
+  .fraud-subject__verdict-form {
+    margin-top: var(--space-xs);
+  }
+
+  .fraud-subject__field-label {
+    display: block;
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__field {
+    width: 100%;
+  }
+
+  .fraud-subject__field--narrow {
+    width: 5rem;
+  }
+
+  // Closed it is one more chip in the actions row; open it takes the whole row
+  // so the rejection form has room without stretching the buttons beside it.
+  .fraud-subject__reject[open] {
+    flex-basis: 100%;
+  }
+
+  .fraud-subject__bulk-actions {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-m);
+  }
+
+  .fraud-subject__bulk-reject[open] {
+    flex-basis: 100%;
+  }
+
+  .fraud-subject__bulk-reject-form {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-brand-salmon);
+    border-radius: var(--profile-radius);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+    max-width: 42rem;
+    padding: var(--space-m);
+  }
+
+  .fraud-subject__projects {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  .fraud-subject__project {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-m);
+  }
+
+  .fraud-subject__mapping-title {
+    font-size: var(--font-size-s);
+    margin: var(--space-m) 0 var(--space-xs);
+  }
+
+  .fraud-subject__key-mappings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin: 0;
+  }
+
+  .fraud-subject__key-mapping {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+
+    dd {
+      color: var(--color-set-3-fg-secondary);
+      margin: 0;
+    }
+  }
+
+  .fraud-subject__approved-orders {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-subject__approved-order {
+    align-items: center;
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    display: flex;
+    gap: var(--space-m);
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-s);
+  }
+
+  @media (max-width: 40rem) {
+    .fraud-subject__identity {
+      flex-direction: column;
+    }
+  }
+}
+
+// Scoped to .admin-content on purpose. The admin button baseline in admin.scss
+// is `.admin-content button:not(.action-btn)`, which outranks a single nested
+// class, so without this the verdict controls fall back to the generic admin
+// button and only the <summary> keeps its own styling.
+//
+// The box below matches that baseline, so a <button>, an input[type="submit"]
+// and the <summary> that opens the rejection form all come out the same shape
+// as every other button in the admin. Only the colour differs.
+.admin-content .fraud-subject {
+  .fraud-subject__verdict {
+    align-items: center;
+    background: var(--color-set-3-bg);
+    border: none;
+    border-radius: 8px;
+    color: var(--color-brand-off-white);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    gap: 0.5em;
+    justify-content: center;
+    line-height: 1.5;
+    list-style: none;
+    min-height: 2.25rem;
+    padding: 0.5rem 1rem;
+
+    // Safari draws its own disclosure triangle regardless of list-style.
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  // One colour scheme across all three kinds of work: purple clears the
+  // person, red acts against them, yellow is the outcome in between.
+  .fraud-subject__verdict--accept {
+    background: var(--color-brand-lilac);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject__verdict--reject {
+    background: var(--color-brand-salmon);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject__verdict--hold {
+    background: var(--color-brand-yellow);
+    color: var(--color-space-bg);
+  }
+}

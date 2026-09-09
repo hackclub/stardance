@@ -8,15 +8,16 @@ class User
       new(1, :admin, "Can do everything except assign or remove admin"),
       new(10, :fraud_lead, "Senior fraud team member"),
       new(2, :fraud_dept, "Can issue negative payouts, cancel grants & shop orders, but not reject or ban users; access to Blazer; access to read-only admin User w/o PII"),
+      new(13, :fraud_squad, "Can work the unified fraud review dashboard: integrity checks, shop orders and fraud flags, per person"),
       new(3, :project_certifier, "Approve/reject if project work meets Shipwright standards"),
       new(4, :guardian_of_integrity, "Can approve/reject projects for YSWS DB"),
       new(5, :fulfillment_person, "Can approve/reject/on-hold shop orders, fulfill them, and see addresses; access to read-only admin User w/ pII"),
-      new(6, :helper, "Support team with read-only access to users (no PII), projects, and shop orders"),
+      new(6, :helper, "Support team with read-only access to users (no PII), projects, shop orders and vote data"),
       new(7, :shop_manager, "Can create/edit draft shop items and view orders without PII"),
       new(8, :mission_reviewer, "Can review submissions for any mission across the platform"),
       new(9, :raffle_admin, "Can manage the referral raffle: weeks, draws, participants, and referrals"),
       new(11, :workshop_manager, "Can create and manage workshops and see their RSVPs and attendees"),
-      new(12, :nda_helper, "NDA-covered helper with read-only access to users, projects, and vote data")
+      new(12, :nda_helper, "NDA-covered helper with read-only access to some data that requires NDA")
     ].freeze
 
     self::SLUGGED = self::ALL.index_by(&:name).freeze

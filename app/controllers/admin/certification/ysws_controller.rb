@@ -48,7 +48,10 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     queue = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
     queue = queue.with_integrity_check if @with_integrity
 
-    @type_counts = queue.joins(:project).group("projects.project_type").count
+    software_counts = queue.joins(:project).where(projects: { hardware_stage: nil }).group("projects.project_type").count
+    hardware_count = queue.joins(:project).where.not(projects: { hardware_stage: nil }).count
+    software_counts.delete("Hardware")
+    @type_counts = software_counts.merge("Hardware" => hardware_count).reject { |_k, v| v.zero? }
 
     scope =
       if @search.present?
@@ -477,7 +480,8 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
         .where(project_id: @review.project_id, status: :approved)
         .lock
       approved_cert = approved_certs.find_by(id: @review.ship_cert_id) ||
-                      approved_certs.find_by(post_ship_event_id: @review.post_ship_event_id)
+                      approved_certs.find_by(post_ship_event_id: @review.post_ship_event_id) ||
+                      approved_certs.order(Arel.sql("decided_at DESC NULLS LAST"), id: :desc).first
 
       new_cert = ::Certification::Ship.create!(
         project_id: @review.project_id,
@@ -489,6 +493,18 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
       if approved_cert&.transfer_external_certification_id_to!(new_cert)
         ::ExternalDashboard::CertReturnJob.perform_later(new_cert.id)
+      elsif approved_cert
+        # Nothing to hand over yet, so the return can't be sent and used to just vanish.
+        # Pushing the approved cert gets a UUID back off the dashboard's duplicate
+        # response, and the job chains the return itself once it lands.
+        ::ExternalDashboard::ShipWebhookJob.perform_later(approved_cert.id)
+      else
+        Sentry.capture_message(
+          "YSWS return has no approved ship cert to chain from",
+          level: :error,
+          tags: { category: "certification.ysws" },
+          extra: { ysws_review_id: @review.id, project_id: @review.project_id, new_cert_id: new_cert.id }
+        )
       end
     end
 

@@ -1,0 +1,54 @@
+<% content_for :title, "Fraud Review Queue" %>
+
+<main class="fraud-queue" role="main">
+  <%= render HeadingComponent.new(title: "Fraud Review Queue", tone: :blue, size: :full) %>
+
+  <% if @total_subjects.zero? %>
+    <div class="fraud-queue__empty" role="status">
+      <p>Nobody is waiting on a fraud verdict.</p>
+    </div>
+  <% else %>
+    <p class="fraud-queue__summary" role="status" aria-live="polite">
+      <span class="fraud-queue__summary-count"><%= @total_subjects %></span>
+      <span class="fraud-queue__summary-label">people waiting, worst first</span>
+    </p>
+
+    <ol class="fraud-queue__list">
+      <% @subjects.each do |subject| %>
+        <% user = @users[subject.user_id] %>
+        <li class="fraud-queue__item">
+          <%= link_to admin_fraud_subject_path(subject.user_id), class: "fraud-subject-card" do %>
+            <span class="fraud-subject-card__identity">
+              <%= image_tag user.avatar, alt: "", class: "fraud-subject-card__avatar", loading: "lazy" %>
+              <span class="fraud-subject-card__identity-copy">
+                <span class="fraud-subject-card__name"><%= user.display_name %></span>
+                <span class="fraud-subject-card__id">#<%= user.id %></span>
+              </span>
+            </span>
+
+            <span class="fraud-subject-card__counts">
+              <% if subject.flag_count.positive? %>
+                <span class="fraud-subject-card__count fraud-subject-card__count--flag">
+                  <%= pluralize(subject.flag_count, "flag") %>
+                </span>
+              <% end %>
+              <% if subject.order_count.positive? %>
+                <span class="fraud-subject-card__count fraud-subject-card__count--order">
+                  <%= pluralize(subject.order_count, "order") %>
+                </span>
+              <% end %>
+            </span>
+
+            <span class="fraud-subject-card__age">
+              waiting <%= time_ago_in_words(subject.oldest_at) %>
+            </span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if @pagy.pages > 1 %>
+      <nav class="fraud-queue__pagination" aria-label="Queue pages"><%== @pagy.series_nav %></nav>
+    <% end %>
+  <% end %>
+</main>

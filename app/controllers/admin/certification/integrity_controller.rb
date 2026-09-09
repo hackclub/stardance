@@ -1,4 +1,6 @@
 class Admin::Certification::IntegrityController < Admin::Certification::ApplicationController
+  include FraudSubjectVerdict
+
   def index
     authorize :integrity, policy_class: Admin::Certification::IntegrityPolicy
 
@@ -62,6 +64,14 @@ class Admin::Certification::IntegrityController < Admin::Certification::Applicat
     @review = ::Certification::Integrity.find(params[:id])
     authorize @review, policy_class: Admin::Certification::IntegrityPolicy
 
+    # A verdict from the per-person fraud page has never opened the review, so
+    # it takes the claim here. atomic_claim! only succeeds when nobody else is
+    # holding it, so this can't jump another reviewer's claim.
+    if fraud_subject && @review.pending?
+      ::Certification::Integrity.atomic_claim!(@review.id, current_user)
+      @review.reload
+    end
+
     unless @review.pending? && @review.claimed_by?(current_user)
       redirect_to admin_certification_integrity_reviews_path,
                   alert: "This review can no longer be decided — it may have been claimed by another admin or already resolved."
@@ -84,6 +94,11 @@ class Admin::Certification::IntegrityController < Admin::Certification::Applicat
     @review.decision_justification = params[:decision_justification].presence
 
     if @review.save
+      if fraud_subject
+        return render_fraud_subject_verdict(@review, "Recorded decision for review ##{@review.id}.",
+                                            refresh_integrity: @review.status.in?(::Certification::Integrity::CASCADING_STATUSES))
+      end
+
       redirect_to admin_certification_integrity_reviews_path,
                   notice: "Recorded decision for review ##{@review.id}."
     else

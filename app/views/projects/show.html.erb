@@ -26,6 +26,12 @@
   # "Complete project info" button (which adds ?complete=1).
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
   can_delete_project = policy(@project).destroy? && (!@project.shipped? || policy(@project).force_destroy?)
+  # Shared by the ship CTA, the returned decision card and the recert modal, and
+  # computed once because link_blocker_message probes the live URLs every call.
+  # Members only: a reviewer opening a returned project shouldn't pay for HTTP
+  # requests to someone else's demo. They still hit the controller and the
+  # resubmit_for_review guard when they actually act.
+  recert_link_blocker = @project.link_blocker_message if is_member && @project.needs_changes?
 %>
 
 <div class="app-layout" data-controller="profile-modal">
@@ -702,13 +708,28 @@
           <% elsif @project.needs_changes? %>
             <%# Changes requested: the ship CTA resubmits this same ship for
                 re-certification instead of opening a fresh ship. %>
-            <%= render ActionButtonComponent.new(
-                  text: "Ship your project!",
-                  variant: :primary,
-                  type: :button,
-                  icon: "icons/rocket.png",
-                  onclick: "document.getElementById('recert-modal-' + #{@project.id.to_json}).showModal()"
-                ) %>
+            <% if recert_link_blocker %>
+              <%= render ActionButtonComponent.new(
+                    text: "Ship your project!",
+                    variant: :secondary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    disabled: :soft,
+                    data: {
+                      controller: "tooltip",
+                      tooltip_message_value: recert_link_blocker,
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
+            <% else %>
+              <%= render ActionButtonComponent.new(
+                    text: "Ship your project!",
+                    variant: :primary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    onclick: "document.getElementById('recert-modal-' + #{@project.id.to_json}).showModal()"
+                  ) %>
+            <% end %>
           <% elsif @project.shippable? %>
             <% if unposted_seconds >= 15 * 60 %>
               <%= render ActionButtonComponent.new(
@@ -945,7 +966,7 @@
           <% if entry.is_a?(Certification::Ship) %>
             <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
             <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project,
-                       recert_modal_id: recert_id %>
+                       recert_modal_id: recert_id, link_blocker: recert_link_blocker %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
             <%# The resubmit button reuses the funding modal, which only renders
                 while the project is still in the design stage. It belongs on the
@@ -987,7 +1008,8 @@
   </div>
 
   <% if (is_member || current_user&.can_review?) && @project.needs_changes? %>
-    <%= render "projects/recert_modal", project: @project, is_member: is_member %>
+    <%= render "projects/recert_modal", project: @project, is_member: is_member,
+               link_blocker: recert_link_blocker %>
   <% end %>
 
   <% if (is_member || current_user&.admin?) && @rejected_mission_sub %>

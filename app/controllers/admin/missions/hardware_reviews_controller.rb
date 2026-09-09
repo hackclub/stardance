@@ -10,7 +10,7 @@ module Admin
 
       skip_before_action :authorize_mission_management
       before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
-      before_action :set_project, only: [ :show, :flag_for_fraud ]
+      before_action :set_project, only: [ :show, :flag_for_fraud, :recordings ]
 
       def index
         authorize_hardware_queue
@@ -29,7 +29,7 @@ module Admin
         authorize @mission, :review?
       end
 
-      def authorize_hardware_review(_project)
+      def authorize_hardware_review(_project, _query = nil)
         authorize @mission, :review?
       end
 
@@ -41,11 +41,15 @@ module Admin
         flag_for_fraud_admin_mission_hardware_review_path(@mission.slug, project)
       end
 
-      def hardware_queue_path(stage)
+      def hardware_recordings_path(project)
+        recordings_admin_mission_hardware_review_path(@mission.slug, project)
+      end
+
+      def hardware_queue_path(stage, **params)
         if stage.to_s == "build"
-          build_admin_mission_hardware_reviews_path(@mission.slug)
+          build_admin_mission_hardware_reviews_path(@mission.slug, **params)
         else
-          design_admin_mission_hardware_reviews_path(@mission.slug)
+          design_admin_mission_hardware_reviews_path(@mission.slug, **params)
         end
       end
 
@@ -66,7 +70,12 @@ module Admin
       end
 
       def set_project
-        @project = ::Project.find(params[:project_id])
+        @project = ::Project.includes(
+          review_notes: :author,
+          certification_funding_requests: :reviewer,
+          ship_reviews: :reviewer,
+          memberships: :user
+        ).find(params[:project_id])
       end
     end
   end
