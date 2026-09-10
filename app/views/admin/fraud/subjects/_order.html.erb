@@ -62,12 +62,12 @@
             <%= f.text_field :reason, class: "fraud-subject__field" %>
 
             <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
-            <%= f.text_area :internal_rejection_reason, rows: 2, class: "fraud-subject__field" %>
+            <%= f.text_area :internal_rejection_reason, rows: 2, class: "fraud-subject__field", required: true %>
 
             <%= f.label :fraud_related_project_id, "Related project", class: "fraud-subject__field-label" %>
             <%= f.select :fraud_related_project_id,
                          user.projects.with_deleted.order(created_at: :desc).map { |p| [ p.title, p.id ] },
-                         { include_blank: "Pick a project" }, class: "fraud-subject__field" %>
+                         { include_blank: "Pick a project" }, { class: "fraud-subject__field", required: true } %>
 
             <%= f.submit "Reject order", class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
           <% end %>
