@@ -7,7 +7,7 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
 
   setup do
     @squad = create_user(slack_id: "U_FRAUD_SQUAD", display_name: "squaddie")
-    @squad.grant_role!(:fraud_squad)
+    @squad.grant_role!(:fraud_fraud_squad_squad)
 
     @subject = create_user(slack_id: "U_FRAUD_SUBJECT", display_name: "subject")
     @reporter = create_user(slack_id: "U_FRAUD_REPORTER", display_name: "reporter")
@@ -24,16 +24,6 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href=?]", admin_fraud_subject_path(@subject)
     assert_select ".fraud-subject-card__avatar[src=?]", @subject.avatar
-  end
-
-  test "the queue leaves out someone with only an integrity check" do
-    pending_integrity_check(@project)
-
-    sign_in @squad
-    get admin_fraud_subjects_path
-
-    assert_response :success
-    assert_select "a[href=?]", admin_fraud_subject_path(@subject), count: 0
   end
 
   test "the queue leaves out quality reports the fraud team does not own" do

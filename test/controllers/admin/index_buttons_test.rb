@@ -16,7 +16,7 @@ class Admin::IndexButtonsTest < ActionDispatch::IntegrationTest
 
   test "the dashboard links the fraud squad to the per-person queue" do
     squaddie = create_user(slack_id: "U_IDX_FRAUD", display_name: "idx_fraud")
-    squaddie.grant_role!(:fraud_squad)
+    squaddie.grant_role!(:fraud_fraud_squad_squad)
     sign_in squaddie
 
     get admin_root_path

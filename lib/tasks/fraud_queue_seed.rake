@@ -76,7 +76,7 @@ class FraudQueueSeeder
       "Must NOT appear: seed_banned (banned), seed_out_of_scope (quality flags",
       "and an awaiting_verification order only).",
       "",
-      "Grant yourself access with: User.find_by(display_name: \"...\").grant_role!(:fraud_squad)"
+      "Grant yourself access with: User.find_by(display_name: \"...\").grant_role!(:fraud_fraud_squad_squad)"
     ]
     lines.join("\n")
   end

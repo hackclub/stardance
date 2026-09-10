@@ -37,6 +37,11 @@
                   <%= pluralize(subject.order_count, "order") %>
                 </span>
               <% end %>
+              <% if subject.integrity_count.positive? %>
+                <span class="fraud-subject-card__count fraud-subject-card__count--integrity">
+                  <%= pluralize(subject.integrity_count, "check") %>
+                </span>
+              <% end %>
             </span>
 
             <span class="fraud-subject-card__age">

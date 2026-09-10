@@ -89,7 +89,7 @@ class Admin::UserPolicy < ApplicationPolicy
   # roles that can work the fraud queue see the figure too.
   def view_usd_cost?
     user&.admin? || user&.fulfillment_person? || user&.shop_manager? ||
-      user&.fraud_lead? || user&.fraud_dept? || user&.fraud_squad?
+      user&.fraud_lead? || user&.fraud_dept? || user&.fraud_fraud_squad_squad?
   end
 
   def shop_order_action?
