@@ -446,10 +446,74 @@
     padding: var(--space-m);
   }
 
-  .fraud-subject__projects {
+  // Sticky so the reviewer keeps sight of how much of this person's queue is
+  // left while working down a long page. One slot per waiting item, each an
+  // equal share of the width, coloured by the verdict that settled it.
+  .fraud-subject__progress {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    margin-bottom: var(--space-m);
+    padding: var(--space-xs);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  .fraud-subject__progress-track {
     display: flex;
-    flex-direction: column;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-subject__progress-slot {
+    background: var(--fraud-slot-tone, var(--color-set-2-fg-secondary));
+    border-radius: 999px;
+    flex: 1 1 0;
+    height: 0.5rem;
+    opacity: 0.25;
+    transition: background-color 150ms ease, opacity 150ms ease;
+  }
+
+  // Still waiting: ghosted in the colour of the queue it came from, so the bar
+  // shows what is left as well as what is done.
+  .fraud-subject__progress-slot--flag {
+    --fraud-slot-tone: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__progress-slot--order {
+    --fraud-slot-tone: var(--color-brand-peach);
+  }
+
+  .fraud-subject__progress-slot--integrity {
+    --fraud-slot-tone: var(--color-brand-lilac);
+  }
+
+  // Settled: the verdict's own colour, at full strength.
+  .fraud-subject__progress-slot--cleared,
+  .fraud-subject__progress-slot--reduced,
+  .fraud-subject__progress-slot--struck {
+    opacity: 1;
+  }
+
+  .fraud-subject__progress-slot--cleared {
+    --fraud-slot-tone: var(--color-brand-mint);
+  }
+
+  .fraud-subject__progress-slot--reduced {
+    --fraud-slot-tone: var(--color-brand-yellow);
+  }
+
+  .fraud-subject__progress-slot--struck {
+    --fraud-slot-tone: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__projects {
+    display: grid;
     gap: var(--space-s);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .fraud-subject__project {
@@ -506,6 +570,10 @@
   @media (max-width: 40rem) {
     .fraud-subject__identity {
       flex-direction: column;
+    }
+
+    .fraud-subject__projects {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 }

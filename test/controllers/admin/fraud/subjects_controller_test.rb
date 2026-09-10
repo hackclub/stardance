@@ -26,6 +26,20 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".fraud-subject-card__avatar[src=?]", @subject.avatar
   end
 
+  test "the progress bar gives each waiting item one slot" do
+    flag_the_project
+    pending_integrity_check(@project)
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__progress-slot", count: 2
+    assert_select ".fraud-subject__progress-slot--flag", count: 1
+    assert_select ".fraud-subject__progress-slot--integrity", count: 1
+    assert_select ".fraud-subject__progress-slot--cleared", count: 0
+  end
+
   test "the queue leaves out quality reports the fraud team does not own" do
     flag_the_project(reason: "low_effort")
 

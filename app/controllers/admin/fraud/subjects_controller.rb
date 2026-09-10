@@ -33,6 +33,7 @@ class Admin::Fraud::SubjectsController < Admin::ApplicationController
     # into Telescreen's per-project view; the rest have no project to name.
     @hackatime_projects = @user.hackatime_projects.where.not(project_id: nil).includes(:project)
     @project_summaries = project_summaries_for(@user)
+    @review_items = @flags.to_a + @orders.to_a + @integrity_checks.to_a
   end
 
   private

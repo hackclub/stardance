@@ -1,5 +1,13 @@
 <%= turbo_frame_tag "fraud-subject-integrity-items" do %>
   <% checks = Admin::Fraud::SubjectQueue.integrity_checks_for(user) %>
+
+  <%# The heading sits inside the frame so its count is re-rendered with the
+      list a verdict replaces, rather than going stale above it. %>
+  <h2 class="fraud-subject__section-title" id="fraud-subject-integrity">
+    Integrity checks
+    <span class="fraud-subject__section-count"><%= checks.size %></span>
+  </h2>
+
   <% if checks.any? %>
     <div class="fraud-subject__items">
       <%= render partial: "admin/fraud/subjects/integrity_check", collection: checks, as: :check, locals: { user: user } %>

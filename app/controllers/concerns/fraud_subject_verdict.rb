@@ -43,6 +43,12 @@ module FraudSubjectVerdict
       locals: { user: fraud_subject }
     )
 
+    streams << turbo_stream.replace(
+      ActionView::RecordIdentifier.dom_id(record, :progress),
+      partial: "admin/fraud/subjects/progress_slot",
+      locals: { record: record }
+    )
+
     render turbo_stream: streams
   end
 

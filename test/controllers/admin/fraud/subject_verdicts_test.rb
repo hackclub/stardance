@@ -31,6 +31,28 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     assert_match ActionView::RecordIdentifier.dom_id(flag), response.body
   end
 
+  test "a verdict fills the item's slot in the progress bar" do
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_match ActionView::RecordIdentifier.dom_id(flag, :progress), response.body
+    assert_match "fraud-subject__progress-slot--struck", response.body
+  end
+
+  test "a dismissed flag fills its slot in the cleared tone" do
+    flag = flag_a_project
+
+    post dismiss_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate flag.reload, :dismissed?
+    assert_match "fraud-subject__progress-slot--cleared", response.body
+  end
+
   test "resolving a flag from its own dashboard still redirects" do
     flag = flag_a_project
 

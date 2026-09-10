@@ -1,0 +1,9 @@
+<%# One slot per item waiting when the page loaded, so every verdict fills the
+    same share of the bar and its colour says which way the verdict went. %>
+<% if review_items.any? %>
+  <div class="fraud-subject__progress">
+    <ol class="fraud-subject__progress-track" aria-label="Review progress">
+      <%= render partial: "admin/fraud/subjects/progress_slot", collection: review_items, as: :record %>
+    </ol>
+  </div>
+<% end %>

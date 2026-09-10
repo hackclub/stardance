@@ -1,6 +1,8 @@
 <% content_for :title, "Fraud review: #{@user.display_name}" %>
 
 <main class="fraud-subject" role="main">
+  <%= render "progress", review_items: @review_items %>
+
   <%= render HeadingComponent.new(title: @user.display_name, tone: :blue, size: :full) %>
 
   <p class="fraud-subject__back">
@@ -43,12 +45,10 @@
     <% end %>
   </section>
 
-  <%= render "approved_orders", approved_orders: @approved_orders,
-             approved_orders_count: @approved_orders_count %>
-
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-integrity">
-    <h2 class="fraud-subject__section-title" id="fraud-subject-integrity">Integrity checks</h2>
-
     <%= render "integrity_items", user: @user %>
   </section>
+
+  <%= render "approved_orders", approved_orders: @approved_orders,
+             approved_orders_count: @approved_orders_count %>
 </main>
