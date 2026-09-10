@@ -145,6 +145,46 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select ".streak-widget__week [data-tooltip-message-value=?]", "Sticky Streak day 1"
   end
 
+  test "the header offers a refresh control once the widget is set up" do
+    get streak_home_discover_rail_path
+
+    assert_response :success
+    assert_select ".streak-widget__header a.streak-widget__refresh[href=?]",
+                  streak_home_discover_rail_path(refresh: 1)
+  end
+
+  test "refreshing re-reads Hackatime inline and throttles the next press" do
+    today = @user.streak_today_date
+    @user.update!(streak_synced_at: FROZEN_NOW - 1.day)
+    span_start = FROZEN_NOW - 1.hour
+    spans = [ { "start_time" => span_start.to_i, "end_time" => (span_start + 300).to_i, "duration" => 300 } ]
+    calls = 0
+    fetch = ->(*_args, **_kwargs) { calls += 1; spans }
+
+    with_memory_cache do
+      HackatimeService.stub(:fetch_heartbeat_spans, fetch) do
+        get streak_home_discover_rail_path(refresh: 1)
+        get streak_home_discover_rail_path(refresh: 1)
+      end
+    end
+
+    assert_response :success
+    assert_equal 1, calls, "a second press inside the throttle window must not hit Hackatime again"
+    assert_equal 300, @user.streak_activities.find_by(activity_date: today).coded_seconds
+    assert_select ".streak-widget__progress-label", text: /5 \/ 5 minutes today/
+  end
+
+  test "the widget does not sync when it is loaded without the refresh flag" do
+    @user.update!(streak_synced_at: FROZEN_NOW - 1.day)
+    fetch = ->(*_args, **_kwargs) { flunk "a plain load must not call Hackatime inline" }
+
+    HackatimeService.stub(:fetch_heartbeat_spans, fetch) do
+      get streak_home_discover_rail_path
+    end
+
+    assert_response :success
+  end
+
   test "the month nav can page forward to the last calendar month" do
     get streak_home_discover_rail_path
 
@@ -153,6 +193,14 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def with_memory_cache
+    original = Rails.cache
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
+    yield
+  ensure
+    Rails.cache = original
+  end
 
   def sticker
     item = ShopItem.new(name: "Orbit Sticker", description: "sticker", ticket_cost: 5,

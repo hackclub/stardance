@@ -23,6 +23,14 @@
         </span>
       <% end %>
     </div>
+    <% if ready? %>
+      <%= link_to helpers.streak_home_discover_rail_path(refresh: 1),
+            class: "streak-widget__refresh",
+            title: "Refresh from Hackatime",
+            aria: { label: "Refresh streak from Hackatime" } do %>
+        <%= helpers.inline_svg_tag "icons/refresh.svg", class: "streak-widget__refresh-icon" %>
+      <% end %>
+    <% end %>
   </div>
 
   <% if setup_needed? %>

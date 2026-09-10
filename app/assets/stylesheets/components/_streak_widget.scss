@@ -47,6 +47,36 @@
     }
   }
 
+  &__refresh {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    color: var(--color-space-text-muted);
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-space-text);
+      background: var(--color-overlay-light-soft);
+    }
+  }
+
+  &__refresh-icon {
+    width: 14px;
+    height: 14px;
+
+    turbo-frame[busy] & {
+      animation: streak-widget-refresh-spin 700ms linear infinite;
+    }
+  }
+
   &__week {
     display: flex;
     justify-content: space-between;
@@ -277,5 +307,11 @@
     color: var(--color-space-text-muted);
     margin: 0;
     line-height: 1.4;
+  }
+}
+
+@keyframes streak-widget-refresh-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
