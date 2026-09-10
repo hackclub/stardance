@@ -505,6 +505,24 @@ button.btn-danger {
   max-width: 90vw;
   width: 400px;
 
+  // This sheet has no global border-box, so a child sized at 100% with its own
+  // padding overflows the dialog. Scope the fix to the modal subtree rather
+  // than reflowing every admin page.
+  &,
+  & *,
+  & *::before,
+  & *::after {
+    box-sizing: border-box;
+  }
+
+  // Roomy enough for a seven-column calendar, and scrolls rather than running
+  // off the viewport once the panel grows.
+  &--wide {
+    width: 540px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
   &__title {
     margin: 0 0 var(--space-s) 0;
     color: var(--color-space-text);

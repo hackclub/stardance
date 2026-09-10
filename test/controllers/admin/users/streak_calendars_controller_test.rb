@@ -87,7 +87,7 @@ class Admin::Users::StreakCalendarsControllerTest < ActionDispatch::IntegrationT
     get admin_user_path(@member)
 
     assert_response :success
-    assert_select "form[data-controller='streak-day-picker'] [data-streak-day-picker-target='date']"
+    assert_select "turbo-frame#admin_user_streak_credit_panel form[data-controller='streak-day-picker'] [data-streak-day-picker-target='date']"
     assert_select "form[data-controller='streak-day-picker'] turbo-frame#admin_user_streak_calendar"
   end
 

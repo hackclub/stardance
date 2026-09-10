@@ -115,4 +115,42 @@ class Admin::Users::StreakCreditsControllerTest < ActionDispatch::IntegrationTes
     assert_not_predicate activity.reload, :completed?
     assert_equal 60, activity.coded_seconds
   end
+
+  test "crediting from the modal swaps the panel instead of closing the dialog" do
+    sign_in @helper
+
+    post admin_user_streak_credits_path(@member),
+         params: { activity_date: @yesterday.to_s, reason: "Hackatime outage" },
+         as: :turbo_stream
+
+    assert_response :success
+    assert_match "turbo-stream", response.media_type
+    assert_select "turbo-stream[action=replace][target=admin_user_streak_credit_panel]"
+    assert_predicate @member.streak_activities.find_by(activity_date: @yesterday), :manually_credited?
+  end
+
+  test "a rejected credit reports back inside the panel rather than redirecting" do
+    sign_in @helper
+
+    post admin_user_streak_credits_path(@member),
+         params: { activity_date: @yesterday.to_s, reason: "" },
+         as: :turbo_stream
+
+    assert_response :success
+    assert_select "turbo-stream[target=admin_user_streak_credit_panel]"
+    assert_select "turbo-stream template", html: /A reason is required/
+    assert_empty @member.streak_activities
+  end
+
+  test "revoking from the modal also swaps the panel in place" do
+    StreakActivity.credit!(user: @member, date: @yesterday, granted_by: @helper, reason: "granted in error")
+    activity = @member.streak_activities.manually_credited.first!
+    sign_in @helper
+
+    delete admin_user_streak_credit_path(@member, activity), as: :turbo_stream
+
+    assert_response :success
+    assert_select "turbo-stream[action=replace][target=admin_user_streak_credit_panel]"
+    assert_not_predicate activity.reload, :manually_credited?
+  end
 end

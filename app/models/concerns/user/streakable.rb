@@ -109,6 +109,18 @@ module User::Streakable
     end
   end
 
+  # Days a helper marked kept by hand, newest first, for the admin credit panel.
+  def streak_credits
+    streak_activities.manually_credited.includes(:manual_credit_by).order(activity_date: :desc)
+  end
+
+  # The month the credit calendar opens on: the person's current month, held
+  # inside the months the program actually ran.
+  def streak_calendar_month
+    streak_today_date.beginning_of_month
+      .clamp(StreakActivity::CALENDAR_FIRST_MONTH, StreakActivity::CALENDAR_LAST_MONTH)
+  end
+
   def streak_next_day_at
     tz = timezone.presence || "UTC"
     local = Time.current.in_time_zone(tz)

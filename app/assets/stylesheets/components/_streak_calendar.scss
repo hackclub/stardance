@@ -1,6 +1,8 @@
 // The month calendar shared by the streak rail widget and the admin credit
 // modal. Cells only become buttons where a surface asks for them (pickable).
 .streak-calendar {
+  max-width: 100%;
+
   &__nav {
     display: flex;
     align-items: center;
@@ -43,7 +45,9 @@
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    // minmax(0, 1fr) rather than 1fr: a bare 1fr track cannot shrink below its
+    // content, which pushes the seventh column out of a narrow container.
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     row-gap: 2px;
     justify-items: center;
   }
@@ -59,6 +63,8 @@
 
   &__cell {
     position: relative;
+    // Cells stay square, so cap them or a wide container makes the grid tall.
+    max-width: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
