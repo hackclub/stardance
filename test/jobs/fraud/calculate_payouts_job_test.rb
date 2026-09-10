@@ -30,6 +30,46 @@ class Fraud::CalculatePayoutsJobTest < ActiveJob::TestCase
     review!(@order3, @reviewer2, "on_hold")
   end
 
+  test "a completed per-person review payout is credited in its own line" do
+    clearer = create_user(slack_id: "UREVIEWER3", display_name: "fraudreviewer3")
+    payout = FraudReviewPayout.create!(reviewer: clearer, subject: @buyer, flag_count: 1,
+                                       order_count: 1, integrity_count: 1, amount: 4.81,
+                                       completed_at: Time.current)
+
+    assert_difference -> { clearer.ledger_entries.count }, 1 do
+      Fraud::CalculatePayoutsJob.perform_now
+    end
+
+    line = payout.reload.fraud_payout_line
+    assert_not_nil line, "the payout is swept into the run"
+    assert_equal 5, line.amount, "4.81 rounds to a whole number at credit time"
+    assert_match "1 person fully reviewed", line.ledger_entries.sole.reason
+  end
+
+  test "a manual run pays every completed review payout, however old" do
+    clearer = create_user(slack_id: "UREVIEWER_OLD", display_name: "fraudreviewerold")
+    old = FraudReviewPayout.create!(reviewer: clearer, subject: @buyer, flag_count: 2,
+                                    order_count: 0, integrity_count: 0, amount: 1.2,
+                                    completed_at: 90.days.ago)
+    old.update_columns(created_at: 90.days.ago)
+
+    assert_difference -> { clearer.ledger_entries.count }, 1 do
+      Fraud::CalculatePayoutsJob.perform_now(manual: true)
+    end
+
+    assert_not_nil old.reload.fraud_payout_line_id
+    assert_empty FraudReviewPayout.payable
+  end
+
+  test "a review payout that is not complete is left for a later run" do
+    FraudReviewPayout.create!(reviewer: @reviewer1, subject: @buyer, flag_count: 1,
+                              order_count: 0, integrity_count: 0, amount: 1.1)
+
+    Fraud::CalculatePayoutsJob.perform_now
+
+    assert_nil FraudReviewPayout.sole.fraud_payout_line_id
+  end
+
   test "creates a payout run with totals from the bracket calculator" do
     Fraud::CalculatePayoutsJob.perform_now
 

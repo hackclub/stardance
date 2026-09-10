@@ -73,8 +73,10 @@ class Admin::Certification::IntegrityController < Admin::Certification::Applicat
     end
 
     unless @review.pending? && @review.claimed_by?(current_user)
-      redirect_to admin_certification_integrity_reviews_path,
-                  alert: "This review can no longer be decided — it may have been claimed by another admin or already resolved."
+      message = "This review can no longer be decided, it may have been claimed by another admin or already resolved."
+      return render_fraud_subject_integrity_error(message) if fraud_subject
+
+      redirect_to admin_certification_integrity_reviews_path, alert: message
       return
     end
 
@@ -102,13 +104,29 @@ class Admin::Certification::IntegrityController < Admin::Certification::Applicat
       redirect_to admin_certification_integrity_reviews_path,
                   notice: "Recorded decision for review ##{@review.id}."
     else
+      errors = @review.errors.full_messages.to_sentence
+      return render_fraud_subject_integrity_error(errors) if fraud_subject
+
       @shop_orders = @review.user&.shop_orders&.includes(:shop_item)&.order(created_at: :desc) || ShopOrder.none
-      flash.now[:alert] = @review.errors.full_messages.to_sentence
+      flash.now[:alert] = errors
       render :show, status: :unprocessable_entity
     end
   end
 
   private
+
+  # A verdict from the fraud subject page is answering into that check's turbo
+  # frame, so every failure has to come back as the frame too. Redirecting or
+  # rendering the review page leaves the reviewer looking at "Content missing".
+  def render_fraud_subject_integrity_error(message)
+    @review.reload
+
+    render turbo_stream: turbo_stream.replace(
+      ActionView::RecordIdentifier.dom_id(@review),
+      partial: "admin/fraud/subjects/integrity_check",
+      locals: { check: @review, user: fraud_subject, error: message }
+    ), status: :unprocessable_entity
+  end
 
   # The "Deducted hours" verdict is entered in hours for the reviewer but stored
   # as whole minutes. Blank stays nil so the model's presence validation surfaces

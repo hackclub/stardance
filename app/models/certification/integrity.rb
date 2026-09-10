@@ -13,19 +13,22 @@
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #  claimed_by_id          :bigint
+#  fraud_review_payout_id :bigint
 #  reviewer_id            :bigint
 #  ship_event_id          :bigint           not null
 #
 # Indexes
 #
-#  index_certification_integrities_on_claimed_by_id  (claimed_by_id)
-#  index_certification_integrities_on_reviewer_id    (reviewer_id)
-#  index_certification_integrities_on_ship_event_id  (ship_event_id) UNIQUE
-#  index_certification_integrities_on_status         (status)
+#  index_certification_integrities_on_claimed_by_id           (claimed_by_id)
+#  index_certification_integrities_on_fraud_review_payout_id  (fraud_review_payout_id)
+#  index_certification_integrities_on_reviewer_id             (reviewer_id)
+#  index_certification_integrities_on_ship_event_id           (ship_event_id) UNIQUE
+#  index_certification_integrities_on_status                  (status)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (claimed_by_id => users.id)
+#  fk_rails_...  (fraud_review_payout_id => fraud_review_payouts.id)
 #  fk_rails_...  (reviewer_id => users.id)
 #  fk_rails_...  (ship_event_id => post_ship_events.id)
 #
@@ -36,6 +39,7 @@ module Certification
     belongs_to :ship_event, class_name: "Post::ShipEvent", inverse_of: :integrity_check
     belongs_to :reviewer, class_name: "User", optional: true
     belongs_to :claimed_by, class_name: "User", optional: true
+    belongs_to :fraud_review_payout, optional: true, inverse_of: :certification_integrities
 
     delegate :project, to: :ship_event
 

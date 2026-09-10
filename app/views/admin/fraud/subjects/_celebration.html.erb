@@ -1,0 +1,22 @@
+<%= turbo_frame_tag "fraud-subject-celebration" do %>
+  <% if payout %>
+    <div class="fraud-celebration" role="status"
+         data-controller="fraud-payout-celebration"
+         data-fraud-payout-celebration-amount-value="<%= payout.amount.to_f %>"
+         data-fraud-payout-celebration-total-value="<%= total.to_f %>"
+         data-action="click->fraud-payout-celebration#dismiss">
+      <div class="fraud-celebration__burst" aria-hidden="true">
+        <% 24.times do %><span class="fraud-celebration__confetti"></span><% end %>
+      </div>
+
+      <p class="fraud-celebration__amount">
+        +<span data-fraud-payout-celebration-target="amount"><%= payout.amount.to_f %></span><%= stardust_icon %>
+      </p>
+
+      <p class="fraud-celebration__total">
+        <span data-fraud-payout-celebration-target="total"><%= total.to_f %></span><%= stardust_icon %>
+        <span class="fraud-celebration__total-label">waiting on the next payout run</span>
+      </p>
+    </div>
+  <% end %>
+<% end %>

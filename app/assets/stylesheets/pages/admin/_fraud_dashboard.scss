@@ -204,3 +204,41 @@
     }
   }
 }
+
+.fraud-payouts__own-reviews {
+  color: var(--color-brand-cream);
+  font-size: var(--font-size-s);
+  margin: var(--space-xs) 0 0;
+}
+
+.fraud-payouts__empty {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+  margin: 0;
+  padding: var(--space-m);
+}
+
+.fraud-leaderboard__rank {
+  color: var(--color-space-text-muted);
+}
+
+.fraud-leaderboard__reviewer {
+  align-items: center;
+  display: flex;
+  gap: var(--space-xxs);
+}
+
+.fraud-leaderboard__avatar {
+  border-radius: 999px;
+  height: 24px;
+  object-fit: cover;
+  width: 24px;
+}
+
+.fraud-leaderboard__you {
+  background: rgb(149 219 255 / 18%);
+  border-radius: 999px;
+  color: var(--color-brand-blue);
+  font-size: 10px;
+  padding: 1px 7px;
+}

@@ -2,8 +2,12 @@
     same share of the bar and its colour says which way the verdict went. %>
 <% if review_items.any? %>
   <div class="fraud-subject__progress">
-    <ol class="fraud-subject__progress-track" aria-label="Review progress">
-      <%= render partial: "admin/fraud/subjects/progress_slot", collection: review_items, as: :record %>
-    </ol>
+    <div class="fraud-subject__progress-inner">
+      <ol class="fraud-subject__progress-track" aria-label="Review progress">
+        <%= render partial: "admin/fraud/subjects/progress_slot", collection: review_items, as: :record %>
+      </ol>
+
+      <%= render "admin/fraud/subjects/payout", payout: payout %>
+    </div>
   </div>
 <% end %>

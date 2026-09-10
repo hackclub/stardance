@@ -2,6 +2,10 @@
 
 <%= turbo_frame_tag check do %>
   <div class="fraud-subject__item fraud-subject__item--integrity">
+    <% if local_assigns[:error].present? %>
+      <p class="fraud-subject__item-error" role="alert"><%= error %></p>
+    <% end %>
+
     <div class="fraud-subject__item-head">
       <span class="fraud-subject__item-title">
         <%= project ? link_to(project.title, admin_project_path(project)) : "Deleted project" %>
@@ -112,12 +116,14 @@
       <%= f.text_area :decision_justification, rows: 2, class: "fraud-subject__field" %>
 
       <div class="fraud-subject__item-actions">
-        <%= button_tag "Pass", name: "decision", value: "pass",
+        <%# Only Deduct needs the hours, so the other two skip form validation
+            rather than the field being required for every verdict. %>
+        <%= button_tag "Pass", name: "decision", value: "pass", formnovalidate: true,
                        class: "fraud-subject__verdict fraud-subject__verdict--accept" %>
-        <%= button_tag "Fraud", name: "decision", value: "fraud",
+        <%= button_tag "Fraud", name: "decision", value: "fraud", formnovalidate: true,
                        class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
         <span class="fraud-subject__verdict-group">
-          <%= f.number_field :deduction_hours, step: 0.25, min: 0, placeholder: "hrs",
+          <%= f.number_field :deduction_hours, step: 0.25, min: 0, placeholder: "hrs", required: true,
                              class: "fraud-subject__field fraud-subject__field--narrow" %>
           <%= button_tag "Deduct", name: "decision", value: "deduct",
                          class: "fraud-subject__verdict fraud-subject__verdict--hold" %>

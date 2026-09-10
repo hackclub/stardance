@@ -26,6 +26,7 @@
 #  assigned_to_user_id                :bigint
 #  fraud_payout_line_id               :bigint
 #  fraud_related_project_id           :bigint
+#  fraud_review_payout_id             :bigint
 #  fulfillment_payout_line_id         :bigint
 #  parent_order_id                    :bigint
 #  shop_card_grant_id                 :bigint
@@ -41,6 +42,7 @@
 #  idx_shop_orders_user_item_state                  (user_id,shop_item_id,aasm_state)
 #  idx_shop_orders_user_item_unique                 (user_id,shop_item_id)
 #  index_shop_orders_on_assigned_to_user_id         (assigned_to_user_id)
+#  index_shop_orders_on_fraud_review_payout_id      (fraud_review_payout_id)
 #  index_shop_orders_on_fulfillment_payout_line_id  (fulfillment_payout_line_id)
 #  index_shop_orders_on_parent_order_id             (parent_order_id)
 #  index_shop_orders_on_region                      (region)
@@ -52,6 +54,7 @@
 # Foreign Keys
 #
 #  fk_rails_...  (assigned_to_user_id => users.id) ON DELETE => nullify
+#  fk_rails_...  (fraud_review_payout_id => fraud_review_payouts.id)
 #  fk_rails_...  (fulfillment_payout_line_id => fulfillment_payout_lines.id)
 #  fk_rails_...  (parent_order_id => shop_orders.id)
 #  fk_rails_...  (shop_item_id => shop_items.id)
@@ -77,6 +80,7 @@ class ShopOrder < ApplicationRecord
   has_one :mission_submission, class_name: "Mission::Submission", inverse_of: :shop_order
   belongs_to :warehouse_package, class_name: "ShopWarehousePackage", optional: true
   belongs_to :assigned_to_user, class_name: "User", optional: true
+  belongs_to :fraud_review_payout, optional: true, inverse_of: :shop_orders
   belongs_to :fulfillment_payout_line, optional: true
   belongs_to :fraud_related_project, class_name: "Project", optional: true, foreign_key: :fraud_related_project_id, inverse_of: false
 

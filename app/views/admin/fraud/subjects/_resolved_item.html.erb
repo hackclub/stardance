@@ -1,3 +1,4 @@
 <%= turbo_frame_tag record do %>
-  <div class="fraud-subject__item fraud-subject__item--resolved" role="status"><%= note %></div>
+  <div class="fraud-subject__item fraud-subject__item--<%= fraud_review_kind(record) %> fraud-subject__item--resolved"
+       role="status"><%= note %></div>
 <% end %>

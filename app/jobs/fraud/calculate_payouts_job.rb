@@ -5,7 +5,8 @@ class Fraud::CalculatePayoutsJob < ApplicationJob
 
   def perform(manual: false)
     orders = eligible_orders(manual)
-    return if orders.empty?
+    review_payouts = FraudReviewPayout.payable.to_a
+    return if orders.empty? && review_payouts.empty?
 
     now = Time.current
 
@@ -38,9 +39,11 @@ class Fraud::CalculatePayoutsJob < ApplicationJob
         ShopOrder.where(id: user_orders.map(&:id)).update_all(fraud_payout_line_id: line.id)
       end
 
+      review_total = pay_out_reviews(run, review_payouts)
+
       run.update!(
-        total_orders: orders.size,
-        total_amount: bracket_results[:total_distributed].to_i
+        total_orders: orders.size + review_payouts.sum(&:item_count),
+        total_amount: bracket_results[:total_distributed].to_i + review_total
       )
 
       run.approve!
@@ -48,6 +51,24 @@ class Fraud::CalculatePayoutsJob < ApplicationJob
   end
 
   private
+
+  # Per-person review payouts get their own line per reviewer: their amount is
+  # already fixed by the formula, so they do not go through the bracket split
+  # that shares out the per-order pot.
+  def pay_out_reviews(run, review_payouts)
+    review_payouts.group_by(&:reviewer_id).sum do |reviewer_id, payouts|
+      amount = payouts.sum(&:credited_amount)
+
+      line = run.lines.create!(
+        user_id: reviewer_id,
+        order_count: payouts.sum(&:item_count),
+        amount: amount
+      )
+      FraudReviewPayout.where(id: payouts.map(&:id)).update_all(fraud_payout_line_id: line.id)
+
+      amount
+    end
+  end
 
   def eligible_orders(manual)
     scope = FraudPayoutRun.payout_eligible_orders

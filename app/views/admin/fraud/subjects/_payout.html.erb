@@ -1,0 +1,19 @@
+<%= turbo_frame_tag "fraud-subject-payout", class: "fraud-subject__payout" do %>
+  <% tally = payout || FraudReviewPayout.new %>
+  <% done = payout&.completed_at.present? %>
+
+  <span class="fraud-subject__payout-sum">
+    <span class="fraud-subject__payout-base">1<%= stardust_icon %></span>
+    <% tally.multipliers.each do |kind, factor| %>
+      <span class="fraud-subject__payout-op" aria-hidden="true">&times;</span>
+      <span class="fraud-subject__payout-mult fraud-subject__payout-mult--<%= kind %>">
+        <%= number_with_precision(factor, precision: 2, strip_insignificant_zeros: true) %>
+      </span>
+    <% end %>
+  </span>
+
+  <%= tag.span class: class_names("fraud-subject__payout-result", "fraud-subject__payout-result--done" => done),
+               role: (done ? "status" : nil) do %>
+    = <%= number_with_precision(tally.amount, precision: 2, strip_insignificant_zeros: true) %><%= stardust_icon %>
+  <% end %>
+<% end %>

@@ -23,34 +23,31 @@ class Admin::FraudPayoutsControllerTest < ActionDispatch::IntegrationTest
     @item.save!
   end
 
-  test "preview includes unpaid eligible orders reviewed before this month and credits the first reviewer" do
-    order = travel_to(2.months.ago) do
-      create_order.tap { |created_order| review!(created_order, @admin, "rejected") }
-    end
-    review!(order, @other_reviewer, "on_hold")
+  test "the leaderboard ranks reviewers by stardust and breaks out each source" do
+    FraudReviewPayout.create!(reviewer: @admin, subject: @buyer, flag_count: 1, order_count: 2,
+                              integrity_count: 3, amount: 9.5, completed_at: Time.current)
+    FraudReviewPayout.create!(reviewer: @other_reviewer, subject: @buyer, flag_count: 1,
+                              order_count: 0, integrity_count: 0, amount: 1.1, completed_at: Time.current)
 
     sign_in @admin
     get admin_fraud_payouts_path
 
     assert_response :success
-    assert_select ".aorder__card-body", text: /1 unpaid order awaiting payout/
-    assert_select "td", text: @admin.display_name, count: 1
-    assert_select "td", text: @other_reviewer.display_name, count: 0
+    assert_select "td", text: /#{@admin.display_name}/
+    assert_select ".fraud-leaderboard__row--me td", text: "6", count: 1
+    assert_select "tbody tr:first-child td", text: /#{@admin.display_name}/,
+                  count: 1, message: "the bigger earner sorts first"
   end
 
-  test "preview excludes an eligible order already attached to a payout line" do
-    order = create_order
-    review!(order, @admin, "rejected")
-    run = FraudPayoutRun.create!(period_end: Time.current, total_orders: 1, total_amount: 1000)
-    line = run.lines.create!(user: @admin, order_count: 1, amount: 1000)
-    order.update_column(:fraud_payout_line_id, line.id)
+  test "an unfinished tally stays off the leaderboard" do
+    FraudReviewPayout.create!(reviewer: @admin, subject: @buyer, flag_count: 1,
+                              order_count: 0, integrity_count: 0, amount: 1.1)
 
     sign_in @admin
     get admin_fraud_payouts_path
 
     assert_response :success
-    assert_select ".aorder__card-body", text: /0 unpaid orders awaiting payout/
-    assert_select "td", text: @admin.display_name, count: 0
+    assert_select ".fraud-payouts__empty", text: /Nobody has cleared a person yet/
   end
 
   private

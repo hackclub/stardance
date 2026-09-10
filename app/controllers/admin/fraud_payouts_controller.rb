@@ -5,9 +5,8 @@ module Admin
     def index
       authorize FraudPayoutRun
       @runs = FraudPayoutRun.order(created_at: :desc).includes(:approved_by_user)
-      @bracket = current_bracket
-      @leaderboard = decorated_leaderboard(@bracket)
-      @estimated_orders, @estimated_amount = estimated_payout_for(current_user, @bracket)
+      @leaderboard = review_leaderboard
+      @my_review_payout = pending_review_payouts.find { |row| row[:user]&.id == current_user.id }
     end
 
     def show
@@ -69,39 +68,33 @@ module Admin
 
     private
 
-    # Builds the live bracket standings from the orders the automatic payout
-    # job would process. Returns the BracketCalculator result hash (or nil when
-    # nobody has an attributable unpaid review).
-    def current_bracket
-      counts = reviewer_order_counts
-      return nil if counts.empty?
-
-      leaderboard = counts.map { |uid, count| { user: uid, total: count } }
-      BracketCalculator.new(leaderboard, 1000).calculate
+    # All-time standings: every payout a reviewer has banked, paid or not, so
+    # the board does not reset itself each time a run goes out.
+    def review_leaderboard
+      FraudReviewPayout.where.not(completed_at: nil).includes(:reviewer).group_by(&:reviewer).map { |reviewer, rows|
+        {
+          user: reviewer,
+          people: rows.size,
+          flags: rows.sum(&:flag_count),
+          orders: rows.sum(&:order_count),
+          integrities: rows.sum(&:integrity_count),
+          amount: rows.sum(&:credited_amount)
+        }
+      }.sort_by { |row| -row[:amount] }
     end
 
-    # Joins the raw bracket result rows to their User records so the view can
-    # render display names without firing a query per row.
-    def decorated_leaderboard(bracket)
-      return [] unless bracket
+    # What the next run will pay out, as opposed to what has been banked.
+    def pending_review_payouts
+      payouts = FraudReviewPayout.payable.includes(:reviewer).group_by(&:reviewer)
 
-      users_by_id = User.where(id: bracket[:results].map { |r| r[:user] }).index_by(&:id)
-      bracket[:results].map { |row| row.merge(user_record: users_by_id[row[:user]]) }
-    end
-
-    def estimated_payout_for(user, bracket)
-      return [ 0, 0 ] unless bracket
-
-      my_result = bracket[:results].find { |r| r[:user] == user.id }
-      return [ 0, 0 ] unless my_result
-
-      [ my_result[:total], my_result[:payout].to_i ]
-    end
-
-    def reviewer_order_counts
-      FraudPayoutRun
-        .orders_by_reviewer(FraudPayoutRun.payout_eligible_orders)
-        .transform_values(&:size)
+      payouts.map { |reviewer, rows|
+        {
+          user: reviewer,
+          people: rows.size,
+          items: rows.sum(&:item_count),
+          amount: rows.sum(&:credited_amount)
+        }
+      }.sort_by { |row| -row[:amount] }
     end
   end
 end

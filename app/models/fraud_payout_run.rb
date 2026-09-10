@@ -29,6 +29,7 @@ class FraudPayoutRun < ApplicationRecord
     ShopOrder
       .where(aasm_state: REVIEW_STATES)
       .where(fraud_payout_line_id: nil)
+      .where(fraud_review_payout_id: nil)
   end
 
   # Base scope for PaperTrail versions that could represent a fraud review.
@@ -89,7 +90,7 @@ class FraudPayoutRun < ApplicationRecord
     lines.includes(:user).find_each do |line|
       line.user.ledger_entries.create!(
         amount: line.amount,
-        reason: "Fraud squad payout for #{line.order_count} #{'order'.pluralize(line.order_count)} reviewed",
+        reason: line.payout_reason,
         created_by: "System",
         ledgerable: line
       )
@@ -98,5 +99,6 @@ class FraudPayoutRun < ApplicationRecord
 
   def release_orders!
     ShopOrder.where(fraud_payout_line: lines).update_all(fraud_payout_line_id: nil)
+    FraudReviewPayout.where(fraud_payout_line: lines).update_all(fraud_payout_line_id: nil)
   end
 end

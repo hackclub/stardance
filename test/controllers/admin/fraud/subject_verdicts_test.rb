@@ -39,10 +39,11 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match ActionView::RecordIdentifier.dom_id(flag, :progress), response.body
-    assert_match "fraud-subject__progress-slot--struck", response.body
+    assert_match "fraud-subject__progress-slot--done", response.body
+    assert_match "fraud-subject__progress-slot--flag", response.body
   end
 
-  test "a dismissed flag fills its slot in the cleared tone" do
+  test "a dismissed flag keeps the colour of the queue it came from" do
     flag = flag_a_project
 
     post dismiss_admin_certification_report_path(flag),
@@ -50,7 +51,51 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_predicate flag.reload, :dismissed?
-    assert_match "fraud-subject__progress-slot--cleared", response.body
+    assert_match "fraud-subject__progress-slot--flag", response.body
+    assert_no_match "progress-slot--cleared", response.body
+    assert_match "fraud-subject__item--flag", response.body
+  end
+
+  test "a verdict accrues a payout tally and shows the multiplier" do
+    flag = flag_a_project
+    pending_integrity_check
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    payout = FraudReviewPayout.sole
+    assert_equal [ @admin.id, @subject.id, 1 ], [ payout.reviewer_id, payout.subject_id, payout.flag_count ]
+    assert_nil payout.completed_at, "a person with a check still waiting is not cleared"
+    assert_match "fraud-subject__payout-mult--flag", response.body
+    assert_match "1.1", response.body
+  end
+
+  test "clearing the last review completes the payout and shows the total" do
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    payout = FraudReviewPayout.sole
+    assert_not_nil payout.completed_at
+    assert_equal 1, payout.credited_amount
+    assert_match "fraud-subject__payout-result--done", response.body
+    assert_match "fraud-celebration", response.body
+    assert_match "fraud-payout-celebration-total-value", response.body
+  end
+
+  test "a payout stays unpayable until the person is cleared" do
+    flag_a_project
+    flag = flag_a_project
+    pending_integrity_check
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_empty FraudReviewPayout.payable
   end
 
   test "resolving a flag from its own dashboard still redirects" do
@@ -81,8 +126,82 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     patch admin_certification_integrity_review_path(check),
           params: { fraud_subject_id: @subject.id, decision: "pass" }, headers: TURBO_STREAM
 
-    assert_redirected_to admin_certification_integrity_reviews_path
+    # A redirect here would render as "Content missing" inside the check's
+    # frame, so the claim guard answers with the frame and the reason instead.
+    assert_response :unprocessable_entity
+    assert_match ActionView::RecordIdentifier.dom_id(check), response.body
+    assert_match "claimed by another admin", response.body
     assert_predicate check.reload, :pending?
+  end
+
+  test "deducting with no hours answers with the check, not a missing frame" do
+    check = pending_integrity_check
+
+    patch admin_certification_integrity_review_path(check),
+          params: { fraud_subject_id: @subject.id, decision: "deduct", deduction_hours: "" },
+          headers: TURBO_STREAM
+
+    assert_response :unprocessable_entity
+    assert_match ActionView::RecordIdentifier.dom_id(check), response.body
+    assert_match "fraud-subject__item-error", response.body
+    assert_predicate check.reload, :pending?
+    assert_nil check.deduction_minutes
+  end
+
+  test "a verdict is refused when another reviewer holds the person" do
+    other = create_user(slack_id: "U_FRAUD_HOLDER", display_name: "holder")
+    FraudSubjectClaim.claim(@subject, other)
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :conflict
+    assert_match "holder", response.body
+    assert_match "was not recorded", response.body
+    assert_predicate flag.reload, :pending?
+    assert_equal 0, FraudReviewPayout.count
+  end
+
+  test "a lapsed claim does not block the next reviewer's verdict" do
+    other = create_user(slack_id: "U_FRAUD_LAPSED", display_name: "lapsed")
+    FraudSubjectClaim.claim(@subject, other)
+                     .update!(claimed_at: (FraudSubjectClaim::CLAIM_TTL + 1.minute).ago)
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate flag.reload, :reviewed?
+  end
+
+  test "a cascading verdict fills the slots of the checks it settled too" do
+    project = Project.create!(title: "Many ships")
+    Project::Membership.create!(project: project, user: @subject, role: :owner)
+    decided, sibling = 2.times.map { integrity_check_on(project) }
+
+    patch admin_certification_integrity_review_path(decided),
+          params: { fraud_subject_id: @subject.id, decision: "pass" }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate sibling.reload, :manually_passed?, "the cascade settled the sibling"
+    assert_match ActionView::RecordIdentifier.dom_id(sibling, :progress), response.body
+    assert_match "fraud-subject__progress-slot--done", response.body
+  end
+
+  test "a non-cascading verdict leaves the other checks' slots alone" do
+    project = Project.create!(title: "Deducted ship")
+    Project::Membership.create!(project: project, user: @subject, role: :owner)
+    decided, sibling = 2.times.map { integrity_check_on(project) }
+
+    patch admin_certification_integrity_review_path(decided),
+          params: { fraud_subject_id: @subject.id, decision: "deduct", deduction_hours: "2" },
+          headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate sibling.reload, :pending?
+    assert_no_match ActionView::RecordIdentifier.dom_id(sibling, :progress), response.body
   end
 
   test "a cascading verdict re-renders the whole integrity list" do
@@ -213,6 +332,12 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     Project::Membership.create!(project: project, user: @subject, role: :owner)
     Project::Report.create!(project: project, reporter: @reporter, reason: "fraud",
                             details: "Detailed enough to pass validation", status: :pending)
+  end
+
+  def integrity_check_on(project)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    Post.create!(project: project, user: @subject, postable: ship_event)
+    Certification::Integrity.create!(ship_event: ship_event, status: :pending)
   end
 
   def pending_integrity_check

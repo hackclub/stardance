@@ -90,6 +90,31 @@ module Admin
             .order(created_at: :asc)
       end
 
+      # The checks a cascading verdict settled alongside the one actually
+      # decided: same person, same project, no longer pending. Their rows leave
+      # the list on its own refresh, but nothing else knows they moved.
+      def self.cascaded_siblings_of(check, user:)
+        project_id = check.ship_event&.post&.project_id
+        return ::Certification::Integrity.none if project_id.nil?
+
+        ::Certification::Integrity.where.not(status: :pending)
+          .where.not(id: check.id)
+          .joins(ship_event: :post)
+          .where(posts: { user_id: user.id, project_id: project_id })
+      end
+
+      # The next person a reviewer should pick up: highest priority first,
+      # skipping the one they just finished and anyone another reviewer is
+      # currently holding.
+      def self.next_subject_id(reviewer:, after: nil)
+        held = ::FraudSubjectClaim.active.where.not(reviewer_id: reviewer.id).pluck(:subject_id)
+        excluded = ([ after&.id ] + held).compact
+
+        scope = relation
+        scope = scope.where.not(id: excluded) if excluded.any?
+        scope.first&.user_id
+      end
+
       def self.integrity_checks_for(user)
         ::Certification::Integrity.pending
           .joins(ship_event: :post)

@@ -1,7 +1,9 @@
 <% content_for :title, "Fraud review: #{@user.display_name}" %>
 
-<main class="fraud-subject" role="main">
-  <%= render "progress", review_items: @review_items %>
+<main class="<%= class_names("fraud-subject", "fraud-subject--claimed-elsewhere" => @blocking_claim) %>" role="main">
+  <%= render "progress", review_items: @review_items, payout: @open_payout %>
+
+  <%= render "celebration", payout: nil, total: 0 %>
 
   <%= render HeadingComponent.new(title: @user.display_name, tone: :blue, size: :full) %>
 
@@ -9,6 +11,8 @@
     <%= link_to "← back to the queue", admin_fraud_subjects_path %>
     <%= link_to "full admin profile", admin_user_path(@user), class: "fraud-subject__profile-link" %>
   </p>
+
+  <%= render "claim", claim: @blocking_claim %>
 
   <%= render "identity", user: @user %>
 
@@ -51,4 +55,6 @@
 
   <%= render "approved_orders", approved_orders: @approved_orders,
              approved_orders_count: @approved_orders_count %>
+
+  <%= render "next_subject", cleared: @review_items.empty?, next_subject_id: @next_subject_id %>
 </main>

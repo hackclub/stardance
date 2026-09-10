@@ -19,6 +19,11 @@ class Admin::Fraud::SubjectsController < Admin::ApplicationController
     @user = User.find(params[:id])
     authorize :fraud_subject, policy_class: Admin::FraudSubjectPolicy
 
+    # Opening a person takes them for an hour, so two reviewers do not work
+    # the same queue. A claim nobody refreshes simply lapses.
+    claim = FraudSubjectClaim.claim(@user, current_user)
+    @blocking_claim = FraudSubjectClaim.active.find_by(subject_id: @user.id) unless claim&.reviewer_id == current_user.id
+
     @flags = Admin::Fraud::SubjectQueue.flags_for(@user)
     @orders = Admin::Fraud::SubjectQueue.orders_for(@user)
     @approvable_orders = @orders.select(&:approvable?)
@@ -34,6 +39,8 @@ class Admin::Fraud::SubjectsController < Admin::ApplicationController
     @hackatime_projects = @user.hackatime_projects.where.not(project_id: nil).includes(:project)
     @project_summaries = project_summaries_for(@user)
     @review_items = @flags.to_a + @orders.to_a + @integrity_checks.to_a
+    @open_payout = FraudReviewPayout.unpaid.find_by(reviewer: current_user, subject: @user, completed_at: nil)
+    @next_subject_id = Admin::Fraud::SubjectQueue.next_subject_id(reviewer: current_user, after: @user) if @review_items.empty?
   end
 
   private

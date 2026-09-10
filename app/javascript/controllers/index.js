@@ -211,6 +211,12 @@ application.register("file-upload", FileUploadController);
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
 
+import FraudPayoutCelebrationController from "./fraud_payout_celebration_controller";
+application.register(
+  "fraud-payout-celebration",
+  FraudPayoutCelebrationController,
+);
+
 import FormSubmitOnceController from "./form_submit_once_controller";
 application.register("form-submit-once", FormSubmitOnceController);
 

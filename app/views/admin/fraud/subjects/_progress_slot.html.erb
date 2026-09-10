@@ -1,3 +1,2 @@
-<% tone = fraud_verdict_tone(record) %>
 <li id="<%= dom_id(record, :progress) %>"
-    class="fraud-subject__progress-slot fraud-subject__progress-slot--<%= fraud_review_kind(record) %> <%= "fraud-subject__progress-slot--#{tone}" if tone %>"></li>
+    class="fraud-subject__progress-slot fraud-subject__progress-slot--<%= fraud_review_kind(record) %> <%= "fraud-subject__progress-slot--done" if fraud_review_resolved?(record) %>"></li>

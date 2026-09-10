@@ -4,7 +4,7 @@
   <div class="aorder__header">
     <div class="aorder__title-group">
       <h1 class="aorder__title">Fraud Squad Payouts</h1>
-      <p class="aorder__subtitle">Monthly bracket-based payouts for fraud reviewers</p>
+      <p class="aorder__subtitle">Stardust earned by the fraud squad for the people they clear</p>
     </div>
     <% if policy(FraudPayoutRun).trigger? %>
       <%= button_to "Trigger Manual Run", trigger_admin_fraud_payouts_path,
@@ -21,20 +21,23 @@
     </div>
     <div class="aorder__card-body">
       <div style="font-size: var(--font-size-xxl); font-family: var(--font-family-subtitle); font-weight:700; color: var(--color-space-text);">
-        <%= number_with_delimiter(@estimated_amount) %> <%= stardust_icon %>
+        <%= number_with_delimiter(@my_review_payout&.dig(:amount) || 0) %> <%= stardust_icon %>
       </div>
       <div style="font-size: var(--font-size-s); color: var(--color-space-text-muted); font-family: var(--font-family-text); margin-top: var(--space-xxs);">
-        <%= @estimated_orders %> unpaid <%= 'order'.pluralize(@estimated_orders) %> awaiting payout &middot; bracket payout based on the standings below
+        <% if @my_review_payout %>
+          <%= pluralize(@my_review_payout[:people], "person") %> cleared &middot;
+          <%= pluralize(@my_review_payout[:items], "review") %> awaiting the next payout run
+        <% else %>
+          Nothing waiting &middot; clear a person on a fraud subject page to earn
+        <% end %>
       </div>
     </div>
   </div>
 
   <div class="aorder__card" style="margin-bottom: var(--space-l);">
     <div class="aorder__card-header">
-      <h2 class="aorder__card-title">Bracket Standings</h2>
-      <% if @bracket %>
-        <span class="aorder__card-subtitle">Top reviewer sets the curve &mdash; <%= @bracket[:max_count] %> reviews = <%= number_with_delimiter(@bracket[:max_payout]) %> <%= stardust_icon %></span>
-      <% end %>
+      <h2 class="aorder__card-title">Leaderboard</h2>
+      <span class="aorder__card-subtitle">Everyone who has cleared a person, by stardust earned</span>
     </div>
     <div class="aorder__card-body" style="padding: 0;">
       <% if @leaderboard.any? %>
@@ -44,32 +47,41 @@
               <th>#</th>
               <th>Reviewer</th>
               <th>Reviews</th>
-              <th>Of Top</th>
-              <th>Bracket</th>
-              <th style="text-align: right;">Payout</th>
+              <th>Flags</th>
+              <th>Shop orders</th>
+              <th>Integrity</th>
+              <th style="text-align: right;">Stardust</th>
             </tr>
           </thead>
           <tbody>
             <% @leaderboard.each_with_index do |row, index| %>
-              <% is_me = row[:user] == current_user.id %>
+              <% is_me = row[:user]&.id == current_user.id %>
               <tr class="<%= "fraud-leaderboard__row--me" if is_me %>">
-                <td style="color: var(--color-space-text-muted);"><%= index + 1 %></td>
+                <td class="fraud-leaderboard__rank"><%= index + 1 %></td>
                 <td>
-                  <%= row[:user_record]&.display_name || "User ##{row[:user]}" %>
-                  <% if is_me %>
-                    <span class="badge" style="font-size: 10px; padding: 1px 7px; margin-left: 4px; background: rgba(149,219,255,0.18); color: var(--color-brand-blue);">you</span>
-                  <% end %>
+                  <span class="fraud-leaderboard__reviewer">
+                    <% if row[:user] %>
+                      <%= image_tag row[:user].avatar, alt: "", class: "fraud-leaderboard__avatar", loading: "lazy" %>
+                    <% end %>
+                    <%= row[:user]&.display_name || "Unknown reviewer" %>
+                    <% if is_me %>
+                      <span class="fraud-leaderboard__you">you</span>
+                    <% end %>
+                  </span>
                 </td>
-                <td><%= row[:total] %></td>
-                <td style="color: var(--color-space-text-muted);"><%= row[:percent] %>%</td>
-                <td><span class="badge" style="background: rgba(235,183,255,0.14); color: var(--color-brand-lilac);"><%= row[:bracket] %></span></td>
-                <td style="text-align: right; font-weight: 600;"><%= number_with_delimiter(row[:payout].to_i) %> <%= stardust_icon %></td>
+                <td><%= row[:flags] + row[:orders] + row[:integrities] %></td>
+                <td><%= row[:flags] %></td>
+                <td><%= row[:orders] %></td>
+                <td><%= row[:integrities] %></td>
+                <td style="text-align: right; font-weight: 600;">
+                  <%= number_with_delimiter(row[:amount]) %><%= stardust_icon %>
+                </td>
               </tr>
             <% end %>
           </tbody>
         </table>
       <% else %>
-        <p style="padding: var(--space-m); color: var(--color-space-text-muted); text-align: center; margin: 0;">No reviews recorded yet.</p>
+        <p class="fraud-payouts__empty">Nobody has cleared a person yet.</p>
       <% end %>
     </div>
   </div>

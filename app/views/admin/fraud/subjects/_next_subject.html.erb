@@ -1,0 +1,17 @@
+<%= turbo_frame_tag "fraud-subject-next" do %>
+  <% if cleared %>
+    <div class="fraud-subject__next">
+      <% if next_subject_id %>
+        <%# _top so the link navigates the page rather than this frame. %>
+        <%= link_to admin_fraud_subject_path(next_subject_id), class: "fraud-subject__next-button",
+                    data: { turbo_frame: "_top" } do %>
+          Next person <span aria-hidden="true">&rarr;</span>
+        <% end %>
+      <% else %>
+        <p class="fraud-subject__next-empty">
+          Nothing else waiting. <%= link_to "Back to the queue", admin_fraud_subjects_path, data: { turbo_frame: "_top" } %>
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

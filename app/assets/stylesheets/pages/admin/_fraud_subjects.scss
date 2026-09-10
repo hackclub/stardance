@@ -203,6 +203,67 @@
     border-left: 6px solid var(--color-brand-lilac);
   }
 
+  // Sits at the end of a finished page: once there is nothing left to decide,
+  // the only thing left to do is pick up the next person.
+  .fraud-subject__next {
+    margin-top: var(--space-l);
+  }
+
+  // The page's standard button, just full width: navigation is not a verdict,
+  // and lilac, salmon and yellow each already mean something specific here.
+  .fraud-subject__next-button {
+    align-items: center;
+    background: var(--color-set-3-bg);
+    border: none;
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: var(--color-brand-off-white);
+    display: flex;
+    font-size: var(--font-size-l);
+    font-weight: 500;
+    gap: 0.5em;
+    justify-content: center;
+    padding: var(--space-m);
+    text-decoration: none;
+    width: 100%;
+  }
+
+  .fraud-subject__next-empty {
+    color: var(--color-set-2-fg-secondary);
+    font-size: var(--font-size-s);
+    margin: 0;
+    padding: var(--space-m);
+    text-align: center;
+  }
+
+  .fraud-subject__claim {
+    background: var(--color-set-3-bg);
+    border-left: 4px solid var(--color-brand-orange);
+    border-radius: 8px;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-s);
+    margin: 0 0 var(--space-m);
+    padding: var(--space-xs) var(--space-s);
+  }
+
+  // Held by someone else: the verdict controls come off the page entirely.
+  // The server refuses the verdict either way, this just stops the reviewer
+  // filling in a form that cannot land.
+  &--claimed-elsewhere .fraud-subject__verdict-form,
+  &--claimed-elsewhere .fraud-subject__bulk-actions {
+    display: none;
+  }
+
+  .fraud-subject__item-error {
+    background: var(--color-set-3-bg);
+    border-left: 4px solid var(--color-brand-salmon);
+    border-radius: 6px;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-xs);
+    margin: 0 0 var(--space-xs);
+    padding: var(--space-xxs) var(--space-xs);
+  }
+
   .fraud-subject__item-head {
     align-items: baseline;
     display: flex;
@@ -230,7 +291,6 @@
   }
 
   .fraud-subject__item--resolved {
-    border-left: 6px solid var(--color-brand-mint);
     color: var(--color-set-3-fg-secondary);
   }
 
@@ -460,25 +520,123 @@
     z-index: 5;
   }
 
+  .fraud-subject__progress-inner {
+    align-items: center;
+    display: flex;
+    gap: var(--space-s);
+  }
+
+  .fraud-subject__payout {
+    align-items: baseline;
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-xxs);
+  }
+
+  .fraud-subject__payout-sum,
+  .fraud-subject__payout-result {
+    align-items: baseline;
+    display: flex;
+    font-size: var(--font-size-s);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    gap: var(--space-xxs);
+    white-space: nowrap;
+  }
+
+  .fraud-subject__payout-base,
+  .fraud-subject__payout-result {
+    color: var(--color-brand-cream);
+  }
+
+  .fraud-subject__payout-op {
+    color: var(--color-set-2-fg-secondary);
+    font-weight: 400;
+  }
+
+  // Each factor wears the colour of the queue it came from, matching the slots
+  // in the bar beside it.
+  .fraud-subject__payout-mult--flag {
+    color: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__payout-mult--order {
+    color: var(--color-brand-peach);
+  }
+
+  .fraud-subject__payout-mult--integrity {
+    color: var(--color-brand-lilac);
+  }
+
+  // The person is cleared: the total swells once so finishing someone reads as
+  // an event rather than a number quietly changing.
+  .fraud-subject__payout-result--done {
+    animation: fraud-payout-pop 600ms ease-out;
+    color: var(--color-brand-yellow);
+  }
+
+  @keyframes fraud-payout-pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.6);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fraud-subject__payout-result--done {
+      animation: none;
+    }
+
+    .fraud-subject__progress-slot--done::after {
+      animation: none;
+      transform: scaleX(1);
+    }
+  }
+
   .fraud-subject__progress-track {
     display: flex;
+    flex: 1 1 auto;
     gap: 2px;
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
+  // Two layers of the same tone: a ghost of what is still waiting, and a fill
+  // that sweeps across it once the verdict lands. Same colour throughout, so a
+  // slot never changes meaning as it is settled.
   .fraud-subject__progress-slot {
-    background: var(--fraud-slot-tone, var(--color-set-2-fg-secondary));
+    background: var(--color-set-2-fg-secondary);
     border-radius: 999px;
     flex: 1 1 0;
     height: 0.5rem;
-    opacity: 0.25;
-    transition: background-color 150ms ease, opacity 150ms ease;
+    overflow: hidden;
+    position: relative;
   }
 
-  // Still waiting: ghosted in the colour of the queue it came from, so the bar
-  // shows what is left as well as what is done.
+  .fraud-subject__progress-slot::before,
+  .fraud-subject__progress-slot::after {
+    background: var(--fraud-slot-tone);
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    position: absolute;
+  }
+
+  .fraud-subject__progress-slot::before {
+    opacity: 0.25;
+  }
+
+  .fraud-subject__progress-slot::after {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
   .fraud-subject__progress-slot--flag {
     --fraud-slot-tone: var(--color-brand-salmon);
   }
@@ -491,23 +649,17 @@
     --fraud-slot-tone: var(--color-brand-lilac);
   }
 
-  // Settled: the verdict's own colour, at full strength.
-  .fraud-subject__progress-slot--cleared,
-  .fraud-subject__progress-slot--reduced,
-  .fraud-subject__progress-slot--struck {
-    opacity: 1;
+  .fraud-subject__progress-slot--done::after {
+    animation: fraud-slot-fill 450ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   }
 
-  .fraud-subject__progress-slot--cleared {
-    --fraud-slot-tone: var(--color-brand-mint);
-  }
-
-  .fraud-subject__progress-slot--reduced {
-    --fraud-slot-tone: var(--color-brand-yellow);
-  }
-
-  .fraud-subject__progress-slot--struck {
-    --fraud-slot-tone: var(--color-brand-salmon);
+  @keyframes fraud-slot-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
   }
 
   .fraud-subject__projects {
@@ -626,5 +778,182 @@
   .fraud-subject__verdict--hold {
     background: var(--color-brand-yellow);
     color: var(--color-space-bg);
+  }
+}
+
+// The payout celebration: a fixed overlay so the amount lands in the middle of
+// the screen rather than wherever the queue happened to be scrolled to.
+.fraud-celebration {
+  align-items: center;
+  animation: fraud-celebration-veil 260ms ease-out both;
+  background: rgb(8 6 30 / 78%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  inset: 0;
+  justify-content: center;
+  pointer-events: none;
+  position: fixed;
+  z-index: 50;
+
+  &--playing {
+    pointer-events: auto;
+  }
+}
+
+.fraud-celebration__amount {
+  animation: fraud-celebration-swell 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  color: var(--color-brand-yellow);
+  // A display size the type scale does not carry: this is the one number on an
+  // otherwise empty screen.
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  margin: 0;
+  text-shadow: 0 0 32px rgb(255 229 100 / 45%);
+}
+
+.fraud-celebration__total {
+  align-items: center;
+  animation: fraud-celebration-total-in 700ms
+    var(--fraud-celebration-hold, 2200ms) ease-out both;
+  color: var(--color-brand-cream);
+  display: flex;
+  font-size: var(--font-size-xxl);
+  font-weight: 700;
+  gap: var(--space-xxs);
+  margin: 0;
+}
+
+.fraud-celebration__total-label {
+  color: var(--color-brand-off-white);
+  font-size: var(--font-size-s);
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+// Zero-size origin at the centre of the screen, so the confetti bursts from
+// behind the amount rather than from a corner.
+.fraud-celebration__burst {
+  height: 0;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  width: 0;
+}
+
+// Paper, not sparks: each piece is a small rectangle that is thrown out and up,
+// then falls past the fold while tumbling. The per-piece spread is derived from
+// the index so it looks scattered without any scripting, and translate/rotate
+// stay separate properties on purpose here, so a piece tumbles about its own
+// centre while it travels.
+.fraud-celebration__confetti {
+  animation: fraud-celebration-confetti 2200ms cubic-bezier(0.18, 0.6, 0.4, 1)
+    both;
+  border-radius: 2px;
+  height: 14px;
+  left: -4px;
+  position: absolute;
+  top: -7px;
+  width: 8px;
+
+  @for $i from 1 through 24 {
+    &:nth-child(#{$i}) {
+      --confetti-x: #{((($i * 37) % 61) - 30) * 9}px;
+      --confetti-rise: #{60 + (($i * 23) % 90)}px;
+      --confetti-fall: #{340 + (($i * 53) % 240)}px;
+      --confetti-spin: #{(($i * 137) % 5) - 2}turn;
+
+      animation-delay: #{($i % 6) * 70}ms;
+
+      @if $i % 5 == 0 {
+        background: var(--color-brand-yellow);
+      } @else if $i % 5 == 1 {
+        background: var(--color-brand-salmon);
+      } @else if $i % 5 == 2 {
+        background: var(--color-brand-lilac);
+      } @else if $i % 5 == 3 {
+        background: var(--color-brand-peach);
+      } @else {
+        background: var(--color-brand-blue);
+      }
+
+      @if $i % 3 == 0 {
+        height: 9px;
+        width: 9px;
+      }
+    }
+  }
+}
+
+@keyframes fraud-celebration-confetti {
+  0% {
+    opacity: 0;
+    rotate: 0turn;
+    translate: 0 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  // The top of the arc: still travelling outward, gravity has not won yet.
+  32% {
+    translate: calc(var(--confetti-x) * 0.55) calc(var(--confetti-rise) * -1);
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    rotate: var(--confetti-spin);
+    translate: var(--confetti-x) var(--confetti-fall);
+  }
+}
+
+@keyframes fraud-celebration-veil {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fraud-celebration-swell {
+  0% {
+    opacity: 0;
+    scale: 0.3;
+  }
+  60% {
+    opacity: 1;
+    scale: 1.25;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes fraud-celebration-total-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fraud-celebration,
+  .fraud-celebration__amount,
+  .fraud-celebration__total,
+  .fraud-celebration__confetti {
+    // The stagger has to go too, or the pieces still flicker in one by one.
+    animation-delay: 0s;
+    animation-duration: 1ms;
   }
 }
