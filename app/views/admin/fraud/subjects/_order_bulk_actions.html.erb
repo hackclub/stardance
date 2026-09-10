@@ -22,15 +22,16 @@
           <%= f.label :reason, "Reason shown to the buyer", class: "fraud-subject__field-label" %>
           <%= f.text_field :reason, required: true, class: "fraud-subject__field" %>
 
-          <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
-          <%= f.text_area :internal_rejection_reason, rows: 2,
-                          required: current_user.admin? || current_user.fraud_dept?, class: "fraud-subject__field" %>
+          <% if Admin::ShopOrderRejector.records_fraud_details?(current_user) %>
+            <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
+            <%= f.text_area :internal_rejection_reason, rows: 2, required: true, class: "fraud-subject__field" %>
 
-          <%= f.label :fraud_related_project_id, "Related project", class: "fraud-subject__field-label" %>
-          <%= f.select :fraud_related_project_id,
-                       projects.map { |project| [ project.title, project.id ] },
-                       { include_blank: "Pick a project" },
-                       required: current_user.admin? || current_user.fraud_dept?, class: "fraud-subject__field" %>
+            <%= f.label :fraud_related_project_id, "Related project", class: "fraud-subject__field-label" %>
+            <%= f.select :fraud_related_project_id,
+                         projects.map { |project| [ project.title, project.id ] },
+                         { include_blank: "Pick a project" },
+                         required: true, class: "fraud-subject__field" %>
+          <% end %>
 
           <%= f.submit "Reject all orders",
                        class: "fraud-subject__verdict fraud-subject__verdict--reject",

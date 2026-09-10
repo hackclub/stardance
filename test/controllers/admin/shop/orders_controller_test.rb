@@ -94,6 +94,44 @@ class Admin::Shop::OrdersControllerTest < ActionDispatch::IntegrationTest
                         "ShopItem::StickyStreakSticker"
   end
 
+  # A reject form has to collect everything Admin::ShopOrderRejector will demand
+  # of that reviewer, or the model's presence validations reject a submission
+  # over a field the reviewer was never shown.
+  test "an admin's reject form collects the internal reason the rejection needs" do
+    seller = buyer("adminreject", integrity: :pending)
+    order = order_for(seller, at: 1.hour.ago)
+
+    sign_in @admin
+    get admin_shop_order_path(order)
+
+    assert_select "#reject-modal textarea[name=?]", "internal_rejection_reason"
+
+    post reject_admin_shop_order_path(order), params: {
+      reason: "Not eligible", internal_rejection_reason: "Matches a known ring",
+      fraud_related_project_id: seller.projects.first.id
+    }
+
+    assert_predicate order.reload, :rejected?
+    assert_equal "Matches a known ring", order.internal_rejection_reason
+  end
+
+  test "a fulfillment person rejects on the buyer-facing reason alone" do
+    fulfiller = create_user(slack_id: "U_SO_FULFILLER", display_name: "so_fulfiller")
+    fulfiller.grant_role!(:fulfillment_person)
+    Project.create!(id: Admin::ShopOrderRejector::PLACEHOLDER_FRAUD_PROJECT_ID, title: "Stardance")
+    order = order_for(buyer("fulfillreject", integrity: :pending), at: 1.hour.ago)
+
+    sign_in fulfiller
+    get admin_shop_order_path(order)
+
+    assert_select "#reject-modal textarea[name=?]", "internal_rejection_reason", count: 0
+
+    post reject_admin_shop_order_path(order), params: { reason: "Out of stock" }
+
+    assert_predicate order.reload, :rejected?
+    assert_equal "Out of stock", order.internal_rejection_reason
+  end
+
   private
 
   def streak_sticker

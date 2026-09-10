@@ -4,14 +4,25 @@ module Admin
       def rejected? = rejected
     end
 
+    # A rejection has to name a project even when it carries no fraud finding,
+    # so the ones that do not point at the Stardance project itself.
+    PLACEHOLDER_FRAUD_PROJECT_ID = 1
+
+    # Whose rejection carries fraud metadata. Everyone else who may reject (a
+    # fulfillment person) falls back to the buyer-facing reason, so their forms
+    # must not ask for the internal fields. Any form collecting them has to
+    # gate on this, or the model's presence validations reject a submission
+    # whose fields were never rendered.
+    def self.records_fraud_details?(actor) = actor.admin? || actor.fraud_dept?
+
     def initialize(order, actor:, reason: nil, internal_reason: nil, joe_case_url: nil, fraud_project_id: nil)
       @order = order
       @actor = actor
       @reason = reason.presence || "No reason provided"
-      fraud_reviewer = actor.admin? || actor.fraud_dept?
+      fraud_reviewer = self.class.records_fraud_details?(actor)
       @internal_reason = fraud_reviewer ? internal_reason.presence : @reason
       @joe_case_url = fraud_reviewer ? joe_case_url.presence : nil
-      @fraud_project_id = fraud_reviewer ? fraud_project_id.presence : 1
+      @fraud_project_id = fraud_reviewer ? fraud_project_id.presence : PLACEHOLDER_FRAUD_PROJECT_ID
     end
 
     def call

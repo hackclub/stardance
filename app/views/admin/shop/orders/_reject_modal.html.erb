@@ -1,4 +1,4 @@
-<% show_fraud_fields = (current_user.admin? || current_user.fraud_dept?) && params[:return_view] != "fulfillment" %>
+<% records_fraud_details = Admin::ShopOrderRejector.records_fraud_details?(current_user) %>
 <dialog id="reject-modal">
   <h2>Reject Order #<%= order.id %></h2>
 
@@ -11,7 +11,7 @@
       <%= f.text_area :reason, placeholder: "Enter reason for rejection...", rows: 3 %>
     </div>
 
-    <% if show_fraud_fields %>
+    <% if records_fraud_details %>
       <div>
         <%= f.label :internal_rejection_reason, "Internal Reason (required, staff only)" %>
         <%= f.text_area :internal_rejection_reason, placeholder: "Detailed internal reason for this rejection...", rows: 3, required: true %>
