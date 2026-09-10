@@ -148,11 +148,11 @@ application.register("composer", ComposerController);
 import ConfirmController from "./confirm_controller";
 application.register("confirm", ConfirmController);
 
-import CopyController from "./copy_controller";
-application.register("copy", CopyController);
-
 import CopyApiKeyController from "./copy_api_key_controller";
 application.register("copy-api-key", CopyApiKeyController);
+
+import CopyController from "./copy_controller";
+application.register("copy", CopyController);
 
 import CountUpController from "./count_up_controller";
 application.register("count-up", CountUpController);
@@ -397,11 +397,14 @@ application.register("sticker-countdown", StickerCountdownController);
 import StickerPromoController from "./sticker_promo_controller";
 application.register("sticker-promo", StickerPromoController);
 
+import StickerZoomController from "./sticker_zoom_controller";
+application.register("sticker-zoom", StickerZoomController);
+
 import StreakController from "./streak_controller";
 application.register("streak", StreakController);
 
-import StickerZoomController from "./sticker_zoom_controller";
-application.register("sticker-zoom", StickerZoomController);
+import StreakDayPickerController from "./streak_day_picker_controller";
+application.register("streak-day-picker", StreakDayPickerController);
 
 import SubmitOnMetaEnterController from "./submit_on_meta_enter_controller";
 application.register("submit-on-meta-enter", SubmitOnMetaEnterController);

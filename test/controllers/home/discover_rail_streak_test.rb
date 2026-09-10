@@ -54,9 +54,9 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select ".streak-widget__week .streak-mark__sticker--claimable"
     assert_select ".streak-widget__week .streak-mark--unknown", minimum: 1
     assert_select ".streak-widget__week .streak-mark--today", 1
-    assert_select ".streak-widget__cal-grid .streak-mark--today", 1
+    assert_select ".streak-calendar__grid .streak-mark--today", 1
     assert_select ".streak-widget__week .streak-mark__star", minimum: 1
-    assert_select ".streak-widget__cal-grid .streak-mark__sticker--claimable"
+    assert_select ".streak-calendar__grid .streak-mark__sticker--claimable"
   end
 
   test "the calendar keeps its plain stars while the challenge is switched off" do
@@ -89,7 +89,7 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_predicate streak, :failed?
-    assert_select ".streak-widget__cal-grid .streak-mark__sticker", 1,
+    assert_select ".streak-calendar__grid .streak-mark__sticker", 1,
                   "only the day banked before the miss keeps its sticker"
     assert_select ".streak-widget__week .streak-mark__sticker", { count: 0 },
                   "this week is all past the miss, so it is ordinary streak days"

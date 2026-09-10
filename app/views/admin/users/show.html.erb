@@ -165,10 +165,12 @@
       <% if policy(@user).credit_streak_days? %>
         <button type="button" onclick="document.getElementById('credit-streak-day-modal').showModal()">⭐ Credit Streak Day</button>
         <%= render layout: "shared/modal", locals: { id: "credit-streak-day-modal", title: "Credit a streak day", description: "Marks a day as kept when Hackatime missed the coding time. Streak progress is worked out from these days, so crediting a missed one also repairs the run behind it, including a Sticky Streak that had already broken." } do %>
-          <form action="<%= admin_user_streak_credits_path(@user) %>" method="post">
+          <form action="<%= admin_user_streak_credits_path(@user) %>" method="post" data-controller="streak-day-picker">
             <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
             <%= label_tag :activity_date, "Day to credit" %>
-            <%= date_field_tag :activity_date, @user.streak_today_date - 1.day, max: @user.streak_today_date, required: true, autocomplete: "off" %>
+            <%= date_field_tag :activity_date, @user.streak_today_date - 1.day, max: @user.streak_today_date, required: true, autocomplete: "off",
+                  data: { streak_day_picker_target: "date" } %>
+            <%= render "admin/users/streak_calendar", user: @user, date: @streak_calendar_month %>
             <%= label_tag :reason, "Reason" %>
             <%= text_area_tag :reason, "", placeholder: "Why this day is being credited...", required: true %>
             <button type="submit">Credit day</button>

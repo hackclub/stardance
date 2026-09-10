@@ -1,0 +1,130 @@
+// The month calendar shared by the streak rail widget and the admin credit
+// modal. Cells only become buttons where a surface asks for them (pickable).
+.streak-calendar {
+  &__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 var(--space-xs);
+  }
+
+  &__nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-space-text);
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--color-overlay-light);
+    }
+
+    &--disabled {
+      opacity: 0.2;
+      pointer-events: none;
+      cursor: default;
+    }
+  }
+
+  &__month {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    color: var(--color-space-text);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 2px;
+    justify-items: center;
+  }
+
+  &__day-header {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-brand-off-white);
+    opacity: 0.7;
+    padding-bottom: var(--space-xxs);
+  }
+
+  &__cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+
+    &--outside {
+      visibility: hidden;
+    }
+  }
+
+  &__bar {
+    position: absolute;
+    top: 50%;
+    height: 10px;
+    transform: translateY(-50%);
+    background: rgba(131, 130, 141, 0.5);
+    border-radius: 5px;
+    z-index: 0;
+
+    &--left:not(#{&}--right) {
+      left: 0;
+      width: 50%;
+      border-radius: 0 5px 5px 0;
+    }
+
+    &--right:not(#{&}--left) {
+      left: 50%;
+      width: 50%;
+      border-radius: 5px 0 0 5px;
+    }
+
+    &--left#{&}--right {
+      left: 0;
+      width: 100%;
+      border-radius: 0;
+    }
+  }
+
+  &__cell--pickable {
+    background: none;
+    border: 0;
+    padding: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-overlay-light);
+    }
+  }
+
+  &__cell--selected {
+    background: var(--color-overlay-light);
+    outline: 2px solid var(--color-brand-lilac);
+    outline-offset: -2px;
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    padding-top: var(--space-xs);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+  }
+}

@@ -1,40 +1,15 @@
-<div class="streak-widget__cal-nav">
+<div class="streak-calendar__nav">
   <% if local_assigns.fetch(:show_prev, true) %>
-    <button type="button" class="streak-widget__cal-nav-btn" data-action="streak#prevMonth" aria-label="Previous month">‹</button>
+    <button type="button" class="streak-calendar__nav-btn" data-action="streak#prevMonth" aria-label="Previous month">‹</button>
   <% else %>
-    <span class="streak-widget__cal-nav-btn streak-widget__cal-nav-btn--disabled">‹</span>
+    <span class="streak-calendar__nav-btn streak-calendar__nav-btn--disabled">‹</span>
   <% end %>
-  <span class="streak-widget__cal-month"><%= date.strftime("%B %Y") %></span>
+  <span class="streak-calendar__month"><%= date.strftime("%B %Y") %></span>
   <% if show_next %>
-    <button type="button" class="streak-widget__cal-nav-btn" data-action="streak#nextMonth" aria-label="Next month">›</button>
+    <button type="button" class="streak-calendar__nav-btn" data-action="streak#nextMonth" aria-label="Next month">›</button>
   <% else %>
-    <span class="streak-widget__cal-nav-btn streak-widget__cal-nav-btn--disabled">›</span>
+    <span class="streak-calendar__nav-btn streak-calendar__nav-btn--disabled">›</span>
   <% end %>
 </div>
 
-<div class="streak-widget__cal-grid">
-  <% %w[S M T W T F S].each do |d| %>
-    <div class="streak-widget__cal-day-header"><%= d %></div>
-  <% end %>
-
-  <% calendar_days.each do |day| %>
-    <% tooltip = day[:in_month] ? streak_day_tooltip(day) : nil %>
-    <div class="<%= class_names(
-                     "streak-widget__cal-cell",
-                     "streak-widget__cal-cell--outside" => !day[:in_month]
-                   ) %>"
-         <% if tooltip %>
-           data-controller="tooltip"
-           data-tooltip-message-value="<%= tooltip %>"
-         <% end %>>
-      <% if day[:streak_left] || day[:streak_right] %>
-        <div class="streak-widget__cal-bar
-                    <%= "streak-widget__cal-bar--left" if day[:streak_left] %>
-                    <%= "streak-widget__cal-bar--right" if day[:streak_right] %>"></div>
-      <% end %>
-      <% if day[:in_month] %>
-        <%= render "streaks/day_mark", day: day, size: "month" %>
-      <% end %>
-    </div>
-  <% end %>
-</div>
+<%= render "streaks/month_cells", calendar_days: calendar_days %>
