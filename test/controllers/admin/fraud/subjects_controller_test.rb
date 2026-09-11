@@ -294,7 +294,58 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "an integrity row shows what the GOI already cut the claim down to" do
+    check = pending_integrity_check(@project)
+    goi_review_on(check, claimed: 1200, approved: 450)
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__vital-value--cut", text: /GOI approved 7\.5 hours of 20\.0/
+  end
+
+  test "an integrity row says so when the GOI cut nothing" do
+    check = pending_integrity_check(@project)
+    goi_review_on(check, claimed: 300, approved: 300)
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_select ".fraud-subject__vital-value", text: /GOI approved all 5\.0 hours/
+    assert_select ".fraud-subject__vital-value--cut", count: 0
+  end
+
+  test "an integrity row says nothing about the GOI before that review lands" do
+    check = pending_integrity_check(@project)
+    goi_review_on(check, claimed: 600, approved: 120).update_columns(reviewed_at: nil)
+
+    sign_in @squad
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__vital-value", text: /GOI/, count: 0
+  end
+
   private
+
+  def goi_review_on(check, claimed:, approved:)
+    project = check.ship_event.post.project
+    review = Certification::Ysws.create!(
+      user: @subject, project: project, post_ship_event: check.ship_event,
+      original_minutes: claimed, reviewer: @admin || @squad, reviewed_at: 2.days.ago
+    )
+
+    devlog = Post::Devlog.new(body: "Devlog", duration_seconds: claimed * 60)
+    devlog.uploading_attachments = true
+    devlog.save!
+    Post.create!(project: project, user: @subject, postable: devlog)
+
+    review.devlog_reviews.create!(post_devlog_id: devlog.id, original_minutes: claimed,
+                                  approved_minutes: approved, status: :approved,
+                                  justification: "Reviewed")
+    review
+  end
 
   def pending_integrity_check(project)
     Project::Membership.create!(project: project, user: @subject, role: :owner) unless

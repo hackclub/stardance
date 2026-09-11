@@ -43,6 +43,23 @@
             </dd>
           </div>
 
+          <%# What the GOI already left on the ship. A fraud deduction comes off
+              this figure, not the claimed one, so it sits beside tracked time.
+              Absent until the YSWS review is decided. %>
+          <% goi = check.ysws_review %>
+          <% if goi&.approved_hours %>
+            <div class="fraud-subject__vital">
+              <dt class="fraud-subject__vital-label">Guardian of Integrity</dt>
+              <dd class="<%= class_names("fraud-subject__vital-value", "fraud-subject__vital-value--cut" => goi.marked_down?) %>">
+                <% if goi.marked_down? %>
+                  GOI approved <%= pluralize(goi.approved_hours, "hour") %> of <%= goi.claimed_hours %>
+                <% else %>
+                  GOI approved all <%= pluralize(goi.approved_hours, "hour") %>
+                <% end %>
+              </dd>
+            </div>
+          <% end %>
+
           <div class="fraud-subject__vital">
             <dt class="fraud-subject__vital-label">Shipped</dt>
             <dd class="fraud-subject__vital-value">

@@ -41,6 +41,10 @@ module Certification
     belongs_to :claimed_by, class_name: "User", optional: true
     belongs_to :fraud_review_payout, optional: true, inverse_of: :certification_integrities
 
+    # The GOI's review of the same ship. It usually lands before the integrity
+    # check does, so a fraud reviewer is adjusting a number the GOI already set.
+    has_one :ysws_review, through: :ship_event
+
     delegate :project, to: :ship_event
 
     # The project, including soft-deleted ones: banning a user soft-deletes their

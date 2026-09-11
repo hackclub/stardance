@@ -98,6 +98,10 @@ class Post::ShipEvent < ApplicationRecord
                             inverse_of: :ship_event,
                             dependent: :destroy
 
+  has_one :ysws_review, class_name: "Certification::Ysws",
+                        foreign_key: :post_ship_event_id,
+                        inverse_of: :post_ship_event
+
   before_save :stamp_rating_lifecycle
   after_update :sync_mission_submission_status, if: :saved_change_to_certification_status?
   after_commit :sync_post_to_gorse_after_certification_change,

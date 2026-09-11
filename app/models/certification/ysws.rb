@@ -741,6 +741,27 @@ module Certification
       devlog_reviews.sum { |dr| dr.approved_minutes.to_i }
     end
 
+    # Summed off the devlog reviews rather than read from `original_minutes`,
+    # which only backs the queue's length sort. YswsAirtableSyncJob totals it
+    # the same way, so the two cannot disagree.
+    def original_minutes_total
+      devlog_reviews.sum { |dr| dr.original_minutes.to_i }
+    end
+
+    # What a finished review left on the ship, in hours. Nil while the review is
+    # still open or was returned, because there is no verdict to report yet. A
+    # fraud deduction comes off this figure and not the claimed one, so it is
+    # the number an integrity verdict actually adjusts.
+    def approved_hours
+      return if reviewed_at.nil?
+
+      (approved_minutes_total / 60.0).round(1)
+    end
+
+    def claimed_hours = (original_minutes_total / 60.0).round(1)
+
+    def marked_down? = approved_hours.present? && approved_minutes_total < original_minutes_total
+
     def review_rejected?
       user.banned? || approved_minutes_total < MIN_APPROVED_MINUTES
     end

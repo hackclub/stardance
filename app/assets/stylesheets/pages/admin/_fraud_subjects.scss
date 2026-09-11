@@ -370,6 +370,10 @@
     margin: 0;
   }
 
+  .fraud-subject__vital-value--cut {
+    color: var(--color-brand-salmon);
+  }
+
   .fraud-subject__vital--lead .fraud-subject__vital-value {
     color: var(--color-brand-cream);
     font-size: var(--font-size-l);

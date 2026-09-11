@@ -132,7 +132,7 @@ module Admin
         ::Certification::Integrity.pending
           .joins(ship_event: :post)
           .where(posts: { user_id: user.id })
-          .includes(ship_event: { post: :project })
+          .includes(ship_event: [ { post: :project }, { ysws_review: :devlog_reviews } ])
           .order(created_at: :asc)
       end
 
