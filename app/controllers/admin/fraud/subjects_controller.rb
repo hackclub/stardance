@@ -9,7 +9,7 @@ class Admin::Fraud::SubjectsController < Admin::ApplicationController
     # GROUP BY, so a SQL page of it still needs a second query to count the
     # groups, and the queue is small enough (about a thousand people) that one
     # pass is cheaper than two round trips.
-    subjects = Admin::Fraud::SubjectQueue.subjects
+    subjects = Admin::Fraud::SubjectQueue.subjects_for(current_user)
     @total_subjects = subjects.size
     @pagy, @subjects = pagy(:offset, subjects, limit: SUBJECTS_PER_PAGE)
     @users = User.where(id: @subjects.map(&:user_id)).index_by(&:id)

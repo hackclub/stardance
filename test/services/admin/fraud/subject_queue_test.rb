@@ -67,9 +67,52 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     assert_equal [ owner.id, teammate.id ].sort, ranked_ids.sort
   end
 
+  test "a person another reviewer is holding drops off the queue" do
+    held = user_with_flag(age: 10.days.ago, display_name: "held")
+    open = user_with_flag(age: 5.days.ago, display_name: "open")
+    holder = create_user(slack_id: "u-holder", display_name: "holder")
+    looker = create_user(slack_id: "u-looker", display_name: "looker")
+    FraudSubjectClaim.claim(held, holder)
+
+    assert_equal [ open.id ], ranked_ids_for(looker)
+    assert_equal [ held.id, open.id ], ranked_ids, "the unfiltered queue still has both"
+  end
+
+  test "a reviewer still sees the person they are holding themselves" do
+    mine = user_with_flag(age: 10.days.ago, display_name: "mine")
+    reviewer = create_user(slack_id: "u-mine", display_name: "minereviewer")
+    FraudSubjectClaim.claim(mine, reviewer)
+
+    assert_equal [ mine.id ], ranked_ids_for(reviewer)
+  end
+
+  test "a lapsed claim puts the person back on the queue" do
+    lapsed = user_with_flag(age: 10.days.ago, display_name: "lapsed")
+    holder = create_user(slack_id: "u-lapsed-holder", display_name: "lapsedholder")
+    looker = create_user(slack_id: "u-lapsed-looker", display_name: "lapsedlooker")
+    claim = FraudSubjectClaim.claim(lapsed, holder)
+    claim.update_columns(claimed_at: (FraudSubjectClaim::CLAIM_TTL + 1.minute).ago)
+
+    assert_equal [ lapsed.id ], ranked_ids_for(looker)
+  end
+
+  test "the next person skips both the one just finished and anyone held" do
+    finished = user_with_flag(age: 30.days.ago, display_name: "finished")
+    held = user_with_flag(age: 20.days.ago, display_name: "nextheld")
+    up_next = user_with_flag(age: 10.days.ago, display_name: "upnext")
+    reviewer = create_user(slack_id: "u-next", display_name: "nextreviewer")
+    holder = create_user(slack_id: "u-next-holder", display_name: "nextholder")
+    FraudSubjectClaim.claim(held, holder)
+
+    assert_equal up_next.id,
+                 Admin::Fraud::SubjectQueue.next_subject_id(reviewer: reviewer, after: finished)
+  end
+
   private
 
   def subjects = Admin::Fraud::SubjectQueue.subjects
+
+  def ranked_ids_for(reviewer) = Admin::Fraud::SubjectQueue.subjects_for(reviewer).map(&:user_id)
 
   def ranked_ids = subjects.map(&:user_id)
 

@@ -26,6 +26,30 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".fraud-subject-card__avatar[src=?]", @subject.avatar
   end
 
+  test "the queue leaves out someone another reviewer is holding" do
+    flag_the_project
+    holder = create_user(slack_id: "U_FRAUD_HOLDER", display_name: "holder")
+    FraudSubjectClaim.claim(@subject, holder)
+
+    sign_in @squad
+    get admin_fraud_subjects_path
+
+    assert_response :success
+    assert_select "a[href=?]", admin_fraud_subject_path(@subject), count: 0
+    assert_select ".fraud-queue__empty"
+  end
+
+  test "the queue still lists the person the reviewer is holding themselves" do
+    flag_the_project
+    FraudSubjectClaim.claim(@subject, @squad)
+
+    sign_in @squad
+    get admin_fraud_subjects_path
+
+    assert_response :success
+    assert_select "a[href=?]", admin_fraud_subject_path(@subject)
+  end
+
   test "the progress bar gives each waiting item one slot" do
     flag_the_project
     pending_integrity_check(@project)
