@@ -253,7 +253,6 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
   end
 
   test "an order row shows its fulfillment cost, stardust cost and the buyer's country" do
-    order = pending_order
     @subject.update!(geocoded_country: "CA")
 
     get admin_fraud_subject_path(@subject)
@@ -303,6 +302,98 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_fraud_subject_path(@subject)
     assert_predicate order.reload, :rejected?
     assert PaperTrail::Version.where(item_type: "ShopOrder", item_id: order.id, whodunnit: @admin.id.to_s).exists?
+  end
+
+  test "bulk approving from the subject page pays the reviewer for every order" do
+    orders = 2.times.map { pending_order }
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: orders.map(&:id), fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    orders.each { |order| assert_equal "awaiting_periodical_fulfillment", order.reload.aasm_state }
+
+    payout = FraudReviewPayout.sole
+    assert_equal [ @admin.id, @subject.id, 2 ], [ payout.reviewer_id, payout.subject_id, payout.order_count ]
+    assert_equal orders.map(&:id).sort, payout.shop_orders.pluck(:id).sort
+    assert_not_nil payout.completed_at, "nothing is left waiting, so the tally is payable"
+    assert_match "fraud-celebration", response.body
+  end
+
+  test "bulk rejecting from the subject page pays the reviewer for every order" do
+    orders = 2.times.map { pending_order }
+    project = Project.create!(title: "Fraud source")
+
+    post bulk_reject_admin_shop_orders_path,
+         params: {
+           order_ids: orders.map(&:id),
+           fraud_subject_id: @subject.id,
+           reason: "Fraud review failed",
+           internal_rejection_reason: "Matching evidence",
+           fraud_related_project_id: project.id
+         }, headers: TURBO_STREAM
+
+    assert_response :success
+    orders.each { |order| assert_predicate order.reload, :rejected? }
+    assert_equal 2, FraudReviewPayout.sole.order_count
+  end
+
+  test "a bulk verdict swaps out every row it settled and refreshes the buttons" do
+    orders = 2.times.map { pending_order }
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: orders.map(&:id), fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    orders.each do |order|
+      assert_match ActionView::RecordIdentifier.dom_id(order), response.body
+      assert_match ActionView::RecordIdentifier.dom_id(order, :progress), response.body
+    end
+    assert_match "fraud-subject-order-bulk-actions", response.body
+    assert_no_match(/Approve all \d+ order/, response.body, "the settled orders are no longer on offer")
+  end
+
+  test "a bulk verdict completes a tally an earlier verdict left open" do
+    flag = flag_a_project
+    order = pending_order
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+    assert_nil FraudReviewPayout.sole.completed_at, "the order is still waiting"
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: [ order.id ], fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    payout = FraudReviewPayout.sole
+    assert_equal [ 1, 1 ], [ payout.flag_count, payout.order_count ]
+    assert_not_nil payout.completed_at
+    assert_includes FraudReviewPayout.payable, payout
+  end
+
+  test "a bulk verdict cannot jump another reviewer's claim" do
+    other = create_user(slack_id: "U_FRAUD_BULK_HOLDER", display_name: "bulkholder")
+    FraudSubjectClaim.claim(@subject, other)
+    order = pending_order
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: [ order.id ], fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :conflict
+    assert_equal "pending", order.reload.aasm_state
+    assert_empty FraudReviewPayout.all
+  end
+
+  test "a bulk verdict from the shop queue still redirects" do
+    order = pending_order
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: [ order.id ] },
+         headers: { "HTTP_REFERER" => admin_shop_orders_url }
+
+    assert_redirected_to admin_shop_orders_path
+    assert_equal "awaiting_periodical_fulfillment", order.reload.aasm_state
+    assert_empty FraudReviewPayout.all, "a payout is the fraud page's unit of work, not the shop queue's"
   end
 
   test "putting an order on hold keeps it in the queue and re-renders the row" do

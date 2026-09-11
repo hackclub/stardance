@@ -26,9 +26,7 @@ class Admin::Fraud::SubjectsController < Admin::ApplicationController
 
     @flags = Admin::Fraud::SubjectQueue.flags_for(@user)
     @orders = Admin::Fraud::SubjectQueue.orders_for(@user)
-    @approvable_orders = @orders.select(&:approvable?)
     @integrity_checks = Admin::Fraud::SubjectQueue.integrity_checks_for(@user)
-    @projects_for_rejection = @user.projects.with_deleted.distinct.order(created_at: :desc)
 
     approved_scope = @user.shop_orders.where(aasm_state: %w[awaiting_periodical_fulfillment fulfilled])
     @approved_orders_count = approved_scope.count

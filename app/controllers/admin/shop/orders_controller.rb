@@ -417,18 +417,11 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_back fallback_location: admin_shop_orders_path, alert: "No orders to approve." and return
     end
 
-    approved, failed = orders.map { |order|
+    settled, failed = orders.map { |order|
       Admin::ShopOrderApprover.new(order, actor: current_user).call
     }.partition(&:approved?)
 
-    if approved.any?
-      flash[:notice] = "Approved #{helpers.pluralize(approved.size, 'order')}: #{approved.map { |result| "##{result.order.id}" }.to_sentence}"
-    end
-    if failed.any?
-      flash[:alert] = failed.map { |result| "##{result.order.id}: #{result.message}" }.join(" ")
-    end
-
-    redirect_back fallback_location: admin_shop_orders_path
+    render_bulk_order_outcome(settled, failed, verb: "Approved")
   end
 
   def bulk_reject
@@ -440,7 +433,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_back fallback_location: admin_shop_orders_path, alert: "No orders to reject." and return
     end
 
-    rejected, failed = orders.map { |order|
+    settled, failed = orders.map { |order|
       Admin::ShopOrderRejector.new(
         order,
         actor: current_user,
@@ -451,14 +444,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       ).call
     }.partition(&:rejected?)
 
-    if rejected.any?
-      flash[:notice] = "Rejected #{helpers.pluralize(rejected.size, 'order')}: #{rejected.map { |result| "##{result.order.id}" }.to_sentence}"
-    end
-    if failed.any?
-      flash[:alert] = failed.map { |result| "##{result.order.id}: #{result.message}" }.join(" ")
-    end
-
-    redirect_back fallback_location: admin_shop_orders_path
+    render_bulk_order_outcome(settled, failed, verb: "Rejected")
   end
 
   def review_order
@@ -702,6 +688,31 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     end
   end
   private
+
+  # Submitted from the per-person fraud page, a bulk verdict answers the way a
+  # single one does: each settled order is claimed onto the reviewer's payout
+  # and swapped in place, rather than reloading the queue and paying nobody.
+  # The per-order outcome shows on the row it settled, so only failures need a
+  # flash of their own.
+  def render_bulk_order_outcome(settled, failed, verb:)
+    if fraud_subject
+      flash.now[:alert] = bulk_order_failure_message(failed) if failed.any?
+
+      return render_fraud_subject_verdicts(settled.map { |result| [ result.order, result.message ] })
+    end
+
+    if settled.any?
+      flash[:notice] = "#{verb} #{helpers.pluralize(settled.size, 'order')}: " \
+                       "#{settled.map { |result| "##{result.order.id}" }.to_sentence}"
+    end
+    flash[:alert] = bulk_order_failure_message(failed) if failed.any?
+
+    redirect_back fallback_location: admin_shop_orders_path
+  end
+
+  def bulk_order_failure_message(failed)
+    failed.map { |result| "##{result.order.id}: #{result.message}" }.join(" ")
+  end
 
   # Only the fraud queue cares, and only a pending order can qualify, so the
   # question is asked about as few rows as possible. Reloaded with just the

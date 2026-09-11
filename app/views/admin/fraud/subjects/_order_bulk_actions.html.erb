@@ -1,43 +1,52 @@
-<% if orders.any? %>
-  <div class="fraud-subject__bulk-actions" aria-label="Bulk order actions">
-    <% if approvable_orders.any? && policy(approvable_orders.first).approve? && user.id != current_user.id %>
-      <%= button_to "Approve all #{pluralize(approvable_orders.size, "order")}",
-                    bulk_approve_admin_shop_orders_path,
-                    params: { order_ids: approvable_orders.map(&:id) },
-                    class: "fraud-subject__verdict fraud-subject__verdict--accept",
-                    data: { turbo_confirm: "Approve all #{approvable_orders.size} approvable orders for #{user.display_name}?" } %>
-    <% end %>
+<%# Framed and self-sufficient so a verdict can swap it: once the orders it
+    offers are settled, the buttons must stop offering them. %>
+<%= turbo_frame_tag "fraud-subject-order-bulk-actions" do %>
+  <% orders = Admin::Fraud::SubjectQueue.orders_for(user) %>
+  <% approvable_orders = orders.select(&:approvable?) %>
 
-    <% if policy(orders.first).reject? %>
-      <details class="fraud-subject__bulk-reject">
-        <summary class="fraud-subject__verdict fraud-subject__verdict--reject">
-          Reject all <%= pluralize(orders.size, "order") %>
-        </summary>
+  <% if orders.any? %>
+    <div class="fraud-subject__bulk-actions" aria-label="Bulk order actions">
+      <% if approvable_orders.any? && policy(approvable_orders.first).approve? && user.id != current_user.id %>
+        <%= button_to "Approve all #{pluralize(approvable_orders.size, "order")}",
+                      bulk_approve_admin_shop_orders_path,
+                      params: { order_ids: approvable_orders.map(&:id), fraud_subject_id: user.id },
+                      class: "fraud-subject__verdict fraud-subject__verdict--accept",
+                      data: { turbo_confirm: "Approve all #{approvable_orders.size} approvable orders for #{user.display_name}?" } %>
+      <% end %>
 
-        <%= form_with url: bulk_reject_admin_shop_orders_path, class: "fraud-subject__bulk-reject-form" do |f| %>
-          <% orders.each do |order| %>
-            <%= hidden_field_tag "order_ids[]", order.id, id: nil %>
+      <% if policy(orders.first).reject? %>
+        <details class="fraud-subject__bulk-reject">
+          <summary class="fraud-subject__verdict fraud-subject__verdict--reject">
+            Reject all <%= pluralize(orders.size, "order") %>
+          </summary>
+
+          <%= form_with url: bulk_reject_admin_shop_orders_path, class: "fraud-subject__bulk-reject-form" do |f| %>
+            <%= hidden_field_tag :fraud_subject_id, user.id %>
+
+            <% orders.each do |order| %>
+              <%= hidden_field_tag "order_ids[]", order.id, id: nil %>
+            <% end %>
+
+            <%= f.label :reason, "Reason shown to the buyer", class: "fraud-subject__field-label" %>
+            <%= f.text_field :reason, required: true, class: "fraud-subject__field" %>
+
+            <% if Admin::ShopOrderRejector.records_fraud_details?(current_user) %>
+              <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
+              <%= f.text_area :internal_rejection_reason, rows: 2, required: true, class: "fraud-subject__field" %>
+
+              <%= f.label :fraud_related_project_id, "Related project", class: "fraud-subject__field-label" %>
+              <%= f.select :fraud_related_project_id,
+                           user.projects.with_deleted.distinct.order(created_at: :desc).map { |project| [ project.title, project.id ] },
+                           { include_blank: "Pick a project" },
+                           required: true, class: "fraud-subject__field" %>
+            <% end %>
+
+            <%= f.submit "Reject all orders",
+                         class: "fraud-subject__verdict fraud-subject__verdict--reject",
+                         data: { turbo_confirm: "Reject all #{orders.size} orders for #{user.display_name}?" } %>
           <% end %>
-
-          <%= f.label :reason, "Reason shown to the buyer", class: "fraud-subject__field-label" %>
-          <%= f.text_field :reason, required: true, class: "fraud-subject__field" %>
-
-          <% if Admin::ShopOrderRejector.records_fraud_details?(current_user) %>
-            <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
-            <%= f.text_area :internal_rejection_reason, rows: 2, required: true, class: "fraud-subject__field" %>
-
-            <%= f.label :fraud_related_project_id, "Related project", class: "fraud-subject__field-label" %>
-            <%= f.select :fraud_related_project_id,
-                         projects.map { |project| [ project.title, project.id ] },
-                         { include_blank: "Pick a project" },
-                         required: true, class: "fraud-subject__field" %>
-          <% end %>
-
-          <%= f.submit "Reject all orders",
-                       class: "fraud-subject__verdict fraud-subject__verdict--reject",
-                       data: { turbo_confirm: "Reject all #{orders.size} orders for #{user.display_name}?" } %>
-        <% end %>
-      </details>
-    <% end %>
-  </div>
+        </details>
+      <% end %>
+    </div>
+  <% end %>
 <% end %>
