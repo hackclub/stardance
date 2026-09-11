@@ -46,6 +46,26 @@ class Fraud::CalculatePayoutsJobTest < ActiveJob::TestCase
     assert_match "1 person fully reviewed", line.ledger_entries.sole.reason
   end
 
+  test "a manual run records who triggered it" do
+    trigger = create_user(slack_id: "UREVIEWER_TRIGGER", display_name: "fraudtrigger")
+
+    Fraud::CalculatePayoutsJob.perform_now(manual: true, triggered_by: trigger)
+
+    run = FraudPayoutRun.sole
+
+    assert_equal trigger, run.approved_by_user
+    assert_not_nil run.approved_at
+    assert_equal trigger.id.to_s,
+                 PaperTrail::Version.find_by(item_type: "FraudPayoutRun", item_id: run.id,
+                                             event: "approved").whodunnit
+  end
+
+  test "a scheduled run has no approver to record" do
+    Fraud::CalculatePayoutsJob.perform_now
+
+    assert_nil FraudPayoutRun.sole.approved_by_user
+  end
+
   test "a manual run pays every completed review payout, however old" do
     clearer = create_user(slack_id: "UREVIEWER_OLD", display_name: "fraudreviewerold")
     old = FraudReviewPayout.create!(reviewer: clearer, subject: @buyer, flag_count: 2,

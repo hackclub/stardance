@@ -3,7 +3,7 @@
 class Fraud::CalculatePayoutsJob < ApplicationJob
   queue_as :literally_whenever
 
-  def perform(manual: false)
+  def perform(manual: false, triggered_by: nil)
     orders = eligible_orders(manual)
     review_payouts = FraudReviewPayout.payable.to_a
     return if orders.empty? && review_payouts.empty?
@@ -43,10 +43,12 @@ class Fraud::CalculatePayoutsJob < ApplicationJob
 
       run.update!(
         total_orders: orders.size + review_payouts.sum(&:item_count),
-        total_amount: bracket_results[:total_distributed].to_i + review_total
+        total_amount: bracket_results[:total_distributed].to_i + review_total,
+        approved_by_user: triggered_by
       )
 
       run.approve!
+      run.log_approval!(by: triggered_by)
     end
   end
 

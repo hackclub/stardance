@@ -84,6 +84,19 @@ class FraudPayoutRun < ApplicationRecord
     end
   end
 
+  # Logged as its own event rather than leaning on the update version: a run
+  # that approves itself at the end of a calculation has no controller around
+  # to set whodunnit.
+  def log_approval!(by:)
+    ::PaperTrail::Version.create!(
+      item_type: "FraudPayoutRun",
+      item_id: id,
+      event: "approved",
+      whodunnit: by&.id.to_s,
+      object_changes: { aasm_state: %w[pending_approval approved] }.to_json
+    )
+  end
+
   private
 
   def distribute_payouts!

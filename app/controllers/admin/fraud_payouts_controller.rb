@@ -23,13 +23,7 @@ module Admin
         @run.approved_at = Time.current
         @run.approve!
 
-        ::PaperTrail::Version.create!(
-          item_type: "FraudPayoutRun",
-          item_id: @run.id,
-          event: "approved",
-          whodunnit: current_user.id,
-          object_changes: { aasm_state: %w[pending_approval approved] }.to_json
-        )
+        @run.log_approval!(by: current_user)
 
         redirect_to admin_fraud_payout_path(@run), notice: "Payout run approved. #{@run.total_amount} tickets distributed to #{@run.lines.count} reviewers."
       else
@@ -61,7 +55,7 @@ module Admin
     def trigger
       authorize FraudPayoutRun
 
-      Fraud::CalculatePayoutsJob.perform_later(manual: true)
+      ::Fraud::CalculatePayoutsJob.perform_later(manual: true, triggered_by: current_user)
 
       redirect_to admin_fraud_payouts_path, notice: "Manual payout calculation has been queued."
     end

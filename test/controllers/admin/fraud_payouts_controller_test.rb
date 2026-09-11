@@ -50,6 +50,17 @@ class Admin::FraudPayoutsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".fraud-payouts__empty", text: /Nobody has cleared a person yet/
   end
 
+  test "triggering a manual run queues the calculation job" do
+    sign_in @admin
+
+    assert_enqueued_with(job: ::Fraud::CalculatePayoutsJob,
+                         args: [ { manual: true, triggered_by: @admin } ]) do
+      post trigger_admin_fraud_payouts_path
+    end
+
+    assert_redirected_to admin_fraud_payouts_path
+  end
+
   private
 
   def create_order

@@ -118,7 +118,7 @@
                 </td>
                 <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= run.total_orders %></td>
                 <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= number_with_delimiter(run.total_amount) %> <%= stardust_icon %></td>
-                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text-muted);"><%= run.approved_by_user&.display_name || "—" %></td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text-muted);"><%= run.approved_by_user&.display_name || "Scheduled run" %></td>
                 <td style="padding: var(--space-s) var(--space-m);">
                   <%= link_to "View →", admin_fraud_payout_path(run), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
                 </td>
