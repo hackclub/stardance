@@ -37,8 +37,7 @@
   <section class="fraud-subject__section" aria-labelledby="fraud-subject-orders">
     <h2 class="fraud-subject__section-title" id="fraud-subject-orders">Shop orders</h2>
 
-    <%= render "order_bulk_actions", user: @user, orders: @orders,
-               approvable_orders: @approvable_orders, projects: @projects_for_rejection %>
+    <%= render "order_bulk_actions", user: @user %>
 
     <% if @orders.any? %>
       <div class="fraud-subject__items">

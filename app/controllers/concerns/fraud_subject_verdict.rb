@@ -44,7 +44,19 @@ module FraudSubjectVerdict
   end
 
   def render_fraud_subject_verdict(record, note, refresh_integrity: false)
+    render turbo_stream: fraud_subject_verdict_streams([ [ record, note ] ], refresh_integrity: refresh_integrity)
+  end
+
+  # A bulk action settles a whole pile in one submission. Each item is swapped
+  # and claimed exactly as it would have been one at a time, so the reviewer is
+  # paid the same either way.
+  def render_fraud_subject_verdicts(settled)
+    render turbo_stream: fraud_subject_verdict_streams(settled)
+  end
+
+  def fraud_subject_verdict_streams(settled, refresh_integrity: false)
     streams = []
+    records = settled.map(&:first)
 
     if refresh_integrity
       streams << turbo_stream.replace(
@@ -55,7 +67,7 @@ module FraudSubjectVerdict
 
       # The siblings the cascade settled leave the list above on their own, but
       # their slots in the progress bar would sit there still waiting.
-      Admin::Fraud::SubjectQueue.cascaded_siblings_of(record, user: fraud_subject).each do |sibling|
+      Admin::Fraud::SubjectQueue.cascaded_siblings_of(records.first, user: fraud_subject).each do |sibling|
         streams << turbo_stream.replace(
           ActionView::RecordIdentifier.dom_id(sibling, :progress),
           partial: "admin/fraud/subjects/progress_slot",
@@ -63,11 +75,13 @@ module FraudSubjectVerdict
         )
       end
     else
-      streams << turbo_stream.replace(
-        ActionView::RecordIdentifier.dom_id(record),
-        partial: "admin/fraud/subjects/resolved_item",
-        locals: { record: record, note: note }
-      )
+      settled.each do |record, note|
+        streams << turbo_stream.replace(
+          ActionView::RecordIdentifier.dom_id(record),
+          partial: "admin/fraud/subjects/resolved_item",
+          locals: { record: record, note: note }
+        )
+      end
     end
 
     streams << turbo_stream.replace(
@@ -76,17 +90,27 @@ module FraudSubjectVerdict
       locals: { user: fraud_subject }
     )
 
+    # A settled order leaves the bulk buttons offering work that is no longer
+    # there, so they are re-read alongside the counts.
     streams << turbo_stream.replace(
-      ActionView::RecordIdentifier.dom_id(record, :progress),
-      partial: "admin/fraud/subjects/progress_slot",
-      locals: { record: record }
+      "fraud-subject-order-bulk-actions",
+      partial: "admin/fraud/subjects/order_bulk_actions",
+      locals: { user: fraud_subject }
     )
 
+    records.each do |record|
+      streams << turbo_stream.replace(
+        ActionView::RecordIdentifier.dom_id(record, :progress),
+        partial: "admin/fraud/subjects/progress_slot",
+        locals: { record: record }
+      )
+    end
+
     cleared = fraud_subject_cleared?
-    payout = FraudReviewPayout.claim!(record, reviewer: current_user, subject: fraud_subject)
+    payout = fraud_subject_payout_for(records, cleared: cleared)
 
     if payout
-      payout.complete! if cleared
+      payout.complete! if cleared && payout.completed_at.nil?
       streams << turbo_stream.replace(
         "fraud-subject-payout",
         partial: "admin/fraud/subjects/payout",
@@ -115,7 +139,24 @@ module FraudSubjectVerdict
       )
     end
 
-    render turbo_stream: streams
+    streams << turbo_stream.update("flash-region", partial: "shared/flash") if flash.any?
+
+    streams
+  end
+
+  # Every settled item is claimed; they all land on the one open tally, so the
+  # last claim is that tally with the full run of them counted.
+  #
+  # An item another payout already claimed earns nothing further but can still
+  # be the one that empties the queue, and a tally left open is never payable
+  # (FraudReviewPayout.payable), so the open one is picked up in that case
+  # rather than left to sit unpaid.
+  def fraud_subject_payout_for(records, cleared:)
+    claimed = records.filter_map do |record|
+      FraudReviewPayout.claim!(record, reviewer: current_user, subject: fraud_subject)
+    end
+
+    claimed.last || (cleared ? FraudReviewPayout.unpaid.find_by(reviewer: current_user, subject: fraud_subject, completed_at: nil) : nil)
   end
 
   # A cascading integrity verdict settles siblings this request never touched,
