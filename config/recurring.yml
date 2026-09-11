@@ -164,6 +164,12 @@ production:
     concurrency: 1
     description: "Recalculate approx_balance and approx_total_earned from ledger entries"
 
+  sync_mac_to_airtable:
+    class: Certification::MACAirtableSyncJob
+    schedule: every 5 minutes
+    concurrency: 1
+    description: "Sync big-mac AI analysis signals (ai_coding_pct, flags) to YSWS airtable for final-pass reviewers"
+
   clear_insufficient_mac_analyses:
     class: Certification::ClearInsufficientMACAnalysesJob
     schedule: every day at 6am UTC
