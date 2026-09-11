@@ -87,6 +87,7 @@ class FraudReviewPayout < ApplicationRecord
   def self.claim!(record, reviewer:, subject:)
     counter = KIND_COUNTERS[record.class.name]
     return if counter.nil? || record.fraud_review_payout_id.present?
+    return if reviewer.fraud_review_payouts_disabled?
 
     transaction do
       payout = open_for(reviewer: reviewer, subject: subject)

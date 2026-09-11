@@ -667,21 +667,22 @@ Rails.application.routes.draw do
 
     resources :users, only: [ :index, :show, :update ] do
       scope module: :users do
-        resources :roles,               only: [ :create, :destroy ], param: :name
-        resource  :ban,                 only: [ :create, :destroy ]
-        resource  :impersonation,       only: [ :create ]
-        resources :feature_flags,       only: [ :create, :destroy ], param: :feature
-        resource  :hackatime_sync,      only: [ :create ]
-        resource  :order_rejection,     only: [ :create ]
-        resources :balance_adjustments, only: [ :create ]
-        resource  :grant_cancellation,  only: [ :create ]
-        resource  :verification,        only: [ :create ]
-        resource  :vote_balance,        only: [ :update ]
-        resource  :ysws_override,       only: [ :update ]
-        resources :identities,          only: [ :destroy ]
-        resources :streak_credits,      only: [ :create, :destroy ]
-        resource  :streak_calendar,     only: [ :show ]
-        resources :votes,               only: [ :index ] do
+        resources :roles,                    only: [ :create, :destroy ], param: :name
+        resource  :ban,                      only: [ :create, :destroy ]
+        resource  :impersonation,            only: [ :create ]
+        resources :feature_flags,            only: [ :create, :destroy ], param: :feature
+        resource  :hackatime_sync,           only: [ :create ]
+        resource  :order_rejection,          only: [ :create ]
+        resources :balance_adjustments,      only: [ :create ]
+        resource  :grant_cancellation,       only: [ :create ]
+        resource  :verification,             only: [ :create ]
+        resource  :vote_balance,             only: [ :update ]
+        resource  :ysws_override,            only: [ :update ]
+        resource  :fraud_payout_eligibility, only: [ :update ]
+        resources :identities,               only: [ :destroy ]
+        resources :streak_credits,           only: [ :create, :destroy ]
+        resource  :streak_calendar,          only: [ :show ]
+        resources :votes,                    only: [ :index ] do
           scope module: :votes do
             resource :discard, only: [ :create ]
           end

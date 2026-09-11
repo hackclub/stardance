@@ -86,6 +86,31 @@ class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
     assert_match "fraud-payout-celebration-total-value", response.body
   end
 
+  test "a reviewer with payouts turned off clears the person with no celebration" do
+    @admin.update!(fraud_review_payouts_disabled_at: Time.current)
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate flag.reload, :reviewed?
+    assert_empty FraudReviewPayout.all
+    assert_no_match "fraud-celebration", response.body
+    assert_no_match "fraud-subject__payout", response.body
+  end
+
+  test "the multiplier readout is gone for a reviewer with payouts turned off" do
+    @admin.update!(fraud_review_payouts_disabled_at: Time.current)
+    flag_a_project
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__progress-track"
+    assert_select ".fraud-subject__payout", count: 0
+  end
+
   test "a payout stays unpayable until the person is cleared" do
     flag_a_project
     flag = flag_a_project

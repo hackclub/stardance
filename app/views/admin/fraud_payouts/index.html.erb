@@ -67,6 +67,9 @@
                     <% if is_me %>
                       <span class="fraud-leaderboard__you">you</span>
                     <% end %>
+                    <% if row[:user]&.fraud_review_payouts_disabled? %>
+                      <span class="fraud-leaderboard__off" title="New reviews no longer earn stardust">payouts off</span>
+                    <% end %>
                   </span>
                 </td>
                 <td><%= row[:flags] + row[:orders] + row[:integrities] %></td>

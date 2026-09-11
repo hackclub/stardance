@@ -7,7 +7,9 @@
         <%= render partial: "admin/fraud/subjects/progress_slot", collection: review_items, as: :record %>
       </ol>
 
-      <%= render "admin/fraud/subjects/payout", payout: payout %>
+      <% unless current_user.fraud_review_payouts_disabled? %>
+        <%= render "admin/fraud/subjects/payout", payout: payout %>
+      <% end %>
     </div>
   </div>
 <% end %>

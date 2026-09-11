@@ -328,6 +328,18 @@
         <% end %>
       <% end %>
 
+      <% if policy(@user).manage_fraud_review_payouts? %>
+        <% if @user.fraud_review_payouts_disabled? %>
+          <%= button_to "Re-enable fraud review payouts", admin_user_fraud_payout_eligibility_path(@user), method: :patch,
+              params: { disabled: "false" },
+              form: { onsubmit: "return confirm(#{("Let #{@user.display_name} earn stardust for fraud reviews again?").to_json})" } %>
+        <% else %>
+          <%= button_to "Disable fraud review payouts", admin_user_fraud_payout_eligibility_path(@user), method: :patch,
+              params: { disabled: "true" },
+              form: { onsubmit: "return confirm(#{("Stop counting #{@user.display_name}'s fraud reviews towards stardust? Anything already banked still pays out.").to_json})" } %>
+        <% end %>
+      <% end %>
+
       <% if policy(@user).ban? %>
         <% if @user.manual_ysws_override? %>
           <%= button_to "Remove YSWS override", admin_user_ysws_override_path(@user), method: :patch,

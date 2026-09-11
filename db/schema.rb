@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_061808) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_141420) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1613,6 +1613,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_061808) do
     t.string "enriched_ref"
     t.string "experience_level"
     t.string "first_name"
+    t.datetime "fraud_review_payouts_disabled_at"
     t.string "geocoded_country"
     t.float "geocoded_lat"
     t.float "geocoded_lon"

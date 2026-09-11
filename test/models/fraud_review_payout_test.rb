@@ -122,6 +122,23 @@ class FraudReviewPayoutTest < ActiveSupport::TestCase
     assert_equal 1, payout.reload.flag_count
   end
 
+  test "a reviewer with payouts turned off earns nothing new" do
+    @reviewer.update!(fraud_review_payouts_disabled_at: Time.current)
+    report = flagged_report
+
+    assert_nil FraudReviewPayout.claim!(report, reviewer: @reviewer, subject: @subject)
+    assert_nil report.reload.fraud_review_payout_id
+    assert_empty FraudReviewPayout.where(reviewer: @reviewer)
+  end
+
+  test "stardust banked before payouts were turned off still pays out" do
+    payout = FraudReviewPayout.claim!(flagged_report, reviewer: @reviewer, subject: @subject)
+    payout.complete!
+    @reviewer.update!(fraud_review_payouts_disabled_at: Time.current)
+
+    assert_equal [ payout ], FraudReviewPayout.payable.to_a
+  end
+
   test "a tally is only payable once the person is cleared" do
     payout = FraudReviewPayout.claim!(flagged_report, reviewer: @reviewer, subject: @subject)
 
