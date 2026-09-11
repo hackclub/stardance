@@ -799,6 +799,13 @@
   &--playing {
     pointer-events: auto;
   }
+
+  // Replaces the veil animation rather than transitioning opacity: the veil
+  // fills forwards, so a transition would never take hold.
+  &--leaving {
+    animation: fraud-celebration-fade 460ms ease-in both;
+    pointer-events: none;
+  }
 }
 
 .fraud-celebration__amount {
@@ -921,6 +928,15 @@
   }
 }
 
+@keyframes fraud-celebration-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes fraud-celebration-swell {
   0% {
     opacity: 0;
@@ -949,6 +965,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .fraud-celebration,
+  .fraud-celebration--leaving,
   .fraud-celebration__amount,
   .fraud-celebration__total,
   .fraud-celebration__confetti {

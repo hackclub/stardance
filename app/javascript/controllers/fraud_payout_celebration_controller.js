@@ -52,8 +52,18 @@ export default class extends Controller {
 
   // Dismissing early is always available: the overlay covers the queue.
   dismiss() {
-    this.element.remove();
+    if (this.leaving) return;
+    this.leaving = true;
+
+    this.element.classList.add("fraud-celebration--leaving");
+    this.element.addEventListener("animationend", this.#remove);
   }
+
+  // Children animate too, so only the overlay's own fade ends the overlay.
+  #remove = (event) => {
+    if (event.target !== this.element) return;
+    this.element.remove();
+  };
 
   #tick() {
     const progress = Math.min(
