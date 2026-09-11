@@ -47,7 +47,7 @@ module Certification
       end
 
       if synced_ids.any?
-        Certification::MACAnalysis.where(id: synced_ids).update_all(airtable_synced_at: Time.current)
+        Certification::MACAnalysis.where(id: synced_ids).update_all("airtable_synced_at = updated_at")
       end
 
       Rails.logger.info "[MacAirtableSyncJob] Synced #{synced_ids.size}, skipped #{skipped} (no airtable record)"
@@ -63,8 +63,13 @@ module Certification
         never_synced = with_airtable_review.where(certification_mac_analyses: { airtable_synced_at: nil })
         stale = with_airtable_review.where("certification_mac_analyses.airtable_synced_at < certification_mac_analyses.updated_at")
 
-        never_synced
+        ids = never_synced
           .or(stale)
+          .select("DISTINCT ON (certification_mac_analyses.ysws_review_id) certification_mac_analyses.id")
+          .order(:ysws_review_id, generated_at: :desc)
+
+        Certification::MACAnalysis
+          .where(id: ids)
           .order(:updated_at)
           .limit(SYNC_LIMIT)
           .to_a
