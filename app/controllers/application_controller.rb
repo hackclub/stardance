@@ -137,7 +137,7 @@ class ApplicationController < ActionController::Base
   end
 
   def client_ip_address
-    request.headers["CF-Connecting-IP"].presence || request.remote_ip
+    RackAttackClient.ip(request)
   end
 
   def prepare_boot_splash
