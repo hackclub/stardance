@@ -59,10 +59,12 @@ module Admin
       # Pagination
       @pagy, @versions = pagy(:offset, @versions, limit: 50)
 
-      # Get unique item types and users for filters
+      # Get unique item types and events for filters. The "Performed By" filter
+      # is searched on demand via /search/users — rendering every past actor
+      # inline meant thousands of avatar requests per page load.
       @item_types = ::PaperTrail::Version.distinct.pluck(:item_type).compact.sort
       @events = ::PaperTrail::Version.distinct.pluck(:event).compact.sort
-      @users = User.where(id: ::PaperTrail::Version.distinct.pluck(:whodunnit).compact).order(:display_name)
+      @selected_user = User.find_by(id: params[:whodunnit]) if params[:whodunnit].present?
 
       # For item_id filter, show the affected record info
       @affected_record = find_affected_record if params[:item_id].present? && params[:item_type].present?
