@@ -53,6 +53,7 @@
             <th><%= ysws_sort_link("length", "Length (hours)") %></th>
             <th><%= ysws_sort_link("todo", "Todo reviews") %></th>
             <th>Age</th>
+            <th><%= ysws_sort_link("ai", "AI") %></th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -110,12 +111,21 @@
                   <span class="ysws-queue__age ysws-queue__age--old"><%= pluralize(age_in_days, "day") %> ago</span>
                 <% end %>
               </td>
+              <td data-label="AI">
+                <% ai_pct = Float(review.mac_analysis&.core_signals&.dig("ai_coding_pct"), exception: false) %>
+                <% if ai_pct %>
+                  <%= number_to_percentage(ai_pct, precision: 0) %>
+                <% else %>
+                  <span class="ysws-queue__placeholder">—</span>
+                <% end %>
+              </td>
               <td data-label="Actions">
                 <%= link_to "View", admin_certification_ysws_review_path(review), class: "ysws-queue__view-btn" %>
               </td>
             </tr>
           <% end %>
         </tbody>
+
       </table>
     </div>
   <% elsif @search.present? %>
