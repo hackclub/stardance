@@ -666,7 +666,7 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
-    rubyzip (3.4.1)
+    rubyzip (3.5.0)
     safely_block (1.0.0)
     sanitize (7.0.0)
       crass (~> 1.0.2)
@@ -889,7 +889,7 @@ DEPENDENCIES
   rubocop
   rubocop-rails-omakase
   ruby-vips
-  rubyzip (~> 3.0)
+  rubyzip (~> 3.5)
   selenium-webdriver
   sentry-rails (~> 6.7)
   sentry-ruby (~> 6.7)
