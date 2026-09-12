@@ -215,7 +215,20 @@ module Sessions
         return nil if fields[:birthday].nil?
 
         age = age_from_birthday(fields[:birthday])
-        age >= 13 && age <= 18 ? :teen : :ineligible
+        return :teen if age >= 13 && age <= 18
+
+        if user.persisted? && user.age_attestation_teen_13_18?
+          signup_age = age_on_date(fields[:birthday], user.created_at.to_date)
+          return :teen if signup_age >= 13 && signup_age <= 18
+        end
+
+        :ineligible
+      end
+
+      def age_on_date(birthday, date)
+        age = date.year - birthday.year
+        age -= 1 if date < birthday + age.years
+        age
       end
 
       def age_ineligible_result(user, is_new_user, guest_collision)
