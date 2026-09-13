@@ -52,6 +52,7 @@
               <span class="badge badge-<%= order.aasm_state %>">
                 <%= order.aasm_state.humanize %>
               </span>
+              <%= render "admin/shop/orders/hold_countdown", order: order %>
             </td>
             <td><%= order.created_at.strftime("%b %d, %Y") %></td>
             <td>

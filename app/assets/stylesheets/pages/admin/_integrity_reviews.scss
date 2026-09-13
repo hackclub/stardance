@@ -649,7 +649,10 @@
 // accent hue; the fill is a translucent tint of that same hue. Tints are kept
 // local here (rather than as global tokens) since they're specific to these
 // pages. Accent-as-status per branding §1.3.
-.integrity-flags {
+// Scoped to .admin-content on purpose: the admin list baseline there is
+// `.admin-content ul`, which outranks a bare `.integrity-flags` and puts a
+// 24px indent and row margins back on the tag row.
+.admin-content .integrity-flags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);

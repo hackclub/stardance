@@ -1,0 +1,33 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
+{
+  "name": "Stardance Dev Container",
+  "dockerComposeFile": ["compose.yml"],
+  "service": "web",
+  "workspaceFolder": "/app",
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [3000, 5432],
+  "portsAttributes": {
+    "3000": {
+      "label": "Web",
+      "onAutoForward": "notify",
+      "requireLocalPort": true
+    },
+    "5432": {
+      "label": "DB",
+      "onAutoForward": "silent",
+      "requireLocalPort": true
+    }
+  },
+
+  "postCreateCommand": "bash .devcontainer/boot.sh",
+  "waitFor": "postCreateCommand",
+
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+      "extensions": ["Shopify.ruby-lsp"]
+    }
+  }
+}

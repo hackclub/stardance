@@ -1,0 +1,13 @@
+<%= turbo_frame_tag "fraud-subject-counts" do %>
+  <p class="fraud-subject__counts">
+    <span class="fraud-subject__count fraud-subject__count--flag">
+      <%= pluralize(Admin::Fraud::SubjectQueue.flags_for(user).count, "flag") %>
+    </span>
+    <span class="fraud-subject__count fraud-subject__count--order">
+      <%= pluralize(Admin::Fraud::SubjectQueue.orders_for(user).count, "order") %>
+    </span>
+    <span class="fraud-subject__count fraud-subject__count--integrity">
+      <%= pluralize(Admin::Fraud::SubjectQueue.integrity_checks_for(user).count, "check") %>
+    </span>
+  </p>
+<% end %>

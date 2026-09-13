@@ -270,6 +270,6 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   end
 
   def ship_params
-    params.require(:certification_ship).permit(:status, :feedback, :verdict_video)
+    params.require(:certification_ship).permit(:status, :feedback, :verdict_video, :payout_multiplier)
   end
 end

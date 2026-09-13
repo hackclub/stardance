@@ -66,6 +66,13 @@ class Admin::UserPolicy < ApplicationPolicy
     user&.admin? || user&.fraud_dept?
   end
 
+  # Narrower than the other fraud actions on purpose: this decides whether
+  # someone gets paid, so it sits with approving payout runs rather than with
+  # working the queue.
+  def manage_fraud_review_payouts?
+    user&.admin?
+  end
+
   # Deliberately wider than the other write actions: helpers work the support
   # queue where a wrongly missed streak day is reported, and a credited day
   # hands out nothing but a sticker.
@@ -85,8 +92,11 @@ class Admin::UserPolicy < ApplicationPolicy
     view_order_full_details? || user&.helper?
   end
 
+  # Fraud reviewers judge an order partly on what it costs to fulfill, so the
+  # roles that can work the fraud queue see the figure too.
   def view_usd_cost?
-    user&.admin? || user&.fulfillment_person? || user&.shop_manager?
+    user&.admin? || user&.fulfillment_person? || user&.shop_manager? ||
+      user&.fraud_lead? || user&.fraud_dept? || user&.fraud_fraud_squad_squad?
   end
 
   def shop_order_action?

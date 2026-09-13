@@ -24,7 +24,7 @@
                 <% members.first(4).each do |member| %>
                   <li class="project-show__avatars-item">
                     <% if member.slack_id.present? %>
-                      <%= image_tag member.avatar, alt: member.display_name, class: "project-show__avatar" %>
+                      <%= image_tag member.avatar, alt: member.display_name, class: "project-show__avatar", loading: "lazy" %>
                     <% else %>
                       <span class="project-show__avatar project-show__avatar--placeholder">
                         <%= member.display_name.to_s.first&.upcase %>

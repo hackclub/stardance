@@ -1,0 +1,12 @@
+<%# Detection signals for one integrity check, shared by the review page and the
+    per-person fraud queue. Callers pass the rows so neither has to unpack the
+    blob twice to decide whether there is anything to show. %>
+<dl class="integrity-review__list">
+  <% rows.each do |name, value| %>
+    <% block = value.is_a?(Hash) %>
+    <div class="integrity-review__row <%= "integrity-review__row--block" if block %>">
+      <dt class="integrity-review__term"><%= name.to_s.humanize %></dt>
+      <dd class="integrity-review__value <%= "integrity-review__value--block" if block %>"><%= format_integrity_signal(name, value) %></dd>
+    </div>
+  <% end %>
+</dl>

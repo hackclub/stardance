@@ -156,15 +156,7 @@
     <h2 class="integrity-review__card-title" id="integrity-review-reasoning-heading">Review reasoning</h2>
 
     <% if signal_rows.any? %>
-      <dl class="integrity-review__list">
-        <% signal_rows.each do |name, value| %>
-          <% block = value.is_a?(Hash) %>
-          <div class="integrity-review__row <%= "integrity-review__row--block" if block %>">
-            <dt class="integrity-review__term"><%= name.to_s.humanize %></dt>
-            <dd class="integrity-review__value <%= "integrity-review__value--block" if block %>"><%= format_integrity_signal(name, value) %></dd>
-          </div>
-        <% end %>
-      </dl>
+      <%= render "signals", rows: signal_rows %>
     <% else %>
       <p class="integrity-review__placeholder">No detection data recorded for this review.</p>
     <% end %>

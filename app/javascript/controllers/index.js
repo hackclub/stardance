@@ -160,11 +160,11 @@ application.register("composer", ComposerController);
 import ConfirmController from "./confirm_controller";
 application.register("confirm", ConfirmController);
 
-import CopyController from "./copy_controller";
-application.register("copy", CopyController);
-
 import CopyApiKeyController from "./copy_api_key_controller";
 application.register("copy-api-key", CopyApiKeyController);
+
+import CopyController from "./copy_controller";
+application.register("copy", CopyController);
 
 import CountUpController from "./count_up_controller";
 application.register("count-up", CountUpController);
@@ -192,6 +192,9 @@ application.register("devlog-edit", DevlogEditController);
 
 import DiscoverRailSearchController from "./discover_rail_search_controller";
 application.register("discover-rail-search", DiscoverRailSearchController);
+
+import DiscoverRailPanelController from "./discover_rail_panel_controller";
+application.register("discover-rail-panel", DiscoverRailPanelController);
 
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
@@ -222,6 +225,12 @@ application.register("file-upload", FileUploadController);
 
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
+
+import FraudPayoutCelebrationController from "./fraud_payout_celebration_controller";
+application.register(
+  "fraud-payout-celebration",
+  FraudPayoutCelebrationController,
+);
 
 import FormSubmitOnceController from "./form_submit_once_controller";
 application.register("form-submit-once", FormSubmitOnceController);
@@ -409,11 +418,14 @@ application.register("sticker-countdown", StickerCountdownController);
 import StickerPromoController from "./sticker_promo_controller";
 application.register("sticker-promo", StickerPromoController);
 
+import StickerZoomController from "./sticker_zoom_controller";
+application.register("sticker-zoom", StickerZoomController);
+
 import StreakController from "./streak_controller";
 application.register("streak", StreakController);
 
-import StickerZoomController from "./sticker_zoom_controller";
-application.register("sticker-zoom", StickerZoomController);
+import StreakDayPickerController from "./streak_day_picker_controller";
+application.register("streak-day-picker", StreakDayPickerController);
 
 import SubmitOnMetaEnterController from "./submit_on_meta_enter_controller";
 application.register("submit-on-meta-enter", SubmitOnMetaEnterController);
@@ -438,6 +450,9 @@ application.register("username-availability", UsernameAvailabilityController);
 
 import VimeoPlayerController from "./vimeo_player_controller";
 application.register("vimeo-player", VimeoPlayerController);
+
+import VisualNovelController from "./visual_novel_controller";
+application.register("visual-novel", VisualNovelController);
 
 import VoteScorecardController from "./vote_scorecard_controller";
 application.register("vote-scorecard", VoteScorecardController);

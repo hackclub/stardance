@@ -22,4 +22,12 @@ class Admin::ProjectPolicy < ApplicationPolicy
   def destroy?
     user&.admin? || user&.fraud_dept?
   end
+
+  def reset_devlogs?
+    user&.admin?
+  end
+
+  def convert_to_software?
+    user&.admin?
+  end
 end

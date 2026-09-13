@@ -15,6 +15,9 @@
       <%= admin_page_button "Fraud Checks", admin_fraud_path,
         enabled: policy(:fraud_dashboard).show?,
         count: "fraud_checks" %>
+      <%= admin_page_button "Fraud by Person", admin_fraud_subjects_path,
+        enabled: policy(:fraud_subject).index?,
+        count: "fraud_subjects" %>
       <%# Filtered to awaiting fulfillment so the queue matches the count badge. %>
       <%= admin_page_button "Shop Fulfillment", admin_shop_orders_path(view: "fulfillment", status: "awaiting_periodical_fulfillment"),
         enabled: policy(ShopOrder).index?,

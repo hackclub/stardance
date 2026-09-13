@@ -1,0 +1,66 @@
+// Vega's portrait, shared by the intro dialogue and the rocket-repair bar.
+//
+// One horizontal sheet holds the 9 unique drawings of his idle cycle (the
+// export runs 20 frames at 55ms, but only 9 are distinct — the resting drawing
+// is held for the first 605ms and the blink-and-swing plays out over the
+// remaining 495ms). An element carrying this class is exactly one frame wide,
+// so percentage background positions land on frame boundaries: 0% is the first
+// drawing, 100% the last. It rests on the first, which is the one the cycle
+// spends most of its time on.
+//
+// Callers set --vega-sprite-height; the width follows from the frame ratio.
+:root {
+  // vega-idle.webp: 9 frames of 502×750. Re-measure both if the art is
+  // re-exported at different proportions.
+  --vega-sprite-frames: 9;
+  --vega-sprite-ratio: 0.6693;
+}
+
+.vega-sprite {
+  width: calc(var(--vega-sprite-height) * var(--vega-sprite-ratio));
+  height: var(--vega-sprite-height);
+  background-image: url("dialogue/vega-idle.webp");
+  background-repeat: no-repeat;
+  background-size: calc(var(--vega-sprite-frames) * 100%) 100%;
+  background-position: 0% 0;
+}
+
+// Frame stops reproduce the export's hold lengths; `step-end` snaps between
+// drawings instead of tweening them.
+@keyframes vega-idle {
+  0% {
+    background-position-x: 0%;
+  }
+
+  55% {
+    background-position-x: 12.5%;
+  }
+
+  60% {
+    background-position-x: 25%;
+  }
+
+  70% {
+    background-position-x: 37.5%;
+  }
+
+  75% {
+    background-position-x: 50%;
+  }
+
+  80% {
+    background-position-x: 62.5%;
+  }
+
+  85% {
+    background-position-x: 75%;
+  }
+
+  90% {
+    background-position-x: 87.5%;
+  }
+
+  95% {
+    background-position-x: 100%;
+  }
+}

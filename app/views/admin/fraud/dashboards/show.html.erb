@@ -108,6 +108,13 @@
         <% end %>
       </div>
 
+      <%= render ActionButtonComponent.new(href: admin_fraud_subjects_path) do %>
+        <span class="action-btn__label">Review by person</span>
+        <% if @subject_queue_count > 0 %>
+          <span class="action-btn__badge action-btn__badge--lilac"><%= @subject_queue_count %></span>
+        <% end %>
+      <% end %>
+
       <%= render ActionButtonComponent.new(href: admin_certification_reports_path) do %>
         <span class="action-btn__label">Reports</span>
         <% if @pending_fraud_reports_count > 0 %>

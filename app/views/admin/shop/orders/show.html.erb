@@ -110,6 +110,9 @@
           <span class="aorder__row-label">Status</span>
           <span class="aorder__row-value">
             <span class="aorder__state-badge aorder__state-badge--<%= display_s %>"><%= display_s.humanize %></span>
+            <% if policy(@order).view_on_hold_state? %>
+              <%= render "admin/shop/orders/hold_countdown", order: @order %>
+            <% end %>
           </span>
         </div>
         <% unless policy(current_user).view_order_full_details? %>
@@ -337,11 +340,11 @@
           </span>
         </div>
         <% if policy(current_user).view_usd_cost? %>
-          <% regional_usd_offset = @order.region.present? ? (item.send("usd_offset_#{@order.region.downcase}") || item.send("usd_offset_xx") || 0) : 0 %>
+          <% regional_usd_offset = item.usd_offset_for_region(@order.region) %>
           <div class="aorder__row">
             <span class="aorder__row-label">USD cost</span>
             <span class="aorder__row-value">
-              $<%= number_with_precision((item.usd_cost || 0) + regional_usd_offset, precision: 2) %>
+              $<%= number_with_precision(item.usd_cost_for_region(@order.region), precision: 2) %>
               <% if regional_usd_offset != 0 %>
                 <small style="color: var(--color-space-text-muted);">(+<%= @order.region %> offset)</small>
               <% end %>
@@ -475,7 +478,7 @@
           </span>
         </div>
         <div class="aorder__assign-form">
-          <div data-controller="searchable-select">
+          <div class="searchable-select" data-controller="searchable-select">
             <%= form_with url: assign_user_admin_shop_order_path(@order), method: :post, local: true, data: { turbo: false } do |f| %>
               <%= f.hidden_field :assigned_to_user_id, value: @order.assigned_to_user_id, data: { searchable_select_target: "hiddenField" } %>
               <input
@@ -486,8 +489,9 @@
                 autocomplete="off"
                 class="aorder__input"
                 style="width: 100%; box-sizing: border-box;">
-              <div data-searchable-select-target="dropdown">
+              <div class="searchable-select-dropdown" data-searchable-select-target="dropdown">
                 <div
+                  class="searchable-select-option"
                   data-searchable-select-target="option"
                   data-action="click->searchable-select#selectAndSubmit"
                   data-value=""
@@ -497,12 +501,13 @@
                 </div>
                 <% @fulfillment_users.each do |user| %>
                   <div
+                    class="searchable-select-option"
                     data-searchable-select-target="option"
                     data-action="click->searchable-select#selectAndSubmit"
                     data-value="<%= user.id %>"
                     data-label="<%= user.display_name %>"
                     data-search-text="<%= "#{user.display_name} #{user.regions.join(' ')} #{user.id}".downcase %>">
-                    <img src="<%= user.avatar %>" alt="" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;">
+                    <img src="<%= user.avatar %>" alt="" class="searchable-select-avatar" loading="lazy">
                     <span><%= user.display_name %></span>
                     <% if user.has_regions? %>
                       <small style="color: var(--color-space-text-muted);"><%= user.regions.join(", ") %></small>

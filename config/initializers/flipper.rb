@@ -53,6 +53,7 @@ Rails.application.config.after_initialize do
         sticky_streaks
         public_api_2026-08-28
         ysws_review_shortcuts
+        bukux2
       ].each { |flag| Flipper.add(flag) }
     end
   rescue StandardError => e

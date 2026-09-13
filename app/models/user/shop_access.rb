@@ -17,7 +17,9 @@ module User::ShopAccess
   end
 
   def reject_pending_orders!(reason: "User banned")
-    shop_orders.where(aasm_state: %w[pending awaiting_periodical_fulfillment]).find_each do |order|
+    shop_orders.where(aasm_state: ShopOrder::REJECTABLE_STATES).find_each do |order|
+      order.system_rejection = true
+      order.internal_rejection_reason = reason
       order.mark_rejected(reason)
       order.save!
     end

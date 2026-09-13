@@ -5,5 +5,6 @@ class Admin::Fraud::DashboardsController < Admin::ApplicationController
     @pending_fraud_reports_count = ::Project::Report.pending.where(reason: "fraud").count
 
     @order_stats = ShopOrder.dashboard_stats
+    @subject_queue_count = Admin::Fraud::SubjectQueue.subjects.size
   end
 end

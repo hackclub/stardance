@@ -1,0 +1,976 @@
+@use "../../config/mixins" as *;
+
+// Unified fraud review queue (admin/fraud/subjects).
+// References: config/_variables.scss for design tokens.
+//
+// Brand rules (docs/branding.md): set-2 surfaces for the clickable person
+// cards with 8px radius and a 2px secondary-foreground border (§1.1, §3),
+// accents used only to distinguish the three kinds of waiting work (§1.3).
+//
+// Selectors are nested one level (.fraud-queue .fraud-queue__*) so they win
+// over the .admin-content element baseline declared later in admin.scss.
+
+.fraud-queue {
+  .fraud-queue__summary {
+    align-items: baseline;
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-m);
+  }
+
+  .fraud-queue__summary-count {
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+  }
+
+  .fraud-queue__summary-label {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  .fraud-queue__empty {
+    background: var(--color-set-1-bg);
+    border: 2px solid var(--color-set-1-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-l);
+    text-align: center;
+  }
+
+  .fraud-queue__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-queue__pagination {
+    margin-top: var(--space-l);
+  }
+}
+
+.fraud-subject-card {
+  align-items: center;
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-set-2-fg-secondary);
+  border-radius: var(--profile-radius);
+  color: inherit;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+  justify-content: space-between;
+  padding: var(--space-s) var(--space-m);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-brand-cream);
+  }
+
+  .fraud-subject-card__identity {
+    align-items: center;
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .fraud-subject-card__avatar {
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 3rem;
+    object-fit: cover;
+    width: 3rem;
+  }
+
+  .fraud-subject-card__identity-copy {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .fraud-subject-card__name {
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  .fraud-subject-card__id {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject-card__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs);
+  }
+
+  .fraud-subject-card__count {
+    border-radius: var(--profile-radius);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxxs) var(--space-xs);
+  }
+
+  .fraud-subject-card__count--flag {
+    background: var(--color-brand-salmon);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject-card__count--order {
+    background: var(--color-brand-peach);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject-card__count--integrity {
+    background: var(--color-brand-lilac);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject-card__age {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+}
+
+.fraud-subject {
+  .fraud-subject__back {
+    display: flex;
+    gap: var(--space-m);
+    margin-bottom: var(--space-l);
+  }
+
+  .fraud-subject__section,
+  .fraud-subject__tools {
+    margin-bottom: var(--space-xl);
+  }
+
+  .fraud-subject__section-title {
+    align-items: baseline;
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .fraud-subject__section-count {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-m);
+  }
+
+  .fraud-subject__empty {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  .fraud-subject__tool-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xs);
+  }
+
+  .fraud-subject__tool-link {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxxs) var(--space-xs);
+    text-decoration: none;
+  }
+
+  .fraud-subject__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-subject__item {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-s) var(--space-m);
+  }
+
+  .fraud-subject__item--flag {
+    border-left: 6px solid var(--color-brand-salmon);
+  }
+
+  .fraud-subject__item--order {
+    border-left: 6px solid var(--color-brand-peach);
+  }
+
+  .fraud-subject__item--integrity {
+    border-left: 6px solid var(--color-brand-lilac);
+  }
+
+  // Sits at the end of a finished page: once there is nothing left to decide,
+  // the only thing left to do is pick up the next person.
+  .fraud-subject__next {
+    margin-top: var(--space-l);
+  }
+
+  // The page's standard button, just full width: navigation is not a verdict,
+  // and lilac, salmon and yellow each already mean something specific here.
+  .fraud-subject__next-button {
+    align-items: center;
+    background: var(--color-set-3-bg);
+    border: none;
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: var(--color-brand-off-white);
+    display: flex;
+    font-size: var(--font-size-l);
+    font-weight: 500;
+    gap: 0.5em;
+    justify-content: center;
+    padding: var(--space-m);
+    text-decoration: none;
+    width: 100%;
+  }
+
+  .fraud-subject__next-empty {
+    color: var(--color-set-2-fg-secondary);
+    font-size: var(--font-size-s);
+    margin: 0;
+    padding: var(--space-m);
+    text-align: center;
+  }
+
+  .fraud-subject__claim {
+    background: var(--color-set-3-bg);
+    border-left: 4px solid var(--color-brand-orange);
+    border-radius: 8px;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-s);
+    margin: 0 0 var(--space-m);
+    padding: var(--space-xs) var(--space-s);
+  }
+
+  // Held by someone else: the verdict controls come off the page entirely.
+  // The server refuses the verdict either way, this just stops the reviewer
+  // filling in a form that cannot land.
+  &--claimed-elsewhere .fraud-subject__verdict-form,
+  &--claimed-elsewhere .fraud-subject__bulk-actions {
+    display: none;
+  }
+
+  .fraud-subject__item-error {
+    background: var(--color-set-3-bg);
+    border-left: 4px solid var(--color-brand-salmon);
+    border-radius: 6px;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-xs);
+    margin: 0 0 var(--space-xs);
+    padding: var(--space-xxs) var(--space-xs);
+  }
+
+  .fraud-subject__item-head {
+    align-items: baseline;
+    display: flex;
+    gap: var(--space-s);
+    justify-content: space-between;
+  }
+
+  .fraud-subject__item-title {
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  .fraud-subject__item-age,
+  .fraud-subject__item-meta {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__item-body {
+    margin: var(--space-xs) 0;
+  }
+
+  .fraud-subject__item-action {
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__item--resolved {
+    color: var(--color-set-3-fg-secondary);
+  }
+
+  .fraud-subject__identity {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--space-m);
+  }
+
+  .fraud-subject__avatar {
+    border: 2px solid var(--color-set-3-fg-secondary);
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: 6rem;
+    object-fit: cover;
+    width: 6rem;
+  }
+
+  .fraud-subject__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    margin: var(--space-xs) 0 0;
+  }
+
+  .fraud-subject__fact {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fraud-subject__fact-label {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+  }
+
+  .fraud-subject__fact-value {
+    margin: 0;
+  }
+
+  .fraud-subject__fact-value--alert {
+    color: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__fact-note {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  // Rhythm inside an integrity card: the review evidence is one group with
+  // generous air around it, the detection findings are a second tight group,
+  // and a rule separates both from the verdict form.
+  .fraud-subject__review {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    margin-top: var(--space-m);
+  }
+
+  .fraud-subject__vitals {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs) var(--space-l);
+    margin: 0;
+  }
+
+  // Label above value would stack four columns and cost a row of height on a
+  // page that lists a dozen of these, so the label is read-only context.
+  .fraud-subject__vital-label {
+    @include visually-hidden;
+  }
+
+  .fraud-subject__vital-value {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+    margin: 0;
+  }
+
+  .fraud-subject__vital--lead .fraud-subject__vital-value {
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  .fraud-subject__blurb {
+    margin: 0;
+    max-width: 68ch;
+  }
+
+  .fraud-subject__tool-links-split {
+    color: var(--color-set-3-fg-secondary);
+  }
+
+  // Reads as the summary of the keys beside it rather than another key name.
+  .fraud-subject__tool-link--all {
+    border-color: var(--color-brand-cream);
+    color: var(--color-brand-cream);
+  }
+
+  // Inside the review group the flex gap already spaces the rows.
+  .fraud-subject__review .fraud-subject__tool-links {
+    margin-bottom: 0;
+  }
+
+  .fraud-subject__detection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin-top: var(--space-l);
+  }
+
+  .fraud-subject__reasoning-summary {
+    color: var(--color-set-3-fg-secondary);
+    cursor: pointer;
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__reasoning .integrity-review {
+    margin-top: var(--space-xs);
+  }
+
+  .fraud-subject__verdict-form--ruled {
+    border-top: 1px solid var(--color-overlay-light);
+    margin-top: var(--space-l);
+    padding-top: var(--space-s);
+  }
+
+  .fraud-subject__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-l);
+  }
+
+  .fraud-subject__count {
+    border-radius: var(--profile-radius);
+    color: var(--color-space-bg);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxxs) var(--space-xs);
+  }
+
+  .fraud-subject__count--flag {
+    background: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__count--order {
+    background: var(--color-brand-peach);
+  }
+
+  .fraud-subject__count--integrity {
+    background: var(--color-brand-lilac);
+  }
+
+  .fraud-subject__item-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+  }
+
+  .fraud-subject__verdict-group {
+    align-items: center;
+    display: flex;
+    gap: var(--space-xxs);
+  }
+
+  .fraud-subject__verdict-form {
+    margin-top: var(--space-xs);
+  }
+
+  .fraud-subject__field-label {
+    display: block;
+    font-size: var(--font-size-s);
+  }
+
+  .fraud-subject__field {
+    width: 100%;
+  }
+
+  .fraud-subject__field--narrow {
+    width: 5rem;
+  }
+
+  // Closed it is one more chip in the actions row; open it takes the whole row
+  // so the rejection form has room without stretching the buttons beside it.
+  .fraud-subject__reject[open] {
+    flex-basis: 100%;
+  }
+
+  .fraud-subject__bulk-actions {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-m);
+  }
+
+  .fraud-subject__bulk-reject[open] {
+    flex-basis: 100%;
+  }
+
+  .fraud-subject__bulk-reject-form {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-brand-salmon);
+    border-radius: var(--profile-radius);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+    max-width: 42rem;
+    padding: var(--space-m);
+  }
+
+  // Sticky so the reviewer keeps sight of how much of this person's queue is
+  // left while working down a long page. One slot per waiting item, each an
+  // equal share of the width, coloured by the verdict that settled it.
+  .fraud-subject__progress {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    margin-bottom: var(--space-m);
+    padding: var(--space-xs);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  .fraud-subject__progress-inner {
+    align-items: center;
+    display: flex;
+    gap: var(--space-s);
+  }
+
+  .fraud-subject__payout {
+    align-items: baseline;
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-xxs);
+  }
+
+  .fraud-subject__payout-sum,
+  .fraud-subject__payout-result {
+    align-items: baseline;
+    display: flex;
+    font-size: var(--font-size-s);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    gap: var(--space-xxs);
+    white-space: nowrap;
+  }
+
+  .fraud-subject__payout-base,
+  .fraud-subject__payout-result {
+    color: var(--color-brand-cream);
+  }
+
+  .fraud-subject__payout-op {
+    color: var(--color-set-2-fg-secondary);
+    font-weight: 400;
+  }
+
+  // Each factor wears the colour of the queue it came from, matching the slots
+  // in the bar beside it.
+  .fraud-subject__payout-mult--flag {
+    color: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__payout-mult--order {
+    color: var(--color-brand-peach);
+  }
+
+  .fraud-subject__payout-mult--integrity {
+    color: var(--color-brand-lilac);
+  }
+
+  // The person is cleared: the total swells once so finishing someone reads as
+  // an event rather than a number quietly changing.
+  .fraud-subject__payout-result--done {
+    animation: fraud-payout-pop 600ms ease-out;
+    color: var(--color-brand-yellow);
+  }
+
+  @keyframes fraud-payout-pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.6);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fraud-subject__payout-result--done {
+      animation: none;
+    }
+
+    .fraud-subject__progress-slot--done::after {
+      animation: none;
+      transform: scaleX(1);
+    }
+  }
+
+  .fraud-subject__progress-track {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  // Two layers of the same tone: a ghost of what is still waiting, and a fill
+  // that sweeps across it once the verdict lands. Same colour throughout, so a
+  // slot never changes meaning as it is settled.
+  .fraud-subject__progress-slot {
+    background: var(--color-set-2-fg-secondary);
+    border-radius: 999px;
+    flex: 1 1 0;
+    height: 0.5rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .fraud-subject__progress-slot::before,
+  .fraud-subject__progress-slot::after {
+    background: var(--fraud-slot-tone);
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    position: absolute;
+  }
+
+  .fraud-subject__progress-slot::before {
+    opacity: 0.25;
+  }
+
+  .fraud-subject__progress-slot::after {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  .fraud-subject__progress-slot--flag {
+    --fraud-slot-tone: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__progress-slot--order {
+    --fraud-slot-tone: var(--color-brand-peach);
+  }
+
+  .fraud-subject__progress-slot--integrity {
+    --fraud-slot-tone: var(--color-brand-lilac);
+  }
+
+  .fraud-subject__progress-slot--done::after {
+    animation: fraud-slot-fill 450ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  @keyframes fraud-slot-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  .fraud-subject__projects {
+    display: grid;
+    gap: var(--space-s);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fraud-subject__project {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    padding: var(--space-m);
+  }
+
+  .fraud-subject__mapping-title {
+    font-size: var(--font-size-s);
+    margin: var(--space-m) 0 var(--space-xs);
+  }
+
+  .fraud-subject__key-mappings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin: 0;
+  }
+
+  .fraud-subject__key-mapping {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+
+    dd {
+      color: var(--color-set-3-fg-secondary);
+      margin: 0;
+    }
+  }
+
+  .fraud-subject__approved-orders {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fraud-subject__approved-order {
+    align-items: center;
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    display: flex;
+    gap: var(--space-m);
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-s);
+  }
+
+  @media (max-width: 40rem) {
+    .fraud-subject__identity {
+      flex-direction: column;
+    }
+
+    .fraud-subject__projects {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
+
+// Scoped to .admin-content on purpose. The admin button baseline in admin.scss
+// is `.admin-content button:not(.action-btn)`, which outranks a single nested
+// class, so without this the verdict controls fall back to the generic admin
+// button and only the <summary> keeps its own styling.
+//
+// The box below matches that baseline, so a <button>, an input[type="submit"]
+// and the <summary> that opens the rejection form all come out the same shape
+// as every other button in the admin. Only the colour differs.
+.admin-content .fraud-subject {
+  .fraud-subject__verdict {
+    align-items: center;
+    background: var(--color-set-3-bg);
+    border: none;
+    border-radius: 8px;
+    color: var(--color-brand-off-white);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    gap: 0.5em;
+    justify-content: center;
+    line-height: 1.5;
+    list-style: none;
+    min-height: 2.25rem;
+    padding: 0.5rem 1rem;
+
+    // Safari draws its own disclosure triangle regardless of list-style.
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  // One colour scheme across all three kinds of work: purple clears the
+  // person, red acts against them, yellow is the outcome in between.
+  .fraud-subject__verdict--accept {
+    background: var(--color-brand-lilac);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject__verdict--reject {
+    background: var(--color-brand-salmon);
+    color: var(--color-space-bg);
+  }
+
+  .fraud-subject__verdict--hold {
+    background: var(--color-brand-yellow);
+    color: var(--color-space-bg);
+  }
+}
+
+// The payout celebration: a fixed overlay so the amount lands in the middle of
+// the screen rather than wherever the queue happened to be scrolled to.
+.fraud-celebration {
+  align-items: center;
+  animation: fraud-celebration-veil 260ms ease-out both;
+  background: rgb(8 6 30 / 78%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  inset: 0;
+  justify-content: center;
+  pointer-events: none;
+  position: fixed;
+  z-index: 50;
+
+  &--playing {
+    pointer-events: auto;
+  }
+
+  // Replaces the veil animation rather than transitioning opacity: the veil
+  // fills forwards, so a transition would never take hold.
+  &--leaving {
+    animation: fraud-celebration-fade 460ms ease-in both;
+    pointer-events: none;
+  }
+}
+
+.fraud-celebration__amount {
+  animation: fraud-celebration-swell 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  color: var(--color-brand-yellow);
+  // A display size the type scale does not carry: this is the one number on an
+  // otherwise empty screen.
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  margin: 0;
+  text-shadow: 0 0 32px rgb(255 229 100 / 45%);
+}
+
+.fraud-celebration__total {
+  align-items: center;
+  animation: fraud-celebration-total-in 700ms
+    var(--fraud-celebration-hold, 2200ms) ease-out both;
+  color: var(--color-brand-cream);
+  display: flex;
+  font-size: var(--font-size-xxl);
+  font-weight: 700;
+  gap: var(--space-xxs);
+  margin: 0;
+}
+
+.fraud-celebration__total-label {
+  color: var(--color-brand-off-white);
+  font-size: var(--font-size-s);
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+// Zero-size origin at the centre of the screen, so the confetti bursts from
+// behind the amount rather than from a corner.
+.fraud-celebration__burst {
+  height: 0;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  width: 0;
+}
+
+// Paper, not sparks: each piece is a small rectangle that is thrown out and up,
+// then falls past the fold while tumbling. The per-piece spread is derived from
+// the index so it looks scattered without any scripting, and translate/rotate
+// stay separate properties on purpose here, so a piece tumbles about its own
+// centre while it travels.
+.fraud-celebration__confetti {
+  animation: fraud-celebration-confetti 2200ms cubic-bezier(0.18, 0.6, 0.4, 1)
+    both;
+  border-radius: 2px;
+  height: 14px;
+  left: -4px;
+  position: absolute;
+  top: -7px;
+  width: 8px;
+
+  @for $i from 1 through 24 {
+    &:nth-child(#{$i}) {
+      --confetti-x: #{((($i * 37) % 61) - 30) * 9}px;
+      --confetti-rise: #{60 + (($i * 23) % 90)}px;
+      --confetti-fall: #{340 + (($i * 53) % 240)}px;
+      --confetti-spin: #{(($i * 137) % 5) - 2}turn;
+
+      animation-delay: #{($i % 6) * 70}ms;
+
+      @if $i % 5 == 0 {
+        background: var(--color-brand-yellow);
+      } @else if $i % 5 == 1 {
+        background: var(--color-brand-salmon);
+      } @else if $i % 5 == 2 {
+        background: var(--color-brand-lilac);
+      } @else if $i % 5 == 3 {
+        background: var(--color-brand-peach);
+      } @else {
+        background: var(--color-brand-blue);
+      }
+
+      @if $i % 3 == 0 {
+        height: 9px;
+        width: 9px;
+      }
+    }
+  }
+}
+
+@keyframes fraud-celebration-confetti {
+  0% {
+    opacity: 0;
+    rotate: 0turn;
+    translate: 0 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  // The top of the arc: still travelling outward, gravity has not won yet.
+  32% {
+    translate: calc(var(--confetti-x) * 0.55) calc(var(--confetti-rise) * -1);
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    rotate: var(--confetti-spin);
+    translate: var(--confetti-x) var(--confetti-fall);
+  }
+}
+
+@keyframes fraud-celebration-veil {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fraud-celebration-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fraud-celebration-swell {
+  0% {
+    opacity: 0;
+    scale: 0.3;
+  }
+  60% {
+    opacity: 1;
+    scale: 1.25;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes fraud-celebration-total-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fraud-celebration,
+  .fraud-celebration--leaving,
+  .fraud-celebration__amount,
+  .fraud-celebration__total,
+  .fraud-celebration__confetti {
+    // The stagger has to go too, or the pieces still flicker in one by one.
+    animation-delay: 0s;
+    animation-duration: 1ms;
+  }
+}

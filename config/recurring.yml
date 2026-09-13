@@ -122,6 +122,12 @@ production:
     concurrency: 1
     description: "Retry fulfillment for free sticker orders stuck in pending"
 
+  shop_release_expired_order_holds:
+    class: Shop::ReleaseExpiredOrderHoldsJob
+    schedule: every minute
+    concurrency: 1
+    description: "Release shop orders after they have been on hold for seven days"
+
   shop_calculate_fulfillment_payouts:
     class: Shop::CalculateFulfillmentPayoutsJob
     schedule: every Friday at 12pm Europe/London
@@ -157,6 +163,12 @@ production:
     schedule: every day at 5am UTC
     concurrency: 1
     description: "Recalculate approx_balance and approx_total_earned from ledger entries"
+
+  sync_mac_to_airtable:
+    class: Certification::MACAirtableSyncJob
+    schedule: every 5 minutes
+    concurrency: 1
+    description: "Sync big-mac AI analysis signals (ai_coding_pct, flags) to YSWS airtable for final-pass reviewers"
 
   clear_insufficient_mac_analyses:
     class: Certification::ClearInsufficientMACAnalysesJob

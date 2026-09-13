@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
-// Live "Xh Ymin" countdown to a fixed instant (the next daily reset). Ticks
-// every half-minute so the minute display stays current; clamps at zero.
+// Live countdown to a fixed instant. Ticks every half-minute so the minute
+// display stays current; includes days for longer windows and clamps at zero.
 export default class extends Controller {
   static values = { resetAt: String, expiredText: String };
 
@@ -23,8 +23,11 @@ export default class extends Controller {
     }
 
     const secs = Math.max(0, Math.floor(remaining / 1000));
-    const hours = Math.floor(secs / 3600);
+    const totalHours = Math.floor(secs / 3600);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
     const mins = Math.floor((secs % 3600) / 60);
-    this.element.textContent = `${hours}h ${mins}min`;
+    this.element.textContent =
+      days > 0 ? `${days}d ${hours}h ${mins}min` : `${hours}h ${mins}min`;
   }
 }

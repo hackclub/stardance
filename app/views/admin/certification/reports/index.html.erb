@@ -74,7 +74,7 @@
                 <td>
                   <% if report.reporter %>
                     <div class="admin-actions-wrap">
-                      <img src="<%= report.reporter.avatar %>" alt="" class="admin-avatar">
+                      <img src="<%= report.reporter.avatar %>" alt="" class="admin-avatar" loading="lazy">
                       <%= link_to report.reporter.display_name, admin_user_path(report.reporter) %>
                     </div>
                   <% else %>
@@ -92,7 +92,7 @@
                   <% reviewer_info = @reviewers_by_report[report.id] %>
                   <% if reviewer_info.is_a?(User) %>
                     <div class="admin-actions-wrap">
-                      <img src="<%= reviewer_info.avatar %>" alt="" class="admin-avatar">
+                      <img src="<%= reviewer_info.avatar %>" alt="" class="admin-avatar" loading="lazy">
                       <span><%= reviewer_info.display_name %></span>
                     </div>
                   <% elsif reviewer_info == :auto %>

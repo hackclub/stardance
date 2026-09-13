@@ -17,7 +17,7 @@ class StreaksControllerTest < ActionDispatch::IntegrationTest
     get streak_month_path(year: 2026, month: 9)
 
     assert_response :success
-    assert_select ".streak-widget__cal-month", "September 2026"
+    assert_select ".streak-calendar__month", "September 2026"
     assert_select "[data-action='streak#nextMonth']", count: 0
   end
 

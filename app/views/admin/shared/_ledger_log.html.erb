@@ -35,7 +35,7 @@
             <td>
               <% if entry.user %>
                 <div>
-                  <img src="<%= entry.user.avatar %>" alt="" class="space-table__avatar">
+                  <img src="<%= entry.user.avatar %>" alt="" class="space-table__avatar" loading="lazy">
                   <span><%= entry.user.display_name %></span>
                 </div>
               <% else %>

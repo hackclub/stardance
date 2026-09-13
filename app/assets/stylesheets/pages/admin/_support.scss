@@ -142,6 +142,19 @@
     gap: var(--space-s);
   }
 
+  &__streak-credit-message {
+    margin: 0 0 var(--space-s);
+    padding: var(--space-xs) var(--space-s);
+    border-radius: 8px;
+    background: var(--color-overlay-light-soft);
+    color: var(--color-space-text);
+    font-size: 14px;
+
+    &--alert {
+      color: var(--color-brand-salmon);
+    }
+  }
+
   &__streak-credit-meta {
     display: block;
     color: var(--color-space-text-muted);

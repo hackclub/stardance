@@ -92,27 +92,27 @@
       "note": "Values interpolated via connection.quote are from a frozen constant (SANKEY_STEPS), not user input"
     },
     {
-      "warning_type": "Command Injection",
-      "warning_code": 14,
-      "fingerprint": "afd46b7b61f1a5de4583920dedb365d30d8286afdeb70a759bf74bea1b3ea30e",
-      "check_name": "Execute",
-      "message": "Possible command injection",
-      "file": "app/services/git_host/git_cli.rb",
-      "line": 89,
-      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
-      "code": "Open3.capture2(\"git\", \"-C\", clone_path, \"log\", \"--format=#{\"%H%n%s%n%b%n%an%n%ae%n%aI%n---COMMIT_END---\"}\", \"--since=#{since.iso8601}\", \"--until=#{before.iso8601}\")",
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "91921ae23d1e868773ebbcc68c806bfcf7bad2e1dc82bc61cceeaab7129ea148",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/admin/fraud/subject_queue.rb",
+      "line": 29,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": null,
       "render_path": null,
       "location": {
         "type": "method",
-        "class": "GitHost::GitCli",
-        "method": "parse_git_log"
+        "class": "Admin::Fraud::SubjectQueue",
+        "method": "SubjectQueue.relation"
       },
-      "user_input": "since.iso8601",
-      "confidence": "Medium",
+      "user_input": null,
+      "confidence": "Weak",
       "cwe_id": [
-        77
+        89
       ],
-      "note": "False positive: Open3.capture2(*cmd) uses the multi-arg array form (no shell); the interpolated values are a frozen format string and iso8601 timestamps, each a single --flag=value arg"
+      "note": "The interpolated subquery comes from private class methods only: frozen weight constants, literal kind names passed through connection.quote, and Arel-generated scope SQL. No caller can reach it with user input."
     },
     {
       "fingerprint": "160ee353d49154f06a9d66f7e7499992370cd6e087eda407ddabcd54f5ca48a3",

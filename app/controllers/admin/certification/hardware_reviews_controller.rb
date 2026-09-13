@@ -8,8 +8,8 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
   include HardwareReviewQueue
 
   before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
-  before_action :set_project, only: [ :show, :flag_for_fraud ]
-  before_action -> { head :not_found unless @project.hardware? }, only: [ :show, :flag_for_fraud ]
+  before_action :set_project, only: [ :show, :flag_for_fraud, :recordings ]
+  before_action -> { head :not_found unless @project.hardware? }, only: [ :show, :flag_for_fraud, :recordings ]
 
   # GET /admin/certification/hardware - kept so older links land somewhere sensible.
   def index
@@ -32,11 +32,16 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
     authorize Project, policy_class: Admin::Certification::HardwareReviewPolicy
   end
 
-  def authorize_hardware_review(project)
-    authorize project, policy_class: Admin::Certification::HardwareReviewPolicy
+  def authorize_hardware_review(project, query = nil)
+    authorize project, query, policy_class: Admin::Certification::HardwareReviewPolicy
   end
 
   def set_project
-    @project = Project.find(params[:project_id])
+    @project = Project.includes(
+      review_notes: :author,
+      certification_funding_requests: :reviewer,
+      ship_reviews: :reviewer,
+      memberships: :user
+    ).find(params[:project_id])
   end
 end

@@ -43,5 +43,9 @@
       <dt>Build devlogs</dt>
       <dd><%= project.devlogs.build_phase.where(deleted_at: nil).count %></dd>
     </div>
+    <div class="hardware-review__fact">
+      <dt>Payout rate</dt>
+      <dd><%= review.payout_multiplier || Post::ShipEvent::Payouts::HARDWARE_STARDUST_PER_HOUR %> sd/hr</dd>
+    </div>
   <% end %>
 </dl>

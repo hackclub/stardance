@@ -112,9 +112,14 @@ module Certification
     }
 
     scope :by_project_type, ->(type) {
-      type == "unclassified" \
-        ? joins(:project).where(projects: { project_type: nil })
-        : joins(:project).where(projects: { project_type: type })
+      case type
+      when "Hardware"
+        joins(:project).where.not(projects: { hardware_stage: nil })
+      when "unclassified"
+        joins(:project).where(projects: { project_type: nil, hardware_stage: nil })
+      else
+        joins(:project).where(projects: { project_type: type, hardware_stage: nil })
+      end
     }
 
     # Project reviews completed from `time` onwards, with a reviewer attached — the

@@ -20,6 +20,7 @@
 @use "components/sidebar";
 @use "components/discover_rail";
 @use "components/streak_widget";
+@use "components/streak_calendar";
 @use "components/sticky_streak";
 @use "components/ship_intro_module";
 @use "components/ui-heading";
@@ -61,6 +62,9 @@
 @use "components/slack_doodle";
 @use "components/sticker_promo";
 @use "components/sticker_promo_widget";
+@use "components/vega_sprite";
+@use "components/visual_novel";
+@use "components/rocket_progress";
 
 // Pages
 @use "pages/onboarding" as onboarding_pages;

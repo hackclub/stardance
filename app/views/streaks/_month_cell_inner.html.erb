@@ -1,0 +1,10 @@
+<% if day[:streak_left] || day[:streak_right] %>
+  <div class="<%= class_names(
+                   "streak-calendar__bar",
+                   "streak-calendar__bar--left" => day[:streak_left],
+                   "streak-calendar__bar--right" => day[:streak_right]
+                 ) %>"></div>
+<% end %>
+<% if day[:in_month] %>
+  <%= render "streaks/day_mark", day: day, size: "month", zoomable: zoomable %>
+<% end %>

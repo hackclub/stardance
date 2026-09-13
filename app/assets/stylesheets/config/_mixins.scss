@@ -36,3 +36,18 @@
   font-weight: 900;
   line-height: 1;
 }
+
+// Hides a label from sight while leaving it for screen readers. For cases
+// where the surrounding layout already makes a value's meaning obvious and a
+// visible label would only cost a row of height.
+@mixin visually-hidden {
+  border: 0;
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

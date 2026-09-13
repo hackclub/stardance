@@ -708,14 +708,14 @@
       font-weight: 600;
     }
 
-    textarea {
+    textarea,
+    input[type="number"] {
       width: 100%;
       padding: var(--space-s);
       font-family: inherit;
       font-size: var(--font-size-m);
       color: var(--color-space-text);
       background: var(--color-space-surface, rgba(255, 255, 255, 0.04));
-      resize: vertical;
       border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.18));
       border-radius: 8px;
 
@@ -724,6 +724,16 @@
         outline-offset: 1px;
       }
     }
+
+    textarea {
+      resize: vertical;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
   }
 
   &__actions {
