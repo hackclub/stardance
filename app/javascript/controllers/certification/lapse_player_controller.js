@@ -20,6 +20,9 @@ export default class extends Controller {
   // raw R2 video. Builds the playlist from every sibling tile and opens at the
   // clicked index. ctrl/middle-click still follows the href (browser default).
   open(event) {
+    // Let the browser handle modified/non-primary clicks (open the raw video in a
+    // new tab/window) — only a plain left-click opens the in-page lightbox.
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button > 0) return;
     event.preventDefault();
     const link = event.currentTarget;
     const items = this.itemTargets.map((tile) => ({ type: "video", src: tile.href }));

@@ -53,6 +53,7 @@ export default class extends Controller {
   disconnect() {
     document.removeEventListener("keydown", this.onKeydown);
     this.observer?.disconnect();
+    this.endNavScroll();
     this.clearHighlight();
     this.undecorateHints();
     this.legend?.remove();
@@ -60,6 +61,12 @@ export default class extends Controller {
   }
 
   onKeydown(event) {
+    // The lapse lightbox (opened with `t`) is modal and owns the keyboard while
+    // open — its own controller handles JKL/Escape. Stand down entirely so our
+    // j/k/a/r don't drive the review or double-scrub behind it. We don't consume
+    // the event, so it flows on to the lapse player's document listener.
+    if (document.querySelector(".lapse-player__lightbox")) return;
+
     // The help overlay is modal: Escape closes it and nothing else fires.
     if (this.dialog?.open) {
       if (event.key === "Escape") return this.consume(event, () => this.dialog.close());
@@ -139,32 +146,81 @@ export default class extends Controller {
     els.forEach((el, i) => el.classList.toggle("devlog-item--kbd-active", i === this.currentIndex));
   }
 
-  // j/k: move the cursor and float the card to the top of the viewport.
+  // j/k: move the cursor and smoothly scroll the card into view. The smooth
+  // animation re-fires the observer, so we suspend its re-selection until the
+  // scroll actually ends (see beginNavScroll) — otherwise it drags the cursor
+  // back to the still-visible previous card mid-animation.
   setDevlog(index) {
     this.markCurrent(index);
+    this.beginNavScroll();
     this.devlogEls()[this.currentIndex]?.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
-  // Track the top-most visible devlog so the verdict/time/lapse keys act on the
-  // card the reviewer has SCROLLED to, not only the one j/k last moved to —
-  // otherwise the cursor and the viewport drift apart and the keys feel random.
+  // Suspend observer re-selection until the programmatic smooth scroll finishes.
+  // scrollend is authoritative; the timeout is a fallback for browsers that don't
+  // emit it, or when the target is already in place (no scroll → no scrollend).
+  beginNavScroll() {
+    this.navScrolling = true;
+    clearTimeout(this.navScrollTimeout);
+    if (this.onScrollEnd) window.removeEventListener("scrollend", this.onScrollEnd);
+    this.onScrollEnd = () => this.endNavScroll();
+    window.addEventListener("scrollend", this.onScrollEnd, { once: true });
+    // scrollend never fires when the target is already in place (no scroll), which
+    // would freeze cursor-follow for the whole fallback. Probe once: if the page
+    // hasn't moved shortly after, there's nothing to wait for — lift immediately;
+    // otherwise keep a bounded fallback for browsers that don't emit scrollend.
+    const startY = window.scrollY;
+    this.navScrollTimeout = setTimeout(() => {
+      if (window.scrollY === startY) this.endNavScroll();
+      else this.navScrollTimeout = setTimeout(() => this.endNavScroll(), 900);
+    }, 150);
+  }
+
+  endNavScroll() {
+    this.navScrolling = false;
+    clearTimeout(this.navScrollTimeout);
+    if (this.onScrollEnd) {
+      window.removeEventListener("scrollend", this.onScrollEnd);
+      this.onScrollEnd = null;
+    }
+  }
+
+  // The "current" devlog follows whichever Review Decision panel is on screen the
+  // most — that's the card the reviewer is actually working on. We track each
+  // non-frozen panel's visible area and pick the largest.
   observeScroll() {
-    const els = this.devlogEls();
-    if (!els.length || typeof IntersectionObserver === "undefined") return;
-    this.visible = new Set();
+    const panels = this.reviewPanels();
+    if (!panels.length || typeof IntersectionObserver === "undefined") return;
+    this.panelArea = new Map(); // panel element -> visible pixel area
     this.observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
-        if (entry.isIntersecting) this.visible.add(entry.target);
-        else this.visible.delete(entry.target);
+        const rect = entry.intersectionRect;
+        this.panelArea.set(entry.target, entry.isIntersecting ? rect.width * rect.height : 0);
       }
-      const list = this.devlogEls();
-      const topMost = list.find((el) => this.visible.has(el)); // DOM order = visual order
-      if (topMost) {
-        const i = list.indexOf(topMost);
-        if (i !== this.currentIndex) this.markCurrent(i);
+      // Don't re-select while a keyboard nav's smooth scroll is still running —
+      // that scroll is what fires this callback, and reacting to it fights j/k.
+      if (this.navScrolling) return;
+      let best = null;
+      let bestArea = 0;
+      for (const [panel, area] of this.panelArea) {
+        if (area > bestArea) {
+          bestArea = area;
+          best = panel;
+        }
       }
-    }, { root: null, rootMargin: "0px 0px -60% 0px", threshold: 0 });
-    els.forEach((el) => this.observer.observe(el));
+      if (best && bestArea > 0) {
+        const i = this.devlogEls().indexOf(best.closest(".devlog-item"));
+        if (i !== -1 && i !== this.currentIndex) this.markCurrent(i);
+      }
+    }, { root: null, threshold: Array.from({ length: 21 }, (_, i) => i / 20) });
+    panels.forEach((panel) => this.observer.observe(panel));
+  }
+
+  // The Review Decision panel for each non-frozen devlog, in devlogEls() order.
+  reviewPanels() {
+    return this.devlogEls()
+      .map((item) => item.querySelector(".devlog-review-panel"))
+      .filter(Boolean);
   }
 
   clearHighlight() {
