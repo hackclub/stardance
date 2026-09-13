@@ -39,6 +39,16 @@ export default class extends Controller {
     if (!this.lightbox || event.altKey) return;
     if (event.key === "Escape")
       return this.consume(event, () => this.closeLightbox());
+    // Ctrl/⌘ + Shift + ←/→ pages between this devlog's recordings, even while a
+    // video is open (plain and shift-only arrows stay bound to scrubbing).
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.shiftKey &&
+      (event.key === "ArrowLeft" || event.key === "ArrowRight")
+    )
+      return this.consume(event, () =>
+        this.stepLightbox(event.key === "ArrowLeft" ? -1 : 1),
+      );
     // Video → Premiere-style JKL transport + arrow scrubbing (shift = coarse).
     if (this.lbVideo) {
       if (event.code === "Space")
@@ -270,7 +280,8 @@ export default class extends Controller {
       pill.classList.toggle("is-active", this.RATE_LADDER[i] === this.rate),
     );
     if (this.lbCaption) {
-      this.lbCaption.textContent = `${this.lbIndex + 1} / ${this.lbItems.length} · j/k/l transport · ←/→ scrub (shift = 10s) · esc to close`;
+      const page = this.lbItems.length > 1 ? " · ⌃⇧←/→ next lapse" : "";
+      this.lbCaption.textContent = `${this.lbIndex + 1} / ${this.lbItems.length} · j/k/l transport · ←/→ scrub (shift = 10s)${page} · esc to close`;
     }
   }
 
