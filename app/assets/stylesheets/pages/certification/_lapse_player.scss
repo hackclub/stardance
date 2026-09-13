@@ -51,6 +51,23 @@
     border-radius: var(--profile-radius);
   }
 
+  // Shown over the stage while the clip fully buffers into memory (so 8× and
+  // reverse never lag). Removed once the blob is ready and playback starts.
+  &__buffering {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--profile-radius);
+    background: hsl(245 55% 8% / 0.55);
+    color: var(--color-brand-lilac);
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+
   &__lightbox-caption {
     margin: 0;
     font-size: var(--font-size-s);
@@ -69,7 +86,11 @@
     gap: var(--space-xs);
     padding: var(--space-xl) var(--space-m) var(--space-s);
     border-radius: 0 0 var(--profile-radius) var(--profile-radius);
-    background: linear-gradient(to top, hsl(245 55% 8% / 0.96) 25%, hsl(245 55% 8% / 0));
+    background: linear-gradient(
+      to top,
+      hsl(245 55% 8% / 0.96) 25%,
+      hsl(245 55% 8% / 0)
+    );
     color: var(--color-space-text);
     font-size: var(--font-size-xs);
   }

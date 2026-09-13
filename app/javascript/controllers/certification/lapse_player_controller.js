@@ -123,6 +123,7 @@ export default class extends Controller {
   renderLightbox() {
     const item = this.lbItems[this.lbIndex];
     this.stopReverse();
+    this.clearBufferPoll();
     this.lbStage.innerHTML = "";
     if (item.type === "video") {
       this.mountVideoPlayer(item);
@@ -147,8 +148,11 @@ export default class extends Controller {
     Object.assign(video, {
       src: item.src,
       controls: false,
-      autoplay: true,
       playsInline: true,
+      preload: "auto",
+      // Muted: timelapses are silent screen captures, and muted playback is never
+      // blocked by autoplay policy — which we rely on to warm the buffer.
+      muted: true,
     });
     video.className = "lapse-player__lightbox-media";
     video.addEventListener("click", (event) => {
@@ -159,11 +163,53 @@ export default class extends Controller {
     video.addEventListener("timeupdate", () => this.syncPlayerUI());
     video.addEventListener("ended", () => this.applyRate(0));
     this.lbVideo = video;
-    this.rate = 1; // signed speed: + forward, − reverse, 0 paused (autoplay = 1×)
+    this.rate = 1; // signed speed: + forward, − reverse, 0 paused
     this.lastRate = 1; // K resumes here after a pause
 
     this.lbStage.append(video, this.buildPlayerBar());
+    this.warmBuffer(video);
     this.syncPlayerUI();
+  }
+
+  // Guarantee no lag at speed: the media host blocks cross-origin fetch (so an
+  // in-memory blob isn't possible), but the browser fully buffers a clip while it
+  // *plays* (a paused video is capped). So we play it muted behind a "Buffering…"
+  // overlay with the transport locked, and only hand control over once the whole
+  // clip is buffered — then 8× and reverse seeks are all local and never stall.
+  warmBuffer(video) {
+    this.ready = false;
+    const loading = document.createElement("div");
+    loading.className = "lapse-player__buffering";
+    loading.textContent = "Buffering…";
+    this.lbStage.appendChild(loading);
+
+    video.loop = true; // don't let a short clip end mid-buffer
+    video.play().catch(() => {});
+
+    const started = Date.now();
+    this.clearBufferPoll();
+    this.bufferPoll = setInterval(() => {
+      if (this.lbVideo !== video) return this.clearBufferPoll();
+      const dur = video.duration;
+      const end = video.buffered.length
+        ? video.buffered.end(video.buffered.length - 1)
+        : 0;
+      const fullyBuffered = dur && end >= dur - 0.3;
+      // Bail out after a while so a stalled network can't trap the viewer behind
+      // the overlay forever — better a chance of lag than a permanent spinner.
+      if (!fullyBuffered && Date.now() - started < 60000) return;
+      this.clearBufferPoll();
+      loading.remove();
+      video.loop = false;
+      video.currentTime = 0;
+      this.ready = true;
+      this.applyRate(1); // start playback from the top, now fully buffered
+    }, 300);
+  }
+
+  clearBufferPoll() {
+    clearInterval(this.bufferPoll);
+    this.bufferPoll = null;
   }
 
   // Vimeo/Plyr-style layout: a full-width scrubber (buffered + played + a handle
@@ -300,7 +346,7 @@ export default class extends Controller {
   RATE_LADDER = [-8, -4, -2, -1, 1, 2, 4, 8];
 
   nudgeRate(direction) {
-    if (!this.lbVideo) return;
+    if (!this.lbVideo || !this.ready) return;
     let next;
     if (!this.rate) {
       next = direction > 0 ? 1 : -1;
@@ -321,7 +367,7 @@ export default class extends Controller {
   // K: pause when playing, resume when paused. Pausing also resets the resume
   // speed to +1× so play always restarts forward (never at a stale J/L speed).
   togglePlay() {
-    if (!this.lbVideo) return;
+    if (!this.lbVideo || !this.ready) return;
     if (this.rate) {
       this.lastRate = 1;
       this.applyRate(0);
@@ -368,7 +414,7 @@ export default class extends Controller {
   }
 
   stepVideo(seconds) {
-    if (!this.lbVideo) return;
+    if (!this.lbVideo || !this.ready) return;
     this.applyRate(0); // frame-scrub pauses first
     const max = this.lbVideo.duration || Number.MAX_SAFE_INTEGER;
     this.lbVideo.currentTime = Math.max(
@@ -386,6 +432,7 @@ export default class extends Controller {
 
   closeLightbox() {
     this.stopReverse();
+    this.clearBufferPoll();
     if (this.onKeydown) document.removeEventListener("keydown", this.onKeydown);
     this.lightbox?.remove();
     this.lightbox = null;
