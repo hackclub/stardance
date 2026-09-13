@@ -1540,16 +1540,22 @@ body:has(.certification-ysws) {
     }
 
     // Keyboard-shortcut cursor (:ysws_review_shortcuts): marks the current devlog
-    // the j/k nav and verdict keys act on. A soft mint-tinted panel with a left
-    // accent rail frames the whole row; negative inline margins let it bleed into
-    // the card's padding and the matching inline padding keeps the content from
-    // shifting as the cursor moves.
+    // the j/k nav and verdict keys act on. A crisp mint ring frames the card and
+    // its Review Decision panel (where the keys actually fire) gets a matching
+    // accent, so the target reads clearly without tinting the whole row. Negative
+    // inline margins let the ring bleed into the card padding and the matching
+    // inline padding keeps the content from shifting as the cursor moves.
     .devlog-item--kbd-active {
       margin-inline: calc(-1 * var(--space-s));
       padding-inline: var(--space-s);
-      border-radius: var(--space-xs);
-      background: color-mix(in srgb, var(--color-brand-mint) 8%, transparent);
-      box-shadow: inset 3px 0 0 0 var(--color-brand-mint);
+      border-radius: var(--profile-radius);
+      outline: 2px solid color-mix(in srgb, var(--color-brand-mint) 70%, transparent);
+      outline-offset: -2px;
+
+      .devlog-review-panel {
+        border-color: color-mix(in srgb, var(--color-brand-mint) 60%, var(--color-space-border));
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
+      }
     }
 
     .devlog-status.status-frozen {
@@ -2075,6 +2081,14 @@ body:has(.certification-ysws) {
         &:hover:not(:disabled) {
           transform: translateY(-2px);
           box-shadow: 0 4px 16px rgba(129, 255, 255, 0.4);
+        }
+
+        // Armed by the first `c` press: a pulsing ring says "press C again to
+        // confirm" before the second press actually completes the review.
+        &.btn-complete--armed {
+          outline: 3px solid var(--color-brand-off-white);
+          outline-offset: 2px;
+          animation: ysws-complete-arm-pulse 0.7s ease-in-out infinite;
         }
       }
     }
@@ -3109,7 +3123,9 @@ body:has(.certification-ysws) {
 
 .ysws-kbd-legend {
   position: fixed;
-  right: var(--space-m);
+  // Pinned bottom-LEFT: the Complete/checklist actions-card floats bottom-right,
+  // so keeping the legend on the opposite corner stops the card burying it.
+  left: var(--space-m);
   bottom: var(--space-m);
   z-index: 60;
   display: flex;
@@ -3134,4 +3150,11 @@ body:has(.certification-ysws) {
     gap: 0.25rem;
     white-space: nowrap;
   }
+}
+
+// Pulse for the Complete Review button while it's armed for its confirming
+// second `c` press (certification--ysws--keyboard-shortcuts).
+@keyframes ysws-complete-arm-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 252, 244, 0.55); }
+  50% { box-shadow: 0 0 12px 4px rgba(255, 252, 244, 0.35); }
 }

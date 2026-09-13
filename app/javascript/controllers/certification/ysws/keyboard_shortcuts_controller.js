@@ -12,18 +12,22 @@ import { Controller } from "@hotwired/stimulus";
 // shortcuts are discoverable without opening the ? help overlay.
 //
 //   j / k        next / previous devlog (clamped)
-//   e            jump to the review-decision panel (focus minutes)
 //   a / r        approve / reject the current devlog
-//   - / shift+-  decrease approved minutes by 15 / 30
+//   5 / 2        set approved minutes to 50% / 25%
+//   + / shift++  add 15 / 30 min        - / shift+-  cut 15 / 30 min
 //   t            open the current devlog's lapse recordings in the lightbox
 //   ctrl+space   focus the current devlog's internal-notes box
+//   ctrl+enter   complete the review (press twice to confirm)
 //   ?            toggle the keyboard-shortcut help overlay (Escape closes)
 
-// Per-control hint badges: [selector within a devlog, key label]. The decision
-// panel title (E) and notes label (⌃Space) are placed separately in decorateHints.
+// Per-control hint badges: [selector within a devlog, key label]. The notes
+// label (⌃Space) and the page-level Complete button (⌃⏎) are placed separately
+// in decorateHints.
 const HINTS = [
   [".btn-approve", "A"],
   [".btn-reject", "R"],
+  ['.adjust-btn[data-adjust-action="50%"]', "5"],
+  ['.adjust-btn[data-adjust-action="25%"]', "2"],
   ['.adjust-btn[data-adjust-action="-15"]', "−"],
   ['.adjust-btn[data-adjust-action="-30"]', "⇧−"],
 ];
@@ -31,11 +35,13 @@ const HINTS = [
 // Rows for the ? help overlay.
 const SHORTCUTS = [
   ["J / K", "Prev / next devlog"],
-  ["E", "Jump to decision"],
   ["A / R", "Approve / reject"],
+  ["5 / 2", "Set 50% / 25%"],
+  ["+ / ⇧+", "Add 15 / 30 min"],
   ["− / ⇧−", "Cut 15 / 30 min"],
   ["T", "Open lapse recordings"],
   ["⌃ Space", "Focus internal notes"],
+  ["⌃ ⏎ ×2", "Complete review (twice)"],
   ["?", "Show this help"],
 ];
 
@@ -54,6 +60,7 @@ export default class extends Controller {
     document.removeEventListener("keydown", this.onKeydown);
     this.observer?.disconnect();
     this.endNavScroll();
+    this.disarmComplete();
     this.clearHighlight();
     this.undecorateHints();
     this.legend?.remove();
@@ -80,6 +87,13 @@ export default class extends Controller {
       return this.consume(event, () => this.openNotes());
     }
 
+    // ctrl/⌘ + Enter completes the review — a deliberate chord (works even while
+    // typing) that arms on the first press and confirms on the second, so a
+    // stray keystroke can never finalize the whole review.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key === "Enter") {
+      return this.consume(event, () => this.completeReview());
+    }
+
     // Escape drops focus out of a field (e.g. the internal-notes box opened with
     // ctrl+space, or the minutes input) so the reviewer can jump back to the
     // single-key shortcuts. Handled before the typing guard so it fires while a
@@ -100,9 +114,12 @@ export default class extends Controller {
     switch (event.key) {
       case "j": return this.consume(event, () => this.stepDevlog(1));
       case "k": return this.consume(event, () => this.stepDevlog(-1));
-      case "e": return this.consume(event, () => this.openDecision());
       case "a": return this.consume(event, () => this.clickCurrent(".btn-approve"));
       case "r": return this.consume(event, () => this.clickCurrent(".btn-reject"));
+      case "5": return this.consume(event, () => this.adjustTime("50%"));
+      case "2": return this.consume(event, () => this.adjustTime("25%"));
+      case "=": return this.consume(event, () => this.adjustMinutes(15));
+      case "+": return this.consume(event, () => this.adjustMinutes(30));
       case "-": return this.consume(event, () => this.adjustTime("-15"));
       case "_": return this.consume(event, () => this.adjustTime("-30"));
       case "t": return this.consume(event, () => this.openLapses());
@@ -230,14 +247,6 @@ export default class extends Controller {
   }
 
   // ── Actions on the current devlog ───────────────────────────────────────
-  // "e" brings the current devlog's decision panel into view. It deliberately
-  // does NOT focus a field: focusing an input trips the typing guard and would
-  // swallow the a/r verdict keys the reviewer reaches for next.
-  openDecision() {
-    const panel = this.currentDevlog()?.querySelector(".devlog-review-panel");
-    panel?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }
-
   // Click a control on the current devlog if present and enabled. The devlog
   // controller autosaves; single-press is fine since these are reversible.
   clickCurrent(selector) {
@@ -247,8 +256,43 @@ export default class extends Controller {
     if (btn && !btn.disabled) btn.click();
   }
 
+  // Click one of the current devlog's quick-adjust buttons (50% / 25% / -15 / -30).
   adjustTime(delta) {
     this.clickCurrent(`.adjust-btn[data-adjust-action="${delta}"]`);
+  }
+
+  // Increase the current devlog's approved minutes: there's no +button, so bump
+  // the input directly and fire `input` so the devlog controller saves + updates
+  // the hours display, matching how the quick-adjust buttons feed it.
+  adjustMinutes(delta) {
+    const input = this.currentDevlog()?.querySelector(".minutes-input");
+    if (!input || input.disabled) return;
+    const current = parseInt(input.value, 10);
+    input.value = Math.max(0, (Number.isNaN(current) ? 0 : current) + delta);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // Complete the whole review. Destructive + irreversible, so it's armed on the
+  // first press (with a visual cue) and only fires on a second press within the
+  // window — a keyboard "are you sure?".
+  completeReview() {
+    const btn = this.element.querySelector(".btn-complete");
+    if (!btn || btn.disabled) return;
+    if (this.completeArmed) {
+      this.disarmComplete();
+      btn.click();
+      return;
+    }
+    this.completeArmed = true;
+    btn.classList.add("btn-complete--armed");
+    clearTimeout(this.completeArmTimer);
+    this.completeArmTimer = setTimeout(() => this.disarmComplete(), 1500);
+  }
+
+  disarmComplete() {
+    this.completeArmed = false;
+    clearTimeout(this.completeArmTimer);
+    this.element.querySelector(".btn-complete")?.classList.remove("btn-complete--armed");
   }
 
   // Open the current devlog's first recording tile — this hands off to the
@@ -310,12 +354,13 @@ export default class extends Controller {
         const el = devlog.querySelector(selector);
         if (el) this.addHint(el, label);
       });
-      const title = devlog.querySelector(".devlog-review-panel .panel-title");
-      if (title) this.addHint(title, "E");
       const notes = devlog.querySelector(".notes-textarea");
       const notesLabel = notes?.closest(".panel-section")?.querySelector(".panel-label");
       if (notesLabel) this.addHint(notesLabel, "⌃Space");
     });
+    // Page-level Complete button (double-tap ctrl+enter), placed once outside the loop.
+    const complete = this.element.querySelector(".btn-complete");
+    if (complete) this.addHint(complete, "⌃⏎");
   }
 
   addHint(el, label) {
