@@ -3104,10 +3104,10 @@ body:has(.certification-ysws) {
 
 .ysws-kbd-legend {
   position: fixed;
-  // Pinned bottom-LEFT: the Complete/checklist actions-card floats bottom-right,
-  // so keeping the legend on the opposite corner stops the card burying it.
-  left: var(--space-m);
-  bottom: var(--space-m);
+  // Pinned top-RIGHT, clear of the Complete/checklist actions-card that floats
+  // bottom-right.
+  right: var(--space-m);
+  top: var(--space-m);
   z-index: 60;
   display: flex;
   align-items: center;
