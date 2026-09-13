@@ -1539,31 +1539,6 @@ body:has(.certification-ysws) {
       }
     }
 
-    // Keyboard-shortcut cursor (:ysws_review_shortcuts): marks the current devlog
-    // the j/k nav and verdict keys act on. A crisp mint ring frames the card and
-    // its Review Decision panel (where the keys actually fire) gets a matching
-    // accent, so the target reads clearly without tinting the whole row. Negative
-    // inline margins let the ring bleed into the card padding and the matching
-    // inline padding keeps the content from shifting as the cursor moves.
-    .devlog-item--kbd-active {
-      margin-inline: calc(-1 * var(--space-s));
-      padding-inline: var(--space-s);
-      border-radius: var(--profile-radius);
-      outline: 2px solid
-        color-mix(in srgb, var(--color-brand-mint) 70%, transparent);
-      outline-offset: -2px;
-
-      .devlog-review-panel {
-        border-color: color-mix(
-          in srgb,
-          var(--color-brand-mint) 60%,
-          var(--color-space-border)
-        );
-        box-shadow: 0 0 0 1px
-          color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
-      }
-    }
-
     .devlog-status.status-frozen {
       background: rgba(255, 255, 255, 0.08);
       color: var(--color-space-text-muted);

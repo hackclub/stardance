@@ -61,7 +61,6 @@ export default class extends Controller {
     this.observer?.disconnect();
     this.endNavScroll();
     this.disarmComplete();
-    this.clearHighlight();
     this.undecorateHints();
     this.legend?.remove();
     this.dialog?.remove();
@@ -185,15 +184,12 @@ export default class extends Controller {
     this.setDevlog(this.currentIndex + delta);
   }
 
-  // Update the cursor WITHOUT scrolling — shared by keyboard nav (which then
-  // scrolls) and the scroll observer (which must not).
+  // Track which devlog is current (clamped). Kept as an internal cursor for the
+  // nav/verdict/lapse keys; there's no visual highlight — it read as noise.
   markCurrent(index) {
     const els = this.devlogEls();
     if (!els.length) return;
     this.currentIndex = Math.max(0, Math.min(index, els.length - 1));
-    els.forEach((el, i) =>
-      el.classList.toggle("devlog-item--kbd-active", i === this.currentIndex),
-    );
   }
 
   // j/k: move the cursor and smoothly scroll the card into view. The smooth
@@ -281,12 +277,6 @@ export default class extends Controller {
     return this.devlogEls()
       .map((item) => item.querySelector(".devlog-review-panel"))
       .filter(Boolean);
-  }
-
-  clearHighlight() {
-    this.element
-      .querySelectorAll(".devlog-item--kbd-active")
-      .forEach((el) => el.classList.remove("devlog-item--kbd-active"));
   }
 
   // ── Actions on the current devlog ───────────────────────────────────────
