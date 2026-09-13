@@ -22,10 +22,14 @@ export default class extends Controller {
   open(event) {
     // Let the browser handle modified/non-primary clicks (open the raw video in a
     // new tab/window) — only a plain left-click opens the in-page lightbox.
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button > 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button > 0)
+      return;
     event.preventDefault();
     const link = event.currentTarget;
-    const items = this.itemTargets.map((tile) => ({ type: "video", src: tile.href }));
+    const items = this.itemTargets.map((tile) => ({
+      type: "video",
+      src: tile.href,
+    }));
     if (!items.length) return;
     this.showLightbox(items, Math.max(0, this.itemTargets.indexOf(link)));
   }
@@ -33,21 +37,34 @@ export default class extends Controller {
   // ── Modal keyboard shortcuts (bound only while the lightbox is open) ──────
   onKeydown(event) {
     if (!this.lightbox || event.altKey) return;
-    if (event.key === "Escape") return this.consume(event, () => this.closeLightbox());
+    if (event.key === "Escape")
+      return this.consume(event, () => this.closeLightbox());
     // Video → Premiere-style JKL transport + arrow scrubbing (shift = coarse).
     if (this.lbVideo) {
-      if (event.code === "Space") return this.consume(event, () => this.togglePlay());
-      if (event.code === "KeyJ") return this.consume(event, () => this.nudgeRate(-1));
-      if (event.code === "KeyK") return this.consume(event, () => this.togglePlay());
-      if (event.code === "KeyL") return this.consume(event, () => this.nudgeRate(1));
+      if (event.code === "Space")
+        return this.consume(event, () => this.togglePlay());
+      if (event.code === "KeyJ")
+        return this.consume(event, () => this.nudgeRate(-1));
+      if (event.code === "KeyK")
+        return this.consume(event, () => this.togglePlay());
+      if (event.code === "KeyL")
+        return this.consume(event, () => this.nudgeRate(1));
       // vim: h mirrors ← scrub (→'s vim key `l` is taken by forward-transport).
-      if (event.key === "ArrowLeft" || event.code === "KeyH") return this.consume(event, () => this.stepVideo(event.shiftKey ? -10 : -1));
-      if (event.key === "ArrowRight") return this.consume(event, () => this.stepVideo(event.shiftKey ? 10 : 1));
+      if (event.key === "ArrowLeft" || event.code === "KeyH")
+        return this.consume(event, () =>
+          this.stepVideo(event.shiftKey ? -10 : -1),
+        );
+      if (event.key === "ArrowRight")
+        return this.consume(event, () =>
+          this.stepVideo(event.shiftKey ? 10 : 1),
+        );
       return;
     }
     // Non-video slides → prev/next (vim h/l mirror ←/→).
-    if (event.key === "ArrowLeft" || event.code === "KeyH") return this.consume(event, () => this.stepLightbox(-1));
-    if (event.key === "ArrowRight" || event.code === "KeyL") return this.consume(event, () => this.stepLightbox(1));
+    if (event.key === "ArrowLeft" || event.code === "KeyH")
+      return this.consume(event, () => this.stepLightbox(-1));
+    if (event.key === "ArrowRight" || event.code === "KeyL")
+      return this.consume(event, () => this.stepLightbox(1));
   }
 
   consume(event, fn) {
@@ -67,7 +84,9 @@ export default class extends Controller {
     box.setAttribute("aria-modal", "true");
     // Backdrop click closes a non-video lightbox; for video it doesn't — so
     // clicking near the player (to pause) never closes it. Use × or esc.
-    box.addEventListener("click", (e) => { if (e.target === box && !this.lbVideo) this.closeLightbox(); });
+    box.addEventListener("click", (e) => {
+      if (e.target === box && !this.lbVideo) this.closeLightbox();
+    });
 
     const close = document.createElement("button");
     close.type = "button";
@@ -115,15 +134,23 @@ export default class extends Controller {
   // control calls the same methods the keyboard does, so the two stay in sync.
   mountVideoPlayer(item) {
     const video = document.createElement("video");
-    Object.assign(video, { src: item.src, controls: false, autoplay: true, playsInline: true });
+    Object.assign(video, {
+      src: item.src,
+      controls: false,
+      autoplay: true,
+      playsInline: true,
+    });
     video.className = "lapse-player__lightbox-media";
-    video.addEventListener("click", (event) => { event.stopPropagation(); this.togglePlay(); });
+    video.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.togglePlay();
+    });
     video.addEventListener("loadedmetadata", () => this.syncPlayerUI());
     video.addEventListener("timeupdate", () => this.syncPlayerUI());
     video.addEventListener("ended", () => this.applyRate(0));
     this.lbVideo = video;
-    this.rate = 1;      // signed speed: + forward, − reverse, 0 paused (autoplay = 1×)
-    this.lastRate = 1;  // K resumes here after a pause
+    this.rate = 1; // signed speed: + forward, − reverse, 0 paused (autoplay = 1×)
+    this.lastRate = 1; // K resumes here after a pause
 
     this.lbStage.append(video, this.buildPlayerBar());
     this.syncPlayerUI();
@@ -146,16 +173,28 @@ export default class extends Controller {
     this.lbHandle.className = "lapse-player__player-handle";
     this.lbProgress.appendChild(this.lbHandle);
     scrub.append(this.lbBuffered, this.lbProgress);
-    scrub.addEventListener("pointerdown", (event) => this.scrubFrom(event, scrub));
+    scrub.addEventListener("pointerdown", (event) =>
+      this.scrubFrom(event, scrub),
+    );
 
     const row = document.createElement("div");
     row.className = "lapse-player__player-row";
 
     const left = document.createElement("div");
     left.className = "lapse-player__player-cluster";
-    this.lbPlayBtn = this.playerButton("❚❚", "Play / pause · k or space", () => this.togglePlay());
-    const back = this.playerButton("⟨", "Step back 1s · ← / h (shift = 10s)", () => this.stepVideo(-1));
-    const fwd = this.playerButton("⟩", "Step forward 1s · → (shift = 10s)", () => this.stepVideo(1));
+    this.lbPlayBtn = this.playerButton("❚❚", "Play / pause · k or space", () =>
+      this.togglePlay(),
+    );
+    const back = this.playerButton(
+      "⟨",
+      "Step back 1s · ← / h (shift = 10s)",
+      () => this.stepVideo(-1),
+    );
+    const fwd = this.playerButton(
+      "⟩",
+      "Step forward 1s · → (shift = 10s)",
+      () => this.stepVideo(1),
+    );
     this.lbTime = document.createElement("span");
     this.lbTime.className = "lapse-player__player-time";
     left.append(this.lbPlayBtn, back, fwd, this.lbTime);
@@ -225,11 +264,13 @@ export default class extends Controller {
       const end = video.buffered.end(video.buffered.length - 1);
       this.lbBuffered.style.width = `${(end / video.duration) * 100}%`;
     }
-    if (this.lbTime) this.lbTime.textContent = `${this.fmtTime(video.currentTime)} / ${this.fmtTime(video.duration)}`;
-    this.lbSpeedPills?.forEach((pill, i) => pill.classList.toggle("is-active", this.RATE_LADDER[i] === this.rate));
+    if (this.lbTime)
+      this.lbTime.textContent = `${this.fmtTime(video.currentTime)} / ${this.fmtTime(video.duration)}`;
+    this.lbSpeedPills?.forEach((pill, i) =>
+      pill.classList.toggle("is-active", this.RATE_LADDER[i] === this.rate),
+    );
     if (this.lbCaption) {
-      this.lbCaption.textContent =
-        `${this.lbIndex + 1} / ${this.lbItems.length} · j/k/l transport · ←/→ scrub (shift = 10s) · esc to close`;
+      this.lbCaption.textContent = `${this.lbIndex + 1} / ${this.lbItems.length} · j/k/l transport · ←/→ scrub (shift = 10s) · esc to close`;
     }
   }
 
@@ -245,7 +286,7 @@ export default class extends Controller {
   // faster-reverse, meeting in the middle (…4×▶ 2×▶ 1×▶ | 1×◀ 2×◀…). So from 8×
   // forward, J steps down to 4×. HTML5 video can't play backwards, so reverse is
   // emulated with a timer that walks currentTime back.
-  RATE_LADDER = [ -8, -4, -2, -1, 1, 2, 4, 8 ];
+  RATE_LADDER = [-8, -4, -2, -1, 1, 2, 4, 8];
 
   nudgeRate(direction) {
     if (!this.lbVideo) return;
@@ -254,9 +295,14 @@ export default class extends Controller {
       next = direction > 0 ? 1 : -1;
     } else {
       const i = this.RATE_LADDER.indexOf(this.rate);
-      next = i === -1
-        ? (direction > 0 ? 1 : -1)
-        : this.RATE_LADDER[Math.max(0, Math.min(this.RATE_LADDER.length - 1, i + direction))];
+      next =
+        i === -1
+          ? direction > 0
+            ? 1
+            : -1
+          : this.RATE_LADDER[
+              Math.max(0, Math.min(this.RATE_LADDER.length - 1, i + direction))
+            ];
     }
     this.applyRate(next);
   }
@@ -314,7 +360,10 @@ export default class extends Controller {
     if (!this.lbVideo) return;
     this.applyRate(0); // frame-scrub pauses first
     const max = this.lbVideo.duration || Number.MAX_SAFE_INTEGER;
-    this.lbVideo.currentTime = Math.max(0, Math.min(max, this.lbVideo.currentTime + seconds));
+    this.lbVideo.currentTime = Math.max(
+      0,
+      Math.min(max, this.lbVideo.currentTime + seconds),
+    );
     this.syncPlayerUI();
   }
 

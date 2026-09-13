@@ -76,21 +76,30 @@ export default class extends Controller {
 
     // The help overlay is modal: Escape closes it and nothing else fires.
     if (this.dialog?.open) {
-      if (event.key === "Escape") return this.consume(event, () => this.dialog.close());
+      if (event.key === "Escape")
+        return this.consume(event, () => this.dialog.close());
       return;
     }
 
     // ctrl/⌘ + space focuses the current devlog's internal-notes box. It's a
     // chord (never inserts text), so it works even while typing elsewhere and is
     // handled before the plain-key guards below.
-    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.code === "Space") {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      event.code === "Space"
+    ) {
       return this.consume(event, () => this.openNotes());
     }
 
     // ctrl/⌘ + Enter completes the review — a deliberate chord (works even while
     // typing) that arms on the first press and confirms on the second, so a
     // stray keystroke can never finalize the whole review.
-    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key === "Enter") {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      event.key === "Enter"
+    ) {
       return this.consume(event, () => this.completeReview());
     }
 
@@ -100,7 +109,12 @@ export default class extends Controller {
     // field is focused.
     if (event.key === "Escape") {
       const el = document.activeElement;
-      if (el && el !== document.body && this.element.contains(el) && typeof el.blur === "function") {
+      if (
+        el &&
+        el !== document.body &&
+        this.element.contains(el) &&
+        typeof el.blur === "function"
+      ) {
         return this.consume(event, () => el.blur());
       }
       return;
@@ -112,18 +126,30 @@ export default class extends Controller {
     if (this.isTyping(event.target)) return;
 
     switch (event.key) {
-      case "j": return this.consume(event, () => this.stepDevlog(1));
-      case "k": return this.consume(event, () => this.stepDevlog(-1));
-      case "a": return this.consume(event, () => this.clickCurrent(".btn-approve"));
-      case "r": return this.consume(event, () => this.clickCurrent(".btn-reject"));
-      case "5": return this.consume(event, () => this.adjustTime("50%"));
-      case "2": return this.consume(event, () => this.adjustTime("25%"));
-      case "=": return this.consume(event, () => this.adjustMinutes(15));
-      case "+": return this.consume(event, () => this.adjustMinutes(30));
-      case "-": return this.consume(event, () => this.adjustTime("-15"));
-      case "_": return this.consume(event, () => this.adjustTime("-30"));
-      case "t": return this.consume(event, () => this.openLapses());
-      case "?": return this.consume(event, () => this.toggleHelp());
+      case "j":
+        return this.consume(event, () => this.stepDevlog(1));
+      case "k":
+        return this.consume(event, () => this.stepDevlog(-1));
+      case "a":
+        return this.consume(event, () => this.clickCurrent(".btn-approve"));
+      case "r":
+        return this.consume(event, () => this.clickCurrent(".btn-reject"));
+      case "5":
+        return this.consume(event, () => this.adjustTime("50%"));
+      case "2":
+        return this.consume(event, () => this.adjustTime("25%"));
+      case "=":
+        return this.consume(event, () => this.adjustMinutes(15));
+      case "+":
+        return this.consume(event, () => this.adjustMinutes(30));
+      case "-":
+        return this.consume(event, () => this.adjustTime("-15"));
+      case "_":
+        return this.consume(event, () => this.adjustTime("-30"));
+      case "t":
+        return this.consume(event, () => this.openLapses());
+      case "?":
+        return this.consume(event, () => this.toggleHelp());
     }
   }
 
@@ -134,7 +160,10 @@ export default class extends Controller {
 
   isTyping(el) {
     if (!el) return false;
-    return ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.isContentEditable;
+    return (
+      ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
+      el.isContentEditable
+    );
   }
 
   // ── Devlog navigation ──────────────────────────────────────────────────
@@ -143,7 +172,9 @@ export default class extends Controller {
   // Frozen prior-review cards render first in the DOM; including them made the
   // cursor land on a card with no buttons, so a/r/e appeared to do nothing.
   devlogEls() {
-    return Array.from(this.element.querySelectorAll(".devlog-item:not(.devlog-item--frozen)"));
+    return Array.from(
+      this.element.querySelectorAll(".devlog-item:not(.devlog-item--frozen)"),
+    );
   }
 
   currentDevlog() {
@@ -160,7 +191,9 @@ export default class extends Controller {
     const els = this.devlogEls();
     if (!els.length) return;
     this.currentIndex = Math.max(0, Math.min(index, els.length - 1));
-    els.forEach((el, i) => el.classList.toggle("devlog-item--kbd-active", i === this.currentIndex));
+    els.forEach((el, i) =>
+      el.classList.toggle("devlog-item--kbd-active", i === this.currentIndex),
+    );
   }
 
   // j/k: move the cursor and smoothly scroll the card into view. The smooth
@@ -170,7 +203,10 @@ export default class extends Controller {
   setDevlog(index) {
     this.markCurrent(index);
     this.beginNavScroll();
-    this.devlogEls()[this.currentIndex]?.scrollIntoView({ block: "start", behavior: "smooth" });
+    this.devlogEls()[this.currentIndex]?.scrollIntoView({
+      block: "start",
+      behavior: "smooth",
+    });
   }
 
   // Suspend observer re-selection until the programmatic smooth scroll finishes.
@@ -179,7 +215,8 @@ export default class extends Controller {
   beginNavScroll() {
     this.navScrolling = true;
     clearTimeout(this.navScrollTimeout);
-    if (this.onScrollEnd) window.removeEventListener("scrollend", this.onScrollEnd);
+    if (this.onScrollEnd)
+      window.removeEventListener("scrollend", this.onScrollEnd);
     this.onScrollEnd = () => this.endNavScroll();
     window.addEventListener("scrollend", this.onScrollEnd, { once: true });
     // scrollend never fires when the target is already in place (no scroll), which
@@ -209,27 +246,33 @@ export default class extends Controller {
     const panels = this.reviewPanels();
     if (!panels.length || typeof IntersectionObserver === "undefined") return;
     this.panelArea = new Map(); // panel element -> visible pixel area
-    this.observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        const rect = entry.intersectionRect;
-        this.panelArea.set(entry.target, entry.isIntersecting ? rect.width * rect.height : 0);
-      }
-      // Don't re-select while a keyboard nav's smooth scroll is still running —
-      // that scroll is what fires this callback, and reacting to it fights j/k.
-      if (this.navScrolling) return;
-      let best = null;
-      let bestArea = 0;
-      for (const [panel, area] of this.panelArea) {
-        if (area > bestArea) {
-          bestArea = area;
-          best = panel;
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const rect = entry.intersectionRect;
+          this.panelArea.set(
+            entry.target,
+            entry.isIntersecting ? rect.width * rect.height : 0,
+          );
         }
-      }
-      if (best && bestArea > 0) {
-        const i = this.devlogEls().indexOf(best.closest(".devlog-item"));
-        if (i !== -1 && i !== this.currentIndex) this.markCurrent(i);
-      }
-    }, { root: null, threshold: Array.from({ length: 21 }, (_, i) => i / 20) });
+        // Don't re-select while a keyboard nav's smooth scroll is still running —
+        // that scroll is what fires this callback, and reacting to it fights j/k.
+        if (this.navScrolling) return;
+        let best = null;
+        let bestArea = 0;
+        for (const [panel, area] of this.panelArea) {
+          if (area > bestArea) {
+            bestArea = area;
+            best = panel;
+          }
+        }
+        if (best && bestArea > 0) {
+          const i = this.devlogEls().indexOf(best.closest(".devlog-item"));
+          if (i !== -1 && i !== this.currentIndex) this.markCurrent(i);
+        }
+      },
+      { root: null, threshold: Array.from({ length: 21 }, (_, i) => i / 20) },
+    );
     panels.forEach((panel) => this.observer.observe(panel));
   }
 
@@ -292,7 +335,9 @@ export default class extends Controller {
   disarmComplete() {
     this.completeArmed = false;
     clearTimeout(this.completeArmTimer);
-    this.element.querySelector(".btn-complete")?.classList.remove("btn-complete--armed");
+    this.element
+      .querySelector(".btn-complete")
+      ?.classList.remove("btn-complete--armed");
   }
 
   // Open the current devlog's first recording tile — this hands off to the
@@ -301,7 +346,9 @@ export default class extends Controller {
   openLapses() {
     const devlog = this.currentDevlog();
     const tile =
-      devlog?.querySelector(".devlog-recordings-section .recording-gallery__item") ||
+      devlog?.querySelector(
+        ".devlog-recordings-section .recording-gallery__item",
+      ) ||
       this.element.querySelector(".recordings-card .recording-gallery__item");
     if (tile) tile.click();
   }
@@ -355,7 +402,9 @@ export default class extends Controller {
         if (el) this.addHint(el, label);
       });
       const notes = devlog.querySelector(".notes-textarea");
-      const notesLabel = notes?.closest(".panel-section")?.querySelector(".panel-label");
+      const notesLabel = notes
+        ?.closest(".panel-section")
+        ?.querySelector(".panel-label");
       if (notesLabel) this.addHint(notesLabel, "⌃Space");
     });
     // Page-level Complete button (double-tap ctrl+enter), placed once outside the loop.
@@ -380,8 +429,15 @@ export default class extends Controller {
     legend.className = "ysws-kbd-legend";
     legend.innerHTML =
       `<span class="ysws-kbd-legend__title">Shortcuts</span>` +
-      [["J / K", "devlogs"], ["T", "lapses"], ["?", "more"]]
-        .map(([key, desc]) => `<span class="ysws-kbd-legend__item"><kbd class="kbd-hint">${key}</kbd>${desc}</span>`)
+      [
+        ["J / K", "devlogs"],
+        ["T", "lapses"],
+        ["?", "more"],
+      ]
+        .map(
+          ([key, desc]) =>
+            `<span class="ysws-kbd-legend__item"><kbd class="kbd-hint">${key}</kbd>${desc}</span>`,
+        )
         .join("");
     document.body.appendChild(legend);
     this.legend = legend;

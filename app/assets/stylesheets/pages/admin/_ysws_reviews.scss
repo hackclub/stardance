@@ -1549,12 +1549,18 @@ body:has(.certification-ysws) {
       margin-inline: calc(-1 * var(--space-s));
       padding-inline: var(--space-s);
       border-radius: var(--profile-radius);
-      outline: 2px solid color-mix(in srgb, var(--color-brand-mint) 70%, transparent);
+      outline: 2px solid
+        color-mix(in srgb, var(--color-brand-mint) 70%, transparent);
       outline-offset: -2px;
 
       .devlog-review-panel {
-        border-color: color-mix(in srgb, var(--color-brand-mint) 60%, var(--color-space-border));
-        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
+        border-color: color-mix(
+          in srgb,
+          var(--color-brand-mint) 60%,
+          var(--color-space-border)
+        );
+        box-shadow: 0 0 0 1px
+          color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
       }
     }
 
@@ -2083,8 +2089,8 @@ body:has(.certification-ysws) {
           box-shadow: 0 4px 16px rgba(129, 255, 255, 0.4);
         }
 
-        // Armed by the first `c` press: a pulsing ring says "press C again to
-        // confirm" before the second press actually completes the review.
+        // Armed by the first ctrl+enter: a pulsing ring says "press ctrl+enter
+        // again to confirm" before the second press completes the review.
         &.btn-complete--armed {
           outline: 3px solid var(--color-brand-off-white);
           outline-offset: 2px;
@@ -3153,8 +3159,13 @@ body:has(.certification-ysws) {
 }
 
 // Pulse for the Complete Review button while it's armed for its confirming
-// second `c` press (certification--ysws--keyboard-shortcuts).
+// second ctrl+enter press (certification--ysws--keyboard-shortcuts).
 @keyframes ysws-complete-arm-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 252, 244, 0.55); }
-  50% { box-shadow: 0 0 12px 4px rgba(255, 252, 244, 0.35); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 252, 244, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(255, 252, 244, 0.35);
+  }
 }
