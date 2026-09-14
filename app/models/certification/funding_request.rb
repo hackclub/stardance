@@ -434,7 +434,9 @@ module Certification
     def owner_eligible_for_funding
       return if project.blank?
 
-      if !owner&.identity_verified?
+      if owner&.banned?
+        errors.add(:base, "This account isn't eligible to request funding.")
+      elsif !owner&.identity_verified?
         errors.add(:base, "Verify your identity before requesting funding.")
       elsif !owner.ysws_eligible?
         errors.add(:base, "You're not eligible for YSWS prizes yet, so we can't fund this build. Check the Hack Club portal for details.")
@@ -503,6 +505,10 @@ module Certification
     def apply_verdict_to_project!
       return unless decided?
       return unless latest_for_project?
+      # A banned owner's request must not advance their (now soft-deleted)
+      # project. Belt-and-braces alongside the create-time eligibility check and
+      # the withdrawal of pending requests on ban (User#ban!).
+      return if owner&.banned?
       project.with_lock do
         case status.to_sym
         when :approved
@@ -517,7 +523,15 @@ module Certification
     def issue_hcb_grant!
       return if hcb_grant_hashid.present?
 
-      owner = project.memberships.owner.first&.user || user
+      # Never send money to a banned owner. The grant callback is guarded on a
+      # missing hashid rather than the status change, so a banned user whose
+      # request was approved and whose first grant attempt failed would
+      # otherwise retry issuance on the next save.
+      if owner&.banned?
+        Rails.logger.warn "Skipping HCB grant for FundingRequest ##{id}: owner ##{owner.id} is banned"
+        return
+      end
+
       grant = HCBService.create_card_grant(
         email: owner.grant_email,
         amount_cents: final_amount_cents,

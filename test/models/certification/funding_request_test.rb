@@ -278,6 +278,48 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
     assert fr.errors[:feedback_images].any?
   end
 
+  test "a banned owner cannot create a funding request" do
+    @owner.update!(banned: true)
+    fr = @project.certification_funding_requests.new(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000
+    )
+    assert_not fr.valid?
+    assert_includes fr.errors[:base], "This account isn't eligible to request funding."
+  end
+
+  test "approving a banned owner's request issues no grant and does not advance the project" do
+    Certification::FundingRequest.create!(
+      project: @project, user: @owner, complexity_tier: 3, requested_amount_cents: 6_000, status: :pending
+    )
+    @owner.update!(banned: true)
+    # Reload the request the way the approval request would: a fresh instance
+    # that resolves the (now banned) owner from the database rather than a memo
+    # captured before the ban.
+    fr = Certification::FundingRequest.find_by!(project: @project)
+
+    grant_called = false
+    HCBService.stub(:create_card_grant, ->(*) { grant_called = true; HCB_GRANT_RESPONSE }) do
+      fr.update!(reviewer: @reviewer, status: :approved)
+    end
+
+    assert_not grant_called, "a banned owner must never be paid an HCB grant"
+    assert_nil fr.reload.hcb_grant_hashid
+    assert_equal "design", @project.reload.hardware_stage,
+      "a banned owner's project must not advance to build"
+  end
+
+  test "banning the owner withdraws their pending funding request" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
+    )
+
+    @owner.ban!(reason: "spam")
+
+    assert_equal "withdrawn", fr.reload.status,
+      "a pending request must be withdrawn when its owner is banned"
+    assert_equal "spam", fr.internal_reason
+  end
+
   private
 
   PIXEL_PNG = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=")
