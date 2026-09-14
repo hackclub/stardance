@@ -435,7 +435,7 @@ module Certification
       return if project.blank?
 
       if owner&.banned?
-        errors.add(:base, "This account isn't eligible to request funding.")
+        errors.add(:base, "The project owner is banned and can't request funding.")
       elsif !owner&.identity_verified?
         errors.add(:base, "Verify your identity before requesting funding.")
       elsif !owner.ysws_eligible?

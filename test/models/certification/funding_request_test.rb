@@ -284,7 +284,7 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
       user: @owner, complexity_tier: 2, requested_amount_cents: 3_000
     )
     assert_not fr.valid?
-    assert_includes fr.errors[:base], "This account isn't eligible to request funding."
+    assert_includes fr.errors[:base], "The project owner is banned and can't request funding."
   end
 
   test "approving a banned owner's request issues no grant and does not advance the project" do
