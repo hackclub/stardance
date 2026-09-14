@@ -22,6 +22,8 @@
       <%= admin_page_button "Mission Reviews", admin_mission_reviews_path,
         enabled: Pundit.policy!(pundit_user, Mission::Submission).index?,
         count: "mission_reviews" %>
+      <%= admin_page_button "Banned-user Grants", admin_certification_banned_funding_grants_path,
+        enabled: policy(Certification::FundingRequest).banned_grants? %>
     </div>
   </section>
 

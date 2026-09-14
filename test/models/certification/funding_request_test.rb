@@ -308,6 +308,26 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
       "a banned owner's project must not advance to build"
   end
 
+  test "with_banned_owner_grant lists approved grants whose recipient is banned" do
+    fr = @project.certification_funding_requests.create!(
+      user: @owner, complexity_tier: 3, requested_amount_cents: 6_000, status: :pending
+    )
+    HCBService.stub(:create_card_grant, HCB_GRANT_RESPONSE) do
+      fr.update!(reviewer: @reviewer, status: :approved)
+    end
+    assert fr.reload.hcb_grant_hashid.present?
+
+    # A grant to a user in good standing is not on the report.
+    assert_not_includes Certification::FundingRequest.with_banned_owner_grant, fr
+
+    @owner.update!(banned: true)
+    assert_includes Certification::FundingRequest.with_banned_owner_grant, fr
+
+    # Once reversed (grant cancelled) it drops off the report.
+    fr.update_column(:reversed_at, Time.current)
+    assert_not_includes Certification::FundingRequest.with_banned_owner_grant, fr
+  end
+
   test "banning the owner withdraws their pending funding request" do
     fr = @project.certification_funding_requests.create!(
       user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending

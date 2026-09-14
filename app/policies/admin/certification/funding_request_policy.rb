@@ -23,6 +23,12 @@ class Admin::Certification::FundingRequestPolicy < ApplicationPolicy
     user.admin? || own_review?
   end
 
+  # The admin claw-back report (approved grants whose recipient is now banned)
+  # and its cancel control move real money, so they're admin-only — not the
+  # wider reviewer team that can otherwise review funding.
+  def banned_grants? = user&.admin?
+  def cancel_banned_grant? = user&.admin?
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless user&.can_review?

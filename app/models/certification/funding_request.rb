@@ -175,6 +175,19 @@ module Certification
         .where.not(project_id: user.memberships.select(:project_id))
     }
 
+    # Approved funding requests that issued a live HCB card grant to a recipient
+    # who is now banned, and whose grant hasn't already been reversed. Powers the
+    # admin claw-back report: a user banned after their grant was issued keeps the
+    # money unless an admin cancels it. Covers both the project owner (who the
+    # grant is addressed to) and the submitter, mirroring how #owner resolves the
+    # recipient.
+    scope :with_banned_owner_grant, -> {
+      banned_users = User.where(banned: true)
+      banned_owner_project_ids = Project::Membership.owner.where(user: banned_users).select(:project_id)
+      live = approved.where.not(hcb_grant_hashid: nil).where(reversed_at: nil)
+      live.where(project_id: banned_owner_project_ids).or(live.where(user: banned_users))
+    }
+
     # What the global hardware design queue can actually hand a reviewer. A
     # request on a soft-deleted project is unreachable from every dash, and a
     # hardware mission's requests are reviewed on that mission's own dash, so
