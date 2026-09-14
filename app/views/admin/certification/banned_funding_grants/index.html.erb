@@ -1,0 +1,69 @@
+<% content_for :title, "Banned-user grants" %>
+
+<div class="banned-grants">
+  <h1 class="banned-grants__title">Banned-user funding grants</h1>
+  <p class="banned-grants__intro">
+    Approved funding requests that paid out an HCB card grant to a recipient who
+    is now banned. Cancelling a grant claws the money back in HCB and takes the
+    row off this list; it doesn't rewind the verdict.
+  </p>
+
+  <% if @funding_requests.any? %>
+    <table class="space-table">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Recipient</th>
+          <th>Amount</th>
+          <th>Tier</th>
+          <th>Grant</th>
+          <th>Approved</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @funding_requests.each do |fr| %>
+          <% modal_id = "cancel-grant-modal-#{fr.id}" %>
+          <tr>
+            <td><%= link_to fr.project.title, admin_project_path(fr.project) %></td>
+            <td>
+              <% if fr.owner %>
+                <%= link_to fr.owner.display_name, admin_user_path(fr.owner) %>
+              <% else %>
+                <span class="space-table__muted">—</span>
+              <% end %>
+              <span class="banned-grants__badge">banned</span>
+            </td>
+            <td>$<%= fr.final_amount_dollars %></td>
+            <td class="space-table__muted"><%= fr.tier_label %></td>
+            <td class="space-table__muted"><%= fr.hcb_grant_hashid %></td>
+            <td class="space-table__muted">
+              <%= fr.decided_at ? l(fr.decided_at.to_date, format: :short) : "—" %>
+            </td>
+            <td>
+              <button type="button" class="btn-danger"
+                      onclick="document.getElementById(<%= modal_id.to_json %>).showModal()">
+                Cancel grant
+              </button>
+              <%= render layout: "shared/modal", locals: { id: modal_id, title: "Cancel HCB grant", description: "Claws the money back in HCB. Cannot be undone." } do %>
+                <p>
+                  Cancel the $<%= fr.final_amount_dollars %> grant to
+                  <strong><%= fr.owner&.display_name || "this recipient" %></strong>
+                  for “<%= fr.project.title %>”?
+                </p>
+                <form action="<%= cancel_grant_admin_certification_banned_funding_grant_path(fr) %>" method="post">
+                  <%= hidden_field_tag :_method, "delete" %>
+                  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                  <button type="submit" class="btn-danger">Confirm cancel</button>
+                  <button type="button" onclick="document.getElementById(<%= modal_id.to_json %>).close()">Keep grant</button>
+                </form>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="banned-grants__empty">No approved grants are outstanding to banned users. Nothing to claw back. 🎉</p>
+  <% end %>
+</div>
