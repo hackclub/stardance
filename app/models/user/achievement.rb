@@ -70,7 +70,12 @@ class User
       )
     end
 
+    # rng_winner has its own dedicated notification (Notifications::RngWinner,
+    # sent once by RngWinnerNotificationJob with the prize redeem link) —
+    # skip the generic one here so holders aren't told twice about the same win.
     def notify_earned
+      return if achievement_slug == "rng_winner"
+
       ::Notifications::AchievementEarned.notify(recipient: user, record: self)
     end
   end
