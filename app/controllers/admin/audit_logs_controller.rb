@@ -100,6 +100,7 @@ module Admin
       "Raffle::Referral" => "Raffle::Referral",
       "Raffle::Week" => "Raffle::Week",
       "Certification::Ysws" => "Certification::Ysws",
+      "Certification::FundingRequest" => "Certification::FundingRequest",
       "StickyStreak" => "StickyStreak",
       "StickyStreakReward" => "StickyStreakReward",
       "StickyStreakClaim" => "StickyStreakClaim",

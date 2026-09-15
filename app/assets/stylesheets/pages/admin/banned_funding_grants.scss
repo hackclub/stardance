@@ -1,0 +1,30 @@
+.banned-grants {
+  &__title {
+    margin-bottom: 0.5rem;
+  }
+
+  &__intro {
+    max-width: 60ch;
+    margin-bottom: 1.5rem;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-s);
+  }
+
+  &__empty {
+    padding: 2rem 0;
+    color: var(--color-brand-cream);
+  }
+
+  &__badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.1em 0.5em;
+    border-radius: calc(var(--border-radius) * 0.4);
+    background: var(--color-brand-salmon);
+    color: var(--color-space-bg);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+}

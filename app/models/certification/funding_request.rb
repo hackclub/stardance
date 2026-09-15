@@ -175,6 +175,19 @@ module Certification
         .where.not(project_id: user.memberships.select(:project_id))
     }
 
+    # Approved funding requests that issued a live HCB card grant to a recipient
+    # who is now banned, and whose grant hasn't already been reversed. Powers the
+    # admin claw-back report: a user banned after their grant was issued keeps the
+    # money unless an admin cancels it. Covers both the project owner (who the
+    # grant is addressed to) and the submitter, mirroring how #owner resolves the
+    # recipient.
+    scope :with_banned_owner_grant, -> {
+      banned_users = User.where(banned: true)
+      banned_owner_project_ids = Project::Membership.owner.where(user: banned_users).select(:project_id)
+      live = approved.where.not(hcb_grant_hashid: nil).where(reversed_at: nil)
+      live.where(project_id: banned_owner_project_ids).or(live.where(user: banned_users))
+    }
+
     # What the global hardware design queue can actually hand a reviewer. A
     # request on a soft-deleted project is unreachable from every dash, and a
     # hardware mission's requests are reviewed on that mission's own dash, so
@@ -434,7 +447,9 @@ module Certification
     def owner_eligible_for_funding
       return if project.blank?
 
-      if !owner&.identity_verified?
+      if owner&.banned?
+        errors.add(:base, "The project owner is banned and can't request funding.")
+      elsif !owner&.identity_verified?
         errors.add(:base, "Verify your identity before requesting funding.")
       elsif !owner.ysws_eligible?
         errors.add(:base, "You're not eligible for YSWS prizes yet, so we can't fund this build. Check the Hack Club portal for details.")
@@ -503,6 +518,10 @@ module Certification
     def apply_verdict_to_project!
       return unless decided?
       return unless latest_for_project?
+      # A banned owner's request must not advance their (now soft-deleted)
+      # project. Belt-and-braces alongside the create-time eligibility check and
+      # the withdrawal of pending requests on ban (User#ban!).
+      return if owner&.banned?
       project.with_lock do
         case status.to_sym
         when :approved
@@ -517,7 +536,15 @@ module Certification
     def issue_hcb_grant!
       return if hcb_grant_hashid.present?
 
-      owner = project.memberships.owner.first&.user || user
+      # Never send money to a banned owner. The grant callback is guarded on a
+      # missing hashid rather than the status change, so a banned user whose
+      # request was approved and whose first grant attempt failed would
+      # otherwise retry issuance on the next save.
+      if owner&.banned?
+        Rails.logger.warn "Skipping HCB grant for FundingRequest ##{id}: owner ##{owner.id} is banned"
+        return
+      end
+
       grant = HCBService.create_card_grant(
         email: owner.grant_email,
         amount_cents: final_amount_cents,
