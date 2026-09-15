@@ -275,7 +275,7 @@
                 </div>
 
                 <% if project.description.present? %>
-                  <p class="profile-project-card__description"><%= project.description %></p>
+                  <p class="profile-project-card__description"><%= strip_tags(md(project.description, allow_images: false)).squish %></p>
                 <% end %>
 
                 <% mission = project.current_mission %>
