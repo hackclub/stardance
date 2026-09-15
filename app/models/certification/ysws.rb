@@ -529,6 +529,36 @@ module Certification
       update!(claimed_by: nil, claimed_at: nil)
     end
 
+    def completion_blocker
+      return "This review is no longer pending." unless pending?
+
+      check_and_update_unified_db_status!
+      return "This review is already in the unified DB" if in_unified_db.present?
+
+      reviews = devlog_reviews.to_a
+      return "Review all devlogs before completing." if reviews.any?(&:pending?)
+
+      approved = reviews.select(&:approved?)
+      if approved.any? && approved.none? { |review| review.justification.present? }
+        return "Add a justification to at least one approved devlog."
+      end
+
+      if reviews.any? { |review| review.rejected? && review.justification.blank? }
+        return "Add a justification to every rejected devlog."
+      end
+
+      nil
+    end
+
+    def complete_by!(user)
+      update!(
+        reviewer: user,
+        reviewed_at: Time.current,
+        claimed_by: nil,
+        claimed_at: nil
+      )
+    end
+
     def approved_minutes_total
       devlog_reviews.sum { |dr| dr.approved_minutes.to_i }
     end

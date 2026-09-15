@@ -19,22 +19,14 @@
   <header class="ysws-queue__header">
     <h1>YSWS Review Queue</h1>
 
-    <%# Continuous review flow (addon, ysws_review_flow): walks this same queue
-        one project at a time without a trip back here between each. It sits in
-        the header row rather than in .ysws-queue__summary because that row is a
-        two-child space-between layout, and a third child pushes the integrity
-        toggle into the middle of it. button_to renders its own <form>, so it
-        also has to stay outside #ysws-queue-filters.
-
-        Hidden while searching: search results can include already-reviewed rows,
-        and the flow walks the real pending queue, so offering it here would
-        promise something the button doesn't do. %>
-    <% if @reviews.any? && @search.blank? && ysws_flow_enabled? %>
-      <%= button_to ysws_flow.active? ? "Resume session →" : "Start reviewing →",
-                    admin_certification_ysws_flow_path,
+    <% if @reviews.any? && @search.blank? && ysws_review_flow_enabled? %>
+      <%= button_to "Start reviewing →",
+                    next_admin_certification_ysws_reviews_path,
                     method: :post,
+                    params: { flow: 1, step: 1 },
                     class: "ysws-queue__flow-btn",
-                    form_class: "ysws-queue__flow-form" %>
+                    form_class: "ysws-queue__flow-form",
+                    form: { data: { turbo: false } } %>
     <% end %>
   </header>
 

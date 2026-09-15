@@ -19,6 +19,24 @@
 // each cell's data-label attribute.
 
 .ysws-queue {
+  & &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-m);
+    margin-bottom: var(--space-s);
+
+    h1 {
+      margin-bottom: 0;
+    }
+  }
+
+  & &__flow-form {
+    margin: 0;
+    margin-left: auto;
+  }
+
   // Queue total on the left, integrity toggle pushed out to the right so it
   // lines up with the trailing edge of the table below.
   & &__summary {
@@ -431,6 +449,45 @@
   }
 }
 
+.admin-content .ysws-queue {
+  .ysws-queue__flow-form {
+    display: inline;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .ysws-queue__flow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 3px 16px;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-brand-highlight-secondary);
+      color: var(--color-set-1-bg);
+    }
+
+    &:active {
+      background: var(--color-brand-off-white);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+}
+
 // ============================================================================
 // REVIEW SHOW PAGE STYLES
 // ============================================================================
@@ -456,6 +513,106 @@ body:has(.certification-ysws) {
 
   @media (max-width: 600px) {
     padding: var(--space-m);
+  }
+
+  .ysws-flow-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-m);
+    max-width: 920px;
+    margin-bottom: var(--space-m);
+    padding: var(--space-s);
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-brand-mint) 42%,
+        var(--color-set-2-fg-secondary)
+      );
+    border-radius: 24px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-brand-blue) 16%, var(--color-set-2-bg)),
+      color-mix(in srgb, var(--color-brand-lilac) 14%, var(--color-set-2-bg))
+    );
+    box-shadow: 0 8px 24px var(--color-shadow-deep);
+  }
+
+  .ysws-flow-bar__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .ysws-flow-bar__label {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+
+    &::before {
+      content: "•";
+      margin-right: var(--space-xxs);
+      color: var(--color-brand-mint);
+    }
+  }
+
+  .ysws-flow-bar__count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding: 0.15rem 0.7rem;
+    border: 1px solid
+      color-mix(in srgb, var(--color-brand-mint) 50%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-brand-mint) 14%, transparent);
+    color: var(--color-brand-mint);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .ysws-flow-bar .ysws-flow-bar__form {
+    margin: 0;
+  }
+
+  .ysws-flow-bar .ysws-flow-bar__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0.3rem 0.9rem;
+    border: 1px solid var(--color-brand-blue);
+    border-radius: 999px;
+    background: var(--color-brand-blue);
+    color: var(--color-set-1-bg);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    line-height: 1.35;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-brand-mint);
+      border-color: var(--color-brand-mint);
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  .ysws-flow-bar .ysws-flow-bar__btn--end {
+    border-color: var(--color-brand-salmon);
+    background: transparent;
+    color: var(--color-brand-salmon);
+
+    &:hover {
+      background: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
   }
 
   h1 {
@@ -1927,6 +2084,15 @@ body:has(.certification-ysws) {
       display: flex;
       flex-direction: row;
       gap: var(--space-xs);
+    }
+
+    .action-buttons-grid__form {
+      width: 50%;
+      margin: 0;
+
+      .action-btn {
+        width: 100%;
+      }
     }
 
     .action-btn {
