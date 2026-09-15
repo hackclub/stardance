@@ -67,12 +67,6 @@ application.register(
   Certification__VideoDropController,
 );
 
-import Certification__Ysws__CompleteReviewController from "./certification/ysws/complete_review_controller";
-application.register(
-  "certification--ysws--complete-review",
-  Certification__Ysws__CompleteReviewController,
-);
-
 import Certification__Ysws__DevlogReviewController from "./certification/ysws/devlog_review_controller";
 application.register(
   "certification--ysws--devlog-review",
@@ -113,12 +107,6 @@ import Certification__Ysws__ReturnToShipCertController from "./certification/ysw
 application.register(
   "certification--ysws--return-to-ship-cert",
   Certification__Ysws__ReturnToShipCertController,
-);
-
-import Certification__Ysws__ReviewFlowController from "./certification/ysws/review_flow_controller";
-application.register(
-  "certification--ysws--review-flow",
-  Certification__Ysws__ReviewFlowController,
 );
 
 import Certification__Ysws__ReviewSidebarController from "./certification/ysws/review_sidebar_controller";
