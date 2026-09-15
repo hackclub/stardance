@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_01_035529) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_15_174652) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -890,6 +890,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_035529) do
     t.index ["project_id", "user_id"], name: "index_project_memberships_on_project_id_and_user_id", unique: true
     t.index ["project_id"], name: "index_project_memberships_on_project_id"
     t.index ["user_id"], name: "index_project_memberships_on_user_id"
+  end
+
+  create_table "project_mentions", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.string "metric_name"
+    t.integer "metric_value"
+    t.string "platform"
+    t.bigint "project_id", null: false
+    t.datetime "rejected_at"
+    t.bigint "reviewer_id"
+    t.text "reviewer_notes"
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.index ["project_id"], name: "index_project_mentions_on_project_id"
+    t.index ["reviewer_id"], name: "index_project_mentions_on_reviewer_id"
   end
 
   create_table "project_mission_attachments", force: :cascade do |t|
@@ -1832,6 +1848,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_035529) do
   add_foreign_key "project_languages", "projects"
   add_foreign_key "project_memberships", "projects"
   add_foreign_key "project_memberships", "users"
+  add_foreign_key "project_mentions", "projects"
+  add_foreign_key "project_mentions", "users", column: "reviewer_id"
   add_foreign_key "project_mission_attachments", "missions"
   add_foreign_key "project_mission_attachments", "projects"
   add_foreign_key "project_reports", "projects"
