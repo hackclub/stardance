@@ -52,6 +52,24 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       icon: "trophy",
       earned_check: ->(user) { DailyRoll.topped_a_day(user) },
       visibility: :hidden
+    ),
+    new(
+      slug: :viral_good,
+      name: "Good Viral Project",
+      description: "Shared your project with the world and it got noticed! Unlocks exclusive shop items.",
+      icon: "rocket",
+      stardust_reward: 50,
+      earned_check: ->(user) { user.earned_achievement?(:viral_good) },
+      visibility: :visible
+    ),
+    new(
+      slug: :viral_great,
+      name: "Great Viral Project",
+      description: "Your project blew up outside Hack Club. The world noticed what you built.",
+      icon: "fire",
+      stardust_reward: 50,
+      earned_check: ->(user) { user.earned_achievement?(:viral_great) },
+      visibility: :visible
     )
   ].freeze
 
