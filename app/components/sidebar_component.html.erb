@@ -64,10 +64,10 @@
     <% if signed_in? %>
       <div class="sidebar__user-card">
         <div class="sidebar__user-meta">
-          <div class="sidebar__user-balance">
+          <%= link_to my_balance_path, class: "sidebar__user-balance", title: "View your balance history" do %>
             <%= helpers.stardust_icon(extra_class: "sidebar__user-balance-icon") %>
             <span class="sidebar__user-balance-amount"><%= number_with_delimiter(user.cached_balance) %></span>
-          </div>
+          <% end %>
           <div class="sidebar__user-handle-row">
             <%= link_to profile_path(user.display_name), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
               @<%= user.display_name %>

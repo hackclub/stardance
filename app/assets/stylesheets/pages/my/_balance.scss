@@ -1,0 +1,87 @@
+.balance-page {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  color: var(--color-space-text);
+
+  &__header {
+    margin-bottom: var(--space-l);
+  }
+
+  &__title {
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-xxl);
+    margin: 0 0 var(--space-xxs);
+  }
+
+  &__total {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    margin: 0 0 var(--space-xxs);
+  }
+
+  &__total-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  &__total-amount {
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__description {
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  // The table scrolls on its own so a long reason never widens the page.
+  &__table-wrap {
+    overflow-x: auto;
+    border-radius: var(--border-radius);
+  }
+
+  &__reason {
+    min-width: 16rem;
+  }
+
+  &__amount {
+    font-weight: 700;
+    white-space: nowrap;
+    text-align: right;
+
+    &--positive {
+      color: var(--color-brand-cream);
+    }
+
+    &--negative {
+      color: var(--color-brand-salmon);
+    }
+  }
+
+  &__date {
+    white-space: nowrap;
+  }
+
+  &__empty {
+    padding: var(--space-xl) var(--space-l);
+    text-align: center;
+  }
+
+  &__empty-title {
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-l);
+    margin: 0 0 var(--space-xxs);
+  }
+
+  &__empty-hint {
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+}
