@@ -216,4 +216,10 @@
       </div>
     <% end %>
   <% end %>
+
+  <%# Stardust comes back whatever the verdict was, so this stays available on a
+      check that is already decided. %>
+  <% if @review.user && policy(@review.user).adjust_balance? %>
+    <%= render "admin/certification/integrity/stardust_deduction", check: @review %>
+  <% end %>
 </main>

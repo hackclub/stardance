@@ -274,6 +274,14 @@ module Post::ShipEvent::Payouts
     end
   end
 
+  # What this ship actually paid per hour, blessing included, so a clawback can
+  # take back the same rate it handed out. Nil until it has paid.
+  def stardust_per_hour_paid
+    return nil if payout.blank? || hours_at_payout.to_f <= 0
+
+    payout / hours_at_payout
+  end
+
   def payout_preview(sample = self.class.payout_score_sample, votes_count: nil, pending_flags_count: nil)
     scores = payout_preview_scores(sample)
     preview_hours = payout_basis_locked_at? ? hours_at_payout.to_f : hours

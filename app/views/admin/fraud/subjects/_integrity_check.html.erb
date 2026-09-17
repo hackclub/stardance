@@ -6,6 +6,10 @@
       <p class="fraud-subject__item-error" role="alert"><%= error %></p>
     <% end %>
 
+    <% if local_assigns[:notice].present? %>
+      <p class="fraud-subject__item-notice" role="status"><%= notice %></p>
+    <% end %>
+
     <div class="fraud-subject__item-head">
       <span class="fraud-subject__item-title">
         <%= project ? link_to(project.title, admin_project_path(project)) : "Deleted project" %>
@@ -147,6 +151,10 @@
         </span>
         <%= link_to "Open check", admin_certification_integrity_review_path(check), class: "fraud-subject__item-action" %>
       </div>
+    <% end %>
+
+    <% if policy(user).adjust_balance? %>
+      <%= render "admin/certification/integrity/stardust_deduction", check: check, fraud_subject: user %>
     <% end %>
   </div>
 <% end %>

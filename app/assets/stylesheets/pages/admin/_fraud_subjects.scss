@@ -258,6 +258,7 @@
   // The server refuses the verdict either way, this just stops the reviewer
   // filling in a form that cannot land.
   &--claimed-elsewhere .fraud-subject__verdict-form,
+  &--claimed-elsewhere .stardust-deduction,
   &--claimed-elsewhere .fraud-subject__bulk-actions {
     display: none;
   }
@@ -265,6 +266,16 @@
   .fraud-subject__item-error {
     background: var(--color-set-3-bg);
     border-left: 4px solid var(--color-brand-salmon);
+    border-radius: 6px;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-xs);
+    margin: 0 0 var(--space-xs);
+    padding: var(--space-xxs) var(--space-xs);
+  }
+
+  .fraud-subject__item-notice {
+    background: var(--color-set-3-bg);
+    border-left: 4px solid var(--color-brand-lilac);
     border-radius: 6px;
     color: var(--color-brand-cream);
     font-size: var(--font-size-xs);
