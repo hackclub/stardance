@@ -7,7 +7,10 @@
   --shop-hub-gutter: 2.5rem;
 
   color: var(--color-space-text);
-  padding: 1.5rem clamp(1.5rem, 4vw, 3rem) 4rem;
+  padding: 1.5rem clamp(1rem, 4vw, 3rem) 4rem;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 
   &__tutorial-card {
     background: rgba(217, 217, 217, 0.1);
@@ -111,6 +114,10 @@
       "main   rail"
       "new    new"
       "popular popular";
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
 
     @media (max-width: 1100px) {
       grid-template-columns: 1fr;
@@ -125,16 +132,45 @@
 
   &__rail {
     grid-area: rail;
+    min-width: 0;
+    max-width: 100%;
 
     .discover-rail {
       position: static;
+      top: auto;
+      right: auto;
+      bottom: auto;
       width: 100%;
+      max-width: 100%;
       max-height: none;
       overflow: visible;
+      transform: none;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      box-sizing: border-box;
+
+      &--open {
+        transform: none;
+      }
+    }
+
+    .discover-rail__toggle {
+      display: none;
     }
 
     .discover-rail__search {
       display: none;
+    }
+
+    .discover-rail__panel,
+    .discover-rail__widgets {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
   }
 
