@@ -48,6 +48,16 @@
 
   &__reason {
     min-width: 16rem;
+
+    a {
+      color: var(--color-brand-lilac);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+
+      &:hover {
+        color: var(--color-brand-off-white);
+      }
+    }
   }
 
   &__amount {
