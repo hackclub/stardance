@@ -466,7 +466,7 @@
             </div>
 
             <% if @project.description.present? %>
-              <p class="project-show__description"><%= @project.description %></p>
+              <div class="project-show__description markdown-content"><%= md(@project.description, allow_images: false) %></div>
             <% end %>
 
             <div class="project-show__read-footer">

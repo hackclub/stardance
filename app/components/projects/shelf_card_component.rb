@@ -15,6 +15,10 @@ module Projects
       project.display_description.presence || project.description
     end
 
+    def plain_description
+      helpers.strip_tags(helpers.md(description, allow_images: false)).squish
+    end
+
     def engagement_data
       {
         controller: "feed-engagement",
