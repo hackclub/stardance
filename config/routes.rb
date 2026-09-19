@@ -922,6 +922,13 @@ Rails.application.routes.draw do
         end
       end
 
+      # Admin claw-back report: approved funding requests whose recipient is now
+      # banned, with a control to cancel the issued HCB card grant. `:id` is the
+      # funding request id.
+      resources :banned_funding_grants, only: [ :index ] do
+        delete :cancel_grant, on: :member
+      end
+
       # Hardware review surface: two separate queues (design funding requests and
       # build ship certifications) sharing one project review page. Verdicts and
       # claims reuse the funding/ship mutation endpoints above so PaperTrail and
