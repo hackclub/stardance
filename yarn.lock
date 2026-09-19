@@ -226,19 +226,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullstory/browser@npm:^2.0.8":
-  version: 2.0.8
-  resolution: "@fullstory/browser@npm:2.0.8"
+"@fullstory/browser@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "@fullstory/browser@npm:2.1.0"
   dependencies:
-    "@fullstory/snippet": "npm:2.0.6"
-  checksum: 10c0/dd64a5480403fdc4a6935459b38c564d1a48e0afefbe682a279bdf6c0ff01905f4df2f0e956c64a29339f43d32a4261f9a5af562ae9f7ecab549811f43290c56
+    "@fullstory/snippet": "npm:2.1.0"
+  checksum: 10c0/93aa81b26ac5198edc72debe37789e376b2da4775c4973f083a267f5f7bc82a9389c414078010df4c957cc19f4f776b49b70f4596530c1e8505676b769bd054b
   languageName: node
   linkType: hard
 
-"@fullstory/snippet@npm:2.0.6":
-  version: 2.0.6
-  resolution: "@fullstory/snippet@npm:2.0.6"
-  checksum: 10c0/2e9b5008112a26936ea4d520b3d029544ae286b9126aa34069f1e24d159b254abe6ece16113cf970682f3e782edf5d9db07b88e40cba91d39d8b1f06b44fa009
+"@fullstory/snippet@npm:2.1.0":
+  version: 2.1.0
+  resolution: "@fullstory/snippet@npm:2.1.0"
+  checksum: 10c0/a4d4ec0dbea4622763beda4d6d36db270b087cd1a49cf09689a5a725a0ce6ebff7a9f381d3383f099dabb0bf91f4fd93780fb6c9fc4da678cb5cc94e4c034e73
   languageName: node
   linkType: hard
 
@@ -387,7 +387,7 @@ __metadata:
   resolution: "app@workspace:."
   dependencies:
     "@emoji-mart/data": "npm:^1.2.1"
-    "@fullstory/browser": "npm:^2.0.8"
+    "@fullstory/browser": "npm:^2.1.0"
     "@hotwired/stimulus": "npm:^3.2.2"
     "@hotwired/turbo-rails": "npm:^8.0.23"
     "@rails/actioncable": "npm:^7.2.302"
