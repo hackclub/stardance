@@ -23,6 +23,10 @@
   // Top margin reserves the part of him that rises past the strip's top edge.
   margin: var(--space-xxl) 0 var(--space-m);
   padding: var(--space-m) var(--space-l);
+  // Floor matches the strip's natural height so the hover growth animates from
+  // it rather than jumping once min-height passes the content height.
+  min-height: 5.5rem;
+  transition: min-height 200ms ease;
 }
 
 // Chrome on its own layer so it can fade out on the left without taking the
@@ -58,6 +62,11 @@
   filter: drop-shadow(0 6px 14px var(--color-shadow-deep));
 }
 
+.rocket-progress__avatar,
+.rocket-progress__body {
+  transition: opacity 200ms ease;
+}
+
 .rocket-progress__body {
   display: flex;
   flex: 1;
@@ -66,6 +75,42 @@
   // Starts where the chrome has fully faded back in.
   margin-left: var(--rocket-progress-gutter);
   min-width: 0;
+}
+
+// Explanation copy that swaps in over the strip on hover, in place of the
+// hours/progress bar — same footprint, just a different story.
+.rocket-progress__hover-copy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--space-l) var(--space-xl);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+
+  p {
+    margin: 0;
+    color: var(--color-space-text);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    line-height: 1.4;
+  }
+}
+
+// Tall enough for the copy plus its full padding — the strip's natural height
+// leaves the text no room to breathe vertically.
+.rocket-progress:hover {
+  min-height: 8rem;
+
+  .rocket-progress__avatar,
+  .rocket-progress__body {
+    opacity: 0;
+  }
+
+  .rocket-progress__hover-copy {
+    opacity: 1;
+  }
 }
 
 .rocket-progress__header {
@@ -162,6 +207,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .rocket-progress {
+    transition: none;
+  }
+
   .rocket-progress__bar .progress-bar__fill {
     transition: none;
   }
