@@ -61,7 +61,7 @@ jobs:
 
       - name: Set up Ruby
         if: ${{ !matrix.skip_ruby }}
-        uses: ruby/setup-ruby@v1.321.0
+        uses: ruby/setup-ruby@v1.322.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -110,7 +110,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: bash .github/scripts/apt-install.sh libvips-dev libblas-dev liblapack-dev
 
-      - uses: ruby/setup-ruby@v1.321.0
+      - uses: ruby/setup-ruby@v1.322.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
