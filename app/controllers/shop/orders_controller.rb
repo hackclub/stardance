@@ -110,7 +110,8 @@ class Shop::OrdersController < Shop::BaseController
           shop_item: @shop_item,
           quantity: @redeemable ? 1 : quantity,
           frozen_address: selected_address,
-          frozen_modifiers_price: @redeemable ? 0 : modifiers_total
+          frozen_modifiers_price: @redeemable ? 0 : modifiers_total,
+          country: address_country&.upcase
         )
         assign_redemption_gate(@order, @redeemable) if @redeemable
         @order.aasm_state = "pending" if @order.respond_to?(:aasm_state=)
@@ -124,7 +125,8 @@ class Shop::OrdersController < Shop::BaseController
               shop_item: accessory,
               quantity: quantity,
               frozen_address: selected_address,
-              parent_order_id: @order.id
+              parent_order_id: @order.id,
+              country: address_country&.upcase
             )
             accessory_order.aasm_state = "pending" if accessory_order.respond_to?(:aasm_state=)
             accessory_order.save!

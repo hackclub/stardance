@@ -9,7 +9,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   # views don't each repeat (and risk drifting from) the permit list.
   PRESERVED_FILTER_KEYS = [
     :user_search, :shop_item_id, :status, :date_from, :date_to, :sort, :view,
-    :goob, :region, :item_type, :min_tickets, :max_tickets, :has_tracking,
+    :goob, :region, :country, :item_type, :min_tickets, :max_tickets, :has_tracking,
     :order_type, { assignee_ids: [], hidden_types: [] }
   ].freeze
 
@@ -813,15 +813,34 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       end
     end
 
+    if params[:country].present?
+      country_code = params[:country].upcase
+      if region_visible_to_current_user?(Shop::Regionalizable.country_to_region(country_code))
+        scope = scope.where(country: country_code)
+      end
+    end
+
     if current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
       scope = scope.where(region: current_user.regions)
                    .or(scope.where(region: nil))
                    .or(scope.where(assigned_to_user_id: current_user.id))
+      scope = scope.where(region: params[:region].upcase) if params[:region].present? && current_user.has_region?(params[:region])
     elsif params[:region].present?
       scope = scope.where(region: params[:region].upcase)
     end
 
     scope
+  end
+
+  # A region-restricted fulfillment person (has_regions? but not admin/fraud)
+  # can only ever see their assigned regions — a region/country filter param
+  # is honored for them only when it falls inside that set, so the filter UI
+  # can't be used to widen visibility past what apply_shared_filters already
+  # scopes them to.
+  def region_visible_to_current_user?(region_code)
+    return true unless current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
+
+    current_user.has_region?(region_code)
   end
 
   def shop_orders_return_path

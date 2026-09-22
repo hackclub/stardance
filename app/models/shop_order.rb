@@ -5,6 +5,7 @@
 #  id                                 :bigint           not null, primary key
 #  aasm_state                         :string
 #  awaiting_periodical_fulfillment_at :datetime
+#  country                            :string(2)
 #  external_ref                       :string
 #  frozen_address_ciphertext          :text
 #  frozen_item_price                  :decimal(6, 2)
@@ -42,6 +43,7 @@
 #  idx_shop_orders_user_item_state                  (user_id,shop_item_id,aasm_state)
 #  idx_shop_orders_user_item_unique                 (user_id,shop_item_id)
 #  index_shop_orders_on_assigned_to_user_id         (assigned_to_user_id)
+#  index_shop_orders_on_country                     (country)
 #  index_shop_orders_on_fraud_review_payout_id      (fraud_review_payout_id)
 #  index_shop_orders_on_fulfillment_payout_line_id  (fulfillment_payout_line_id)
 #  index_shop_orders_on_parent_order_id             (parent_order_id)
@@ -138,6 +140,7 @@ class ShopOrder < ApplicationRecord
   after_create :hold_if_usps_suspended
   before_create :freeze_item_price
   before_create :set_region_from_address
+  before_create :set_country_from_address
   after_commit :notify_user_of_status_change, if: :saved_change_to_aasm_state?
   after_commit :schedule_hold_release, if: :placed_on_hold?
 
@@ -717,6 +720,13 @@ class ShopOrder < ApplicationRecord
     return unless frozen_address.present? && frozen_address["country"].present?
 
     self.region = Shop::Regionalizable.country_to_region(frozen_address["country"])
+  end
+
+  def set_country_from_address
+    return if country.present?
+    return unless frozen_address.present? && frozen_address["country"].present?
+
+    self.country = frozen_address["country"].upcase
   end
 
   def assign_default_user

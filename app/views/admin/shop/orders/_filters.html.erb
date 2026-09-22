@@ -13,20 +13,23 @@
             { prompt: "All items" } %>
       </div>
 
-      <% unless current_user.fulfillment_person? %>
       <div class="shop-orders__field">
         <%= f.label :region, "Region" %>
-        <%= f.select :region, options_for_select([
-            ['All regions', ''],
-            ['United States', 'US'],
-            ['EU + UK', 'EU'],
-            ['India', 'IN'],
-            ['Canada', 'CA'],
-            ['Australia & NZ', 'AU'],
-            ['Rest of World', 'XX']
-          ], params[:region]) %>
+        <%= f.select :region, options_for_select(
+            [['All regions', '']] + Shop::Regionalizable::REGIONS.map { |code, config| [config[:name], code] },
+            params[:region]) %>
       </div>
 
+      <div class="shop-orders__field">
+        <%= f.label :country, "Country" %>
+        <%= f.select :country, options_for_select(
+            [['All countries', '']] + ISO3166::Country.all
+              .sort_by { |c| c.common_name.presence || c.iso_short_name }
+              .map { |c| [c.common_name.presence || c.iso_short_name, c.alpha2] },
+            params[:country]) %>
+      </div>
+
+      <% unless current_user.fulfillment_person? %>
       <div class="shop-orders__field">
         <% status_options = [
             ['All statuses', ''],

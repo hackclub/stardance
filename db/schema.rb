@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_16_195716) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_211544) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1335,6 +1335,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_195716) do
     t.string "aasm_state"
     t.bigint "assigned_to_user_id"
     t.datetime "awaiting_periodical_fulfillment_at"
+    t.string "country", limit: 2
     t.datetime "created_at", null: false
     t.string "external_ref"
     t.bigint "fraud_payout_line_id"
@@ -1364,6 +1365,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_195716) do
     t.bigint "warehouse_package_id"
     t.index ["aasm_state", "created_at"], name: "idx_shop_orders_aasm_state_created_at_desc", order: { created_at: :desc }
     t.index ["assigned_to_user_id"], name: "index_shop_orders_on_assigned_to_user_id"
+    t.index ["country"], name: "index_shop_orders_on_country"
     t.index ["fraud_review_payout_id"], name: "index_shop_orders_on_fraud_review_payout_id"
     t.index ["fulfillment_payout_line_id"], name: "index_shop_orders_on_fulfillment_payout_line_id"
     t.index ["parent_order_id"], name: "index_shop_orders_on_parent_order_id"
