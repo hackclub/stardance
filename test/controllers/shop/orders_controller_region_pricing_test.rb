@@ -58,6 +58,20 @@ class Shop::OrdersControllerRegionPricingTest < ActionDispatch::IntegrationTest
     assert_equal 50, @user.reload.balance
   end
 
+  test "the model-level balance validation is modifier-inclusive: item price alone fitting isn't enough" do
+    grant(120) # covers the US item price (100) plus a little, not the item + a $50-ish modifier
+
+    order = @user.shop_orders.new(
+      shop_item: @item, quantity: 1, frozen_address: { "country" => "US", "primary" => true },
+      frozen_modifiers_price: 50
+    )
+
+    assert_not order.save
+    assert_match(/Insufficient balance/, order.errors.full_messages.to_sentence)
+    assert_equal 0, ShopOrder.count
+    assert_equal 120, @user.reload.balance, "a rejected order must never touch the ledger"
+  end
+
   private
 
   def grant(amount)
