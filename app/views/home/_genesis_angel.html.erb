@@ -1,0 +1,28 @@
+<% if current_user&.has_dismissed?("slack_doodle") && !current_user.has_dismissed?("genesis_angel") %>
+  <div class="genesis-angel" data-controller="genesis-angel"
+   data-genesis-angel-lines-value="<%= [
+    "HARKEN ye, for I come bearing the good word of Torvalds.",
+    "psst... wanna build an operating system?",
+    "genesis is calling on line 4225 - go to genesis.hackclub.com to build the truth",
+    "we're waiting for you there..."
+   ].to_json %>">
+        <div class="genesis-angel__art">
+            <%= image_tag "genesis_ad/stardance_herald.png", alt: "A monochrome angel, come to herald Genesis for the people of Stardance", class: "genesis-angel__angel" %>
+
+            <%# One eye per orbit in $genesis-angel-eyes (components/_genesis_angel.scss) %>
+            <div class="genesis-angel__swarm">
+                <% 1.upto(4) do |position| %>
+                    <span class="genesis-angel__eye genesis-angel__eye--<%= position %>">
+                        <span class="genesis-angel__eye-orbit">
+                            <%= image_tag "genesis_ad/eyebutton.png", alt: "", class: "genesis-angel__eye-art" %>
+                        </span>
+                    </span>
+                <% end %>
+            </div>
+        </div>
+
+        <div class="genesis-angel__bubble" data-action="click->genesis-angel#advance">
+            <p class="genesis-angel__speech" data-genesis-angel-target="speech">psst... hey kid, wanna build an operating system?</p>
+        </div>
+  </div>
+<% end %>

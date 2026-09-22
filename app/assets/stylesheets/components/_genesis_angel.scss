@@ -1,0 +1,181 @@
+// index, plane pitch, plane roll, radius, period, phase, direction
+$genesis-angel-eyes:
+  (1, 14deg, 0deg, 118px, 9s, 0s, normal),
+  (2, -60deg, 22deg, 142px, 13s, -4.5s, reverse),
+  (3, 52deg, -34deg, 132px, 7s, -2.2s, normal),
+  (4, -28deg, 66deg, 152px, 11s, -6.8s, reverse);
+
+.genesis-angel {
+  position: fixed;
+  bottom: 0;
+  right: 2rem;
+  z-index: 90;
+  width: 220px;
+
+  &__art {
+    position: relative;
+    // one shared 3D space for the angel and the ring, so the eyes sort
+    // against her by depth instead of compositing over her as a layer
+    perspective: 700px;
+    transform-style: preserve-3d;
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -12%;
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse at center,
+        color-mix(in srgb, var(--color-brand-off-white) 42%, transparent) 0%,
+        transparent 68%
+      );
+      pointer-events: none;
+      animation: genesis-angel-halo 200ms ease forwards;
+
+      @media (prefers-reduced-motion: reduce) {
+        animation: none;
+      }
+    }
+  }
+
+  @keyframes genesis-angel-halo {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes genesis-angel-eye-orbit {
+    from {
+      transform: rotateY(0deg);
+    }
+    to {
+      transform: rotateY(360deg);
+    }
+  }
+
+  // rides out to the orbit radius, then unwinds the turn so the eye keeps
+  // looking at the viewer instead of showing its edge
+  @keyframes genesis-angel-eye-face {
+    from {
+      transform: translateZ(var(--genesis-angel-orbit)) rotateY(0deg);
+    }
+    to {
+      transform: translateZ(var(--genesis-angel-orbit)) rotateY(-360deg);
+    }
+  }
+
+  @keyframes genesis-angel-eye-depth {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  &__angel {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+  &__swarm {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform-style: preserve-3d;
+  }
+
+  // tips the whole orbit onto its own plane; the eye inherits the tilt, which
+  // is what keeps the four of them from reading as one synchronised ring
+  &__eye {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    width: 42px;
+    transform-style: preserve-3d;
+  }
+
+  &__eye-orbit {
+    display: block;
+    transform-style: preserve-3d;
+    animation: genesis-angel-eye-orbit var(--genesis-angel-period) linear
+      infinite;
+    animation-delay: var(--genesis-angel-phase);
+    animation-direction: var(--genesis-angel-direction);
+  }
+
+  &__eye-art {
+    display: block;
+    width: 100%;
+    height: auto;
+    animation:
+      genesis-angel-eye-face var(--genesis-angel-period) linear infinite,
+      genesis-angel-eye-depth var(--genesis-angel-period) linear infinite;
+    animation-delay: var(--genesis-angel-phase), var(--genesis-angel-phase);
+    // the face must unwind whichever way its orbit turns; the depth fade is
+    // symmetric, so it reads the same either way
+    animation-direction: var(--genesis-angel-direction), normal;
+  }
+
+  @each $index, $pitch, $roll, $radius, $period, $phase,
+    $direction in $genesis-angel-eyes
+  {
+    &__eye--#{$index} {
+      --genesis-angel-orbit: #{$radius};
+      --genesis-angel-period: #{$period};
+      --genesis-angel-phase: #{$phase};
+      --genesis-angel-direction: #{$direction};
+
+      transform: translate(-50%, -50%) rotateX($pitch) rotateZ($roll);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__eye-orbit,
+    &__eye-art {
+      animation: none;
+    }
+
+    // the radius lives in the keyframes, so without them the eyes would
+    // pile up on her centre line; park them out on their orbits instead
+    &__eye-art {
+      transform: translateZ(var(--genesis-angel-orbit));
+    }
+  }
+  &__bubble {
+    position: absolute;
+    right: 100%;
+    top: 12%; // head height on the herald
+    transform: translateY(-50%);
+    width: 200px;
+    margin-right: var(--space-s);
+    cursor: pointer;
+    padding: var(--space-s);
+
+    // no room beside the angel on a phone, so stack the speech above it
+    @media (max-width: 600px) {
+      right: auto;
+      left: 0;
+      top: auto;
+      bottom: 100%;
+      transform: none;
+      width: 100%;
+      margin: 0 0 var(--space-s);
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, black, white, black 2%);
+      mask: url("genesis_ad/noiseTexture.png") repeat luminance;
+    }
+  }
+  &__speech {
+    position: relative;
+  }
+}

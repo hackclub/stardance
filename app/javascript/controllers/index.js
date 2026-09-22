@@ -238,6 +238,9 @@ application.register("fraud-speedrun", FraudSpeedrunController);
 import FormSubmitOnceController from "./form_submit_once_controller";
 application.register("form-submit-once", FormSubmitOnceController);
 
+import GenesisAngelController from "./genesis_angel_controller";
+application.register("genesis-angel", GenesisAngelController);
+
 import GuidePreviewController from "./guide_preview_controller";
 application.register("guide-preview", GuidePreviewController);
 
