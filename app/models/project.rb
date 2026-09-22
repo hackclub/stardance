@@ -168,6 +168,7 @@ class Project < ApplicationRecord
   has_many :missions,                 through:    :mission_attachments
   has_many :mission_section_completions, class_name: "Mission::SectionCompletion",  dependent: :destroy
   has_many :mission_submissions,         class_name: "Mission::Submission",         through: :ship_events
+  has_many :mentions, class_name: "ProjectMention", dependent: :destroy
 
   def current_mission_attachment
     if mission_attachments.loaded?

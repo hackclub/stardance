@@ -5,7 +5,7 @@ Now there's a bonus for how well you ship it to the wider world!
 
 Get up to 5,000 bonus stardust :stardust: per viral project.
 
-Ship your project, share it with the world, and if it hits a threshold on any platform, submit a claim at [hack.af/stardance-project-mention](https://hack.af/stardance-project-mention).
+Ship your project, share it with the world, and if it hits a threshold on any platform, submit a claim from your project page using the "Submit viral mention" link.
 A reviewer verifies it, and you earn your bonus.
 
 ## ⭐ Good

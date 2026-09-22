@@ -1012,6 +1012,7 @@ Rails.application.routes.draw do
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
     resource :fire_nomination, only: [ :create, :destroy ], module: :projects
+    resources :mentions, only: [ :new, :create ], module: :projects
     # shallow: false — the guide JS deletes at the nested path, and the
     # controller needs :project_id to scope the completion.
     resources :mission_section_completions,
