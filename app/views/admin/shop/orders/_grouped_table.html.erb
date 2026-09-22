@@ -45,6 +45,15 @@
               <% if order.mission_submission.present? %>
                 <br><span class="shop-orders__mission-badge" title="Redeemed for free via the &quot;<%= order.mission_submission.mission.name %>&quot; mission">🎖️ Free via mission</span>
               <% end %>
+              <% if @batch_counts && params[:shop_item_id].blank? %>
+                <% batch_count = @batch_counts[order.shop_item_id].to_i %>
+                <% if batch_count > 1 %>
+                  <br><%= link_to admin_shop_orders_path(preserved_filter_params.merge(shop_item_id: order.shop_item_id)),
+                                  class: "shop-orders__batch-link" do %>
+                    see all (<%= batch_count %>)
+                  <% end %>
+                <% end %>
+              <% end %>
             </td>
             <td><%= order.quantity %></td>
             <td><%= order.total_cost %></td>

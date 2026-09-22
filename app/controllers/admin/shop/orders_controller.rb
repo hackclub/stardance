@@ -175,6 +175,13 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       orders = orders.where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
     end
 
+    if @view == "fulfillment" && params[:shop_item_id].blank?
+      @batch_counts = ShopOrder.where(aasm_state: "awaiting_periodical_fulfillment")
+                               .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+                               .group(:shop_item_id)
+                               .count
+    end
+
     if @view == "fulfillment"
       @awaiting_counts_by_type = apply_shared_filters(ShopOrder.joins(:shop_item))
                                    .where(aasm_state: "awaiting_periodical_fulfillment",
@@ -216,9 +223,24 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     when "created_at_desc" then [ :created_at, :desc ]
     when "shells_asc" then [ :frozen_item_price, :asc ]
     when "shells_desc" then [ :frozen_item_price, :desc ]
+    when "batch_size_desc" then [ :batch_size, :desc ]
     else [ :created_at, :asc ]
     end
-    orders = orders.order(sort_column => sort_direction)
+
+    if sort_column == :batch_size
+      batch_counts_sql = ShopOrder
+        .where(aasm_state: "awaiting_periodical_fulfillment")
+        .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+        .select("shop_item_id AS bc_item_id, COUNT(*) AS batch_count")
+        .group(:shop_item_id)
+        .to_sql
+      orders = orders
+        .joins("LEFT JOIN (#{batch_counts_sql}) bc ON bc.bc_item_id = shop_orders.shop_item_id")
+        .order(Arel.sql("bc.batch_count DESC NULLS LAST, shop_orders.created_at ASC"))
+      sort_column, sort_direction = :created_at, :asc
+    else
+      orders = orders.order(sort_column => sort_direction)
+    end
 
     # Grouping. Paginate the *users* rather than the orders so every page holds
     # whole groups — grouping is the fulfillment default, so loading the entire
