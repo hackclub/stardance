@@ -55,6 +55,8 @@ Rails.application.config.after_initialize do
         ysws_review_shortcuts
         bukux2
         mihimode
+        blackhole
+        bukux3
       ].each { |flag| Flipper.add(flag) }
     end
   rescue StandardError => e

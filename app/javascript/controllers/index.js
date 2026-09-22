@@ -477,3 +477,12 @@ application.register("workshop-countdown", WorkshopCountdownController);
 
 import MihiModeController from "./mihi_mode_controller";
 application.register("mihi-mode", MihiModeController);
+
+import BlackholeController from "./blackhole_controller";
+application.register("blackhole", BlackholeController);
+
+import BukuX3RevealController from "./buku_x3_reveal_controller";
+application.register("buku-x3-reveal", BukuX3RevealController);
+
+import BukuX3PreviewController from "./buku_x3_preview_controller";
+application.register("buku-x3-preview", BukuX3PreviewController);
