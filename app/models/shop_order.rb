@@ -576,7 +576,10 @@ class ShopOrder < ApplicationRecord
     return if redeeming_prize?
     return unless frozen_item_price&.positive? && quantity.present?
 
-    total_cost_for_validation = frozen_item_price * quantity
+    # total_cost_with_modifiers, not just the item price: it's what
+    # create_negative_payout actually deducts, so the balance check has to
+    # match or a modifier-priced order can still push the ledger negative.
+    total_cost_for_validation = total_cost_with_modifiers
     if user&.balance&.< total_cost_for_validation
       shortage = total_cost_for_validation - (user.balance || 0)
       errors.add(:base, "Insufficient balance. You need #{shortage} more tickets.")
