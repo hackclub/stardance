@@ -31,6 +31,14 @@ module Certification
         return
       end
 
+      # GOI, then integrity, then Airtable. An undecided or not-yet-created check
+      # means the hours are not final; the verdict resyncs the review itself
+      # (Certification::Integrity#resync_completed_review_to_airtable).
+      unless review.project.hardware? || integrity_decided?(review)
+        Rails.logger.info "[YswsAirtableSyncJob] Skipping review ##{review.id}: waiting on integrity"
+        return
+      end
+
       Rails.logger.info "[YswsAirtableSyncJob] Starting sync for review ##{review.id}"
 
       # Check if this review has already been submitted to unified DB
@@ -71,6 +79,10 @@ module Certification
     # Every synced review must have one — a missing record is a data error.
     # Raises StandardError (not RecordNotFound, which this job discards) so
     # the rescue_from handler reports it to Sentry.
+    def integrity_decided?(review)
+      Certification::Integrity.where(ship_event_id: review.post_ship_event_id).where.not(status: :pending).exists?
+    end
+
     def integrity_check_for(review)
       Certification::Integrity.find_by(ship_event_id: review.post_ship_event_id) ||
         raise(StandardError, "No certification integrity for ship event ##{review.post_ship_event_id} (ysws_review ##{review.id})")

@@ -1,0 +1,54 @@
+<% content_for :title, "My Balance" %>
+
+<div class="app-layout">
+  <main class="app-layout__main balance-page">
+    <header class="balance-page__header">
+      <h1 class="balance-page__title">My Balance</h1>
+      <p class="balance-page__total">
+        <%= stardust_icon(extra_class: "balance-page__total-icon") %>
+        <span class="balance-page__total-amount"><%= number_with_delimiter(current_user.balance) %></span>
+      </p>
+      <p class="balance-page__description">
+        Every stardust payout, purchase and adjustment on your account, newest first.
+      </p>
+    </header>
+
+    <% if @balance.any? %>
+      <div class="balance-page__table-wrap">
+        <table class="space-table balance-page__table">
+          <thead>
+            <tr>
+              <th>Reason</th>
+              <th>Amount</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @balance.each do |entry| %>
+              <tr>
+                <td class="balance-page__reason"><%= ledger_entry_reason_with_link(entry) %></td>
+                <td class="balance-page__amount balance-page__amount--<%= entry.amount.negative? ? "negative" : "positive" %>">
+                  <%= number_with_sign(entry.amount) %>
+                </td>
+                <td class="space-table__muted balance-page__date">
+                  <%= entry.created_at.strftime("%b %d, %Y") %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <%== @pagy.series_nav if @pagy.pages > 1 %>
+    <% else %>
+      <div class="balance-page__empty">
+        <p class="balance-page__empty-title">No transactions yet</p>
+        <p class="balance-page__empty-hint">
+          Ship a project or finish a mission and your first stardust payout will show up here.
+        </p>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

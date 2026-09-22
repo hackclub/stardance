@@ -29,6 +29,7 @@ class FraudPayoutRun < ApplicationRecord
     ShopOrder
       .where(aasm_state: REVIEW_STATES)
       .where(fraud_payout_line_id: nil)
+      .where(fraud_review_payout_id: nil)
   end
 
   # Base scope for PaperTrail versions that could represent a fraud review.
@@ -83,13 +84,26 @@ class FraudPayoutRun < ApplicationRecord
     end
   end
 
+  # Logged as its own event rather than leaning on the update version: a run
+  # that approves itself at the end of a calculation has no controller around
+  # to set whodunnit.
+  def log_approval!(by:)
+    ::PaperTrail::Version.create!(
+      item_type: "FraudPayoutRun",
+      item_id: id,
+      event: "approved",
+      whodunnit: by&.id.to_s,
+      object_changes: { aasm_state: %w[pending_approval approved] }.to_json
+    )
+  end
+
   private
 
   def distribute_payouts!
     lines.includes(:user).find_each do |line|
       line.user.ledger_entries.create!(
         amount: line.amount,
-        reason: "Fraud squad payout for #{line.order_count} #{'order'.pluralize(line.order_count)} reviewed",
+        reason: line.payout_reason,
         created_by: "System",
         ledgerable: line
       )
@@ -98,5 +112,6 @@ class FraudPayoutRun < ApplicationRecord
 
   def release_orders!
     ShopOrder.where(fraud_payout_line: lines).update_all(fraud_payout_line_id: nil)
+    FraudReviewPayout.where(fraud_payout_line: lines).update_all(fraud_payout_line_id: nil)
   end
 end

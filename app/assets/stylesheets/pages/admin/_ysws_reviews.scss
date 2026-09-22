@@ -72,25 +72,6 @@
     }
   }
 
-  // Checkbox filters read as a single row rather than the stacked
-  // label-over-control layout the dropdown filters use.
-  & &__filter--toggle {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-xs);
-  }
-
-  & &__checkbox {
-    accent-color: var(--color-brand-highlight);
-    width: 1rem;
-    height: 1rem;
-
-    &:focus-visible {
-      outline: 2px solid var(--color-brand-highlight);
-      outline-offset: 2px;
-    }
-  }
-
   & &__filter--search {
     flex: 1 1 48rem;
     min-width: 0;
@@ -355,10 +336,56 @@
         border: none;
         border-radius: 0;
         margin: 0;
+        // .admin-content sets `overflow: hidden` on tables to clip their rounded
+        // corners. Here the wrapper owns the radius, and that clip would make the
+        // table its own scroll context — stopping the sticky Actions column below
+        // from anchoring to the scroll wrapper. Hand scrolling back to the wrapper.
+        overflow: visible;
       }
 
       th {
         border-bottom: 2px solid var(--color-set-1-fg-secondary);
+      }
+
+      // Pin the Actions column to the right edge of the scroll wrapper so the
+      // View button is always reachable — however wide the other columns get,
+      // the reviewer never has to scroll the table sideways to reach it. The
+      // opaque backing hides cells sliding underneath; the soft left shadow
+      // reads as elevation once the table actually overflows.
+      th:last-child,
+      td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        background: var(--color-set-1-bg);
+        box-shadow: -8px 0 8px -8px rgba(0, 0, 0, 0.35);
+      }
+
+      // Re-composite the thead / zebra / hover tints over the pinned backing so
+      // the sticky cell matches the row it belongs to instead of showing a seam.
+      th:last-child {
+        z-index: 2;
+        background:
+          linear-gradient(
+            var(--color-overlay-light-soft),
+            var(--color-overlay-light-soft)
+          ),
+          var(--color-set-1-bg);
+      }
+
+      tbody tr:nth-child(odd) td:last-child {
+        background:
+          linear-gradient(hsla(228, 18%, 45%, 0.06), hsla(228, 18%, 45%, 0.06)),
+          var(--color-set-1-bg);
+      }
+
+      tbody tr:hover td:last-child {
+        background:
+          linear-gradient(
+            var(--color-overlay-light-soft),
+            var(--color-overlay-light-soft)
+          ),
+          var(--color-set-1-bg);
       }
     }
 
@@ -2063,6 +2090,14 @@ body:has(.certification-ysws) {
           transform: translateY(-2px);
           box-shadow: 0 4px 16px rgba(129, 255, 255, 0.4);
         }
+
+        // Armed by the first ctrl+enter: a pulsing ring says "press ctrl+enter
+        // again to confirm" before the second press completes the review.
+        &.btn-complete--armed {
+          outline: 3px solid var(--color-brand-off-white);
+          outline-offset: 2px;
+          animation: ysws-complete-arm-pulse 0.7s ease-in-out infinite;
+        }
       }
     }
   }
@@ -3063,5 +3098,76 @@ body:has(.certification-ysws) {
   &__loading {
     color: rgba(255, 255, 255, 0.6);
     font-style: italic;
+  }
+}
+
+// Keyboard-shortcut affordances (:ysws_review_shortcuts). The controller injects
+// <kbd class="kbd-hint"> badges onto the controls each key drives and pins a
+// fixed legend for the navigation keys — both exist only while the flag is on.
+// Top-level (not nested under .certification-ysws) because the legend mounts on
+// <body>.
+.kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--space-xxs);
+  padding: 0 0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  // Inherit the host control's text colour so the badge stays legible on any
+  // surface — dark panels, the mint approve button, the salmon reject button —
+  // and read as a subtle hint rather than a filled chip.
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  font-family: "Exo 2", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.ysws-kbd-legend {
+  position: fixed;
+  // Pinned top-RIGHT, clear of the Complete/checklist actions-card that floats
+  // bottom-right.
+  right: var(--space-m);
+  top: var(--space-m);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-xs) var(--space-s);
+  border: 1px solid var(--color-space-border);
+  border-radius: 999px;
+  background: var(--color-set-2-bg);
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-xs);
+  box-shadow: 0 4px 16px hsl(245 55% 4% / 0.5);
+
+  &__title {
+    color: var(--color-brand-mint);
+    font-weight: 700;
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+  }
+}
+
+// Pulse for the Complete Review button while it's armed for its confirming
+// second ctrl+enter press (certification--ysws--keyboard-shortcuts).
+@keyframes ysws-complete-arm-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 252, 244, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(255, 252, 244, 0.35);
   }
 }

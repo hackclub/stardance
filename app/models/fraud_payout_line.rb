@@ -29,4 +29,14 @@ class FraudPayoutLine < ApplicationRecord
   belongs_to :user
 
   has_many :shop_orders, dependent: :nullify
+  has_many :fraud_review_payouts, dependent: :nullify
+
+  # Per-person review payouts and the per-order bracket payouts land in
+  # separate lines, so the ledger entry says which one the reviewer is reading.
+  def payout_reason
+    people = fraud_review_payouts.size
+    return "Fraud squad payout for #{people} #{'person'.pluralize(people)} fully reviewed" if people.positive?
+
+    "Fraud squad payout for #{order_count} #{'order'.pluralize(order_count)} reviewed"
+  end
 end

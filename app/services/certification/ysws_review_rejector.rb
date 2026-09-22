@@ -107,8 +107,8 @@ module Certification
       JUSTIFICATIONS.fetch(reason)
     end
 
-    # YswsAirtableSyncJob raises when the ship event carries no integrity check,
-    # so a review without one is left unsynced rather than queued to fail.
+    # YswsAirtableSyncJob waits for the ship's integrity verdict, so a review
+    # with no check yet is left for that verdict to sync.
     def enqueue_sync
       unless Certification::Integrity.exists?(ship_event_id: review.post_ship_event_id)
         Rails.logger.warn "[YswsReviewRejector] review=#{review.id} skipping Airtable sync — " \

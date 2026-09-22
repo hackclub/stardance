@@ -12,8 +12,7 @@ module Admin::Certification::YswsHelper
     next_dir = (active && @dir == "desc") ? "asc" : "desc"
     arrow    = active ? (@dir == "asc" ? "▲" : "▼") : "▾"
     link_to admin_certification_ysws_reviews_path(project_type: @project_type, sort: column,
-                                                  dir: next_dir, search: @search.presence,
-                                                  with_integrity: @with_integrity ? nil : "0"),
+                                                  dir: next_dir, search: @search.presence),
             class: [ "ysws-queue__sort", ("ysws-queue__sort--active" if active) ] do
       safe_join([ label, tag.span(arrow, class: "ysws-queue__sort-arrow", aria: { hidden: true }) ], " ")
     end

@@ -16,12 +16,16 @@
 module HardwareReviewQueue
   extend ActiveSupport::Concern
 
+  QUEUE_PAGE_SIZE = 25
+  QUEUE_STATS_TTL = 30.seconds
+
   included do
     before_action :set_body_class
     before_action :release_other_claims, only: [ :next ]
     helper_method :hardware_review_path, :hardware_queue_path, :hardware_next_path,
                   :hardware_skip_path, :hardware_queue_title, :hardware_back_link,
-                  :hardware_flag_for_fraud_path, :undo_review_path
+                  :hardware_flag_for_fraud_path, :undo_review_path,
+                  :hardware_recordings_path
   end
 
   def design
@@ -74,6 +78,15 @@ module HardwareReviewQueue
     authorize_hardware_review(@project)
     load_review_context
     render "admin/certification/hardware_reviews/show"
+  end
+
+  def recordings
+    authorize_hardware_review(@project, :show?)
+    @owner = @project.memberships.find { |m| m.owner? }&.user
+    @lapse_owner_uid = @owner&.hackatime_identity&.uid
+    @lapse_timelapses = lapse_timelapses_for_review
+    @lookout_recordings = lookout_recordings_for_review
+    render "admin/certification/hardware_reviews/recordings", layout: false
   end
 
   # Flags the project for the fraud team. Reuses Project::Report's existing fraud
@@ -130,18 +143,11 @@ module HardwareReviewQueue
     @to = parse_date(params[:to])
     @lb_period = params[:lb].presence_in(%w[daily weekly alltime]) || "daily"
 
-    @review_items = sort_review_items(queue_items(@stage))
+    @pagy, @review_items = paginated_queue_items(@stage)
     @hackpad_project_ids = hackpad_project_ids(@review_items.map { |item| item[:project].id })
-    @stats = stage_stats(@stage)
-    @tab_counts = {
-      "design" => stage_list_scope("design").pending.count,
-      "build" => stage_list_scope("build").pending.count
-    }
-    @leaderboards = {
-      "daily" => hardware_leaderboard(:daily),
-      "weekly" => hardware_leaderboard(:weekly),
-      "alltime" => hardware_leaderboard(:alltime)
-    }
+    @stats = cached_stage_stats(@stage)
+    @tab_counts = cached_tab_counts
+    @leaderboard = hardware_leaderboard(@lb_period.to_sym)
     @my_stats = my_hardware_stats
   end
 
@@ -181,30 +187,36 @@ module HardwareReviewQueue
     stage.to_s == "design" ? hardware_funding_list_scope : hardware_ship_list_scope
   end
 
-  def queue_items(stage)
+  def paginated_queue_items(stage)
     scope = apply_queue_filters(stage_list_scope(stage), stage_model(stage))
+    order = @sort == "newest" ? "#{stage_model(stage).table_name}.created_at DESC" : "#{stage_model(stage).table_name}.created_at ASC"
+    scope = scope.order(Arel.sql(order))
+
+    pagy, records = pagy(scope, limit: QUEUE_PAGE_SIZE)
 
     if stage == "design"
-      scope.includes(:reviewer, project: { memberships: :user }).map do |request|
-        review_item(:funding, request, request.project, request.owner, request.created_at)
-      end
+      records = records.includes(:reviewer, project: { memberships: :user })
+      items = records.map { |r| review_item(:funding, r, r.project, eager_owner(r), r.created_at) }
     else
-      scope.includes(:reviewer, :post_ship_event, project: { memberships: :user }).map do |ship|
-        review_item(:ship, ship, ship.project, ship.owner, ship.created_at)
-      end
+      records = records.includes(:reviewer, :post_ship_event, project: { memberships: :user })
+      items = records.map { |r| review_item(:ship, r, r.project, eager_owner(r), r.created_at) }
     end
+
+    [ pagy, items ]
+  end
+
+  def eager_owner(record)
+    record.project.memberships.find { |m| m.owner? }&.user
   end
 
   def review_owner
-    @review_owner ||= @project.memberships.owner.first&.user
+    @review_owner ||= @project.memberships.find { |m| m.owner? }&.user
   end
 
   def load_review_context
-    @funding_request = @project.latest_funding_request
-    @ship = @project.latest_ship_review
+    @funding_request = @project.certification_funding_requests.max_by(&:created_at)
+    @ship = @project.ship_reviews.max_by(&:created_at)
     @owner = review_owner
-    # Owner Hackatime uid for Telescreen deep-links on Lapse recordings.
-    @lapse_owner_uid = @owner&.hackatime_identity&.uid
     @active_review =
       if @funding_request&.pending?
         @funding_request
@@ -218,9 +230,7 @@ module HardwareReviewQueue
       end
     @past_reviews = past_reviews
     load_undo_context
-    @review_notes = @project.review_notes.includes(:author).newest_first
-    @lapse_timelapses = lapse_timelapses_for_review
-    @lookout_recordings = lookout_recordings_for_review
+    @review_notes = @project.review_notes.order(created_at: :desc)
   end
 
   # Only the newest decided review is reversible, so the undo affordance and its
@@ -262,8 +272,8 @@ module HardwareReviewQueue
   # the active review, yet we still want it in the history with a "Reversed" badge
   # rather than silently vanishing.
   def past_reviews
-    reviews = @project.certification_funding_requests.includes(:reviewer).to_a +
-              @project.ship_reviews.includes(:reviewer).to_a
+    reviews = @project.certification_funding_requests.to_a +
+              @project.ship_reviews.to_a
     reviews
       .reject { |review| (review.pending? || review == @active_review) && review.reversed_at.blank? }
       .sort_by(&:created_at)
@@ -345,9 +355,19 @@ module HardwareReviewQueue
     end
   end
 
-  def sort_review_items(items)
-    sorted = items.sort_by { |item| item[:submitted_at] || Time.zone.at(0) }
-    @sort == "newest" ? sorted.reverse : sorted
+  def cached_stage_stats(stage)
+    Rails.cache.fetch([ "hw_queue_stats", stage, reviewable_projects.cache_key_with_version ], expires_in: QUEUE_STATS_TTL) do
+      stage_stats(stage)
+    end
+  end
+
+  def cached_tab_counts
+    Rails.cache.fetch([ "hw_queue_tab_counts", reviewable_projects.cache_key_with_version ], expires_in: QUEUE_STATS_TTL) do
+      {
+        "design" => stage_list_scope("design").pending.count,
+        "build" => stage_list_scope("build").pending.count
+      }
+    end
   end
 
   def hardware_leaderboard(period, now: Time.current, limit: 10)

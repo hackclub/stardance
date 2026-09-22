@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_16_195716) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -217,18 +217,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.integer "deduction_minutes"
     t.integer "flags", default: 0, null: false
     t.jsonb "fraud_detection_data"
+    t.bigint "fraud_review_payout_id"
     t.datetime "reviewed_at"
     t.bigint "reviewer_id"
     t.bigint "ship_event_id", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["claimed_by_id"], name: "index_certification_integrities_on_claimed_by_id"
+    t.index ["fraud_review_payout_id"], name: "index_certification_integrities_on_fraud_review_payout_id"
     t.index ["reviewer_id"], name: "index_certification_integrities_on_reviewer_id"
     t.index ["ship_event_id"], name: "index_certification_integrities_on_ship_event_id", unique: true
     t.index ["status"], name: "index_certification_integrities_on_status"
   end
 
   create_table "certification_mac_analyses", force: :cascade do |t|
+    t.datetime "airtable_synced_at"
     t.datetime "created_at", null: false
     t.datetime "generated_at", null: false
     t.jsonb "report", default: {}, null: false
@@ -269,6 +272,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.text "feedback"
     t.text "internal_reason"
     t.integer "lock_version", default: 0, null: false
+    t.float "payout_multiplier"
     t.bigint "post_ship_event_id"
     t.bigint "project_id", null: false
     t.string "proof_video_url"
@@ -282,6 +286,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
     t.index ["external_certification_id"], name: "index_certification_ship_reviews_on_external_certification_id", unique: true
     t.index ["post_ship_event_id"], name: "index_certification_ship_reviews_on_post_ship_event_id"
+    t.index ["project_id"], name: "index_certification_ship_reviews_on_project_id"
     t.index ["project_id"], name: "index_ship_reviews_unique_pending_project", unique: true, where: "(status = 0)"
     t.index ["reviewer_id"], name: "index_certification_ship_reviews_on_reviewer_id"
     t.index ["status", "claim_expires_at"], name: "idx_on_status_claim_expires_at_c7a5e87a52"
@@ -423,6 +428,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "fraud_review_payouts", force: :cascade do |t|
+    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.integer "flag_count", default: 0, null: false
+    t.bigint "fraud_payout_line_id"
+    t.integer "integrity_count", default: 0, null: false
+    t.integer "order_count", default: 0, null: false
+    t.bigint "reviewer_id", null: false
+    t.bigint "subject_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fraud_payout_line_id"], name: "index_fraud_review_payouts_on_fraud_payout_line_id"
+    t.index ["reviewer_id"], name: "index_fraud_review_payouts_on_reviewer_id"
+    t.index ["subject_id"], name: "index_fraud_review_payouts_on_subject_id"
+  end
+
+  create_table "fraud_subject_claims", force: :cascade do |t|
+    t.datetime "claimed_at", null: false
+    t.datetime "created_at", null: false
+    t.bigint "reviewer_id", null: false
+    t.bigint "subject_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reviewer_id"], name: "index_fraud_subject_claims_on_reviewer_id"
+    t.index ["subject_id"], name: "index_fraud_subject_claims_on_subject_id", unique: true
+  end
+
   create_table "fulfillment_payout_lines", force: :cascade do |t|
     t.integer "amount"
     t.datetime "created_at", null: false
@@ -545,6 +576,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.bigint "user_id", null: false
     t.index ["sent_by_id"], name: "index_messages_on_sent_by_id"
     t.index ["user_id"], name: "index_messages_on_user_id"
+  end
+
+  create_table "mihi_activations", force: :cascade do |t|
+    t.date "activated_on", null: false
+    t.integer "activations_count", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["activated_on", "user_id"], name: "index_mihi_activations_on_activated_on_and_user_id", unique: true
+    t.index ["user_id"], name: "index_mihi_activations_on_user_id"
   end
 
   create_table "mission_guide_variants", force: :cascade do |t|
@@ -927,11 +968,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
   create_table "project_reports", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "details", null: false
+    t.bigint "fraud_review_payout_id"
     t.bigint "project_id", null: false
     t.string "reason", null: false
     t.bigint "reporter_id", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["fraud_review_payout_id"], name: "index_project_reports_on_fraud_review_payout_id"
     t.index ["project_id"], name: "index_project_reports_on_project_id"
     t.index ["reporter_id", "project_id"], name: "index_project_reports_on_reporter_id_and_project_id", unique: true
     t.index ["reporter_id"], name: "index_project_reports_on_reporter_id"
@@ -1293,11 +1336,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
 
   create_table "shop_order_reviews", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "fraud_review_payout_id"
     t.text "reason", null: false
     t.bigint "shop_order_id", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.string "verdict", null: false
+    t.index ["fraud_review_payout_id"], name: "index_shop_order_reviews_on_fraud_review_payout_id"
     t.index ["shop_order_id", "user_id"], name: "index_shop_order_reviews_on_shop_order_id_and_user_id", unique: true
     t.index ["shop_order_id"], name: "index_shop_order_reviews_on_shop_order_id"
     t.index ["user_id"], name: "index_shop_order_reviews_on_user_id"
@@ -1311,6 +1356,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.string "external_ref"
     t.bigint "fraud_payout_line_id"
     t.bigint "fraud_related_project_id"
+    t.bigint "fraud_review_payout_id"
     t.text "frozen_address_ciphertext"
     t.decimal "frozen_item_price", precision: 6, scale: 2
     t.integer "frozen_modifiers_price", default: 0, null: false
@@ -1335,6 +1381,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.bigint "warehouse_package_id"
     t.index ["aasm_state", "created_at"], name: "idx_shop_orders_aasm_state_created_at_desc", order: { created_at: :desc }
     t.index ["assigned_to_user_id"], name: "index_shop_orders_on_assigned_to_user_id"
+    t.index ["fraud_review_payout_id"], name: "index_shop_orders_on_fraud_review_payout_id"
     t.index ["fulfillment_payout_line_id"], name: "index_shop_orders_on_fulfillment_payout_line_id"
     t.index ["parent_order_id"], name: "index_shop_orders_on_parent_order_id"
     t.index ["region"], name: "index_shop_orders_on_region"
@@ -1595,6 +1642,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
     t.string "enriched_ref"
     t.string "experience_level"
     t.string "first_name"
+    t.datetime "fraud_review_payouts_disabled_at"
     t.string "geocoded_country"
     t.float "geocoded_lat"
     t.float "geocoded_lon"
@@ -1776,6 +1824,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
   add_foreign_key "certification_funding_requests", "projects"
   add_foreign_key "certification_funding_requests", "users"
   add_foreign_key "certification_funding_requests", "users", column: "reviewer_id"
+  add_foreign_key "certification_integrities", "fraud_review_payouts"
   add_foreign_key "certification_integrities", "post_ship_events", column: "ship_event_id"
   add_foreign_key "certification_integrities", "users", column: "claimed_by_id"
   add_foreign_key "certification_integrities", "users", column: "reviewer_id"
@@ -1803,6 +1852,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
   add_foreign_key "follows", "users", column: "follower_id"
   add_foreign_key "fraud_payout_lines", "fraud_payout_runs"
   add_foreign_key "fraud_payout_lines", "users"
+  add_foreign_key "fraud_review_payouts", "fraud_payout_lines"
+  add_foreign_key "fraud_review_payouts", "users", column: "reviewer_id"
+  add_foreign_key "fraud_review_payouts", "users", column: "subject_id"
+  add_foreign_key "fraud_subject_claims", "users", column: "reviewer_id"
+  add_foreign_key "fraud_subject_claims", "users", column: "subject_id"
   add_foreign_key "fulfillment_payout_lines", "fulfillment_payout_runs"
   add_foreign_key "fulfillment_payout_lines", "users"
   add_foreign_key "fulfillment_payout_runs", "users", column: "approved_by_user_id"
@@ -1813,6 +1867,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
   add_foreign_key "lookout_sessions", "users"
   add_foreign_key "messages", "users"
   add_foreign_key "messages", "users", column: "sent_by_id"
+  add_foreign_key "mihi_activations", "users"
   add_foreign_key "mission_guide_variants", "missions"
   add_foreign_key "mission_memberships", "missions"
   add_foreign_key "mission_memberships", "users"
@@ -1853,6 +1908,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
   add_foreign_key "project_mentions", "users", column: "reviewer_id"
   add_foreign_key "project_mission_attachments", "missions"
   add_foreign_key "project_mission_attachments", "projects"
+  add_foreign_key "project_reports", "fraud_review_payouts"
   add_foreign_key "project_reports", "projects"
   add_foreign_key "project_reports", "users", column: "reporter_id"
   add_foreign_key "project_skips", "projects"
@@ -1888,8 +1944,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_15_192730) do
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"
+  add_foreign_key "shop_order_reviews", "fraud_review_payouts"
   add_foreign_key "shop_order_reviews", "shop_orders"
   add_foreign_key "shop_order_reviews", "users"
+  add_foreign_key "shop_orders", "fraud_review_payouts"
   add_foreign_key "shop_orders", "fulfillment_payout_lines"
   add_foreign_key "shop_orders", "shop_items"
   add_foreign_key "shop_orders", "shop_orders", column: "parent_order_id"

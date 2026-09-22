@@ -1,9 +1,12 @@
 class Admin::Certification::IntegrityController < Admin::Certification::ApplicationController
+  include FraudSubjectVerdict
+
   def index
     authorize :integrity, policy_class: Admin::Certification::IntegrityPolicy
 
     reviews = ::Certification::Integrity
       .pending
+      .past_goi
       .unclaimed_or_claimed_by(current_user)
       .joins(ship_event: :project)
       .includes(ship_event: [ :project, { post: :user } ])
@@ -62,9 +65,19 @@ class Admin::Certification::IntegrityController < Admin::Certification::Applicat
     @review = ::Certification::Integrity.find(params[:id])
     authorize @review, policy_class: Admin::Certification::IntegrityPolicy
 
+    # A verdict from the per-person fraud page has never opened the review, so
+    # it takes the claim here. atomic_claim! only succeeds when nobody else is
+    # holding it, so this can't jump another reviewer's claim.
+    if fraud_subject && @review.pending?
+      ::Certification::Integrity.atomic_claim!(@review.id, current_user)
+      @review.reload
+    end
+
     unless @review.pending? && @review.claimed_by?(current_user)
-      redirect_to admin_certification_integrity_reviews_path,
-                  alert: "This review can no longer be decided — it may have been claimed by another admin or already resolved."
+      message = "This review can no longer be decided, it may have been claimed by another admin or already resolved."
+      return render_fraud_subject_integrity_error(message) if fraud_subject
+
+      redirect_to admin_certification_integrity_reviews_path, alert: message
       return
     end
 
@@ -84,16 +97,66 @@ class Admin::Certification::IntegrityController < Admin::Certification::Applicat
     @review.decision_justification = params[:decision_justification].presence
 
     if @review.save
+      if fraud_subject
+        return render_fraud_subject_verdict(@review, "Recorded decision for review ##{@review.id}.",
+                                            refresh_integrity: @review.status.in?(::Certification::Integrity::CASCADING_STATUSES))
+      end
+
       redirect_to admin_certification_integrity_reviews_path,
                   notice: "Recorded decision for review ##{@review.id}."
     else
+      errors = @review.errors.full_messages.to_sentence
+      return render_fraud_subject_integrity_error(errors) if fraud_subject
+
       @shop_orders = @review.user&.shop_orders&.includes(:shop_item)&.order(created_at: :desc) || ShopOrder.none
-      flash.now[:alert] = @review.errors.full_messages.to_sentence
+      flash.now[:alert] = errors
       render :show, status: :unprocessable_entity
     end
   end
 
+  # Passes every check the reviewer was shown on the per-person fraud page. Each
+  # is claimed and decided as its own Pass would be, so a check an earlier pass
+  # already settled by cascading across its project is skipped, not paid twice.
+  def pass_all
+    authorize :integrity, :update?, policy_class: Admin::Certification::IntegrityPolicy
+    params.require(:fraud_subject_id)
+
+    checks = Admin::Fraud::SubjectQueue.integrity_checks_for(fraud_subject).where(id: params[:check_ids])
+    passed = []
+    failed = []
+
+    checks.each do |check|
+      next unless check.reload.pending?
+
+      claimed = ::Certification::Integrity.atomic_claim!(check.id, current_user)
+      next failed << check if claimed.nil?
+
+      claimed.assign_attributes(status: :manually_passed, deduction_minutes: nil, reviewer: current_user)
+      claimed.save ? passed << claimed : failed << claimed
+    end
+
+    if failed.any?
+      flash.now[:alert] = "Could not pass #{helpers.pluralize(failed.size, 'check')} (#{failed.map { |check| "##{check.id}" }.to_sentence}), " \
+                          "another reviewer may hold them."
+    end
+
+    render_fraud_subject_verdicts(passed.map { |check| [ check, "Passed." ] }, refresh_integrity: true)
+  end
+
   private
+
+  # A verdict from the fraud subject page is answering into that check's turbo
+  # frame, so every failure has to come back as the frame too. Redirecting or
+  # rendering the review page leaves the reviewer looking at "Content missing".
+  def render_fraud_subject_integrity_error(message)
+    @review.reload
+
+    render turbo_stream: turbo_stream.replace(
+      ActionView::RecordIdentifier.dom_id(@review),
+      partial: "admin/fraud/subjects/integrity_check",
+      locals: { check: @review, user: fraud_subject, error: message }
+    ), status: :unprocessable_entity
+  end
 
   # The "Deducted hours" verdict is entered in hours for the reviewer but stored
   # as whole minutes. Blank stays nil so the model's presence validation surfaces

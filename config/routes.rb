@@ -464,7 +464,10 @@ Rails.application.routes.draw do
 
       # Public API: authenticated with a user's personal API key (see
       # Api::V1::PublicApiController).
-      resources :projects, only: [ :index, :show ]
+      resources :projects, only: [ :index, :show ] do
+        resources :devlogs, only: [ :index ]
+      end
+      resources :devlogs, only: [ :index, :show ]
     end
     namespace :slack do
       post "events", to: "events#create"
@@ -548,6 +551,7 @@ Rails.application.routes.draw do
   # Home
   get "home", to: "home#index"
   resources :feed_events, only: [ :create ]
+  resources :mihi_activations, only: [ :create ]
   resource :daily_roll, only: [ :create ]
   post "daily_roll/reroll", to: "daily_rolls#reroll", as: :reroll_daily_roll
   get "daily_roll/reroll_status", to: "daily_rolls#reroll_status", as: :reroll_status_daily_roll
@@ -664,20 +668,22 @@ Rails.application.routes.draw do
 
     resources :users, only: [ :index, :show, :update ] do
       scope module: :users do
-        resources :roles,               only: [ :create, :destroy ], param: :name
-        resource  :ban,                 only: [ :create, :destroy ]
-        resource  :impersonation,       only: [ :create ]
-        resources :feature_flags,       only: [ :create, :destroy ], param: :feature
-        resource  :hackatime_sync,      only: [ :create ]
-        resource  :order_rejection,     only: [ :create ]
-        resources :balance_adjustments, only: [ :create ]
-        resource  :grant_cancellation,  only: [ :create ]
-        resource  :verification,        only: [ :create ]
-        resource  :vote_balance,        only: [ :update ]
-        resource  :ysws_override,       only: [ :update ]
-        resources :identities,          only: [ :destroy ]
-        resources :streak_credits,      only: [ :create, :destroy ]
-        resources :votes,               only: [ :index ] do
+        resources :roles,                    only: [ :create, :destroy ], param: :name
+        resource  :ban,                      only: [ :create, :destroy ]
+        resource  :impersonation,            only: [ :create ]
+        resources :feature_flags,            only: [ :create, :destroy ], param: :feature
+        resource  :hackatime_sync,           only: [ :create ]
+        resource  :order_rejection,          only: [ :create ]
+        resources :balance_adjustments,      only: [ :create ]
+        resource  :grant_cancellation,       only: [ :create ]
+        resource  :verification,             only: [ :create ]
+        resource  :vote_balance,             only: [ :update ]
+        resource  :ysws_override,            only: [ :update ]
+        resource  :fraud_payout_eligibility, only: [ :update ]
+        resources :identities,               only: [ :destroy ]
+        resources :streak_credits,           only: [ :create, :destroy ]
+        resource  :streak_calendar,          only: [ :show ]
+        resources :votes,                    only: [ :index ] do
           scope module: :votes do
             resource :discard, only: [ :create ]
           end
@@ -692,6 +698,9 @@ Rails.application.routes.draw do
         post :delete
         post :update_ship_status
         post :force_state
+        post :reset_devlogs
+        post :convert_to_software
+        get  :export_devlogs
         get  :votes
       end
     end
@@ -714,6 +723,15 @@ Rails.application.routes.draw do
     get "user-perms", to: "users#user_perms"
     resource :support, only: [ :show ], controller: "support/dashboards"
     resource :fraud, only: [ :show ], controller: "fraud/dashboards"
+    namespace :fraud do
+      # One page per person with fraud work waiting: reports and shop orders are
+      # ranked by whoever has waited longest on the thing that matters most.
+      # Integrity checks remain supporting context on the subject page.
+      resources :subjects, only: [ :index, :show ] do
+        # The subject's own stardust ledger, pulled into the page on demand.
+        resource :balance, only: [ :show ], controller: "subjects/balances"
+      end
+    end
 
     # Referral raffle management (reads the Raffle engine's models).
     get "raffles", to: "raffles/dashboard#show", as: :raffles
@@ -763,6 +781,7 @@ Rails.application.routes.draw do
       resources :orders, only: [ :index, :show ] do
         collection do
           post :bulk_approve
+          post :bulk_reject
         end
         member do
           post :reveal_address
@@ -857,7 +876,10 @@ Rails.application.routes.draw do
           get :next
           post :skip
         end
-        post :flag_for_fraud, on: :member
+        member do
+          post :flag_for_fraud
+          get :recordings
+        end
       end
     end
     get "mission_reviews", to: "missions/submissions#overview", as: :mission_reviews
@@ -865,6 +887,8 @@ Rails.application.routes.draw do
     namespace :certification do
       # Integrity review queue — restricted to admins and fraud leads.
       get "integrity", to: "integrity#index", as: "integrity_reviews"
+      post "integrity/pass_all", to: "integrity#pass_all", as: "pass_all_integrity_reviews"
+      post "integrity/:integrity_id/deductions", to: "integrity/deductions#create", as: "integrity_review_deductions"
       get "integrity/:id", to: "integrity#show", as: "integrity_review"
       patch "integrity/:id", to: "integrity#update"
 
@@ -910,7 +934,10 @@ Rails.application.routes.draw do
           get :next
           post :skip
         end
-        post :flag_for_fraud, on: :member
+        member do
+          post :flag_for_fraud
+          get :recordings
+        end
       end
 
       # Reviewer-only internal notes about a project, shared across its funding

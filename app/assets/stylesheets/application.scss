@@ -14,12 +14,14 @@
 @use "components/alerts";
 @use "components/action_items";
 @use "components/action_button";
+@use "components/mihi_mode_toggle";
 @use "components/special_action_button";
 @use "components/input";
 @use "components/input-group";
 @use "components/sidebar";
 @use "components/discover_rail";
 @use "components/streak_widget";
+@use "components/streak_calendar";
 @use "components/sticky_streak";
 @use "components/ship_intro_module";
 @use "components/ui-heading";
@@ -61,6 +63,9 @@
 @use "components/slack_doodle";
 @use "components/sticker_promo";
 @use "components/sticker_promo_widget";
+@use "components/vega_sprite";
+@use "components/visual_novel";
+@use "components/rocket_progress";
 
 // Pages
 @use "pages/onboarding" as onboarding_pages;
@@ -71,6 +76,7 @@
 @use "pages/projects/hardware_update";
 @use "pages/projects/lookout_finalize";
 @use "pages/my/timelapses";
+@use "pages/my/balance" as my_balance;
 @use "pages/hardware_funding";
 @use "pages/votes";
 @use "pages/workshops";
@@ -103,6 +109,7 @@
 @use "pages/certification/ships/monitor" as certification_ships_monitor;
 @use "pages/certification/hardware_review" as certification_hardware_review;
 @use "pages/certification/recording_gallery" as certification_recording_gallery;
+@use "pages/certification/lapse_player" as certification_lapse_player;
 @use "pages/certification/mystats" as certification_mystats;
 @use "pages/certification/payouts" as certification_payouts;
 @use "pages/raffle";

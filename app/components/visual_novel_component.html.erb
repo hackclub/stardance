@@ -1,0 +1,41 @@
+<div class="visual-novel"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="visual-novel-speaker"
+     aria-describedby="visual-novel-line"
+     data-controller="visual-novel"
+     data-visual-novel-lines-value="<%= lines.to_json %>"
+     data-visual-novel-dismiss-thing-value="<%= dismiss_thing %>">
+  <div class="visual-novel__veil" data-action="click->visual-novel#advance"></div>
+
+  <div class="visual-novel__stage">
+    <span class="vega-sprite visual-novel__portrait" aria-hidden="true"></span>
+
+    <div class="visual-novel__box" data-action="click->visual-novel#advance">
+      <p class="visual-novel__speaker" id="visual-novel-speaker"><%= speaker %></p>
+
+      <button type="button" class="visual-novel__skip" data-action="click->visual-novel#finish:stop">Skip</button>
+
+      <p class="visual-novel__line" id="visual-novel-line" data-visual-novel-target="line"><%= lines.first %></p>
+
+      <div class="visual-novel__controls">
+        <ol class="visual-novel__progress">
+          <% lines.each_with_index do |_line, index| %>
+            <li class="visual-novel__dot <%= "visual-novel__dot--active" if index.zero? %>"
+                data-visual-novel-target="dot"></li>
+          <% end %>
+        </ol>
+
+        <button type="button"
+                class="visual-novel__advance"
+                aria-label="Next line"
+                data-visual-novel-target="advance"
+                data-action="click->visual-novel#advance:stop">
+          <svg class="visual-novel__advance-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M7 3.5 27 16 7 28.5Z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

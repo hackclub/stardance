@@ -44,6 +44,37 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Used AI to rubber-duck CSS.", @project.ai_declaration
   end
 
+  test "linking and unlinking a Hackatime key is recorded against the owner" do
+    key = User::HackatimeProject.create!(user: @owner, name: "forest-odyssey")
+    sign_in @owner
+
+    patch project_path(@project), params: { project: { title: "Forest Odyssey", hackatime_project_ids: [ key.id ] } }
+
+    assert_equal @project.id, key.reload.project_id
+
+    patch project_path(@project), params: { project: { title: "Forest Odyssey", hackatime_project_ids: [ "" ] } }
+
+    assert_nil key.reload.project_id
+
+    changes = key.versions.where(event: "update").to_h { |version| [ version.changeset["project_id"], version.whodunnit ] }
+    assert_equal @owner.id.to_s, changes[[ nil, @project.id ]], "the link is recorded against the owner"
+    assert_equal @owner.id.to_s, changes[[ @project.id, nil ]], "the unlink is recorded against the owner"
+  end
+
+  test "deleting a draft project records each Hackatime key it released" do
+    key = User::HackatimeProject.create!(user: @owner, name: "forest-odyssey")
+    key.update_columns(project_id: @project.id)
+    sign_in @owner
+
+    delete project_path(@project)
+
+    assert_nil key.reload.project_id
+    version = PaperTrail::Version.find_by!(item_type: "User::HackatimeProject", item_id: key.id.to_s,
+                                           event: "released_by_project_deletion")
+    assert_equal [ @project.id, nil ], version.object_changes["project_id"]
+    assert_equal @owner.id.to_s, version.whodunnit
+  end
+
   test "non-owner sees read-only project shell" do
     sign_in @viewer
 
@@ -227,6 +258,40 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='project[hardware_stage]'][value='design'][disabled]"
     assert_select "input[name='project[hardware_stage]'][checked]", 0
     assert_select "input[type='hidden'][name='project[hardware_stage]']"
+  end
+
+  test "locked software project shows Software as the selected type" do
+    ship = Post::ShipEvent.new(body: "shipped", uploading_attachments: true)
+    ActiveRecord::Base.transaction do
+      ship.save!(validate: false)
+      Post.create!(project: @project, user: @owner, postable: ship)
+    end
+
+    sign_in @owner
+
+    get project_path(@project, editing: true)
+
+    assert_response :success
+    assert_select ".project-show__stage-choice-label--selected", text: "Software", count: 1
+    assert_select ".project-show__stage-choice-label--selected", text: "Hardware", count: 0
+  end
+
+  test "locked hardware project shows Hardware as the selected type" do
+    @project.update!(hardware_stage: "build")
+
+    ship = Post::ShipEvent.new(body: "shipped", uploading_attachments: true)
+    ActiveRecord::Base.transaction do
+      ship.save!(validate: false)
+      Post.create!(project: @project, user: @owner, postable: ship)
+    end
+
+    sign_in @owner
+
+    get project_path(@project, editing: true)
+
+    assert_response :success
+    assert_select ".project-show__stage-choice-label--selected", text: "Hardware", count: 1
+    assert_select ".project-show__stage-choice-label--selected", text: "Software", count: 0
   end
 
   test "new project dialog offers the hardware project option and stage chooser" do

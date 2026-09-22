@@ -2,24 +2,27 @@
 #
 # Table name: project_reports
 #
-#  id          :bigint           not null, primary key
-#  details     :text             not null
-#  reason      :string           not null
-#  status      :integer          default(0), not null
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
-#  project_id  :bigint           not null
-#  reporter_id :bigint           not null
+#  id                     :bigint           not null, primary key
+#  details                :text             not null
+#  reason                 :string           not null
+#  status                 :integer          default(0), not null
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  fraud_review_payout_id :bigint
+#  project_id             :bigint           not null
+#  reporter_id            :bigint           not null
 #
 # Indexes
 #
 #  idx_project_reports_status_created_at_desc           (status,created_at DESC)
+#  index_project_reports_on_fraud_review_payout_id      (fraud_review_payout_id)
 #  index_project_reports_on_project_id                  (project_id)
 #  index_project_reports_on_reporter_id                 (reporter_id)
 #  index_project_reports_on_reporter_id_and_project_id  (reporter_id,project_id) UNIQUE
 #
 # Foreign Keys
 #
+#  fk_rails_...  (fraud_review_payout_id => fraud_review_payouts.id)
 #  fk_rails_...  (project_id => projects.id)
 #  fk_rails_...  (reporter_id => users.id)
 #
@@ -28,6 +31,7 @@ class Project::Report < ApplicationRecord
 
     belongs_to :reporter, class_name: "User"
     belongs_to :project
+    belongs_to :fraud_review_payout, optional: true, inverse_of: :project_reports
     after_commit :notify_slack_channel, on: :create
 
     REASONS = [
@@ -41,6 +45,18 @@ class Project::Report < ApplicationRecord
       "Shipwrights project flag"
     ].freeze
     USER_REASONS = %w[low_effort undeclared_ai demo_broken other].freeze # fraud is internal
+
+    # Reasons the fraud queue owns. The review teams' own flags plus
+    # undeclared_ai, which is a fraud claim even though anyone can file it.
+    # low_effort, demo_broken and other are quality complaints about a shipped
+    # project, so they stay with the reports queue.
+    FRAUD_REVIEW_REASONS = [
+      "fraud",
+      "undeclared_ai",
+      "External flag",
+      "YSWS project flag",
+      "Shipwrights project flag"
+    ].freeze
 
     DETAILS_MIN_LENGTH = 20
 

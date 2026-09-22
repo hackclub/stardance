@@ -8,7 +8,7 @@ class Admin::ProjectPolicy < ApplicationPolicy
   end
 
   def view_votes?
-    user.admin? || user.nda_helper?
+    user.admin? || user.helper? || user.nda_helper?
   end
 
   def restore?
@@ -21,5 +21,13 @@ class Admin::ProjectPolicy < ApplicationPolicy
 
   def destroy?
     user&.admin? || user&.fraud_dept?
+  end
+
+  def reset_devlogs?
+    user&.admin?
+  end
+
+  def convert_to_software?
+    user&.admin?
   end
 end

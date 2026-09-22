@@ -52,9 +52,19 @@
             <dt class="integrity-review__term">Ship status</dt>
             <dd class="integrity-review__value"><%= project.ship_status.presence || dash %></dd>
           </div>
+          <%# A deduction comes off the window this ship claims, not the
+              project's lifetime total, so the window is the number and the
+              total trails it as context on a project that shipped twice. %>
+          <% ship_hours = @review.ship_event.window_hours.round(1) %>
+          <% project_hours = (project.duration_seconds / 3600.0).round(1) %>
           <div class="integrity-review__row">
-            <dt class="integrity-review__term">Tracked time</dt>
-            <dd class="integrity-review__value"><%= pluralize((project.duration_seconds / 3600.0).round(1), "hour") %></dd>
+            <dt class="integrity-review__term"><%= ship_hours == project_hours ? "Tracked time" : "Tracked this ship" %></dt>
+            <dd class="integrity-review__value">
+              <%= pluralize(ship_hours, "hour") %>
+              <% if ship_hours != project_hours %>
+                <span class="integrity-review__value-aside"><%= project_hours %> total project hours</span>
+              <% end %>
+            </dd>
           </div>
           <div class="integrity-review__row">
             <dt class="integrity-review__term">Repository</dt>
@@ -156,15 +166,7 @@
     <h2 class="integrity-review__card-title" id="integrity-review-reasoning-heading">Review reasoning</h2>
 
     <% if signal_rows.any? %>
-      <dl class="integrity-review__list">
-        <% signal_rows.each do |name, value| %>
-          <% block = value.is_a?(Hash) %>
-          <div class="integrity-review__row <%= "integrity-review__row--block" if block %>">
-            <dt class="integrity-review__term"><%= name.to_s.humanize %></dt>
-            <dd class="integrity-review__value <%= "integrity-review__value--block" if block %>"><%= format_integrity_signal(name, value) %></dd>
-          </div>
-        <% end %>
-      </dl>
+      <%= render "signals", rows: signal_rows %>
     <% else %>
       <p class="integrity-review__placeholder">No detection data recorded for this review.</p>
     <% end %>
@@ -223,5 +225,11 @@
         <%= button_tag "Deduct hours", type: :submit, name: "decision", value: "deduct", class: "integrity-review__action integrity-review__action--deduct" %>
       </div>
     <% end %>
+  <% end %>
+
+  <%# Stardust comes back whatever the verdict was, so this stays available on a
+      check that is already decided. %>
+  <% if @review.user && policy(@review.user).adjust_balance? %>
+    <%= render "admin/certification/integrity/stardust_deduction", check: @review %>
   <% end %>
 </main>

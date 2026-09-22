@@ -24,6 +24,8 @@
 class User::HackatimeProject < ApplicationRecord
   include FunnelResyncTrigger
 
+  has_paper_trail
+
   belongs_to :user
   belongs_to :project, optional: true
 

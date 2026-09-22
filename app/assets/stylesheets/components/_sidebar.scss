@@ -356,6 +356,15 @@ button.sidebar__nav-link {
   align-items: center;
   gap: 4px;
   margin-top: 2px;
+  color: inherit;
+  text-decoration: none;
+  width: fit-content;
+
+  &:hover .sidebar__user-balance-amount,
+  &:focus-visible .sidebar__user-balance-amount {
+    opacity: 1;
+    text-decoration: underline;
+  }
 }
 
 .sidebar__user-balance-icon {

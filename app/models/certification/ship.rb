@@ -10,6 +10,7 @@
 #  feedback                  :text
 #  internal_reason           :text
 #  lock_version              :integer          default(0), not null
+#  payout_multiplier         :float
 #  proof_video_url           :string
 #  recert_reason             :text
 #  reversed_at               :datetime
@@ -29,6 +30,7 @@
 #  index_certification_ship_reviews_on_decided_at                 (decided_at)
 #  index_certification_ship_reviews_on_external_certification_id  (external_certification_id) UNIQUE
 #  index_certification_ship_reviews_on_post_ship_event_id         (post_ship_event_id)
+#  index_certification_ship_reviews_on_project_id                 (project_id)
 #  index_certification_ship_reviews_on_reviewer_id                (reviewer_id)
 #  index_ship_reviews_unique_pending_project                      (project_id) UNIQUE WHERE (status = 0)
 #
@@ -168,6 +170,10 @@ module Certification
               content_type: { in: ACCEPTED_VIDEO_TYPES, spoofing_protection: true }
     validates :bonus_stardust,
               numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 },
+              allow_nil: true
+
+    validates :payout_multiplier,
+              numericality: { greater_than: 0, less_than_or_equal_to: 100 },
               allow_nil: true
 
     scope :for_reviewer, ->(user) {
@@ -462,12 +468,19 @@ module Certification
     # Stardust earned per completed review
     REVIEW_BOUNTY = 1.25 # This will be updated once we add the project types.
 
+    # Set when a verdict is mirrored back from the external dashboard for a project we
+    # can't act on any more - deleted, or the owner is banned. The status still gets
+    # recorded so both queues agree on what happened, but nothing downstream fires: no
+    # bounty, no project transition, no DM to the builder.
+    attr_accessor :record_verdict_only
+
     before_save :stamp_claimed_at, if: -> { will_save_change_to_reviewer_id? && reviewer_id.present? && claimed_at.nil? }
     before_save :stamp_decided_at, if: -> { will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && decided_at.nil? }
-    before_save :assign_stardust_earned, if: -> { will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
-    after_save :apply_verdict_to_project!, if: :saved_change_to_status?
-    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? }
-    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? && project&.hardware? }
+    before_save :assign_stardust_earned, if: -> { !record_verdict_only && will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
+    after_save :apply_verdict_to_project!, if: -> { saved_change_to_status? && !record_verdict_only }
+    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? && !record_verdict_only }
+    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? && project&.hardware? && !record_verdict_only }
+    after_save_commit :post_approval_to_hardware_feed!, if: -> { saved_change_to_status? && approved? && project&.hardware? && !record_verdict_only }
     after_create_commit :post_submission_to_hardware_review_channel!, if: -> { project&.hardware? }
 
     # Timeline cards for decided reviews sort by when the verdict landed.

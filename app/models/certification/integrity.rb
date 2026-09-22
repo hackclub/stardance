@@ -13,19 +13,22 @@
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
 #  claimed_by_id          :bigint
+#  fraud_review_payout_id :bigint
 #  reviewer_id            :bigint
 #  ship_event_id          :bigint           not null
 #
 # Indexes
 #
-#  index_certification_integrities_on_claimed_by_id  (claimed_by_id)
-#  index_certification_integrities_on_reviewer_id    (reviewer_id)
-#  index_certification_integrities_on_ship_event_id  (ship_event_id) UNIQUE
-#  index_certification_integrities_on_status         (status)
+#  index_certification_integrities_on_claimed_by_id           (claimed_by_id)
+#  index_certification_integrities_on_fraud_review_payout_id  (fraud_review_payout_id)
+#  index_certification_integrities_on_reviewer_id             (reviewer_id)
+#  index_certification_integrities_on_ship_event_id           (ship_event_id) UNIQUE
+#  index_certification_integrities_on_status                  (status)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (claimed_by_id => users.id)
+#  fk_rails_...  (fraud_review_payout_id => fraud_review_payouts.id)
 #  fk_rails_...  (reviewer_id => users.id)
 #  fk_rails_...  (ship_event_id => post_ship_events.id)
 #
@@ -36,8 +39,23 @@ module Certification
     belongs_to :ship_event, class_name: "Post::ShipEvent", inverse_of: :integrity_check
     belongs_to :reviewer, class_name: "User", optional: true
     belongs_to :claimed_by, class_name: "User", optional: true
+    belongs_to :fraud_review_payout, optional: true, inverse_of: :certification_integrities
+
+    # The GOI's review of the same ship. It usually lands before the integrity
+    # check does, so a fraud reviewer is adjusting a number the GOI already set.
+    has_one :ysws_review, through: :ship_event
 
     delegate :project, to: :ship_event
+
+    # Checks on a ship the GOI has finished reviewing. A returned YSWS review is
+    # replaced by a fresh one on the same ship, so any completed review counts.
+    scope :past_goi, -> {
+      where(
+        Certification::Ysws.where("certification_ysws_reviews.post_ship_event_id = certification_integrities.ship_event_id")
+                           .where.not(reviewed_at: nil)
+                           .arel.exists
+      )
+    }
 
     # The project, including soft-deleted ones: banning a user soft-deletes their
     # projects, and Post::ShipEvent#project is a has_one :through that applies
@@ -141,6 +159,31 @@ module Certification
     # rewrites has its own review to bring back in line.
     after_commit :resync_completed_review_to_airtable, if: :saved_change_to_status?
 
+    # Stardust a fraud reviewer takes back for one hour of this ship's time: the
+    # rate the ship actually paid, blessing included. A ship that has not paid
+    # out has no rate of its own, so a deduction on it falls back to a flat one.
+    UNPAID_DEDUCTION_RATE = 10
+
+    def deduction_rate_per_hour
+      ship_event.stardust_per_hour_paid || UNPAID_DEDUCTION_RATE
+    end
+
+    def deduction_stardust_for(hours) = (hours.to_f * deduction_rate_per_hour).round
+
+    # Takes the stardust those hours earned back off the shipper's balance. The
+    # ledger entry is the record of it: it names the project and the reviewer's
+    # reason, and LedgerEntry files the balance change against the user itself.
+    def deduct_stardust!(hours:, reason:, actor:)
+      recipient = ship_event.payout_recipient
+
+      recipient.ledger_entries.create!(
+        ledgerable: recipient,
+        amount: -deduction_stardust_for(hours),
+        reason: "Integrity deduction on #{deduction_project_title} (#{ActiveSupport::NumberHelper.number_to_rounded(hours, precision: 2, strip_insignificant_zeros: true)} hrs): #{reason}",
+        created_by: "#{actor.display_name} (#{actor.id})"
+      )
+    end
+
     def claim_active?
       claimed_by_id.present? && claimed_at.present? && claimed_at > CLAIM_TTL.ago
     end
@@ -163,6 +206,10 @@ module Certification
     end
 
     private
+
+    def deduction_project_title
+      project_including_deleted&.title.presence || "Unknown project"
+    end
 
     def stamp_reviewed_at
       self.reviewed_at = Time.current

@@ -1,5 +1,6 @@
 <% recert_review = project.latest_ship_review %>
 <% gated = action_items_enabled? && is_member && recert_review&.returned? && recert_review.gates_resubmission? %>
+<% link_blocker = local_assigns[:link_blocker] %>
 <dialog id="recert-modal-<%= project.id %>"
         class="recert-modal"
         data-controller="modal"
@@ -15,8 +16,11 @@
     <h3 id="recert-modal-<%= project.id %>-title" class="recert-modal__title">Changes requested</h3>
     <% if !is_member %>
       <p class="recert-modal__subtitle">Reviewer feedback and walkthrough left for this project.</p>
-    <% elsif !gated %>
+    <% elsif !gated && !link_blocker %>
       <p class="recert-modal__subtitle">Your reviewer left feedback below. Address it and then request re-certification.</p>
+    <% end %>
+    <% if link_blocker %>
+      <p class="recert-modal__subtitle">This project's links need fixing before re-certification can be requested. <%= link_blocker %>.</p>
     <% end %>
 
     <% verdict_video_src = certification_verdict_video_src(recert_review) %>
@@ -58,8 +62,18 @@
                 onclick="document.getElementById(<%= "recert-modal-#{project.id}".to_json %>).close()">
           Close
         </button>
-        <%= submit_tag "Request re-certification", class: "recert-modal__btn recert-modal__btn--primary",
-              data: { action_items_target: ("submit" if gated) } %>
+        <% if link_blocker %>
+          <%# A plain button, not a disabled submit: the action-items controller
+              re-enables its submit target as soon as the checklist is ticked. %>
+          <button type="button"
+                  class="recert-modal__btn recert-modal__btn--primary"
+                  aria-disabled="true">
+            Request re-certification
+          </button>
+        <% else %>
+          <%= submit_tag "Request re-certification", class: "recert-modal__btn recert-modal__btn--primary",
+                data: { action_items_target: ("submit" if gated) } %>
+        <% end %>
       </div>
     <% end %>
   </div>

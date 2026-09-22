@@ -6,6 +6,18 @@
 
 <div class="app-layout">
   <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
+    <%= render RocketProgressComponent.new(user: current_user) %>
+    <% if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>
+      <%= render ActionButtonComponent.new(
+            text: "free 10,000 stardust hack *LEGIT* 2026 (WORKING)",
+            type: :button,
+            size: :small,
+            variant: :secondary,
+            class: "mihi-mode-toggle",
+            aria: { pressed: false },
+            data: { action: "mihi-mode#activate", mihi_mode_target: "toggle", mihi_mode_ignore: true }
+          ) %>
+    <% end %>
     <%= render "shared/raffle_referral_banner" %>
     <% if current_user.present? %>
       <%= render Posts::ComposerComponent.new(

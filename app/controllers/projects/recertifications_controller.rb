@@ -6,6 +6,11 @@ class Projects::RecertificationsController < ApplicationController
   def create
     authorize @project, :request_recertification?
 
+    if (link_blocker = @project.link_blocker_message)
+      redirect_to project_path(@project),
+                  alert: "This project's links need fixing before re-certification can be requested. #{link_blocker}." and return
+    end
+
     @project.with_lock do
       latest_review = @project.latest_ship_review
 

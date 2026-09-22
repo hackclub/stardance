@@ -329,16 +329,18 @@ class ProjectsController < ApplicationController
     validate_urls
     success = false
 
-    Project.transaction do
-      break unless @project.errors.empty? && @project.save
+    PaperTrail.request(whodunnit: paper_trail_whodunnit) do
+      Project.transaction do
+        break unless @project.errors.empty? && @project.save
 
-      @project.memberships.create!(user: current_user, role: :owner)
-      link_hackatime_projects
+        @project.memberships.create!(user: current_user, role: :owner)
+        link_hackatime_projects
 
-      if @project.errors.empty?
-        success = true
-      else
-        raise ActiveRecord::Rollback
+        if @project.errors.empty?
+          success = true
+        else
+          raise ActiveRecord::Rollback
+        end
       end
     end
 
@@ -385,10 +387,9 @@ class ProjectsController < ApplicationController
   def update
     authorize @project
 
-    whodunnit = impersonating? ? real_user&.id : current_user&.id
     success = nil
 
-    PaperTrail.request(whodunnit: whodunnit) do
+    PaperTrail.request(whodunnit: paper_trail_whodunnit) do
       @project.assign_attributes(project_params)
       validate_urls
       success = @project.errors.empty? && @project.save
@@ -451,7 +452,7 @@ class ProjectsController < ApplicationController
         )
       end
 
-      @project.soft_delete!(force: force)
+      PaperTrail.request(whodunnit: paper_trail_whodunnit) { @project.soft_delete!(force: force) }
       flash[:notice] = "Project deleted successfully"
       redirect_to profile_projects_path(current_user.display_name)
     rescue ActiveRecord::RecordInvalid => e
@@ -556,9 +557,12 @@ class ProjectsController < ApplicationController
   # validation error instead of a bare 400.
   def project_params
     params.fetch(:project, ActionController::Parameters.new)
-          .permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, :update_description, :hardware_stage, hackatime_project_ids: [])
+          .permit(:title, :description, :demo_url, :repo_url, :readme_url, :banner, :ai_declaration, :update_description, :hardware_stage)
   end
 
+  # Read here rather than permitted into project_params: the association's ids
+  # writer unlinks with update_all, skipping the key's validations and audit
+  # trail, so links only ever change through link_hackatime_projects.
   def hackatime_project_ids
     @hackatime_project_ids ||= Array(params.dig(:project, :hackatime_project_ids)).reject(&:blank?).map(&:to_i)
   end
@@ -653,6 +657,10 @@ class ProjectsController < ApplicationController
     Rails.logger.warn("URL validation error for #{attribute}: #{e.class}: #{e.message}")
     @project.errors.add(attribute, "#{name} could not be verified. Please try again or contact support if the issue persists.")
   end
+
+  # An impersonated change is recorded against the admin doing the impersonating.
+  def paper_trail_whodunnit = impersonating? ? real_user&.id : current_user&.id
+
   def link_hackatime_projects
     # Unlink hackatime projects that were removed. Scoped to the current user:
     # every member of a hardware project has their own row under the same name,

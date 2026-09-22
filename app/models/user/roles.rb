@@ -9,9 +9,16 @@ module User::Roles
     end
   end
 
+  # Checked by has_role? but never stored, so each can still be granted or
+  # removed on its own.
+  IMPLIED_ROLES = { fraud_fraud_squad_squad: %i[fraud_dept] }.freeze
+
   def roles = granted_roles&.map(&:to_sym) || []
 
-  def has_role?(role_name) = roles.include?(role_name.to_sym)
+  def has_role?(role_name)
+    role = role_name.to_sym
+    roles.any? { |granted| granted == role || IMPLIED_ROLES.fetch(granted, []).include?(role) }
+  end
 
   def admin? = has_role?(:admin) || has_role?(:super_admin)
 
@@ -27,7 +34,7 @@ module User::Roles
     role = role_name.to_sym
     raise ArgumentError, "Invalid role: #{role_name}" unless User::Role.all_slugs.include?(role)
 
-    return if has_role?(role)
+    return if roles.include?(role)
 
     update!(granted_roles: roles + [ role ])
     notify_role_granted(role)
@@ -37,7 +44,7 @@ module User::Roles
     role = role_name.to_sym
     raise ArgumentError, "Invalid role: #{role_name}" unless User::Role.all_slugs.include?(role)
 
-    update!(granted_roles: roles - [ role ]) if has_role?(role)
+    update!(granted_roles: roles - [ role ]) if roles.include?(role)
   end
 
   private

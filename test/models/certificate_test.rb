@@ -99,7 +99,7 @@ class CertificateTest < ActiveSupport::TestCase
     assert certificate.pending?
   end
 
-  test "certificate_eligible? keys off approved ship hours" do
+  test "certificate_eligible? keys off approved hours" do
     user = users(:one)
     assert_not user.certificate_eligible?
 
@@ -107,13 +107,41 @@ class CertificateTest < ActiveSupport::TestCase
     assert user.certificate_eligible?
   end
 
-  test "approved ship hours exclude soft-deleted projects" do
+  test "approved hours exclude soft-deleted projects" do
     user = users(:one)
     create_approved_ship(user, hours: 42)
-    assert_equal 42, user.approved_ship_hours
+    assert_equal 42, user.approved_hours
 
     posts(:one).project.soft_delete!(force: true)
-    assert_equal 0, user.approved_ship_hours
+    assert_equal 0, user.approved_hours
     assert_not user.certificate_eligible?
+  end
+
+  test "approved funding counts the design time a hardware ship leaves out" do
+    user = users(:one)
+    user.update_columns(verification_status: "verified", ysws_eligible: true)
+    project = Project.create!(title: "Funded Rover", hardware_stage: "design", created_at: 5.days.ago)
+    Project::Membership.create!(project: project, user: user, role: :owner)
+    create_devlog(project, user, seconds: 2 * 3600, phase: "design", at: 3.days.ago)
+    request = project.certification_funding_requests.create!(
+      user: user, complexity_tier: 1, requested_amount_cents: 2_000, status: :pending
+    )
+    request.update_column(:created_at, 2.days.ago)
+    create_devlog(project, user, seconds: 3 * 3600, phase: "build", at: 1.day.ago)
+
+    assert_equal 0, user.approved_hours
+
+    request.update_column(:status, Certification::FundingRequest.statuses[:approved])
+
+    assert_in_delta 2.0, user.approved_hours, 0.001
+  end
+
+  private
+
+  def create_devlog(project, user, seconds:, phase:, at:)
+    devlog = Post::Devlog.new(body: "work log", duration_seconds: seconds, phase: phase)
+    devlog.uploading_attachments = true
+    devlog.save!
+    Post.create!(project: project, user: user, postable: devlog, created_at: at)
   end
 end

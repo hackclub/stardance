@@ -2,12 +2,13 @@
 #
 # Table name: certification_mac_analyses
 #
-#  id             :bigint           not null, primary key
-#  generated_at   :datetime         not null
-#  report         :jsonb            not null
-#  created_at     :datetime         not null
-#  updated_at     :datetime         not null
-#  ysws_review_id :bigint           not null
+#  id                 :bigint           not null, primary key
+#  airtable_synced_at :datetime
+#  generated_at       :datetime         not null
+#  report             :jsonb            not null
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
+#  ysws_review_id     :bigint           not null
 #
 # Indexes
 #

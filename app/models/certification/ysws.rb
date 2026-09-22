@@ -103,18 +103,15 @@ module Certification
       select("certification_ysws_reviews.*", "#{TODO_DEVLOG_COUNT_SQL} AS todo_devlog_count")
     }
 
-    # Reviews whose ship event already carries a decided integrity check, or
-    # whose project is hardware (hardware projects skip integrity checks).
-    scope :with_integrity_check, -> {
-      hardware = joins(:project).where.not(projects: { hardware_stage: nil })
-      decided  = joins(:integrity_check).where.not(certification_integrities: { status: :pending })
-      where(id: hardware).or(where(id: decided))
-    }
-
     scope :by_project_type, ->(type) {
-      type == "unclassified" \
-        ? joins(:project).where(projects: { project_type: nil })
-        : joins(:project).where(projects: { project_type: type })
+      case type
+      when "Hardware"
+        joins(:project).where.not(projects: { hardware_stage: nil })
+      when "unclassified"
+        joins(:project).where(projects: { project_type: nil, hardware_stage: nil })
+      else
+        joins(:project).where(projects: { project_type: type, hardware_stage: nil })
+      end
     }
 
     # Project reviews completed from `time` onwards, with a reviewer attached — the
@@ -735,6 +732,27 @@ module Certification
     def approved_minutes_total
       devlog_reviews.sum { |dr| dr.approved_minutes.to_i }
     end
+
+    # Summed off the devlog reviews rather than read from `original_minutes`,
+    # which only backs the queue's length sort. YswsAirtableSyncJob totals it
+    # the same way, so the two cannot disagree.
+    def original_minutes_total
+      devlog_reviews.sum { |dr| dr.original_minutes.to_i }
+    end
+
+    # What a finished review left on the ship, in hours. Nil while the review is
+    # still open or was returned, because there is no verdict to report yet. A
+    # fraud deduction comes off this figure and not the claimed one, so it is
+    # the number an integrity verdict actually adjusts.
+    def approved_hours
+      return if reviewed_at.nil?
+
+      (approved_minutes_total / 60.0).round(1)
+    end
+
+    def claimed_hours = (original_minutes_total / 60.0).round(1)
+
+    def marked_down? = approved_hours.present? && approved_minutes_total < original_minutes_total
 
     def review_rejected?
       user.banned? || approved_minutes_total < MIN_APPROVED_MINUTES

@@ -1,0 +1,18 @@
+<%# The page passes what it already loaded; a verdict's re-render counts afresh. %>
+<% flags = local_assigns.fetch(:flags) { Admin::Fraud::SubjectQueue.flags_for(user) } %>
+<% orders = local_assigns.fetch(:orders) { Admin::Fraud::SubjectQueue.orders_for(user, reviewer: current_user) } %>
+<% checks = local_assigns.fetch(:checks) { Admin::Fraud::SubjectQueue.integrity_checks_for(user) } %>
+
+<%= turbo_frame_tag "fraud-subject-counts" do %>
+  <p class="fraud-subject__counts">
+    <span class="fraud-subject__count fraud-subject__count--flag">
+      <%= pluralize(flags.size, "flag") %>
+    </span>
+    <span class="fraud-subject__count fraud-subject__count--order">
+      <%= pluralize(orders.size, "order") %>
+    </span>
+    <span class="fraud-subject__count fraud-subject__count--integrity">
+      <%= pluralize(checks.size, "check") %>
+    </span>
+  </p>
+<% end %>

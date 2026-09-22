@@ -4,6 +4,9 @@ module User::Streakable
   # How long a streak sync holds off the next throttled sync (sync_streak_if_stale!).
   STREAK_SYNC_THROTTLE = 15.minutes
 
+  # How long a hand-triggered sync (sync_streak_now!) holds off the next one.
+  MANUAL_STREAK_SYNC_THROTTLE = 20.seconds
+
   included do
     has_many :streak_activities, dependent: :destroy
     has_one :sticky_streak, dependent: :destroy
@@ -59,6 +62,18 @@ module User::Streakable
     sync_streak!
   end
 
+  # Someone pressing refresh wants numbers they can see now, so sync inline
+  # rather than queueing. Its own short window keeps a mashed button off
+  # Hackatime; the shared window is armed too so no background sync piles on.
+  def sync_streak_now!
+    return unless hackatime_identity.present?
+    return if Rails.cache.read(manual_streak_sync_key)
+
+    Rails.cache.write(manual_streak_sync_key, true, expires_in: MANUAL_STREAK_SYNC_THROTTLE)
+    Rails.cache.write(streak_sync_throttle_key, true, expires_in: STREAK_SYNC_THROTTLE)
+    StreakActivity.sync_for_user!(self)
+  end
+
   # Most recent day (streak-day granularity) the user logged any Hackatime
   # coding time. Read straight from streak_activities, so no live Hackatime
   # call — nil if they've never logged time on a linked project.
@@ -109,6 +124,18 @@ module User::Streakable
     end
   end
 
+  # Days a helper marked kept by hand, newest first, for the admin credit panel.
+  def streak_credits
+    streak_activities.manually_credited.includes(:manual_credit_by).order(activity_date: :desc)
+  end
+
+  # The month the credit calendar opens on: the person's current month, held
+  # inside the months the program actually ran.
+  def streak_calendar_month
+    streak_today_date.beginning_of_month
+      .clamp(StreakActivity::CALENDAR_FIRST_MONTH, StreakActivity::CALENDAR_LAST_MONTH)
+  end
+
   def streak_next_day_at
     tz = timezone.presence || "UTC"
     local = Time.current.in_time_zone(tz)
@@ -120,6 +147,10 @@ module User::Streakable
 
   def streak_sync_throttle_key
     "streak_sync:#{id}"
+  end
+
+  def manual_streak_sync_key
+    "streak_sync_manual:#{id}"
   end
 
   def calculate_current_streak

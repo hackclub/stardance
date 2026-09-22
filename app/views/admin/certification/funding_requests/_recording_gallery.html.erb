@@ -4,7 +4,7 @@
       items:      array of { source:, video_url:, poster_url:, processing:,
                   name:, duration: (seconds), recorded_at: (Time or nil),
                   telescreen_url: (optional Telescreen deep-link) } %>
-<div class="ship-review__panel recording-gallery">
+<div class="ship-review__panel recording-gallery" data-controller="certification--lapse-player">
   <h2 class="ship-review__panel-title"><%= title %></h2>
 
   <% if items.blank? %>
@@ -12,22 +12,39 @@
   <% else %>
     <ul class="recording-gallery__list">
       <% items.each do |item| %>
-        <li class="recording-gallery__item">
-          <div class="recording-gallery__media">
-            <% if item[:source].present? %>
-              <span class="recording-gallery__source"><%= item[:source] %></span>
-            <% end %>
-            <% if item[:video_url].present? %>
-              <video controls playsinline preload="none"
-                     class="recording-gallery__video"
-                     poster="<%= item[:poster_url] %>">
-                <source src="<%= item[:video_url] %>" type="video/mp4">
-                Your browser does not support the video tag.
-              </video>
-            <% else %>
-              <div class="recording-gallery__processing"><%= item[:processing] %></div>
-            <% end %>
-          </div>
+        <li>
+          <% if item[:video_url].present? %>
+            <%# Clickable thumbnail: the JKL lapse-player opens it in a modal;
+                ctrl/middle-click still follows the href to the raw video. %>
+            <a class="recording-gallery__item"
+               href="<%= item[:video_url] %>"
+               data-certification--lapse-player-target="item"
+               data-action="click->certification--lapse-player#open"
+               target="_blank" rel="noopener noreferrer">
+              <div class="recording-gallery__media">
+                <% if item[:source].present? %>
+                  <span class="recording-gallery__source"><%= item[:source] %></span>
+                <% end %>
+                <% if item[:poster_url].present? %>
+                  <img class="recording-gallery__thumb" loading="lazy"
+                       src="<%= item[:poster_url] %>" alt="">
+                <% end %>
+                <span class="recording-gallery__play" aria-hidden="true">▶</span>
+                <% if item[:duration].present? %>
+                  <span class="recording-gallery__duration"><%= format_clock(item[:duration]) %></span>
+                <% end %>
+              </div>
+            </a>
+          <% else %>
+            <div class="recording-gallery__item">
+              <div class="recording-gallery__media">
+                <% if item[:source].present? %>
+                  <span class="recording-gallery__source"><%= item[:source] %></span>
+                <% end %>
+                <div class="recording-gallery__processing"><%= item[:processing] %></div>
+              </div>
+            </div>
+          <% end %>
           <div class="recording-gallery__meta">
             <span class="recording-gallery__name"><%= item[:name] %></span>
             <span class="recording-gallery__sub">

@@ -20,6 +20,11 @@
     </div>
   </header>
 
+  <%= turbo_frame_tag "mega-dash-mihis",
+        src: admin_mega_dashboard_section_path(section: "mihis", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading daily active mihis…</p>
+  <% end %>
+
   <%= turbo_frame_tag "mega-dash-overview",
         src: admin_mega_dashboard_section_path(section: "overview", period: @period), loading: "lazy", target: "_top" do %>
     <p class="mega-dash__loading">Loading queue overview…</p>

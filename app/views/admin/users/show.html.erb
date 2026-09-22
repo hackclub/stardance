@@ -164,35 +164,8 @@
       <% end %>
       <% if policy(@user).credit_streak_days? %>
         <button type="button" onclick="document.getElementById('credit-streak-day-modal').showModal()">⭐ Credit Streak Day</button>
-        <%= render layout: "shared/modal", locals: { id: "credit-streak-day-modal", title: "Credit a streak day", description: "Marks a day as kept when Hackatime missed the coding time. Streak progress is worked out from these days, so crediting a missed one also repairs the run behind it, including a Sticky Streak that had already broken." } do %>
-          <form action="<%= admin_user_streak_credits_path(@user) %>" method="post">
-            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-            <%= label_tag :activity_date, "Day to credit" %>
-            <%= date_field_tag :activity_date, @user.streak_today_date - 1.day, max: @user.streak_today_date, required: true, autocomplete: "off" %>
-            <%= label_tag :reason, "Reason" %>
-            <%= text_area_tag :reason, "", placeholder: "Why this day is being credited...", required: true %>
-            <button type="submit">Credit day</button>
-            <button type="button" onclick="document.getElementById('credit-streak-day-modal').close()">Cancel</button>
-          </form>
-
-          <% if @streak_credits.any? %>
-            <h4 class="admin-user-show__section-title">Already credited</h4>
-            <ul class="admin-user-show__streak-credits">
-              <% @streak_credits.each do |credit| %>
-                <li class="admin-user-show__streak-credit">
-                  <div>
-                    <strong><%= credit.activity_date.to_fs(:long) %></strong>
-                    <span class="admin-user-show__streak-credit-meta">
-                      <%= credit.manual_credit_reason %> (<%= credit.manual_credit_by&.display_name || "unknown" %>)
-                    </span>
-                  </div>
-                  <%= button_to "Revoke", admin_user_streak_credit_path(@user, credit), method: :delete,
-                      class: "admin-user-show__inline-action",
-                      form: { onsubmit: "return confirm(#{("Remove the credit for #{credit.activity_date.to_fs(:long)}?").to_json})" } %>
-                </li>
-              <% end %>
-            </ul>
-          <% end %>
+        <%= render layout: "shared/modal", locals: { id: "credit-streak-day-modal", class_name: "modal--wide", title: "Credit a streak day", description: "Marks a day as kept when Hackatime missed the coding time. Streak progress is worked out from these days, so crediting a missed one also repairs the run behind it, including a Sticky Streak that had already broken." } do %>
+          <%= render "admin/users/streak_credit_panel", user: @user %>
         <% end %>
       <% end %>
       <% if policy(@user).refresh_verification? %>
@@ -224,8 +197,8 @@
           all_roles = User::Role.all_slugs.reject { |slug| slug == :super_admin }.map do |slug|
             { name: slug.to_s, disabled: slug == :admin ? !current_user&.super_admin? : !current_user&.admin? }
           end
-          promotable_roles = all_roles.reject { |r| @user.has_role?(r[:name]) }
-          demotable_roles = all_roles.select { |r| @user.has_role?(r[:name]) }
+          promotable_roles = all_roles.reject { |r| @user.roles.include?(r[:name].to_sym) }
+          demotable_roles = all_roles.select { |r| @user.roles.include?(r[:name].to_sym) }
         %>
         <% if promotable_roles.any? %>
           <div class="role-dropdown">
@@ -276,6 +249,10 @@
 
       <% if policy(@user).reject_orders? %>
         <% if @user.shop_orders.where(aasm_state: %w[pending awaiting_periodical_fulfillment]).any? %>
+          <%# Only a pending order is still in fraud review, so an awaiting-fulfillment-only
+              batch (or a reviewer without the fraud role) never needs the fraud paperwork. %>
+          <% fraud_review_order = @user.shop_orders.find_by(aasm_state: "pending") %>
+          <% show_fraud_fields = fraud_review_order.present? && Admin::ShopOrderRejector.records_fraud_details?(fraud_review_order, current_user) %>
           <button type="button" onclick="document.getElementById('reject-modal-orders').showModal()">
             ✗ Reject Orders
           </button>
@@ -286,18 +263,24 @@
                 <%= label_tag :reason, "Public Rejection Reason (optional)" %>
                 <%= text_area_tag :reason, "", placeholder: "Shown to the user..." %>
               </div>
-              <div>
-                <%= label_tag :internal_rejection_reason, "Internal Reason (required, staff only)" %>
-                <%= text_area_tag :internal_rejection_reason, "", placeholder: "Detailed internal reason for these rejections...", required: true %>
-              </div>
-              <div>
-                <%= label_tag :fraud_related_project_id, "Related Project ID (required)" %>
-                <%= number_field_tag :fraud_related_project_id, nil, placeholder: "e.g. 1234", required: true, autocomplete: "off" %>
-              </div>
-              <div>
-                <%= label_tag :joe_case_url, "Telescreen case URL (optional)" %>
-                <%= url_field_tag :joe_case_url, nil, placeholder: "https://telescreen.hackclub.com/cases/...", autocomplete: "off" %>
-              </div>
+
+              <% if show_fraud_fields %>
+                <div>
+                  <%= label_tag :internal_rejection_reason, "Internal Reason (required, staff only)" %>
+                  <%= text_area_tag :internal_rejection_reason, "", placeholder: "Detailed internal reason for these rejections...", required: true %>
+                </div>
+                <div>
+                  <%= label_tag :fraud_related_project_id, "Related project (required)" %>
+                  <%= select_tag :fraud_related_project_id,
+                                 options_for_select(fraud_related_project_options(@user)),
+                                 include_blank: "Pick a project", required: true %>
+                </div>
+                <div>
+                  <%= label_tag :joe_case_url, "Telescreen case URL (optional)" %>
+                  <%= url_field_tag :joe_case_url, nil, placeholder: "https://telescreen.hackclub.com/cases/...", autocomplete: "off" %>
+                </div>
+              <% end %>
+
               <div>
                 <button type="submit">Confirm Reject</button>
                 <button type="button" onclick="document.getElementById('reject-modal-orders').close()">Cancel</button>
@@ -308,18 +291,7 @@
       <% end %>
 
       <% if policy(@user).adjust_balance? %>
-        <button type="button" onclick="document.getElementById('adjust-balance-modal').showModal()">💰 Adjust Balance</button>
-        <%= render layout: "shared/modal", locals: { id: "adjust-balance-modal", title: "Adjust Balance", description: "Current: #{@user.balance} tickets" } do %>
-          <form action="<%= admin_user_balance_adjustments_path(@user) %>" method="post">
-            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-            <%= label_tag :amount, "Amount" %>
-            <%= number_field_tag :amount, nil, placeholder: "e.g. 100 or -50", required: true, autocomplete: "off" %>
-            <%= label_tag :reason, "Reason" %>
-            <%= text_area_tag :reason, "", placeholder: "Reason for adjustment...", required: true %>
-            <button type="submit">Confirm</button>
-            <button type="button" onclick="document.getElementById('adjust-balance-modal').close()">Cancel</button>
-          </form>
-        <% end %>
+        <%= render "admin/users/adjust_balance", user: @user, balance: @user.balance %>
       <% end %>
 
       <% if policy(@user).view_votes? %>
@@ -352,6 +324,18 @@
               <button type="button" onclick="document.getElementById('cancel-grants-modal').close()">Cancel</button>
             </form>
           <% end %>
+        <% end %>
+      <% end %>
+
+      <% if policy(@user).manage_fraud_review_payouts? %>
+        <% if @user.fraud_review_payouts_disabled? %>
+          <%= button_to "Re-enable fraud review payouts", admin_user_fraud_payout_eligibility_path(@user), method: :patch,
+              params: { disabled: "false" },
+              form: { onsubmit: "return confirm(#{("Let #{@user.display_name} earn stardust for fraud reviews again?").to_json})" } %>
+        <% else %>
+          <%= button_to "Disable fraud review payouts", admin_user_fraud_payout_eligibility_path(@user), method: :patch,
+              params: { disabled: "true" },
+              form: { onsubmit: "return confirm(#{("Stop counting #{@user.display_name}'s fraud reviews towards stardust? Anything already banked still pays out.").to_json})" } %>
         <% end %>
       <% end %>
 

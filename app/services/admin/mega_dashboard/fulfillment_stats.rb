@@ -12,14 +12,8 @@ module Admin
       end
 
       def to_h
-        awaiting = ::ShopOrder.joins(:shop_item)
-                              .where(aasm_state: "awaiting_periodical_fulfillment")
-                              .where.not(shop_items: { type: "ShopItem::FreeStickers" })
-                              .group("shop_items.type").count
-        fulfilled = ::ShopOrder.joins(:shop_item)
-                               .where(aasm_state: "fulfilled")
-                               .where.not(shop_items: { type: "ShopItem::FreeStickers" })
-                               .group("shop_items.type").count
+        awaiting = countable.where(aasm_state: "awaiting_periodical_fulfillment").group("shop_items.type").count
+        fulfilled = countable.where(aasm_state: "fulfilled").group("shop_items.type").count
 
         {
           groups: build_rows(awaiting, fulfilled),
@@ -30,6 +24,10 @@ module Admin
       end
 
       private
+
+      # Both giveaways are left out: free stickers and Sticky Streak stickers
+      # arrive in bulk and would bury the items the team actually packs.
+      def countable = ::ShopOrder.real.without_streak_stickers
 
       # One row per item type, biggest queue first, so nothing hides in a
       # catch-all bucket.

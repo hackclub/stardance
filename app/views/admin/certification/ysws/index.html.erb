@@ -11,9 +11,8 @@
     <p class="ysws-dashboard__loading">Loading reviewer stats…</p>
   <% end %>
 
-  <%# The project-type select and the integrity toggle live outside this form —
-      in the table header and the summary row respectively — and associate back
-      to it via their form="ysws-queue-filters" attribute. %>
+  <%# The project-type select lives outside this form, in the table header, and
+      associates back to it via its form="ysws-queue-filters" attribute. %>
   <%= form_with url: admin_certification_ysws_reviews_path, method: :get,
                 id: "ysws-queue-filters", class: "ysws-queue__filters" do %>
     <% if @sort %>
@@ -84,7 +83,7 @@
     <% end %>
 
     <%# Reset filters, hidden from the UI for now. %>
-    <%# if @project_type.present? || @sort.present? || !@with_integrity %>
+    <%# if @project_type.present? || @sort.present? %>
     <%#   link_to "Reset filters", admin_certification_ysws_reviews_path(reset_filters: 1), class: "btn-secondary slim ysws-queue__reset-filters" %>
     <%# end %>
   <% end %>

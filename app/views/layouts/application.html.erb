@@ -67,7 +67,10 @@
     <%= Sentry.get_trace_propagation_meta.html_safe %> <%# erb_lint:disable ErbSafety %>
   </head>
 
-  <body class="<%= !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'streamer-mode' if session[:streamer_mode] %>">
+  <body class="<%= !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'streamer-mode' if session[:streamer_mode] %>"
+        data-controller="<%= 'mihi-mode' if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>"
+        data-mihi-mode-activation-url-value="<%= mihi_activations_path %>"
+        data-mihi-mode-image-url-value="<%= asset_path('mihi/portrait.jpg') %>">
     <% if @show_boot_splash %>
       <div class="app-loading" aria-hidden="true">
         <div class="app-loading__inner">
@@ -116,6 +119,7 @@
     <%= render "shared/sticky_streak_promo" %>
     <%= render "shared/post_panel" %>
     <%= render "shared/idv_verify_modal" %>
+    <%= render VisualNovelComponent.new(user: current_user) %>
     <% unless @hide_footer %>
       <footer class="dev-footer">
         <p>

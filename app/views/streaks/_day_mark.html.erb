@@ -1,23 +1,32 @@
 <%# The mark inside a streak calendar day. Days inside a Sticky Streak run show
     that day's sticker (clickable, zooms), or a question mark while no sticker
-    has been picked for it. Every other day keeps the usual star. %>
+    has been picked for it. Every other day keeps the usual star.
+    Surfaces that make the whole cell a button pass zoomable: false, since a
+    button cannot nest inside another button. %>
+<% zoomable = local_assigns.fetch(:zoomable, true) %>
 <% mark_classes = class_names("streak-mark", "streak-mark--#{size}", "streak-mark--today" => day[:today]) %>
 <% if day[:sticky_day] %>
   <% item = day[:sticky_reward]&.shop_item %>
   <% if item&.image&.attached? %>
-    <button type="button"
-            class="<%= class_names(mark_classes, "streak-mark--claimable" => day[:sticky_claimable]) %>"
-            data-action="sticker-zoom#open"
-            data-sticker-zoom-src-param="<%= url_for(item.image.variant(:carousel_lg)) %>"
-            data-sticker-zoom-name-param="<%= item.name %>"
-            data-sticker-zoom-description-param="<%= item.description %>"
-            data-sticker-zoom-claim-href-param="<%= shop_item_path(item, sticky_streak_day: day[:sticky_day]) if day[:sticky_claimable] %>">
-      <%= image_tag item.image.variant(:carousel_sm),
-            class: class_names("streak-mark__sticker",
-                               "streak-mark__sticker--claimable" => day[:sticky_claimable],
-                               "streak-mark__sticker--earned" => day[:completed] && !day[:sticky_claimable]),
-            alt: item.name %>
-    </button>
+    <% sticker = image_tag item.image.variant(:carousel_sm),
+                   class: class_names("streak-mark__sticker",
+                                      "streak-mark__sticker--claimable" => day[:sticky_claimable],
+                                      "streak-mark__sticker--earned" => day[:completed] && !day[:sticky_claimable]),
+                   alt: item.name %>
+    <% classes = class_names(mark_classes, "streak-mark--claimable" => day[:sticky_claimable]) %>
+    <% if zoomable %>
+      <button type="button"
+              class="<%= classes %>"
+              data-action="sticker-zoom#open"
+              data-sticker-zoom-src-param="<%= url_for(item.image.variant(:carousel_lg)) %>"
+              data-sticker-zoom-name-param="<%= item.name %>"
+              data-sticker-zoom-description-param="<%= item.description %>"
+              data-sticker-zoom-claim-href-param="<%= shop_item_path(item, sticky_streak_day: day[:sticky_day]) if day[:sticky_claimable] %>">
+        <%= sticker %>
+      </button>
+    <% else %>
+      <span class="<%= classes %>"><%= sticker %></span>
+    <% end %>
   <% else %>
     <span class="<%= mark_classes %> streak-mark--unknown"
           aria-label="Sticky Streak day <%= day[:sticky_day] %>, sticker not picked yet">?</span>

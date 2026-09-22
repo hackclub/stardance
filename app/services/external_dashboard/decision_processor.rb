@@ -21,8 +21,6 @@ module ExternalDashboard
 
       cert = Certification::Ship.find_by_external(uuid: certification[:id], external_id: certification[:externalId])
       return error(:not_found, "cert not found (externalId=#{certification[:externalId].inspect} id=#{certification[:id].inspect})") if cert.nil?
-      return ignored("project is deleted") if cert.project.nil? || cert.project.deleted_at.present?
-      return ignored("project owner is banned") if cert.owner&.banned?
       return error(:bad_request, "missing or invalid timestamp") if decision_timestamp.nil?
       return error(:conflict, "implausible decision timestamp (timestamp=#{payload[:timestamp].inspect})") if cert.pending? && VerdictApplier.stale?(cert: cert, decided_at: decision_timestamp)
 
@@ -110,11 +108,6 @@ module ExternalDashboard
 
     def ok(body)
       Result.new(status: :ok, body: body)
-    end
-
-    def ignored(reason)
-      Rails.logger.warn "[ExternalDashboard::DecisionProcessor] ignored decision: #{reason}"
-      Result.new(status: :ok, body: { ignored: reason })
     end
 
     def error(status_sym, message)

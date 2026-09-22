@@ -122,6 +122,12 @@ production:
     concurrency: 1
     description: "Retry fulfillment for free sticker orders stuck in pending"
 
+  shop_release_expired_order_holds:
+    class: Shop::ReleaseExpiredOrderHoldsJob
+    schedule: every minute
+    concurrency: 1
+    description: "Release shop orders after they have been on hold for seven days"
+
   shop_calculate_fulfillment_payouts:
     class: Shop::CalculateFulfillmentPayoutsJob
     schedule: every Friday at 12pm Europe/London
@@ -158,11 +164,22 @@ production:
     concurrency: 1
     description: "Recalculate approx_balance and approx_total_earned from ledger entries"
 
+  sync_mac_to_airtable:
+    class: Certification::MACAirtableSyncJob
+    schedule: every 5 minutes
+    concurrency: 1
+    description: "Sync big-mac AI analysis signals (ai_coding_pct, flags) to YSWS airtable for final-pass reviewers"
+
   clear_insufficient_mac_analyses:
     class: Certification::ClearInsufficientMACAnalysesJob
     schedule: every day at 6am UTC
     concurrency: 1
     description: "Destroy MAC analyses flagged insufficient_data older than 3 days so they re-enter the pending queue"
+
+  certification_fraud_integrity_backfill:
+    class: OneTime::BackfillFraudIntegrityJob
+    schedule: every day at 5am America/New_York
+    description: "Run fraud auto-detection on ships that have a YSWS review but no integrity check yet"
 
   certification_ysws_airtable_resync:
     class: Certification::YswsAirtableResyncJob

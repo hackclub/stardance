@@ -66,6 +66,13 @@ class Admin::UserPolicy < ApplicationPolicy
     user&.admin? || user&.fraud_dept?
   end
 
+  # Narrower than the other fraud actions on purpose: this decides whether
+  # someone gets paid, so it sits with approving payout runs rather than with
+  # working the queue.
+  def manage_fraud_review_payouts?
+    user&.admin?
+  end
+
   # Deliberately wider than the other write actions: helpers work the support
   # queue where a wrongly missed streak day is reported, and a credited day
   # hands out nothing but a sticker.
@@ -74,7 +81,7 @@ class Admin::UserPolicy < ApplicationPolicy
   end
 
   def view_votes?
-    user&.admin? || user&.nda_helper?
+    user&.admin? || user&.helper? || user&.nda_helper?
   end
 
   def view_order_full_details?
@@ -85,8 +92,11 @@ class Admin::UserPolicy < ApplicationPolicy
     view_order_full_details? || user&.helper?
   end
 
+  # Fraud reviewers judge an order partly on what it costs to fulfill, so the
+  # roles that can work the fraud queue see the figure too.
   def view_usd_cost?
-    user&.admin? || user&.fulfillment_person? || user&.shop_manager?
+    user&.admin? || user&.fulfillment_person? || user&.shop_manager? ||
+      user&.fraud_lead? || user&.fraud_dept?
   end
 
   def shop_order_action?
@@ -121,8 +131,6 @@ class Admin::UserPolicy < ApplicationPolicy
       return true if record.has_role?(:admin) || record.has_role?(:super_admin)
     end
 
-    protected_roles = [ :admin, :super_admin, :fraud_dept ]
-    shared_protected_roles = user.roles & protected_roles & record.roles
-    shared_protected_roles.any?
+    [ :admin, :super_admin, :fraud_dept ].any? { |role| user.has_role?(role) && record.has_role?(role) }
   end
 end

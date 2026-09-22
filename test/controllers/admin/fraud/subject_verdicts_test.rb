@@ -1,0 +1,708 @@
+require "test_helper"
+
+# Verdicts submitted from the per-person fraud page settle the item and answer
+# with a swap, so the reviewer stays on the person instead of being sent back to
+# whichever queue the item came from.
+class Admin::Fraud::SubjectVerdictsTest < ActionDispatch::IntegrationTest
+  include UserFactory
+
+  TURBO_STREAM = { "Accept" => "text/vnd.turbo-stream.html" }.freeze
+  PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=".freeze
+
+  setup do
+    @admin = create_user(slack_id: "U_FRAUD_VERDICT_ADMIN", display_name: "verdictadmin")
+    @admin.grant_role!(:admin)
+
+    @subject = create_user(slack_id: "U_FRAUD_VERDICT_SUBJECT", display_name: "verdictsubject")
+    @reporter = create_user(slack_id: "U_FRAUD_VERDICT_REPORTER", display_name: "verdictreporter")
+
+    sign_in @admin
+  end
+
+  test "resolving a flag swaps the item out instead of redirecting" do
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate flag.reload, :reviewed?
+    assert_match "turbo-stream", response.media_type
+    assert_match ActionView::RecordIdentifier.dom_id(flag), response.body
+  end
+
+  test "a verdict fills the item's slot in the progress bar" do
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_match ActionView::RecordIdentifier.dom_id(flag, :progress), response.body
+    assert_match "fraud-subject__progress-slot--done", response.body
+    assert_match "fraud-subject__progress-slot--flag", response.body
+  end
+
+  test "a dismissed flag keeps the colour of the queue it came from" do
+    flag = flag_a_project
+
+    post dismiss_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate flag.reload, :dismissed?
+    assert_match "fraud-subject__progress-slot--flag", response.body
+    assert_no_match "progress-slot--cleared", response.body
+    assert_match "fraud-subject__item--flag", response.body
+  end
+
+  test "a verdict accrues a payout tally and shows the multiplier" do
+    flag = flag_a_project
+    pending_integrity_check
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    payout = FraudReviewPayout.sole
+    assert_equal [ @admin.id, @subject.id, 1 ], [ payout.reviewer_id, payout.subject_id, payout.flag_count ]
+    assert_nil payout.completed_at, "a person with a check still waiting is not cleared"
+    assert_match "fraud-subject__payout-mult--flag", response.body
+    assert_match "1.1", response.body
+  end
+
+  test "clearing the last review completes the payout and shows the total" do
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    payout = FraudReviewPayout.sole
+    assert_not_nil payout.completed_at
+    assert_equal 1, payout.credited_amount
+    assert_match "fraud-subject__payout-result--done", response.body
+    assert_match "fraud-celebration", response.body
+    assert_match "fraud-payout-celebration-total-value", response.body
+  end
+
+  test "a reviewer with payouts turned off clears the person with no celebration" do
+    @admin.update!(fraud_review_payouts_disabled_at: Time.current)
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate flag.reload, :reviewed?
+    assert_empty FraudReviewPayout.all
+    assert_no_match "fraud-celebration", response.body
+    assert_no_match "fraud-subject__payout", response.body
+  end
+
+  test "the multiplier readout is gone for a reviewer with payouts turned off" do
+    @admin.update!(fraud_review_payouts_disabled_at: Time.current)
+    flag_a_project
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__progress-track"
+    assert_select ".fraud-subject__payout", count: 0
+  end
+
+  test "a payout stays unpayable until the person is cleared" do
+    flag_a_project
+    flag = flag_a_project
+    pending_integrity_check
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_empty FraudReviewPayout.payable
+  end
+
+  test "resolving a flag from its own dashboard still redirects" do
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag)
+
+    assert_redirected_to admin_certification_reports_path
+    assert_predicate flag.reload, :reviewed?
+  end
+
+  test "an integrity verdict takes the claim it never opened" do
+    check = pending_integrity_check
+
+    patch admin_certification_integrity_review_path(check),
+          params: { fraud_subject_id: @subject.id, decision: "pass" }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate check.reload, :manually_passed?
+    assert_equal @admin.id, check.reviewer_id
+  end
+
+  test "a fraud squad member settles every kind of item from the subject page" do
+    squad = create_user(slack_id: "U_FRAUD_VERDICT_SQUAD", display_name: "verdictsquad")
+    squad.grant_role!(:fraud_fraud_squad_squad)
+    sign_in squad
+    flag = flag_a_project
+    check = pending_integrity_check
+    order = pending_order
+
+    post dismiss_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+    assert_response :success
+
+    patch admin_certification_integrity_review_path(check),
+          params: { fraud_subject_id: @subject.id, decision: "pass" }, headers: TURBO_STREAM
+    assert_response :success
+
+    post approve_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+    assert_response :success
+
+    assert_predicate flag.reload, :dismissed?
+    assert_predicate check.reload, :manually_passed?
+    assert_equal "awaiting_periodical_fulfillment", order.reload.aasm_state
+  end
+
+  test "approving an order records its state change once, against the reviewer" do
+    order = pending_order
+
+    post approve_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    state_changes = order.versions.where(event: "update").select { |version| version.changeset.key?("aasm_state") }
+    assert_equal [ [ "pending", "awaiting_periodical_fulfillment" ] ], state_changes.map { |version| version.changeset["aasm_state"] }
+    assert_equal @admin.id.to_s, state_changes.first.whodunnit
+  end
+
+  test "an integrity verdict cannot jump another reviewer's claim" do
+    other = create_user(slack_id: "U_FRAUD_OTHER", display_name: "otherreviewer")
+    check = pending_integrity_check
+    Certification::Integrity.atomic_claim!(check.id, other)
+
+    patch admin_certification_integrity_review_path(check),
+          params: { fraud_subject_id: @subject.id, decision: "pass" }, headers: TURBO_STREAM
+
+    # A redirect here would render as "Content missing" inside the check's
+    # frame, so the claim guard answers with the frame and the reason instead.
+    assert_response :unprocessable_entity
+    assert_match ActionView::RecordIdentifier.dom_id(check), response.body
+    assert_match "claimed by another admin", response.body
+    assert_predicate check.reload, :pending?
+  end
+
+  test "deducting with no hours answers with the check, not a missing frame" do
+    check = pending_integrity_check
+
+    patch admin_certification_integrity_review_path(check),
+          params: { fraud_subject_id: @subject.id, decision: "deduct", deduction_hours: "" },
+          headers: TURBO_STREAM
+
+    assert_response :unprocessable_entity
+    assert_match ActionView::RecordIdentifier.dom_id(check), response.body
+    assert_match "fraud-subject__item-error", response.body
+    assert_predicate check.reload, :pending?
+    assert_nil check.deduction_minutes
+  end
+
+  test "a verdict is refused when another reviewer holds the person" do
+    other = create_user(slack_id: "U_FRAUD_HOLDER", display_name: "holder")
+    FraudSubjectClaim.claim(@subject, other)
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :conflict
+    assert_match "holder", response.body
+    assert_match "was not recorded", response.body
+    assert_predicate flag.reload, :pending?
+    assert_equal 0, FraudReviewPayout.count
+  end
+
+  test "a lapsed claim does not block the next reviewer's verdict" do
+    other = create_user(slack_id: "U_FRAUD_LAPSED", display_name: "lapsed")
+    FraudSubjectClaim.claim(@subject, other)
+                     .update!(claimed_at: (FraudSubjectClaim::CLAIM_TTL + 1.minute).ago)
+    flag = flag_a_project
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate flag.reload, :reviewed?
+  end
+
+  test "a cascading verdict fills the slots of the checks it settled too" do
+    project = Project.create!(title: "Many ships")
+    Project::Membership.create!(project: project, user: @subject, role: :owner)
+    decided, sibling = 2.times.map { integrity_check_on(project) }
+
+    patch admin_certification_integrity_review_path(decided),
+          params: { fraud_subject_id: @subject.id, decision: "pass" }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate sibling.reload, :manually_passed?, "the cascade settled the sibling"
+    assert_match ActionView::RecordIdentifier.dom_id(sibling, :progress), response.body
+    assert_match "fraud-subject__progress-slot--done", response.body
+  end
+
+  test "passing all checks settles every project and pays as passing them one at a time would" do
+    many = Project.create!(title: "Many ships")
+    Project::Membership.create!(project: many, user: @subject, role: :owner)
+    first, cascaded = 2.times.map { integrity_check_on(many) }
+    other = pending_integrity_check
+
+    post admin_certification_pass_all_integrity_reviews_path,
+         params: { fraud_subject_id: @subject.id, check_ids: [ first.id, cascaded.id, other.id ] }, headers: TURBO_STREAM
+
+    assert_response :success
+    [ first, cascaded, other ].each do |check|
+      assert_predicate check.reload, :manually_passed?
+      assert_equal @admin, check.reviewer
+      assert_match ActionView::RecordIdentifier.dom_id(check, :progress), response.body
+    end
+    assert_equal 2, FraudReviewPayout.find_by!(reviewer: @admin, subject: @subject).integrity_count,
+                 "the check the cascade settled earns nothing on top of the one that decided it"
+  end
+
+  test "passing all leaves a check another reviewer holds" do
+    held = pending_integrity_check
+    free = pending_integrity_check
+    Certification::Integrity.atomic_claim!(held.id, create_user(slack_id: "U_FRAUD_HOLDER", display_name: "holder"))
+
+    post admin_certification_pass_all_integrity_reviews_path,
+         params: { fraud_subject_id: @subject.id, check_ids: [ held.id, free.id ] }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate held.reload, :pending?
+    assert_predicate free.reload, :manually_passed?
+    assert_match "Could not pass 1 check (##{held.id})", response.body
+  end
+
+  test "the integrity section offers to pass every check waiting" do
+    2.times { pending_integrity_check }
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_select "form[action=?] button", admin_certification_pass_all_integrity_reviews_path, text: "Pass all 2 checks"
+  end
+
+  test "a non-cascading verdict leaves the other checks' slots alone" do
+    project = Project.create!(title: "Deducted ship")
+    Project::Membership.create!(project: project, user: @subject, role: :owner)
+    decided, sibling = 2.times.map { integrity_check_on(project) }
+
+    patch admin_certification_integrity_review_path(decided),
+          params: { fraud_subject_id: @subject.id, decision: "deduct", deduction_hours: "2" },
+          headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate sibling.reload, :pending?
+    assert_no_match ActionView::RecordIdentifier.dom_id(sibling, :progress), response.body
+  end
+
+  test "a cascading verdict re-renders the whole integrity list" do
+    check = pending_integrity_check
+
+    patch admin_certification_integrity_review_path(check),
+          params: { fraud_subject_id: @subject.id, decision: "pass" }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_match "fraud-subject-integrity-items", response.body
+  end
+
+  test "a deduction replaces only the row it settled" do
+    check = pending_integrity_check
+
+    patch admin_certification_integrity_review_path(check),
+          params: { fraud_subject_id: @subject.id, decision: "deduct", deduction_hours: "1.5" },
+          headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate check.reload, :deducted?
+    assert_equal 90, check.deduction_minutes
+    assert_match ActionView::RecordIdentifier.dom_id(check), response.body
+  end
+
+  test "an order row shows its fulfillment cost, stardust cost and the buyer's country" do
+    @subject.update!(geocoded_country: "CA")
+    pending_order
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__facts" do
+      assert_select "dd", text: /\$7\.00/
+      assert_select "dd", text: /CA/
+    end
+  end
+
+  test "the subject page offers bulk order verdicts" do
+    pending_order
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select "form[action=?] button", bulk_approve_admin_shop_orders_path, text: "Approve all 1 order"
+    assert_select "form[action=?] input[type=submit]", bulk_reject_admin_shop_orders_path, value: "Reject all orders"
+  end
+
+  test "the subject page shows previously approved orders" do
+    order = pending_order
+    order.update_columns(aasm_state: "awaiting_periodical_fulfillment", awaiting_periodical_fulfillment_at: Time.current)
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select "#fraud-subject-approved-orders", text: /Previously approved orders/
+    assert_match order.shop_item.name, response.body
+    assert_match "Awaiting periodical fulfillment", response.body
+  end
+
+  test "bulk rejection rejects every selected subject order and audits each verdict" do
+    @admin.grant_role!(:fraud_dept)
+    order = pending_order
+    project = Project.create!(title: "Fraud source")
+
+    post bulk_reject_admin_shop_orders_path,
+         params: {
+           order_ids: [ order.id ],
+           reason: "Fraud review failed",
+           internal_rejection_reason: "Matching evidence",
+           fraud_related_project_id: project.id
+         },
+         headers: { "HTTP_REFERER" => admin_fraud_subject_url(@subject) }
+
+    assert_redirected_to admin_fraud_subject_path(@subject)
+    assert_predicate order.reload, :rejected?
+    assert PaperTrail::Version.where(item_type: "ShopOrder", item_id: order.id, whodunnit: @admin.id.to_s).exists?
+  end
+
+  test "bulk approving from the subject page pays the reviewer for every order" do
+    orders = 2.times.map { pending_order }
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: orders.map(&:id), fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    orders.each { |order| assert_equal "awaiting_periodical_fulfillment", order.reload.aasm_state }
+
+    payout = FraudReviewPayout.sole
+    assert_equal [ @admin.id, @subject.id, 2 ], [ payout.reviewer_id, payout.subject_id, payout.order_count ]
+    assert_equal orders.map(&:id).sort, payout.shop_orders.pluck(:id).sort
+    assert_not_nil payout.completed_at, "nothing is left waiting, so the tally is payable"
+    assert_match "fraud-celebration", response.body
+  end
+
+  test "bulk rejecting from the subject page pays the reviewer for every order" do
+    @admin.grant_role!(:fraud_dept)
+    orders = 2.times.map { pending_order }
+    project = Project.create!(title: "Fraud source")
+
+    post bulk_reject_admin_shop_orders_path,
+         params: {
+           order_ids: orders.map(&:id),
+           fraud_subject_id: @subject.id,
+           reason: "Fraud review failed",
+           internal_rejection_reason: "Matching evidence",
+           fraud_related_project_id: project.id
+         }, headers: TURBO_STREAM
+
+    assert_response :success
+    orders.each { |order| assert_predicate order.reload, :rejected? }
+    assert_equal 2, FraudReviewPayout.sole.order_count
+  end
+
+  test "a bulk verdict swaps out every row it settled and refreshes the buttons" do
+    orders = 2.times.map { pending_order }
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: orders.map(&:id), fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    orders.each do |order|
+      assert_match ActionView::RecordIdentifier.dom_id(order), response.body
+      assert_match ActionView::RecordIdentifier.dom_id(order, :progress), response.body
+    end
+    assert_match "fraud-subject-order-bulk-actions", response.body
+    assert_no_match(/Approve all \d+ order/, response.body, "the settled orders are no longer on offer")
+  end
+
+  test "a bulk verdict completes a tally an earlier verdict left open" do
+    flag = flag_a_project
+    order = pending_order
+
+    post review_admin_certification_report_path(flag),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+    assert_nil FraudReviewPayout.sole.completed_at, "the order is still waiting"
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: [ order.id ], fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    payout = FraudReviewPayout.sole
+    assert_equal [ 1, 1 ], [ payout.flag_count, payout.order_count ]
+    assert_not_nil payout.completed_at
+    assert_includes FraudReviewPayout.payable, payout
+  end
+
+  test "a two-approval order offers an approval that asks for a reason" do
+    order = high_value_order
+
+    get admin_fraud_subject_path(@subject)
+
+    assert_response :success
+    assert_select ".fraud-subject__second-review form[action=?] textarea[required]", review_order_admin_shop_order_path(order)
+  end
+
+  test "a first approval on a two-approval order pays the reviewer and leaves the order for someone else" do
+    order = high_value_order
+    FraudSubjectClaim.claim(@subject, @admin)
+
+    post review_order_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id, verdict: "approve", review_reason: "Receipts check out" },
+         headers: TURBO_STREAM
+
+    assert_response :success
+    assert_equal "pending", order.reload.aasm_state
+    assert_nil order.fraud_review_payout_id, "the order is left for whoever approves it"
+
+    payout = FraudReviewPayout.find_by!(reviewer: @admin, subject: @subject)
+    assert_equal payout.id, order.reviews.sole.fraud_review_payout_id
+    assert_not_nil payout.completed_at, "nothing else on the person is left for this reviewer"
+    assert_nil FraudSubjectClaim.find_by(subject_id: @subject.id), "the claim is let go for the second reviewer"
+    assert_match "waits on another reviewer", response.body
+  end
+
+  test "the second approval on a two-approval order approves it and pays that reviewer too" do
+    order = high_value_order
+    first = create_user(slack_id: "U_FRAUD_FIRST_REVIEWER", display_name: "firstreviewer")
+    first.grant_role!(:fraud_dept)
+    order.reviews.create!(user: first, verdict: "approve", reason: "Receipts check out")
+
+    post review_order_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id, verdict: "approve", review_reason: "Agreed" },
+         headers: TURBO_STREAM
+
+    assert_response :success
+    assert_equal "awaiting_periodical_fulfillment", order.reload.aasm_state
+    assert_equal FraudReviewPayout.find_by!(reviewer: @admin, subject: @subject).id, order.fraud_review_payout_id
+  end
+
+  test "a first rejection on a two-review order records it and leaves the order pending" do
+    @admin.grant_role!(:fraud_dept)
+    order = high_value_order
+    project = Project.create!(title: "Fraud source #{SecureRandom.hex(4)}")
+    FraudSubjectClaim.claim(@subject, @admin)
+
+    post reject_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id, reason: "Not shipping this",
+                   internal_rejection_reason: "Bought with laundered hours", fraud_related_project_id: project.id },
+         headers: TURBO_STREAM
+
+    assert_response :success
+    assert_equal "pending", order.reload.aasm_state
+    assert_equal [ ShopOrderReview::REJECT, "Bought with laundered hours" ], order.reviews.sole.slice(:verdict, :reason).values
+    assert_match "waits on another reviewer", response.body
+
+    payout = FraudReviewPayout.find_by!(reviewer: @admin, subject: @subject)
+    assert_equal payout.id, order.reviews.sole.fraud_review_payout_id, "the reviewer is paid for the rejection they recorded"
+  end
+
+  test "the second rejection on a two-review order rejects it and pays that reviewer" do
+    @admin.grant_role!(:fraud_dept)
+    order = high_value_order
+    project = Project.create!(title: "Fraud source #{SecureRandom.hex(4)}")
+    first = create_user(slack_id: "U_FRAUD_FIRST_REJECTER", display_name: "firstrejecter")
+    first.grant_role!(:fraud_dept)
+    order.reviews.create!(user: first, verdict: ShopOrderReview::REJECT, reason: "Hours do not add up")
+
+    post reject_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id, reason: "Not shipping this",
+                   internal_rejection_reason: "Agreed, laundered hours", fraud_related_project_id: project.id },
+         headers: TURBO_STREAM
+
+    assert_response :success
+    assert_predicate order.reload, :rejected?
+    assert_equal FraudReviewPayout.find_by!(reviewer: @admin, subject: @subject).id, order.fraud_review_payout_id
+  end
+
+  test "two approvals do not let a high-value order be rejected" do
+    @admin.grant_role!(:fraud_dept)
+    order = high_value_order
+    project = Project.create!(title: "Fraud source #{SecureRandom.hex(4)}")
+    2.times do |i|
+      reviewer = create_user(slack_id: "U_FRAUD_APPROVER_#{i}", display_name: "approver#{i}")
+      order.reviews.create!(user: reviewer, verdict: ShopOrderReview::APPROVE, reason: "Looks fine to me")
+    end
+
+    post reject_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id, reason: "Not shipping this",
+                   internal_rejection_reason: "Changed my mind", fraud_related_project_id: project.id },
+         headers: TURBO_STREAM
+
+    assert_response :success
+    assert_equal "pending", order.reload.aasm_state
+    assert_equal 1, order.review_count(ShopOrderReview::REJECT), "the approvals stand and the rejection is only the first"
+  end
+
+  test "two rejections do not let a high-value order be approved" do
+    order = high_value_order
+    2.times do |i|
+      reviewer = create_user(slack_id: "U_FRAUD_REJECTER_#{i}", display_name: "rejecter#{i}")
+      order.reviews.create!(user: reviewer, verdict: ShopOrderReview::REJECT, reason: "Hours do not add up")
+    end
+
+    post approve_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_redirected_to admin_shop_order_path(order)
+    assert_equal "pending", order.reload.aasm_state
+    assert_match "fraud dept approvals", flash[:alert]
+  end
+
+  test "a review without a reason keeps the reviewer on the order with the error" do
+    order = high_value_order
+
+    post review_order_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id, verdict: "approve", review_reason: "" },
+         headers: TURBO_STREAM
+
+    assert_response :success
+    assert_empty order.reviews
+    assert_match(/Reason can(&#39;|')t be blank/, response.body)
+    assert_select ".fraud-subject__item-error"
+  end
+
+  test "a bulk verdict cannot jump another reviewer's claim" do
+    other = create_user(slack_id: "U_FRAUD_BULK_HOLDER", display_name: "bulkholder")
+    FraudSubjectClaim.claim(@subject, other)
+    order = pending_order
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: [ order.id ], fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :conflict
+    assert_equal "pending", order.reload.aasm_state
+    assert_empty FraudReviewPayout.all
+  end
+
+  test "a bulk verdict from the shop queue still redirects" do
+    order = pending_order
+
+    post bulk_approve_admin_shop_orders_path,
+         params: { order_ids: [ order.id ] },
+         headers: { "HTTP_REFERER" => admin_shop_orders_url }
+
+    assert_redirected_to admin_shop_orders_path
+    assert_equal "awaiting_periodical_fulfillment", order.reload.aasm_state
+    assert_empty FraudReviewPayout.all, "a payout is the fraud page's unit of work, not the shop queue's"
+  end
+
+  test "putting an order on hold keeps it in the queue and re-renders the row" do
+    order = pending_order
+
+    assert_enqueued_with(job: Shop::ReleaseExpiredOrderHoldsJob) do
+      post place_on_hold_admin_shop_order_path(order),
+           params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+    end
+
+    assert_response :success
+    assert_equal "on_hold", order.reload.aasm_state
+    assert_match "Release hold", response.body
+    assert_match "Automatically releases in", response.body
+    assert_select "[data-controller='countdown'][data-countdown-reset-at-value]"
+  end
+
+  test "releasing a hold puts the order back to pending" do
+    order = pending_order
+    order.update_columns(aasm_state: "on_hold")
+
+    post release_from_hold_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_equal "pending", order.reload.aasm_state
+    assert_no_match "Release hold", response.body
+  end
+
+  test "a released hold puts the order back on offer to the bulk approve button" do
+    order = pending_order
+    order.update_columns(aasm_state: "on_hold")
+
+    post release_from_hold_admin_shop_order_path(order),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_match "fraud-subject-order-bulk-actions", response.body
+    assert_match "Approve all 1 order", response.body
+  end
+
+  test "an order placed on hold stops being offered by the bulk approve button" do
+    pending_order
+    held = pending_order
+
+    post place_on_hold_admin_shop_order_path(held),
+         params: { fraud_subject_id: @subject.id }, headers: TURBO_STREAM
+
+    assert_response :success
+    assert_match "Approve all 1 order", response.body
+  end
+
+  private
+
+  def pending_order
+    @subject.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
+    order = @subject.shop_orders.create!(shop_item: shop_item, quantity: 1,
+                                         frozen_address: { "country" => "US" })
+    order.update_columns(aasm_state: "pending")
+    order
+  end
+
+  def high_value_order
+    order = pending_order
+    order.update_columns(frozen_item_price: ShopOrder::HIGH_VALUE_THRESHOLD + 1)
+    order
+  end
+
+  def shop_item
+    @shop_item ||= begin
+      item = ShopItem.new(name: "Verdict patch #{SecureRandom.hex(4)}", description: "Test item",
+                          ticket_cost: 0, usd_cost: 7, type: "ShopItem::ThirdPartyPhysical", enabled: true)
+      item.image.attach(io: StringIO.new(Base64.decode64(PIXEL)), filename: "px.png", content_type: "image/png")
+      item.save!
+      item
+    end
+  end
+
+  def flag_a_project
+    project = Project.create!(title: "Flagged #{SecureRandom.hex(4)}")
+    Project::Membership.create!(project: project, user: @subject, role: :owner)
+    Project::Report.create!(project: project, reporter: @reporter, reason: "fraud",
+                            details: "Detailed enough to pass validation", status: :pending)
+  end
+
+  def integrity_check_on(project)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    Post.create!(project: project, user: @subject, postable: ship_event)
+    Certification::Ysws.create!(user: @subject, project: project, post_ship_event: ship_event,
+                                original_minutes: 60, reviewed_at: Time.current)
+    Certification::Integrity.create!(ship_event: ship_event, status: :pending)
+  end
+
+  def pending_integrity_check
+    project = Project.create!(title: "Shipped #{SecureRandom.hex(4)}")
+    Project::Membership.create!(project: project, user: @subject, role: :owner)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    Post.create!(project: project, user: @subject, postable: ship_event)
+    Certification::Ysws.create!(user: @subject, project: project, post_ship_event: ship_event,
+                                original_minutes: 60, reviewed_at: Time.current)
+    Certification::Integrity.create!(ship_event: ship_event, status: :pending)
+  end
+end

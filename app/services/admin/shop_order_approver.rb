@@ -13,7 +13,10 @@ module Admin
     def call
       return failure("You cannot approve your own order.") if order.user_id == actor.id
       return failure("This order has already been processed.") unless order.pending? || order.awaiting_verification_call?
-      return failure("This is a high-value order and requires 2 fraud dept reviews before approval (#{order.reviews.count}/2 so far).") if order.requires_additional_review?
+      if order.requires_additional_review?(ShopOrderReview::APPROVE)
+        return failure("This is a high-value order and requires #{ShopOrderReview::REQUIRED_COUNT} fraud dept approvals before it can be approved " \
+                       "(#{order.review_count(ShopOrderReview::APPROVE)}/#{ShopOrderReview::REQUIRED_COUNT} so far).")
+      end
 
       return fulfill_immediately if order.shop_item.respond_to?(:fulfill!)
 
@@ -38,8 +41,6 @@ module Admin
     end
 
     def queue_for_next_step
-      old_state = order.aasm_state
-
       if order.shop_item.requires_verification_call?
         moved = order.queue_for_verification_call && order.save
         message = "Order ##{order.id} queued for verification call"
@@ -50,14 +51,6 @@ module Admin
       end
 
       return failure("Failed to approve order: #{order.errors.full_messages.join(', ')}") unless moved
-
-      ::PaperTrail::Version.create!(
-        item_type: "ShopOrder",
-        item_id: order.id,
-        event: "update",
-        whodunnit: actor.id,
-        object_changes: { aasm_state: [ old_state, order.aasm_state ] }
-      )
 
       success(message)
     end

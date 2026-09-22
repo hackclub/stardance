@@ -16,11 +16,14 @@ module TelescreenHelper
     "#{telescreen_base_url}/subjects/#{ERB::Util.url_encode(id)}"
   end
 
+  # `project` takes one key or several; the workbench narrows to a comma
+  # separated list, so an array of keys opens them all in one view.
   def telescreen_hackatime_overview_url(hackatime_uid, project: nil)
     return if hackatime_uid.blank?
 
     query = { u: hackatime_uid }
-    query[:p] = project if project.present?
+    keys = Array(project).compact_blank.join(",")
+    query[:p] = keys if keys.present?
     "#{telescreen_base_url}/workbench/hackatime/overview?#{query.to_query}"
   end
 

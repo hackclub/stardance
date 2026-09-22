@@ -21,6 +21,7 @@ module Admin
       @period = QueueStats::PERIODS.key?(params[:period].to_s) ? params[:period].to_s : QueueStats::DEFAULT_PERIOD
 
       case params[:section]
+      when "mihis" then render_mihis
       when "overview" then render_overview
       when "waterfall" then render_waterfall
       when "jelly" then render_jelly
@@ -51,6 +52,13 @@ module Admin
     end
 
     private
+
+    def render_mihis
+      @mihis = MegaDashboard::MihiStats.new(period: @period).to_h
+      render partial: "admin/mega_dashboard/sections/mihis", layout: false
+    rescue StandardError => e
+      render_section_error("mihis", e)
+    end
 
     def render_queue(key)
       @queue = MegaDashboard::Queue.find(key)

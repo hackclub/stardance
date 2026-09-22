@@ -1,6 +1,6 @@
 class Admin::Certification::IntegrityPolicy < ApplicationPolicy
   def index?
-    user&.admin? || user&.has_role?(:fraud_lead)
+    user&.admin? || user&.fraud_lead? || user&.fraud_fraud_squad_squad?
   end
 
   def show?

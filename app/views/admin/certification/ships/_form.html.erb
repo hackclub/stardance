@@ -63,6 +63,19 @@
     </label>
   </fieldset>
 
+  <% if ship.project&.hardware? %>
+    <div class="review-form__field">
+      <%= f.label :payout_multiplier, "Payout multiplier (stardust per hour)" %>
+      <%= f.number_field :payout_multiplier, step: 0.01, min: 0.01, max: 100,
+            placeholder: Post::ShipEvent::Payouts::HARDWARE_STARDUST_PER_HOUR,
+            value: ship.payout_multiplier,
+            class: "review-form__input" %>
+      <p class="review-form__hint">
+        Default is <%= Post::ShipEvent::Payouts::HARDWARE_STARDUST_PER_HOUR %> stardust/hr. Leave blank to use the default.
+      </p>
+    </div>
+  <% end %>
+
   <div class="review-form__field">
     <%= f.label :feedback, "Feedback for the user (visible to the project owner)" %>
     <div class="review-form__template-bar">

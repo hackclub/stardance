@@ -34,6 +34,12 @@ application.register(
   Certification__FeedbackTemplatesController,
 );
 
+import Certification__LapsePlayerController from "./certification/lapse_player_controller";
+application.register(
+  "certification--lapse-player",
+  Certification__LapsePlayerController,
+);
+
 import Certification__QueueController from "./certification/queue_controller";
 application.register("certification--queue", Certification__QueueController);
 
@@ -103,6 +109,12 @@ application.register(
   Certification__Ysws__GithubCalendarController,
 );
 
+import Certification__Ysws__KeyboardShortcutsController from "./certification/ysws/keyboard_shortcuts_controller";
+application.register(
+  "certification--ysws--keyboard-shortcuts",
+  Certification__Ysws__KeyboardShortcutsController,
+);
+
 import Certification__Ysws__MediaViewerController from "./certification/ysws/media_viewer_controller";
 application.register(
   "certification--ysws--media-viewer",
@@ -148,11 +160,11 @@ application.register("composer", ComposerController);
 import ConfirmController from "./confirm_controller";
 application.register("confirm", ConfirmController);
 
-import CopyController from "./copy_controller";
-application.register("copy", CopyController);
-
 import CopyApiKeyController from "./copy_api_key_controller";
 application.register("copy-api-key", CopyApiKeyController);
+
+import CopyController from "./copy_controller";
+application.register("copy", CopyController);
 
 import CountUpController from "./count_up_controller";
 application.register("count-up", CountUpController);
@@ -180,6 +192,9 @@ application.register("devlog-edit", DevlogEditController);
 
 import DiscoverRailSearchController from "./discover_rail_search_controller";
 application.register("discover-rail-search", DiscoverRailSearchController);
+
+import DiscoverRailPanelController from "./discover_rail_panel_controller";
+application.register("discover-rail-panel", DiscoverRailPanelController);
 
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
@@ -210,6 +225,15 @@ application.register("file-upload", FileUploadController);
 
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
+
+import FraudPayoutCelebrationController from "./fraud_payout_celebration_controller";
+application.register(
+  "fraud-payout-celebration",
+  FraudPayoutCelebrationController,
+);
+
+import FraudSpeedrunController from "./fraud_speedrun_controller";
+application.register("fraud-speedrun", FraudSpeedrunController);
 
 import FormSubmitOnceController from "./form_submit_once_controller";
 application.register("form-submit-once", FormSubmitOnceController);
@@ -397,11 +421,14 @@ application.register("sticker-countdown", StickerCountdownController);
 import StickerPromoController from "./sticker_promo_controller";
 application.register("sticker-promo", StickerPromoController);
 
+import StickerZoomController from "./sticker_zoom_controller";
+application.register("sticker-zoom", StickerZoomController);
+
 import StreakController from "./streak_controller";
 application.register("streak", StreakController);
 
-import StickerZoomController from "./sticker_zoom_controller";
-application.register("sticker-zoom", StickerZoomController);
+import StreakDayPickerController from "./streak_day_picker_controller";
+application.register("streak-day-picker", StreakDayPickerController);
 
 import SubmitOnMetaEnterController from "./submit_on_meta_enter_controller";
 application.register("submit-on-meta-enter", SubmitOnMetaEnterController);
@@ -427,6 +454,9 @@ application.register("username-availability", UsernameAvailabilityController);
 import VimeoPlayerController from "./vimeo_player_controller";
 application.register("vimeo-player", VimeoPlayerController);
 
+import VisualNovelController from "./visual_novel_controller";
+application.register("visual-novel", VisualNovelController);
+
 import VoteScorecardController from "./vote_scorecard_controller";
 application.register("vote-scorecard", VoteScorecardController);
 
@@ -444,3 +474,6 @@ application.register("word-cycle", WordCycleController);
 
 import WorkshopCountdownController from "./workshop_countdown_controller";
 application.register("workshop-countdown", WorkshopCountdownController);
+
+import MihiModeController from "./mihi_mode_controller";
+application.register("mihi-mode", MihiModeController);

@@ -1,7 +1,7 @@
 <div id="comment_<%= comment.id %>" class="devlog-comment">
   <div class="devlog-comment__header">
     <%= link_to profile_path(comment.user.display_name), class: "devlog-comment__avatar-link" do %>
-      <%= image_tag comment.user.avatar, alt: "", class: "devlog-comment__avatar" %>
+      <%= image_tag comment.user.avatar, alt: "", class: "devlog-comment__avatar", loading: "lazy" %>
     <% end %>
     <div class="devlog-comment__meta">
       <%= render "shared/username_link", user: comment.user, link_class: "devlog-comment__author" %>
