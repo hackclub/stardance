@@ -136,8 +136,11 @@ class ShopOrder < ApplicationRecord
   after_create :assign_default_user
   after_create :notify_amber_if_verification_call_required
   after_create :hold_if_usps_suspended
-  before_create :freeze_item_price
-  before_create :set_region_from_address
+  # Both run before_validation (not before_create) so frozen_item_price and
+  # region are populated in time for check_user_balance / check_regional_availability
+  # to actually validate against them, instead of running before either is set.
+  before_validation :set_region_from_address, on: :create
+  before_validation :freeze_item_price, on: :create
   after_commit :notify_user_of_status_change, if: :saved_change_to_aasm_state?
   after_commit :schedule_hold_release, if: :placed_on_hold?
 
@@ -536,9 +539,9 @@ class ShopOrder < ApplicationRecord
     end
 
     # Use price_for_user so any per-user pricing is enforced at purchase, not
-    # just displayed. Falls back to the regional price for ordinary items.
-    order_region = region.presence || Shop::Regionalizable.country_to_region(frozen_address&.dig("country"))
-    self.frozen_item_price = shop_item.price_for_user(user, order_region || "XX")
+    # just displayed. region is set by set_region_from_address, which runs
+    # first, so this is always the region the order actually ships to.
+    self.frozen_item_price = shop_item.price_for_user(user, region.presence || "XX")
   end
 
   def check_item_enabled

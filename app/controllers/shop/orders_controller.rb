@@ -65,7 +65,25 @@ class Shop::OrdersController < Shop::BaseController
                      []
     end
 
-    region = user_region
+    return redirect_to shop_item_path(@shop_item), alert: "You need to have an address to make an order!" unless current_user.addresses.any?
+
+    selected_address = current_user.addresses.find { |a| a["id"] == params[:address_id] } || current_user.addresses.first
+
+    unless selected_address&.dig("phone_number").present? || Rails.env.development? || tutorial_item?(@shop_item)
+      return redirect_to shop_item_path(@shop_item), alert: "You need to have a phone number on file to place an order! Please update your profile."
+    end
+
+    # The region used for pricing and the balance check must be the region the
+    # item actually ships to (ShopOrder#freeze_item_price derives its charge
+    # the same way from frozen_address) — never the user's shop-region
+    # preference, which they can set independently of their shipping address.
+    address_country = selected_address&.dig("country")
+    region = Shop::Regionalizable.country_to_region(address_country)
+    unless @shop_item.enabled_in_region?(region)
+      redirect_to shop_item_path(@shop_item), alert: "This item is not available in your region."
+      return
+    end
+
     @modifiers = if modifier_ids.any?
                    @shop_item.available_modifiers_for_region(region).select { |m| modifier_ids.include?(m.id) }
     else
@@ -77,21 +95,6 @@ class Shop::OrdersController < Shop::BaseController
     accessories_total = @accessories.sum { |a| a.price_for_region(region) } * quantity
     modifiers_total = @modifiers.sum { |m| m.price_for_region(region) }
     total_cost = item_total + accessories_total + modifiers_total
-
-    return redirect_to shop_item_path(@shop_item), alert: "You need to have an address to make an order!" unless current_user.addresses.any?
-
-    selected_address = current_user.addresses.find { |a| a["id"] == params[:address_id] } || current_user.addresses.first
-
-    unless selected_address&.dig("phone_number").present? || Rails.env.development? || tutorial_item?(@shop_item)
-      return redirect_to shop_item_path(@shop_item), alert: "You need to have a phone number on file to place an order! Please update your profile."
-    end
-
-    address_country = selected_address&.dig("country")
-    address_region = Shop::Regionalizable.country_to_region(address_country)
-    unless @shop_item.enabled_in_region?(address_region)
-      redirect_to shop_item_path(@shop_item), alert: "This item is not available in your region."
-      return
-    end
 
     begin
       ActiveRecord::Base.transaction do
@@ -110,7 +113,8 @@ class Shop::OrdersController < Shop::BaseController
           shop_item: @shop_item,
           quantity: @redeemable ? 1 : quantity,
           frozen_address: selected_address,
-          frozen_modifiers_price: @redeemable ? 0 : modifiers_total
+          frozen_modifiers_price: @redeemable ? 0 : modifiers_total,
+          region: region
         )
         assign_redemption_gate(@order, @redeemable) if @redeemable
         @order.aasm_state = "pending" if @order.respond_to?(:aasm_state=)
@@ -124,7 +128,8 @@ class Shop::OrdersController < Shop::BaseController
               shop_item: accessory,
               quantity: quantity,
               frozen_address: selected_address,
-              parent_order_id: @order.id
+              parent_order_id: @order.id,
+              region: region
             )
             accessory_order.aasm_state = "pending" if accessory_order.respond_to?(:aasm_state=)
             accessory_order.save!
