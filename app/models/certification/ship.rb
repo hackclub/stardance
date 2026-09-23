@@ -45,6 +45,7 @@ module Certification
     self.table_name = "certification_ship_reviews"
 
     include Certification::Reviewable
+    include Certification::SecondStageGated
 
     belongs_to :project
     # Same record as :project but visible through soft deletion, so submitter
@@ -476,11 +477,12 @@ module Certification
 
     before_save :stamp_claimed_at, if: -> { will_save_change_to_reviewer_id? && reviewer_id.present? && claimed_at.nil? }
     before_save :stamp_decided_at, if: -> { will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && decided_at.nil? }
-    before_save :assign_stardust_earned, if: -> { !record_verdict_only && will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
+    # Approval-side effects also wait on second_stage_cleared?; returns are unaffected.
+    before_save :assign_stardust_earned, if: -> { !record_verdict_only && !releasing_second_stage && will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
     after_save :apply_verdict_to_project!, if: -> { saved_change_to_status? && !record_verdict_only }
-    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? && !record_verdict_only }
-    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? && project&.hardware? && !record_verdict_only }
-    after_save_commit :post_approval_to_hardware_feed!, if: -> { saved_change_to_status? && approved? && project&.hardware? && !record_verdict_only }
+    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? && !record_verdict_only && (!approved? || second_stage_cleared?) }
+    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? && project&.hardware? && !record_verdict_only && (!approved? || second_stage_cleared?) }
+    after_save_commit :post_approval_to_hardware_feed!, if: -> { saved_change_to_status? && approved? && project&.hardware? && !record_verdict_only && second_stage_cleared? }
     after_create_commit :post_submission_to_hardware_review_channel!, if: -> { project&.hardware? }
 
     # Timeline cards for decided reviews sort by when the verdict landed.
@@ -563,6 +565,9 @@ module Certification
 
     def apply_verdict_to_project!
       return unless decided?
+      # Parked in the T2 queue: nothing is certified until T2 clears.
+      return if approved? && !second_stage_cleared?
+
       project.with_lock do
         ship_event = verdict_ship_event
         latest = ship_event.nil? || ship_event == project.last_ship_event
@@ -584,6 +589,14 @@ module Certification
           end
         end
       end
+    end
+
+    # Runs the certification cascade held back at T1, in callback order.
+    def run_deferred_approval_effects!
+      apply_verdict_to_project!
+      notify_owner!
+      post_verdict_to_hardware_review_channel! if project&.hardware?
+      post_approval_to_hardware_feed! if project&.hardware?
     end
 
     # Hardware missions review the build as one decision: certifying the ship

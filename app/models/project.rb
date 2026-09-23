@@ -514,8 +514,11 @@ class Project < ApplicationRecord
   end
 
   # True while a funding request for this project is awaiting reviewer decision.
+  # Includes a T1 approval parked in the T2 queue, or the builder could submit a
+  # second request (the unique index only covers pending).
   def has_pending_funding_request?
-    certification_funding_requests.pending.exists?
+    certification_funding_requests.pending.exists? ||
+      certification_funding_requests.approved.any?(&:awaiting_second_stage?)
   end
 
   # True once any funding request has been submitted (pending, approved, or returned).

@@ -3,7 +3,7 @@
 class Admin::Certification::ReviewNotePolicy < ApplicationPolicy
   # Same bar as leaving a verdict: a hardware reviewer may add an internal note,
   # but never on a project they're a member of.
-  def create? = can_review_hardware? && not_own_project?
+  def create? = (can_review_hardware? || user&.has_role?(:t2_reviewer)) && not_own_project?
 
   private
 

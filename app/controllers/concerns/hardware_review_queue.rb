@@ -13,8 +13,10 @@
 #   hardware_review_path(project)
 #   hardware_queue_path(stage)     -> "design" | "build"
 #   hardware_next_path(stage:, skip: nil)
+#   hardware_t2_queue_path         -> the T2 queue this dash feeds, or nil for none
 module HardwareReviewQueue
   extend ActiveSupport::Concern
+  include HardwareReviewRecordings
 
   QUEUE_PAGE_SIZE = 25
   QUEUE_STATS_TTL = 30.seconds
@@ -25,7 +27,7 @@ module HardwareReviewQueue
     helper_method :hardware_review_path, :hardware_queue_path, :hardware_next_path,
                   :hardware_skip_path, :hardware_queue_title, :hardware_back_link,
                   :hardware_flag_for_fraud_path, :undo_review_path,
-                  :hardware_recordings_path
+                  :hardware_recordings_path, :hardware_t2_queue_path
   end
 
   def design
@@ -84,8 +86,8 @@ module HardwareReviewQueue
     authorize_hardware_review(@project, :show?)
     @owner = @project.memberships.find { |m| m.owner? }&.user
     @lapse_owner_uid = @owner&.hackatime_identity&.uid
-    @lapse_timelapses = lapse_timelapses_for_review
-    @lookout_recordings = lookout_recordings_for_review
+    @lapse_timelapses = lapse_timelapses_for(@project, @owner)
+    @lookout_recordings = lookout_recordings_for(@project)
     render "admin/certification/hardware_reviews/recordings", layout: false
   end
 
@@ -228,6 +230,10 @@ module HardwareReviewQueue
       when ::Certification::FundingRequest then :funding
       when ::Certification::Ship then :ship
       end
+    # Not off @active_review: that's nil once T1 approves, exactly when T2 exists.
+    @second_stage_review = [ @funding_request, @ship ].compact
+      .filter_map { |review| review.second_stage_review if review.respond_to?(:second_stage_review) }
+      .max_by(&:created_at)
     @past_reviews = past_reviews
     load_undo_context
     @review_notes = @project.review_notes.order(created_at: :desc)
@@ -437,25 +443,6 @@ module HardwareReviewQueue
 
   def claim_order_sql(model)
     Arel.sql(model.sanitize_sql_array([ "CASE WHEN reviewer_id = ? THEN 0 ELSE 1 END", current_user.id ]))
-  end
-
-  # Provider URLs expire after ~1h, so a short cache keyed by project kills the
-  # per-render HTTP fan-out without staling them.
-  RECORDINGS_CACHE_TTL = 1.minute
-
-  def lapse_timelapses_for_review
-    Rails.cache.fetch([ "hardware_review_recordings", "lapse", @project.id ], expires_in: RECORDINGS_CACHE_TTL) do
-      LapseService.timelapses_for_project(
-        hackatime_user_id: review_owner&.hackatime_identity&.uid,
-        project_keys: @project.hackatime_keys
-      )
-    end
-  end
-
-  def lookout_recordings_for_review
-    Rails.cache.fetch([ "hardware_review_recordings", "lookout", @project.id ], expires_in: RECORDINGS_CACHE_TTL) do
-      LookoutService.recordings_for_project(@project)
-    end
   end
 
   # The .app-layout wrapper reserves the sidebar gutter itself; this body class
