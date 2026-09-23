@@ -1,0 +1,385 @@
+<%# T2 review cockpit: evidence rail, submission, decision. %>
+<% content_for :title, "T2 review — #{@project.title}" %>
+<% design = @review.stage == "design" %>
+<% claimed_by_me = @review.claim_held_by?(current_user) %>
+<%# Only a grant T1 already approved can be adjusted; T2 doesn't fund an unfunded approval. %>
+<% grant_adjustable = design && @reviewable.issues_grant? %>
+<%
+  # What clearing this actually costs, reused by the stakes panel and the
+  # approve confirmation so the two can never say different things. %{amount}
+  # is filled in by the confirmation with whatever figure is in the form.
+  grant_stakes = "Clearing this issues a $%{amount} HCB grant and moves the project to the build stage."
+  approve_stakes =
+    if grant_adjustable
+      format(grant_stakes, amount: @reviewable.payable_amount_dollars)
+    elsif !design
+      "Clearing this certifies the build, creates the YSWS review and releases " \
+        "any after-ship prizes."
+    else
+      "Clearing this approves the design with no funding attached."
+    end
+%>
+
+<div class="review-cockpit"
+     data-controller="certification--review-shortcuts">
+  <header class="review-cockpit__bar">
+    <%= link_to "Exit", queue_path_for(@review.stage), class: "review-cockpit__exit" %>
+    <span class="review-kbd-legend" data-certification--review-shortcuts-target="legend"></span>
+    <% if claimed_by_me && @review.claim_expires_at.present? %>
+      <span class="review-cockpit__claim-clock"
+            data-controller="certification--review-claim-clock"
+            data-certification--review-claim-clock-expires-at-value="<%= @review.claim_expires_at.iso8601 %>"
+            data-certification--review-claim-clock-expired-text-value="Claim expired">
+        Claim ending in —
+      </span>
+    <% end %>
+    <% if @review.pending? %>
+      <%= button_to "Skip to next project",
+            skip_admin_certification_second_stage_review_path(@project),
+            method: :post,
+            form_class: "review-cockpit__skip",
+            class: "action-btn action-btn--small action-btn--secondary",
+            data: { shortcut: "skip" } %>
+    <% end %>
+  </header>
+
+  <div class="review-cockpit__panes">
+    <section class="review-cockpit__rail" aria-label="Devlogs"
+             data-certification--review-shortcuts-target="rail">
+      <%= turbo_frame_tag "review-devlog-rail",
+            src: devlogs_admin_certification_second_stage_review_path(@project),
+            loading: "lazy" do %>
+        <p class="review-cockpit__muted">Loading devlogs…</p>
+      <% end %>
+    </section>
+
+    <section class="review-cockpit__center" aria-label="Submission">
+      <section class="review-submission">
+        <div class="review-submission__banner">
+          <% if @project.banner.attached? %>
+            <%= image_tag @project.banner.variant(:card), class: "review-submission__banner-image",
+                  alt: "#{@project.title} banner", loading: "lazy" %>
+          <% else %>
+            <span class="review-submission__banner-empty">No banner</span>
+          <% end %>
+        </div>
+
+        <div class="review-submission__split">
+          <div class="review-submission__side">
+            <div class="review-submission__title-row">
+              <h1 class="review-submission__title"><%= @project.title %></h1>
+              <span class="review-submission__pill"><%= @review.stage_label %></span>
+            </div>
+
+            <div class="review-submission__owner">
+              <% if @owner %>
+                <%= image_tag @owner.avatar, alt: "", class: "review-submission__avatar" %>
+              <% end %>
+              <span class="review-submission__owner-name"><%= @owner&.display_name || "—" %></span>
+              <span class="review-submission__divider" aria-hidden="true"></span>
+              <span class="review-submission__owner-slack"><%= @owner&.slack_id.presence || "no Slack ID" %></span>
+              <%# Only shown when it would stop a payout. %>
+              <% unless @owner&.verification_verified? %>
+                <span class="review-submission__flag">
+                  ID <%= @owner&.verification_status&.humanize&.downcase || "unknown" %>
+                </span>
+              <% end %>
+            </div>
+
+            <div class="review-submission__stats">
+              <span>Hours <strong><%= @project.total_ship_hours.round(1) %></strong></span>
+              <span>Devlogs <strong><%= @devlog_count %></strong></span>
+            </div>
+          </div>
+
+          <div class="review-submission__side review-submission__side--right">
+            <div class="review-submission__pills">
+              <% if design %>
+                <span class="review-submission__pill">$<%= @reviewable.requested_amount_dollars %> reqd</span>
+                <% if (tier_max = @reviewable.tier_max_dollars) %>
+                  <span class="review-submission__pill<%= " review-submission__pill--over" if @reviewable.final_amount_dollars > tier_max %>">
+                    <%= @reviewable.tier_label %> max $<%= tier_max %>
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
+
+            <% waiting = Time.current - @review.created_at %>
+            <p class="review-submission__waiting">
+              Waiting <%= (waiting / 1.day).floor %>d <%= ((waiting % 1.day) / 1.hour).floor %>h
+            </p>
+
+            <div class="review-submission__links">
+              <% if @project.repo_url.present? %>
+                <%= link_to "Github", @project.repo_url, class: "review-submission__link",
+                      target: "_blank", rel: "noopener" %>
+                <span class="review-submission__divider" aria-hidden="true"></span>
+              <% end %>
+              <%= link_to "Project Page", project_path(@project), class: "review-submission__link",
+                    target: "_blank", rel: "noopener" %>
+            </div>
+          </div>
+        </div>
+
+        <p class="review-submission__description">
+          <%= @project.description.presence || "No description on this project." %>
+        </p>
+      </section>
+
+      <%# Stated either way: a missing panel would read the same as no flag. %>
+      <div class="review-cockpit__panel review-cockpit__panel--fraud">
+        <h2 class="review-cockpit__panel-title">Fraud</h2>
+        <% if (fraud_report = @project.pending_fraud_report) %>
+          <p class="review-cockpit__fraud-flagged">
+            <span class="review-cockpit__fraud-badge">Flagged for fraud review</span>
+            reported by <%= fraud_report.reporter&.display_name || "—" %> ·
+            <%= l(fraud_report.created_at.to_date, format: :long) %> · pending
+          </p>
+          <p class="review-cockpit__fraud-details"><%= fraud_report.details %></p>
+        <% else %>
+          <p class="review-cockpit__muted">No fraud report on this project.</p>
+        <% end %>
+      </div>
+
+      <%# Open by default: a project that has been round this loop before is what T2 is here to catch. %>
+      <details class="review-cockpit__panel" open>
+        <summary class="review-cockpit__panel-title">
+          Decision by <%= @first_stage_reviewer&.display_name || "—" %>
+          <% if @reviewable.decided_at %>
+            · <%= l(@reviewable.decided_at.to_date, format: :long) %>
+          <% end %>
+        </summary>
+
+        <% if @undo_review && @undo_preflight %>
+          <%= render "admin/certification/hardware_reviews/undo_review",
+                review: @undo_review, preflight: @undo_preflight %>
+        <% end %>
+
+        <% if design %>
+          <p class="review-cockpit__verdict-line">
+            Approved at T1:
+            <strong>
+              <% if @reviewable.issues_grant? %>
+                $<%= @reviewable.final_amount_dollars %>
+              <% elsif @reviewable.awards_design_kit? %>
+                Design kit
+              <% else %>
+                Approved, no funding
+              <% end %>
+            </strong>
+          </p>
+        <% end %>
+
+        <% if design && @reviewable.submitter_note.present? %>
+          <h3 class="review-cockpit__label">Why the builder asked for it</h3>
+          <div class="review-cockpit__prose"><%= simple_format(@reviewable.submitter_note) %></div>
+        <% end %>
+
+        <% if @reviewable.feedback.present? %>
+          <h3 class="review-cockpit__label">T1 feedback to the builder</h3>
+          <div class="review-cockpit__prose"><%= simple_format(@reviewable.feedback) %></div>
+        <% end %>
+
+        <% if @prior_reviews.any? %>
+          <h3 class="review-cockpit__label">Earlier reviews (<%= @prior_reviews.size %>)</h3>
+          <ol class="review-cockpit__history">
+            <% @prior_reviews.each do |prior| %>
+              <li class="review-cockpit__history-item">
+                <span class="review-cockpit__history-stage">
+                  <%= prior.is_a?(::Certification::FundingRequest) ? "Design" : "Build" %>
+                </span>
+                <span class="review-cockpit__history-verdict review-cockpit__history-verdict--<%= prior.status %>">
+                  <%= prior.status.to_s.titleize %>
+                </span>
+                <span class="review-cockpit__history-by">
+                  <%= prior.reviewer&.display_name || "—" %>
+                  <% if prior.decided_at %>· <%= l(prior.decided_at.to_date, format: :long) %><% end %>
+                </span>
+                <% if prior.feedback.present? %>
+                  <p class="review-cockpit__history-feedback"><%= simple_format(prior.feedback) %></p>
+                <% end %>
+              </li>
+            <% end %>
+          </ol>
+        <% end %>
+      </details>
+
+      <details class="review-cockpit__panel">
+        <summary class="review-cockpit__panel-title">Files</summary>
+        <%= turbo_frame_tag "review-files",
+              src: files_admin_certification_second_stage_review_path(@project),
+              loading: "lazy" do %>
+          <p class="review-cockpit__muted">Loading repo…</p>
+        <% end %>
+      </details>
+    </section>
+
+    <aside class="review-cockpit__side" aria-label="Decision">
+      <div class="review-cockpit__panel review-cockpit__panel--stakes"><%= approve_stakes %></div>
+
+      <% if @review.decided? %>
+        <div class="review-cockpit__panel review-cockpit__panel--decided">
+          <h2 class="review-cockpit__panel-title">
+            Already <%= @review.approved? ? "cleared" : "returned" %>
+          </h2>
+          <p>
+            by <%= @review.reviewer&.display_name || "—" %>
+            on <%= l(@review.decided_at, format: :long) %>
+          </p>
+          <% if @review.feedback.present? %>
+            <div class="review-cockpit__prose"><%= simple_format(@review.feedback) %></div>
+          <% end %>
+        </div>
+      <% elsif !claimed_by_me %>
+        <%# Opening is browsing; the verdict form stays closed until this reviewer holds the claim. %>
+        <div class="review-cockpit__panel review-cockpit__panel--claim">
+          <h2 class="review-cockpit__panel-title">Claim this review to decide it</h2>
+          <p class="review-cockpit__muted">
+            <% if @review.reviewer.present? && !@review.claim_expired? %>
+              Currently claimed by <%= @review.reviewer.display_name %>.
+            <% else %>
+              Nobody is holding this one right now.
+            <% end %>
+          </p>
+          <% if policy(@review).claim? %>
+            <%= button_to "Claim this review",
+                  claim_admin_certification_second_stage_review_path(@project),
+                  method: :post,
+                  class: "action-btn action-btn--large action-btn--primary" %>
+          <% else %>
+            <p class="review-cockpit__muted">You gave the T1 verdict here, so another reviewer has to clear it.</p>
+          <% end %>
+        </div>
+      <% else %>
+        <%= form_with model: @review,
+              url: second_stage_path,
+              method: :patch,
+              scope: :certification_second_stage_review,
+              html: { multipart: true },
+              class: "review-cockpit__form",
+              data: {
+                controller: "certification--t2-decision",
+                "certification--t2-decision-approve-text-value": approve_stakes,
+                "certification--t2-decision-grant-text-value": (grant_stakes if grant_adjustable),
+                "certification--t2-decision-return-text-value":
+                  "This sends the submission back to the builder. Nothing is paid out."
+              } do |f| %>
+
+          <div class="review-cockpit__panel">
+            <%= f.label :feedback, "Feedback for the builder", class: "review-cockpit__label" %>
+            <%= f.text_area :feedback, rows: 8, class: "review-cockpit__textarea",
+                  placeholder: "Shown to the builder if you return this.",
+                  data: {
+                    "certification--t2-decision-target": "feedback",
+                    "certification--review-shortcuts-target": "feedback"
+                  } %>
+            <p class="review-cockpit__hint">ctrl/cmd + space to jump here · ? for all shortcuts</p>
+
+            <%= f.label :feedback_images, "Attach photos", class: "review-cockpit__label" %>
+            <%= f.file_field :feedback_images, multiple: true,
+                  accept: "image/*", class: "review-cockpit__file-input" %>
+          </div>
+
+          <% if grant_adjustable %>
+            <div class="review-cockpit__panel">
+              <%= f.label :approved_amount_dollars, "Grant amount", class: "review-cockpit__label" %>
+              <%# Blank pays what T1 approved; a figure here is what HCB is asked for. %>
+              <div class="review-cockpit__amount">
+                <span class="review-cockpit__amount-prefix">$</span>
+                <%= f.number_field :approved_amount_dollars, min: 0, step: 1,
+                      max: @reviewable.tier_max_dollars,
+                      value: @review.approved_amount_dollars,
+                      placeholder: @reviewable.final_amount_dollars,
+                      class: "review-cockpit__amount-input",
+                      data: { "certification--t2-decision-target": "amount" } %>
+              </div>
+              <p class="review-cockpit__hint">
+                Leave blank to pay the $<%= @reviewable.final_amount_dollars %> T1 approved.
+                <% if (tier_max = @reviewable.tier_max_dollars) %>
+                  <%= @reviewable.tier_label %> max is $<%= tier_max %>.
+                <% end %>
+              </p>
+            </div>
+          <% end %>
+
+          <div class="review-cockpit__panel">
+            <%# The radios carry the verdict; buttons and shortcuts set them, then open the confirmation. %>
+            <fieldset class="review-cockpit__verdicts">
+              <legend class="review-cockpit__label">Decision</legend>
+              <%= f.radio_button :verdict, "approved", class: "review-cockpit__radio",
+                    data: { "certification--t2-decision-target": "approve" } %>
+              <%= f.label :verdict_approved, "Approve", class: "review-cockpit__sr-only" %>
+              <%= f.radio_button :verdict, "returned", class: "review-cockpit__radio",
+                    data: { "certification--t2-decision-target": "return" } %>
+              <%= f.label :verdict_returned, "Return", class: "review-cockpit__sr-only" %>
+            </fieldset>
+
+            <div class="review-cockpit__actions">
+              <button type="button" class="action-btn action-btn--large action-btn--primary"
+                      data-shortcut="approve"
+                      data-action="certification--t2-decision#approve">
+                Approve
+              </button>
+              <button type="button" class="action-btn action-btn--large action-btn--secondary"
+                      data-shortcut="return"
+                      data-action="certification--t2-decision#returnIt">
+                Return
+              </button>
+            </div>
+
+            <%= f.label :internal_reason, "Internal note (reviewers only)", class: "review-cockpit__label" %>
+            <%= f.text_area :internal_reason, rows: 3, class: "review-cockpit__textarea" %>
+          </div>
+
+          <dialog class="review-cockpit__confirm"
+                  data-certification--t2-decision-target="confirm"
+                  aria-labelledby="t2-confirm-title">
+            <h2 class="review-cockpit__confirm-title" id="t2-confirm-title">Record this verdict?</h2>
+            <p class="review-cockpit__confirm-text"
+               data-certification--t2-decision-target="confirmText"></p>
+            <div class="review-cockpit__confirm-actions">
+              <button type="button" class="action-btn action-btn--secondary"
+                      data-action="certification--t2-decision#cancel">Cancel</button>
+              <button type="button" class="action-btn action-btn--primary"
+                      data-shortcut="record"
+                      data-action="certification--t2-decision#submit">Record verdict</button>
+            </div>
+          </dialog>
+        <% end %>
+      <% end %>
+
+      <div class="review-cockpit__panel review-cockpit__panel--notes">
+        <h2 class="review-cockpit__panel-title">
+          Notes <span class="review-cockpit__rail-count"><%= @review_notes.size %></span>
+        </h2>
+        <% if @review_notes.any? %>
+          <ul class="review-cockpit__notes">
+            <% @review_notes.each do |note| %>
+              <li class="review-cockpit__note">
+                <div class="review-cockpit__note-head">
+                  <span class="review-cockpit__note-author"><%= note.author&.display_name || "—" %></span>
+                  <span class="review-cockpit__note-date"><%= l(note.created_at.to_date, format: :long) %></span>
+                </div>
+                <div class="review-cockpit__prose"><%= simple_format(note.body) %></div>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="review-cockpit__muted">No notes on this project.</p>
+        <% end %>
+
+        <% if policy([ :admin, ::Certification::ReviewNote.new(project: @project) ]).create? %>
+          <%= form_with model: ::Certification::ReviewNote.new,
+                url: admin_certification_project_review_notes_path(@project),
+                scope: :certification_review_note,
+                class: "review-cockpit__note-form" do |f| %>
+            <%= hidden_field_tag :second_stage, "1" %>
+            <%= f.text_area :body, rows: 3, class: "review-cockpit__textarea",
+                  placeholder: "Note for the next reviewer…" %>
+            <%= f.submit "Add note", class: "action-btn action-btn--small action-btn--secondary" %>
+          <% end %>
+        <% end %>
+      </div>
+    </aside>
+  </div>
+</div>

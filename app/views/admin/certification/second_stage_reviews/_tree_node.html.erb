@@ -1,0 +1,21 @@
+<%# Locals: node (name => sub-hash for a folder, or full path for a file),
+    prefix (the folder being rendered), project. %>
+<ul class="review-tree__list">
+  <% node.each do |name, child| %>
+    <li class="review-tree__item">
+      <% if child.is_a?(Hash) %>
+        <% dir_path = [ prefix, name ].compact_blank.join("/") %>
+        <details class="review-tree__folder" <%= "open" if @open_dirs.include?(dir_path) %>>
+          <summary class="review-tree__summary"><%= name %></summary>
+          <%= render "admin/certification/second_stage_reviews/tree_node",
+                node: child, prefix: dir_path, project: project %>
+        </details>
+      <% else %>
+        <%= link_to name,
+              files_admin_certification_second_stage_review_path(project, path: child),
+              class: class_names("review-tree__file", "review-tree__file--on" => child == @selected_path),
+              title: child %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

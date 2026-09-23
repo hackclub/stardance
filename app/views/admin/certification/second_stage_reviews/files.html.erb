@@ -1,0 +1,34 @@
+<%# Own frame, so a slow or rate-limited GitHub never holds up the verdict form. %>
+<%= turbo_frame_tag "review-files" do %>
+  <div class="review-cockpit__files">
+    <% if @filenames.any? %>
+      <nav class="review-cockpit__tree review-tree" aria-label="Repository files">
+        <%= render "admin/certification/second_stage_reviews/tree_node",
+              node: @file_tree, prefix: nil, project: @project %>
+      </nav>
+
+      <div class="review-cockpit__file">
+        <% if @selected_path %>
+          <h3 class="review-cockpit__label"><%= @selected_path %></h3>
+          <% if @file_body.present? %>
+            <% if @selected_path.end_with?(".md", ".markdown") %>
+              <div class="review-cockpit__file-body markdown-content">
+                <%= md(@file_body, allow_images: false) %>
+              </div>
+            <% else %>
+              <pre class="review-cockpit__file-source"><%= @file_body %></pre>
+            <% end %>
+          <% else %>
+            <p class="review-cockpit__muted">Couldn't read that file.</p>
+          <% end %>
+        <% else %>
+          <p class="review-cockpit__muted">Pick a file to read it here.</p>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="review-cockpit__muted">
+        <%= @project.repo_url.present? ? "Couldn't read this repo." : "No repo on this project." %>
+      </p>
+    <% end %>
+  </div>
+<% end %>

@@ -61,6 +61,7 @@ module Certification
     self.table_name = "certification_funding_requests"
 
     include Certification::Reviewable
+    include Certification::SecondStageGated
     include Mission::PrizeRedeemable
 
     belongs_to :project
@@ -292,9 +293,21 @@ module Certification
     end
 
     # True when approving this request pays out an HCB card grant, as opposed to
-    # shipping a kit or approving the build with no funding at all.
+    # shipping a kit or approving the build with no funding at all. Blind to the
+    # second stage on purpose: approved_without_grant? is its negation.
     def issues_grant?
-      approved? && !awards_design_kit? && final_amount_cents.to_i.positive?
+      approved? && !awards_design_kit? && payable_amount_cents.to_i.positive?
+    end
+
+    # What HCB is asked for: a T2 override wins, final_amount_cents stays T1's call.
+    def payable_amount_cents
+      second_stage_review&.approved_amount_cents || final_amount_cents
+    end
+
+    def payable_amount_dollars = (payable_amount_cents || 0) / 100
+
+    def grant_payable?
+      issues_grant? && second_stage_cleared?
     end
 
     # An approval that funds nothing: the project moves to the build stage, but
@@ -385,7 +398,7 @@ module Certification
     before_save :stamp_decided_at,
       if: -> { will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && decided_at.nil? }
     before_save :assign_stardust_earned,
-      if: -> { will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
+      if: -> { !releasing_second_stage && will_save_change_to_status? && status_change&.last.in?(DECIDED_STATUSES) && reviewer_id.present? }
     after_save :apply_verdict_to_project!, if: :saved_change_to_status?
     # Notify first. The verdict message only states what already happened (the
     # request was approved, the project moved to build) and never claims a card
@@ -396,10 +409,12 @@ module Certification
     # so a grant that failed (an expired HCB token is a live failure mode here)
     # retries the next time the request is saved instead of being stranded.
     # issue_hcb_grant! already returns early when a grant exists.
-    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? }
-    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? }
-    after_save_commit :post_approval_to_hardware_feed!, if: -> { saved_change_to_status? && approved? }
-    after_save_commit :issue_hcb_grant!, if: -> { issues_grant? && hcb_grant_hashid.blank? && latest_for_project? }
+    # Approval-side effects also wait on second_stage_cleared? (re-run by
+    # run_deferred_approval_effects!); returns notify at once.
+    after_save_commit :notify_owner!, if: -> { saved_change_to_status? && decided? && (!approved? || second_stage_cleared?) }
+    after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? && (!approved? || second_stage_cleared?) }
+    after_save_commit :post_approval_to_hardware_feed!, if: -> { saved_change_to_status? && approved? && second_stage_cleared? }
+    after_save_commit :issue_hcb_grant!, if: -> { grant_payable? && hcb_grant_hashid.blank? && latest_for_project? }
     after_create_commit :post_submission_to_hardware_review_channel!
 
     def queue_mismatch_flagged_label = "design funding"
@@ -503,6 +518,9 @@ module Certification
     def apply_verdict_to_project!
       return unless decided?
       return unless latest_for_project?
+      # Parked in the T2 queue: the project only moves to build once T2 clears.
+      return if approved? && !second_stage_cleared?
+
       project.with_lock do
         case status.to_sym
         when :approved
@@ -514,13 +532,23 @@ module Certification
       end
     end
 
+    # Runs the effects held back at T1, in callback order. latest_for_project? is
+    # re-checked because a resubmit can supersede this while it waits for T2.
+    def run_deferred_approval_effects!
+      apply_verdict_to_project!
+      notify_owner!
+      post_verdict_to_hardware_review_channel!
+      post_approval_to_hardware_feed!
+      issue_hcb_grant! if grant_payable? && hcb_grant_hashid.blank? && latest_for_project?
+    end
+
     def issue_hcb_grant!
       return if hcb_grant_hashid.present?
 
       owner = project.memberships.owner.first&.user || user
       grant = HCBService.create_card_grant(
         email: owner.grant_email,
-        amount_cents: final_amount_cents,
+        amount_cents: payable_amount_cents,
         # HCB caps the purpose at 30 chars, so key it off the project id (short
         # and stable) rather than the title, which would get chopped.
         purpose: "Hardware grant, project #{project.id}".truncate(30),

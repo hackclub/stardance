@@ -123,7 +123,11 @@ class ReviewerPayoutRequest < ApplicationRecord
                 .where(reviewer: user)
                 .decided
                 .sum(:stardust_earned)
-    ship + funding
+    second_stage = Certification::SecondStageReview
+                     .where(reviewer: user)
+                     .decided
+                     .sum(:stardust_earned)
+    ship + funding + second_stage
   end
 
   def self.unclaimed_for(user)

@@ -1,0 +1,120 @@
+<%# Own frame: Lapse and Lookout are network calls the verdict form mustn't wait on. %>
+<%= turbo_frame_tag "review-devlog-rail" do %>
+  <div data-controller="certification--review-rail">
+    <div class="review-cockpit__rail-head">
+      <h2 class="review-cockpit__rail-title">
+        Devlogs
+        <% if @devlog_count > @devlogs.size %>
+          <span class="review-cockpit__rail-count">newest <%= @devlogs.size %> of <%= @devlog_count %></span>
+        <% else %>
+          <span class="review-cockpit__rail-count"><%= @devlog_count %></span>
+        <% end %>
+      </h2>
+
+      <div class="review-cockpit__rail-config" role="group" aria-label="Devlog order">
+        <% %w[newest oldest].each do |order| %>
+          <%= link_to order.titleize,
+                devlogs_admin_certification_second_stage_review_path(@project, order: order),
+                class: class_names("review-cockpit__chip", "review-cockpit__chip--on" => @order == order) %>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @lapse_timelapses.any? || @lookout_recordings.any? %>
+      <details class="review-cockpit__recordings">
+        <summary class="review-cockpit__label">
+          All recordings (<%= @lapse_timelapses.size + @lookout_recordings.size %>)
+        </summary>
+        <%= render "admin/certification/funding_requests/recordings",
+              timelapses: @lapse_timelapses, recordings: @lookout_recordings,
+              telescreen_uid: @lapse_owner_uid %>
+      </details>
+    <% end %>
+
+    <% if @devlogs.any? %>
+      <ol class="review-cockpit__devlogs">
+        <% @devlogs.each do |devlog| %>
+          <% lapses = @devlog_lapses[devlog.id] || [] %>
+          <% lookouts = @devlog_lookouts[devlog.id] || [] %>
+          <% hours, remainder = devlog.duration_seconds.to_i.divmod(3600) %>
+          <li class="review-cockpit__devlog">
+            <div class="review-cockpit__devlog-head">
+              <% if (posted_at = devlog.post&.created_at) %>
+                <span class="review-cockpit__devlog-date"><%= l(posted_at.to_date, format: :long) %></span>
+              <% end %>
+              <span class="review-cockpit__devlog-time">
+                <%= format("%02dh %02dm", hours, remainder / 60) %>
+              </span>
+              <button type="button" class="review-cockpit__chip"
+                      data-action="certification--review-rail#toggleDevlog">
+                Collapse
+              </button>
+            </div>
+
+            <div class="review-cockpit__devlog-content">
+              <% if devlog.body.present? %>
+                <div class="review-cockpit__devlog-body markdown-content">
+                  <%= md(devlog.body, allow_images: false) %>
+                </div>
+              <% end %>
+
+              <% if devlog.attachments.any? %>
+                <ul class="review-cockpit__gallery">
+                  <% devlog.attachments.each do |attachment| %>
+                    <li class="review-cockpit__gallery-item">
+                      <% if attachment.video? %>
+                        <%= link_to rails_storage_redirect_path(attachment),
+                              class: "review-cockpit__gallery-link",
+                              target: "_blank", rel: "noopener" do %>
+                          <video class="review-cockpit__gallery-media" muted preload="metadata">
+                            <source src="<%= rails_storage_redirect_path(attachment) %>"
+                                    type="<%= attachment.content_type %>">
+                          </video>
+                          <span class="review-cockpit__gallery-badge">Video</span>
+                        <% end %>
+                      <% else %>
+                        <button type="button" class="review-cockpit__gallery-link"
+                                data-action="certification--review-rail#openImage"
+                                data-full-src="<%= url_for(attachment) %>"
+                                aria-label="Open devlog photo full screen">
+                          <%= image_tag attachment.variant(:thumb),
+                                class: "review-cockpit__gallery-media", loading: "lazy",
+                                alt: "Devlog attachment" %>
+                        </button>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <%# Always rendered, even at zero, so every devlog answers "which timelapses are mine?" %>
+              <details class="review-cockpit__devlog-recordings" <%= "open" if lapses.any? || lookouts.any? %>>
+                <summary class="review-cockpit__devlog-recordings-summary">
+                  Timelapses <span class="review-cockpit__count"><%= lapses.size + lookouts.size %></span>
+                </summary>
+                <% if lapses.any? || lookouts.any? %>
+                  <%= render "admin/certification/funding_requests/recordings",
+                        timelapses: lapses, recordings: lookouts,
+                        title: "",
+                        telescreen_uid: @lapse_owner_uid %>
+                <% else %>
+                  <p class="review-cockpit__muted">Nothing recorded in this devlog's window.</p>
+                <% end %>
+              </details>
+            </div>
+          </li>
+        <% end %>
+      </ol>
+    <% else %>
+      <p class="review-cockpit__muted">No devlogs on this project.</p>
+    <% end %>
+
+    <%# One dialog shared by every thumbnail. %>
+    <dialog class="review-cockpit__lightbox" data-certification--review-rail-target="lightbox">
+      <button type="button" class="review-cockpit__lightbox-close"
+              data-action="certification--review-rail#closeImage" aria-label="Close">×</button>
+      <img class="review-cockpit__lightbox-image" alt=""
+           data-certification--review-rail-target="lightboxImage">
+    </dialog>
+  </div>
+<% end %>

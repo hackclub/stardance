@@ -5,7 +5,11 @@
                   name:, duration: (seconds), recorded_at: (Time or nil),
                   telescreen_url: (optional Telescreen deep-link) } %>
 <div class="ship-review__panel recording-gallery" data-controller="certification--lapse-player">
-  <h2 class="ship-review__panel-title"><%= title %></h2>
+  <%# Blank title means the caller has already labelled the panel - the review
+      cockpit puts the gallery inside its own "Timelapses" disclosure. %>
+  <% if title.present? %>
+    <h2 class="ship-review__panel-title"><%= title %></h2>
+  <% end %>
 
   <% if items.blank? %>
     <p class="recording-gallery__empty"><%= empty_text %></p>

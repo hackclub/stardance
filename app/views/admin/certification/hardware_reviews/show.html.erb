@@ -33,6 +33,37 @@
               review: @active_review, review_type: @active_review_type %>
       <% end %>
 
+      <%# Where a T1 approval on this project went next. Shown to everyone so a
+          T1 reviewer can see their approval is parked rather than paid, with the
+          way through only for the people who can actually decide it. %>
+      <% if @second_stage_review && Flipper.enabled?(:hardware_t2_review) %>
+        <% can_review_t2 = current_user&.has_role?(:t2_reviewer) || current_user&.admin? %>
+        <div class="hardware-review__second-stage hardware-review__second-stage--<%= @second_stage_review.status %>">
+          <div class="hardware-review__second-stage-text">
+            <strong class="hardware-review__second-stage-title">
+              <% case @second_stage_review.status %>
+              <% when "pending" %>
+                Approved at T1 — waiting on a T2 review
+              <% when "approved" %>
+                Cleared at T2 by <%= @second_stage_review.reviewer&.display_name || "—" %>
+              <% else %>
+                Returned at T2 by <%= @second_stage_review.reviewer&.display_name || "—" %>
+              <% end %>
+            </strong>
+            <span class="hardware-review__second-stage-note">
+              <% if @second_stage_review.pending? %>
+                Nothing is paid out until a second reviewer clears it.
+              <% end %>
+            </span>
+          </div>
+          <% if can_review_t2 %>
+            <%= link_to "Open T2 review →",
+                  admin_certification_second_stage_review_path(@project),
+                  class: "action-btn action-btn--primary" %>
+          <% end %>
+        </div>
+      <% end %>
+
       <%# Compact link row rather than a definition list further down the page. %>
       <div class="hardware-review__links">
         <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>

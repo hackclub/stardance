@@ -25,8 +25,9 @@ class Admin::Certification::HardwareReviewPolicy < ApplicationPolicy
     index?
   end
 
+  # T2 reviewers may read it; deciding T1 still needs can_review? via update?.
   def show?
-    user&.can_review? && not_own_project?
+    (user&.can_review? || user&.has_role?(:t2_reviewer)) && not_own_project?
   end
 
   # Same bar as Certification::ShipPolicy#report_fraud?: any reviewer may flag,

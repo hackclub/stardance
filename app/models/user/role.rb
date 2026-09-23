@@ -17,7 +17,8 @@ class User
       new(8, :mission_reviewer, "Can review submissions for any mission across the platform"),
       new(9, :raffle_admin, "Can manage the referral raffle: weeks, draws, participants, and referrals"),
       new(11, :workshop_manager, "Can create and manage workshops and see their RSVPs and attendees"),
-      new(12, :nda_helper, "NDA-covered helper with read-only access to some data that requires NDA")
+      new(12, :nda_helper, "NDA-covered helper with read-only access to some data that requires NDA"),
+      new(14, :t2_reviewer, "Second-stage (T2) reviewer for hardware design & build: a T1 approval only pays out once a T2 reviewer clears it")
     ].freeze
 
     self::SLUGGED = self::ALL.index_by(&:name).freeze

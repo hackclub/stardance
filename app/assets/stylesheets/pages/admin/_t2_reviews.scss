@@ -1,0 +1,86 @@
+// T2 queue rows; the page frame comes from the shared .ship-queue / .hardware-queue chrome.
+
+.t2-queue {
+  &__note {
+    margin: 0 0 var(--spacing-m, 1rem);
+    padding: 0.75rem 1rem;
+    border-radius: var(--container-radius, 8px);
+    background: var(--color-brand-yellow-soft);
+    color: var(--color-space-text);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__item {
+    border-radius: var(--container-radius, 8px);
+    background: var(--color-set-2-bg);
+  }
+
+  &__link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    color: var(--color-space-text);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-blue-soft);
+    }
+  }
+
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+
+  &__project {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  &__stage-pill {
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--color-brand-lilac-soft);
+    color: var(--color-brand-lilac);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  &__amount {
+    color: var(--color-brand-mint);
+    font-weight: 600;
+  }
+
+  &__empty {
+    padding: 2rem 0;
+    color: var(--color-set-1-fg-secondary);
+    text-align: center;
+  }
+}

@@ -91,6 +91,17 @@ module GitHost
       tree["tree"].filter_map { |node| node["path"] if node["type"] == "blob" }
     end
 
+    # Contents API so the proxy and token headers apply; binary/huge files return nil.
+    def fetch_file(path)
+      return nil unless owner && repo && path.present?
+
+      full_url = "#{api_base}/repos/#{owner}/#{repo}/contents/#{ERB::Util.url_encode(path).gsub('%2F', '/')}"
+      body = http_get(full_url, headers: auth_headers)
+      return nil unless body.is_a?(Hash) && body["encoding"] == "base64" && body["content"].present?
+
+      Base64.decode64(body["content"]).force_encoding("UTF-8").scrub
+    end
+
     def fetch_languages
       return nil unless owner && repo
 

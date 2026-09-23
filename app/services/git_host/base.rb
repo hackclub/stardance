@@ -34,6 +34,10 @@ module GitHost
       raise NotImplementedError
     end
 
+    def fetch_file(_path)
+      nil
+    end
+
     def fetch_languages
       nil
     end

@@ -262,6 +262,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_211544) do
     t.index ["user_id"], name: "index_certification_review_skips_on_user_id"
   end
 
+  create_table "certification_second_stage_reviews", force: :cascade do |t|
+    t.integer "approved_amount_cents"
+    t.datetime "claim_expires_at"
+    t.datetime "claimed_at"
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.text "feedback"
+    t.text "internal_reason"
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "reviewable_id", null: false
+    t.string "reviewable_type", null: false
+    t.bigint "reviewer_id"
+    t.integer "stardust_earned"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_at"], name: "index_certification_second_stage_reviews_on_decided_at"
+    t.index ["reviewable_type", "reviewable_id"], name: "index_certification_second_stage_reviews_on_reviewable"
+    t.index ["reviewable_type", "reviewable_id"], name: "index_second_stage_reviews_unique_reviewable", unique: true
+    t.index ["reviewer_id"], name: "index_certification_second_stage_reviews_on_reviewer_id"
+    t.index ["status", "claim_expires_at"], name: "idx_second_stage_reviews_on_status_claim_expires"
+  end
+
   create_table "certification_ship_reviews", force: :cascade do |t|
     t.float "bonus_stardust"
     t.datetime "claim_expires_at"
@@ -1834,6 +1856,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_211544) do
   add_foreign_key "certification_review_notes", "projects"
   add_foreign_key "certification_review_notes", "users", column: "author_id"
   add_foreign_key "certification_review_skips", "users"
+  add_foreign_key "certification_second_stage_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ship_reviews", "post_ship_events", on_delete: :nullify
   add_foreign_key "certification_ship_reviews", "projects"
   add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"

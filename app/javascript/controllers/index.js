@@ -43,6 +43,24 @@ application.register(
 import Certification__QueueController from "./certification/queue_controller";
 application.register("certification--queue", Certification__QueueController);
 
+import Certification__ReviewClaimClockController from "./certification/review_claim_clock_controller";
+application.register(
+  "certification--review-claim-clock",
+  Certification__ReviewClaimClockController,
+);
+
+import Certification__ReviewRailController from "./certification/review_rail_controller";
+application.register(
+  "certification--review-rail",
+  Certification__ReviewRailController,
+);
+
+import Certification__ReviewShortcutsController from "./certification/review_shortcuts_controller";
+application.register(
+  "certification--review-shortcuts",
+  Certification__ReviewShortcutsController,
+);
+
 import Certification__ScreenshotCheckController from "./certification/screenshot_check_controller";
 application.register(
   "certification--screenshot-check",
@@ -59,6 +77,12 @@ import Certification__Ships__MonitorChartController from "./certification/ships/
 application.register(
   "certification--ships--monitor-chart",
   Certification__Ships__MonitorChartController,
+);
+
+import Certification__T2DecisionController from "./certification/t2_decision_controller";
+application.register(
+  "certification--t2-decision",
+  Certification__T2DecisionController,
 );
 
 import Certification__VerdictPreviewController from "./certification/verdict_preview_controller";

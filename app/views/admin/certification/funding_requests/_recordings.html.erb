@@ -6,7 +6,9 @@
       title:      optional panel heading (default "Recordings")
       telescreen_uid: optional owner Hackatime uid; when present, each Lapse gets
                   an "Open in Telescreen" deep-link (Lookout recordings never do) %>
-<% title ||= "Recordings" %>
+<%# nil means "no heading passed" and defaults; "" means the caller has labelled
+    the panel itself and wants none. %>
+<% title = "Recordings" if title.nil? %>
 <% telescreen_uid ||= nil %>
 <%
   items = Array(timelapses).map do |tl|

@@ -1,0 +1,83 @@
+<% design = @stage == "design" %>
+<% title = design ? "T2 design queue" : "T2 build queue" %>
+<% content_for :title, title %>
+
+<% status_labels = { "pending" => "Pending", "approved" => "Cleared", "returned" => "Returned", "all" => "All" } %>
+
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide ship-queue hardware-queue t2-queue">
+    <%= link_to "Back to admin", admin_root_path, class: "ship-queue__back" %>
+
+    <header class="ship-queue__header">
+      <div class="ship-queue__title">
+        <h1><%= title %></h1>
+        <span class="hardware-queue__subtitle">
+          <%= design ?
+                "Design approvals waiting on a second pair of eyes before the grant is issued" :
+                "Build approvals waiting on a second pair of eyes before the build is certified" %>
+        </span>
+      </div>
+      <div class="ship-queue__header-actions">
+        <%= link_to "Start reviewing", next_admin_certification_second_stage_reviews_path(stage: @stage),
+              class: "action-btn action-btn--large action-btn--primary" %>
+      </div>
+    </header>
+
+    <nav class="hardware-queue__stages" aria-label="T2 review queues">
+      <%= link_to design_admin_certification_second_stage_reviews_path,
+            class: class_names("hardware-queue__stage", "is-active" => design),
+            aria: { current: (design ? "page" : nil) } do %>
+        <span class="hardware-queue__stage-name">Design</span>
+        <span class="hardware-queue__stage-count"><%= @tab_counts["design"] %></span>
+      <% end %>
+      <%= link_to build_admin_certification_second_stage_reviews_path,
+            class: class_names("hardware-queue__stage", "is-active" => !design),
+            aria: { current: (design ? nil : "page") } do %>
+        <span class="hardware-queue__stage-name">Build</span>
+        <span class="hardware-queue__stage-count"><%= @tab_counts["build"] %></span>
+      <% end %>
+    </nav>
+
+    <p class="t2-queue__note">
+      Every submission below has already been approved at T1. Nothing is paid out
+      until it is cleared here.
+    </p>
+
+    <nav class="hardware-queue__filters" aria-label="Filter by status">
+      <% status_labels.each do |value, label| %>
+        <%= link_to label,
+              url_for(status: value, sort: @sort, search: @search.presence),
+              class: class_names("hardware-queue__filter", "is-active" => @status == value) %>
+      <% end %>
+    </nav>
+
+    <% if @reviews.any? %>
+      <ul class="t2-queue__list">
+        <% @reviews.each do |review| %>
+          <li class="t2-queue__item">
+            <%= link_to admin_certification_second_stage_review_path(review.reviewable.project_id), class: "t2-queue__link" do %>
+              <div class="t2-queue__main">
+                <span class="t2-queue__project"><%= review.project.title %></span>
+                <span class="t2-queue__stage-pill"><%= review.stage_label %></span>
+              </div>
+              <div class="t2-queue__meta">
+                <span class="t2-queue__owner"><%= review.owner&.display_name %></span>
+                <span class="t2-queue__t1">
+                  T1 by <%= review.first_stage_reviewer&.display_name || "—" %>
+                </span>
+                <% if review.stage == "design" && review.reviewable.issues_grant? %>
+                  <span class="t2-queue__amount">$<%= review.reviewable.final_amount_dollars %></span>
+                <% end %>
+                <span class="t2-queue__age"><%= time_ago_in_words(review.created_at) %> ago</span>
+              </div>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+
+      <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
+    <% else %>
+      <p class="t2-queue__empty">Nothing waiting in this queue.</p>
+    <% end %>
+  </div>
+</div>

@@ -28,6 +28,13 @@
         </button>
         <%= link_to "Start reviewing", hardware_next_path(stage: @stage),
               class: "action-btn action-btn--large action-btn--primary" %>
+        <%# The way through to the second stage, for the reviewers who clear it. %>
+        <% if hardware_t2_queue_path && Flipper.enabled?(:hardware_t2_review) &&
+             policy(::Certification::SecondStageReview).index? %>
+          <%= link_to "T2", hardware_t2_queue_path,
+                class: "action-btn action-btn--small action-btn--secondary",
+                title: "Second-stage review queue" %>
+        <% end %>
       </div>
     </header>
 
