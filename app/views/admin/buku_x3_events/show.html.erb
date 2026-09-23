@@ -1,0 +1,59 @@
+<% content_for :title, "the jim takeover" %>
+
+<div class="admin-dashboard">
+  <header>
+    <%= link_to "← admin dashboard", admin_root_path %>
+    <h1>the jim takeover</h1>
+  </header>
+
+  <section aria-labelledby="buku-discoveries-heading">
+    <h2 id="buku-discoveries-heading">roles discovered</h2>
+    <p class="admin-dashboard__metric-note">unique accounts that completed their role reveal · previews don't count · updates on refresh</p>
+    <dl class="admin-dashboard__grid">
+      <div class="admin-dashboard__metric">
+        <dt>total discovered</dt>
+        <dd><%= number_with_delimiter(@buku_discoveries[:total]) %></dd>
+      </div>
+      <div class="admin-dashboard__metric admin-dashboard__metric--buku">
+        <dt>buku bukus</dt>
+        <dd><%= number_with_delimiter(@buku_discoveries[:buku]) %></dd>
+      </div>
+      <div class="admin-dashboard__metric admin-dashboard__metric--bean">
+        <dt>beans</dt>
+        <dd><%= number_with_delimiter(@buku_discoveries[:bean]) %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <section aria-labelledby="buku-shippers-heading"
+           data-controller="buku-activity-chart"
+           data-buku-activity-chart-data-value="<%= @buku_daily_shippers.to_json %>">
+    <h2 id="buku-shippers-heading">daily active shippers</h2>
+    <p class="admin-dashboard__metric-note">last 14 days · eastern time · unique users with approved event hours, grouped by ship date · late approvals update earlier days</p>
+    <div class="admin-dashboard__activity-chart">
+      <canvas data-buku-activity-chart-target="canvas" role="img" aria-label="daily active shippers: stacked bars for buku bukus and beans">
+        <% @buku_daily_shippers.each do |day| %>
+          <%= day[:date].iso8601 %>: <%= day[:buku] %> buku bukus, <%= day[:bean] %> beans;
+        <% end %>
+      </canvas>
+    </div>
+    <% if @buku_daily_shippers.all? { |day| day[:buku].zero? && day[:bean].zero? } %>
+      <p class="admin-dashboard__metric-note">no approved event ships in this period yet</p>
+    <% end %>
+  </section>
+
+  <% if policy(:admin).manage_buku_event? %>
+    <section class="admin-dashboard__event-controls" aria-labelledby="buku-intensity-heading">
+      <h2 id="buku-intensity-heading">disintegration intensity</h2>
+      <p>visual effect only · does not change team hours or the tug-of-war score</p>
+      <p class="admin-dashboard__metric-note" id="buku-intensity-help">0% turns it off · 100% is normal · 200% doubles the effect, capped at full disintegration · live pages update within a minute</p>
+      <%= form_with scope: :buku_x3_event, url: admin_buku_x3_event_path, method: :patch, class: "admin-dashboard__intensity-form" do |f| %>
+        <%= f.label :visual_intensity, "visual intensity (%)" %>
+        <%= f.number_field :visual_intensity, value: @buku_event.visual_intensity, min: 0, max: 200, step: 1, required: true,
+                           class: "admin-filters__input", aria: { describedby: "buku-intensity-help" } %>
+        <%= f.submit "save intensity", class: "btn-primary" %>
+      <% end %>
+      <%= link_to "view intensity audit history", admin_audit_logs_path(item_type: "BukuX3::Event", changed_field: "visual_intensity") %>
+    </section>
+  <% end %>
+</div>

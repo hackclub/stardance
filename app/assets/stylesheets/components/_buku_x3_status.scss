@@ -1,0 +1,272 @@
+.buku-x3-status {
+  position: relative;
+  display: grid;
+  align-items: center;
+  gap: var(--space-l);
+  margin-bottom: var(--space-l);
+  padding: var(--space-m);
+  border: 2px solid var(--buku-team-color);
+  border-radius: 8px;
+  background: var(--color-set-1-bg);
+  box-shadow: 0 0 var(--space-m)
+    color-mix(in srgb, var(--buku-team-color) 40%, transparent);
+  color: var(--color-brand-off-white);
+
+  &--buku {
+    --buku-team-color: var(--color-brand-lilac);
+  }
+
+  &--bean {
+    --buku-team-color: var(--color-brand-yellow);
+  }
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    min-width: 0;
+  }
+
+  &:not(&--compact) &__identity,
+  &__damage {
+    grid-area: 1 / 1;
+  }
+
+  &:not(&--compact) &__identity {
+    justify-content: center;
+    width: 100%;
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  &__identity,
+  &__damage {
+    transition:
+      opacity 180ms ease,
+      visibility 180ms;
+  }
+
+  &__toggle {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    border: 0;
+    border-radius: inherit;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-off-white);
+      outline-offset: var(--space-xxxs);
+    }
+  }
+
+  &[data-role-open],
+  &:has(&__toggle:focus-visible) {
+    .buku-x3-status__identity {
+      visibility: visible;
+      opacity: 1;
+    }
+    .buku-x3-status__damage {
+      visibility: hidden;
+      opacity: 0;
+    }
+  }
+
+  @media (hover: hover) {
+    &:not(&--compact):hover {
+      .buku-x3-status__identity {
+        visibility: visible;
+        opacity: 1;
+      }
+      .buku-x3-status__damage {
+        visibility: hidden;
+        opacity: 0;
+      }
+    }
+  }
+
+  &__icon {
+    width: 120px;
+    height: 132px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &:not(&--compact) &__icon {
+    width: clamp(120px, 25%, 180px);
+    height: auto;
+    aspect-ratio: 10 / 11;
+  }
+
+  &:not(&--compact) &__role {
+    font-size: var(--font-size-l);
+    margin-bottom: var(--space-xxxs);
+  }
+
+  &:not(&--compact) &__reminder {
+    font-size: var(--font-size-m);
+  }
+
+  &__role,
+  &__reminder,
+  &__label {
+    margin: 0;
+  }
+
+  &__role {
+    font-size: var(--font-size-m);
+  }
+
+  &--buku &__role strong {
+    color: var(--color-brand-lilac);
+  }
+
+  &--bean &__role strong {
+    color: var(--color-brand-yellow);
+  }
+
+  &__reminder,
+  &__label {
+    font-size: var(--font-size-s);
+  }
+
+  &__damage {
+    container-type: inline-size;
+    min-width: 0;
+  }
+
+  &__label {
+    text-align: center;
+  }
+
+  &__tug {
+    --character-width: clamp(64px, 24cqi, 160px);
+
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: var(--character-width) minmax(0, 1fr) var(
+        --character-width
+      );
+    margin-top: var(--space-s);
+  }
+
+  &__team {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    font-size: var(--font-size-s);
+    font-weight: 700;
+
+    &--buku {
+      color: var(--color-brand-lilac);
+    }
+    &--bean {
+      grid-column: 3;
+      color: var(--color-brand-yellow);
+    }
+  }
+
+  &__character-frame {
+    position: relative;
+    aspect-ratio: 1408 / 1258;
+    overflow: hidden;
+  }
+
+  &__hours {
+    display: block;
+    margin-top: var(--space-xxxs);
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  &__character {
+    // Frame the shared transparent canvas without modifying the supplied art.
+    position: absolute;
+    left: -3.55%;
+    top: -8.74%;
+    display: block;
+    width: 129.55%;
+    max-width: none;
+    height: auto;
+  }
+
+  &__rope {
+    // Hand centers in the framed artwork: x=7%/93%, y=45% and 69%.
+    // Derive both edges from character width so the grips stay aligned on phones.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.405);
+    height: calc(var(--character-width) * 0.214);
+    box-sizing: border-box;
+    border: 2px solid var(--color-brand-cream);
+    border-radius: 8px;
+    background: linear-gradient(
+      to right,
+      var(--color-brand-lilac),
+      var(--color-set-2-bg) 50%,
+      var(--color-brand-yellow)
+    );
+  }
+
+  &__midpoint {
+    position: absolute;
+    top: calc(-1 * var(--space-xs));
+    bottom: calc(-1 * var(--space-xs));
+    left: 50%;
+    border-left: 2px dashed var(--color-brand-off-white);
+    opacity: 0.5;
+  }
+
+  &__marker {
+    position: absolute;
+    top: 50%;
+    left: var(--tug-position, 50%);
+    width: var(--space-l);
+    height: var(--space-xl);
+    border: 2px solid var(--color-brand-off-white);
+    border-radius: 8px;
+    background: var(--color-set-1-bg);
+    box-shadow: 0 0 var(--space-s) var(--color-brand-lilac);
+    transform: translate(-50%, -50%);
+    transition: left 700ms ease;
+
+    &::after {
+      content: "✦";
+      display: grid;
+      height: 100%;
+      place-items: center;
+      color: var(--color-brand-cream);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__identity,
+    &__damage,
+    &__marker {
+      transition: none;
+    }
+  }
+
+  &--compact {
+    margin-top: var(--space-m);
+    margin-bottom: 0;
+    padding: var(--space-s);
+    border-color: var(--color-set-2-fg-secondary);
+    background: var(--color-set-1-bg);
+    box-shadow: none;
+  }
+
+  &--compact &__icon {
+    width: 72px;
+    height: 80px;
+  }
+}

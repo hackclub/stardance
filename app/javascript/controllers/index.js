@@ -19,6 +19,9 @@ application.register("admin-ledger-chart", AdminLedgerChartController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import BukuActivityChartController from "./buku_activity_chart_controller";
+application.register("buku-activity-chart", BukuActivityChartController);
+
 import BulkSelectController from "./bulk_select_controller";
 application.register("bulk-select", BulkSelectController);
 
@@ -480,3 +483,12 @@ application.register("workshop-countdown", WorkshopCountdownController);
 
 import MihiModeController from "./mihi_mode_controller";
 application.register("mihi-mode", MihiModeController);
+
+import BlackholeController from "./blackhole_controller";
+application.register("blackhole", BlackholeController);
+
+import BukuX3RevealController from "./buku_x3_reveal_controller";
+application.register("buku-x3-reveal", BukuX3RevealController);
+
+import BukuX3StatusController from "./buku_x3_status_controller";
+application.register("buku-x3-status", BukuX3StatusController);

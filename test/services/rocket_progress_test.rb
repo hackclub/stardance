@@ -101,7 +101,7 @@ class RocketProgressTest < ActiveSupport::TestCase
   end
 
   test "no contribution for a banned user or a review below the minimum" do
-    reviewed_ship(minutes: 5, at: @in_window)
+    reviewed_ship(minutes: 20, approved: 5, at: @in_window)
     assert_equal 0, RocketProgress.snapshot(user: @owner).user_hours
 
     reviewed_ship(minutes: 120, at: @in_window)

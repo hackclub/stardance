@@ -1229,6 +1229,7 @@
             </button>
             <%= form.submit "Ship!", class: "ship-modal__btn ship-modal__btn--primary", data: { disable_with: "Shipping…", composer_target: "submit" } %>
           </div>
+          <%= render BukuX3StatusComponent.new(user: current_user, compact: true) %>
         </div>
       <% end %>
     </dialog>

@@ -1,0 +1,21 @@
+class Admin::BukuX3EventsController < Admin::ApplicationController
+  def show
+    authorize :admin, :index?
+    @buku_discoveries = BukuX3::Assignment.discovered_counts
+    @buku_event = BukuX3::Event.current || BukuX3::Event.new
+    @buku_daily_shippers = @buku_event.daily_active_shippers.reverse
+  end
+
+  def update
+    authorize :admin, :manage_buku_event?
+    intensity = params.require(:buku_x3_event).require(:visual_intensity)
+    event = BukuX3::Event.transaction do
+      record = BukuX3::Event.create_or_find_by!(key: BukuX3::Event::KEY)
+      record.update!(visual_intensity: intensity)
+      record
+    end
+    redirect_to admin_jim_takeover_path, notice: "visual intensity set to #{event.visual_intensity}% · live pages update within a minute", status: :see_other
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to admin_jim_takeover_path, alert: e.record.errors.full_messages.to_sentence, status: :see_other
+  end
+end

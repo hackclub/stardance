@@ -1,0 +1,69 @@
+.blackhole {
+  &__masks {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  &__dust {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9997;
+  }
+
+  &__text {
+    display: contents;
+  }
+
+  &__text[hidden] {
+    display: none !important;
+  }
+
+  &__text-copy {
+    position: fixed !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
+
+  &__text-copy[hidden] {
+    display: none !important;
+  }
+
+  &__text-copy,
+  &__text-copy * {
+    color: var(--color-brand-off-white) !important;
+    -webkit-text-fill-color: var(--color-brand-off-white) !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    outline-color: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    pointer-events: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  &__text-copy * {
+    clip-path: none !important;
+  }
+
+  &__text-copy::before,
+  &__text-copy::after,
+  &__text-copy:is(img, svg),
+  &__text-copy *::before,
+  &__text-copy *::after,
+  &__text-copy img,
+  &__text-copy svg,
+  &__text-copy canvas,
+  &__text-copy .blackhole__text-excluded,
+  &__text-copy .blackhole__text-excluded * {
+    visibility: hidden !important;
+  }
+}

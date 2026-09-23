@@ -6,7 +6,15 @@
 
 <div class="app-layout">
   <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
-    <%= render RocketProgressComponent.new(user: current_user) %>
+    <%= turbo_frame_tag "buku_x3_home_status", class: ("buku-x3-home-preview" if Rails.env.development?), data: { controller: "buku-x3-status", action: "buku-x3-reveal:complete@window->buku-x3-status#refresh" } do %>
+      <% preview_role = params[:buku_preview].presence_in(%w[buku bean]) if Rails.env.development? %>
+      <% event_status = BukuX3StatusComponent.new(user: current_user, preview: preview_role.present?, preview_role: preview_role) %>
+      <% if event_status.render? %>
+        <%= render event_status %>
+      <% else %>
+        <%= render RocketProgressComponent.new(user: current_user) %>
+      <% end %>
+    <% end %>
     <% if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>
       <%= render ActionButtonComponent.new(
             text: "free 10,000 stardust hack *LEGIT* 2026 (WORKING)",
