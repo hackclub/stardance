@@ -176,10 +176,11 @@
     margin: var(--space-m) auto;
 
     &.slack-emote {
-    display: inline-block;
-    width: 1.35em; height: 1.35em;
-    margin: 0 0.08em;
-    vertical-align: -0.25em;
+      display: inline-block;
+      width: 1.35em;
+      height: 1.35em;
+      margin: 0 0.08em;
+      vertical-align: -0.25em;
     }
   }
 }
