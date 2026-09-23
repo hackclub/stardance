@@ -97,11 +97,13 @@ class Admin::Shop::OrdersControllerTest < ActionDispatch::IntegrationTest
   # A reject form has to collect everything Admin::ShopOrderRejector will demand
   # of that reviewer, or the model's presence validations reject a submission
   # over a field the reviewer was never shown.
-  test "an admin's reject form collects the internal reason the rejection needs" do
-    seller = buyer("adminreject", integrity: :pending)
+  test "a fraud dept reviewer's reject form collects the internal reason the rejection needs" do
+    reviewer = create_user(slack_id: "U_SO_FRAUD_REVIEWER", display_name: "so_fraud_reviewer")
+    reviewer.grant_role!(:fraud_dept)
+    seller = buyer("fraudreject", integrity: :pending)
     order = order_for(seller, at: 1.hour.ago)
 
-    sign_in @admin
+    sign_in reviewer
     get admin_shop_order_path(order)
 
     assert_select "#reject-modal textarea[name=?]", "internal_rejection_reason"
@@ -113,6 +115,39 @@ class Admin::Shop::OrdersControllerTest < ActionDispatch::IntegrationTest
 
     assert_predicate order.reload, :rejected?
     assert_equal "Matches a known ring", order.internal_rejection_reason
+  end
+
+  test "a plain admin's reject form only needs the buyer-facing reason" do
+    Project.create!(id: Admin::ShopOrderRejector::PLACEHOLDER_FRAUD_PROJECT_ID, title: "Stardance")
+    order = order_for(buyer("adminreject", integrity: :pending), at: 1.hour.ago)
+
+    sign_in @admin
+    get admin_shop_order_path(order)
+
+    assert_select "#reject-modal textarea[name=?]", "internal_rejection_reason", count: 0
+
+    post reject_admin_shop_order_path(order), params: { reason: "Out of stock" }
+
+    assert_predicate order.reload, :rejected?
+    assert_equal "Out of stock", order.internal_rejection_reason
+  end
+
+  test "a fraud dept reviewer's reject form drops the fraud fields once the order has left fraud review" do
+    reviewer = create_user(slack_id: "U_SO_FRAUD_PAST_REVIEW", display_name: "so_fraud_past_review")
+    reviewer.grant_role!(:fraud_dept)
+    Project.create!(id: Admin::ShopOrderRejector::PLACEHOLDER_FRAUD_PROJECT_ID, title: "Stardance")
+    order = order_for(buyer("fraudpastreview", integrity: :pending), at: 1.hour.ago)
+    order.update_columns(aasm_state: "awaiting_periodical_fulfillment")
+
+    sign_in reviewer
+    get admin_shop_order_path(order)
+
+    assert_select "#reject-modal textarea[name=?]", "internal_rejection_reason", count: 0
+
+    post reject_admin_shop_order_path(order), params: { reason: "Out of stock" }
+
+    assert_predicate order.reload, :rejected?
+    assert_equal "Out of stock", order.internal_rejection_reason
   end
 
   test "a fulfillment person rejects on the buyer-facing reason alone" do

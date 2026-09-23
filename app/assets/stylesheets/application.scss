@@ -64,6 +64,7 @@
 @use "components/settings-form";
 @use "components/slack_doodle";
 @use "components/sticker_promo";
+@use "components/receipt_promo_widget";
 @use "components/sticker_promo_widget";
 @use "components/vega_sprite";
 @use "components/visual_novel";
@@ -79,6 +80,7 @@
 @use "pages/projects/hardware_update";
 @use "pages/projects/lookout_finalize";
 @use "pages/my/timelapses";
+@use "pages/my/balance" as my_balance;
 @use "pages/hardware_funding";
 @use "pages/votes";
 @use "pages/workshops";
@@ -119,4 +121,5 @@
 @use "pages/notification_settings" as notification_settings_page;
 @use "pages/data_exports" as data_exports_page;
 @use "pages/rng";
+@use "pages/mention_form";
 @use "landing/landing_footer";

@@ -258,6 +258,7 @@
   // The server refuses the verdict either way, this just stops the reviewer
   // filling in a form that cannot land.
   &--claimed-elsewhere .fraud-subject__verdict-form,
+  &--claimed-elsewhere .stardust-deduction,
   &--claimed-elsewhere .fraud-subject__bulk-actions {
     display: none;
   }
@@ -265,6 +266,16 @@
   .fraud-subject__item-error {
     background: var(--color-set-3-bg);
     border-left: 4px solid var(--color-brand-salmon);
+    border-radius: 6px;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-xs);
+    margin: 0 0 var(--space-xs);
+    padding: var(--space-xxs) var(--space-xs);
+  }
+
+  .fraud-subject__item-notice {
+    background: var(--color-set-3-bg);
+    border-left: 4px solid var(--color-brand-lilac);
     border-radius: 6px;
     color: var(--color-brand-cream);
     font-size: var(--font-size-xs);
@@ -346,7 +357,77 @@
   .fraud-subject__fact-value--balance {
     align-items: center;
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-xs);
+  }
+
+  // Closed, the toggle sits inline with the balance. Opened, the ledger takes
+  // the whole facts row instead of the narrow column the balance lives in.
+  .fraud-subject__fact:has(.fraud-subject__balance-history[open]),
+  .fraud-subject__balance-history[open] {
+    flex-basis: 100%;
+  }
+
+  .fraud-subject__balance-panel {
+    background: var(--color-set-3-bg);
+    border-radius: 8px;
+    margin-top: var(--space-xs);
+    max-height: 24rem;
+    overflow-y: auto;
+    padding: var(--space-s);
+  }
+
+  .fraud-subject__balance-summary {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .fraud-subject__balance-link {
+    color: var(--color-brand-cream);
+  }
+
+  .fraud-subject__balance-table {
+    border-collapse: collapse;
+    font-size: var(--font-size-s);
+    width: 100%;
+
+    th,
+    td {
+      padding: var(--space-xxs) var(--space-xs);
+      text-align: left;
+    }
+
+    th {
+      color: var(--color-set-3-fg-secondary);
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    tbody tr + tr {
+      border-top: 1px solid var(--color-overlay-light);
+    }
+  }
+
+  .fraud-subject__balance-amount--positive {
+    color: var(--color-brand-mint);
+  }
+
+  .fraud-subject__balance-amount--negative {
+    color: var(--color-brand-salmon);
+  }
+
+  .fraud-subject__balance-date {
+    color: var(--color-set-3-fg-secondary);
+    white-space: nowrap;
+  }
+
+  .fraud-subject__balance-empty,
+  .fraud-subject__balance-loading {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-s);
+    margin: 0;
   }
 
   .fraud-subject__fact-note {
@@ -392,6 +473,15 @@
     color: var(--color-brand-cream);
     font-size: var(--font-size-l);
     font-weight: 600;
+  }
+
+  // Lifetime hours are context for the ship's claim, so they trail the lead
+  // number at label size instead of competing with it.
+  .fraud-subject__vital-aside {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 400;
+    margin-left: var(--space-xxs);
   }
 
   .fraud-subject__blurb {
@@ -777,6 +867,23 @@
     padding: 0.5rem 1rem;
 
     // Safari draws its own disclosure triangle regardless of list-style.
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  // Reading a ledger is not a verdict, so the toggle stays neutral next to the
+  // balance rather than borrowing a verdict colour.
+  .fraud-subject__balance-toggle {
+    background: var(--color-set-3-bg);
+    border-radius: 8px;
+    color: var(--color-brand-off-white);
+    cursor: pointer;
+    display: inline-block;
+    font-size: var(--font-size-xs);
+    list-style: none;
+    padding: var(--space-xxs) var(--space-xs);
+
     &::-webkit-details-marker {
       display: none;
     }

@@ -159,6 +159,31 @@ module Certification
     # rewrites has its own review to bring back in line.
     after_commit :resync_completed_review_to_airtable, if: :saved_change_to_status?
 
+    # Stardust a fraud reviewer takes back for one hour of this ship's time: the
+    # rate the ship actually paid, blessing included. A ship that has not paid
+    # out has no rate of its own, so a deduction on it falls back to a flat one.
+    UNPAID_DEDUCTION_RATE = 10
+
+    def deduction_rate_per_hour
+      ship_event.stardust_per_hour_paid || UNPAID_DEDUCTION_RATE
+    end
+
+    def deduction_stardust_for(hours) = (hours.to_f * deduction_rate_per_hour).round
+
+    # Takes the stardust those hours earned back off the shipper's balance. The
+    # ledger entry is the record of it: it names the project and the reviewer's
+    # reason, and LedgerEntry files the balance change against the user itself.
+    def deduct_stardust!(hours:, reason:, actor:)
+      recipient = ship_event.payout_recipient
+
+      recipient.ledger_entries.create!(
+        ledgerable: recipient,
+        amount: -deduction_stardust_for(hours),
+        reason: "Integrity deduction on #{deduction_project_title} (#{ActiveSupport::NumberHelper.number_to_rounded(hours, precision: 2, strip_insignificant_zeros: true)} hrs): #{reason}",
+        created_by: "#{actor.display_name} (#{actor.id})"
+      )
+    end
+
     def claim_active?
       claimed_by_id.present? && claimed_at.present? && claimed_at > CLAIM_TTL.ago
     end
@@ -181,6 +206,10 @@ module Certification
     end
 
     private
+
+    def deduction_project_title
+      project_including_deleted&.title.presence || "Unknown project"
+    end
 
     def stamp_reviewed_at
       self.reviewed_at = Time.current

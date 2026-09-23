@@ -166,6 +166,28 @@ class Post::ShipEventHoursTest < ActiveSupport::TestCase
     assert_equal "stardance_hardware_flat_5_v1", Post::ShipEvent::Payouts::HARDWARE_PAYOUT_CURVE_VERSION
   end
 
+  test "window hours count only the time logged since the previous ship" do
+    project = Project.create!(title: "SW #{SecureRandom.hex(4)}", created_at: 5.days.ago)
+    create_devlog(project, seconds: 7200, phase: nil, at: 4.days.ago)
+    first_ship = create_ship(project, at: 3.days.ago)
+    create_devlog(project, seconds: 3600, phase: nil, at: 2.days.ago)
+    second_ship = create_ship(project, at: 1.day.ago)
+
+    assert_in_delta 2.0, first_ship.reload.window_hours, 0.001
+    assert_in_delta 1.0, second_ship.reload.window_hours, 0.001
+    assert_in_delta 3.0, project.reload.duration_seconds / 3600.0, 0.001
+  end
+
+  test "window hours survive a soft-deleted project" do
+    project = Project.create!(title: "SW #{SecureRandom.hex(4)}", created_at: 3.days.ago)
+    create_devlog(project, seconds: 3600, phase: nil, at: 2.days.ago)
+    ship = create_ship(project)
+    project.update!(deleted_at: Time.current)
+
+    assert_nil ship.reload.project
+    assert_in_delta 1.0, ship.window_hours, 0.001
+  end
+
   private
 
   def hardware_project_with_approved_funding(requested_at:)
@@ -202,11 +224,11 @@ class Post::ShipEventHoursTest < ActiveSupport::TestCase
     devlog
   end
 
-  def create_ship(project)
+  def create_ship(project, at: Time.current)
     ship = Post::ShipEvent.new(body: "ship it")
     ship.uploading_attachments = true
     ship.save!
-    Post.create!(project: project, user: @owner, postable: ship, created_at: Time.current)
+    Post.create!(project: project, user: @owner, postable: ship, created_at: at)
     ship
   end
 end

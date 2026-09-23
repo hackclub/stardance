@@ -114,6 +114,35 @@ class Admin::Certification::IntegrityController < Admin::Certification::Applicat
     end
   end
 
+  # Passes every check the reviewer was shown on the per-person fraud page. Each
+  # is claimed and decided as its own Pass would be, so a check an earlier pass
+  # already settled by cascading across its project is skipped, not paid twice.
+  def pass_all
+    authorize :integrity, :update?, policy_class: Admin::Certification::IntegrityPolicy
+    params.require(:fraud_subject_id)
+
+    checks = Admin::Fraud::SubjectQueue.integrity_checks_for(fraud_subject).where(id: params[:check_ids])
+    passed = []
+    failed = []
+
+    checks.each do |check|
+      next unless check.reload.pending?
+
+      claimed = ::Certification::Integrity.atomic_claim!(check.id, current_user)
+      next failed << check if claimed.nil?
+
+      claimed.assign_attributes(status: :manually_passed, deduction_minutes: nil, reviewer: current_user)
+      claimed.save ? passed << claimed : failed << claimed
+    end
+
+    if failed.any?
+      flash.now[:alert] = "Could not pass #{helpers.pluralize(failed.size, 'check')} (#{failed.map { |check| "##{check.id}" }.to_sentence}), " \
+                          "another reviewer may hold them."
+    end
+
+    render_fraud_subject_verdicts(passed.map { |check| [ check, "Passed." ] }, refresh_integrity: true)
+  end
+
   private
 
   # A verdict from the fraud subject page is answering into that check's turbo

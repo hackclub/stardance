@@ -1496,6 +1496,12 @@
     }
   }
 
+  &__blocker-note {
+    margin: var(--space-xxs) 0 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
   &__feedback,
   &__video-section {
     padding-left: var(--space-s);

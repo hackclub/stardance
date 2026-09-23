@@ -20,9 +20,29 @@
     line-height: var(--line-height-headers);
     margin-top: var(--space-xl);
     margin-bottom: var(--space-s);
+    position: relative;
 
     &:first-child {
       margin-top: 0;
+    }
+
+    &[id] .guide-content__anchor {
+      color: var(--color-brand-lilac);
+      text-decoration: none;
+      opacity: 0;
+      margin-left: 0.3em;
+      font-size: 0.7em;
+      vertical-align: middle;
+      transition: opacity 0.15s ease;
+    }
+
+    &[id]:hover .guide-content__anchor,
+    &[id] .guide-content__anchor:focus {
+      opacity: 0.6;
+    }
+
+    &[id] .guide-content__anchor:hover {
+      opacity: 1;
     }
   }
 
@@ -154,6 +174,14 @@
     border-radius: var(--profile-radius);
     display: block;
     margin: var(--space-m) auto;
+
+    &.slack-emote {
+      display: inline-block;
+      width: 1.35em;
+      height: 1.35em;
+      margin: 0 0.08em;
+      vertical-align: -0.25em;
+    }
   }
 }
 

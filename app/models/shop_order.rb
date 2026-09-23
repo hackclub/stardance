@@ -5,6 +5,7 @@
 #  id                                 :bigint           not null, primary key
 #  aasm_state                         :string
 #  awaiting_periodical_fulfillment_at :datetime
+#  country                            :string(2)
 #  external_ref                       :string
 #  frozen_address_ciphertext          :text
 #  frozen_item_price                  :decimal(6, 2)
@@ -42,6 +43,7 @@
 #  idx_shop_orders_user_item_state                  (user_id,shop_item_id,aasm_state)
 #  idx_shop_orders_user_item_unique                 (user_id,shop_item_id)
 #  index_shop_orders_on_assigned_to_user_id         (assigned_to_user_id)
+#  index_shop_orders_on_country                     (country)
 #  index_shop_orders_on_fraud_review_payout_id      (fraud_review_payout_id)
 #  index_shop_orders_on_fulfillment_payout_line_id  (fulfillment_payout_line_id)
 #  index_shop_orders_on_parent_order_id             (parent_order_id)
@@ -136,8 +138,13 @@ class ShopOrder < ApplicationRecord
   after_create :assign_default_user
   after_create :notify_amber_if_verification_call_required
   after_create :hold_if_usps_suspended
-  before_create :freeze_item_price
-  before_create :set_region_from_address
+  # All three run before_validation (not before_create) so frozen_item_price
+  # and region are populated in time for check_user_balance /
+  # check_regional_availability to actually validate against them, instead of
+  # running before either is set.
+  before_validation :set_region_from_address, on: :create
+  before_validation :set_country_from_address, on: :create
+  before_validation :freeze_item_price, on: :create
   after_commit :notify_user_of_status_change, if: :saved_change_to_aasm_state?
   after_commit :schedule_hold_release, if: :placed_on_hold?
 
@@ -150,6 +157,11 @@ class ShopOrder < ApplicationRecord
   }
   scope :worth_counting, -> { where.not(aasm_state: %w[rejected refunded]) }
   scope :real, -> { without_item_type("ShopItem::FreeStickers") }
+  # Sticky Streak stickers clear review on their own and ship outside the batch
+  # sweep, and one 21-day run adds 21 of them per person, so counting them
+  # alongside the orders a human actually works buries that work. They still
+  # show up in the queues themselves; they just leave the numbers alone.
+  scope :without_streak_stickers, -> { without_item_type("ShopItem::StickyStreakSticker") }
   scope :manually_fulfilled, -> { joins(:shop_item).merge(ShopItem.where(type: ShopItem::MANUAL_FULFILLMENT_TYPES)) }
   scope :with_item_type, ->(item_type) { joins(:shop_item).where(shop_items: { type: item_type.to_s }) }
   scope :without_item_type, ->(item_type) { joins(:shop_item).where.not(shop_items: { type: item_type.to_s }) }
@@ -344,8 +356,51 @@ class ShopOrder < ApplicationRecord
       total_cost_with_modifiers > HIGH_VALUE_THRESHOLD
   end
 
-  def requires_additional_review?
-    high_value? && reviews.size < ShopOrderReview::REQUIRED_COUNT
+  def review_count(verdict)
+    reviews.count { |review| review.verdict == verdict }
+  end
+
+  # Verdicts are counted apart: two approvals do not clear a rejection, and a
+  # split decision clears neither, so a third reviewer breaks the tie.
+  def requires_additional_review?(verdict = ShopOrderReview::APPROVE)
+    high_value? && review_count(verdict) < ShopOrderReview::REQUIRED_COUNT
+  end
+
+  # Neither verdict has carried, so the order cannot move until someone else
+  # weighs in. The mirror of ShopOrderReview.awaiting_another_reviewer.
+  def awaiting_another_review?
+    requires_additional_review?(ShopOrderReview::APPROVE) && requires_additional_review?(ShopOrderReview::REJECT)
+  end
+
+  # One reviewer's verdict on a high-value order, with the audit entry the
+  # order page and the fraud dashboard read back. Returns the review, carrying
+  # its errors when it could not be recorded.
+  def record_review(user:, verdict:, reason:)
+    with_lock do
+      previous_count = reviews.count
+      review = reviews.build(user: user, verdict: verdict, reason: reason)
+
+      if review.save
+        ::PaperTrail::Version.create!(
+          item_type: "ShopOrder",
+          item_id: id,
+          event: "review",
+          whodunnit: user.id,
+          object_changes: {
+            review_count: [ previous_count, previous_count + 1 ],
+            verdict: review.verdict,
+            reason: review.reason
+          }
+        )
+        reviews.reset
+      end
+
+      review
+    end
+  end
+
+  def fraud_review_state?
+    aasm_state.in?(FRAUD_REVIEW_STATES)
   end
 
   def approvable?
@@ -488,9 +543,9 @@ class ShopOrder < ApplicationRecord
     end
 
     # Use price_for_user so any per-user pricing is enforced at purchase, not
-    # just displayed. Falls back to the regional price for ordinary items.
-    order_region = region.presence || Shop::Regionalizable.country_to_region(frozen_address&.dig("country"))
-    self.frozen_item_price = shop_item.price_for_user(user, order_region || "XX")
+    # just displayed. region is set by set_region_from_address, which runs
+    # first, so this is always the region the order actually ships to.
+    self.frozen_item_price = shop_item.price_for_user(user, region.presence || "XX")
   end
 
   def check_item_enabled
@@ -525,7 +580,10 @@ class ShopOrder < ApplicationRecord
     return if redeeming_prize?
     return unless frozen_item_price&.positive? && quantity.present?
 
-    total_cost_for_validation = frozen_item_price * quantity
+    # total_cost_with_modifiers, not just the item price: it's what
+    # create_negative_payout actually deducts, so the balance check has to
+    # match or a modifier-priced order can still push the ledger negative.
+    total_cost_for_validation = total_cost_with_modifiers
     if user&.balance&.< total_cost_for_validation
       shortage = total_cost_for_validation - (user.balance || 0)
       errors.add(:base, "Insufficient balance. You need #{shortage} more tickets.")
@@ -669,6 +727,13 @@ class ShopOrder < ApplicationRecord
     return unless frozen_address.present? && frozen_address["country"].present?
 
     self.region = Shop::Regionalizable.country_to_region(frozen_address["country"])
+  end
+
+  def set_country_from_address
+    return if country.present?
+    return unless frozen_address.present? && frozen_address["country"].present?
+
+    self.country = frozen_address["country"].upcase
   end
 
   def assign_default_user

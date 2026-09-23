@@ -9,7 +9,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   # views don't each repeat (and risk drifting from) the permit list.
   PRESERVED_FILTER_KEYS = [
     :user_search, :shop_item_id, :status, :date_from, :date_to, :sort, :view,
-    :goob, :region, :item_type, :min_tickets, :max_tickets, :has_tracking,
+    :goob, :region, :country, :item_type, :min_tickets, :max_tickets, :has_tracking,
     :order_type, { assignee_ids: [], hidden_types: [] }
   ].freeze
 
@@ -32,13 +32,6 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     { label: "HQ Mail", hidden_by_default: false, types: %w[ShopItem::HQMailItem] + ShopItem::LetterMail::BULK_BATCHED_TYPES },
     { label: "Streak Stickers", hidden_by_default: false, types: %w[ShopItem::StickyStreakSticker] }
   ].freeze
-
-  # Sticky Streak stickers clear review on their own and ship outside the batch
-  # sweep, and one 21-day run adds 21 of them per person, so counting them
-  # alongside the orders a human actually works buries that work. They stay in
-  # the queue below and keep their own toggle count; they just leave the
-  # headline numbers alone.
-  STATS_EXCLUDED_ITEM_TYPES = %w[ShopItem::StickyStreakSticker].freeze
 
   TOGGLEABLE_ITEM_TYPES = ITEM_TYPE_TOGGLES.flat_map { |toggle| toggle[:types] }.freeze
 
@@ -166,13 +159,21 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
     # Apply shared filters to both the orders query and the stats base query
     orders = apply_shared_filters(orders)
-    base = apply_shared_filters(ShopOrder.includes(:shop_item, :user))
-             .where.not(shop_item_id: ShopItem.where(type: STATS_EXCLUDED_ITEM_TYPES))
+    # Streak stickers stay in the queue below and keep their own toggle count;
+    # they just leave the headline numbers alone.
+    base = apply_shared_filters(ShopOrder.includes(:shop_item, :user).without_streak_stickers)
 
     # Folded-away item types only come off the list itself — the stats below and
     # the counts on the toggles stay whole so nothing vanishes silently.
     if hidden_item_types.any?
       orders = orders.where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+    end
+
+    if @view == "fulfillment" && params[:shop_item_id].blank?
+      @batch_counts = ShopOrder.where(aasm_state: "awaiting_periodical_fulfillment")
+                               .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+                               .group(:shop_item_id)
+                               .count
     end
 
     if @view == "fulfillment"
@@ -216,9 +217,24 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     when "created_at_desc" then [ :created_at, :desc ]
     when "shells_asc" then [ :frozen_item_price, :asc ]
     when "shells_desc" then [ :frozen_item_price, :desc ]
+    when "batch_size_desc" then [ :batch_size, :desc ]
     else [ :created_at, :asc ]
     end
-    orders = orders.order(sort_column => sort_direction)
+
+    if sort_column == :batch_size
+      batch_counts_sql = ShopOrder
+        .where(aasm_state: "awaiting_periodical_fulfillment")
+        .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+        .select("shop_item_id AS bc_item_id, COUNT(*) AS batch_count")
+        .group(:shop_item_id)
+        .to_sql
+      orders = orders
+        .joins("LEFT JOIN (#{batch_counts_sql}) bc ON bc.bc_item_id = shop_orders.shop_item_id")
+        .order(Arel.sql("bc.batch_count DESC NULLS LAST, shop_orders.created_at ASC"))
+      sort_column, sort_direction = :created_at, :asc
+    else
+      orders = orders.order(sort_column => sort_direction)
+    end
 
     # Grouping. Paginate the *users* rather than the orders so every page holds
     # whole groups — grouping is the fulfillment default, so loading the entire
@@ -433,7 +449,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_back fallback_location: admin_shop_orders_path, alert: "No orders to reject." and return
     end
 
-    settled, failed = orders.map { |order|
+    settled, undecided = orders.map { |order|
       Admin::ShopOrderRejector.new(
         order,
         actor: current_user,
@@ -444,7 +460,9 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       ).call
     }.partition(&:rejected?)
 
-    render_bulk_order_outcome(settled, failed, verb: "Rejected")
+    voted, failed = undecided.partition(&:review)
+
+    render_bulk_order_outcome(settled, failed, verb: "Rejected", voted: voted)
   end
 
   def review_order
@@ -454,51 +472,20 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_to admin_shop_order_path(@order), alert: "You cannot review your own order." and return
     end
 
-    success = false
-    notice_message = nil
-    alert_message = nil
-    review = nil
+    review = @order.record_review(user: current_user, verdict: params[:verdict], reason: params[:review_reason])
 
-    @order.with_lock do
-      previous_review_count = @order.reviews.count
-
-      review = @order.reviews.build(
-        user: current_user,
-        verdict: params[:verdict],
-        reason: params[:review_reason]
-      )
-
-      if review.save
-        new_review_count = previous_review_count + 1
-
-        ::PaperTrail::Version.create!(
-          item_type: "ShopOrder",
-          item_id: @order.id,
-          event: "review",
-          whodunnit: current_user.id,
-          object_changes: {
-            review_count: [ previous_review_count, new_review_count ],
-            verdict: review.verdict,
-            reason: review.reason
-          }
-        )
-
-        success = true
-        notice_message = "Review submitted — #{review.verdict} (#{new_review_count}/2)."
-      else
-        alert_message = review.errors.full_messages.to_sentence
-      end
-    end
-
-    if success
-      return render_fraud_subject_review(review) if fraud_subject
-
-      redirect_to admin_shop_order_path(@order), notice: notice_message
-    else
+    unless review.persisted?
+      alert_message = review.errors.full_messages.to_sentence
       return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order", error: alert_message) if fraud_subject
 
-      redirect_to admin_shop_order_path(@order), alert: alert_message
+      return redirect_to admin_shop_order_path(@order), alert: alert_message
     end
+
+    return render_fraud_subject_review(review) if fraud_subject
+
+    redirect_to admin_shop_order_path(@order),
+                notice: "Review submitted - #{review.verdict} " \
+                        "(#{@order.review_count(review.verdict)}/#{ShopOrderReview::REQUIRED_COUNT})."
   end
 
   def reject
@@ -517,6 +504,10 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       return render_fraud_subject_verdict(@order, result.message) if fraud_subject
 
       redirect_to shop_orders_return_path, notice: result.message
+    elsif result.review
+      return render_fraud_subject_verdict(@order, result.message, claim: result.review) if fraud_subject
+
+      redirect_to admin_shop_order_path(@order), notice: result.message
     else
       redirect_to admin_shop_order_path(@order), alert: result.message
     end
@@ -699,33 +690,54 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   # and swapped in place, rather than reloading the queue and paying nobody.
   # The per-order outcome shows on the row it settled, so only failures need a
   # flash of their own.
-  # A review from the fraud page is either the first of a high-value order's
-  # two, which pays the reviewer for that review and leaves the order waiting on
-  # someone else, or the one that completes it, which approves the order.
+  # A review from the fraud page is either one of a high-value order's two,
+  # which pays the reviewer for that review and leaves the order waiting on
+  # someone else, or the approval that completes the pair, which approves the
+  # order. A completed pair of rejections stops at the vote: the rejection
+  # itself needs the reasons the reject form collects.
   def render_fraud_subject_review(review)
     @order.reviews.reset
 
-    if @order.requires_additional_review?
-      note = "Approval recorded (#{@order.reviews.size}/#{ShopOrderReview::REQUIRED_COUNT}). The order now waits on another reviewer."
-      return render_fraud_subject_verdict(@order, note, claim: review)
+    if review.verdict == ShopOrderReview::APPROVE && !@order.requires_additional_review?(ShopOrderReview::APPROVE)
+      result = Admin::ShopOrderApprover.new(@order, actor: current_user).call
+      return render_fraud_subject_verdict(@order, result.message) if result.approved?
+
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order", error: result.message)
     end
 
-    result = Admin::ShopOrderApprover.new(@order, actor: current_user).call
-    return render_fraud_subject_verdict(@order, result.message) if result.approved?
-
-    render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order", error: result.message)
+    render_fraud_subject_verdict(@order, fraud_subject_review_note(review), claim: review)
   end
 
-  def render_bulk_order_outcome(settled, failed, verb:)
+  def fraud_subject_review_note(review)
+    tally = "(#{@order.review_count(review.verdict)}/#{ShopOrderReview::REQUIRED_COUNT})"
+    recorded = review.verdict == ShopOrderReview::APPROVE ? "Approval" : "Rejection"
+
+    return "#{recorded} recorded #{tally}. The order now waits on another reviewer." if @order.requires_additional_review?(review.verdict)
+
+    "#{recorded} recorded #{tally}. The order can now be rejected."
+  end
+
+  # `voted` holds the high-value orders the submission could only vote on. They
+  # settle nothing, but the reviewer is paid for each vote and the rows they
+  # leave behind have to say so, exactly as a single verdict would.
+  def render_bulk_order_outcome(settled, failed, verb:, voted: [])
     if fraud_subject
       flash.now[:alert] = bulk_order_failure_message(failed) if failed.any?
 
-      return render_fraud_subject_verdicts(settled.map { |result| [ result.order, result.message ] })
+      decided = settled + voted
+      return render_fraud_subject_verdicts(
+        decided.map { |result| [ result.order, result.message ] },
+        claims: settled.map(&:order) + voted.map(&:review)
+      )
     end
 
     if settled.any?
       flash[:notice] = "#{verb} #{helpers.pluralize(settled.size, 'order')}: " \
                        "#{settled.map { |result| "##{result.order.id}" }.to_sentence}"
+    end
+    if voted.any?
+      flash[:notice] = [ flash[:notice], "Recorded a rejection on #{helpers.pluralize(voted.size, 'order')} " \
+                                         "waiting on a second reviewer: #{voted.map { |result| "##{result.order.id}" }.to_sentence}" ].compact.join(" ")
     end
     flash[:alert] = bulk_order_failure_message(failed) if failed.any?
 
@@ -801,15 +813,34 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       end
     end
 
+    if params[:country].present?
+      country_code = params[:country].upcase
+      if region_visible_to_current_user?(Shop::Regionalizable.country_to_region(country_code))
+        scope = scope.where(country: country_code)
+      end
+    end
+
     if current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
       scope = scope.where(region: current_user.regions)
                    .or(scope.where(region: nil))
                    .or(scope.where(assigned_to_user_id: current_user.id))
+      scope = scope.where(region: params[:region].upcase) if params[:region].present? && current_user.has_region?(params[:region])
     elsif params[:region].present?
       scope = scope.where(region: params[:region].upcase)
     end
 
     scope
+  end
+
+  # A region-restricted fulfillment person (has_regions? but not admin/fraud)
+  # can only ever see their assigned regions — a region/country filter param
+  # is honored for them only when it falls inside that set, so the filter UI
+  # can't be used to widen visibility past what apply_shared_filters already
+  # scopes them to.
+  def region_visible_to_current_user?(region_code)
+    return true unless current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
+
+    current_user.has_region?(region_code)
   end
 
   def shop_orders_return_path

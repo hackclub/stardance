@@ -168,6 +168,7 @@ class Project < ApplicationRecord
   has_many :missions,                 through:    :mission_attachments
   has_many :mission_section_completions, class_name: "Mission::SectionCompletion",  dependent: :destroy
   has_many :mission_submissions,         class_name: "Mission::Submission",         through: :ship_events
+  has_many :mentions, class_name: "ProjectMention", dependent: :destroy
 
   def current_mission_attachment
     if mission_attachments.loaded?
@@ -917,6 +918,19 @@ class Project < ApplicationRecord
     first_unmet_requirement(LINK_REQUIREMENT_KEYS)&.dig(:label)
   end
 
+  RECERTIFICATION_COOLDOWN_CAP_HOURS = 24
+
+  def recertification_available_at
+    requested_at = recertification_request_times
+    return nil if requested_at.empty?
+
+    hours = [ (requested_at.size**2) - 1, RECERTIFICATION_COOLDOWN_CAP_HOURS ].min
+    return nil if hours.zero?
+
+    available_at = requested_at.max + hours.hours
+    available_at if available_at.future?
+  end
+
   # The editable info fields (see FIELD_REQUIREMENT_MAP) that still have an
   # unmet requirement for the current stage — used to highlight what's left to
   # fill in on the form. Stage-aware like #stage_info_complete?, so a demo link
@@ -1065,6 +1079,19 @@ class Project < ApplicationRecord
     shipping_requirements
       .select { |r| keys.include?(r[:key]) }
       .find { |r| !r[:passed] }
+  end
+
+  def recertification_request_times
+    attributed, unattributed = ship_reviews
+      .select(:id, :post_ship_event_id, :created_at, :returned_by_id, :status)
+      .order(:created_at, :id).to_a
+      .partition(&:post_ship_event_id)
+
+    openers_dropped = attributed.group_by(&:post_ship_event_id).flat_map { |_event_id, certs| certs.drop(1) }
+
+    (openers_dropped + unattributed)
+      .reject { |cert| cert.returned_by_id || cert.misfiled? || cert.withdrawn? }
+      .map(&:created_at)
   end
 
   def do_url_probe(url)

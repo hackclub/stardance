@@ -154,11 +154,11 @@ class ReviewerPayoutRequest < ApplicationRecord
   def self.settled_for(user)
     return 0 unless user
 
-    # A reduction still settles the full requested claim (the denied difference
-    # isn't reclaimable); a bonus settles what was actually paid (the surplus
-    # above the request must count too, or it reopens as "unclaimed"). Either
-    # way that's whichever of amount/paid_amount is larger.
-    where(user: user, aasm_state: "paid").sum(Arel.sql("GREATEST(amount, paid_amount)"))
+    # Only the requested claim settles against earned stardust. A reduction still
+    # settles the full request (the denied difference isn't reclaimable), and a
+    # bonus above the request is a no-strings top-up, so counting the surplus here
+    # would silently charge it back to the reviewer's future earnings.
+    where(user: user, aasm_state: "paid").sum(:amount)
   end
 
   private

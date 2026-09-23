@@ -3,7 +3,7 @@
 
   <div class="rocket-progress__body">
     <div class="rocket-progress__header">
-      <h2 class="rocket-progress__eyebrow">Rocket repair</h2>
+      <h2 class="rocket-progress__eyebrow"><%= heading %></h2>
       <p class="rocket-progress__count">
         <span class="rocket-progress__hours"><%= display_hours %></span>
         <span class="rocket-progress__goal">/ <%= display_goal %> hours</span>
@@ -31,5 +31,9 @@
         </div>
       <% end %>
     </div>
+  </div>
+
+  <div class="rocket-progress__hover-copy" aria-hidden="true">
+    <p>Every hour that you or any stardancer codes adds to the rocket's build progress! Once the repairs are complete, everyone who's contributed at least five hours gets limited-edition stickers :D</p>
   </div>
 </section>

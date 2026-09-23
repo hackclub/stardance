@@ -30,7 +30,7 @@
             <%= f.label :reason, "Reason shown to the buyer", class: "fraud-subject__field-label" %>
             <%= f.text_field :reason, required: true, class: "fraud-subject__field" %>
 
-            <% if Admin::ShopOrderRejector.records_fraud_details?(current_user) %>
+            <% if Admin::ShopOrderRejector.records_fraud_details?(orders.first, current_user) %>
               <%= f.label :internal_rejection_reason, "Internal reason", class: "fraud-subject__field-label" %>
               <%= f.text_area :internal_rejection_reason, rows: 2, required: true, class: "fraud-subject__field" %>
 

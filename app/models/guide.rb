@@ -157,6 +157,16 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       reading_minutes: 2,
       related: %i[github_repository hackatime good_git_commits devlogs what_is_shipping how_to_ship],
       markdown: "software.md"
+    ),
+    new(
+      slug: :virality_bonus,
+      title: "Virality Bonus",
+      description: "If your project goes viral outside Hack Club, you can earn bonus stardust and an enhanced payout multiplier.",
+      category: :shipping,
+      icon: "rocket",
+      reading_minutes: 4,
+      related: %i[what_is_shipping how_to_ship great_readme],
+      markdown: "virality_bonus.md"
     )
   ].freeze
 

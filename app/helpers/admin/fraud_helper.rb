@@ -22,10 +22,21 @@ module Admin
       end
     end
 
-    # This reviewer gave their half of a two-approval order, so it is finished
+    # This reviewer gave their half of a two-review order, so it is finished
     # for them even though it stays open for someone else.
     def fraud_review_passed_on?(order)
-      order.reviews.any? { |review| review.user_id == current_user.id } && order.requires_additional_review?
+      order.reviews.any? { |review| review.user_id == current_user.id } && order.awaiting_another_review?
+    end
+
+    # LedgerEntriesHelper links a reason at the reader's own pages, which on a
+    # fraud review would send the reviewer to their own shop or achievements.
+    # Only the project behind a payout is worth a link here, and it goes to the
+    # admin view of it.
+    def fraud_ledger_reason(entry)
+      project = entry.ledgerable.is_a?(::Post::ShipEvent) ? entry.ledgerable.post&.project : nil
+      return entry.reason unless project
+
+      link_to entry.reason, admin_project_path(project), data: { turbo_frame: "_top" }
     end
 
     # The bulk form and every order's reject form offer the same projects, so

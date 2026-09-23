@@ -99,8 +99,11 @@ module Admin
         {
           key: "fraud_orders",
           label: "Shop orders (fraud)",
-          scope: -> { ::ShopOrder.all },
-          pending: -> { ::ShopOrder.where(aasm_state: ::ShopOrder::REVIEW_QUEUE_STATES) },
+          # Sticky Streak stickers skip this queue entirely: they auto-approve
+          # by item type, so counting them reported thousands of instant
+          # decisions no reviewer ever made.
+          scope: -> { ::ShopOrder.without_streak_stickers },
+          pending: -> { ::ShopOrder.without_streak_stickers.where(aasm_state: ::ShopOrder::REVIEW_QUEUE_STATES) },
           entered_at: "shop_orders.created_at",
           decided_at: ::ShopOrder::DECIDED_AT_SQL,
           sla_hours: ::ShopOrder::LONG_WAIT_DAYS * 24,
@@ -119,8 +122,11 @@ module Admin
         {
           key: "shop_fulfillment",
           label: "Shop fulfillment",
-          scope: -> { ::ShopOrder.all },
-          pending: -> { ::ShopOrder.where(aasm_state: "awaiting_periodical_fulfillment") },
+          # Streak stickers sit approved-but-unfulfilled by design until a
+          # letter batch goes out, so they are a standing backlog rather than
+          # work the team is behind on.
+          scope: -> { ::ShopOrder.without_streak_stickers },
+          pending: -> { ::ShopOrder.without_streak_stickers.where(aasm_state: "awaiting_periodical_fulfillment") },
           entered_at: "shop_orders.awaiting_periodical_fulfillment_at",
           decided_at: "shop_orders.fulfilled_at",
           sla_hours: 7 * 24,

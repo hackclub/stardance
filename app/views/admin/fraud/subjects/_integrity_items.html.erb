@@ -9,6 +9,16 @@
   </h2>
 
   <% if checks.any? %>
+    <% if Admin::Certification::IntegrityPolicy.new(current_user, :integrity).update? %>
+      <div class="fraud-subject__bulk-actions" aria-label="Bulk integrity actions">
+        <%= button_to "Pass all #{pluralize(checks.size, "check")}",
+                      admin_certification_pass_all_integrity_reviews_path,
+                      params: { check_ids: checks.map(&:id), fraud_subject_id: user.id },
+                      class: "fraud-subject__verdict fraud-subject__verdict--accept",
+                      data: { turbo_confirm: "Pass all #{checks.size} integrity checks for #{user.display_name}?" } %>
+      </div>
+    <% end %>
+
     <div class="fraud-subject__items">
       <%= render partial: "admin/fraud/subjects/integrity_check", collection: checks, as: :check, locals: { user: user } %>
     </div>

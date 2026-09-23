@@ -358,6 +358,9 @@ application.register("project-type", ProjectTypeController);
 import RatingDashboardChartController from "./rating_dashboard_chart_controller";
 application.register("rating-dashboard-chart", RatingDashboardChartController);
 
+import ReceiptPrinterController from "./receipt_printer_controller";
+application.register("receipt-printer", ReceiptPrinterController);
+
 import ReadMoreController from "./read_more_controller";
 application.register("read-more", ReadMoreController);
 

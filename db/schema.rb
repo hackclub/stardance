@@ -961,6 +961,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_225733) do
     t.index ["user_id"], name: "index_project_memberships_on_user_id"
   end
 
+  create_table "project_mentions", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.string "metric_name"
+    t.integer "metric_value"
+    t.string "platform"
+    t.bigint "project_id", null: false
+    t.datetime "rejected_at"
+    t.bigint "reviewer_id"
+    t.text "reviewer_notes"
+    t.text "submitter_notes"
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["project_id"], name: "index_project_mentions_on_project_id"
+    t.index ["reviewer_id"], name: "index_project_mentions_on_reviewer_id"
+  end
+
   create_table "project_mission_attachments", force: :cascade do |t|
     t.datetime "attached_at", null: false
     t.datetime "created_at", null: false
@@ -1363,6 +1380,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_225733) do
     t.string "aasm_state"
     t.bigint "assigned_to_user_id"
     t.datetime "awaiting_periodical_fulfillment_at"
+    t.string "country", limit: 2
     t.datetime "created_at", null: false
     t.string "external_ref"
     t.bigint "fraud_payout_line_id"
@@ -1392,6 +1410,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_225733) do
     t.bigint "warehouse_package_id"
     t.index ["aasm_state", "created_at"], name: "idx_shop_orders_aasm_state_created_at_desc", order: { created_at: :desc }
     t.index ["assigned_to_user_id"], name: "index_shop_orders_on_assigned_to_user_id"
+    t.index ["country"], name: "index_shop_orders_on_country"
     t.index ["fraud_review_payout_id"], name: "index_shop_orders_on_fraud_review_payout_id"
     t.index ["fulfillment_payout_line_id"], name: "index_shop_orders_on_fulfillment_payout_line_id"
     t.index ["parent_order_id"], name: "index_shop_orders_on_parent_order_id"
@@ -1918,6 +1937,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_225733) do
   add_foreign_key "project_languages", "projects"
   add_foreign_key "project_memberships", "projects"
   add_foreign_key "project_memberships", "users"
+  add_foreign_key "project_mentions", "projects"
+  add_foreign_key "project_mentions", "users", column: "reviewer_id"
   add_foreign_key "project_mission_attachments", "missions"
   add_foreign_key "project_mission_attachments", "projects"
   add_foreign_key "project_reports", "fraud_review_payouts"

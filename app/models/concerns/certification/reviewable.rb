@@ -4,7 +4,9 @@ module Certification
 
     CLAIM_TTL = 30.minutes
     HARDWARE_REVIEW_CHANNEL = "C0BPN8XPSPN"
+    HARDWARE_GENERAL_CHANNEL = "C0BPUM5N3RR"
     HARDWARE_APPROVAL_FEED_CHANNEL = "C0BUR6M0ZQT"
+    HARDWARE_INVITE_CHANNELS = [ HARDWARE_REVIEW_CHANNEL, HARDWARE_GENERAL_CHANNEL ].freeze
 
     # A reviewer's actual verdicts. The queue-routing corrections (misfiled,
     # withdrawn) are not decisions: they earn no bounty, stamp no decided_at,
@@ -98,6 +100,8 @@ module Certification
     end
 
     def post_submission_to_hardware_review_channel!
+      return if prior_hardware_submission_exists?
+
       routes = Rails.application.routes.url_helpers
       url_opts = (Rails.application.config.action_controller.default_url_options || {})
                    .reverse_merge(host: "stardance.hackclub.com", protocol: "https")
@@ -125,11 +129,22 @@ module Certification
       return unless owner&.slack_id.present?
       return if owner.hardware_channel_invited_at.present?
 
-      InviteToSlackChannelJob.perform_later(owner.id, HARDWARE_REVIEW_CHANNEL)
+      InviteToSlackChannelJob.perform_later(owner.id, HARDWARE_INVITE_CHANNELS)
+    end
+
+    def prior_hardware_submission_exists?
+      fundings = Certification::FundingRequest.where(project_id: project_id)
+      ships = Certification::Ship.where(project_id: project_id)
+
+      fundings = fundings.where.not(id: id) if is_a?(Certification::FundingRequest)
+      ships = ships.where.not(id: id) if is_a?(Certification::Ship)
+
+      fundings.exists? || ships.exists?
     end
 
     def post_approval_to_hardware_feed!
       return unless approved?
+      return if project&.current_mission&.hardware?
 
       locals = notification_locals.slice(:project_title, :project_url, :reviewer_name, :feedback)
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
@@ -155,6 +170,8 @@ module Certification
     end
 
     def post_verdict_to_hardware_review_channel!
+      return if project&.current_mission&.hardware?
+
       locals = notification_locals.slice(:project_title, :project_url, :approved, :reviewer_name, :feedback)
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
       locals[:owner_slack_id] = owner&.slack_id

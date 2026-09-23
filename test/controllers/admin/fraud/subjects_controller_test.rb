@@ -273,7 +273,8 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     assert_match "##{project.id}", response.body
     assert_match "Web App", response.body
     assert_match "Submitted", response.body
-    assert_match "3.0 hours", response.body
+    assert_match "0.0 hours", response.body
+    assert_match "3.0 total project hours", response.body
     assert_match "What the ship actually does", response.body
     assert_select "a[href=?]", "https://github.com/example/repo"
     assert_select "a[href=?]", "https://example.com/demo"

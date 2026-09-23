@@ -249,6 +249,10 @@
 
       <% if policy(@user).reject_orders? %>
         <% if @user.shop_orders.where(aasm_state: %w[pending awaiting_periodical_fulfillment]).any? %>
+          <%# Only a pending order is still in fraud review, so an awaiting-fulfillment-only
+              batch (or a reviewer without the fraud role) never needs the fraud paperwork. %>
+          <% fraud_review_order = @user.shop_orders.find_by(aasm_state: "pending") %>
+          <% show_fraud_fields = fraud_review_order.present? && Admin::ShopOrderRejector.records_fraud_details?(fraud_review_order, current_user) %>
           <button type="button" onclick="document.getElementById('reject-modal-orders').showModal()">
             ✗ Reject Orders
           </button>
@@ -259,20 +263,24 @@
                 <%= label_tag :reason, "Public Rejection Reason (optional)" %>
                 <%= text_area_tag :reason, "", placeholder: "Shown to the user..." %>
               </div>
-              <div>
-                <%= label_tag :internal_rejection_reason, "Internal Reason (required, staff only)" %>
-                <%= text_area_tag :internal_rejection_reason, "", placeholder: "Detailed internal reason for these rejections...", required: true %>
-              </div>
-              <div>
-                <%= label_tag :fraud_related_project_id, "Related project (required)" %>
-                <%= select_tag :fraud_related_project_id,
-                               options_for_select(fraud_related_project_options(@user)),
-                               include_blank: "Pick a project", required: true %>
-              </div>
-              <div>
-                <%= label_tag :joe_case_url, "Telescreen case URL (optional)" %>
-                <%= url_field_tag :joe_case_url, nil, placeholder: "https://telescreen.hackclub.com/cases/...", autocomplete: "off" %>
-              </div>
+
+              <% if show_fraud_fields %>
+                <div>
+                  <%= label_tag :internal_rejection_reason, "Internal Reason (required, staff only)" %>
+                  <%= text_area_tag :internal_rejection_reason, "", placeholder: "Detailed internal reason for these rejections...", required: true %>
+                </div>
+                <div>
+                  <%= label_tag :fraud_related_project_id, "Related project (required)" %>
+                  <%= select_tag :fraud_related_project_id,
+                                 options_for_select(fraud_related_project_options(@user)),
+                                 include_blank: "Pick a project", required: true %>
+                </div>
+                <div>
+                  <%= label_tag :joe_case_url, "Telescreen case URL (optional)" %>
+                  <%= url_field_tag :joe_case_url, nil, placeholder: "https://telescreen.hackclub.com/cases/...", autocomplete: "off" %>
+                </div>
+              <% end %>
+
               <div>
                 <button type="submit">Confirm Reject</button>
                 <button type="button" onclick="document.getElementById('reject-modal-orders').close()">Cancel</button>

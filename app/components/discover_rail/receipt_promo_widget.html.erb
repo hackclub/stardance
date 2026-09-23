@@ -1,0 +1,26 @@
+<section class="receipt-promo" aria-label="Receipt, a Hack Club YSWS">
+  <div class="receipt-promo__printer" data-controller="receipt-printer">
+    <canvas class="receipt-promo__canvas"
+            data-receipt-printer-target="canvas"
+            data-action="click->receipt-printer#press keydown.enter->receipt-printer#press keydown.space->receipt-printer#press"
+            role="button"
+            tabindex="0"
+            aria-label="Print a new receipt (plays a printer sound)"></canvas>
+  </div>
+
+  <div class="rail-widget receipt-promo__card">
+    <p class="receipt-promo__countdown"
+       data-controller="sticker-countdown"
+       data-sticker-countdown-deadline-value="<%= deadline_iso %>">
+      Ends in <strong data-sticker-countdown-target="timer"><%= ends_label %></strong>
+    </p>
+    <h3 class="rail-widget__title">Write a sketch that draws itself.</h3>
+    <p class="rail-widget__body">
+      We'll print it on a little thermal printer and mail it to you. Also, maybe try clicking the printer. Hehe.
+    </p>
+    <%= link_to "Start printing", URL,
+          class: "action-btn action-btn--primary action-btn--small receipt-promo__cta",
+          target: "_blank",
+          rel: "noopener" %>
+  </div>
+</section>

@@ -1,0 +1,40 @@
+.mention-form {
+  max-width: 40rem;
+  margin: var(--space-xl) auto;
+  padding: 0 var(--space-m);
+
+  &__header {
+    margin-bottom: var(--space-l);
+  }
+
+  &__title {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    color: var(--color-space-text);
+    margin: 0 0 var(--space-xs);
+  }
+
+  &__hint {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    color: var(--color-space-text-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__hint-link {
+    color: var(--color-brand-highlight);
+    font-weight: 700;
+
+    &:hover {
+      color: var(--color-brand-highlight-secondary);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-s);
+    margin-top: var(--space-m);
+  }
+}

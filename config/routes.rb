@@ -733,7 +733,10 @@ Rails.application.routes.draw do
       # One page per person with fraud work waiting: reports and shop orders are
       # ranked by whoever has waited longest on the thing that matters most.
       # Integrity checks remain supporting context on the subject page.
-      resources :subjects, only: [ :index, :show ]
+      resources :subjects, only: [ :index, :show ] do
+        # The subject's own stardust ledger, pulled into the page on demand.
+        resource :balance, only: [ :show ], controller: "subjects/balances"
+      end
     end
 
     # Referral raffle management (reads the Raffle engine's models).
@@ -890,6 +893,8 @@ Rails.application.routes.draw do
     namespace :certification do
       # Integrity review queue — restricted to admins and fraud leads.
       get "integrity", to: "integrity#index", as: "integrity_reviews"
+      post "integrity/pass_all", to: "integrity#pass_all", as: "pass_all_integrity_reviews"
+      post "integrity/:integrity_id/deductions", to: "integrity/deductions#create", as: "integrity_review_deductions"
       get "integrity/:id", to: "integrity#show", as: "integrity_review"
       patch "integrity/:id", to: "integrity#update"
 
@@ -1040,6 +1045,7 @@ Rails.application.routes.draw do
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
     resource :fire_nomination, only: [ :create, :destroy ], module: :projects
+    resources :mentions, only: [ :new, :create ], module: :projects
     # shallow: false — the guide JS deletes at the nested path, and the
     # controller needs :project_id to scope the completion.
     resources :mission_section_completions,

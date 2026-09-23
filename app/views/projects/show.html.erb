@@ -29,9 +29,13 @@
   # Shared by the ship CTA, the returned decision card and the recert modal, and
   # computed once because link_blocker_message probes the live URLs every call.
   # Members only: a reviewer opening a returned project shouldn't pay for HTTP
-  # requests to someone else's demo. They still hit the controller and the
-  # resubmit_for_review guard when they actually act.
-  recert_link_blocker = @project.link_blocker_message if is_member && @project.needs_changes?
+  # requests to someone else's demo, and a reviewer filing on a builder's behalf
+  # bypasses the cooldown anyway (ProjectPolicy#bypass_recertification_cooldown?).
+  # They still hit the controller and the resubmit_for_review guard when they act.
+  recert_gated = is_member && @project.needs_changes?
+  recert_cooldown_at = @project.recertification_available_at if recert_gated
+  recert_cooldown_blocker = recertification_cooldown_message(recert_cooldown_at) if recert_cooldown_at
+  recert_link_blocker = @project.link_blocker_message if recert_gated && recert_cooldown_blocker.nil?
 %>
 
 <div class="app-layout" data-controller="profile-modal">
@@ -480,6 +484,11 @@
               <div class="project-show__panel-actions">
                 <%= render "projects/fire_controls", project: @project %>
 
+                <% if !@project.draft? && is_member && Flipper.enabled?(:virality_bonus, current_user) %>
+                  <%= link_to "Submit viral mention", new_project_mention_path(@project), data: { turbo_frame: "_top" } %>
+                  <%= render "shared/help_tooltip", text: "Got traction on Reddit, HN, GitHub, or another platform? Submit a link and earn bonus stardust.", position: "top" %>
+                <% end %>
+
                 <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
                   <%= link_to safe_repo_url,
                               class: "project-show__pill project-show__pill--outline project-show__pill--github",
@@ -708,7 +717,7 @@
           <% elsif @project.needs_changes? %>
             <%# Changes requested: the ship CTA resubmits this same ship for
                 re-certification instead of opening a fresh ship. %>
-            <% if recert_link_blocker %>
+            <% if (recert_blocker = recert_cooldown_blocker || recert_link_blocker) %>
               <%= render ActionButtonComponent.new(
                     text: "Ship your project!",
                     variant: :secondary,
@@ -717,7 +726,7 @@
                     disabled: :soft,
                     data: {
                       controller: "tooltip",
-                      tooltip_message_value: recert_link_blocker,
+                      tooltip_message_value: recert_blocker,
                       tooltip_position_value: "top"
                     }
                   ) %>
@@ -966,7 +975,8 @@
           <% if entry.is_a?(Certification::Ship) %>
             <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
             <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project,
-                       recert_modal_id: recert_id, link_blocker: recert_link_blocker %>
+                       recert_modal_id: recert_id, link_blocker: recert_link_blocker,
+                       cooldown_blocker: recert_cooldown_blocker %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
             <%# The resubmit button reuses the funding modal, which only renders
                 while the project is still in the design stage. It belongs on the
@@ -1009,7 +1019,7 @@
 
   <% if (is_member || current_user&.can_review?) && @project.needs_changes? %>
     <%= render "projects/recert_modal", project: @project, is_member: is_member,
-               link_blocker: recert_link_blocker %>
+               link_blocker: recert_link_blocker, cooldown_blocker: recert_cooldown_blocker %>
   <% end %>
 
   <% if (is_member || current_user&.admin?) && @rejected_mission_sub %>

@@ -1,0 +1,51 @@
+// Receipt promo (receipt.hackclub.com). The 3D printer (receipt-printer
+// controller) renders on a transparent canvas straight onto the rail and
+// stands on the top edge of a regular rail card.
+
+.receipt-promo {
+  display: flex;
+  flex-direction: column;
+
+  &__printer {
+    position: relative;
+    z-index: 1;
+    aspect-ratio: 0.76; // matches receipt.hackclub.com's .terminal-wrap, so the camera fit is identical
+    margin: 0 var(--space-m) -22px;
+  }
+
+  &__canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    outline: none;
+    border-radius: 8px;
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px var(--color-brand-highlight);
+    }
+  }
+
+  &__card {
+    padding-top: calc(22px + var(--space-s));
+  }
+
+  // Same treatment as the sticker promo's "Ship in" countdown.
+  &__countdown {
+    margin: 0;
+    color: var(--color-space-text);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    text-transform: uppercase;
+
+    strong {
+      color: var(--color-brand-yellow);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__cta {
+    align-self: flex-start;
+  }
+}
