@@ -1,0 +1,46 @@
+<section class="buku-x3-status <%= 'buku-x3-status--compact' if compact? %> buku-x3-status--<%= buku? ? 'buku' : 'bean' %>"
+         aria-label="<%= compact? ? 'your private event role' : 'bukus versus beans' %>"
+         data-controller="buku-x3-status"
+         data-buku-x3-status-live-hours-value="<%= (compact? ? {} : team_hours).to_json %>"
+         data-action="blackhole:progress@window->buku-x3-status#update">
+  <% unless compact? %>
+    <button type="button" class="buku-x3-status__toggle" aria-label="show your event role" aria-pressed="false"
+            data-buku-x3-status-target="toggle"
+            data-action="click->buku-x3-status#toggleRole keydown.esc->buku-x3-status#dismissRole"></button>
+  <% end %>
+  <div class="buku-x3-status__identity">
+    <%= image_tag icon, class: "buku-x3-status__icon", alt: "", width: 120, height: 132 %>
+    <div>
+      <p class="buku-x3-status__role">you're a <strong><%= role_name %></strong></p>
+      <p class="buku-x3-status__reminder"><%= reminder %></p>
+    </div>
+  </div>
+  <% unless compact? %>
+    <div class="buku-x3-status__damage">
+      <p class="buku-x3-status__label"><strong data-buku-x3-status-target="amount"><%= display_percent %>% damaged</strong></p>
+      <div class="buku-x3-status__tug">
+        <div class="buku-x3-status__team buku-x3-status__team--buku">
+          <div class="buku-x3-status__character-frame">
+            <%= image_tag "events/bukux3/buku-pulling.png", class: "buku-x3-status__character", alt: "", width: 2752, height: 2064 %>
+          </div>
+          <span>bukus</span>
+          <small class="buku-x3-status__hours"><span data-buku-x3-status-target="bukuHours"><%= display_hours(:buku) %></span> h shipped</small>
+        </div>
+        <div class="buku-x3-status__rope" role="meter" aria-label="black hole damage"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= percent %>"
+             aria-valuetext="<%= display_percent %>% damaged; bukus pull left, beans pull right"
+             data-buku-x3-status-target="meter" style="--tug-position: <%= marker_position %>%">
+          <span class="buku-x3-status__midpoint" aria-hidden="true"></span>
+          <span class="buku-x3-status__marker" aria-hidden="true"></span>
+        </div>
+        <div class="buku-x3-status__team buku-x3-status__team--bean">
+          <div class="buku-x3-status__character-frame">
+            <%= image_tag "events/bukux3/bean-pulling.png", class: "buku-x3-status__character", alt: "", width: 2752, height: 2064 %>
+          </div>
+          <span>beans</span>
+          <small class="buku-x3-status__hours"><span data-buku-x3-status-target="beanHours"><%= display_hours(:bean) %></span> h shipped</small>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</section>

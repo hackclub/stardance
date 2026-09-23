@@ -2,34 +2,6 @@
   overflow: hidden;
 }
 
-.buku-x3-preview {
-  position: fixed;
-  top: var(--space-m);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-
-  &__button {
-    padding: var(--space-xs) var(--space-m);
-    border: 2px solid var(--color-brand-lilac);
-    border-radius: 999px;
-    background: var(--color-set-1-bg);
-    color: var(--color-brand-off-white);
-    font-family: var(--font-family-text);
-    font-size: var(--font-size-s);
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      background: var(--color-set-2-bg);
-      outline: 2px solid var(--color-brand-highlight);
-      outline-offset: 2px;
-    }
-  }
-}
-
 .buku-x3-reveal {
   position: fixed;
   inset: 0;
@@ -107,6 +79,10 @@
     animation: buku-x3-character-in 820ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
+  &--bean &__title em {
+    color: var(--color-brand-yellow);
+  }
+
   &--role &__art {
     animation: none;
     opacity: 0;
@@ -153,7 +129,7 @@
     }
 
     em {
-      color: var(--color-brand-yellow);
+      color: var(--color-brand-lilac);
       font-family: "Playfair Display", "Times New Roman", Georgia, serif;
       font-weight: 700;
     }
@@ -166,6 +142,14 @@
     font-size: var(--font-size-m);
     font-weight: 600;
     text-shadow: 0 2px 8px var(--color-set-1-bg);
+  }
+
+  &__badge {
+    display: block;
+    width: min(240px, 38svh, 58vw);
+    height: min(264px, 42svh, 64vw);
+    object-fit: contain;
+    margin: 0 auto var(--space-s);
   }
 
   &__skip {

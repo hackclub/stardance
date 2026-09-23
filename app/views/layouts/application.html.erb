@@ -71,8 +71,11 @@
         data-controller="<%= 'mihi-mode' if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>"
         data-mihi-mode-activation-url-value="<%= mihi_activations_path %>"
         data-mihi-mode-image-url-value="<%= asset_path('mihi/portrait.jpg') %>">
-    <% if Flipper.enabled?(:blackhole, current_user) %>
-      <%= render "shared/blackhole_preview" %>
+    <% if current_user.present? && Flipper.enabled?(:bukux3, current_user) %>
+      <% buku_event = BukuX3::Event.current %>
+      <%= render "shared/blackhole", intensity: buku_event&.percent || BukuX3::Event::STARTING_PERCENT,
+                 visual_intensity: buku_event&.visual_intensity || 100, progress_url: buku_x3_progress_path(format: :json),
+                 awaiting_reveal: !(current_user.onboarded? && current_user.has_dismissed?(VisualNovelComponent::BUKU_X3_DISMISS_THING) && current_user.has_dismissed?(BukuX3RevealComponent::DISMISS_THING)) %>
     <% end %>
     <% if @show_boot_splash %>
       <div class="app-loading" aria-hidden="true">
@@ -123,10 +126,8 @@
     <%= render "shared/post_panel" %>
     <%= render "shared/idv_verify_modal" %>
     <%= render VisualNovelComponent.new(user: current_user) %>
+    <%= render VisualNovelComponent.new(user: current_user, chapter: :bukux3) %>
     <%= render BukuX3RevealComponent.new(user: current_user) %>
-    <% if Rails.env.development? %>
-      <%= render "shared/buku_x3_preview" %>
-    <% end %>
     <% unless @hide_footer %>
       <footer class="dev-footer">
         <p>

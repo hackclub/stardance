@@ -33,6 +33,8 @@
     <div class="admin-dashboard__grid">
       <%= admin_page_button "Super Mega Dashboard", admin_mega_dashboard_path,
         enabled: policy(:mega_dashboard).show?, featured: true %>
+      <%= admin_page_button "the jim takeover", admin_jim_takeover_path,
+        enabled: policy(:admin).index? %>
       <%= admin_page_button "Support", admin_support_path, enabled: policy(:support_dashboard).show? %>
       <%= admin_page_button "Fraud", admin_fraud_path, enabled: policy(:fraud_dashboard).show? %>
       <%= admin_page_button "Shop", admin_shop_path, enabled: policy(ShopItem).index? %>

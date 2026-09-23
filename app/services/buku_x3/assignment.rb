@@ -13,6 +13,18 @@ module BukuX3
       new(user, secret:).buku?
     end
 
+    # Count saved reveals, not all assigned accounts or development previews.
+    # Use the same deterministic assignment as the reveal, without loading PII.
+    def self.discovered_counts
+      counts = { total: 0, buku: 0, bean: 0 }
+      User.where("things_dismissed @> ARRAY[?]::varchar[]", BukuX3RevealComponent::DISMISS_THING)
+        .select(:id).find_each do |user|
+          counts[buku?(user) ? :buku : :bean] += 1
+          counts[:total] += 1
+        end
+      counts
+    end
+
     def initialize(user, secret:)
       @user = user
       @secret = secret

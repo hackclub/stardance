@@ -58,6 +58,7 @@ Rails.application.config.after_initialize do
         blackhole
         bukux3
       ].each { |flag| Flipper.add(flag) }
+      Flipper.add(:bukux2_preview_complete) if Rails.env.development?
     end
   rescue StandardError => e
     Rails.logger.warn "Could not initialize flipper: #{e.message}"

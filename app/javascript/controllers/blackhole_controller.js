@@ -4,8 +4,11 @@ import { Delaunay } from "d3";
 const CARD_SURFACES =
   ".feed-post-card, .feed-composer, .rocket-progress, .rail-widget, .raffle-widget, .sidebar__logo-img, .sidebar__user-card";
 const MEDIA_CONTENT = "img, video, iframe, svg";
+// Story scenes must remain intact even at 100% damage, including previews
+// inserted into the page after the effect has already started.
+const EXCLUDED_SCENES = ".visual-novel, .buku-x3-reveal";
 const PROTECTED_CONTENT =
-  "a:not(.feed-post-card__overlay-link), button, input, textarea, select, summary, img, video, iframe, svg, [role='progressbar'], [contenteditable]";
+  "a:not(.feed-post-card__overlay-link), button, input, textarea, select, summary, img, video, iframe, svg, [role='progressbar'], [role='meter'], [contenteditable]";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const clamp = (n, min = 0, max = 1) => Math.min(max, Math.max(min, n));
 const random = (x, y, seed = 0) => {
@@ -25,23 +28,19 @@ const noise = (x, y, seed) => {
   );
 };
 
-// A visual-only prototype: SVG clipping removes pieces of the live DOM without
-// changing its contents. The control panel lives outside all clipped surfaces.
+// SVG clipping removes pieces of the live DOM without changing its contents.
+// Live intensity and the visual safety control are server-owned.
 export default class extends Controller {
-  static targets = [
-    "masks",
-    "canvas",
-    "text",
-    "slider",
-    "amount",
-    "status",
-    "simple",
-    "phases",
-    "hint",
-  ];
+  static values = {
+    intensity: Number,
+    visualIntensity: { type: Number, default: 100 },
+    progressUrl: String,
+    awaitingReveal: Boolean,
+  };
+
+  static targets = ["masks", "canvas", "text"];
 
   connect() {
-    this.simpleMode = false;
     this.repairRadius = 145;
     this.pointer = null;
     this.level = 0;
@@ -52,23 +51,17 @@ export default class extends Controller {
     this.textRevision = 0;
     this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const style = getComputedStyle(this.element);
-    this.palette = [
-      "--color-brand-cream",
-      "--color-brand-lilac",
-      "--color-brand-mint",
-      "--color-brand-blue",
-    ].map((name) => style.getPropertyValue(name).trim());
+    this.particleColor = style
+      .getPropertyValue("--color-brand-off-white")
+      .trim();
     this.invalidate = () => {
       this.dirty = true;
       this.wake();
     };
     this.onScroll = this.invalidate;
     this.onPointerMove = (event) => {
-      if (!this.simpleMode || !this.requested || event.pointerType === "touch")
-        return;
-      this.pointer = event.target.closest?.(".blackhole__panel")
-        ? null
-        : { x: event.clientX, y: event.clientY };
+      if (!this.requested || event.pointerType === "touch") return;
+      this.pointer = { x: event.clientX, y: event.clientY };
       this.repairDirty = true;
       if (this.reducedMotion.matches) this.dirty = true;
       this.wake();
@@ -84,7 +77,10 @@ export default class extends Controller {
       this.sizeCanvas();
       this.invalidate();
     };
-    this.beforeCache = () => this.reset();
+    this.beforeCache = () => {
+      this.stopPolling();
+      this.reset();
+    };
     this.visibility = () => {
       if (document.hidden) {
         cancelAnimationFrame(this.frame);
@@ -106,6 +102,10 @@ export default class extends Controller {
     document.addEventListener("turbo:frame-load", this.invalidate);
     this.observer = new MutationObserver((records) => {
       if (records.some((record) => !this.element.contains(record.target))) {
+        const blocked = this.scenesBlocked();
+        if (blocked !== this.sceneBlocked) {
+          this.setIntensity(this.latestIntensity);
+        }
         this.textRevision++;
         this.invalidate();
       }
@@ -117,9 +117,15 @@ export default class extends Controller {
     });
     this.surfaceResize = new ResizeObserver(this.invalidate);
     this.sizeCanvas();
+    this.setIntensity(this.intensityValue);
+    if (this.progressUrlValue) {
+      this.pollTimer = window.setInterval(() => this.refreshProgress(), 60000);
+      this.refreshProgress();
+    }
   }
 
   disconnect() {
+    this.stopPolling();
     this.reset();
     this.observer.disconnect();
     this.surfaceResize.disconnect();
@@ -133,50 +139,84 @@ export default class extends Controller {
     document.removeEventListener("turbo:frame-load", this.invalidate);
   }
 
-  change() {
-    this.setIntensity(Number(this.sliderTarget.value));
-  }
-  preset(event) {
-    this.setIntensity(Number(event.currentTarget.dataset.amount));
+  stopPolling() {
+    window.clearInterval(this.pollTimer);
+    this.progressRequest?.abort();
+    this.progressRequest = null;
   }
 
-  toggleSimple() {
-    const intensity = this.requested * 100;
-    this.reset();
-    this.simpleMode = this.simpleTarget.checked;
-    this.phasesTarget.hidden = this.simpleMode;
-    this.hintTarget.textContent = this.simpleMode
-      ? "Move your cursor to reconstruct a small pocket of the page. It crumbles again as you move away."
-      : "Hover or focus to restore cards until 60%. Images fade next; damaged text turns mint instead of disappearing.";
-    this.setIntensity(intensity);
+  async refreshProgress() {
+    if (document.hidden || this.progressRequest) return;
+    const request = new AbortController();
+    this.progressRequest = request;
+    try {
+      const response = await fetch(this.progressUrlValue, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        signal: request.signal,
+      });
+      if (request.signal.aborted || !this.element.isConnected) return;
+      if (response.status === 401 || response.status === 403) {
+        this.setIntensity(0);
+        this.stopPolling();
+        return;
+      }
+      if (!response.ok) return;
+      const progress = await response.json();
+      if (
+        !request.signal.aborted &&
+        this.element.isConnected &&
+        Number.isFinite(progress.percent)
+      ) {
+        this.teamHours = progress.hours;
+        if (Number.isFinite(progress.visual_intensity))
+          this.visualIntensityValue = clamp(progress.visual_intensity, 0, 200);
+        this.setIntensity(progress.percent);
+      }
+    } catch (error) {
+      // Retain the last known state while offline; retry on the next tick.
+      if (error.name !== "AbortError")
+        console.debug("buku progress unavailable");
+    } finally {
+      if (this.progressRequest === request) this.progressRequest = null;
+    }
   }
 
   setIntensity(value) {
-    this.requested = clamp(value / 100);
-    this.sliderTarget.value = Math.round(this.requested * 100);
-    this.amountTarget.innerHTML = `${Math.round(this.requested * 100)}<span>%</span>`;
-    this.statusTarget.textContent =
-      this.requested === 0
-        ? "Spacetime is holding."
-        : this.simpleMode
-          ? this.requested === 1
-            ? "All fragments gone. Ready to restore."
-            : "Global disintegration · Everything decays together."
-          : this.requested <= 0.3
-            ? "Phase 1 · The edges are crumbling."
-            : this.requested <= 0.6
-              ? "Phase 2 · Backgrounds fading. Content protected."
-              : this.requested <= 0.82
-                ? "Phase 3 · Images dissolving. Text protected."
-                : this.requested < 1
-                  ? "Phase 4 · Damaged words turn spectral."
-                  : "Only the words remain. Ready to restore.";
-    if (this.requested === 0) {
+    if (!Number.isFinite(value)) return;
+    this.latestIntensity = value;
+    this.sceneBlocked = this.scenesBlocked();
+    const damage = clamp(value / 100);
+    // Scale the visuals without changing the score sent to the tug-of-war.
+    const strength = (this.visualIntensityValue ?? 100) / 100;
+    this.requested = clamp(damage * strength);
+    if (this.progressUrlValue) {
+      this.dispatch("progress", {
+        detail: {
+          percent: damage * 100,
+          hours: this.teamHours,
+        },
+      });
+    }
+    if (this.sceneBlocked || this.requested === 0) {
       this.reset();
       return;
     }
     this.dirty = true;
     this.wake();
+  }
+
+  scenesBlocked() {
+    return (
+      this.awaitingRevealValue || !!document.querySelector(EXCLUDED_SCENES)
+    );
+  }
+
+  revealComplete() {
+    this.awaitingRevealValue = false;
+    // The scene may still be fading out; its removal will resume the effect.
+    this.setIntensity(this.latestIntensity);
   }
 
   sizeCanvas() {
@@ -206,8 +246,7 @@ export default class extends Controller {
       this.level = this.requested;
     if (
       this.dirty ||
-      (this.simpleMode &&
-        (this.repairActive || this.repairDirty) &&
+      ((this.repairActive || this.repairDirty) &&
         time - (this.lastMask || 0) > 45) ||
       (this.level !== previous &&
         (this.level === this.requested || time - (this.lastMask || 0) > 45))
@@ -240,13 +279,11 @@ export default class extends Controller {
     }
     // The layout wrapper is transparent: clip its columns separately so the
     // fixed discover rail never inherits the scrolling feed's holes.
-    const cards = this.simpleMode
-      ? []
-      : [...document.querySelectorAll(CARD_SURFACES)].filter(
-          (element) =>
-            !this.element.contains(element) &&
-            !element.parentElement.closest(CARD_SURFACES),
-        );
+    const cards = [...document.querySelectorAll(CARD_SURFACES)].filter(
+      (element) =>
+        !this.element.contains(element) &&
+        !element.parentElement.closest(CARD_SURFACES),
+    );
     const layers = [...document.body.children].flatMap((element) =>
       element.matches(".app-layout") ? [...element.children] : [element],
     );
@@ -254,6 +291,7 @@ export default class extends Controller {
     for (const element of elements) {
       if (
         element === this.element ||
+        element.closest(EXCLUDED_SCENES) ||
         this.surfaces.has(element) ||
         element.matches(
           "script, style, link, svg, template, noscript, .app-loading",
@@ -287,7 +325,7 @@ export default class extends Controller {
     this.collectSurfaces();
     this.repairTime = performance.now();
     this.repairActive = false;
-    this.textTarget.hidden = this.simpleMode || this.level <= 0.82;
+    this.textTarget.hidden = this.level <= 0.82;
     for (const surface of this.surfaces.values()) {
       if (surface.textCopy) surface.textCopy.hidden = true;
     }
@@ -316,21 +354,15 @@ export default class extends Controller {
         surface.seed;
       surface.layerIndex = getComputedStyle(layer).zIndex;
       // Parent layers leave each card to its own mask, avoiding double erosion
-      // and allowing a hovered/focused card to reconstruct during phases 1–2.
-      const nestedCards =
-        this.simpleMode || surface.card
-          ? []
-          : [...element.querySelectorAll(CARD_SURFACES)];
+      // while the cursor repair pocket restores nearby fragments.
+      const nestedCards = surface.card
+        ? []
+        : [...element.querySelectorAll(CARD_SURFACES)];
       const excludedRects = nestedCards.map((card) =>
         this.localRect(card.getBoundingClientRect(), rect, 12),
       );
-      const protectedRects = this.simpleMode
-        ? []
-        : this.protectedRects(element, rect, nestedCards);
-      element.classList.toggle(
-        "blackhole__surface",
-        !this.simpleMode && surface.card && this.level <= 0.6,
-      );
+      const protectedRects = this.protectedRects(element, rect, nestedCards);
+
       const path = this.fragmentPath(
         rect,
         9,
@@ -340,8 +372,7 @@ export default class extends Controller {
         surface.card,
       );
       surface.path.setAttribute("d", path);
-      if (!this.simpleMode && this.level > 0.82)
-        this.drawDamagedText(element, rect, path, surface);
+      if (this.level > 0.82) this.drawDamagedText(element, rect, path, surface);
     }
     if (emit && !this.reducedMotion.matches) this.emitDust(35);
   }
@@ -452,7 +483,6 @@ export default class extends Controller {
         "direction",
       ])
         copy.style.setProperty(property, style.getPropertyValue(property));
-      copy.classList.remove("blackhole__surface");
       copy.classList.add("blackhole__text-copy");
       copy.inert = true;
       copy.setAttribute("aria-hidden", "true");
@@ -474,10 +504,10 @@ export default class extends Controller {
       clone.scrollTop = original.scrollTop;
       clone.scrollLeft = original.scrollLeft;
     }
-    // The complementary path paints mint glyphs only inside actual holes.
+    // The complementary path paints off-white glyphs only inside actual holes.
     surface.textPath.setAttribute(
       "d",
-      this.level === 1
+      !path
         ? `M0,0H${rect.width}V${rect.height}H0Z`
         : path.slice(path.indexOf("Z") + 1),
     );
@@ -548,7 +578,6 @@ export default class extends Controller {
     excludedRects = [],
     card = true,
   ) {
-    if (this.level === 1 && !this.simpleMode) return "";
     const holes = [];
     for (const cell of this.fragmentCells(rect, size, seed)) {
       const { cx, cy, vertices, bounds } = cell;
@@ -579,7 +608,7 @@ export default class extends Controller {
         (area) => area.kind === "text" && overlaps(area),
       );
       // Stable cells and thresholds make every phase additive: advancing the
-      // slider never repairs a fragment or swaps to a different pattern.
+      // damage never repairs a fragment or swaps to a different pattern.
       const edgeThreshold = card
         ? 0.3 * (edgeDistance / 32 + random(x, y, seed + 9) * 0.45)
         : 1;
@@ -601,17 +630,15 @@ export default class extends Controller {
       const textThreshold = 0.82 + 0.11 * collapse;
       // Text drawn over an image survives with its backing until the last
       // stage; image-only links and icons can dissolve before their controls.
-      const start = this.simpleMode
-        ? collapse * 0.93
-        : textContent
-          ? textThreshold
-          : imageContent
-            ? imageThreshold
-            : protectedContent
-              ? textThreshold
-              : Math.min(edgeThreshold, backgroundThreshold);
+      const start = textContent
+        ? textThreshold
+        : imageContent
+          ? imageThreshold
+          : protectedContent
+            ? textThreshold
+            : Math.min(edgeThreshold, backgroundThreshold);
       let erosion = clamp((this.level - start) / 0.07);
-      if (this.simpleMode) erosion *= 1 - this.repairStrength(cell, rect);
+      erosion *= 1 - this.repairStrength(cell, rect);
       if (!erosion) continue;
       const polygon = vertices.map(
         ([px, py]) =>
@@ -696,7 +723,7 @@ export default class extends Controller {
         spin: Math.random() * 3 - 1.5,
         age: 0,
         life: 2.4 + Math.random() * 2,
-        color: this.palette[Math.floor(Math.random() * this.palette.length)],
+        color: this.particleColor,
       });
     }
   }
@@ -746,7 +773,6 @@ export default class extends Controller {
           surface.priority,
         );
       else element.style.removeProperty("clip-path");
-      element.classList.remove("blackhole__surface");
       surface.clip.remove();
       surface.textClip?.remove();
       surface.textCopy?.remove();
@@ -756,8 +782,5 @@ export default class extends Controller {
     this.fragmentMeshes?.clear();
     this.canvasContext.clearRect(0, 0, this.width, this.height);
     this.textTarget.replaceChildren();
-    this.sliderTarget.value = 0;
-    this.amountTarget.innerHTML = "0<span>%</span>";
-    this.statusTarget.textContent = "Spacetime is holding.";
   }
 }

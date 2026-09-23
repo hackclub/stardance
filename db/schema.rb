@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_16_195716) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_225733) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -152,6 +152,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_195716) do
     t.string "status"
     t.datetime "updated_at", null: false
     t.index ["creator_id"], name: "index_blazer_queries_on_creator_id"
+  end
+
+  create_table "buku_x3_contributions", force: :cascade do |t|
+    t.boolean "buku", null: false
+    t.datetime "created_at", null: false
+    t.bigint "event_id", null: false
+    t.integer "minutes", default: 0, null: false
+    t.datetime "shipped_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "ysws_review_id", null: false
+    t.index ["event_id", "ysws_review_id"], name: "index_buku_x3_contributions_on_event_id_and_ysws_review_id", unique: true
+    t.index ["event_id"], name: "index_buku_x3_contributions_on_event_id"
+    t.index ["user_id"], name: "index_buku_x3_contributions_on_user_id"
+    t.index ["ysws_review_id"], name: "index_buku_x3_contributions_on_ysws_review_id"
+    t.check_constraint "minutes >= 0", name: "buku_x3_positive_minutes"
+  end
+
+  create_table "buku_x3_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "destruction_minutes", default: 0, null: false
+    t.string "key", null: false
+    t.datetime "unlocked_at"
+    t.datetime "updated_at", null: false
+    t.integer "visual_intensity", default: 100, null: false
+    t.index ["key"], name: "index_buku_x3_events_on_key", unique: true
+    t.check_constraint "destruction_minutes >= 0 AND destruction_minutes <= 300000", name: "buku_x3_destruction_bounds"
+    t.check_constraint "visual_intensity >= 0 AND visual_intensity <= 200", name: "buku_x3_visual_intensity_range"
   end
 
   create_table "certificates", force: :cascade do |t|
@@ -1801,6 +1829,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_195716) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "buku_x3_contributions", "buku_x3_events", column: "event_id", on_delete: :cascade
+  add_foreign_key "buku_x3_contributions", "certification_ysws_reviews", column: "ysws_review_id", on_delete: :cascade
+  add_foreign_key "buku_x3_contributions", "users", on_delete: :cascade
   add_foreign_key "certificates", "users"
   add_foreign_key "certification_devlog_reviews", "certification_ysws_reviews", column: "ysws_review_id"
   add_foreign_key "certification_devlog_reviews", "post_devlogs"

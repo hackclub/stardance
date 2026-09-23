@@ -25,7 +25,7 @@ export default class extends Controller {
     this.element.classList.add("buku-x3-reveal--ready");
     this.skipTarget.focus({ preventScroll: true });
 
-    if (this.reduceMotion) {
+    if (this.reduceMotion || !this.animationUrlValue) {
       this.start();
       return;
     }
@@ -84,6 +84,8 @@ export default class extends Controller {
         () => {
           this.cleanup();
           this.element.remove();
+          if (!this.dismissThingValue)
+            this.dispatch("preview-complete", { target: window });
         },
         this.reduceMotion ? 0 : REMOVE_DELAY_MS,
       ),
@@ -115,6 +117,10 @@ export default class extends Controller {
       },
       body: JSON.stringify({ thing_name: this.dismissThingValue }),
       keepalive: true,
-    }).catch(() => {});
+    })
+      .then((response) => {
+        if (response.ok) this.dispatch("complete", { target: window });
+      })
+      .catch(() => {});
   }
 }

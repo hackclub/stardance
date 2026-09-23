@@ -552,6 +552,10 @@ Rails.application.routes.draw do
   get "home", to: "home#index"
   resources :feed_events, only: [ :create ]
   resources :mihi_activations, only: [ :create ]
+  namespace :buku_x3 do
+    resource :progress, only: [ :show ], controller: "progress"
+    resource :reveal, only: [ :show ]
+  end
   resource :daily_roll, only: [ :create ]
   post "daily_roll/reroll", to: "daily_rolls#reroll", as: :reroll_daily_roll
   get "daily_roll/reroll_status", to: "daily_rolls#reroll_status", as: :reroll_status_daily_roll
@@ -643,6 +647,8 @@ Rails.application.routes.draw do
   namespace :admin, constraints: AdminConstraint do
     # Admin dashboard
     root to: "application#index"
+    resource :buku_x3_event, only: :update
+    get "jim_takeover", to: "buku_x3_events#show", as: :jim_takeover
     get "dashboard/counts/:key", to: "dashboard_counts#show", as: :dashboard_count
 
     resource :funnel, only: [ :show ], controller: "funnel"
