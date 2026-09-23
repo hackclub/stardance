@@ -42,7 +42,10 @@ module Certification
       Rails.logger.info "[YswsAirtableSyncJob] Starting sync for review ##{review.id}"
 
       # Check if this review has already been submitted to unified DB
-      check_stardance_review_submitted_unified(review)
+      return if check_stardance_review_submitted_unified(review)
+
+      # the hackatime ban check only runs on a stats fetch, and the users sync can take hours to reach this user
+      review.user.try_sync_hackatime_data!(force: true)
 
       # Check if user is banned
       rejection_info = check_user_status(review)
@@ -94,11 +97,17 @@ module Certification
 
       # If record exists and has "Automation - YSWS Record ID" populated, it's already in unified DB
       if existing_record && existing_record["Automation - YSWS Record ID"].present?
-        raise StandardError, "This review is already in the unified db"
+        # cache the live answer so later triggers skip this review
+        review.update_column(:in_unified_db, existing_record["Automation - YSWS Record ID"])
+        Rails.logger.info "[YswsAirtableSyncJob] Skipping review ##{review.id}: already in unified db"
+        return true
       end
+
+      false
     rescue Faraday::Error, Norairrecord::RecordNotFoundError => e
       # If Airtable fetch fails, log and allow sync to continue
       Rails.logger.warn "[YswsAirtableSyncJob] Could not check unified DB status: #{e.message}"
+      false
     end
 
     def check_user_status(review)
