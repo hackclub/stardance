@@ -19,9 +19,6 @@ application.register("admin-ledger-chart", AdminLedgerChartController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
-import BlackHoleController from "./black_hole_controller";
-application.register("black-hole", BlackHoleController);
-
 import BukuActivityChartController from "./buku_activity_chart_controller";
 application.register("buku-activity-chart", BukuActivityChartController);
 
@@ -324,6 +321,9 @@ application.register("parallax", ParallaxController);
 
 import PayoutReviewController from "./payout_review_controller";
 application.register("payout-review", PayoutReviewController);
+
+import PhantomVoidController from "./phantom_void_controller";
+application.register("phantom-void", PhantomVoidController);
 
 import PostMenuController from "./post_menu_controller";
 application.register("post-menu", PostMenuController);

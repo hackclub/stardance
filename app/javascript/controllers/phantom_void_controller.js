@@ -419,6 +419,6 @@ function linkProgram(gl) {
   });
   gl.linkProgram(program);
   if (gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
-  console.warn("black-hole: shader failed", gl.getProgramInfoLog(program));
+  console.warn("phantom-void: shader failed", gl.getProgramInfoLog(program));
   return null;
 }
