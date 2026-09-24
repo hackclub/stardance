@@ -24,13 +24,23 @@ class ShopCardGrant < ApplicationRecord
   belongs_to :user
   belongs_to :shop_item
 
+  # HCB statuses a grant can never come back from: `canceled` (the recipient or
+  # an admin pulled it) and `expired` (HCB timed it out and returned the money).
+  # HCB refuses a top-up on either - CardGrantPolicy#topup? requires an active
+  # grant - so a grant in one of these is finished, not reusable.
+  CLOSED_STATUSES = %w[canceled expired].freeze
+
   class << self
     # Reads an HCB card-grant payload (the body HCBService.show_card_grant
     # returns) the same way everywhere a grant's safety is judged - shop
-    # fulfillment (Shop::HCBGrantFulfillable#topupable?) and hardware review undo
+    # fulfillment (Shop::HCBGrantFulfillable) and hardware review undo
     # (Certification::ReviewUndoer) - so the field handling lives in one place.
-    def canceled_grant?(hcb_data)
-      hcb_data.present? && hcb_data["status"].to_s == "canceled"
+    #
+    # Only a payload HCB actually gave us can close a grant. A caller that
+    # couldn't read the status has to treat that as unknown rather than passing
+    # blank data in and reading `false` as "still live".
+    def closed_grant?(hcb_data)
+      hcb_data.present? && CLOSED_STATUSES.include?(hcb_data["status"].to_s)
     end
 
     # A grant whose remaining balance still equals the amount granted is
@@ -48,13 +58,16 @@ class ShopCardGrant < ApplicationRecord
     end
   end
 
+  # Raises if HCB can't be reached or refuses the read; callers decide what an
+  # unreadable status should mean for them.
   def hcb_data
     @hcb_data ||= HCBService.show_card_grant(hashid: hcb_grant_hashid)
   end
 
-  # True when HCB reports this grant already cancelled.
-  def canceled?
-    self.class.canceled_grant?(hcb_data)
+  # True when HCB reports this grant cancelled or expired. Raises if the status
+  # can't be read - see #hcb_data.
+  def closed?
+    self.class.closed_grant?(hcb_data)
   end
 
   def hcb_url
