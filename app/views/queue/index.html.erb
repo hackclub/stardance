@@ -1,12 +1,12 @@
-<% content_for :title, "Order queue" %>
+<% content_for :title, "Fulfillment queue" %>
 
 <div class="container queue">
-  <%= render HeadingComponent.new(title: "Order queue", tone: :blue, size: :full) %>
+  <%= render HeadingComponent.new(title: "Fulfillment queue", tone: :blue, size: :full) %>
 
   <p class="queue__intro">
-    Every shop order is checked by a human before it ships. This page shows
-    what the queue looks like right now and how long each item has been taking
-    to reach the post — so you can see where your order sits without asking.
+    Every shop order is checked by a human, then packed and posted by another
+    one. This page shows how long that whole journey is taking right now, item
+    by item, so you can see where your order sits without having to ask.
   </p>
 
   <% if Flipper.enabled?(:shop_backlogged) %>
@@ -19,31 +19,45 @@
 
   <ul class="queue__stats">
     <%= render "queue/stat",
-               tone: "lilac",
-               value: number_with_delimiter(@snapshot.pending_count),
-               label: "Orders waiting",
-               note: "#{number_with_delimiter(@snapshot.decisions_last_week)} cleared in the last 7 days" %>
-    <%= render "queue/stat",
-               tone: "peach",
-               value: @snapshot.oldest_waiting_at ? distance_of_time_in_words_to_now(@snapshot.oldest_waiting_at) : "—",
-               label: "Longest wait so far",
-               note: @snapshot.average_wait_hours ? "#{queue_duration_in_words(@snapshot.average_wait_hours)} on average" : nil %>
+               tone: "mint",
+               value: queue_duration_in_words(@snapshot.fulfillment_average_hours),
+               label: "Order placed to parcel sent",
+               note: "averaged over the last 90 days",
+               lead: true %>
     <%= render "queue/stat",
                tone: "blue",
                value: queue_duration_in_words(@snapshot.review_average_hours),
-               label: "Average review time",
-               note: "across the last 30 days" %>
+               label: "…of which is review",
+               note: "then #{queue_duration_in_words(@snapshot.dispatch_average_hours)} packing & post" %>
     <%= render "queue/stat",
-               tone: "mint",
-               value: queue_duration_in_words(@snapshot.fulfillment_average_hours),
-               label: "Average time to fulfill",
-               note: "order placed to parcel sent" %>
+               tone: "lilac",
+               value: number_with_delimiter(@snapshot.open_count),
+               label: "Orders in the pipeline",
+               note: "#{number_with_delimiter(@snapshot.fulfilled_last_week)} sent in the last 7 days" %>
+    <%= render "queue/stat",
+               tone: "peach",
+               value: @snapshot.oldest_open_at ? distance_of_time_in_words_to_now(@snapshot.oldest_open_at) : "—",
+               label: "Longest anyone is waiting",
+               note: @snapshot.average_open_hours ? "#{queue_duration_in_words(@snapshot.average_open_hours)} on average" : nil %>
   </ul>
 
   <section class="queue__section">
-    <h2 class="queue__section-title">How long the queue has been waiting</h2>
+    <h2 class="queue__section-title">Where those orders are</h2>
 
-    <% if @snapshot.pending_count.positive? %>
+    <% if @snapshot.open_count.positive? %>
+      <ol class="queue__pipeline">
+        <% @snapshot.stages.each do |stage| %>
+          <li class="queue__stage">
+            <span class="queue__stage-count"><%= number_with_delimiter(stage.count) %></span>
+            <span class="queue__stage-label"><%= stage.label %></span>
+            <span class="queue__stage-note">
+              <%= stage.oldest_at ? "oldest #{time_ago_in_words(stage.oldest_at)}" : "nothing waiting" %>
+            </span>
+          </li>
+        <% end %>
+      </ol>
+
+      <h3 class="queue__subsection-title">How long they've been waiting</h3>
       <div class="queue__bands" role="img"
            aria-label="<%= @snapshot.age_bands.map { |band| "#{band.label}: #{band.count}" }.join(", ") %>">
         <div class="queue__band-bar">
@@ -64,13 +78,13 @@
         </ul>
       </div>
     <% else %>
-      <p class="queue__empty">Nothing is waiting — the queue is completely clear. 🎉</p>
+      <p class="queue__empty">Nothing is waiting — every order has been sent. 🎉</p>
     <% end %>
   </section>
 
   <section class="queue__section" data-controller="queue-filter">
     <div class="queue__section-head">
-      <h2 class="queue__section-title">Turnaround by item</h2>
+      <h2 class="queue__section-title">How long each item takes</h2>
 
       <input type="search"
              class="queue__search"
@@ -87,26 +101,31 @@
           <thead>
             <tr>
               <th scope="col">Item</th>
-              <th scope="col">Waiting now</th>
-              <th scope="col">Average review</th>
-              <th scope="col">Average to fulfill</th>
-              <th scope="col">Fulfilled orders</th>
+              <th scope="col">Placed to sent</th>
+              <th scope="col">Review</th>
+              <th scope="col">Packing &amp; post</th>
+              <th scope="col">In the pipeline</th>
             </tr>
           </thead>
           <tbody>
             <% @snapshot.items.each do |item| %>
               <tr data-queue-filter-target="row" data-queue-filter-name="<%= item.name.downcase %>">
                 <th scope="row" class="queue__cell-name"><%= item.name %></th>
+                <td class="queue__cell-number queue__cell-lead">
+                  <%= queue_duration_in_words(item.fulfillment_hours) %>
+                  <% if item.sample.positive? %>
+                    <span class="queue__cell-sample">from <%= pluralize(number_with_delimiter(item.sample), "order") %></span>
+                  <% end %>
+                </td>
+                <td class="queue__cell-number queue__cell-muted"><%= queue_duration_in_words(item.review_hours) %></td>
+                <td class="queue__cell-number queue__cell-muted"><%= queue_duration_in_words(item.dispatch_hours) %></td>
                 <td class="queue__cell-number">
-                  <% if item.waiting.positive? %>
-                    <%= number_with_delimiter(item.waiting) %>
+                  <% if item.open.positive? %>
+                    <%= number_with_delimiter(item.open) %>
                   <% else %>
                     <span class="queue__cell-blank">—</span>
                   <% end %>
                 </td>
-                <td class="queue__cell-number"><%= queue_duration_in_words(item.review_hours) %></td>
-                <td class="queue__cell-number"><%= queue_duration_in_words(item.fulfillment_hours) %></td>
-                <td class="queue__cell-number queue__cell-muted"><%= number_with_delimiter(item.sample) %></td>
               </tr>
             <% end %>
           </tbody>
@@ -117,14 +136,16 @@
         No items match that filter.
       </p>
     <% else %>
-      <p class="queue__empty">No orders have moved through the queue yet.</p>
+      <p class="queue__empty">No orders have been through the pipeline yet.</p>
     <% end %>
   </section>
 
   <p class="queue__footnote">
-    Review times cover the last 30 days and fulfillment times the last 90.
-    An item needs at least <%= Shop::QueueSnapshot::MIN_SAMPLE %> fulfilled
-    orders in that window before its average is shown. Orders for items the
+    "Placed to sent" covers orders sent in the last 90 days; review times cover
+    the last 30. An item needs at least <%= Shop::QueueSnapshot::MIN_SAMPLE %>
+    sent orders in that window before its average is shown. Orders waiting on
+    something from you — ID verification, a call — aren't counted in the
+    pipeline, since nobody else is queued behind them. Orders for items the
     shop doesn't list publicly are grouped under
     &ldquo;<%= Shop::QueueSnapshot::HIDDEN_ITEM_LABEL %>&rdquo;.
     Updated <%= time_ago_in_words(@snapshot.generated_at) %> ago.

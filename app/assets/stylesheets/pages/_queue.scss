@@ -61,6 +61,17 @@
     &--peach {
       --_tone: var(--color-brand-peach);
     }
+
+    // The placed-to-sent figure is the one the page exists to publish, so it
+    // outranks the other three rather than sitting level with them.
+    &--lead {
+      border-width: 2px;
+      border-top-width: 3px;
+
+      .queue__stat-value {
+        font-size: var(--font-size-xxxl);
+      }
+    }
   }
 
   &__stat-value {
@@ -124,6 +135,73 @@
       border-color: var(--color-border-input-focus);
       outline: none;
     }
+  }
+
+  // ── Pipeline stages ─────────────────────────────────────────────────────
+
+  &__pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    margin: 0 0 var(--space-xl);
+    padding: 0;
+    list-style: none;
+    counter-reset: queue-stage;
+  }
+
+  // Stages are chained with an arrow so the strip reads as a journey rather
+  // than as two unrelated tallies.
+  &__stage {
+    position: relative;
+    display: flex;
+    flex: 1 1 200px;
+    flex-direction: column;
+    gap: var(--space-xxxs);
+    padding: var(--space-m);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--profile-radius);
+    background: var(--color-set-2-bg);
+
+    & + &::before {
+      content: "→";
+      position: absolute;
+      left: calc(var(--space-m) / -2 - 0.35em);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-set-1-fg-secondary);
+      line-height: 1;
+    }
+
+    @media (max-width: 600px) {
+      & + &::before {
+        content: none;
+      }
+    }
+  }
+
+  &__stage-count {
+    color: var(--color-space-text);
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    line-height: var(--line-height-headers);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__stage-label {
+    font-size: var(--font-size-m);
+    font-weight: 600;
+  }
+
+  &__stage-note {
+    color: var(--color-set-2-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  &__subsection-title {
+    margin: 0 0 var(--space-s);
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-m);
+    font-weight: 600;
   }
 
   // ── Ageing distribution ─────────────────────────────────────────────────
@@ -238,6 +316,22 @@
 
   &__cell-muted {
     color: var(--color-space-text-muted);
+  }
+
+  // The headline per-item figure, with its sample size tucked underneath so
+  // the number can be trusted without spending a column on it.
+  &__cell-lead {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-weight: 600;
+  }
+
+  &__cell-sample {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-s);
+    font-weight: 400;
+    white-space: nowrap;
   }
 
   &__cell-blank {

@@ -9,27 +9,45 @@ class QueueControllerTest < ActionDispatch::IntegrationTest
     @unlisted = build_item("Secret Prize", unlisted: true)
   end
 
-  test "renders an empty queue without any orders" do
+  test "renders an empty pipeline without any orders" do
     get queue_path
 
     assert_response :success
     assert_select ".queue__stat-value", text: "0"
-    assert_includes response.body, "the queue is completely clear"
+    assert_includes response.body, "every order has been sent"
   end
 
-  test "counts pending orders and bands them by age" do
+  # Both legs of the journey count as "in the pipeline": an approved order
+  # waiting to be posted is still a buyer waiting on a parcel.
+  test "counts orders in review and awaiting dispatch, and bands them by age" do
     build_order(@listed, aasm_state: "pending", created_at: 2.hours.ago)
-    build_order(@listed, aasm_state: "pending", created_at: 10.days.ago)
+    build_order(@listed, aasm_state: "awaiting_periodical_fulfillment", created_at: 10.days.ago,
+                         awaiting_periodical_fulfillment_at: 9.days.ago)
 
     get queue_path
 
     assert_response :success
     assert_select ".queue__stat-value", text: "2"
     assert_select ".queue__band-count", text: "1", count: 2
+    assert_select ".queue__stage-count", text: "1", count: 2
     assert_select "tr[data-queue-filter-name=?]", "usb blaster"
   end
 
-  test "averages the time from order to fulfillment per item" do
+  # Waiting on the buyer is not waiting on us, so those orders must not inflate
+  # the number of orders everyone else appears to be queued behind.
+  test "excludes orders that are waiting on the buyer" do
+    build_order(@listed, aasm_state: "awaiting_verification", created_at: 2.days.ago)
+    build_order(@listed, aasm_state: "on_hold", created_at: 2.days.ago)
+
+    get queue_path
+
+    assert_response :success
+    assert_select ".queue__stat-value", text: "0"
+  end
+
+  # Placed 10 days ago, approved after 1 day, sent 7 days after that: the total
+  # and both legs should each be reported.
+  test "reports the total journey and both legs per item" do
     Shop::QueueSnapshot::MIN_SAMPLE.times do
       build_order(@listed, aasm_state: "fulfilled", created_at: 10.days.ago,
                            awaiting_periodical_fulfillment_at: 9.days.ago, fulfilled_at: 2.days.ago)
@@ -39,8 +57,25 @@ class QueueControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "tr[data-queue-filter-name=?]", "usb blaster" do
-      assert_select ".queue__cell-number", text: "24 hours"
-      assert_select ".queue__cell-number", text: "8 days"
+      assert_select ".queue__cell-lead", /8 days/          # placed to sent
+      assert_select ".queue__cell-number", text: "24 hours" # review leg
+      assert_select ".queue__cell-number", text: "7 days"   # packing & post leg
+    end
+  end
+
+  # An order sent without ever passing through the dispatch queue has a NULL
+  # start for that leg; it must not poison the average or crash the row.
+  test "handles an order fulfilled without a dispatch timestamp" do
+    Shop::QueueSnapshot::MIN_SAMPLE.times do
+      build_order(@listed, aasm_state: "fulfilled", created_at: 4.days.ago,
+                           awaiting_periodical_fulfillment_at: nil, fulfilled_at: 2.days.ago)
+    end
+
+    get queue_path
+
+    assert_response :success
+    assert_select "tr[data-queue-filter-name=?]", "usb blaster" do
+      assert_select ".queue__cell-lead", /2 days/
     end
   end
 
