@@ -5,17 +5,17 @@
     <p class="event-simulator__hint">browser-only preview · no real hours or roles are changed</p>
     <p class="event-simulator__status" role="status" data-blackhole-target="simulatorStatus">live event values</p>
     <label class="event-simulator__field">damage (%)
-      <input type="range" name="damage" min="0" max="100" step="1" value="25">
+      <input type="range" name="damage" min="0" max="100" step="1" value="25" autocomplete="off">
     </label>
     <label class="event-simulator__field">buku hours
-      <input type="number" name="buku" min="0" step="50" value="0">
+      <input type="number" name="buku" min="0" step="50" value="0" autocomplete="off">
     </label>
     <label class="event-simulator__field">bean hours
-      <input type="number" name="bean" min="0" step="50" value="0">
+      <input type="number" name="bean" min="0" step="50" value="0" autocomplete="off">
     </label>
     <p class="event-simulator__hint">team hours start from 25% damage · 50 hours move it by 1%</p>
     <label class="event-simulator__field">visual intensity (%)
-      <input type="range" name="strength" min="0" max="200" step="5" value="100">
+      <input type="range" name="strength" min="0" max="200" step="5" value="100" autocomplete="off">
     </label>
     <label class="event-simulator__field">particles
       <%= check_box_tag :particles, "1", particles_enabled, disabled: !particles_enabled %>
