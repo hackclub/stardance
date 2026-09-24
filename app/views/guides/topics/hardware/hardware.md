@@ -12,7 +12,7 @@ The first step to making hardware projects is to make a design for your project!
 
 To get rewards from Stardance, you'll need to track your time with [Lapse](https://lapse.hackclub.com) - it records a timelapse of you building and files the time against a Hackatime project. We set that Hackatime project up for you as soon as your project becomes a hardware project, so it'll be waiting for you to pick in Lapse.
 
-![image](https://cdn.hackclub.com/019ed75a-21f7-7c08-a97c-1c6e553a0b40/paste-1781729468716.png)
+[![image](https://cdn.hackclub.com/019ed75a-21f7-7c08-a97c-1c6e553a0b40/paste-1781729468716.png)](https://lapse.hackclub.com/)
 _^^ hit this button to record your progress! it'll redirect you to lapse.hackclub.com_
 
 Once you're in lapse, you can start recording your work! Keep working along your project. Make sure to make devlogs often.
