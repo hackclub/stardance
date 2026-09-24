@@ -137,6 +137,40 @@ class QueueControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr[data-queue-filter-name=?]", "sold out kit"
   end
 
+  # Streak rewards, tutorial no-ops and free stickers live in shop_orders but
+  # aren't someone waiting on a purchase — on production they outnumber real
+  # orders more than twenty to one, so counting them makes every headline wrong.
+  test "excludes item types that are not real purchases" do
+    Shop::QueueSnapshot::EXCLUDED_ITEM_TYPES.each_with_index do |type, index|
+      noise = build_item("Noise #{index}", type: type)
+      build_order(noise, aasm_state: "awaiting_periodical_fulfillment", created_at: 30.days.ago,
+                         awaiting_periodical_fulfillment_at: 29.days.ago)
+      build_order(noise, aasm_state: "fulfilled", created_at: 2.days.ago, fulfilled_at: 2.days.ago + 1.minute)
+    end
+
+    get queue_path
+
+    assert_response :success
+    assert_select ".queue__stat-value", text: "0"
+    Shop::QueueSnapshot::EXCLUDED_ITEM_TYPES.each_with_index do |_type, index|
+      assert_not_includes response.body, "Noise #{index}"
+    end
+  end
+
+  # One order taking months must not drag the published figure away from what
+  # people actually experience — the reason this page reports medians.
+  test "an extreme outlier does not move the headline" do
+    4.times do
+      build_order(@listed, aasm_state: "fulfilled", created_at: 10.days.ago, fulfilled_at: 8.days.ago)
+    end
+    build_order(@listed, aasm_state: "fulfilled", created_at: 200.days.ago, fulfilled_at: 1.day.ago)
+
+    get queue_path
+
+    assert_response :success
+    assert_select ".queue__stat-value", text: "2 days"
+  end
+
   private
 
   def build_item(name, type: "ShopItem::ThirdPartyPhysical", **attributes)

@@ -20,25 +20,25 @@
   <ul class="queue__stats">
     <%= render "queue/stat",
                tone: "mint",
-               value: queue_duration_in_words(@snapshot.fulfillment_average_hours),
-               label: "Order placed to parcel sent",
-               note: "averaged over the last 90 days",
+               value: queue_duration_in_words(@snapshot.total_median_hours),
+               label: "Typical order, placed to sent",
+               note: "half of the last 90 days' orders were quicker",
                lead: true %>
     <%= render "queue/stat",
                tone: "blue",
-               value: queue_duration_in_words(@snapshot.review_average_hours),
-               label: "…of which is review",
-               note: "then #{queue_duration_in_words(@snapshot.dispatch_average_hours)} packing & post" %>
+               value: queue_duration_in_words(@snapshot.review_median_hours),
+               label: "Typical time in review",
+               note: "packing & post: #{queue_duration_in_words(@snapshot.dispatch_median_hours)}" %>
     <%= render "queue/stat",
                tone: "lilac",
                value: number_with_delimiter(@snapshot.open_count),
                label: "Orders in the pipeline",
-               note: "#{number_with_delimiter(@snapshot.fulfilled_last_week)} sent in the last 7 days" %>
+               note: "#{number_with_delimiter(@snapshot.sent_last_week)} sent in the last 7 days" %>
     <%= render "queue/stat",
                tone: "peach",
                value: @snapshot.oldest_open_at ? distance_of_time_in_words_to_now(@snapshot.oldest_open_at) : "—",
                label: "Longest anyone is waiting",
-               note: @snapshot.average_open_hours ? "#{queue_duration_in_words(@snapshot.average_open_hours)} on average" : nil %>
+               note: @snapshot.median_open_hours ? "#{queue_duration_in_words(@snapshot.median_open_hours)} for the middle one" : nil %>
   </ul>
 
   <section class="queue__section">
@@ -101,7 +101,7 @@
           <thead>
             <tr>
               <th scope="col">Item</th>
-              <th scope="col">Placed to sent</th>
+              <th scope="col">Typical, placed to sent</th>
               <th scope="col">Review</th>
               <th scope="col">Packing &amp; post</th>
               <th scope="col">In the pipeline</th>
@@ -112,7 +112,7 @@
               <tr data-queue-filter-target="row" data-queue-filter-name="<%= item.name.downcase %>">
                 <th scope="row" class="queue__cell-name"><%= item.name %></th>
                 <td class="queue__cell-number queue__cell-lead">
-                  <%= queue_duration_in_words(item.fulfillment_hours) %>
+                  <%= queue_duration_in_words(item.total_hours) %>
                   <% if item.sample.positive? %>
                     <span class="queue__cell-sample">from <%= pluralize(number_with_delimiter(item.sample), "order") %></span>
                   <% end %>
@@ -141,12 +141,17 @@
   </section>
 
   <p class="queue__footnote">
-    "Placed to sent" covers orders sent in the last 90 days; review times cover
-    the last 30. An item needs at least <%= Shop::QueueSnapshot::MIN_SAMPLE %>
-    sent orders in that window before its average is shown. Orders waiting on
-    something from you — ID verification, a call — aren't counted in the
-    pipeline, since nobody else is queued behind them. Orders for items the
-    shop doesn't list publicly are grouped under
+    Every figure is a median over orders sent in the last 90 days — half were
+    quicker, half slower — because a handful of orders take months and an
+    average would land on a wait almost nobody has. Each step is its own
+    median, so the two steps won't add up to the total exactly. An item needs at least
+    <%= Shop::QueueSnapshot::MIN_SAMPLE %> sent orders in that window before
+    its figures are shown. Free stickers, shop-tutorial orders and sticky
+    streak rewards aren't counted: they're posted in batches or completed
+    automatically, so they'd say nothing about how long a purchase takes.
+    Orders waiting on something from you — ID verification, a call — aren't in
+    the pipeline either, since nobody else is queued behind them. Orders for
+    items the shop doesn't list publicly are grouped under
     &ldquo;<%= Shop::QueueSnapshot::HIDDEN_ITEM_LABEL %>&rdquo;.
     Updated <%= time_ago_in_words(@snapshot.generated_at) %> ago.
   </p>
