@@ -1,0 +1,266 @@
+// Public shop order queue (/queue) — backlog depth, ageing distribution and
+// per-item turnaround.
+
+.queue {
+  padding-bottom: var(--space-xxxl);
+
+  &__intro {
+    max-width: 62ch;
+    margin: 0 0 var(--space-l);
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-l);
+    line-height: 1.6;
+  }
+
+  &__banner {
+    margin: 0 0 var(--space-xl);
+    padding: var(--space-m) var(--space-l);
+    border: 2px solid var(--color-brand-peach);
+    border-radius: var(--profile-radius);
+    background: var(--color-brand-highlight-faint);
+    color: var(--color-space-text);
+    font-size: var(--font-size-m);
+    line-height: 1.6;
+  }
+
+  // ── Headline tiles ──────────────────────────────────────────────────────
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-m);
+    margin: 0 0 var(--space-xxl);
+    padding: 0;
+    list-style: none;
+  }
+
+  &__stat {
+    --_tone: var(--color-brand-highlight);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxxs);
+    padding: var(--space-l) var(--space-m);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid var(--_tone);
+    border-radius: var(--profile-radius);
+    background: var(--color-set-2-bg);
+
+    &--mint {
+      --_tone: var(--color-brand-mint);
+    }
+
+    &--blue {
+      --_tone: var(--color-brand-blue);
+    }
+
+    &--lilac {
+      --_tone: var(--color-brand-lilac);
+    }
+
+    &--peach {
+      --_tone: var(--color-brand-peach);
+    }
+  }
+
+  &__stat-value {
+    color: var(--_tone);
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    line-height: var(--line-height-headers);
+  }
+
+  &__stat-label {
+    color: var(--color-space-text);
+    font-size: var(--font-size-m);
+    font-weight: 600;
+  }
+
+  &__stat-note {
+    color: var(--color-set-2-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  // ── Sections ────────────────────────────────────────────────────────────
+
+  &__section {
+    margin-bottom: var(--space-xxl);
+  }
+
+  &__section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    margin-bottom: var(--space-m);
+  }
+
+  &__section-title {
+    margin: 0 0 var(--space-m);
+    color: var(--color-space-text);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+
+    .queue__section-head & {
+      margin-bottom: 0;
+    }
+  }
+
+  &__search {
+    flex: 0 1 260px;
+    padding: var(--space-xs) var(--space-m);
+    border: 1px solid var(--color-border-input);
+    border-radius: 999px;
+    background: var(--color-set-1-bg);
+    color: var(--color-space-text);
+    font-size: var(--font-size-s);
+
+    &::placeholder {
+      color: var(--color-set-1-fg-secondary);
+    }
+
+    &:focus-visible {
+      border-color: var(--color-border-input-focus);
+      outline: none;
+    }
+  }
+
+  // ── Ageing distribution ─────────────────────────────────────────────────
+
+  &__band-bar {
+    display: flex;
+    height: 14px;
+    margin-bottom: var(--space-m);
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--color-space-surface-faint);
+  }
+
+  &__band-fill {
+    // Share of the backlog in this band, set per-element by the view.
+    width: var(--queue-band-share);
+    background: var(--_tone, var(--color-brand-highlight));
+
+    &--mint {
+      --_tone: var(--color-brand-mint);
+    }
+
+    &--blue {
+      --_tone: var(--color-brand-blue);
+    }
+
+    &--peach {
+      --_tone: var(--color-brand-peach);
+    }
+
+    &--salmon {
+      --_tone: var(--color-brand-salmon);
+    }
+  }
+
+  // Each entry hugs its own content so the count stays next to its label —
+  // an equal-column grid strands the numbers at the far edge of each cell.
+  &__band-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-l);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__band {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--font-size-s);
+  }
+
+  &__band-swatch {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--_tone, var(--color-brand-highlight));
+
+    &--mint {
+      --_tone: var(--color-brand-mint);
+    }
+
+    &--blue {
+      --_tone: var(--color-brand-blue);
+    }
+
+    &--peach {
+      --_tone: var(--color-brand-peach);
+    }
+
+    &--salmon {
+      --_tone: var(--color-brand-salmon);
+    }
+  }
+
+  &__band-label {
+    color: var(--color-space-text-muted);
+  }
+
+  &__band-count {
+    color: var(--color-space-text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // ── Turnaround table ────────────────────────────────────────────────────
+
+  &__table-scroll {
+    overflow-x: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--profile-radius);
+  }
+
+  &__table {
+    min-width: 640px;
+  }
+
+  // A row header rather than a cell, so it misses the padding .space-table
+  // hands to thead th / tbody td.
+  &__cell-name {
+    padding: var(--space-s) var(--space-m);
+    font-weight: 600;
+    text-align: left;
+  }
+
+  &__cell-number {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__cell-muted {
+    color: var(--color-space-text-muted);
+  }
+
+  &__cell-blank {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  // ── Empty / footnote ────────────────────────────────────────────────────
+
+  &__empty {
+    margin: var(--space-m) 0 0;
+    padding: var(--space-l);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--profile-radius);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text-muted);
+    text-align: center;
+  }
+
+  &__footnote {
+    max-width: 70ch;
+    margin: 0;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-s);
+    line-height: 1.6;
+  }
+}

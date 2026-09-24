@@ -1,0 +1,7 @@
+<li class="queue__stat queue__stat--<%= tone %>">
+  <span class="queue__stat-value"><%= value %></span>
+  <span class="queue__stat-label"><%= label %></span>
+  <% if local_assigns[:note].present? %>
+    <span class="queue__stat-note"><%= note %></span>
+  <% end %>
+</li>

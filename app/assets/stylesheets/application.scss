@@ -116,6 +116,7 @@
 @use "pages/certification/lapse_player" as certification_lapse_player;
 @use "pages/certification/mystats" as certification_mystats;
 @use "pages/certification/payouts" as certification_payouts;
+@use "pages/queue" as queue_page;
 @use "pages/raffle";
 @use "pages/notifications" as notifications_page;
 @use "pages/notification_settings" as notification_settings_page;

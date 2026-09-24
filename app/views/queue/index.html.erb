@@ -1,118 +1,132 @@
-<% content_for :title, "Order Review Queue" %>
-<h1>Order Review Queue</h1>
+<% content_for :title, "Order queue" %>
 
-<% if Flipper.enabled?(:shop_backlogged) %>
-  <div class="backlog-banner">
-    ⚠️ There is many shop orders and we are currently a bit backlogged! Please be patient with us fraud dept + fulfilment team is volunteers who have a life, school and other things as well :3
-  </div>
-<% end %>
+<div class="container queue">
+  <%= render HeadingComponent.new(title: "Order queue", tone: :blue, size: :full) %>
 
-<div class="fraud-grid">
-  <div class="card fraud-card fraud-card--wide">
-    <h2>Queue Status</h2>
-    <div class="fraud-stats">
-      <div class="fraud-stat fraud-stat--warning">
-        <span class="fraud-stat__value"><%= @pending_count %></span>
-        <span class="fraud-stat__label">Pending</span>
-      </div>
-      <div class="fraud-stat fraud-stat--warning">
-        <span class="fraud-stat__value"><%= @pending_count %></span>
-        <span class="fraud-stat__label">Total Backlog</span>
-      </div>
-    </div>
-    <% if @avg_response_hours %>
-      <p class="fraud-note">Avg response time (30d): <strong><%= @avg_response_hours %>h</strong></p>
-    <% end %>
-  </div>
+  <p class="queue__intro">
+    Every shop order is checked by a human before it ships. This page shows
+    what the queue looks like right now and how long each item has been taking
+    to reach the post — so you can see where your order sits without asking.
+  </p>
 
-  <div class="card fraud-card">
-    <h2>Wait Times</h2>
-    <div class="fraud-stats">
-      <div class="fraud-stat fraud-stat--danger">
-        <span class="fraud-stat__value"><%= @oldest_waiting ? distance_of_time_in_words_to_now(@oldest_waiting) : "—" %></span>
-        <span class="fraud-stat__label">Oldest Waiting</span>
-      </div>
-      <div class="fraud-stat fraud-stat--success">
-        <span class="fraud-stat__value"><%= @newest_waiting ? distance_of_time_in_words_to_now(@newest_waiting) : "—" %></span>
-        <span class="fraud-stat__label">Newest Waiting</span>
-      </div>
-      <div class="fraud-stat fraud-stat--info">
-        <span class="fraud-stat__value"><%= @avg_wait ? "#{@avg_wait}h" : "—" %></span>
-        <span class="fraud-stat__label">Avg Wait</span>
-      </div>
-    </div>
-  </div>
+  <% if Flipper.enabled?(:shop_backlogged) %>
+    <p class="queue__banner">
+      We're backlogged right now, so orders are taking longer than the numbers
+      below suggest. The fraud and fulfillment teams are volunteers with school
+      and lives of their own — thank you for being patient with them.
+    </p>
+  <% end %>
 
-  <div class="card fraud-card">
-    <h2>By Item Type</h2>
-    <table class="fraud-table">
-      <thead><tr><th>Type</th><th>Count</th></tr></thead>
-      <tbody>
-        <% @by_item_type.sort_by { |_, c| -c }.each do |type, count| %>
-          <tr>
-            <td><%= type.demodulize.titleize %></td>
-            <td><strong><%= count %></strong></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-</div>
+  <ul class="queue__stats">
+    <%= render "queue/stat",
+               tone: "lilac",
+               value: number_with_delimiter(@snapshot.pending_count),
+               label: "Orders waiting",
+               note: "#{number_with_delimiter(@snapshot.decisions_last_week)} cleared in the last 7 days" %>
+    <%= render "queue/stat",
+               tone: "peach",
+               value: @snapshot.oldest_waiting_at ? distance_of_time_in_words_to_now(@snapshot.oldest_waiting_at) : "—",
+               label: "Longest wait so far",
+               note: @snapshot.average_wait_hours ? "#{queue_duration_in_words(@snapshot.average_wait_hours)} on average" : nil %>
+    <%= render "queue/stat",
+               tone: "blue",
+               value: queue_duration_in_words(@snapshot.review_average_hours),
+               label: "Average review time",
+               note: "across the last 30 days" %>
+    <%= render "queue/stat",
+               tone: "mint",
+               value: queue_duration_in_words(@snapshot.fulfillment_average_hours),
+               label: "Average time to fulfill",
+               note: "order placed to parcel sent" %>
+  </ul>
 
-<div class="fraud-grid">
-  <div class="card fraud-card">
-    <h2>Pending Orders</h2>
-    <% if @pending_orders.any? %>
-      <table class="fraud-table">
-        <thead>
-          <tr><th>#</th><th>Created</th></tr>
-        </thead>
-        <tbody>
-          <% @pending_orders.each do |order| %>
-            <tr>
-              <td><%= order.id %></td>
-              <td><%= order.created_at ? "#{time_ago_in_words(order.created_at)} ago" : "—" %></td>
-            </tr>
+  <section class="queue__section">
+    <h2 class="queue__section-title">How long the queue has been waiting</h2>
+
+    <% if @snapshot.pending_count.positive? %>
+      <div class="queue__bands" role="img"
+           aria-label="<%= @snapshot.age_bands.map { |band| "#{band.label}: #{band.count}" }.join(", ") %>">
+        <div class="queue__band-bar">
+          <% @snapshot.age_bands.reject { |band| band.count.zero? }.each do |band| %>
+            <span class="queue__band-fill queue__band-fill--<%= band.tone %>"
+                  style="--queue-band-share: <%= band.share %>%"></span>
           <% end %>
-        </tbody>
-      </table>
-    <% else %>
-      <p class="fraud-note">No pending orders 🎉</p>
-    <% end %>
-  </div>
-</div>
+        </div>
 
-<style>
-.fraud-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.fraud-card { display: flex; flex-direction: column; gap: 0.75rem; }
-.fraud-card--wide { grid-column: span 2; }
-@media (max-width: 800px) { .fraud-card--wide { grid-column: span 1; } }
-.fraud-card h2 { margin: 0 0 0.25rem; font-size: 1rem; }
-.fraud-stats { display: flex; flex-wrap: wrap; gap: 1rem; }
-.fraud-stat { display: flex; flex-direction: column; align-items: center; min-width: 80px; padding: 0.5rem; }
-.fraud-stat__value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
-.fraud-stat__label { font-size: 0.7rem; color: var(--color-text-muted); text-align: center; }
-.fraud-stat--warning .fraud-stat__value { color: #f59e0b; }
-.fraud-stat--success .fraud-stat__value { color: #10b981; }
-.fraud-stat--danger .fraud-stat__value { color: #ef4444; }
-.fraud-stat--info .fraud-stat__value { color: #3b82f6; }
-.fraud-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-.fraud-table th, .fraud-table td { padding: 0.375rem 0.5rem; text-align: left; border-bottom: 1px solid var(--color-tan-400); }
-.fraud-table th { font-weight: 600 }
-.fraud-table td:last-child { text-align: right; }
-.fraud-note { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); }
-.backlog-banner {
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
-  color: #92400e;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  font-weight: 500;
-}
-</style>
+        <ul class="queue__band-legend">
+          <% @snapshot.age_bands.each do |band| %>
+            <li class="queue__band">
+              <span class="queue__band-swatch queue__band-swatch--<%= band.tone %>"></span>
+              <span class="queue__band-label"><%= band.label %></span>
+              <span class="queue__band-count"><%= number_with_delimiter(band.count) %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% else %>
+      <p class="queue__empty">Nothing is waiting — the queue is completely clear. 🎉</p>
+    <% end %>
+  </section>
+
+  <section class="queue__section" data-controller="queue-filter">
+    <div class="queue__section-head">
+      <h2 class="queue__section-title">Turnaround by item</h2>
+
+      <input type="search"
+             class="queue__search"
+             placeholder="Filter items…"
+             aria-label="Filter items by name"
+             autocomplete="off"
+             data-queue-filter-target="input"
+             data-action="input->queue-filter#filter search->queue-filter#filter">
+    </div>
+
+    <% if @snapshot.items.any? %>
+      <div class="queue__table-scroll">
+        <table class="space-table queue__table">
+          <thead>
+            <tr>
+              <th scope="col">Item</th>
+              <th scope="col">Waiting now</th>
+              <th scope="col">Average review</th>
+              <th scope="col">Average to fulfill</th>
+              <th scope="col">Fulfilled orders</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @snapshot.items.each do |item| %>
+              <tr data-queue-filter-target="row" data-queue-filter-name="<%= item.name.downcase %>">
+                <th scope="row" class="queue__cell-name"><%= item.name %></th>
+                <td class="queue__cell-number">
+                  <% if item.waiting.positive? %>
+                    <%= number_with_delimiter(item.waiting) %>
+                  <% else %>
+                    <span class="queue__cell-blank">—</span>
+                  <% end %>
+                </td>
+                <td class="queue__cell-number"><%= queue_duration_in_words(item.review_hours) %></td>
+                <td class="queue__cell-number"><%= queue_duration_in_words(item.fulfillment_hours) %></td>
+                <td class="queue__cell-number queue__cell-muted"><%= number_with_delimiter(item.sample) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="queue__empty" hidden data-queue-filter-target="empty">
+        No items match that filter.
+      </p>
+    <% else %>
+      <p class="queue__empty">No orders have moved through the queue yet.</p>
+    <% end %>
+  </section>
+
+  <p class="queue__footnote">
+    Review times cover the last 30 days and fulfillment times the last 90.
+    An item needs at least <%= Shop::QueueSnapshot::MIN_SAMPLE %> fulfilled
+    orders in that window before its average is shown. Orders for items the
+    shop doesn't list publicly are grouped under
+    &ldquo;<%= Shop::QueueSnapshot::HIDDEN_ITEM_LABEL %>&rdquo;.
+    Updated <%= time_ago_in_words(@snapshot.generated_at) %> ago.
+  </p>
+</div>
