@@ -1,0 +1,23 @@
+<section class="phantom-promo"
+         aria-label="Phantom, a Hack Club YSWS"
+         data-controller="black-hole"
+         data-black-hole-torn-class="phantom-promo--torn"
+         data-action="pointerenter->black-hole#enter pointerleave->black-hole#leave pointermove->black-hole#track pointerdown->black-hole#press">
+  <canvas class="phantom-promo__canvas" data-black-hole-target="canvas" aria-hidden="true"></canvas>
+
+  <div class="phantom-promo__horizon" data-black-hole-target="horizon">
+    <p class="phantom-promo__wordmark">PHANTOM</p>
+  </div>
+
+  <div class="phantom-promo__copy" data-black-hole-target="copy">
+    <h3 class="phantom-promo__title">An <em class="phantom-promo__emphasis">escape room</em> hackathon in Philly.</h3>
+    <p class="phantom-promo__body">
+      Build creative projects for 50 hours, then spend 3 days solving puzzles in Philadelphia.
+    </p>
+    <p class="phantom-promo__note">Can't make it? Trade your hours for prizes at high rates.</p>
+    <%= link_to "Enter the void", URL,
+          class: "action-btn action-btn--primary action-btn--small phantom-promo__cta",
+          target: "_blank",
+          rel: "noopener" %>
+  </div>
+</section>

@@ -19,6 +19,9 @@ application.register("admin-ledger-chart", AdminLedgerChartController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import BlackHoleController from "./black_hole_controller";
+application.register("black-hole", BlackHoleController);
+
 import BukuActivityChartController from "./buku_activity_chart_controller";
 application.register("buku-activity-chart", BukuActivityChartController);
 
@@ -357,9 +360,6 @@ application.register("project-type", ProjectTypeController);
 
 import RatingDashboardChartController from "./rating_dashboard_chart_controller";
 application.register("rating-dashboard-chart", RatingDashboardChartController);
-
-import ReceiptPrinterController from "./receipt_printer_controller";
-application.register("receipt-printer", ReceiptPrinterController);
 
 import ReadMoreController from "./read_more_controller";
 application.register("read-more", ReadMoreController);
