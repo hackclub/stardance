@@ -65,16 +65,53 @@ class QueueControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr[data-queue-filter-name=?]", Shop::QueueSnapshot::HIDDEN_ITEM_LABEL.downcase
   end
 
+  test "folds mission-prize-only items into the anonymous row" do
+    prize = build_item("Unreleased Trophy", mission_prize_only: true)
+    build_order(prize, aasm_state: "pending", created_at: 1.hour.ago)
+
+    get queue_path
+
+    assert_response :success
+    assert_not_includes response.body, "Unreleased Trophy"
+    assert_select "tr[data-queue-filter-name=?]", Shop::QueueSnapshot::HIDDEN_ITEM_LABEL.downcase
+  end
+
+  test "folds accessories that cannot be bought on their own" do
+    accessory = build_item("Spare Nozzle", type: "ShopItem::Accessory")
+    ShopItemAttachment.create!(parent_item: @listed, accessory_item: accessory)
+    accessory.update!(buyable_by_self: false)
+    build_order(accessory, aasm_state: "pending", created_at: 1.hour.ago)
+
+    get queue_path
+
+    assert_response :success
+    assert_not_includes response.body, "Spare Nozzle"
+    assert_select "tr[data-queue-filter-name=?]", Shop::QueueSnapshot::HIDDEN_ITEM_LABEL.downcase
+  end
+
+  # A sold-out item still has people waiting on it, so it keeps its own row
+  # rather than disappearing into the anonymous one.
+  test "still names a disabled item that has orders in the queue" do
+    retired = build_item("Sold Out Kit")
+    build_order(retired, aasm_state: "pending", created_at: 1.hour.ago)
+    retired.update!(enabled: false)
+
+    get queue_path
+
+    assert_response :success
+    assert_select "tr[data-queue-filter-name=?]", "sold out kit"
+  end
+
   private
 
-  def build_item(name, unlisted: false)
+  def build_item(name, type: "ShopItem::ThirdPartyPhysical", **attributes)
     item = ShopItem.new(
       name: name,
       description: "test item",
       ticket_cost: 10,
-      type: "ShopItem::ThirdPartyPhysical",
+      type: type,
       enabled: true,
-      unlisted: unlisted
+      **attributes
     )
     item.image.attach(io: StringIO.new(PIXEL_PNG), filename: "px.png", content_type: "image/png")
     item.save!

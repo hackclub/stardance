@@ -30,9 +30,11 @@ module Shop
       [ "Over a week", nil, "salmon" ]
     ].freeze
 
-    # Items the shop doesn't list publicly — mission prizes, retired stock,
-    # drafts — still sit in the queue, but naming them here would leak them,
-    # so their rows fold into a single anonymous one.
+    # Items the shop doesn't list publicly — mission prizes, drafts,
+    # accessories that aren't sold on their own — still sit in the queue, but
+    # naming them here would leak them, so their rows fold into one anonymous
+    # row.
+    #
     HIDDEN_ITEM_LABEL = "Other items".freeze
 
     ItemRow = Struct.new(:name, :waiting, :review_hours, :fulfillment_hours, :sample, keyword_init: true)
@@ -100,7 +102,7 @@ module Shop
     def items
       @items ||= begin
         ids = (backlog_by_item.keys + review_stats.keys + fulfillment_stats.keys).compact.uniq
-        named = ShopItem.where(id: ids).listed.published.pluck(:id, :name).to_h
+        named = public_item_names(ids)
 
         rows = named.map { |id, name| item_row(name, [ id ]) }
         hidden_ids = ids - named.keys
@@ -112,6 +114,24 @@ module Shop
     end
 
     private
+
+    # The names this page is allowed to print, mirroring the public shop
+    # catalog (ShopItem.cached_shop_page_data) minus its `enabled` clause.
+    #
+    # `enabled` is deliberately left off: an order can only be created for an
+    # item that was enabled at the time (ShopOrder#check_item_enabled), so any
+    # name reaching this page was already public. Filtering on it would instead
+    # hide the rows of people whose orders are in the queue right now for
+    # something since sold out — the readers this page exists for.
+    def public_item_names(ids)
+      ShopItem.where(id: ids)
+              .listed
+              .published
+              .buyable_standalone
+              .where(mission_prize_only: false)
+              .pluck(:id, :name)
+              .to_h
+    end
 
     def backlog
       @backlog ||= ShopOrder.where(aasm_state: "pending").pluck(:shop_item_id, :created_at)
