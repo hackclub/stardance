@@ -1,6 +1,8 @@
 module User::HackatimeSync
   extend ActiveSupport::Concern
 
+  HACKATIME_BAN_REASON = "Automatically banned: User is banned on Hackatime".freeze
+
   def all_time_coding_seconds
     try_sync_hackatime_data!&.dig(:projects)&.values&.sum || 0
   end
@@ -44,12 +46,13 @@ module User::HackatimeSync
     return nil unless hackatime_identity
 
     result = HackatimeService.fetch_stats(hackatime_identity.uid, access_token: hackatime_identity.access_token)
-    return nil unless result
 
-    if result[:banned] && !banned?
+    if banned_on_hackatime?(result) && !banned?
       Rails.logger.warn "User #{id} (#{slack_id}) is banned on Hackatime, auto-banning"
-      ban!(reason: "Automatically banned: User is banned on Hackatime")
+      ban!(reason: HACKATIME_BAN_REASON)
     end
+
+    return nil unless result
 
     if result[:projects].any?
       User::HackatimeProject.insert_all(
@@ -73,5 +76,25 @@ module User::HackatimeSync
     return projects.none if project_names_with_time.empty?
 
     projects.where(name: project_names_with_time)
+  end
+
+  private
+
+  # a hackatime ban blocks the user's token, public stats might be off, so check this instead
+  def banned_on_hackatime?(stats)
+    return stats[:banned] if stats
+
+    trust_level = HackatimeService.fetch_trust_level(hackatime_identity.uid)
+    report_unknown_hackatime_ban_status if trust_level.nil?
+    trust_level == "red"
+  end
+
+  def report_unknown_hackatime_ban_status
+    Sentry.capture_message(
+      "Could not determine Hackatime ban status",
+      level: :error,
+      fingerprint: [ "hackatime-ban-status-unknown" ],
+      extra: { user_id: id, hackatime_uid: hackatime_identity&.uid }
+    )
   end
 end

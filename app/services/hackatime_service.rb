@@ -76,6 +76,47 @@ class HackatimeService
       nil
     end
 
+    # works in all circumstances, even if the user is banned (api locked) and has private data
+    def fetch_trust_level(hackatime_uid)
+      return nil if hackatime_uid.blank?
+
+      response = connection.get("users/#{hackatime_uid}/trust_factor")
+      if response.success?
+        JSON.parse(response.body)["trust_level"]
+      else
+        Rails.logger.error "HackatimeService trust_factor error: #{response.status} - #{response.body}"
+        nil
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService trust_factor timeout: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "HackatimeService trust_factor exception: #{e.message}"
+      nil
+    end
+
+    # raw trust levels from Hackatime (admin batch api, fast, max 2000 uids)
+    def fetch_trust_levels(hackatime_uids)
+      return {} if hackatime_uids.blank?
+
+      response = admin_connection.get("user/info_batch", ids: hackatime_uids.join(",")) do |req|
+        req.headers["Authorization"] = "Bearer #{ENV["HACKATIME_ADMIN_KEY"]}"
+      end
+
+      if response.success?
+        JSON.parse(response.body).fetch("users").to_h { |user| [ user["id"].to_s, user["trust_level"] ] }
+      else
+        Rails.logger.error "HackatimeService user/info_batch error: #{response.status} - #{response.body}"
+        nil
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService user/info_batch timeout: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "HackatimeService user/info_batch exception: #{e.message}"
+      nil
+    end
+
     def fetch_total_seconds_for_projects(hackatime_uid, project_keys, start_date: START_DATE, end_date: nil, access_token: nil)
       return nil if hackatime_uid.blank? || project_keys.blank?
 
