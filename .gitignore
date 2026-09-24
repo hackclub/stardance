@@ -80,6 +80,3 @@ vendor
 .venv
 
 staff-search
-
-# Local hardware experiment, not part of Stardance.
-/tools/goon-detector/
