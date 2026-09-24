@@ -15,6 +15,8 @@ class Admin::MegaDashboardControllerTest < ActionDispatch::IntegrationTest
     assert_match(/[A-Z][a-z]+ [A-Z][a-z]+ [A-Z][a-z]+ Dashboard/, response.body)
     assert_match "mega-dash-overview", response.body
     assert_match "mega-dash-waterfall", response.body
+    assert_select "turbo-frame#mega-dash-mihis", count: 0
+    assert_no_match "Daily active mihis", response.body
     Admin::MegaDashboard::Queue.keys.each do |key|
       assert_match "mega-dash-queue-#{key}", response.body
     end
@@ -103,6 +105,14 @@ class Admin::MegaDashboardControllerTest < ActionDispatch::IntegrationTest
     sign_in @admin
 
     get admin_mega_dashboard_section_path(section: "nope")
+
+    assert_response :bad_request
+  end
+
+  test "removed mihis section is unavailable" do
+    sign_in @admin
+
+    get admin_mega_dashboard_section_path(section: "mihis")
 
     assert_response :bad_request
   end

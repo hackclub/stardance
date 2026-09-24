@@ -33,15 +33,7 @@ class MihiActivationTest < ActiveSupport::TestCase
       next_day = MihiActivation.record!(user: user, now: now + 2.minutes)
       assert_not_equal first.id, next_day.id
     end
-    stats = Admin::MegaDashboard::MihiStats.new(period: "7", now: now + 2.minutes).to_h
-    assert_equal 1, stats[:today]
-    assert_equal 1, stats[:unique_users]
-    assert_equal 3, stats[:total]
-    assert_equal 2, stats[:daily_totals]["2026-09-16"]
-    assert_equal 7, stats[:daily].size
-    assert_equal 0, stats[:daily]["2026-09-15"]
-    assert_equal 1, stats[:daily]["2026-09-16"]
-    assert_equal 1, stats[:daily]["2026-09-17"]
+    assert_equal 2, MihiActivation.where(user: user).count
   end
 
   test "anonymous users and disabled flags cannot record activations" do
