@@ -152,36 +152,44 @@ module Shop
     # Time from order placed to reviewer verdict, whichever way the verdict
     # went — an order rejected after an hour and one approved after an hour
     # cost the buyer the same wait.
+    #
+    # The SQL is spelled out here rather than passed into a shared builder so
+    # every fragment is a literal or a constant Brakeman can resolve; nothing
+    # user-supplied reaches the query.
     def review_stats
-      @review_stats ||= turnaround(
-        ShopOrder.where("#{ShopOrder::DECIDED_AT_SQL} >= ?", @now - REVIEW_WINDOW),
-        ShopOrder::DECIDED_AT_SQL
+      @review_stats ||= tally(
+        ShopOrder
+          .where("#{ShopOrder::DECIDED_AT_SQL} >= ?", @now - REVIEW_WINDOW)
+          .where("#{ShopOrder::DECIDED_AT_SQL} > shop_orders.created_at")
+          .group(:shop_item_id)
+          .pluck(Arel.sql(
+            "shop_orders.shop_item_id, COUNT(*), " \
+            "AVG(EXTRACT(EPOCH FROM (#{ShopOrder::DECIDED_AT_SQL} - shop_orders.created_at)))"
+          ))
       )
     end
 
     # Time from order placed to the item actually going out, which is the
     # number a buyer cares about: review plus packing plus dispatch.
     def fulfillment_stats
-      @fulfillment_stats ||= turnaround(
-        ShopOrder.where(fulfilled_at: (@now - FULFILLMENT_WINDOW)..),
-        "fulfilled_at"
+      @fulfillment_stats ||= tally(
+        ShopOrder
+          .where(fulfilled_at: (@now - FULFILLMENT_WINDOW)..)
+          .where("shop_orders.fulfilled_at > shop_orders.created_at")
+          .group(:shop_item_id)
+          .pluck(Arel.sql(
+            "shop_orders.shop_item_id, COUNT(*), " \
+            "AVG(EXTRACT(EPOCH FROM (shop_orders.fulfilled_at - shop_orders.created_at)))"
+          ))
       )
     end
 
-    # => { shop_item_id => [order_count, average_seconds] }
+    # Shapes the grouped rows above into { shop_item_id => [count, avg_seconds] }.
     #
-    # Orders whose end timestamp precedes their creation are excluded rather
-    # than averaged in: backfills and out-of-order state stamps both produce
-    # them, and one is enough to drag an item's average negative.
-    def turnaround(scope, finished_at_sql)
-      rows = scope.where("#{finished_at_sql} > shop_orders.created_at")
-                  .group(:shop_item_id)
-                  .pluck(Arel.sql(<<~SQL.squish))
-                    shop_orders.shop_item_id,
-                    COUNT(*),
-                    AVG(EXTRACT(EPOCH FROM (#{finished_at_sql} - shop_orders.created_at)))
-                  SQL
-
+    # Both queries drop orders whose end timestamp precedes their creation
+    # rather than averaging them in: backfills and out-of-order state stamps
+    # both produce those, and one is enough to drag an item's average negative.
+    def tally(rows)
       rows.to_h { |item_id, count, seconds| [ item_id, [ count, seconds.to_f ] ] }
     end
 
