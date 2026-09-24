@@ -1,4 +1,4 @@
-<li class="queue__stat queue__stat--<%= tone %>">
+<li class="queue__stat queue__stat--<%= tone %> <%= "queue__stat--lead" if local_assigns[:lead] %>">
   <span class="queue__stat-value"><%= value %></span>
   <span class="queue__stat-label"><%= label %></span>
   <% if local_assigns[:note].present? %>
