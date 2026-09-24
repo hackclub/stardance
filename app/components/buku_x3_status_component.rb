@@ -28,7 +28,10 @@ class BukuX3StatusComponent < ViewComponent::Base
   end
   def role_name = buku? ? "buku buku" : "bean"
   def icon = "events/bukux3/#{buku? ? 'buku' : 'bean'}.png"
-  def reminder = "your hours will #{buku? ? 'destroy' : 'repair'} the spaceship"
+  def reminder
+    buku? ? "your objective is to destroy the ship - every hour you code contributes to the downfall of the beans and tears stardance apart" :
+      "your hours will repair the spaceship"
+  end
   def percent = event&.percent || BukuX3::Event::STARTING_PERCENT
   def marker_position = 100 - percent
   def display_percent = helpers.number_with_precision(percent, precision: 1, strip_insignificant_zeros: true)

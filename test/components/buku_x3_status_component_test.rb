@@ -32,7 +32,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     assert_selector ".buku-x3-status__role", text: "you're a buku buku"
     assert_selector "button.buku-x3-status__toggle[aria-label='show your event role'][aria-pressed='false']"
     assert_selector "img[src*='events/bukux3/buku']"
-    assert_selector ".buku-x3-status__reminder", exact_text: "your hours will destroy the spaceship"
+    assert_selector ".buku-x3-status__reminder", exact_text: "your objective is to destroy the ship - every hour you code contributes to the downfall of the beans and tears stardance apart"
     assert_selector "[role='meter'][aria-valuenow='25.0'][aria-valuemax='100'][style='--tug-position: 75.0%']"
     assert_selector ".buku-x3-status__team--buku img[src*='bukux3/buku-pulling'][width='2752'][height='2064']"
     assert_selector ".buku-x3-status__team--bean img[src*='bukux3/bean-pulling'][width='2752'][height='2064']"

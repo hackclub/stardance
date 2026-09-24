@@ -146,7 +146,7 @@
           <%= check_box_tag :particle_effects_enabled, "1", preference.particle_effects_enabled?, id: "particle_effects_enabled" %>
           <span>Show disintegration particles</span>
         </label>
-        <small class="settings-form__hint">Turn off drifting particles while keeping the event damage and cursor repair effect</small>
+        <small class="settings-form__hint">Turn off drifting particles</small>
       </div>
 
       <% if user.slack_id.present? %>
