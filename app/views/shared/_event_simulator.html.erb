@@ -1,0 +1,38 @@
+<%# locals: (particles_enabled: true) %>
+<details class="event-simulator">
+  <summary class="event-simulator__toggle">event simulator · local only</summary>
+  <form class="event-simulator__controls" data-blackhole-target="simulatorForm" data-action="input->blackhole#simulate submit->blackhole#simulate">
+    <p class="event-simulator__hint">browser-only preview · no real hours or roles are changed</p>
+    <p class="event-simulator__status" role="status" data-blackhole-target="simulatorStatus">live event values</p>
+    <label class="event-simulator__field">damage (%)
+      <input type="range" name="damage" min="0" max="100" step="1" value="25">
+    </label>
+    <label class="event-simulator__field">buku hours
+      <input type="number" name="buku" min="0" step="50" value="0">
+    </label>
+    <label class="event-simulator__field">bean hours
+      <input type="number" name="bean" min="0" step="50" value="0">
+    </label>
+    <p class="event-simulator__hint">team hours start from 25% damage · 50 hours move it by 1%</p>
+    <label class="event-simulator__field">visual intensity (%)
+      <input type="range" name="strength" min="0" max="200" step="5" value="100">
+    </label>
+    <label class="event-simulator__field">particles
+      <%= check_box_tag :particles, "1", particles_enabled, disabled: !particles_enabled %>
+    </label>
+    <% unless particles_enabled %>
+      <p class="event-simulator__hint">particles are disabled in your user settings</p>
+    <% end %>
+    <label class="event-simulator__field">cursor repair radius
+      <input type="checkbox" name="cursorRepair" checked>
+    </label>
+    <div class="event-simulator__actions">
+      <button type="button" data-action="blackhole#simulate">apply preview</button>
+      <button type="button" data-action="blackhole#resetSimulation">restore live values</button>
+    </div>
+    <div class="event-simulator__actions">
+      <%= link_to "preview buku", home_path(buku_preview: "buku") %>
+      <%= link_to "preview bean", home_path(buku_preview: "bean") %>
+    </div>
+  </form>
+</details>

@@ -109,6 +109,54 @@ class RocketProgressTest < ActiveSupport::TestCase
     assert_equal 0, RocketProgress.snapshot(user: @owner).user_hours
   end
 
+  test "contributor export groups ships and net hours into one row per user" do
+    review = reviewed_ship(minutes: 180, at: @in_window)
+    deduct!(review, minutes: 30)
+    reviewed_ship(minutes: 60, at: @in_window)
+
+    rows = CSV.parse(RocketProgress::ContributorExport.new.to_csv, headers: true)
+    assert_equal RocketProgress::ContributorExport::HEADERS, rows.headers
+    assert_equal 1, rows.length
+    assert_equal @owner.id.to_s, rows.first["user_id"]
+    assert_equal @owner.display_name, rows.first["username"]
+    assert_equal @owner.slack_id, rows.first["slack_id"]
+    assert_equal "2", rows.first["counted_ships"]
+    assert_equal "3.5", rows.first["approved_hours"]
+  end
+
+  test "contributor export includes the full last eastern day and late approvals" do
+    finish = RocketProgress::ContributorExport::WINDOW.end
+    reviewed_ship(minutes: 600, at: RocketProgress::WINDOW_START - 1.second)
+    reviewed_ship(minutes: 60, at: RocketProgress::WINDOW_START)
+    late = reviewed_ship(minutes: 60, at: finish - 1.second)
+    late.update_columns(reviewed_at: finish + 2.days)
+    reviewed_ship(minutes: 600, at: finish)
+
+    row = RocketProgress::ContributorExport.new.rows.sole
+    assert_equal 2, row[3]
+    assert_equal 2.0, row[4]
+  end
+
+  test "contributor export excludes banned users, below-floor approvals and zero net hours" do
+    reviewed_ship(minutes: 20, approved: 5, at: @in_window)
+    zero = reviewed_ship(minutes: 60, at: @in_window)
+    deduct!(zero, minutes: 60)
+    banned = create_user(slack_id: "U_EXPORT_BANNED", display_name: "banned-export", verified: true)
+    reviewed_ship(minutes: 60, at: @in_window, user: banned)
+    banned.update_columns(banned: true)
+
+    export = RocketProgress::ContributorExport.new
+    assert_empty export.rows
+    assert_equal [ RocketProgress::ContributorExport::HEADERS ], CSV.parse(export.to_csv)
+  end
+
+  test "contributor csv escapes spreadsheet formulas and quotes names correctly" do
+    reviewed_ship(minutes: 60, at: @in_window)
+    @owner.update_columns(display_name: "=HYPERLINK(\"https://example.test\",\"hi\")")
+    row = CSV.parse(RocketProgress::ContributorExport.new.to_csv, headers: true).first
+    assert_equal "'#{@owner.reload.display_name}", row["username"]
+  end
+
   private
     # An approved YSWS review with one reviewed devlog, whose ship event was
     # posted (created_at) at `at` — the timestamp RocketProgress windows

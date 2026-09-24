@@ -649,6 +649,7 @@ Rails.application.routes.draw do
     root to: "application#index"
     resource :buku_x3_event, only: :update
     get "jim_takeover", to: "buku_x3_events#show", as: :jim_takeover
+    post "jim_takeover/bukux2_contributors", to: "buku_x3_events#export_bukux2", as: :bukux2_contributors_export
     get "dashboard/counts/:key", to: "dashboard_counts#show", as: :dashboard_count
 
     resource :funnel, only: [ :show ], controller: "funnel"

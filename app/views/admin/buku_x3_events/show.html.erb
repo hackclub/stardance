@@ -43,6 +43,15 @@
   </section>
 
   <% if policy(:admin).manage_buku_event? %>
+    <section aria-labelledby="bukux2-export-heading">
+      <h2 id="bukux2-export-heading">bukux2 contributors</h2>
+      <p class="admin-dashboard__metric-note">ships from september 3–24, 2026 inclusive · eastern time · users with positive net approved hours under bukux2 rules</p>
+      <p class="admin-dashboard__metric-note">uses current approvals and fraud deductions, including late approvals · one row per user with username, slack id, counted ships, and approved hours</p>
+      <%= button_to "download bukux2 contributors csv", admin_bukux2_contributors_export_path,
+                    method: :post, class: "btn-primary", form: { data: { turbo: false } } %>
+      <%= link_to "view export audit history", admin_audit_logs_path(event: "export_bukux2_contributors") %>
+    </section>
+
     <section class="admin-dashboard__event-controls" aria-labelledby="buku-intensity-heading">
       <h2 id="buku-intensity-heading">disintegration intensity</h2>
       <p>visual effect only · does not change team hours or the tug-of-war score</p>

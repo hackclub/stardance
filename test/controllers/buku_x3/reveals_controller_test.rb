@@ -11,6 +11,55 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
 
   teardown { Flipper.disable(:bukux3) }
 
+  test "simulator is available only on local development hosts" do
+    host! "localhost"
+    get home_path
+    assert_select ".event-simulator", count: 0
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("development")) do
+      get home_path
+      assert_select ".event-simulator", count: 1
+      assert_select "[data-blackhole-simulator-enabled-value='true']", count: 1
+      host! "stardance.example"
+      get home_path
+      assert_select ".event-simulator", count: 0
+    end
+  end
+
+  test "local simulator is usable without enabling the event flag" do
+    Flipper.disable(:bukux3)
+    host! "localhost"
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("development")) do
+      get home_path
+      assert_select ".event-simulator", count: 1
+      assert_select "[data-blackhole-intensity-value='0'][data-blackhole-progress-url-value='']", count: 1
+    end
+  end
+
+  test "local simulator respects the particle preference saved through settings" do
+    host! "localhost"
+    sign_in(@user)
+    patch my_settings_path, params: { particle_effects_enabled: "0" }
+    assert_redirected_to root_path
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("development")) do
+      get home_path
+      assert_response :success
+      assert_select "[data-blackhole-particles-enabled-value='false']", count: 1
+      assert_select ".event-simulator input[name='particles'][disabled]:not([checked])", count: 1
+    end
+  end
+
+  test "dashboard renders the saved particle preference without disabling damage" do
+    @user.update!(things_dismissed: %w[bukux3_intro bukux3_role_reveal])
+    [ false, true ].each do |enabled|
+      @user.preference.update!(particle_effects_enabled: enabled)
+      get home_path
+      assert_response :success
+      assert_select ".blackhole[data-blackhole-particles-enabled-value='#{enabled}'][data-blackhole-awaiting-reveal-value='false']", count: 1
+      assert_select "input#particle_effects_enabled[type='checkbox']", count: 1
+      assert_select "input#particle_effects_enabled[checked]", count: enabled ? 1 : 0
+    end
+  end
+
   test "first load contains only the explanation, never a prefetched role" do
     BukuX3::Assignment.stub(:buku?, ->(_) { flunk "role must wait until after intro" }) do
       get home_path

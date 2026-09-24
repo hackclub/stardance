@@ -12,19 +12,19 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
     Flipper.disable(:blackhole)
   end
 
-  test "development pages have no event test buttons or simulator panels" do
+  test "non-local development pages have no event test buttons or simulator panels" do
     sign_in(@user)
     Flipper.enable(:blackhole)
     Rails.env.stub(:development?, true) do
       get home_path
       assert_response :success
-      assert_select ".blackhole, .buku-x3-preview, .buku-x3-simulator, .blackhole__panel", count: 0
+      assert_select ".blackhole, .buku-x3-preview, .event-simulator, .blackhole__panel", count: 0
 
       Flipper.enable(:bukux3)
       get home_path
       assert_response :success
       assert_select ".blackhole", count: 1
-      assert_select ".buku-x3-preview, .buku-x3-simulator, .blackhole__panel", count: 0
+      assert_select ".buku-x3-preview, .event-simulator, .blackhole__panel", count: 0
     end
   end
 

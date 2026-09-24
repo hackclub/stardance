@@ -18,4 +18,22 @@ class Admin::BukuX3EventsController < Admin::ApplicationController
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_jim_takeover_path, alert: e.record.errors.full_messages.to_sentence, status: :see_other
   end
+
+  def export_bukux2
+    authorize :admin, :manage_buku_event?
+    export = RocketProgress::ContributorExport.new
+    csv = export.to_csv
+    PaperTrail::Version.create!(
+      item_type: "User", item_id: current_user.id, event: "export_bukux2_contributors",
+      whodunnit: current_user.id.to_s,
+      object_changes: {
+        report: [ nil, "bukux2 contributors" ],
+        ship_window_start: [ nil, RocketProgress::ContributorExport::WINDOW.begin.iso8601 ],
+        ship_window_end_exclusive: [ nil, RocketProgress::ContributorExport::WINDOW.end.iso8601 ],
+        exported_users: [ nil, export.rows.size ]
+      }
+    )
+    response.headers["Cache-Control"] = "no-store"
+    send_data csv, filename: "bukux2-contributors-through-2026-09-24.csv", type: "text/csv; charset=utf-8", disposition: "attachment"
+  end
 end

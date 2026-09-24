@@ -1,11 +1,14 @@
-<%# locals: (intensity: 0, progress_url: nil, awaiting_reveal: false, visual_intensity: 100) %>
+<%# locals: (intensity: 0, progress_url: nil, awaiting_reveal: false, visual_intensity: 100, particles_enabled: true, simulator: false) %>
 <div class="blackhole" data-controller="blackhole" data-mihi-mode-ignore
      data-blackhole-intensity-value="<%= intensity %>"
      data-blackhole-visual-intensity-value="<%= visual_intensity %>"
+     data-blackhole-particles-enabled-value="<%= particles_enabled %>"
+     data-blackhole-simulator-enabled-value="<%= simulator %>"
      data-blackhole-awaiting-reveal-value="<%= awaiting_reveal %>"
      data-action="buku-x3-reveal:complete@window->blackhole#revealComplete buku-x3-reveal:preview-complete@window->blackhole#revealComplete"
      data-blackhole-progress-url-value="<%= progress_url %>">
   <svg class="blackhole__masks" aria-hidden="true" width="0" height="0" data-blackhole-target="masks"><defs></defs></svg>
   <div class="blackhole__text" aria-hidden="true" inert data-blackhole-target="text"></div>
   <canvas class="blackhole__dust" aria-hidden="true" data-blackhole-target="canvas"></canvas>
+  <%= render "shared/event_simulator", particles_enabled: particles_enabled if simulator %>
 </div>

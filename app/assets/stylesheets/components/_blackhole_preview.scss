@@ -1,3 +1,68 @@
+.event-simulator {
+  position: fixed;
+  right: var(--space-m);
+  bottom: var(--space-m);
+  z-index: 9998;
+  width: min(360px, calc(100vw - 2 * var(--space-m)));
+  max-height: 80dvh;
+  overflow: auto;
+  border: 2px solid var(--color-brand-lilac);
+  border-radius: 8px;
+  background: var(--color-set-1-bg);
+  color: var(--color-space-text);
+  font-size: var(--font-size-m);
+
+  &__toggle {
+    padding: var(--space-m);
+    cursor: pointer;
+  }
+  &__controls {
+    padding: 0 var(--space-m) var(--space-m);
+    display: grid;
+    gap: var(--space-s);
+  }
+  &__field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+  &__field input {
+    max-width: 45%;
+    accent-color: var(--color-brand-lilac);
+  }
+  &__field input[type="number"] {
+    background: var(--color-set-2-bg);
+    color: inherit;
+    border: 1px solid var(--color-set-2-fg-secondary);
+    border-radius: 8px;
+    padding: var(--space-xxs);
+  }
+  &__hint {
+    color: var(--color-set-1-fg-secondary);
+    margin: 0;
+  }
+  &__status {
+    color: var(--color-brand-lilac);
+    margin: 0;
+  }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+  &__actions button,
+  &__actions a {
+    cursor: pointer;
+    border: 1px solid var(--color-brand-lilac);
+    border-radius: 999px;
+    background: var(--color-set-2-bg);
+    color: inherit;
+    padding: var(--space-xxs) var(--space-xs);
+    font: inherit;
+  }
+}
+
 .blackhole {
   &__masks {
     position: absolute;

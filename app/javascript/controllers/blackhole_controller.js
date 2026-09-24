@@ -4,12 +4,18 @@ import { Delaunay } from "d3";
 const CARD_SURFACES =
   ".feed-post-card, .feed-composer, .rocket-progress, .rail-widget, .raffle-widget, .sidebar__logo-img, .sidebar__user-card";
 const MEDIA_CONTENT = "img, video, iframe, svg";
+const SIDEBAR_SURFACES = [
+  "#primary-nav",
+  ".sidebar__logo-img",
+  ".sidebar__user-card",
+];
 // Story scenes must remain intact even at 100% damage, including previews
 // inserted into the page after the effect has already started.
 const EXCLUDED_SCENES = ".visual-novel, .buku-x3-reveal";
 const PROTECTED_CONTENT =
   "a:not(.feed-post-card__overlay-link), button, input, textarea, select, summary, img, video, iframe, svg, [role='progressbar'], [role='meter'], [contenteditable]";
 const SVG_NS = "http://www.w3.org/2000/svg";
+const SIMULATOR_KEY = "stardance-event-simulator-v1";
 const clamp = (n, min = 0, max = 1) => Math.min(max, Math.max(min, n));
 const random = (x, y, seed = 0) => {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
@@ -36,11 +42,36 @@ export default class extends Controller {
     visualIntensity: { type: Number, default: 100 },
     progressUrl: String,
     awaitingReveal: Boolean,
+    particlesEnabled: { type: Boolean, default: true },
+    simulatorEnabled: Boolean,
   };
 
-  static targets = ["masks", "canvas", "text"];
+  static targets = [
+    "masks",
+    "canvas",
+    "text",
+    "simulatorForm",
+    "simulatorStatus",
+  ];
 
   connect() {
+    this.simulation = null;
+    if (this.simulatorEnabledValue && this.hasSimulatorFormTarget) {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(SIMULATOR_KEY));
+        if (saved) {
+          for (const field of this.simulatorFormTarget.elements) {
+            if (field.disabled || !(field.name in saved)) continue;
+            if (field.type === "checkbox")
+              field.checked = saved[field.name] === true;
+            else field.value = saved[field.name];
+          }
+          this.readSimulation();
+        }
+      } catch {
+        /* Storage may be unavailable; the preview still works. */
+      }
+    }
     this.repairRadius = 145;
     this.pointer = null;
     this.level = 0;
@@ -117,7 +148,13 @@ export default class extends Controller {
     });
     this.surfaceResize = new ResizeObserver(this.invalidate);
     this.sizeCanvas();
-    this.setIntensity(this.intensityValue);
+    this.setIntensity(this.intensityValue, { immediate: true });
+    if (this.simulatorEnabledValue) {
+      // Status controllers elsewhere on the page connect in the same turn.
+      this.simulatorFrame = requestAnimationFrame(() =>
+        this.setIntensity(this.latestIntensity),
+      );
+    }
     if (this.progressUrlValue) {
       this.pollTimer = window.setInterval(() => this.refreshProgress(), 60000);
       this.refreshProgress();
@@ -125,6 +162,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    cancelAnimationFrame(this.simulatorFrame);
     this.stopPolling();
     this.reset();
     this.observer.disconnect();
@@ -183,19 +221,22 @@ export default class extends Controller {
     }
   }
 
-  setIntensity(value) {
+  setIntensity(value, { immediate = false } = {}) {
     if (!Number.isFinite(value)) return;
     this.latestIntensity = value;
     this.sceneBlocked = this.scenesBlocked();
-    const damage = clamp(value / 100);
+    const damage = clamp((this.simulation?.damage ?? value) / 100);
     // Scale the visuals without changing the score sent to the tug-of-war.
-    const strength = (this.visualIntensityValue ?? 100) / 100;
+    const strength =
+      (this.simulation?.strength ?? this.visualIntensityValue ?? 100) / 100;
     this.requested = clamp(damage * strength);
-    if (this.progressUrlValue) {
+    if (this.progressUrlValue || this.simulatorEnabledValue) {
       this.dispatch("progress", {
         detail: {
           percent: damage * 100,
-          hours: this.teamHours,
+          hours: this.simulation
+            ? { buku: this.simulation.buku, bean: this.simulation.bean }
+            : this.teamHours,
         },
       });
     }
@@ -203,14 +244,71 @@ export default class extends Controller {
       this.reset();
       return;
     }
-    this.dirty = true;
+    // Navigation restores the current damage, not a fresh destruction scene.
+    // Live updates and the first role reveal still ease into their new level.
+    if (immediate) {
+      this.level = this.requested;
+      this.cutSurfaces(false);
+    }
+    this.dirty = !immediate;
     this.wake();
   }
 
   scenesBlocked() {
     return (
-      this.awaitingRevealValue || !!document.querySelector(EXCLUDED_SCENES)
+      (this.awaitingRevealValue && !this.simulation) ||
+      !!document.querySelector(EXCLUDED_SCENES)
     );
+  }
+
+  readSimulation() {
+    const fields = this.simulatorFormTarget.elements;
+    const number = (name, max) =>
+      clamp(Number(fields.namedItem(name).value) || 0, 0, max);
+    this.simulation = {
+      damage: number("damage", 100),
+      buku: number("buku", 1000000),
+      bean: number("bean", 1000000),
+      strength: number("strength", 200),
+      particles: fields.namedItem("particles").checked,
+      cursorRepair: fields.namedItem("cursorRepair").checked,
+    };
+    this.simulatorStatusTarget.textContent = `${this.simulation.damage}% damaged · ${this.simulation.strength}% visual intensity · preview active`;
+  }
+
+  simulate(event) {
+    event.preventDefault();
+    if (!this.simulatorEnabledValue || !this.hasSimulatorFormTarget) return;
+    const fields = this.simulatorFormTarget.elements;
+    if (["buku", "bean"].includes(event.target.name)) {
+      const buku = Math.max(0, Number(fields.namedItem("buku").value) || 0);
+      const bean = Math.max(0, Number(fields.namedItem("bean").value) || 0);
+      fields.namedItem("damage").value = clamp(25 + (buku - bean) / 50, 0, 100);
+    }
+    this.readSimulation();
+    this.particles = [];
+    this.dustBudget = 0;
+    try {
+      sessionStorage.setItem(SIMULATOR_KEY, JSON.stringify(this.simulation));
+    } catch {
+      /* Optional storage. */
+    }
+    this.setIntensity(this.latestIntensity);
+  }
+
+  resetSimulation() {
+    if (!this.simulatorEnabledValue) return;
+    this.simulation = null;
+    this.particles = [];
+    this.simulatorFormTarget.reset();
+    this.simulatorStatusTarget.textContent = "live event values";
+    try {
+      sessionStorage.removeItem(SIMULATOR_KEY);
+    } catch {
+      /* Optional storage. */
+    }
+    this.setIntensity(this.latestIntensity);
+    if (this.progressUrlValue) this.refreshProgress();
   }
 
   revealComplete() {
@@ -259,7 +357,11 @@ export default class extends Controller {
     this.emitAmbientDust(dt);
     this.draw(dt);
     if (
-      (this.level > 0 ||
+      ((this.level > 0 &&
+        this.particlesEnabledValue &&
+        this.simulation?.particles !== false) ||
+        this.repairActive ||
+        this.repairDirty ||
         this.level !== this.requested ||
         this.particles.length) &&
       !this.reducedMotion.matches
@@ -313,12 +415,20 @@ export default class extends Controller {
         path,
         original: element.style.getPropertyValue("clip-path"),
         priority: element.style.getPropertyPriority("clip-path"),
-        seed: this.surfaces.size * 31,
+        seed: this.surfaceSeed(element),
         card: cards.includes(element),
       });
       element.style.setProperty("clip-path", `url(#${clip.id})`);
       this.surfaceResize.observe(element);
     }
+  }
+
+  surfaceSeed(element) {
+    // Permanent sidebar fragments must not depend on the current page's cards.
+    const index = SIDEBAR_SURFACES.findIndex((selector) =>
+      element.matches(selector),
+    );
+    return index < 0 ? this.surfaces.size * 31 : -(index + 1) * 31;
   }
 
   cutSurfaces(emit) {
@@ -374,7 +484,7 @@ export default class extends Controller {
       surface.path.setAttribute("d", path);
       if (this.level > 0.82) this.drawDamagedText(element, rect, path, surface);
     }
-    if (emit && !this.reducedMotion.matches) this.emitDust(35);
+    if (emit && !this.reducedMotion.matches) this.emitDust(8);
   }
 
   localRect(rect, surfaceRect, padding = 5) {
@@ -665,6 +775,7 @@ export default class extends Controller {
   }
 
   repairStrength(cell, rect) {
+    if (this.simulation?.cursorRepair === false) return 0;
     const distance = this.pointer
       ? Math.hypot(
           cell.cx + rect.left - this.pointer.x,
@@ -690,18 +801,30 @@ export default class extends Controller {
   }
 
   emitAmbientDust(dt) {
-    if (!this.level || this.reducedMotion.matches) return;
+    if (
+      !this.particlesEnabledValue ||
+      this.simulation?.particles === false ||
+      !this.level ||
+      this.reducedMotion.matches
+    )
+      return;
     // Fractional particles accumulate, so even 1% emits a gentle trickle.
     // The rate is per second, independent of the display's refresh rate.
-    this.dustBudget = (this.dustBudget || 0) + dt * this.level * 180;
+    this.dustBudget = (this.dustBudget || 0) + dt * this.level * 45;
     const count = Math.floor(this.dustBudget);
     this.dustBudget -= count;
     this.emitDust(count);
   }
 
   emitDust(count) {
+    if (
+      !this.particlesEnabledValue ||
+      this.simulation?.particles === false ||
+      this.reducedMotion.matches
+    )
+      return;
     if (!this.fringe?.length && !this.dustBounds?.length) return;
-    for (let i = 0; i < count && this.particles.length < 1200; i++) {
+    for (let i = 0; i < count && this.particles.length < 180; i++) {
       let source = this.fringe[Math.floor(Math.random() * this.fringe.length)];
       if (!source) {
         // When no fragment is mid-break (including total decay), let residual
@@ -718,11 +841,11 @@ export default class extends Controller {
         y: source.y,
         vx: 15 + Math.random() * 35,
         vy: -12 - Math.random() * 25,
-        size: 1.8 + Math.random() ** 1.5 * 6.5,
+        size: 1 + Math.random() ** 1.5 * 3,
         angle: Math.random() * Math.PI,
         spin: Math.random() * 3 - 1.5,
         age: 0,
-        life: 2.4 + Math.random() * 2,
+        life: 1.5 + Math.random(),
         color: this.particleColor,
       });
     }
@@ -731,7 +854,13 @@ export default class extends Controller {
   draw(dt) {
     const ctx = this.canvasContext;
     ctx.clearRect(0, 0, this.width, this.height);
-    if (!this.level || this.reducedMotion.matches) return;
+    if (
+      !this.particlesEnabledValue ||
+      this.simulation?.particles === false ||
+      !this.level ||
+      this.reducedMotion.matches
+    )
+      return;
     this.particles = this.particles.filter((p) => p.age < p.life);
     for (const p of this.particles) {
       p.age += dt;
@@ -744,7 +873,9 @@ export default class extends Controller {
       ctx.translate(p.x, p.y);
       ctx.rotate(p.angle + p.age * p.spin);
       ctx.globalAlpha =
-        Math.min(p.age * 10, 1) * clamp((p.life - p.age) / (p.life * 0.65));
+        0.55 *
+        Math.min(p.age * 10, 1) *
+        clamp((p.life - p.age) / (p.life * 0.65));
       ctx.fillStyle = p.color;
       const scale = p.size * (1 - (p.age / p.life) * 0.45);
       ctx.fillRect(-scale / 2, -scale / 2, scale, scale * 0.65);

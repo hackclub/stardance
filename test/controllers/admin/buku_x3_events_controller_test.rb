@@ -25,6 +25,65 @@ class Admin::BukuX3EventsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "visual_intensity"
   end
 
+  test "admin pages never render disintegration or the local simulator" do
+    host! "localhost"
+    sign_in @admin
+    Flipper.enable(:bukux3)
+    @admin.update!(onboarded_at: Time.current, things_dismissed: %w[bukux3_intro bukux3_role_reveal])
+    @event.update!(destruction_minutes: BukuX3::Event::MAX_DESTRUCTION_MINUTES)
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("development")) do
+      # Missions deliberately uses the application layout instead of admin.
+      [ admin_root_path, admin_jim_takeover_path, admin_missions_path, admin_audit_logs_path ].each do |path|
+        get path
+        assert_response :success
+        assert_select "[data-controller~='blackhole'], .event-simulator", count: 0
+      end
+      get home_path
+      assert_response :success
+      assert_select "[data-controller~='blackhole']", count: 1
+    end
+  ensure
+    Flipper.disable(:bukux3)
+  end
+
+  test "admins can download an uncached csv with an accessible attributed audit entry" do
+    sign_in @admin
+    assert_difference "PaperTrail::Version.where(event: 'export_bukux2_contributors').count", 1 do
+      post admin_bukux2_contributors_export_path
+    end
+    assert_response :success
+    assert_equal "text/csv", response.media_type
+    assert_equal "no-store", response.headers["Cache-Control"]
+    assert_includes response.headers["Content-Disposition"], "attachment"
+    assert_includes response.headers["Content-Disposition"], "bukux2-contributors-through-2026-09-24.csv"
+    assert_equal RocketProgress::ContributorExport::HEADERS, CSV.parse(response.body).first
+    version = PaperTrail::Version.where(event: "export_bukux2_contributors").last
+    assert_equal @admin.id.to_s, version.whodunnit
+    assert_equal [ nil, 0 ], version.changeset["exported_users"]
+    get admin_audit_logs_path(event: "export_bukux2_contributors")
+    assert_response :success
+    assert_includes response.body, "export_bukux2_contributors"
+  end
+
+  test "export authorizes before reading participant data" do
+    user = users(:one)
+    user.grant_role!(:workshop_manager)
+    sign_in user
+    RocketProgress::ContributorExport.stub(:new, -> { flunk "must authorize first" }) do
+      post admin_bukux2_contributors_export_path
+    end
+    assert_response :forbidden
+    get admin_jim_takeover_path
+    assert_select "form[action=?]", admin_bukux2_contributors_export_path, count: 0
+  end
+
+  test "signed out requests cannot export contributors" do
+    assert_no_difference "PaperTrail::Version.where(event: 'export_bukux2_contributors').count" do
+      post admin_bukux2_contributors_export_path
+    end
+    assert_response :not_found
+  end
+
   test "off and double strength are allowed but malformed or out of range values are rejected" do
     sign_in @admin
     [ 0, 200, 100 ].each do |intensity|
@@ -92,6 +151,7 @@ class Admin::BukuX3EventsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_select "table", count: 0
     assert_select "form[action=?]", admin_buku_x3_event_path
+    assert_select "form[action=?][data-turbo='false']", admin_bukux2_contributors_export_path
   end
 
   test "ordinary users cannot access the event dashboard" do

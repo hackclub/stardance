@@ -4,6 +4,7 @@
 #
 #  id                                       :bigint           not null, primary key
 #  leaderboard_optin                        :boolean          default(FALSE), not null
+#  particle_effects_enabled                 :boolean          default(TRUE), not null
 #  search_engine_indexing_off               :boolean          default(FALSE), not null
 #  send_notifications_for_followed_projects :boolean          default(TRUE), not null
 #  send_notifications_for_followed_users    :boolean          default(TRUE), not null

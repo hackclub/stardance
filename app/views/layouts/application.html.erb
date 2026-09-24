@@ -71,11 +71,14 @@
         data-controller="<%= 'mihi-mode' if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>"
         data-mihi-mode-activation-url-value="<%= mihi_activations_path %>"
         data-mihi-mode-image-url-value="<%= asset_path('mihi/portrait.jpg') %>">
-    <% if current_user.present? && Flipper.enabled?(:bukux3, current_user) %>
+    <% buku_enabled = current_user.present? && Flipper.enabled?(:bukux3, current_user) %>
+    <% if !controller_path.start_with?("admin/") && (buku_enabled || local_event_simulator?) %>
       <% buku_event = BukuX3::Event.current %>
-      <%= render "shared/blackhole", intensity: buku_event&.percent || BukuX3::Event::STARTING_PERCENT,
-                 visual_intensity: buku_event&.visual_intensity || 100, progress_url: buku_x3_progress_path(format: :json),
-                 awaiting_reveal: !(current_user.onboarded? && current_user.has_dismissed?(VisualNovelComponent::BUKU_X3_DISMISS_THING) && current_user.has_dismissed?(BukuX3RevealComponent::DISMISS_THING)) %>
+      <%= render "shared/blackhole", intensity: buku_enabled ? (buku_event&.percent || BukuX3::Event::STARTING_PERCENT) : 0,
+                 visual_intensity: buku_event&.visual_intensity || 100, progress_url: buku_enabled ? buku_x3_progress_path(format: :json) : nil,
+                 particles_enabled: current_user&.preference&.particle_effects_enabled? != false,
+                 simulator: local_event_simulator?,
+                 awaiting_reveal: buku_enabled && !(current_user.onboarded? && current_user.has_dismissed?(VisualNovelComponent::BUKU_X3_DISMISS_THING) && current_user.has_dismissed?(BukuX3RevealComponent::DISMISS_THING)) %>
     <% end %>
     <% if @show_boot_splash %>
       <div class="app-loading" aria-hidden="true">

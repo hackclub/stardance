@@ -4,6 +4,7 @@
 #
 #  id                                       :bigint           not null, primary key
 #  leaderboard_optin                        :boolean          default(FALSE), not null
+#  particle_effects_enabled                 :boolean          default(TRUE), not null
 #  search_engine_indexing_off               :boolean          default(FALSE), not null
 #  send_notifications_for_followed_projects :boolean          default(TRUE), not null
 #  send_notifications_for_followed_users    :boolean          default(TRUE), not null
@@ -35,6 +36,7 @@ class User::PreferenceTest < ActiveSupport::TestCase
     assert_not user.preference.send_votes_to_slack
     assert_not user.preference.leaderboard_optin
     assert_not user.preference.search_engine_indexing_off
+    assert user.preference.particle_effects_enabled
   end
 
   test "each user can only have one preference record" do
