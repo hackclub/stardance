@@ -1,0 +1,49 @@
+<% content_for :title, "Jeremy Funnel" %>
+<% loops = @funnel[:loops] %>
+
+<div class="ship-funnel"
+     data-controller="ship-funnel"
+     data-ship-funnel-links-value="<%= @funnel[:links].to_json %>"
+     data-ship-funnel-unshipped-links-value="<%= (@funnel[:unshipped_links] || []).to_json %>">
+  <%= link_to "← back to admin", admin_root_path, class: "ship-funnel__back" %>
+
+  <header class="ship-funnel__header">
+    <div>
+      <h1 class="ship-funnel__title">Jeremy Funnel</h1>
+    </div>
+    <div class="ship-funnel__controls">
+      <div class="ship-funnel__toggle" role="group" aria-label="Projects">
+        <% { both: "Both", software: "Software", hardware: "Hardware" }.each do |type, label| %>
+          <button type="button" class="<%= class_names("ship-funnel__toggle-button", "is-active" => type == :both) %>"
+                  data-ship-funnel-target="typeButton" data-action="ship-funnel#setType"
+                  data-ship-funnel-type-param="<%= type %>"><%= label %></button>
+        <% end %>
+      </div>
+      <div class="ship-funnel__toggle" role="group" aria-label="Unit">
+        <% { hours: "Hours", ships: "Ships" }.each do |unit, label| %>
+          <button type="button" class="<%= class_names("ship-funnel__toggle-button", "is-active" => unit == :hours) %>"
+                  data-ship-funnel-target="unitButton" data-action="ship-funnel#setUnit"
+                  data-ship-funnel-unit-param="<%= unit %>"><%= label %></button>
+        <% end %>
+      </div>
+      <label class="ship-funnel__checkbox">
+        <input type="checkbox" data-ship-funnel-target="unshippedToggle" data-action="ship-funnel#toggleUnshipped">
+        Show unshipped hours
+      </label>
+      <%= button_to "Update", refresh_admin_ship_funnel_path, class: "ship-funnel__refresh" %>
+      <span class="ship-funnel__computed">updated <%= time_ago_in_words(@funnel[:generated_at]) %> ago</span>
+    </div>
+  </header>
+
+  <div class="ship-funnel__chart">
+    <svg class="ship-funnel__svg" data-ship-funnel-target="chart" role="img"
+         aria-label="Sankey of shipped hours through ship review, GOI, the fraud check and Airtable to Unified"></svg>
+  </div>
+
+  <p class="ship-funnel__footer">
+    Loops not pictured:
+    <%= pluralize(number_with_delimiter(loops[:returned_twice]), "ship") %> returned by ship review two or more times,
+    <%= pluralize(number_with_delimiter(loops[:goi_sent_back]), "ship") %> GOI sent back to ship review,
+    <%= pluralize(number_with_delimiter(loops[:goi_twice]), "ship") %> with two or more GOI reviews.
+  </p>
+</div>
