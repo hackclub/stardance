@@ -50,6 +50,7 @@ module Certification
 
     # Read-only classification of every side effect. Safe to call from a GET.
     def preflight
+      return outcome([ block(:permanent_rejection, "This project is on hold or permanently rejected. Its reviews cannot be undone.") ]) if project&.hardware_review_blocked?
       return outcome([ block(:decided, "This review hasn't been decided, so there's nothing to undo.") ]) unless review.decided?
       return outcome([ block(:latest, "A newer review has superseded this one. Undo the most recent decision first.") ]) unless latest_decided_review?
 
@@ -138,6 +139,7 @@ module Certification
 
     # DB-only re-check for use inside the row lock.
     def still_undoable?
+      return false if project&.hardware_review_blocked?
       return false unless review.decided?
       return false unless latest_decided_review?
       return false if funding? && review.awards_design_kit? && review.prize_redemptions.exists?

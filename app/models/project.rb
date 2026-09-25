@@ -157,6 +157,7 @@ class Project < ApplicationRecord
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
   has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
   has_many :review_notes, class_name: "Certification::ReviewNote", dependent: :destroy
+  has_many :permanent_rejection_nominations, class_name: "Certification::PermanentRejectionNomination", dependent: :restrict_with_exception
   has_many :integrity_checks, through: :ship_events, source: :integrity_check
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
@@ -518,6 +519,14 @@ class Project < ApplicationRecord
     certification_funding_requests.pending.exists?
   end
 
+  def permanently_rejected?
+    permanent_rejection_nominations.approved.exists?
+  end
+
+  def hardware_review_blocked?
+    permanent_rejection_nominations.blocking.exists?
+  end
+
   # True once any funding request has been submitted (pending, approved, or returned).
   def has_any_funding_request?
     return @_has_any_funding_request if defined?(@_has_any_funding_request)
@@ -564,7 +573,7 @@ class Project < ApplicationRecord
   # withdrawn ones carry no verdict, so both stay off the feed.
   def timeline_funding_requests
     certification_funding_requests
-      .where(status: [ :pending, :approved, :returned ])
+      .where(status: [ :pending, :approved, :returned, :permanently_rejected ])
       .order(created_at: :desc)
   end
 
@@ -667,7 +676,8 @@ class Project < ApplicationRecord
     end
 
     event :resubmit_for_review do
-      transitions from: :needs_changes, to: :submitted, guard: :links_complete?
+      transitions from: :needs_changes, to: :submitted,
+                  guard: -> { links_complete? && !hardware_review_blocked? }
     end
 
     # A ship that was withdrawn rather than judged (see
@@ -706,6 +716,13 @@ class Project < ApplicationRecord
     votes_needed = [ -owner_vote_balance, 0 ].max
     mission_review = blocking_mission_submission
     [
+      {
+        key: :hardware_review_decision,
+        label: "Your project must be eligible for another review",
+        fail_label: permanently_rejected? ? "This project was permanently rejected" : "Your project is still under review",
+        tooltip: permanently_rejected? ? "This decision is final. This project cannot be submitted for funding or certification again. See the review explanation on this page." : "We'll let you know when a decision has been made.",
+        passed: !hardware_review_blocked?
+      },
       {
         key: :demo_url,
         label: "Add a demo link so anyone can try your project",
