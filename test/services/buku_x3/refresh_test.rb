@@ -92,8 +92,8 @@ class BukuX3RefreshTest < ActiveSupport::TestCase
     assert_equal 25, @event.reload.percent
   end
 
-  test "pending incomplete and under-minimum reviews do not count" do
-    reviewed_ship(user: @buku, minutes: 6000, at: @cutoff + 1.hour, reviewed_at: nil)
+  test "unapproved and under-minimum reviews do not count" do
+    reviewed_ship(user: @buku, minutes: 6000, approved: 0, at: @cutoff + 1.hour, reviewed_at: nil)
     reviewed_ship(user: @buku, minutes: 100, approved: 5, at: @cutoff + 2.hours)
     refresh
     assert_empty @event.contributions
@@ -112,18 +112,61 @@ class BukuX3RefreshTest < ActiveSupport::TestCase
     assert_equal 26, @event.reload.percent
   end
 
-  test "reopening or rejecting a previously counted review removes its effect" do
+  test "reopening a review does not remove its approved minutes" do
     review = reviewed_ship(user: @buku, minutes: 3000, at: @cutoff + 1.hour)
     refresh
     review.update!(reviewed_at: nil)
     refresh
+    assert_equal 26, @event.reload.percent
+  end
+
+  test "rejected and misfiled ships are excluded and previously counted hours are removed" do
+    review = reviewed_ship(user: @buku, minutes: 3000, at: @cutoff + 1.hour)
+    %w[rejected misfiled].each do |status|
+      review.post_ship_event.update_columns(certification_status: "approved")
+      refresh
+      assert_equal 26, @event.reload.percent
+      review.post_ship_event.update_columns(certification_status: status)
+      hidden = reviewed_ship(user: @human, minutes: 1500, at: @cutoff + 2.hours)
+      hidden.post_ship_event.update_columns(certification_status: status)
+      refresh
+      assert_equal 25, @event.reload.percent
+      assert_equal 0, @event.contributions.find_by!(ysws_review: review).minutes
+      assert_not @event.contributions.exists?(ysws_review: hidden)
+    end
+  end
+
+  test "removing approved minutes removes the effect and restoring them catches up" do
+    review = reviewed_ship(user: @buku, minutes: 3000, at: @cutoff + 1.hour)
+    refresh
+    review.devlog_reviews.sole.update!(approved_minutes: 0)
+    refresh
     assert_equal 25, @event.reload.percent
-    review.update!(reviewed_at: Time.current)
+    assert_equal 0, @event.contributions.sole.minutes
+    review.devlog_reviews.sole.update!(approved_minutes: 3000)
     refresh
     assert_equal 26, @event.reload.percent
-    review.post_ship_event.update_columns(certification_status: "rejected")
+    assert_equal 1, @event.contributions.count
+  end
+
+  test "refresh backfills unfinished reviews without role reveals using bukux2 accounting" do
+    [ @buku, @human ].each { |user| user.update!(things_dismissed: []) }
+    reviewed_ship(user: @buku, minutes: 120, at: @cutoff + 1.hour, reviewed_at: nil)
+    review = reviewed_ship(user: @human, minutes: 90, at: @cutoff + 2.hours, reviewed_at: nil)
+    Certification::Integrity.create!(ship_event: review.post_ship_event, reviewer: @buku,
+                                     status: :deducted, deduction_minutes: 30)
     refresh
-    assert_equal 25, @event.reload.percent
+
+    expected_minutes = RocketProgress.approved_reviews
+      .where("post_ship_events.created_at > ? AND post_ship_events.created_at <= ?", @cutoff, Time.current)
+      .pluck(Arel.sql(RocketProgress::NET_MINUTES_SQL)).sum
+    assert_equal 180, expected_minutes
+    assert_equal expected_minutes, @event.contributions.sum(:minutes)
+    assert_equal({ buku: 2, bean: 1 }, @event.reload.team_hours)
+    assert_no_difference "BukuX3::Contribution.count" do
+      refresh
+    end
+    assert_equal({ buku: 2, bean: 1 }, @event.reload.team_hours)
   end
 
   test "repairs at zero do not bank credit against future damage" do
@@ -143,11 +186,12 @@ class BukuX3RefreshTest < ActiveSupport::TestCase
   end
 
   test "late approvals replay in ship order rather than job order" do
-    early = reviewed_ship(user: @buku, minutes: 3000, at: @cutoff + 1.hour, reviewed_at: nil)
+    early = reviewed_ship(user: @buku, minutes: 3000, approved: 0, at: @cutoff + 1.hour, reviewed_at: nil)
     reviewed_ship(user: @human, minutes: 1500, at: @cutoff + 2.hours)
     refresh
     assert_equal 24.5, @event.reload.percent
     early.update!(reviewed_at: Time.current)
+    early.devlog_reviews.sole.update!(approved_minutes: 3000, status: :approved)
     refresh
     assert_equal 25.5, @event.reload.percent
   end

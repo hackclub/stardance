@@ -23,10 +23,11 @@ module BukuX3
 
     def reconcile!
       existing = @event.contributions.index_by(&:ysws_review_id)
+      # Use bukux2's approved-minute accounting without waiting for the overall
+      # review to finish, but exclude rejected/misfiled ships from this event.
       rows = RocketProgress.approved_reviews
         .where("post_ship_events.created_at > ? AND post_ship_events.created_at <= ?", @event.unlocked_at, @now)
         .where.not(post_ship_events: { certification_status: Post::ShipEvent::HIDDEN_STATUSES })
-        .where(reviewed_at: ..@now)
         .group("post_ship_events.created_at")
         .pluck(:id, :user_id, "post_ship_events.created_at", Arel.sql(RocketProgress::NET_MINUTES_SQL))
       users = User.where(id: rows.map { |row| row[1] }).select(:id).index_by(&:id)
@@ -40,7 +41,7 @@ module BukuX3
         contribution.save! if contribution.changed?
       end
 
-      # A ban, reopened/rejected review, or reduced approval can remove a
+      # A ban, hidden ship, deleted review, or reduced approval can remove a
       # previously counted ship. Retain its audit record but remove its effect.
       existing.each_value do |contribution|
         contribution.update!(minutes: 0) unless contribution.minutes.zero?
