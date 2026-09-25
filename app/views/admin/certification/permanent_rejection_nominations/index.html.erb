@@ -1,0 +1,64 @@
+<% content_for :title, "Permanent rejections" %>
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide permanent-rejections">
+    <%= link_to "← Hardware reviews", admin_certification_hardware_reviews_path, class: "permanent-rejections__back" %>
+    <header class="permanent-rejections__header">
+      <h1>Permanent rejections</h1>
+      <p class="permanent-rejections__muted">Reviewer nominations from design and build.</p>
+    </header>
+
+    <nav class="permanent-rejections__tabs" aria-label="Nomination status">
+      <% %w[pending approved denied].each do |status| %>
+        <%= link_to admin_certification_permanent_rejection_nominations_path(status: status),
+              class: "permanent-rejections__tab", aria: { current: @status == status ? "page" : nil } do %>
+          <%= status.capitalize %>
+          <% if status == "pending" %>
+            <span class="permanent-rejections__count"><%= @pending_count %></span>
+          <% end %>
+        <% end %>
+      <% end %>
+    </nav>
+
+    <% if @nominations.empty? %>
+      <div class="permanent-rejections__empty">
+        <h2><%= @status == "pending" ? "You're all caught up" : "No #{@status} nominations yet" %></h2>
+        <p class="permanent-rejections__muted"><%= @status == "pending" ? "New nominations will appear here." : "Decisions will appear here for reference." %></p>
+      </div>
+    <% else %>
+      <ul class="permanent-rejections__list">
+        <% @nominations.each do |nomination| %>
+          <li>
+            <%= link_to admin_certification_permanent_rejection_nomination_path(nomination), class: "permanent-rejections__row" do %>
+              <div class="permanent-rejections__row-content">
+                <div class="permanent-rejections__row-title">
+                  <h2><%= nomination.project.title %></h2>
+                  <span class="permanent-rejections__stage"><%= nomination.review_stage %></span>
+                  <% if nomination.project.deleted? %>
+                    <span class="permanent-rejections__warning">Deleted</span>
+                  <% end %>
+                </div>
+                <p class="permanent-rejections__excerpt"><%= truncate(nomination.reason.squish, length: 180) %></p>
+              </div>
+              <div class="permanent-rejections__row-meta">
+                <span><%= nomination.reviewer.display_name %></span>
+                <time datetime="<%= nomination.created_at.iso8601 %>" title="<%= l(nomination.created_at, format: :long) %>"><%= l(nomination.created_at.to_date, format: :long) %></time>
+              </div>
+              <span class="permanent-rejections__row-action"><%= nomination.pending? ? "Review" : "View" %> <span aria-hidden="true">→</span></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+      <p class="permanent-rejections__caption">Oldest nominations first</p>
+    <% end %>
+
+    <%== @pagy.series_nav if @pagy.pages > 1 %>
+
+    <details class="permanent-rejections__disclosure permanent-rejections__disclosure--quiet">
+      <summary>How decisions work</summary>
+      <div class="permanent-rejections__disclosure-body">
+        <p><strong>Approve</strong> permanently blocks funding and build certification. The builder receives the justification.</p>
+        <p><strong>Deny</strong> returns the submission to its original queue. Pending and denied nominations stay private from the builder.</p>
+      </div>
+    </details>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+<% content_for :title, "Permanent rejection justification" %>
+<div class="app-layout">
+  <div class="app-layout__main ship-review">
+    <%= link_to "← Back to the project review", admin_certification_hardware_review_path(@nomination.project), class: "ship-review__back" %>
+    <h1><%= @nomination.project.title %></h1>
+    <%= render "form", nomination: @nomination %>
+  </div>
+</div>

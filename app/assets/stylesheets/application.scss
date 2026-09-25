@@ -112,6 +112,8 @@
 @use "pages/certification/ships/show" as certification_ships_show;
 @use "pages/certification/ships/monitor" as certification_ships_monitor;
 @use "pages/certification/hardware_review" as certification_hardware_review;
+@use "pages/certification/permanent_rejections" as
+  certification_permanent_rejections;
 @use "pages/certification/recording_gallery" as certification_recording_gallery;
 @use "pages/certification/lapse_player" as certification_lapse_player;
 @use "pages/certification/mystats" as certification_mystats;

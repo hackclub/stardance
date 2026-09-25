@@ -47,6 +47,11 @@
       </tbody>
     </table>
 
+    <% rejected_count = stats[:design][:permanently_rejected] + stats[:build][:permanently_rejected] %>
+    <% if rejected_count.positive? %>
+      <p class="hardware-stats__note">Reviewed totals include <%= pluralize(rejected_count, "permanent rejection") %>.</p>
+    <% end %>
+
     <p class="hardware-stats__note">
       Payouts cover both queues.
       <%= link_to "Open full stats and payouts →", admin_certification_mystats_path,

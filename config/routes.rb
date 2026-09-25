@@ -932,6 +932,11 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :permanent_rejection_nominations, only: [ :index, :show, :create ] do
+        post :approve, on: :member
+        post :deny, on: :member
+      end
+
       # Hardware review surface: two separate queues (design funding requests and
       # build ship certifications) sharing one project review page. Verdicts and
       # claims reuse the funding/ship mutation endpoints above so PaperTrail and

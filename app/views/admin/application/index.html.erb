@@ -9,6 +9,10 @@
       <%= admin_page_button "Ship Certifications", admin_certification_ships_path,
         enabled: policy(Certification::Ship).index?,
         count: "ship_certifications" %>
+      <% if Flipper.enabled?(:hardware_flow, current_user) && current_user.admin? %>
+        <%= admin_page_button "Permanent Reject Nominations", admin_certification_permanent_rejection_nominations_path,
+          enabled: policy(Certification::PermanentRejectionNomination).index? %>
+      <% end %>
       <%= admin_page_button "YSWS Reviews", admin_certification_ysws_reviews_path,
         enabled: policy(Certification::Ysws).index?,
         count: "ysws_reviews" %>

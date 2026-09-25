@@ -2,6 +2,34 @@
 // has one reviewer surface, with a compact pipeline summary instead of separate
 // funding/build review cards.
 
+.permanent-rejection {
+  display: grid;
+  gap: var(--space-m);
+  padding: var(--space-l);
+  margin-bottom: var(--space-m);
+  background: var(--color-set-1-bg);
+  border: 2px solid var(--color-set-1-fg-secondary);
+  border-radius: var(--border-radius);
+  color: var(--color-space-text);
+  overflow-wrap: anywhere;
+
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+  a {
+    color: var(--color-brand-blue);
+  }
+
+  &__warning {
+    color: var(--color-brand-salmon);
+  }
+  &__reason {
+    white-space: pre-wrap;
+  }
+}
+
 .hardware-review {
   &__tag {
     padding: 0.15rem 0.6rem;

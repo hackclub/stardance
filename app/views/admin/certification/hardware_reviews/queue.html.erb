@@ -22,6 +22,10 @@
         </span>
       </div>
       <div class="ship-queue__header-actions">
+        <% if current_user.admin? %>
+          <%= link_to "Permanent reject nominations", admin_certification_permanent_rejection_nominations_path,
+                class: "action-btn action-btn--small action-btn--secondary" %>
+        <% end %>
         <button type="button" class="action-btn action-btn--large action-btn--secondary"
                 onclick="document.getElementById('hardware-my-stats').showModal()">
           My Stats

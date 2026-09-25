@@ -1,0 +1,101 @@
+<% content_for :title, "Permanent rejection: #{@nomination.project.title}" %>
+<% project = @nomination.project %>
+<div class="app-layout app-layout--wide">
+  <div class="app-layout__main app-layout__main--wide permanent-rejections">
+    <%= link_to "← Permanent rejections", admin_certification_permanent_rejection_nominations_path(status: @nomination.status), class: "permanent-rejections__back" %>
+    <header class="permanent-rejections__header">
+      <p class="permanent-rejections__eyebrow">Permanent rejection · #<%= @nomination.id %></p>
+      <div class="permanent-rejections__title">
+        <h1><%= project.title %></h1>
+        <span class="permanent-rejections__status permanent-rejections__status--<%= @nomination.status %>"><%= @nomination.pending? ? "Awaiting decision" : @nomination.status.capitalize %></span>
+      </div>
+      <p class="permanent-rejections__muted"><%= @nomination.review_stage %> review · Built by <%= project.memberships.owner.first&.user&.display_name || "Unknown" %> · Project #<%= project.id %></p>
+      <div class="permanent-rejections__links">
+        <%= link_to "Open project review →", admin_certification_hardware_review_path(project), class: "action-btn action-btn--small action-btn--secondary" %>
+        <%= link_to "View project", project_path(project), class: "permanent-rejections__link" %>
+        <% if (repo_url = safe_external_url(project.repo_url)) %>
+          <%= link_to "Repository ↗", repo_url, target: "_blank", rel: "noopener noreferrer", class: "permanent-rejections__link" %>
+        <% end %>
+      </div>
+    </header>
+
+    <div class="permanent-rejections__workspace">
+      <section class="permanent-rejections__panel" aria-labelledby="justification-title">
+        <div class="permanent-rejections__section-heading">
+          <h2 id="justification-title">Justification</h2>
+          <p class="permanent-rejections__muted">Nominated by <%= render "shared/username_link", user: @nomination.reviewer, link_class: "permanent-rejections__link", badge: false %> · <time datetime="<%= @nomination.created_at.iso8601 %>" title="<%= l(@nomination.created_at, format: :long) %>"><%= l(@nomination.created_at.to_date, format: :long) %></time></p>
+        </div>
+        <p class="permanent-rejections__reason"><%= @nomination.reason %></p>
+        <p class="permanent-rejections__caption"><%= @nomination.approved? ? "Shared with the builder as the final explanation." : @nomination.pending? ? "Shared with the builder only if approved." : "Not shared with the builder." %></p>
+      </section>
+
+      <section class="permanent-rejections__panel permanent-rejections__decision" aria-labelledby="decision-title">
+        <% if @nomination.pending? %>
+          <h2 id="decision-title">Make a decision</h2>
+          <% if project.deleted? %>
+            <p class="permanent-rejections__warning">This project was deleted. Approval is unavailable; denying closes the nomination without returning it to the queue.</p>
+          <% end %>
+          <% if policy([:admin, @nomination]).approve? %>
+            <div class="permanent-rejections__option">
+              <p><strong>Approval is final.</strong> It blocks funding and build certification. The builder receives the justification.</p>
+              <%= button_to "Approve rejection", approve_admin_certification_permanent_rejection_nomination_path(@nomination),
+                    class: "action-btn action-btn--small action-btn--destructive", disabled: project.deleted?,
+                    data: { turbo_confirm: "Permanently reject this project? The builder will receive the justification and cannot resubmit this project." } %>
+            </div>
+            <div class="permanent-rejections__option">
+              <p><%= project.deleted? ? "Close this nomination without notifying the builder." : "Return to the review queue without notifying the builder." %></p>
+              <%= button_to "Deny nomination", deny_admin_certification_permanent_rejection_nomination_path(@nomination),
+                    class: "action-btn action-btn--small action-btn--secondary",
+                    data: { turbo_confirm: project.deleted? ? "Close this nomination? The deleted project will stay out of the queue and the builder will not be notified." : "Deny this nomination and return the submission to its original queue? The builder will not be notified." } %>
+            </div>
+          <% else %>
+            <p class="permanent-rejections__warning">Another admin must decide this nomination because you belong to the project.</p>
+          <% end %>
+        <% else %>
+          <h2 id="decision-title"><%= @nomination.approved? ? "Permanently rejected" : "Nomination denied" %></h2>
+          <p><%= @nomination.approved? ? "Funding and build certification are blocked for this project." : "No permanent rejection was applied. The builder was not notified." %></p>
+          <p class="permanent-rejections__muted"><%= @nomination.status.capitalize %> by <strong><%= @nomination.decided_by.display_name %></strong><br><time datetime="<%= @nomination.decided_at.iso8601 %>"><%= l(@nomination.decided_at, format: :long) %></time></p>
+        <% end %>
+      </section>
+    </div>
+
+    <details class="permanent-rejections__disclosure">
+      <summary>Project details</summary>
+      <div class="permanent-rejections__disclosure-body">
+        <p><%= project.description %></p>
+        <p class="permanent-rejections__muted">Submitted for <%= @nomination.review_stage.downcase %> review on <%= l(@nomination.reviewable.created_at, format: :long) %>.<%= " This project has been deleted." if project.deleted? %></p>
+      </div>
+    </details>
+
+    <details class="permanent-rejections__disclosure">
+      <summary>Audit history</summary>
+      <div class="permanent-rejections__disclosure-body">
+        <ol class="permanent-rejections__history">
+          <li>
+            <div><strong>Nominated</strong> by <%= render "shared/username_link", user: @nomination.reviewer, link_class: "permanent-rejections__link", badge: false %></div>
+            <time datetime="<%= @nomination.created_at.iso8601 %>"><%= l(@nomination.created_at, format: :long) %></time>
+          </li>
+          <% if @nomination.decided_at %>
+            <li>
+              <div><strong><%= @nomination.status.capitalize %></strong> by <%= @nomination.decided_by.display_name %></div>
+              <time datetime="<%= @nomination.decided_at.iso8601 %>"><%= l(@nomination.decided_at, format: :long) %></time>
+              <p><%= @nomination.approved? ? "The builder was notified of the final decision." : "The builder was not notified." %></p>
+            </li>
+          <% end %>
+        </ol>
+        <%= link_to "Detailed audit log →", admin_audit_logs_path(item_type: @nomination.class.name, item_id: @nomination.id), class: "permanent-rejections__link" %>
+      </div>
+    </details>
+
+    <% if @nomination.pending? %>
+      <details class="permanent-rejections__disclosure permanent-rejections__disclosure--quiet">
+        <summary>Queue &amp; notification details</summary>
+        <div class="permanent-rejections__disclosure-body">
+          <p>The submission is on hold. The builder still sees it as under review.</p>
+          <p>Approval sends the justification through the builder's review notifications, according to their settings. Nothing is posted to the public hardware review channel.</p>
+          <p>Denial releases the review claim and keeps the original submission date. Deleted projects stay out of the queue.</p>
+        </div>
+      </details>
+    <% end %>
+  </div>
+</div>
