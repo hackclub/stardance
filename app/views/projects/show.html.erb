@@ -1321,13 +1321,13 @@
             </label>
 
             <div class="funding-modal__bom">
-              <p class="funding-modal__bom-hint">
+              <%# <p class="funding-modal__bom-hint">
                 Don't have one? Check
                 <%= link_to "the hardware codex",
                       "https://codex.hackclub.com/shipping/101/#3-make-a-bill-of-materials",
-                      class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
-                out for info!
-              </p>
+                      class: "funding-modal__guide-link", target: "_blank", rel: "noopener" 
+                      out for info!
+              </p> %>
 
                 <label class="funding-modal__bom-check">
                 <input type="checkbox" onchange="fundingValidate(this.form)">
