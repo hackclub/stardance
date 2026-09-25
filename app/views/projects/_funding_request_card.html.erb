@@ -9,7 +9,8 @@
     Reviewer feedback names a reviewer and explains a rejection, so it stays with
     the person who has to act on it: the project owner, plus reviewers who can
     always see review history. When the public_hardware_reviews flag is on it
-    goes public along with the card (see ProjectsController#visible_funding_requests).
+    goes public along with the card. Permanent rejections are always restricted
+    to their submitter and review staff by ProjectsController#visible_funding_requests.
 
     Locals: funding_request, project, owner (required); resubmit_modal_id
     (optional - when present a returned request offers a resubmit button). %>
@@ -17,7 +18,7 @@
   decided_on = funding_request.decided_at || funding_request.created_at
   reviewer = funding_request.reviewer
   viewer_is_owner = owner.present? && owner == current_user
-  feedback_visible = viewer_is_owner || current_user&.can_review? || Flipper.enabled?(:public_hardware_reviews)
+  feedback_visible = funding_request.permanently_rejected? || viewer_is_owner || current_user&.can_review? || Flipper.enabled?(:public_hardware_reviews)
   show_feedback = funding_request.feedback.present? && !funding_request.pending? && feedback_visible
 
   kit_mission = funding_request.kit_mission?
@@ -44,6 +45,9 @@
     when :returned
       [ "returned your funding request",
         "This needs changes before it can be funded. Take a look at the feedback, then submit your design again." ]
+    when :permanently_rejected
+      [ "permanently rejected your project",
+        "This project can’t be submitted for funding or certification again." ]
     else
       [ "requested funding",
         "Waiting on a reviewer. We'll let you know as soon as there's a decision." ]
@@ -72,7 +76,7 @@
           <span class="feed-post-card__author"><%= owner&.display_name || "Someone" %></span>
         <% end %>
         <span class="feed-post-card__context"><%= context %></span>
-        <% if show_feedback %>
+        <% if show_feedback && !funding_request.permanently_rejected? %>
           <%= render "shared/help_tooltip", text: message %>
         <% end %>
         <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>"
@@ -103,7 +107,7 @@
   %>
   <%= tag.div class: message_class, onclick: open_modal_js do %>
     <% if show_feedback %>
-      <% if action_items_enabled? %>
+      <% if action_items_enabled? && !funding_request.permanently_rejected? %>
         <%= render "projects/review_feedback", review: funding_request %>
       <% else %>
         <%= simple_format(funding_request.feedback, {}, sanitize: true) %>
@@ -112,6 +116,10 @@
     <% else %>
       <p><%= message %></p>
     <% end %>
+  <% end %>
+
+  <% if funding_request.permanently_rejected? && show_feedback %>
+    <p class="funding-request-card__final-note"><%= message %></p>
   <% end %>
 
   <% if funding_request.returned? && viewer_is_owner && resubmit_modal_id.present? %>

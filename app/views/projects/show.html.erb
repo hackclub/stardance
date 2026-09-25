@@ -634,7 +634,9 @@
             <% end %>
           <% end %>
           <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
-            <% if @project.has_pending_funding_request? %>
+            <% if @project.permanently_rejected? %>
+              <%= render ActionButtonComponent.new(text: "Project permanently rejected", variant: :secondary, type: :button, disabled: :hard) %>
+            <% elsif @project.has_pending_funding_request? %>
               <%= render ActionButtonComponent.new(
                     text: "Funding request under review",
                     variant: :secondary,
@@ -1238,7 +1240,7 @@
 
   <%# Funding request popup — design-stage hardware only. Mirrors the ship
       post modal but collects a complexity tier + requested amount. %>
-  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? && !@project.permanently_rejected? %>
     <dialog id="funding-request-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post funding-modal"
             data-controller="modal"

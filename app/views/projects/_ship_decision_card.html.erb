@@ -1,6 +1,8 @@
 <%
   approved = decision.approved?
-  message = if approved
+  message = if decision.permanently_rejected?
+    "This project can’t be submitted for funding or certification again."
+  elsif approved
     "This project was vetted by Shipwrights and is now up for voting. You can ship again after making more updates."
   else
     "This needs changes before we can consider it shipped. Review the Shipwright feedback, make updates, then ship again."
@@ -35,7 +37,7 @@
         <% else %>
           <span class="feed-post-card__author">Shipwrights</span>
         <% end %>
-        <span class="feed-post-card__context"><%= approved ? "approved" : "returned" %></span>
+        <span class="feed-post-card__context"><%= decision.permanently_rejected? ? "permanently rejected" : (approved ? "approved" : "returned") %></span>
         <span class="ship-decision-card__subject">your project</span>
         <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>" title="<%= l(decided_on, format: :long) %>">
           · <%= time_ago_in_words(decided_on) %> ago
@@ -54,7 +56,7 @@
       <div class="ship-decision-card__feedback-body">
         <%# Action items are a hardware-only affordance; software feedback stays
             plain prose, bullets and all. %>
-        <% if action_items_enabled? && project.hardware? %>
+        <% if action_items_enabled? && project.hardware? && !decision.permanently_rejected? %>
           <%= render "projects/review_feedback", review: decision %>
         <% else %>
           <%= simple_format(decision.feedback, {}, sanitize: true) %>
