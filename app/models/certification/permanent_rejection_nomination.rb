@@ -53,11 +53,14 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
         end
 
         update!(status: approve ? :approved : :denied, decided_by: admin, decided_at: Time.current)
+        # Denial only lifts the hold; nomination already released the claim.
         if approve
-          reviewable.update!(status: :permanently_rejected, feedback: reason, reviewer: admin,
-                             claimed_at: nil, claim_expires_at: nil)
-        else
-          reviewable.update!(reviewer: nil, claimed_at: nil, claim_expires_at: nil)
+          reviewable.assign_attributes(status: :permanently_rejected, feedback: reason, reviewer: admin,
+                                       claimed_at: nil, claim_expires_at: nil)
+          # The authorized decision above is final even if submission eligibility
+          # changed (e.g. a zero-dollar kit request lost its mission). Keep save
+          # callbacks for audit, project state and notifications.
+          reviewable.save!(validate: false)
         end
       end
     end
