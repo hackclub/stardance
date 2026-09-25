@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 // Multi-image picker for the hardware funding review form. Previews the
-// reviewer's selected feedback photos, lets them drop or remove files, and
+// reviewer's selected feedback photos, lets them paste, drop or remove files, and
 // keeps the file input in sync so the current selection submits with the
 // verdict. Server-side validation (image type / size / count) is the source of
 // truth; this only mirrors the accepted types and max count for a nicer UI.
@@ -18,6 +18,16 @@ export default class extends Controller {
 
   select() {
     this.#addFiles(this.inputTarget.files);
+  }
+
+  paste(event) {
+    const accepted = this.#acceptedTypes();
+    const files = Array.from(event.clipboardData?.files || []).filter((file) =>
+      accepted.includes(file.type),
+    );
+    if (files.length === 0) return;
+    event.preventDefault();
+    this.#addFiles(files);
   }
 
   drop(event) {
