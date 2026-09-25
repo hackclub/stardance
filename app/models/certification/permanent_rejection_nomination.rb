@@ -1,3 +1,33 @@
+# == Schema Information
+#
+# Table name: certification_permanent_rejection_nominations
+#
+#  id              :bigint           not null, primary key
+#  decided_at      :datetime
+#  reason          :text             not null
+#  reviewable_type :string           not null
+#  status          :integer          default(0), not null
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#  decided_by_id   :bigint
+#  project_id      :bigint           not null
+#  reviewable_id   :bigint           not null
+#  reviewer_id     :bigint           not null
+#
+# Indexes
+#
+#  idx_on_decided_by_id_c31160fc96            (decided_by_id)
+#  idx_on_project_id_7a0080ce93               (project_id)
+#  idx_on_reviewer_id_b6dd573175              (reviewer_id)
+#  index_permanent_rejections_active_project  (project_id) UNIQUE WHERE (status = ANY (ARRAY[0, 1]))
+#  index_permanent_rejections_reviewable      (reviewable_type,reviewable_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (decided_by_id => users.id)
+#  fk_rails_...  (project_id => projects.id)
+#  fk_rails_...  (reviewer_id => users.id)
+#
 class Certification::PermanentRejectionNomination < ApplicationRecord
   self.table_name = "certification_permanent_rejection_nominations"
 
