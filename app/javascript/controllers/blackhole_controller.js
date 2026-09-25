@@ -334,6 +334,17 @@ export default class extends Controller {
 
   tick(time) {
     this.frame = null;
+    // Slow mask generation also puts dust on a 30fps budget. Keep scheduling
+    // repairs even when a frame is skipped or particles are disabled.
+    if (
+      !this.reducedMotion.matches &&
+      this.maskInterval > 60 &&
+      this.lastTime &&
+      time - this.lastTime < 32
+    ) {
+      this.wake();
+      return;
+    }
     const dt = Math.min((time - (this.lastTime || time)) / 1000, 0.05);
     this.lastTime = time;
     const previous = this.level;
@@ -342,17 +353,17 @@ export default class extends Controller {
       : this.level + (this.requested - this.level) * (1 - Math.exp(-dt * 5));
     if (Math.abs(this.level - this.requested) < 0.001)
       this.level = this.requested;
+    if (this.level !== previous) this.maskDirty = true;
     if (
-      this.dirty ||
-      ((this.repairActive || this.repairDirty) &&
-        time - (this.lastMask || 0) > 45) ||
-      (this.level !== previous &&
-        (this.level === this.requested || time - (this.lastMask || 0) > 45))
+      (this.dirty || this.repairActive || this.repairDirty || this.maskDirty) &&
+      (this.reducedMotion.matches ||
+        time - (this.lastMask || 0) >= (this.maskInterval || 45))
     ) {
       this.cutSurfaces(this.level > previous);
       this.lastMask = time;
       this.dirty = false;
       this.repairDirty = false;
+      this.maskDirty = false;
     }
     this.emitAmbientDust(dt);
     this.draw(dt);
@@ -362,6 +373,8 @@ export default class extends Controller {
         this.simulation?.particles !== false) ||
         this.repairActive ||
         this.repairDirty ||
+        this.dirty ||
+        this.maskDirty ||
         this.level !== this.requested ||
         this.particles.length) &&
       !this.reducedMotion.matches
@@ -376,6 +389,8 @@ export default class extends Controller {
         surface.clip.remove();
         surface.textClip?.remove();
         surface.textCopy?.remove();
+        this.fragmentMeshes?.delete(surface.geometry?.seed);
+        this.fragmentFields?.delete(surface.geometry?.seed);
         this.surfaces.delete(element);
       }
     }
@@ -432,7 +447,8 @@ export default class extends Controller {
   }
 
   cutSurfaces(emit) {
-    this.collectSurfaces();
+    const started = performance.now();
+    if (this.dirty || !this.surfaces.size) this.collectSurfaces();
     this.repairTime = performance.now();
     this.repairActive = false;
     this.textTarget.hidden = this.level <= 0.82;
@@ -456,22 +472,11 @@ export default class extends Controller {
         top: Math.max(0, rect.top),
         bottom: Math.min(this.height, rect.bottom),
       });
-      let layer = element;
-      while (layer.parentElement && getComputedStyle(layer).zIndex === "auto")
-        layer = layer.parentElement;
-      const seed =
-        (Number.parseInt(getComputedStyle(layer).zIndex, 10) || 0) +
-        surface.seed;
-      surface.layerIndex = getComputedStyle(layer).zIndex;
-      // Parent layers leave each card to its own mask, avoiding double erosion
-      // while the cursor repair pocket restores nearby fragments.
-      const nestedCards = surface.card
-        ? []
-        : [...element.querySelectorAll(CARD_SURFACES)];
-      const excludedRects = nestedCards.map((card) =>
-        this.localRect(card.getBoundingClientRect(), rect, 12),
+      const { seed, protectedRects, excludedRects } = this.surfaceGeometry(
+        element,
+        surface,
+        rect,
       );
-      const protectedRects = this.protectedRects(element, rect, nestedCards);
 
       const path = this.fragmentPath(
         rect,
@@ -481,10 +486,55 @@ export default class extends Controller {
         excludedRects,
         surface.card,
       );
-      surface.path.setAttribute("d", path);
+      if (surface.lastPath !== path) {
+        surface.path.setAttribute("d", path);
+        surface.lastPath = path;
+      }
       if (this.level > 0.82) this.drawDamagedText(element, rect, path, surface);
     }
     if (emit && !this.reducedMotion.matches) this.emitDust(8);
+    this.recordMaskCost(performance.now() - started);
+  }
+
+  recordMaskCost(milliseconds) {
+    this.maskCost =
+      this.maskCost == null
+        ? milliseconds
+        : this.maskCost * 0.8 + milliseconds * 0.2;
+    // Budget approximately a quarter of main-thread time for masks, with a
+    // ceiling so cursor repair remains responsive even on slower hardware.
+    this.maskInterval = clamp(this.maskCost * 4, 45, 160);
+  }
+
+  surfaceGeometry(element, surface, rect) {
+    const cached = surface.geometry;
+    if (
+      !this.dirty &&
+      cached &&
+      cached.revision === this.textRevision &&
+      ["left", "top", "width", "height"].every(
+        (key) => cached.rect[key] === rect[key],
+      )
+    )
+      return cached;
+
+    let layer = element;
+    while (layer.parentElement && getComputedStyle(layer).zIndex === "auto")
+      layer = layer.parentElement;
+    surface.layerIndex = getComputedStyle(layer).zIndex;
+    const nestedCards = surface.card
+      ? []
+      : [...element.querySelectorAll(CARD_SURFACES)];
+    // Parent layers leave each card to its own mask, avoiding double erosion.
+    return (surface.geometry = {
+      rect,
+      revision: this.textRevision,
+      seed: (Number.parseInt(surface.layerIndex, 10) || 0) + surface.seed,
+      excludedRects: nestedCards.map((card) =>
+        this.localRect(card.getBoundingClientRect(), rect, 12),
+      ),
+      protectedRects: this.protectedRects(element, rect, nestedCards),
+    });
   }
 
   localRect(rect, surfaceRect, padding = 5) {
@@ -680,7 +730,7 @@ export default class extends Controller {
     return cells;
   }
 
-  fragmentPath(
+  fragmentField(
     rect,
     size,
     seed,
@@ -688,9 +738,23 @@ export default class extends Controller {
     excludedRects = [],
     card = true,
   ) {
-    const holes = [];
-    for (const cell of this.fragmentCells(rect, size, seed)) {
-      const { cx, cy, vertices, bounds } = cell;
+    const cells = this.fragmentCells(rect, size, seed);
+    this.fragmentFields ||= new Map();
+    const cached = this.fragmentFields.get(seed);
+    if (
+      cached &&
+      cached.cells === cells &&
+      cached.width === rect.width &&
+      cached.height === rect.height &&
+      cached.size === size &&
+      cached.card === card &&
+      cached.protectedRects === protectedRects &&
+      cached.excludedRects === excludedRects
+    )
+      return cached.field;
+    const field = [];
+    for (const cell of cells) {
+      const { cx, cy, bounds } = cell;
       const x = cx / size;
       const y = cy / size;
       // Clustered erosion with the original irregular fragment boundaries.
@@ -747,14 +811,52 @@ export default class extends Controller {
           : protectedContent
             ? textThreshold
             : Math.min(edgeThreshold, backgroundThreshold);
+      field.push({ cell, start });
+    }
+    this.fragmentFields.set(seed, {
+      cells,
+      width: rect.width,
+      height: rect.height,
+      size,
+      card,
+      protectedRects,
+      excludedRects,
+      field,
+    });
+    return field;
+  }
+
+  fragmentPath(
+    rect,
+    size,
+    seed,
+    protectedRects = [],
+    excludedRects = [],
+    card = true,
+  ) {
+    const holes = [];
+    for (const entry of this.fragmentField(
+      rect,
+      size,
+      seed,
+      protectedRects,
+      excludedRects,
+      card,
+    )) {
+      const { cell, start } = entry;
+      const { cx, cy, vertices } = cell;
       let erosion = clamp((this.level - start) / 0.07);
       erosion *= 1 - this.repairStrength(cell, rect);
       if (!erosion) continue;
-      const polygon = vertices.map(
-        ([px, py]) =>
-          `${(cx + (px - cx) * erosion).toFixed(1)},${(cy + (py - cy) * erosion).toFixed(1)}`,
-      );
-      holes.push(`M${polygon.join("L")}Z`);
+      if (entry.erosion !== erosion) {
+        const polygon = vertices.map(
+          ([px, py]) =>
+            `${(cx + (px - cx) * erosion).toFixed(1)},${(cy + (py - cy) * erosion).toFixed(1)}`,
+        );
+        entry.path = `M${polygon.join("L")}Z`;
+        entry.erosion = erosion;
+      }
+      holes.push(entry.path);
       const viewportX = cx + rect.left;
       const viewportY = cy + rect.top;
       if (
@@ -896,6 +998,7 @@ export default class extends Controller {
     this.pointer = null;
     this.repairActive = false;
     this.repairDirty = false;
+    this.maskDirty = false;
     for (const [element, surface] of this.surfaces) {
       if (surface.original)
         element.style.setProperty(
@@ -911,6 +1014,7 @@ export default class extends Controller {
     this.surfaceResize?.disconnect();
     this.surfaces.clear();
     this.fragmentMeshes?.clear();
+    this.fragmentFields?.clear();
     this.canvasContext.clearRect(0, 0, this.width, this.height);
     this.textTarget.replaceChildren();
   }

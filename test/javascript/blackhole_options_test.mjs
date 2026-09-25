@@ -266,6 +266,7 @@ test("cursor repair removes nearby holes, including at full destruction", () => 
     const controller = {
       level,
       fragmentCells: () => [cell],
+      fragmentField: BlackholeController.prototype.fragmentField,
       repairStrength: () => 1,
       fringe: [],
       width: 100,
