@@ -5,7 +5,13 @@
 <dl class="hardware-review__facts">
   <div class="hardware-review__fact">
     <dt>Submitter</dt>
-    <dd><%= owner&.display_name || "—" %></dd>
+    <dd>
+      <% if owner %>
+        <%= render "shared/username_link", user: owner, link_class: nil %>
+      <% else %>
+        —
+      <% end %>
+    </dd>
   </div>
 
   <div class="hardware-review__fact">

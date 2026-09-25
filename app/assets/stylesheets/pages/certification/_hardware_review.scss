@@ -160,6 +160,16 @@
     white-space: nowrap;
   }
 
+  &__card {
+    position: relative;
+  }
+
+  // Keep profile and admin links above the row/card's stretched review link.
+  &__submitter {
+    position: relative;
+    z-index: 1;
+  }
+
   &__ask {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
