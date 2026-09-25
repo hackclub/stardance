@@ -144,7 +144,8 @@ class GuideMarkdownRenderer
           underline: true,
           table: true,
           autolink: true,
-          tagfilter: true
+          tagfilter: true,
+          tasklist: true
         }
       },
     )
@@ -154,8 +155,8 @@ class GuideMarkdownRenderer
 
     sanitized = MarkdownRenderer.sanitize_html(
       raw_html,
-      extra_tags:       %w[u kbd mark table thead tbody tfoot tr th td],
-      extra_attributes: %w[target rel]
+      extra_tags:       %w[u kbd mark table thead tbody tfoot tr th td input],
+      extra_attributes: %w[target rel type checked disabled]
     )
 
     doc = Nokogiri::HTML5.fragment(sanitized)

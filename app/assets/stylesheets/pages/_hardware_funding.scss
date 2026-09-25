@@ -289,6 +289,12 @@
     accent-color: var(--color-brand-lilac);
   }
 
+  a {
+    color: var(--color-brand-blue);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
   code {
     padding: 0.1rem 0.35rem;
     background: var(--color-overlay-light-soft);
