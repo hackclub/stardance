@@ -110,18 +110,9 @@ module Admin
 
     def loops
       {
-        returned_twice: count(<<~SQL),
-          SELECT count(*) FROM (SELECT post_ship_event_id FROM certification_ship_reviews
-                                WHERE status = #{::Certification::Ship.statuses[:returned]}
-                                GROUP BY 1 HAVING count(*) >= 2) returned_twice
-        SQL
-        goi_sent_back: count(<<~SQL),
-          SELECT count(DISTINCT post_ship_event_id) FROM certification_ship_reviews WHERE returned_by_id IS NOT NULL
-        SQL
-        goi_twice: count(<<~SQL)
-          SELECT count(*) FROM (SELECT post_ship_event_id FROM certification_ysws_reviews
-                                GROUP BY 1 HAVING count(*) >= 2) goi_twice
-        SQL
+        returned_twice: ::Certification::Ship.returned.group(:post_ship_event_id).having("count(*) >= 2").count.size,
+        goi_sent_back: ::Certification::Ship.where.not(returned_by_id: nil).distinct.count(:post_ship_event_id),
+        goi_twice: ::Certification::Ysws.group(:post_ship_event_id).having("count(*) >= 2").count.size
       }
     end
 
@@ -159,8 +150,6 @@ module Admin
         GROUP BY 1, 2
       SQL
     end
-
-    def count(sql) = ::ActiveRecord::Base.connection.select_value(sql).to_i
 
     def ship_rows = ::ActiveRecord::Base.connection.select_all(ship_rows_sql).to_a
 
