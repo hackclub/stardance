@@ -325,6 +325,9 @@ application.register("parallax", ParallaxController);
 import PayoutReviewController from "./payout_review_controller";
 application.register("payout-review", PayoutReviewController);
 
+import PhantomVoidController from "./phantom_void_controller";
+application.register("phantom-void", PhantomVoidController);
+
 import PostMenuController from "./post_menu_controller";
 application.register("post-menu", PostMenuController);
 
@@ -363,9 +366,6 @@ application.register("queue-filter", QueueFilterController);
 
 import RatingDashboardChartController from "./rating_dashboard_chart_controller";
 application.register("rating-dashboard-chart", RatingDashboardChartController);
-
-import ReceiptPrinterController from "./receipt_printer_controller";
-application.register("receipt-printer", ReceiptPrinterController);
 
 import ReadMoreController from "./read_more_controller";
 application.register("read-more", ReadMoreController);
