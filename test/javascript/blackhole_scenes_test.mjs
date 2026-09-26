@@ -2,6 +2,54 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import BlackholeController from "../../app/javascript/controllers/blackhole_controller.js";
 
+test("the Phantom ad receives its own card mask without masking its canvas separately", () => {
+  const originalDocument = globalThis.document;
+  const style = new Map();
+  const ad = {
+    id: "",
+    isConnected: true,
+    parentElement: { closest: () => null },
+    closest: () => null,
+    matches: (selector) => selector.split(", ").includes(".phantom-promo"),
+    getBoundingClientRect: () => ({ width: 310, height: 480 }),
+    style: {
+      getPropertyValue: (name) => style.get(name) || "",
+      getPropertyPriority: () => "",
+      setProperty: (name, value) => style.set(name, value),
+    },
+  };
+  const canvas = {
+    matches: (selector) => selector.split(", ").includes("canvas"),
+  };
+  let masks = 0;
+  let observed = 0;
+  try {
+    globalThis.document = {
+      body: { children: [] },
+      querySelectorAll: (selector) =>
+        [ad, canvas].filter((element) => element.matches(selector)),
+      createElementNS: () => ({ setAttribute() {}, append() {} }),
+    };
+    const controller = {
+      surfaces: new Map(),
+      surfaceSeed: BlackholeController.prototype.surfaceSeed,
+      element: { contains: () => false },
+      masksTarget: { firstElementChild: { append: () => masks++ } },
+      surfaceResize: { observe: () => observed++ },
+    };
+    BlackholeController.prototype.collectSurfaces.call(controller);
+    BlackholeController.prototype.collectSurfaces.call(controller);
+    assert.equal(controller.surfaces.size, 1);
+    assert.equal(controller.surfaces.get(ad).card, true);
+    assert.match(style.get("clip-path"), /^url\(#blackhole-cut-/);
+    assert.equal(masks, 1, "repeated passes reuse the ad's mask");
+    assert.equal(observed, 1);
+  } finally {
+    if (originalDocument === undefined) delete globalThis.document;
+    else globalThis.document = originalDocument;
+  }
+});
+
 test("damage stays off through intro, reveal, and its fade-out, then resumes", () => {
   const originalDocument = globalThis.document;
   let scene = null;

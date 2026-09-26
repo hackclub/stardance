@@ -5,13 +5,24 @@
 <dl class="hardware-review__facts">
   <div class="hardware-review__fact">
     <dt>Submitter</dt>
-    <dd><%= owner&.display_name || "—" %></dd>
+    <dd>
+      <% if owner %>
+        <%= render "shared/username_link", user: owner, link_class: nil %>
+      <% else %>
+        —
+      <% end %>
+    </dd>
   </div>
 
   <div class="hardware-review__fact">
     <dt>Waiting</dt>
     <% wait_days = ((Time.current - review.created_at) / 1.day).floor %>
     <dd class="<%= "is-negative" if wait_days >= review.class::SLA_DAYS %>"><%= wait_days %>d</dd>
+  </div>
+
+  <div class="hardware-review__fact">
+    <dt>Total hours</dt>
+    <dd><%= format_hours_minutes(project.duration_seconds) %></dd>
   </div>
 
   <% if review_type == :funding %>

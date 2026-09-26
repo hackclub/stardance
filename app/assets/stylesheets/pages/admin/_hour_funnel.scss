@@ -1,0 +1,217 @@
+.hour-funnel {
+  display: grid;
+  gap: var(--space-l);
+  margin: 0 auto;
+  max-width: 1400px;
+
+  &__back,
+  &__note,
+  &__subtitle,
+  &__tile-label,
+  &__tile-note {
+    color: var(--color-space-text-muted);
+  }
+
+  &__subtitle,
+  &__note {
+    margin: 0;
+  }
+
+  &__header {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    justify-content: space-between;
+  }
+
+  &__controls {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  &__units {
+    display: flex;
+    gap: var(--space-xxs);
+  }
+
+  // The unit toggle and the recompute button share the pill look; the
+  // toggle's active pill is the only one that lights up. Scoped under
+  // .admin-content to outrank that sheet's generic button styling.
+  .admin-content &__unit,
+  .admin-content &__refresh button,
+  .admin-content &__refresh input[type="submit"] {
+    background: none;
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+    font: inherit;
+    min-height: 0;
+    padding: var(--space-xxs) var(--space-s);
+  }
+
+  .admin-content &__unit.is-active {
+    background: var(--color-set-2-bg);
+    border-color: var(--color-brand-cream);
+    color: var(--color-brand-cream);
+  }
+
+  &__tiles {
+    display: grid;
+    gap: var(--space-s);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  &__tile {
+    background: var(--color-set-2-bg);
+    border-radius: 8px;
+    display: grid;
+    gap: var(--space-xxs);
+    padding: var(--space-s);
+  }
+
+  &__tile-value {
+    font-size: var(--font-size-xl);
+    line-height: 1.1;
+  }
+
+  &__tile-label,
+  &__tile-note {
+    font-size: var(--font-size-s);
+  }
+
+  // The Sankey fills its wrapper; the tooltip is positioned against it.
+  &__sankey-wrap {
+    background: var(--color-set-1-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: 12px;
+    padding: var(--space-m);
+    position: relative;
+  }
+
+  &__sankey {
+    overflow-x: auto;
+
+    svg {
+      display: block;
+      max-width: 100%;
+    }
+  }
+
+  &__sankey-link {
+    stroke-opacity: 0.3;
+
+    &:hover {
+      stroke-opacity: 0.55;
+    }
+  }
+
+  &__sankey-node {
+    rx: 2px;
+  }
+
+  &__sankey-label {
+    fill: var(--color-space-text);
+    font-size: var(--font-size-xs);
+    pointer-events: none;
+  }
+
+  &__sankey-value {
+    fill: var(--color-space-text-muted);
+  }
+
+  &__sankey-tooltip {
+    background: var(--color-set-2-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: 6px;
+    color: var(--color-brand-cream);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxs) var(--space-xs);
+    pointer-events: none;
+    position: absolute;
+    white-space: nowrap;
+    z-index: 1;
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      align-items: center;
+      color: var(--color-space-text-muted);
+      display: flex;
+      font-size: var(--font-size-s);
+      gap: var(--space-xxs);
+      margin: 0;
+    }
+  }
+
+  &__legend-key {
+    border-radius: 2px;
+    display: inline-block;
+    height: 0.75rem;
+    margin-right: var(--space-xxs);
+    width: 0.75rem;
+
+    &--kept {
+      background: var(--color-brand-mint);
+    }
+
+    &--held {
+      background: var(--color-brand-yellow);
+    }
+
+    &--lost {
+      background: var(--color-brand-salmon);
+    }
+  }
+
+  &__details {
+    display: grid;
+    gap: var(--space-s);
+
+    summary {
+      color: var(--color-space-text-muted);
+      cursor: pointer;
+    }
+  }
+
+  &__table {
+    margin: 0;
+
+    td {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th[scope="row"] {
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--color-space-text);
+      font-size: var(--font-size-s);
+    }
+  }
+
+  &__breakdown {
+    display: grid;
+    gap: var(--space-xxs) var(--space-m);
+    grid-template-columns: max-content 1fr;
+    margin: 0;
+
+    dt {
+      color: var(--color-space-text-muted);
+    }
+
+    dd {
+      margin: 0;
+    }
+  }
+}

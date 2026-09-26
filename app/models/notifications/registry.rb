@@ -26,6 +26,7 @@ module Notifications
       Notifications::ShopOrders::StatusChanged
       Notifications::Hardware::FundingRequestReviewed
       Notifications::Hardware::BuildReviewed
+      Notifications::Hardware::PermanentlyRejected
       Notifications::Hardware::ReviewQueueMismatch
       Notifications::Hardware::ReviewUndone
       Notifications::Workshops::StartingSoon

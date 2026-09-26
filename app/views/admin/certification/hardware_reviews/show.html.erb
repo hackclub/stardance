@@ -297,6 +297,24 @@
       </section>
 
       <aside class="ship-review__sidebar hardware-review__sidebar">
+        <% if @rejection_nominations.present? %>
+          <section class="permanent-rejection">
+            <h2 class="ship-review__panel-title">Permanent rejection history</h2>
+            <% @rejection_nominations.each do |nomination| %>
+              <details>
+                <summary><%= nomination.status.capitalize %> · <%= nomination.reviewer.display_name %> · <%= l(nomination.created_at.to_date, format: :long) %></summary>
+                <p class="permanent-rejection__reason"><%= nomination.reason %></p>
+                <% if nomination.decided_at %>
+                  <p><%= nomination.status.capitalize %> by <%= nomination.decided_by.display_name %> on <%= l(nomination.decided_at, format: :long) %>.</p>
+                <% end %>
+                <p><%= nomination.approved? ? "The final decision is visible to the builder." : "This nomination is not visible to the builder." %></p>
+                <% if current_user.admin? %>
+                  <%= link_to "View nomination and decision", admin_certification_permanent_rejection_nomination_path(nomination) %>
+                <% end %>
+              </details>
+            <% end %>
+          </section>
+        <% end %>
         <%# The verdict form is the point of the page, so it leads the sidebar
             once claimed; the claim prompt takes its place when it isn't. %>
         <% if @active_review_type == :funding && @funding_request.pending? && funding_can_review %>
@@ -378,6 +396,16 @@
             <%# Flag for fraud — a button in this same secondary-actions card. %>
             <%= render "admin/certification/hardware_reviews/fraud_flag",
                   project: @project, fraud_flag: @project.pending_fraud_report %>
+
+            <button type="button" class="action-btn action-btn--small action-btn--destructive"
+                    aria-haspopup="dialog" onclick="document.getElementById('hardware-permanent-rejection').showModal()">
+              <%= current_user.admin? ? "Permanently reject project" : "Nominate for permanent rejection" %>
+            </button>
+            <dialog id="hardware-permanent-rejection" class="hardware-review__fraud-modal"
+                    data-controller="modal" aria-labelledby="permanent-rejection-title">
+              <%= render "admin/certification/permanent_rejection_nominations/form", modal: true,
+                    nomination: Certification::PermanentRejectionNomination.new(project: @project, reviewable: @active_review) %>
+            </dialog>
           </div>
         <% end %>
 

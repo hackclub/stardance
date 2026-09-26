@@ -2,45 +2,59 @@ import { Controller } from "@hotwired/stimulus";
 
 // Reusable timelapse viewer for the shared recording gallery (hardware funding
 // review + YSWS review). Each gallery tile is a clickable <a> pointing at the
-// raw video; clicking one opens a modal lightbox with a Premiere-style JKL
-// transport instead of navigating away.
+// raw video; clicking one opens a modal lightbox with a Video.js player and a
+// Premiere-style JKL transport layered on top of it.
 //
 // Self-contained: the lightbox is appended to document.body (the gallery panel
-// is small and clip-scrolled), and the document keydown listener is bound ONLY
-// while the lightbox is open so it never fights page typing when closed.
+// is small and clip-scrolled), and the keydown listener is bound ONLY while the
+// lightbox is open so it never fights page typing when closed.
 export default class extends Controller {
   static targets = ["item"];
+  // The Video.js skin is its own bundle (app/javascript/lapse_player_skin.js),
+  // so only review pages with a gallery download it, not every visitor.
+  static values = { skinUrl: String };
+
+  // One shared signed-speed ladder: L nudges toward faster-forward, J toward
+  // faster-reverse, meeting in the middle (…4×▶ 2×▶ 1×▶ | 1×◀ 2×◀…). So from 8×
+  // forward, J steps down to 4×.
+  RATE_LADDER = [-8, -4, -2, -1, 1, 2, 4, 8];
+
+  // Above this a clip streams from the network instead of being cached whole,
+  // so one huge recording can't balloon the tab's memory.
+  MAX_CACHE_BYTES = 512 * 1024 * 1024;
+
+  // Start fetching the skin as soon as a gallery appears, so it's ready by the
+  // time a reviewer clicks a tile.
+  connect() {
+    this.skinLoaded = import(this.skinUrlValue);
+  }
 
   disconnect() {
-    this.stopReverse();
     this.closeLightbox();
   }
 
-  // Clicking a tile opens it in the JKL lightbox instead of navigating to the
-  // raw R2 video. Builds the playlist from every sibling tile and opens at the
-  // clicked index. ctrl/middle-click still follows the href (browser default).
-  open(event) {
-    // Let the browser handle modified/non-primary clicks (open the raw video in a
-    // new tab/window) — only a plain left-click opens the in-page lightbox.
+  // Clicking a tile opens it in the lightbox instead of navigating to the raw
+  // video. Builds the playlist from every sibling tile and opens at the clicked
+  // index. Modified/non-primary clicks still follow the href (browser default).
+  async open(event) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.button > 0)
       return;
     event.preventDefault();
-    const link = event.currentTarget;
-    const items = this.itemTargets.map((tile) => ({
-      type: "video",
-      src: tile.href,
-    }));
-    if (!items.length) return;
-    this.showLightbox(items, Math.max(0, this.itemTargets.indexOf(link)));
+    const sources = this.itemTargets.map((tile) => tile.href);
+    const index = Math.max(0, this.itemTargets.indexOf(event.currentTarget));
+    await this.skinLoaded;
+    this.showLightbox(sources, index);
   }
 
-  // ── Modal keyboard shortcuts (bound only while the lightbox is open) ──────
-  onKeydown(event) {
+  // ── Keyboard (bound only while the lightbox is open) ─────────────────────
+  // Runs in the capture phase so nothing else on the page (e.g. the YSWS review
+  // shortcuts) — nor the skin's own hotkeys — sees the keys we claim; the rest
+  // (f, 0–9, Home/End) fall through to the skin.
+  onKeydown = (event) => {
     if (!this.lightbox || event.altKey) return;
-    if (event.key === "Escape")
-      return this.consume(event, () => this.closeLightbox());
-    // Ctrl/⌘ + Shift + ←/→ pages between this devlog's recordings, even while a
-    // video is open (plain and shift-only arrows stay bound to scrubbing).
+    if (event.key === "Escape") return this.consume(event, this.closeLightbox);
+    // Ctrl/⌘ + Shift + ←/→ pages between recordings (plain and shift-only
+    // arrows stay bound to scrubbing).
     if (
       (event.ctrlKey || event.metaKey) &&
       event.shiftKey &&
@@ -49,363 +63,264 @@ export default class extends Controller {
       return this.consume(event, () =>
         this.stepLightbox(event.key === "ArrowLeft" ? -1 : 1),
       );
-    // Video → Premiere-style JKL transport + arrow scrubbing (shift = coarse).
-    if (this.lbVideo) {
-      if (event.code === "Space")
-        return this.consume(event, () => this.togglePlay());
-      if (event.code === "KeyJ")
-        return this.consume(event, () => this.nudgeRate(-1));
-      if (event.code === "KeyK")
-        return this.consume(event, () => this.togglePlay());
-      if (event.code === "KeyL")
-        return this.consume(event, () => this.nudgeRate(1));
-      // vim: h mirrors ← scrub (→'s vim key `l` is taken by forward-transport).
-      if (event.key === "ArrowLeft" || event.code === "KeyH")
-        return this.consume(event, () =>
-          this.stepVideo(event.shiftKey ? -10 : -1),
-        );
-      if (event.key === "ArrowRight")
-        return this.consume(event, () =>
-          this.stepVideo(event.shiftKey ? 10 : 1),
-        );
-      return;
-    }
-    // Non-video slides → prev/next (vim h/l mirror ←/→).
+    if (event.ctrlKey || event.metaKey) return;
+
+    if (event.code === "Space" || event.code === "KeyK")
+      return this.consume(event, this.togglePlay);
+    if (event.code === "KeyJ")
+      return this.consume(event, () => this.nudgeRate(-1));
+    if (event.code === "KeyL")
+      return this.consume(event, () => this.nudgeRate(1));
+    // vim: h mirrors ← scrub (→'s vim key `l` is taken by forward-transport).
     if (event.key === "ArrowLeft" || event.code === "KeyH")
-      return this.consume(event, () => this.stepLightbox(-1));
-    if (event.key === "ArrowRight" || event.code === "KeyL")
-      return this.consume(event, () => this.stepLightbox(1));
-  }
+      return this.consume(event, () =>
+        this.stepVideo(event.shiftKey ? -10 : -1),
+      );
+    if (event.key === "ArrowRight")
+      return this.consume(event, () => this.stepVideo(event.shiftKey ? 10 : 1));
+  };
 
   consume(event, fn) {
     event.preventDefault();
+    event.stopImmediatePropagation();
     fn();
   }
 
   // ── Lightbox ─────────────────────────────────────────────────────────────
-  showLightbox(items, index) {
+  showLightbox(sources, index) {
     this.closeLightbox();
-    this.lbItems = items;
-    this.lbIndex = index;
+    this.sources = sources;
+    this.index = index;
+    this.cache = new Map(); // src → Promise<objectURL | null>
+    this.fetches = new AbortController();
 
     const box = document.createElement("div");
     box.className = "lapse-player__lightbox";
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-modal", "true");
-    // Backdrop click closes a non-video lightbox; for video it doesn't — so
-    // clicking near the player (to pause) never closes it. Use × or esc.
-    box.addEventListener("click", (e) => {
-      if (e.target === box && !this.lbVideo) this.closeLightbox();
-    });
 
     const close = document.createElement("button");
     close.type = "button";
-    close.className = "lapse-player__lightbox-close";
+    close.className = "lapse-player__close";
     close.setAttribute("aria-label", "Close");
     close.textContent = "×";
-    close.addEventListener("click", () => this.closeLightbox());
+    close.addEventListener("click", this.closeLightbox);
 
-    this.lbStage = document.createElement("div");
-    this.lbStage.className = "lapse-player__lightbox-stage";
-    this.lbCaption = document.createElement("p");
-    this.lbCaption.className = "lapse-player__lightbox-caption";
+    this.stage = document.createElement("div");
+    this.stage.className = "lapse-player__stage";
+    this.caption = document.createElement("p");
+    this.caption.className = "lapse-player__caption";
 
-    box.append(close, this.lbStage, this.lbCaption);
+    box.append(close, this.stage, this.caption);
     document.body.appendChild(box);
     this.lightbox = box;
+    window.addEventListener("keydown", this.onKeydown, true);
 
-    this.onKeydown = this.onKeydown.bind(this);
-    document.addEventListener("keydown", this.onKeydown);
-
-    this.renderLightbox();
+    this.mountVideo();
   }
 
-  renderLightbox() {
-    const item = this.lbItems[this.lbIndex];
+  mountVideo() {
     this.stopReverse();
-    this.clearBufferPoll();
-    this.lbStage.innerHTML = "";
-    if (item.type === "video") {
-      this.mountVideoPlayer(item);
-    } else {
-      const img = document.createElement("img");
-      img.src = item.src;
-      img.alt = item.alt || "";
-      img.className = "lapse-player__lightbox-media";
-      this.lbStage.appendChild(img);
-      this.lbVideo = null;
-      const nav = this.lbItems.length > 1 ? " · ←/→" : "";
-      this.lbCaption.textContent = `${this.lbIndex + 1} / ${this.lbItems.length}${nav} · esc to close`;
-    }
-  }
+    const src = this.sources[this.index];
 
-  // ── Custom player chrome ─────────────────────────────────────────────────
-  // Native controls are off so the transport has one look: a scrubber, a
-  // play/pause + frame-step cluster, and a visual JKL speed ladder. Every
-  // control calls the same methods the keyboard does, so the two stay in sync.
-  mountVideoPlayer(item) {
+    const player = document.createElement("video-player");
+    const skin = document.createElement("lapse-player-skin");
+    skin.className = "lapse-player__skin";
     const video = document.createElement("video");
     Object.assign(video, {
-      src: item.src,
-      controls: false,
+      src,
+      // autoplay, not play(): the Video.js player reloads the source once it
+      // attaches, which would cancel an early play() call.
+      autoplay: true,
       playsInline: true,
       preload: "auto",
-      // Muted: timelapses are silent screen captures, and muted playback is never
-      // blocked by autoplay policy — which we rely on to warm the buffer.
+      // Timelapses are silent screen captures; muted also keeps autoplay from
+      // being blocked.
       muted: true,
     });
-    video.className = "lapse-player__lightbox-media";
-    video.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.togglePlay();
-    });
-    video.addEventListener("loadedmetadata", () => this.syncPlayerUI());
-    video.addEventListener("timeupdate", () => this.syncPlayerUI());
     video.addEventListener("ended", () => this.applyRate(0));
-    this.lbVideo = video;
-    this.rate = 1; // signed speed: + forward, − reverse, 0 paused
+    // Only the first load autoplays; swapping to the cached copy later must not
+    // resume a clip the reviewer has paused.
+    video.addEventListener("playing", () => (video.autoplay = false), {
+      once: true,
+    });
+    // Keep the ladder in sync when the player's own controls change playback.
+    // Like K, the play button resumes at +1×, never at a stale J/L speed.
+    video.addEventListener("play", () => {
+      if (this.rate <= 0) this.applyRate(1);
+    });
+    video.addEventListener("pause", () => {
+      if (!this.reverseTimer && !video.ended) this.setRate(0);
+    });
+    video.addEventListener("ratechange", () => {
+      if (!video.paused) this.setRate(video.playbackRate);
+    });
+
+    skin.append(video, this.buildSpeedLadder());
+    player.appendChild(skin);
+    this.stage.replaceChildren(player);
+    this.video = video;
     this.lastRate = 1; // K resumes here after a pause
+    this.setRate(0); // the play event lights 1▶ once autoplay actually starts
 
-    this.lbStage.append(video, this.buildPlayerBar());
-    this.warmBuffer(video);
-    this.syncPlayerUI();
+    this.cacheVideo(src).then((url) => this.swapToCached(video, src, url));
   }
 
-  // Guarantee no lag at speed: the media host blocks cross-origin fetch (so an
-  // in-memory blob isn't possible), but the browser fully buffers a clip while it
-  // *plays* (a paused video is capped). So we play it muted behind a "Buffering…"
-  // overlay with the transport locked, and only hand control over once the whole
-  // clip is buffered — then 8× and reverse seeks are all local and never stall.
-  warmBuffer(video) {
-    this.ready = false;
-    const loading = document.createElement("div");
-    loading.className = "lapse-player__buffering";
-    loading.textContent = "Buffering…";
-    this.lbStage.appendChild(loading);
-
-    video.loop = true; // don't let a short clip end mid-buffer
-    video.play().catch(() => {});
-
-    const started = Date.now();
-    this.clearBufferPoll();
-    this.bufferPoll = setInterval(() => {
-      if (this.lbVideo !== video) return this.clearBufferPoll();
-      const dur = video.duration;
-      const end = video.buffered.length
-        ? video.buffered.end(video.buffered.length - 1)
-        : 0;
-      const fullyBuffered = dur && end >= dur - 0.3;
-      // Bail out after a while so a stalled network can't trap the viewer behind
-      // the overlay forever — better a chance of lag than a permanent spinner.
-      if (!fullyBuffered && Date.now() - started < 60000) return;
-      this.clearBufferPoll();
-      loading.remove();
-      video.loop = false;
-      video.currentTime = 0;
-      this.ready = true;
-      this.applyRate(1); // start playback from the top, now fully buffered
-    }, 300);
+  // ── Aggressive buffering ─────────────────────────────────────────────────
+  // Playback starts straight off the network while the whole clip downloads
+  // into memory; once it lands, the player swaps to the local copy so seeks,
+  // 8× and reverse never wait on the network. The next recording is then
+  // prefetched so paging forward is instant too. If the media host refuses the
+  // cross-origin fetch, the player just keeps streaming.
+  cacheVideo(src) {
+    if (!this.cache.has(src)) this.cache.set(src, this.download(src));
+    return this.cache.get(src);
   }
 
-  clearBufferPoll() {
-    clearInterval(this.bufferPoll);
-    this.bufferPoll = null;
+  async download(src) {
+    try {
+      const response = await fetch(src, { signal: this.fetches.signal });
+      const total = Number(response.headers.get("content-length"));
+      if (!response.ok || total > this.MAX_CACHE_BYTES) return null;
+
+      const reader = response.body.getReader();
+      const chunks = [];
+      let loaded = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+        if (total && src === this.sources?.[this.index])
+          this.cacheProgress = Math.floor((loaded / total) * 100);
+        this.syncCaption();
+      }
+      return URL.createObjectURL(
+        new Blob(chunks, { type: response.headers.get("content-type") }),
+      );
+    } catch {
+      return null;
+    }
   }
 
-  // Vimeo/Plyr-style layout: a full-width scrubber (buffered + played + a handle
-  // that appears on hover) above a control row split into a left transport
-  // cluster and a right JKL speed ladder.
-  buildPlayerBar() {
-    const bar = document.createElement("div");
-    bar.className = "lapse-player__player";
+  swapToCached(video, src, url) {
+    if (video !== this.video) return;
+    this.cacheProgress = url ? 100 : null;
+    this.syncCaption();
+    if (!url) return;
 
-    const scrub = document.createElement("div");
-    scrub.className = "lapse-player__player-scrub";
-    this.lbBuffered = document.createElement("div");
-    this.lbBuffered.className = "lapse-player__player-buffered";
-    this.lbProgress = document.createElement("div");
-    this.lbProgress.className = "lapse-player__player-progress";
-    this.lbHandle = document.createElement("div");
-    this.lbHandle.className = "lapse-player__player-handle";
-    this.lbProgress.appendChild(this.lbHandle);
-    scrub.append(this.lbBuffered, this.lbProgress);
-    scrub.addEventListener("pointerdown", (event) =>
-      this.scrubFrom(event, scrub),
+    const { currentTime } = video;
+    const rate = this.rate;
+    video.addEventListener(
+      "loadedmetadata",
+      () => {
+        video.currentTime = currentTime;
+        this.applyRate(rate);
+      },
+      { once: true },
     );
+    video.src = url;
+    const next = this.sources[(this.index + 1) % this.sources.length];
+    if (next !== src) this.cacheVideo(next);
+  }
 
-    const row = document.createElement("div");
-    row.className = "lapse-player__player-row";
-
-    const left = document.createElement("div");
-    left.className = "lapse-player__player-cluster";
-    this.lbPlayBtn = this.playerButton("❚❚", "Play / pause · k or space", () =>
-      this.togglePlay(),
-    );
-    const back = this.playerButton(
-      "⟨",
-      "Step back 1s · ← / h (shift = 10s)",
-      () => this.stepVideo(-1),
-    );
-    const fwd = this.playerButton(
-      "⟩",
-      "Step forward 1s · → (shift = 10s)",
-      () => this.stepVideo(1),
-    );
-    this.lbTime = document.createElement("span");
-    this.lbTime.className = "lapse-player__player-time";
-    left.append(this.lbPlayBtn, back, fwd, this.lbTime);
-
-    const right = document.createElement("div");
-    right.className = "lapse-player__player-cluster";
-    const speed = document.createElement("div");
-    speed.className = "lapse-player__player-speed";
-    const speedLabel = document.createElement("span");
-    speedLabel.className = "lapse-player__player-speed-label";
-    speedLabel.textContent = "JKL";
-    speed.appendChild(speedLabel);
-    this.lbSpeedPills = this.RATE_LADDER.map((r) => {
+  // ── Speed ladder ─────────────────────────────────────────────────────────
+  buildSpeedLadder() {
+    const ladder = document.createElement("div");
+    ladder.className = "lapse-player__speed";
+    ladder.slot = "speed"; // lands in the skin's control bar
+    const label = document.createElement("span");
+    label.className = "lapse-player__speed-label";
+    label.textContent = "JKL";
+    ladder.appendChild(label);
+    this.pills = this.RATE_LADDER.map((rate) => {
       const pill = document.createElement("button");
       pill.type = "button";
-      pill.className = "lapse-player__player-pill";
-      pill.textContent = r < 0 ? `${-r}◀` : `${r}▶`;
-      pill.title = `${r < 0 ? "reverse" : "forward"} ${Math.abs(r)}× · j / l`;
-      pill.addEventListener("click", () => this.applyRate(r));
-      speed.appendChild(pill);
+      pill.className = "lapse-player__pill";
+      pill.textContent = rate < 0 ? `${-rate}◀` : `${rate}▶`;
+      pill.title = `${rate < 0 ? "reverse" : "forward"} ${Math.abs(rate)}× · j / l`;
+      pill.addEventListener("click", () => this.applyRate(rate));
+      ladder.appendChild(pill);
       return pill;
     });
-    right.appendChild(speed);
-
-    row.append(left, right);
-    bar.append(scrub, row);
-    return bar;
+    return ladder;
   }
 
-  playerButton(label, title, onClick) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "lapse-player__player-btn";
-    button.title = title;
-    button.textContent = label;
-    button.addEventListener("click", onClick);
-    return button;
-  }
-
-  // Click / drag anywhere on the track to seek (pauses first, like a scrub).
-  scrubFrom(event, track) {
-    const seek = (clientX) => {
-      if (!this.lbVideo?.duration) return;
-      const rect = track.getBoundingClientRect();
-      const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      this.applyRate(0);
-      this.lbVideo.currentTime = frac * this.lbVideo.duration;
-      this.syncPlayerUI();
-    };
-    seek(event.clientX);
-    const move = (e) => seek(e.clientX);
-    const up = () => {
-      document.removeEventListener("pointermove", move);
-      document.removeEventListener("pointerup", up);
-    };
-    document.addEventListener("pointermove", move);
-    document.addEventListener("pointerup", up);
-  }
-
-  syncPlayerUI() {
-    if (!this.lbVideo) return;
-    const video = this.lbVideo;
-    if (this.lbPlayBtn) this.lbPlayBtn.textContent = this.rate ? "❚❚" : "▶";
-    const pct = video.duration ? (video.currentTime / video.duration) * 100 : 0;
-    if (this.lbProgress) this.lbProgress.style.width = `${pct}%`;
-    if (this.lbBuffered && video.duration && video.buffered.length) {
-      const end = video.buffered.end(video.buffered.length - 1);
-      this.lbBuffered.style.width = `${(end / video.duration) * 100}%`;
-    }
-    if (this.lbTime)
-      this.lbTime.textContent = `${this.fmtTime(video.currentTime)} / ${this.fmtTime(video.duration)}`;
-    this.lbSpeedPills?.forEach((pill, i) =>
-      pill.classList.toggle("is-active", this.RATE_LADDER[i] === this.rate),
+  // Records the signed speed and repaints the ladder + caption, without
+  // touching the video.
+  setRate(rate) {
+    this.rate = rate;
+    if (rate) this.lastRate = rate;
+    this.pills?.forEach((pill, i) =>
+      pill.classList.toggle(
+        "lapse-player__pill--active",
+        this.RATE_LADDER[i] === rate,
+      ),
     );
-    if (this.lbCaption) {
-      const page = this.lbItems.length > 1 ? " · ⌃⇧←/→ next lapse" : "";
-      this.lbCaption.textContent = `${this.lbIndex + 1} / ${this.lbItems.length} · j/k/l transport · ←/→ scrub (shift = 10s)${page} · esc to close`;
-    }
+    this.syncCaption();
   }
 
-  fmtTime(seconds) {
-    if (!isFinite(seconds)) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${String(s).padStart(2, "0")}`;
+  syncCaption() {
+    if (!this.caption) return;
+    const parts = [`${this.index + 1} / ${this.sources.length}`];
+    if (this.cacheProgress != null && this.cacheProgress < 100)
+      parts.push(`caching ${this.cacheProgress}%`);
+    parts.push("j/k/l transport", "←/→ scrub (shift = 10s)");
+    if (this.sources.length > 1) parts.push("⌃⇧←/→ next lapse");
+    parts.push("esc to close");
+    this.caption.textContent = parts.join(" · ");
   }
 
   // ── Premiere-style JKL transport ─────────────────────────────────────────
-  // One shared signed-speed ladder: L nudges toward faster-forward, J toward
-  // faster-reverse, meeting in the middle (…4×▶ 2×▶ 1×▶ | 1×◀ 2×◀…). So from 8×
-  // forward, J steps down to 4×. HTML5 video can't play backwards, so reverse is
-  // emulated with a timer that walks currentTime back.
-  RATE_LADDER = [-8, -4, -2, -1, 1, 2, 4, 8];
-
   nudgeRate(direction) {
-    if (!this.lbVideo || !this.ready) return;
-    let next;
-    if (!this.rate) {
-      next = direction > 0 ? 1 : -1;
-    } else {
-      const i = this.RATE_LADDER.indexOf(this.rate);
-      next =
-        i === -1
-          ? direction > 0
-            ? 1
-            : -1
-          : this.RATE_LADDER[
-              Math.max(0, Math.min(this.RATE_LADDER.length - 1, i + direction))
-            ];
-    }
-    this.applyRate(next);
+    if (!this.rate) return this.applyRate(direction > 0 ? 1 : -1);
+    const i = this.RATE_LADDER.indexOf(this.rate);
+    if (i === -1) return this.applyRate(direction > 0 ? 1 : -1);
+    const next = Math.max(
+      0,
+      Math.min(this.RATE_LADDER.length - 1, i + direction),
+    );
+    this.applyRate(this.RATE_LADDER[next]);
   }
 
   // K: pause when playing, resume when paused. Pausing also resets the resume
   // speed to +1× so play always restarts forward (never at a stale J/L speed).
-  togglePlay() {
-    if (!this.lbVideo || !this.ready) return;
+  togglePlay = () => {
     if (this.rate) {
-      this.lastRate = 1;
       this.applyRate(0);
+      this.lastRate = 1;
     } else {
       this.applyRate(this.lastRate || 1);
     }
-  }
+  };
 
   applyRate(rate) {
-    if (!this.lbVideo) return;
-    this.rate = rate;
-    if (rate) this.lastRate = rate;
+    if (!this.video) return;
     this.stopReverse();
+    this.setRate(rate);
     if (rate > 0) {
-      this.lbVideo.playbackRate = rate;
-      this.lbVideo.play();
+      this.video.playbackRate = rate;
+      this.video.play().catch(() => {});
     } else if (rate < 0) {
-      this.lbVideo.pause();
-      this.reverseSpeed = -rate;
-      this.startReverse();
+      this.startReverse(-rate);
     } else {
-      this.lbVideo.pause();
+      this.video.pause();
     }
-    this.syncPlayerUI();
   }
 
-  startReverse() {
-    this.stopReverse();
+  // HTML5 video can't play backwards, so reverse walks currentTime back on a
+  // timer; with the clip cached locally every one of those seeks is instant.
+  startReverse(speed) {
     this.reverseTimer = setInterval(() => {
-      if (!this.lbVideo) return this.stopReverse();
-      const t = this.lbVideo.currentTime - this.reverseSpeed * 0.066;
+      const t = this.video.currentTime - speed * 0.066;
       if (t <= 0) {
-        this.lbVideo.currentTime = 0;
-        this.applyRate(0); // hit the start → stop
+        this.video.currentTime = 0;
+        this.applyRate(0);
       } else {
-        this.lbVideo.currentTime = t;
+        this.video.currentTime = t;
       }
     }, 66);
+    this.video.pause();
   }
 
   stopReverse() {
@@ -414,28 +329,30 @@ export default class extends Controller {
   }
 
   stepVideo(seconds) {
-    if (!this.lbVideo || !this.ready) return;
+    if (!this.video) return;
     this.applyRate(0); // frame-scrub pauses first
-    const max = this.lbVideo.duration || Number.MAX_SAFE_INTEGER;
-    this.lbVideo.currentTime = Math.max(
+    const max = this.video.duration || Number.MAX_SAFE_INTEGER;
+    this.video.currentTime = Math.max(
       0,
-      Math.min(max, this.lbVideo.currentTime + seconds),
+      Math.min(max, this.video.currentTime + seconds),
     );
-    this.syncPlayerUI();
   }
 
   stepLightbox(direction) {
-    const count = this.lbItems.length;
-    this.lbIndex = (this.lbIndex + direction + count) % count;
-    this.renderLightbox();
+    const count = this.sources.length;
+    this.index = (this.index + direction + count) % count;
+    this.cacheProgress = null;
+    this.mountVideo();
   }
 
-  closeLightbox() {
+  closeLightbox = () => {
     this.stopReverse();
-    this.clearBufferPoll();
-    if (this.onKeydown) document.removeEventListener("keydown", this.onKeydown);
+    window.removeEventListener("keydown", this.onKeydown, true);
+    this.fetches?.abort();
+    this.cache?.forEach((pending) =>
+      pending.then((url) => url && URL.revokeObjectURL(url)),
+    );
     this.lightbox?.remove();
-    this.lightbox = null;
-    this.lbVideo = null;
-  }
+    this.lightbox = this.video = this.cache = this.fetches = null;
+  };
 }

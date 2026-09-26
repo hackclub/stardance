@@ -1,0 +1,86 @@
+.phantom-promo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 440px;
+  padding: var(--space-l) var(--space-l)
+    calc(var(--space-xl) + var(--space-xxxs))
+    calc(var(--space-l) + var(--space-xxxs));
+  border: 1px solid #535063;
+  border-radius: 20px;
+  background: #050507;
+  color: var(--color-space-text);
+  isolation: isolate;
+  container-type: inline-size;
+
+  &--torn {
+    border-color: transparent;
+    background: none;
+  }
+
+  &__canvas {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+  }
+
+  &__horizon {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+  }
+
+  &__wordmark {
+    margin: 0;
+    color: var(--color-brand-off-white);
+    font-family: "Instrument Serif", "Times New Roman", Georgia, serif;
+    font-size: 24cqi;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  &__emphasis {
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-weight: 400;
+  }
+
+  &__body {
+    margin: 0;
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    line-height: 1.45;
+    opacity: 0.8;
+  }
+
+  &__note {
+    margin: 0;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+  }
+
+  &__cta {
+    align-self: flex-start;
+    margin-top: var(--space-xxs);
+  }
+}

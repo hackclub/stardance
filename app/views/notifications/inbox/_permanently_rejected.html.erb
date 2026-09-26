@@ -1,0 +1,6 @@
+<span class="notifications-item__verb">Your hardware project</span>
+<% if notification.record&.project %>
+  <%= link_to notification.record.project.title, project_path(notification.record.project), class: "notifications-item__actor" %>
+<% end %>
+<span class="notifications-item__verb">was</span>
+<strong>permanently rejected</strong>

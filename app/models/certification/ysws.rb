@@ -81,6 +81,10 @@ module Certification
     scope :pending, -> { where(reviewed_at: nil, returned_at: nil) }
     scope :without_mac_analysis, -> { left_joins(:mac_analysis).where(certification_mac_analyses: { id: nil }) }
 
+    # Finished reviews whose Airtable row the unified base has not taken yet, so
+    # a rewrite still reaches it.
+    scope :rewritable_in_airtable, -> { where.not(reviewed_at: nil).where(in_unified_db: [ nil, "" ]) }
+
     # A review is visible to a reviewer if nobody holds an active claim on it,
     # or they're the one holding it.
     scope :unclaimed_or_claimed_by, ->(user) {

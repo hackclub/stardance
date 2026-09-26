@@ -60,6 +60,30 @@
     }
   }
 
+  li:has(> input[type="checkbox"]) {
+    list-style: none;
+    margin-left: calc(-1 * var(--space-l));
+
+    > input[type="checkbox"] {
+      appearance: none;
+      width: 1em;
+      height: 1em;
+      border: 2px solid var(--color-brand-lilac);
+      border-radius: 3px;
+      vertical-align: -0.15em;
+      margin-right: 0.4em;
+      background: transparent;
+      cursor: default;
+
+      &:checked {
+        background: var(--color-brand-mint);
+        border-color: var(--color-brand-mint);
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 7l3 3 5-6' stroke='%2308061E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-size: contain;
+      }
+    }
+  }
+
   a {
     color: var(--color-brand-mint);
     text-decoration: underline;

@@ -268,6 +268,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.index ["ysws_review_id"], name: "index_certification_mac_analyses_on_ysws_review_id", unique: true
   end
 
+  create_table "certification_permanent_rejection_nominations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.bigint "decided_by_id"
+    t.bigint "project_id", null: false
+    t.text "reason", null: false
+    t.bigint "reviewable_id", null: false
+    t.string "reviewable_type", null: false
+    t.bigint "reviewer_id", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_by_id"], name: "idx_on_decided_by_id_c31160fc96"
+    t.index ["project_id"], name: "idx_on_project_id_7a0080ce93"
+    t.index ["project_id"], name: "index_permanent_rejections_active_project", unique: true, where: "(status = ANY (ARRAY[0, 1]))"
+    t.index ["reviewable_type", "reviewable_id"], name: "index_permanent_rejections_reviewable"
+    t.index ["reviewer_id"], name: "idx_on_reviewer_id_b6dd573175"
+    t.check_constraint "status = ANY (ARRAY[0, 1, 2])", name: "permanent_rejection_status"
+  end
+
   create_table "certification_review_notes", force: :cascade do |t|
     t.bigint "author_id", null: false
     t.text "body"
@@ -1863,6 +1882,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
   add_foreign_key "certification_integrities", "users", column: "claimed_by_id"
   add_foreign_key "certification_integrities", "users", column: "reviewer_id"
   add_foreign_key "certification_mac_analyses", "certification_ysws_reviews", column: "ysws_review_id"
+  add_foreign_key "certification_permanent_rejection_nominations", "projects"
+  add_foreign_key "certification_permanent_rejection_nominations", "users", column: "decided_by_id"
+  add_foreign_key "certification_permanent_rejection_nominations", "users", column: "reviewer_id"
   add_foreign_key "certification_review_notes", "projects"
   add_foreign_key "certification_review_notes", "users", column: "author_id"
   add_foreign_key "certification_review_skips", "users"

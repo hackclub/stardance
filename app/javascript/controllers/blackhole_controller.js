@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 import { Delaunay } from "d3";
 
 const CARD_SURFACES =
-  ".feed-post-card, .feed-composer, .rocket-progress, .rail-widget, .raffle-widget, .sidebar__logo-img, .sidebar__user-card";
+  ".feed-post-card, .feed-composer, .rocket-progress, .rail-widget, .raffle-widget, .phantom-promo, .sidebar__logo-img, .sidebar__user-card";
 const MEDIA_CONTENT = "img, video, iframe, svg";
 const SIDEBAR_SURFACES = [
   "#primary-nav",

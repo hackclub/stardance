@@ -1484,6 +1484,15 @@
     --ship-decision-accent: var(--color-brand-salmon);
   }
 
+  &--permanently_rejected {
+    --ship-decision-accent: var(--color-brand-salmon);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-salmon) 8%,
+      var(--color-set-1-bg)
+    );
+  }
+
   &__subject {
     color: var(--color-space-text);
     font-weight: 400;
@@ -2384,6 +2393,25 @@
 
   &--returned {
     --funding-accent: var(--color-brand-salmon);
+  }
+
+  &--permanently_rejected {
+    --funding-accent: var(--color-brand-salmon);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-salmon) 8%,
+      var(--color-set-1-bg)
+    );
+
+    .funding-request-card__amount {
+      flex-shrink: 0;
+    }
+  }
+
+  &__final-note {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
   }
 
   // The byline is a single line but the avatar is 39px, so the shared

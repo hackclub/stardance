@@ -11,6 +11,8 @@
 <% if mission.present? %>
   <%
     shipped = project.shipped_to_mission?(mission)
+    review_pending = project.hardware_review_pending?
+    admin_override = viewer&.admin? && !impersonating?
     # Guide progress only matters before the first ship; afterwards the mission
     # is "part of" the project and the guide is just a reference link.
     show_progress = !shipped && mission.has_guide?
@@ -75,19 +77,24 @@
                     mission_path(mission.slug),
                     data: { turbo: false },
                     class: "action-btn action-btn--small action-btn--secondary" %>
-        <% if is_member && !shipped %>
+        <% if (is_member || admin_override) && (!shipped || (admin_override && review_pending)) %>
           <% fallback = project.shipped? ? project.fallback_mission_after_detaching(mission) : nil %>
           <% detach_confirm = fallback ?
                "Detach this project from #{mission.name}? It'll go back to #{fallback.name}." :
                "Detach this project from #{mission.name}?" %>
-          <%= button_to "Detach",
+          <%= button_to (admin_override && review_pending ? "Detach (admin)" : "Detach"),
                         project_mission_path(project),
                         method: :delete,
+                        disabled: review_pending && !admin_override,
                         data: { confirm: detach_confirm },
                         class: "mission-panel__detach" %>
         <% end %>
       </div>
     </header>
+
+    <% if review_pending && is_member && !admin_override %>
+      <p class="mission-panel__review-lock">You can change missions once your hardware review is complete.</p>
+    <% end %>
 
     <% if shipped && is_member %>
       <% follow_up_targets = project.follow_up_targets_for(viewer) %>

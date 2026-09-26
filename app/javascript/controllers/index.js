@@ -250,6 +250,9 @@ application.register("hackatime-link", HackatimeLinkController);
 import HcbChartController from "./hcb_chart_controller";
 application.register("hcb-chart", HcbChartController);
 
+import HourFunnelController from "./hour_funnel_controller";
+application.register("hour-funnel", HourFunnelController);
+
 import HeroWarpController from "./hero_warp_controller";
 application.register("hero-warp", HeroWarpController);
 
@@ -322,6 +325,9 @@ application.register("parallax", ParallaxController);
 import PayoutReviewController from "./payout_review_controller";
 application.register("payout-review", PayoutReviewController);
 
+import PhantomVoidController from "./phantom_void_controller";
+application.register("phantom-void", PhantomVoidController);
+
 import PostMenuController from "./post_menu_controller";
 application.register("post-menu", PostMenuController);
 
@@ -355,11 +361,11 @@ application.register("project-thumbs-scroll", ProjectThumbsScrollController);
 import ProjectTypeController from "./project_type_controller";
 application.register("project-type", ProjectTypeController);
 
+import QueueFilterController from "./queue_filter_controller";
+application.register("queue-filter", QueueFilterController);
+
 import RatingDashboardChartController from "./rating_dashboard_chart_controller";
 application.register("rating-dashboard-chart", RatingDashboardChartController);
-
-import ReceiptPrinterController from "./receipt_printer_controller";
-application.register("receipt-printer", ReceiptPrinterController);
 
 import ReadMoreController from "./read_more_controller";
 application.register("read-more", ReadMoreController);

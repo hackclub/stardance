@@ -8,6 +8,10 @@ class Api::V1::ReviewerPayoutsController < Api::V1::BaseController
     render json: result.body, status: result.status
   end
 
+  def all
+    render json: ExternalDashboard::ReviewerPayoutBulkStatusProcessor.call
+  end
+
   def create
     result = ExternalDashboard::ReviewerPayoutCreationProcessor.call(parsed_body)
     render json: result.body, status: result.status

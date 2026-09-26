@@ -1,0 +1,14 @@
+header "Hardware permanent rejection nomination"
+
+section "#{reviewer_name} nominated #{project_title} (#{review_stage.downcase} review) for permanent rejection.", markdown: false
+section "Justification:"
+reason.scan(/.{1,2900}/m).each { |part| section part, markdown: false }
+if automatically_approved
+  section "Automatically approved because the reviewer is an administrator. The builder will receive the final decision through their review notifications."
+else
+  section "Removed from the normal review queue and awaiting an administrator's decision. The builder has not been notified. Denying this nomination returns it to the original queue without notifying the builder."
+end
+
+actions [
+  button("View nomination", "view_nomination", url: nomination_url)
+]

@@ -457,6 +457,9 @@ Rails.application.routes.draw do
       end
       resources :fraud_reports, only: [ :create ]
       resources :reviewer_payouts, only: [ :index, :create ] do
+        collection do
+          get :all
+        end
         member do
           post :decision
         end
@@ -654,6 +657,9 @@ Rails.application.routes.draw do
 
     resource :funnel, only: [ :show ], controller: "funnel"
     resource :rating_dashboard, only: [ :show ], controller: "rating_dashboard"
+    resource :hour_funnel, only: [ :show ], controller: "hour_funnel" do
+      post :refresh
+    end
 
     # Sections load lazily so one slow data source can't hold up the page.
     get    "mega_dashboard",                   to: "mega_dashboard#show",        as: :mega_dashboard
@@ -927,6 +933,11 @@ Rails.application.routes.draw do
         scope module: :funding_requests do
           resource :claim, only: [ :create, :destroy ]
         end
+      end
+
+      resources :permanent_rejection_nominations, only: [ :index, :show, :create ] do
+        post :approve, on: :member
+        post :deny, on: :member
       end
 
       # Hardware review surface: two separate queues (design funding requests and

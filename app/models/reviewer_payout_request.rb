@@ -115,20 +115,24 @@ class ReviewerPayoutRequest < ApplicationRecord
 
   def self.total_earned_for(user)
     return 0 unless user
-    ship = Certification::Ship
-             .where(reviewer: user)
-             .decided
-             .sum(:stardust_earned)
-    funding = Certification::FundingRequest
-                .where(reviewer: user)
-                .decided
-                .sum(:stardust_earned)
-    ship + funding
+    total_earned_by([ user.id ]).fetch(user.id)
+  end
+
+  def self.total_earned_by(user_ids)
+    ship = Certification::Ship.decided.where(reviewer_id: user_ids).group(:reviewer_id).sum(:stardust_earned)
+    funding = Certification::FundingRequest.decided.where(reviewer_id: user_ids).group(:reviewer_id).sum(:stardust_earned)
+    user_ids.index_with { |id| ship.fetch(id, 0.0) + funding.fetch(id, 0) }
   end
 
   def self.unclaimed_for(user)
     return 0 unless user
-    [ total_earned_for(user) - settled_for(user), 0 ].max
+    unclaimed_by([ user.id ]).fetch(user.id)
+  end
+
+  def self.unclaimed_by(user_ids)
+    earned = total_earned_by(user_ids)
+    settled = settled_by(user_ids)
+    user_ids.index_with { |id| [ earned.fetch(id) - settled.fetch(id), 0 ].max }
   end
 
   def self.pending_for(user)
@@ -138,7 +142,13 @@ class ReviewerPayoutRequest < ApplicationRecord
 
   def self.available_to_request_for(user)
     return 0 unless user
-    [ unclaimed_for(user) - (pending_for(user)&.amount || 0), 0 ].max
+    available_to_request_by([ user.id ]).fetch(user.id)
+  end
+
+  def self.available_to_request_by(user_ids)
+    unclaimed = unclaimed_by(user_ids)
+    pending = where(user_id: user_ids, aasm_state: "pending").pluck(:user_id, :amount).to_h
+    user_ids.index_with { |id| [ unclaimed.fetch(id) - pending.fetch(id, 0), 0 ].max }
   end
 
   def self.history_for(user)
@@ -151,14 +161,13 @@ class ReviewerPayoutRequest < ApplicationRecord
     paid_at || updated_at
   end
 
-  def self.settled_for(user)
-    return 0 unless user
-
+  def self.settled_by(user_ids)
     # Only the requested claim settles against earned stardust. A reduction still
     # settles the full request (the denied difference isn't reclaimable), and a
     # bonus above the request is a no-strings top-up, so counting the surplus here
     # would silently charge it back to the reviewer's future earnings.
-    where(user: user, aasm_state: "paid").sum(:amount)
+    settled = where(user_id: user_ids, aasm_state: "paid").group(:user_id).sum(:amount)
+    user_ids.index_with { |id| settled.fetch(id, 0) }
   end
 
   private

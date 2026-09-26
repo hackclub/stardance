@@ -235,13 +235,12 @@ class ProjectsController < ApplicationController
 
   # Decided Shipwright reviews. Same audience as the funding history below.
   def visible_ship_decisions
-    return [] unless hardware_review_history_visible?(:week_1_release)
-
+    history_visible = hardware_review_history_visible?(:week_1_release)
     @project.ship_reviews
             .decided
-            .includes(:reviewer)
+            .includes(:reviewer, post_ship_event: :post)
             .with_attached_verdict_video
-            .to_a
+            .select { |review| review.permanently_rejected? ? permanent_rejection_visible?(review) : history_visible }
   end
   private :visible_ship_decisions
 
@@ -249,11 +248,23 @@ class ProjectsController < ApplicationController
   # Project#timeline_funding_requests), so a returned review keeps its place as
   # newer devlogs are posted rather than only the latest request showing.
   def visible_funding_requests
-    return [] unless hardware_review_history_visible?(:hardware_flow)
-
-    @project.timeline_funding_requests.includes(:reviewer).to_a
+    history_visible = hardware_review_history_visible?(:hardware_flow)
+    @project.timeline_funding_requests.includes(:reviewer, :user).select do |review|
+      review.permanently_rejected? ? permanent_rejection_visible?(review) : history_visible
+    end
   end
   private :visible_funding_requests
+
+  # Permanent decisions stay private even when other hardware reviews are public.
+  # A collaborator is not necessarily the person who submitted the review.
+  def permanent_rejection_visible?(review)
+    return false unless current_user
+    return true if current_user.can_review?
+
+    submitter = review.is_a?(Certification::FundingRequest) ? review.user : (review.verdict_ship_event&.post&.user || review.owner)
+    current_user == submitter || policy([ :admin, review ]).show?
+  end
+  private :permanent_rejection_visible?
 
   # The "your submission is in the wrong queue" question, if one is open. Same
   # audience as the funding requests above: members and admins only.

@@ -15,6 +15,13 @@ module Certification
     REQUEST_TIMEOUT = 10
 
     Submission = Data.define(:program_name, :code_url)
+    Totals = Data.define(:records, :hours)
+
+    # The unified base is fed by each program's own submission table, so the
+    # hours column can carry either name depending on which automation wrote
+    # the row. The first present value wins.
+    HOURS_FIELDS = [ "Optional - Override Hours Spent", "Override Hours Spent", "Hours Spent" ].freeze
+    PAGE_SIZE = 100
 
     class << self
       # Submissions of the same repo to YSWS programs other than Stardance.
@@ -27,6 +34,50 @@ module Certification
 
       def double_dipped?(repo_url)
         double_dip_submissions(repo_url).any?
+      end
+
+      # Every Stardance row in the unified base, counted and summed by hours.
+      # Pages through the whole set, so it is for a cached dashboard figure,
+      # not a request path. Fails open with nil: no key, or an Airtable hiccup,
+      # reads as "unknown" rather than zero.
+      def stardance_totals
+        key = api_key
+        if key.blank?
+          Rails.logger.warn "[UnifiedYswsService] totals skipped: no API key configured (UNIFIED_READ_ONLY)"
+          return nil
+        end
+
+        records = 0
+        hours = 0.0
+        offset = nil
+
+        loop do
+          response = Faraday.get("https://api.airtable.com/v0/#{BASE_ID}/#{TABLE_ID}") do |req|
+            req.params["filterByFormula"] = %Q(FIND("#{STARDANCE_PROGRAM}", ARRAYJOIN({#{PROGRAM_NAME_FIELD}})))
+            req.params["pageSize"] = PAGE_SIZE
+            req.params["offset"] = offset if offset
+            req.headers["Authorization"] = "Bearer #{key}"
+            req.options.timeout = REQUEST_TIMEOUT
+          end
+
+          unless response.success?
+            Rails.logger.warn "[UnifiedYswsService] totals failed: HTTP #{response.status} — #{response.body}"
+            return nil
+          end
+
+          body = JSON.parse(response.body)
+          body.fetch("records", []).each do |record|
+            records += 1
+            hours += hours_for(record.fetch("fields", {}))
+          end
+          offset = body["offset"]
+          break if offset.blank?
+        end
+
+        Totals.new(records: records, hours: hours.round(1))
+      rescue StandardError => e
+        Rails.logger.error "[UnifiedYswsService] totals error: #{e.class}: #{e.message}"
+        nil
       end
 
       # Strips scheme, a trailing ".git", trailing slash and fragment so the
@@ -70,6 +121,10 @@ module Certification
       rescue StandardError => e
         Rails.logger.error "[UnifiedYswsService] lookup error: #{e.class}: #{e.message}"
         []
+      end
+
+      def hours_for(fields)
+        HOURS_FIELDS.lazy.map { |field| fields[field] }.find(&:present?).to_f
       end
 
       def build_submission(fields)

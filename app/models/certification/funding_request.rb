@@ -118,7 +118,8 @@ module Certification
       approved: 1,
       returned: 2,
       misfiled: 3,
-      withdrawn: 4
+      withdrawn: 4,
+      permanently_rejected: 5
     }, default: :pending
 
     # HCB org the hardware grants are issued from. Spend controls (approved and
@@ -188,7 +189,7 @@ module Certification
       # filter with for_reviewer's own project_id condition and drop the fraud
       # hold-back. A pending fraud report keeps the project out of the queue
       # until the fraud team clears it.
-      super.merge(for_reviewer(user)).where.not(project_id: fraud_flagged_project_ids)
+      super.merge(for_reviewer(user)).without_rejection_hold.where.not(project_id: fraud_flagged_project_ids)
     end
 
     # Health target for the pending queue. Above this we read as "behind".
@@ -310,7 +311,7 @@ module Certification
     def verdict
       @verdict ||= if approved_without_grant?
         "approved_without_grant"
-      elsif decided?
+      elsif status.in?(VERDICTS)
         status
       end
     end
@@ -510,6 +511,8 @@ module Certification
           project.update!(hardware_stage: "build")
         when :returned
           # owner is notified; no project change
+        when :permanently_rejected
+          project.update!(ship_status: :rejected)
         end
       end
     end
@@ -545,6 +548,8 @@ module Certification
     # the verdict also lands in the in-app inbox and by email, and so a builder
     # with no Slack account still hears about it.
     def notify_owner!
+      return notify_permanent_rejection! if permanently_rejected?
+
       Notifications::Hardware::FundingRequestReviewed.notify(
         recipient: owner,
         actor: reviewer,
