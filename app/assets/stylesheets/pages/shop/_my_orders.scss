@@ -159,6 +159,12 @@
     }
   }
 
+  &__grant-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
   &__cancel-link {
     font-family: var(--font-family-text);
     font-size: var(--font-size-s);

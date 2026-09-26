@@ -486,6 +486,7 @@ Rails.application.routes.draw do
     resources :orders, only: [ :index, :create ] do
       member do
         delete :cancel
+        post :return_grant
       end
       resource :flex_image, only: [ :show ], module: :orders, defaults: { format: :png }
     end

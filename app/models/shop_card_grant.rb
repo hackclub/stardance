@@ -23,6 +23,7 @@
 class ShopCardGrant < ApplicationRecord
   belongs_to :user
   belongs_to :shop_item
+  has_many :shop_orders
 
   class << self
     # Reads an HCB card-grant payload (the body HCBService.show_card_grant

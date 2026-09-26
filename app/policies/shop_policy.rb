@@ -15,6 +15,10 @@ class ShopPolicy < ApplicationPolicy
     signed_in_any?
   end
 
+  def return_grant?
+    signed_in_any?
+  end
+
   def flex_image?
     signed_in_any?
   end
