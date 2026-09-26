@@ -41,7 +41,6 @@ class NotificationTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
   setup do
-    Flipper.enable(:week_2_release)
     @alice = create_user(slack_id: "U_ALICE", display_name: "alice")
     @bob   = create_user(slack_id: "U_BOB",   display_name: "bob")
     @carol = create_user(slack_id: "U_CAROL", display_name: "carol")

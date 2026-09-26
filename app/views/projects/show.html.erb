@@ -533,7 +533,7 @@
                               } %>
                 <% end %>
 
-                <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? && !is_member && current_user&.can_review? %>
+                <% if @project.hardware? && !is_member && current_user&.can_review? %>
                   <%= link_to "Review", admin_certification_hardware_review_path(@project),
                               class: "project-show__pill project-show__pill--outline project-show__pill--review",
                               data: { turbo_frame: "_top" } %>
@@ -562,7 +562,7 @@
           devlog_modifier_class = devlog_primary ? "project-show__action--primary" : "project-show__action--secondary"
         %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
+          <% if @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: (@hackatime_linked ? nil : "Link your Hackatime account to start recording") %>
@@ -633,7 +633,7 @@
               <% end %>
             <% end %>
           <% end %>
-          <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+          <% if is_member && @project.design_stage? %>
             <% if @project.permanently_rejected? %>
               <%= render ActionButtonComponent.new(text: "Project permanently rejected", variant: :secondary, type: :button, disabled: :hard) %>
             <% elsif @project.has_pending_funding_request? %>
@@ -807,7 +807,7 @@
         <% end %>
       <% else %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
+          <% if @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: "Link your Hackatime account to start recording" %>
@@ -950,7 +950,7 @@
                       data: { turbo: false } do %>
             Open the guide!<%= inline_svg_tag "icons/right-arrow.svg", class: "action-btn__icon action-btn__icon--trailing", aria: { hidden: true } %>
           <% end %>
-        <% elsif Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
+        <% elsif @project.hardware? %>
           <%= link_to guide_path("hardware"),
                       class: "action-btn action-btn--large action-btn--primary project-show__onboarding-cta",
                       target: "_blank", rel: "noopener",
@@ -984,7 +984,7 @@
                 while the project is still in the design stage. It belongs on the
                 latest review only - older returned reviews are history the
                 builder has already moved past. %>
-            <% resubmit_available = Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+            <% resubmit_available = is_member && @project.design_stage? %>
             <% resubmit_id = (resubmit_available && entry == @project.latest_funding_request) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
@@ -1240,7 +1240,7 @@
 
   <%# Funding request popup — design-stage hardware only. Mirrors the ship
       post modal but collects a complexity tier + requested amount. %>
-  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? && !@project.permanently_rejected? %>
+  <% if is_member && @project.design_stage? && !@project.permanently_rejected? %>
     <dialog id="funding-request-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post funding-modal"
             data-controller="modal"

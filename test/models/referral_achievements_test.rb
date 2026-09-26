@@ -6,7 +6,6 @@ class ReferralAchievementsTest < ActiveSupport::TestCase
     @referrer = create_user(slack_id: "U_REF_#{@tag}", display_name: "ref#{@tag}")
     @participant = @referrer.raffle_participant || Raffle::Participant.find_or_enroll!(@referrer)
     @week = Raffle::Week.create!(number: 16, status: :active)
-    Flipper.enable(:week_2_release)
   end
 
   # -- helpers --
@@ -144,15 +143,6 @@ class ReferralAchievementsTest < ActiveSupport::TestCase
     refs.first.update!(status: :verified, credited_week: @week, verified_at: Time.current)
     @referrer.sync_referral_achievements!
     assert @referrer.earned_achievement?(:referral_2)
-  end
-
-  # -- feature flag --
-
-  test "sync is a no-op when week_2_release flag is disabled" do
-    Flipper.disable(:week_2_release)
-    2.times { |i| create_verified_referral(i) }
-    @referrer.sync_referral_achievements!
-    assert_not @referrer.earned_achievement?(:referral_2)
   end
 
   # -- integration: Credit service triggers sync --

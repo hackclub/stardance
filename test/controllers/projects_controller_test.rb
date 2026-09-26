@@ -2,7 +2,6 @@ require "test_helper"
 
 class ProjectsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:hardware_flow)
     @owner = User.create!(slack_id: "U_PROJECT_OWNER", display_name: "owner", email: "owner@example.test")
     @owner.identities.create!(provider: "hack_club", uid: "hca_project_owner", access_token: "fake-token-project-owner")
     @viewer = User.create!(slack_id: "U_PROJECT_VIEWER", display_name: "viewer", email: "viewer@example.test")
@@ -380,32 +379,6 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "button", text: /Record a timelapse/, count: 0
-  end
-
-  test "software ship feedback renders as prose, not an action-item checklist" do
-    Flipper.enable(:week_1_release)
-    @project.update!(ship_status: "submitted")
-    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- rework the CSS")
-    sign_in @owner
-
-    get project_path(@project)
-
-    assert_response :success
-    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items", 0
-    assert_select ".ship-decision-card__feedback-body", text: /rework the CSS/
-  end
-
-  test "hardware ship feedback renders reviewer action items as a checklist" do
-    Flipper.enable(:week_1_release)
-    Flipper.enable(:hardware_action_items)
-    @project.update!(hardware_stage: "build", ship_status: "submitted")
-    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- add a BOM")
-    sign_in @owner
-
-    get project_path(@project)
-
-    assert_response :success
-    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items li", text: "add a BOM"
   end
 
   test "the fund-request submit explains itself instead of a dead button" do

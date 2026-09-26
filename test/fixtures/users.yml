@@ -79,6 +79,7 @@ one:
   display_name: fixture_one
   slack_id: U_FIXTURE_ONE
   votes_count: 1
+  onboarded_at: <%= 1.week.ago.to_fs(:db) %>
 
 two:
   email: two@example.test

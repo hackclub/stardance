@@ -9,8 +9,6 @@ class DailyRollsController < ApplicationController
   # to validate the reroll_status poll param so it can't render arbitrary sizes.
   REROLL_SURFACE_SIZES = { "rng-hero" => :large, "daily-roll-widget" => :small }.freeze
 
-  before_action :require_week_2_release
-
   def create
     authorize :daily_roll
 
@@ -55,7 +53,7 @@ class DailyRollsController < ApplicationController
     authorize :daily_roll, :reroll?
 
     size = REROLL_SURFACE_SIZES[params[:surface]]
-    head :not_found and return unless size && Flipper.enabled?(:rng_reroll, current_user)
+    head :not_found and return unless size
 
     current_user.sync_streak_if_stale!
 
@@ -82,7 +80,7 @@ class DailyRollsController < ApplicationController
     # Refresh today's coding time on every /rng visit so the reroll unlocks
     # promptly after coding — but once they've coded enough to unlock there's
     # nothing more to learn, so stop hitting Hackatime.
-    if current_user && Flipper.enabled?(:rng_reroll, current_user) && !reroll_unlocked?(current_user)
+    if current_user && !reroll_unlocked?(current_user)
       current_user.sync_streak!
     end
 
@@ -157,11 +155,10 @@ class DailyRollsController < ApplicationController
   end
 
   # Server-side gate for the reroll (never trust the button's state): signed
-  # in, feature live, has rolled today, hasn't already rerolled, and has coded
+  # in, has rolled today, hasn't already rerolled, and has coded
   # past the unlock threshold today on a linked Stardance project.
   def reroll_allowed?(roll)
     current_user.present? &&
-      Flipper.enabled?(:rng_reroll, current_user) &&
       roll.present? && !roll.rerolled? &&
       reroll_unlocked?(current_user)
   end
@@ -186,11 +183,6 @@ class DailyRollsController < ApplicationController
         locals: { roll: roll, just_rolled: just_rerolled }
       )
     ]
-  end
-
-  # rng ships with the week 2 release; until then it 404s for everyone.
-  def require_week_2_release
-    head :not_found unless Flipper.enabled?(:week_2_release, current_user)
   end
 
   # /rng?date=2026-06-10 — clamped to days that can have rolls.

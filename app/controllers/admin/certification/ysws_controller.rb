@@ -70,13 +70,6 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       @reviews.sort_by! { |review| Float(review.mac_analysis&.core_signals&.dig("ai_coding_pct"), exception: false) || -1 }
       @reviews.reverse! if @dir == "desc"
     end
-
-    if !turbo_frame_request? &&
-       Flipper.enabled?(:devlog_review_pace, current_user) &&
-       !Flipper.enabled?(:reviewer_progress_panel, current_user)
-      @devlog_pace  = ::Certification::Ysws.reviewer_devlog_pace(current_user.id)
-      @project_pace = ::Certification::Ysws.reviewer_project_pace(current_user.id)
-    end
   end
 
   def show
@@ -144,9 +137,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       @contribution_data = ::Certification::YswsService.fetch_contributions(platform, username)
     end
 
-    # The MAC pre-screen is flagged per reviewer: left nil when it's off so the
-    # banner and the per-devlog notes both disappear from a single check.
-    @mac_analysis = @review.mac_analysis if Flipper.enabled?(:mac_analysis, current_user)
+    @mac_analysis = @review.mac_analysis
 
     # Flag-gated keyboard-shortcut layer for the review GUI (j/k nav, verdict
     # keys, lapse lightbox). Off by default; attaches its Stimulus controller

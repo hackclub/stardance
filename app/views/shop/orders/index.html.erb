@@ -6,10 +6,6 @@
     <%= render ActionButtonComponent.new(text: "Back to the Shop", href: shop_path, size: :small, variant: :secondary) %>
   </div>
 
-  <% if @sharable_order %>
-    <%= render "sharable_purchase", order: @sharable_order %>
-  <% end %>
-
   <% if @orders.empty? %>
     <div class="my-orders__empty">
       <p>You haven't placed any orders yet.</p>

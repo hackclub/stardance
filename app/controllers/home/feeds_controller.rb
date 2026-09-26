@@ -15,7 +15,7 @@ class Home::FeedsController < ApplicationController
   def show
     authorize :home, :feed?
     @feed_request_id = SecureRandom.uuid
-    @current_tab = TABS.include?(params[:tab]) && Flipper.enabled?(:week_3_release, current_user) ? params[:tab] : "for_you"
+    @current_tab = TABS.include?(params[:tab]) ? params[:tab] : "for_you"
     load_feed
     load_recommended_projects if first_page? && @current_tab == "for_you"
     render layout: false
@@ -35,11 +35,10 @@ class Home::FeedsController < ApplicationController
 
     @liked_devlog_ids = liked_devlog_ids_for(@feed_posts)
     @reposted_post_ids = reposted_post_ids_for(@feed_posts)
-    @show_post_views = Flipper.enabled?(:week_2_release, current_user)
   end
 
   def load_for_you_feed
-    return load_seen_mixer_feed if seen_mixer_enabled?
+    return load_seen_mixer_feed if current_user.present?
 
     load_legacy_for_you_feed
   end
@@ -160,10 +159,6 @@ class Home::FeedsController < ApplicationController
       rendered_ships: @feed_posts.count { |post| post.postable_type == "Post::ShipEvent" }
     )
     ActiveSupport::Notifications.instrument("feed.mixed", metrics)
-  end
-
-  def seen_mixer_enabled?
-    current_user.present? && Flipper.enabled?(:feed_seen_mixer, current_user)
   end
 
   def filtered_feed_scope(scope)
