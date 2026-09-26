@@ -20,6 +20,11 @@
     <dd class="<%= "is-negative" if wait_days >= review.class::SLA_DAYS %>"><%= wait_days %>d</dd>
   </div>
 
+  <div class="hardware-review__fact">
+    <dt>Total hours</dt>
+    <dd><%= format_hours_minutes(project.duration_seconds) %></dd>
+  </div>
+
   <% if review_type == :funding %>
     <% if review.awards_design_kit? %>
       <div class="hardware-review__fact hardware-review__fact--primary hardware-review__fact--wide">

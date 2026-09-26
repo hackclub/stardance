@@ -241,6 +241,10 @@
     border: 1px solid var(--color-space-border);
     border-radius: var(--border-radius);
     background: var(--color-set-1-bg);
+
+    .ship-review__title {
+      flex-wrap: wrap;
+    }
   }
 
   &__facts {
