@@ -41,7 +41,7 @@ module DiscoverRail
     end
 
     def render?
-      profile_user.present? && Flipper.enabled?(:week_2_release, user)
+      profile_user.present?
     end
   end
 end

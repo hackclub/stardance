@@ -225,7 +225,6 @@ class ShopItem < ApplicationRecord
       .first(limit)
 
     ordered.map do |(item, price)|
-      item.instance_variable_set(:@recommended_from_wishlist, wishlisted_ids.include?(item.id))
       item.instance_variable_set(:@recommended_price, price)
       item
     end
@@ -248,11 +247,6 @@ class ShopItem < ApplicationRecord
     country   = address && address["country"]
     region    = Shop::Regionalizable.country_to_region(country) if country.present?
     region.presence || "US"
-  end
-
-  # True when affordable_for surfaced this item because the user wishlisted it.
-  def recommended_from_wishlist?
-    instance_variable_defined?(:@recommended_from_wishlist) && @recommended_from_wishlist
   end
 
   # The region/user price affordable_for filtered + should display (falls back to

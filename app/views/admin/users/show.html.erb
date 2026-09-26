@@ -135,7 +135,7 @@
       </dl>
     </div>
   </div>
-  <% if Flipper.enabled?(:hardware_flow, current_user) && @user.earned_achievement?(:manual_outpost_ticket_approval) %>
+  <% if @user.earned_achievement?(:manual_outpost_ticket_approval) %>
   <div>
     <h2>Hardware</h2>
     <p>Super Hardware Builder: <strong>yes</strong></p>

@@ -3,7 +3,6 @@
     Dismissal persists per account through User::StateFlags. %>
 <% if current_user&.onboarded? &&
       !current_user.has_dismissed?("sticky_streak_intro") &&
-      current_user.sticky_streaks_enabled? &&
       current_user.sticky_streak.nil? &&
       current_user.hackatime_identity.present? %>
   <dialog class="sticky-promo"

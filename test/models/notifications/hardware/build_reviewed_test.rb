@@ -4,13 +4,10 @@ module Notifications
   module Hardware
     class BuildReviewedTest < ActiveSupport::TestCase
       setup do
-        Flipper.enable(:hardware_flow)
         @owner = create_user(slack_id: "U_BR_OWNER", display_name: "br_owner")
         @reviewer = create_user(slack_id: "U_BR_REVIEWER", display_name: "br_reviewer")
         @project = hardware_project("Reflow oven controller")
       end
-
-      teardown { Flipper.disable(:hardware_flow) }
 
       test "notifies the project owner when a build is approved" do
         review = ship_review(@project)

@@ -2,7 +2,6 @@ require "test_helper"
 
 class My::NotificationsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:week_2_release)
     @alice = create_user(slack_id: "U_ALICE", display_name: "alice")
     @bob   = create_user(slack_id: "U_BOB",   display_name: "bob")
     sign_in(@alice)

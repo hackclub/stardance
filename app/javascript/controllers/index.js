@@ -397,9 +397,6 @@ application.register("scroll-restore", ScrollRestoreController);
 import SearchableSelectController from "./searchable_select_controller";
 application.register("searchable-select", SearchableSelectController);
 
-import SharePurchaseController from "./share_purchase_controller";
-application.register("share-purchase", SharePurchaseController);
-
 import ShopController from "./shop_controller";
 application.register("shop", ShopController);
 

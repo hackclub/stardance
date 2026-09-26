@@ -25,7 +25,7 @@
         </dd>
         <dt>Type</dt>         <dd><%= @project.project_type.presence || content_tag(:span, "Not set", class: "admin-user-show__muted") %></dd>
         <dt>Categories</dt>   <dd><%= @project.project_categories.any? ? @project.project_categories.join(", ") : content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
-        <% if @project.hardware? && Flipper.enabled?(:hardware_flow, current_user) %>
+        <% if @project.hardware? %>
           <dt>Hardware review</dt>
           <dd><%= link_to "Open hardware review", admin_certification_hardware_review_path(@project) %></dd>
         <% end %>

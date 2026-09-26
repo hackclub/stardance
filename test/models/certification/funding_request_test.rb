@@ -46,7 +46,6 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
   HCB_GRANT_RESPONSE = { "id" => "test_grant_123" }.freeze
 
   def setup
-    Flipper.enable(:hardware_flow)
     @owner = User.create!(
       email: "owner-#{SecureRandom.hex(6)}@example.com",
       display_name: "Owner#{SecureRandom.hex(3)}",

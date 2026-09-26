@@ -4,7 +4,6 @@ class HardwareKitFundingSubmissionTest < ActionDispatch::IntegrationTest
   PIXEL_PNG = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=")
 
   setup do
-    Flipper.enable(:hardware_flow)
     @owner = User.create!(email: "owner-#{SecureRandom.hex(6)}@example.com",
                           display_name: "Owner#{SecureRandom.hex(3)}", slack_id: "U#{SecureRandom.hex(8)}",
                           verification_status: :verified, ysws_eligible: true)

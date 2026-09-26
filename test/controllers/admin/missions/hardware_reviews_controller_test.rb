@@ -2,7 +2,6 @@ require "test_helper"
 
 class Admin::Missions::HardwareReviewsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:hardware_flow)
     @owner = create_user(slack_id: "U_MHW_OWNER", display_name: "mhw-owner", verified: true)
     @reviewer = create_user(slack_id: "U_MHW_REV", display_name: "mhw-reviewer")
     @outsider = create_user(slack_id: "U_MHW_OUT", display_name: "mhw-outsider")
@@ -20,8 +19,6 @@ class Admin::Missions::HardwareReviewsControllerTest < ActionDispatch::Integrati
     @build_project = attach_hardware_project("Kit build bot", "build")
     @ship = ::Certification::Ship.create!(project: @build_project, status: :pending)
   end
-
-  teardown { Flipper.disable(:hardware_flow) }
 
   test "a per-mission reviewer sees the mission's design and build queues" do
     sign_in @reviewer

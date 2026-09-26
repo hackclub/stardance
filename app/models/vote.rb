@@ -239,8 +239,6 @@ class Vote < ApplicationRecord
   end
 
   def discard(event_type:, actor:, properties:)
-    credit_reversed = false
-
     with_lock do
       return false if discarded?
 
@@ -253,13 +251,10 @@ class Vote < ApplicationRecord
         properties: properties
       )
 
-      if Flipper.enabled?(:discarded_vote_credit_reversal, user)
-        user.increment!(:vote_balance, -1)
-        credit_reversed = true
-      end
+      user.increment!(:vote_balance, -1)
     end
 
-    Notifications::Votes::Discarded.notify(recipient: user) if credit_reversed
+    Notifications::Votes::Discarded.notify(recipient: user)
     ShipEventPayoutRefreshJob.perform_later(ship_event_id)
     true
   end

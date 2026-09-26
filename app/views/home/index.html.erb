@@ -37,18 +37,16 @@
           ) %>
     <% end %>
 
-    <% if Flipper.enabled?(:week_3_release, current_user) %>
-      <nav class="feed-tabs" aria-label="Feed filters">
-        <button class="feed-tabs__tab feed-tabs__tab--active" data-feed-tabs-target="tab" data-tab="for_you" data-action="feed-tabs#switch">For you</button>
-        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="hardware" data-action="feed-tabs#switch">Hardware</button>
-        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="new_builders" data-action="feed-tabs#switch">New builders</button>
-        <% if current_user.present? %>
-          <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="following" data-action="feed-tabs#switch">Following</button>
-        <% end %>
-        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="popular" data-action="feed-tabs#switch">Popular</button>
-        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="newest" data-action="feed-tabs#switch">Newest</button>
-      </nav>
-    <% end %>
+    <nav class="feed-tabs" aria-label="Feed filters">
+      <button class="feed-tabs__tab feed-tabs__tab--active" data-feed-tabs-target="tab" data-tab="for_you" data-action="feed-tabs#switch">For you</button>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="hardware" data-action="feed-tabs#switch">Hardware</button>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="new_builders" data-action="feed-tabs#switch">New builders</button>
+      <% if current_user.present? %>
+        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="following" data-action="feed-tabs#switch">Following</button>
+      <% end %>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="popular" data-action="feed-tabs#switch">Popular</button>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="newest" data-action="feed-tabs#switch">Newest</button>
+    </nav>
 
     <%= turbo_frame_tag "home_feed", src: home_feed_path, target: "_top", class: "feed-home__frame" do %>
       <div class="feed-loading" role="status" aria-live="polite">
