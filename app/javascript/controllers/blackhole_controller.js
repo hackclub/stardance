@@ -89,7 +89,12 @@ export default class extends Controller {
       this.dirty = true;
       this.wake();
     };
-    this.onScroll = this.invalidate;
+    this.onScroll = (event) => {
+      // Mirroring an inner scroller must not trigger another mask rebuild.
+      if (this.element.contains(event.target)) return;
+      this.syncDamagedText();
+      this.invalidate();
+    };
     this.onPointerMove = (event) => {
       if (!this.requested || event.pointerType === "touch") return;
       this.pointer = { x: event.clientX, y: event.clientY };
@@ -336,7 +341,9 @@ export default class extends Controller {
     this.frame = null;
     // Slow mask generation also puts dust on a 30fps budget. Keep scheduling
     // repairs even when a frame is skipped or particles are disabled.
+    // Scroll/layout invalidations must follow the page on the very next frame.
     if (
+      !this.dirty &&
       !this.reducedMotion.matches &&
       this.maskInterval > 60 &&
       this.lastTime &&
@@ -356,7 +363,8 @@ export default class extends Controller {
     if (this.level !== previous) this.maskDirty = true;
     if (
       (this.dirty || this.repairActive || this.repairDirty || this.maskDirty) &&
-      (this.reducedMotion.matches ||
+      (this.dirty ||
+        this.reducedMotion.matches ||
         time - (this.lastMask || 0) >= (this.maskInterval || 45))
     ) {
       this.cutSurfaces(this.level > previous);
@@ -529,6 +537,7 @@ export default class extends Controller {
     return (surface.geometry = {
       rect,
       revision: this.textRevision,
+      viewportText: this.textFollowsViewport(element),
       seed: (Number.parseInt(surface.layerIndex, 10) || 0) + surface.seed,
       excludedRects: nestedCards.map((card) =>
         this.localRect(card.getBoundingClientRect(), rect, 12),
@@ -652,18 +661,11 @@ export default class extends Controller {
     }
     const copy = surface.textCopy;
     copy.hidden = false;
-    copy.style.left = `${rect.left}px`;
-    copy.style.top = `${rect.top}px`;
+    this.positionDamagedText(element, surface, rect);
     copy.style.width = `${rect.width}px`;
     copy.style.height = `${rect.height}px`;
     copy.style.zIndex = surface.layerIndex;
     copy.style.clipPath = `url(#${surface.textClip.id})`;
-    copy.scrollTop = element.scrollTop;
-    copy.scrollLeft = element.scrollLeft;
-    for (const [original, clone] of surface.scrollCopies) {
-      clone.scrollTop = original.scrollTop;
-      clone.scrollLeft = original.scrollLeft;
-    }
     // The complementary path paints off-white glyphs only inside actual holes.
     surface.textPath.setAttribute(
       "d",
@@ -671,6 +673,52 @@ export default class extends Controller {
         ? `M0,0H${rect.width}V${rect.height}H0Z`
         : path.slice(path.indexOf("Z") + 1),
     );
+  }
+
+  textFollowsViewport(element) {
+    for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+      if (["fixed", "sticky"].includes(getComputedStyle(ancestor).position))
+        return true;
+    }
+    return false;
+  }
+
+  positionDamagedText(
+    element,
+    surface,
+    rect,
+    origin = this.textTarget.getBoundingClientRect(),
+  ) {
+    const copy = surface.textCopy;
+    const fixed = surface.geometry.viewportText;
+    copy.classList.toggle("blackhole__text-copy--fixed", fixed);
+    // Ordinary copies share document scrolling with the original. Only fixed
+    // and sticky UI uses viewport coordinates (including descendants of it).
+    copy.style.left = `${rect.left - (fixed ? 0 : origin.left)}px`;
+    copy.style.top = `${rect.top - (fixed ? 0 : origin.top)}px`;
+    copy.scrollTop = element.scrollTop;
+    copy.scrollLeft = element.scrollLeft;
+    for (const [original, clone] of surface.scrollCopies) {
+      clone.scrollTop = original.scrollTop;
+      clone.scrollLeft = original.scrollLeft;
+    }
+  }
+
+  syncDamagedText() {
+    if (this.textTarget.hidden) return;
+    const origin = this.textTarget.getBoundingClientRect();
+    // Sticky transitions and nested scrollers need a cheap position update,
+    // not a full Voronoi rebuild, before the next mask-animation frame.
+    for (const [element, surface] of this.surfaces) {
+      if (!surface.textCopy || surface.textCopy.hidden || !element.isConnected)
+        continue;
+      this.positionDamagedText(
+        element,
+        surface,
+        element.getBoundingClientRect(),
+        origin,
+      );
+    }
   }
 
   fragmentCells(rect, size, seed) {

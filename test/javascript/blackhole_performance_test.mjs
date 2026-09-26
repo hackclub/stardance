@@ -114,7 +114,7 @@ test("slow masks lower their update rate and recover when work becomes cheaper",
   assert.equal(c.maskInterval, 45);
 });
 
-test("throttled dirty masks keep scheduling until the final state is painted", () => {
+test("throttled animation masks keep scheduling until the final state is painted", () => {
   let cuts = 0;
   let wakes = 0;
   const c = {
@@ -123,7 +123,7 @@ test("throttled dirty masks keep scheduling until the final state is painted", (
     lastTime: 100,
     lastMask: 100,
     maskInterval: 100,
-    dirty: true,
+    maskDirty: true,
     particles: [],
     reducedMotion: { matches: false },
     cutSurfaces() {
@@ -143,8 +143,39 @@ test("throttled dirty masks keep scheduling until the final state is painted", (
   assert.equal(wakes, 2);
   BlackholeController.prototype.tick.call(c, 210);
   assert.equal(cuts, 1);
-  assert.equal(c.dirty, false);
+  assert.equal(c.maskDirty, false);
   assert.equal(wakes, 2);
+});
+
+test("scroll and layout invalidations bypass both throttles even on slow machines", () => {
+  let cuts = 0;
+  const c = {
+    level: 0.9,
+    requested: 0.9,
+    lastTime: 100,
+    lastMask: 100,
+    maskInterval: 160,
+    dirty: true,
+    particles: [],
+    reducedMotion: { matches: false },
+    cutSurfaces() {
+      cuts++;
+    },
+    emitAmbientDust() {},
+    draw() {},
+    wake() {},
+  };
+  for (const time of [110, 120, 130]) {
+    c.dirty = true;
+    BlackholeController.prototype.tick.call(c, time);
+    assert.equal(
+      c.lastMask,
+      time,
+      "scroll masks must track each new viewport position",
+    );
+    assert.equal(c.dirty, false);
+  }
+  assert.equal(cuts, 3);
 });
 
 test("reduced motion paints dirty masks immediately without needing another animation frame", () => {
@@ -167,4 +198,93 @@ test("reduced motion paints dirty masks immediately without needing another anim
   };
   BlackholeController.prototype.tick.call(c, 110);
   assert.equal(cuts, 1);
+});
+
+test("page text retains document coordinates across vertical and horizontal scrolling", () => {
+  const c = controller();
+  const copy = {
+    style: {},
+    classList: {
+      toggle(name, fixed) {
+        assert.equal(fixed, false);
+      },
+    },
+  };
+  const element = { scrollTop: 0, scrollLeft: 0 };
+  const surface = {
+    textCopy: copy,
+    geometry: { viewportText: false },
+    scrollCopies: [],
+  };
+  c.positionDamagedText(
+    element,
+    surface,
+    { left: 200, top: 600 },
+    { left: 0, top: 0 },
+  );
+  assert.equal(copy.style.top, "600px");
+  assert.equal(copy.style.left, "200px");
+  c.positionDamagedText(
+    element,
+    surface,
+    { left: 120, top: 100 },
+    { left: -80, top: -500 },
+  );
+  assert.equal(
+    copy.style.top,
+    "600px",
+    "native scrolling moves the copy, not a delayed top update",
+  );
+  assert.equal(copy.style.left, "200px");
+});
+
+test("fixed sidebar text stays viewport anchored and nested scroll offsets are mirrored", () => {
+  const c = controller();
+  const copy = {
+    style: {},
+    classList: {
+      toggle(name, fixed) {
+        assert.equal(fixed, true);
+      },
+    },
+  };
+  const original = { scrollTop: 45, scrollLeft: 12 };
+  const clone = {};
+  const surface = {
+    textCopy: copy,
+    geometry: { viewportText: true },
+    scrollCopies: [[original, clone]],
+  };
+  c.positionDamagedText(
+    original,
+    surface,
+    { left: 20, top: 300 },
+    { left: -80, top: -500 },
+  );
+  assert.equal(copy.style.top, "300px");
+  assert.equal(copy.style.left, "20px");
+  assert.equal(copy.scrollTop, 45);
+  assert.equal(clone.scrollTop, 45);
+  assert.equal(clone.scrollLeft, 12);
+});
+
+test("viewport anchoring includes fixed and sticky ancestors, not ordinary page text", () => {
+  const previousStyle = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = (element) => ({ position: element.position });
+  try {
+    const c = controller();
+    for (const position of ["fixed", "sticky", "relative", "static"]) {
+      const element = {
+        position: "static",
+        parentElement: { position, parentElement: null },
+      };
+      assert.equal(
+        c.textFollowsViewport(element),
+        ["fixed", "sticky"].includes(position),
+      );
+    }
+  } finally {
+    if (previousStyle) globalThis.getComputedStyle = previousStyle;
+    else delete globalThis.getComputedStyle;
+  }
 });
