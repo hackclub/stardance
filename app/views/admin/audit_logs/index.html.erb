@@ -41,28 +41,16 @@
               <%= f.select :event, options_for_select(@events, params[:event]), { include_blank: "All" }, class: "admin-filters__select" %>
             </div>
 
-            <div class="admin-filters__field searchable-select" data-controller="searchable-select">
+            <div class="admin-filters__field searchable-select" data-controller="searchable-select"
+                 data-searchable-select-search-url-value="<%= search_users_path(format: :json) %>">
               <%= f.label :whodunnit, "Performed By", class: "admin-filters__label" %>
-              <% selected_user = @users.find { |u| u.id.to_s == params[:whodunnit].to_s } %>
               <%= f.hidden_field :whodunnit, value: params[:whodunnit], data: { searchable_select_target: "hiddenField" } %>
-              <input type="text" placeholder="Search users..." value="<%= selected_user&.display_name %>"
+              <input type="text" placeholder="Search users..." value="<%= @selected_user&.display_name %>"
                      class="admin-filters__input"
                      data-searchable-select-target="input"
                      data-action="focus->searchable-select#open input->searchable-select#filter"
                      autocomplete="off">
-              <div class="searchable-select-dropdown" data-searchable-select-target="dropdown">
-                <div class="searchable-select-option" data-searchable-select-target="option" data-action="click->searchable-select#clear"
-                     data-value="" data-label="" data-search-text="all">All</div>
-                <% @users.each do |user| %>
-                  <div class="searchable-select-option" data-searchable-select-target="option" data-action="click->searchable-select#select"
-                       data-value="<%= user.id %>" data-label="<%= user.display_name %>"
-                       data-search-text="<%= "#{user.display_name} #{user.id}".downcase %>">
-                    <img src="<%= user.avatar %>" alt="" class="searchable-select-avatar" loading="lazy">
-                    <span><%= user.display_name %></span>
-                    <span class="admin-user-show__muted">#<%= user.id %></span>
-                  </div>
-                <% end %>
-              </div>
+              <div class="searchable-select-dropdown" data-searchable-select-target="dropdown"></div>
             </div>
 
             <div class="admin-filters__field">
