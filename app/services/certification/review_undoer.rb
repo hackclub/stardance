@@ -73,6 +73,9 @@ module Certification
 
       undone = false
       review.with_lock do
+        # Serialize the return to pending with mission changes, including
+        # returned funding requests that don't otherwise update the project.
+        project.lock!
         # Cheap re-check under the row lock (no HCB round-trip) so a double-submit
         # can't undo twice, and so the grant below is only cancelled once we know
         # the reversal will go through.

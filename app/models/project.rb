@@ -217,22 +217,22 @@ class Project < ApplicationRecord
   # when the swap is allowed: draft projects switch freely, shipped projects
   # only move to a follow-up or back to a mission they shipped to. Otherwise
   # the attachment validations raise RecordInvalid.
-  def attach_mission!(mission)
+  def attach_mission!(mission, force: false)
     with_lock do
       current = current_mission_attachment
-      current.detach! if current && may_swap_mission_to?(mission)
+      current.detach!(force: force) if current && may_swap_mission_to?(mission)
       mission_attachments.create!(mission: mission, attached_at: Time.current)
     end
   end
 
   # Detaches the current mission and returns the fallback it re-attached,
   # if any — a shipped project never goes mission-less.
-  def detach_mission!
+  def detach_mission!(force: false)
     with_lock do
       attachment = current_mission_attachment
       next nil unless attachment
 
-      attachment.detach!
+      attachment.detach!(force: force)
       fallback = fallback_mission_after_detaching(attachment.mission)
       mission_attachments.create!(mission: fallback, attached_at: Time.current) if fallback
       fallback
@@ -517,6 +517,10 @@ class Project < ApplicationRecord
   # True while a funding request for this project is awaiting reviewer decision.
   def has_pending_funding_request?
     certification_funding_requests.pending.exists?
+  end
+
+  def hardware_review_pending?
+    hardware? && (has_pending_funding_request? || awaiting_ship_review?)
   end
 
   def permanently_rejected?

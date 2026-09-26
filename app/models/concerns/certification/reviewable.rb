@@ -315,9 +315,12 @@ module Certification
     # next reviewer through the queue picks it up rather than the one who
     # flagged it.
     def dispute_queue_mismatch!
-      return false unless misfiled?
+      with_lock do
+        return false unless misfiled?
 
-      transaction do
+        # Match verdict/undo lock order: review, then project. Mission changes
+        # hold the project lock and must not overlap a return to pending.
+        project.lock!
         update!(status: :pending, reviewer: nil, claim_expires_at: nil, claimed_at: nil)
         restore_to_public_surfaces!
       end

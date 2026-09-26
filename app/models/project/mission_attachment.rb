@@ -44,10 +44,17 @@ class Project::MissionAttachment < ApplicationRecord
 
   before_validation :default_attached_at, on: :create
 
-  def detach!
+  # Both detaching and switching missions come through here. Only a trusted
+  # admin action may bypass the review lock; never pass a request parameter.
+  def detach!(force: false)
     return if detached_at.present?
 
     transaction do
+      if project.hardware_review_pending? && !force
+        errors.add(:base, "You can't detach or switch missions while your hardware project is under review.")
+        raise ActiveRecord::RecordInvalid, self
+      end
+
       update!(detached_at: Time.current)
       discard_rejected_submissions
     end
