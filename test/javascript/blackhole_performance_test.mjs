@@ -60,6 +60,175 @@ test("fragment fields invalidate when geometry, protected content, or exclusions
   assert.deepEqual(c.fragmentField(rect, 9, 31, areas, allExcluded), []);
 });
 
+test("small scrolls reuse meshes, while large jumps and resizing rebuild them", () => {
+  const c = controller();
+  const tall = { ...rect, height: 5000 };
+  const initial = c.fragmentCells(tall, 9, 31);
+  for (let offset = 10; offset <= 120; offset += 10)
+    assert.equal(c.fragmentCells({ ...tall, top: -offset }, 9, 31), initial);
+  const jumped = c.fragmentCells({ ...tall, top: -600 }, 9, 31);
+  assert.notEqual(jumped, initial);
+  const resized = c.fragmentCells({ ...tall, top: -600, width: 800 }, 9, 31);
+  assert.notEqual(resized, jumped);
+  assert.ok(
+    resized.length < 20000,
+    "tall pages must not allocate a full-page mesh",
+  );
+});
+
+test("diagonal scroll reversals preserve visible polygons and keep one mesh per surface", () => {
+  const c = controller();
+  const normalize = (cells, rect) =>
+    cells
+      .filter(
+        ({ cx, cy }) =>
+          cx >= -rect.left &&
+          cx <= c.width - rect.left &&
+          cy >= -rect.top &&
+          cy <= c.height - rect.top,
+      )
+      .map(({ cx, cy, vertices }) => [
+        cx,
+        cy,
+        vertices.map((point) => point.map((n) => n.toFixed(6))).sort(),
+      ]);
+  for (const [left, top] of [
+    [-200, -300],
+    [-250, -350],
+    [-210, -310],
+    [-20, -30],
+    [-800, -1200],
+  ]) {
+    const rect = { left, top, width: 3000, height: 5000 };
+    const actual = normalize(c.fragmentCells(rect, 9, 31), rect);
+    const expected = normalize(controller().fragmentCells(rect, 9, 31), rect);
+    assert.equal(actual.length, expected.length);
+    for (let i = 0; i < actual.length; i++)
+      assert.deepEqual(actual[i], expected[i]);
+    assert.equal(c.fragmentMeshes.size, 1);
+  }
+});
+
+test("removed surfaces release their meshes, fields, and text copies", () => {
+  const previousDocument = globalThis.document;
+  globalThis.document = { querySelectorAll: () => [], body: { children: [] } };
+  try {
+    const c = controller();
+    let removed = 0,
+      unobserved = 0;
+    const element = { isConnected: false };
+    const removable = () => ({ remove: () => removed++ });
+    c.surfaces = new Map([
+      [
+        element,
+        {
+          geometry: { seed: 31 },
+          clip: removable(),
+          textClip: removable(),
+          textCopy: removable(),
+        },
+      ],
+    ]);
+    c.surfaceResize = { unobserve: () => unobserved++ };
+    c.fragmentMeshes = new Map([[31, {}]]);
+    c.fragmentFields = new Map([[31, {}]]);
+    c.collectSurfaces();
+    assert.equal(c.surfaces.size, 0);
+    assert.equal(c.fragmentMeshes.size, 0);
+    assert.equal(c.fragmentFields.size, 0);
+    assert.equal(removed, 3);
+    assert.equal(unobserved, 1);
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+});
+
+test("scroll caching preserves visible polygon geometry without seams", () => {
+  const c = controller();
+  const tall = { ...rect, height: 5000 };
+  c.fragmentCells(tall, 9, 31);
+  for (const offset of [50, 120, 500, 650]) {
+    const scrolled = { ...tall, top: -offset };
+    const cached = c.fragmentCells(scrolled, 9, 31);
+    const fresh = controller().fragmentCells(scrolled, 9, 31);
+    const visible = (cells) =>
+      cells
+        .filter(
+          ({ cx, cy }) =>
+            cx >= 0 &&
+            cx <= rect.width &&
+            cy >= offset &&
+            cy <= offset + c.height,
+        )
+        .map(({ cx, cy, vertices }) => [
+          cx,
+          cy,
+          vertices.map((point) => point.map((n) => n.toFixed(6))).sort(),
+        ]);
+    const actual = visible(cached);
+    const expected = visible(fresh);
+    assert.equal(actual.length, expected.length);
+    for (let index = 0; index < actual.length; index++)
+      assert.deepEqual(actual[index], expected[index]);
+  }
+});
+
+test("scrolling a Phantom-sized card reuses its decay field but respects changed text bounds", () => {
+  const previousStyle = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = () => ({ zIndex: "5", position: "relative" });
+  try {
+    const c = controller();
+    c.textRevision = 1;
+    c.dirty = true;
+    let textLeft = 20;
+    c.protectedRects = () => [
+      { left: textLeft, right: 280, top: 250, bottom: 300, kind: "text" },
+    ];
+    const element = {};
+    const surface = { card: true, seed: 31 };
+    const ad = { left: 850, top: 150, width: 310, height: 480 };
+    const geometry = c.surfaceGeometry(element, surface, ad);
+    const field = c.fragmentField(
+      ad,
+      9,
+      geometry.seed,
+      geometry.protectedRects,
+      geometry.excludedRects,
+    );
+    const scrolled = { ...ad, top: 50 };
+    const next = c.surfaceGeometry(element, surface, scrolled);
+    assert.equal(next.protectedRects, geometry.protectedRects);
+    assert.equal(next.excludedRects, geometry.excludedRects);
+    assert.equal(
+      c.fragmentField(
+        scrolled,
+        9,
+        next.seed,
+        next.protectedRects,
+        next.excludedRects,
+      ),
+      field,
+    );
+    textLeft = 30;
+    const changed = c.surfaceGeometry(element, surface, scrolled);
+    assert.notEqual(changed.protectedRects, next.protectedRects);
+    assert.notEqual(
+      c.fragmentField(
+        scrolled,
+        9,
+        changed.seed,
+        changed.protectedRects,
+        changed.excludedRects,
+      ),
+      field,
+    );
+  } finally {
+    if (previousStyle) globalThis.getComputedStyle = previousStyle;
+    else delete globalThis.getComputedStyle;
+  }
+});
+
 test("cursor repairs and subsequent decay remain live on cached fields", () => {
   const c = controller();
   c.level = 0.9;

@@ -16,6 +16,7 @@ const PROTECTED_CONTENT =
   "a:not(.feed-post-card__overlay-link), button, input, textarea, select, summary, img, video, iframe, svg, [role='progressbar'], [role='meter'], [contenteditable]";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SIMULATOR_KEY = "stardance-event-simulator-v1";
+const MESH_OVERSCAN = 128;
 const clamp = (n, min = 0, max = 1) => Math.min(max, Math.max(min, n));
 const random = (x, y, seed = 0) => {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
@@ -539,11 +540,31 @@ export default class extends Controller {
       revision: this.textRevision,
       viewportText: this.textFollowsViewport(element),
       seed: (Number.parseInt(surface.layerIndex, 10) || 0) + surface.seed,
-      excludedRects: nestedCards.map((card) =>
-        this.localRect(card.getBoundingClientRect(), rect, 12),
+      excludedRects: this.reuseRects(
+        cached?.excludedRects,
+        nestedCards.map((card) =>
+          this.localRect(card.getBoundingClientRect(), rect, 12),
+        ),
       ),
-      protectedRects: this.protectedRects(element, rect, nestedCards),
+      protectedRects: this.reuseRects(
+        cached?.protectedRects,
+        this.protectedRects(element, rect, nestedCards),
+      ),
     });
+  }
+
+  reuseRects(previous, current) {
+    // Scrolling changes viewport coordinates, not necessarily local geometry.
+    // Keep field-cache identity when the freshly measured content is unchanged;
+    // sticky children, inner scrolling, and reflow still invalidate immediately.
+    return previous?.length === current.length &&
+      current.every((area, index) =>
+        ["left", "right", "top", "bottom", "kind"].every(
+          (key) => area[key] === previous[index][key],
+        ),
+      )
+      ? previous
+      : current;
   }
 
   localRect(rect, surfaceRect, padding = 5) {
@@ -722,19 +743,44 @@ export default class extends Controller {
   }
 
   fragmentCells(rect, size, seed) {
-    // Deterministic sites with a wide guard band keep the same Voronoi cells
-    // when scrolling. Cache the mesh while only intensity is changing.
-    const left = Math.floor(Math.max(-rect.left, -size) / size) - 1;
-    const right =
+    // Keep a bounded overscan strip so small scrolls do not retriangulate the
+    // same card every nine pixels. Sites remain anchored to local coordinates.
+    let left = Math.floor(Math.max(-rect.left, -size) / size) - 1;
+    let right =
       Math.ceil(Math.min(this.width - rect.left, rect.width + size) / size) + 1;
-    const top = Math.floor(Math.max(-rect.top, -size) / size) - 1;
-    const bottom =
+    let top = Math.floor(Math.max(-rect.top, -size) / size) - 1;
+    let bottom =
       Math.ceil(Math.min(this.height - rect.top, rect.height + size) / size) +
       1;
-    const key = `${left}:${right}:${top}:${bottom}:${size}`;
     this.fragmentMeshes ||= new Map();
     const cached = this.fragmentMeshes.get(seed);
-    if (cached?.key === key) return cached.cells;
+    if (
+      cached &&
+      cached.size === size &&
+      cached.width === rect.width &&
+      cached.height === rect.height &&
+      cached.left <= left &&
+      cached.right >= right &&
+      cached.top <= top &&
+      cached.bottom >= bottom
+    )
+      return cached.cells;
+    const overscanLeft =
+      rect.left < 0 ? Math.max(0, -rect.left - MESH_OVERSCAN) : -rect.left;
+    left = Math.floor(Math.max(overscanLeft, -size) / size) - 1;
+    right =
+      Math.ceil(
+        Math.min(this.width - rect.left + MESH_OVERSCAN, rect.width + size) /
+          size,
+      ) + 1;
+    const overscanTop =
+      rect.top < 0 ? Math.max(0, -rect.top - MESH_OVERSCAN) : -rect.top;
+    top = Math.floor(Math.max(overscanTop, -size) / size) - 1;
+    bottom =
+      Math.ceil(
+        Math.min(this.height - rect.top + MESH_OVERSCAN, rect.height + size) /
+          size,
+      ) + 1;
     const sites = [];
     for (let y = top - 4; y <= bottom + 4; y++) {
       for (let x = left - 4; x <= right + 4; x++) {
@@ -774,7 +820,16 @@ export default class extends Controller {
         },
       });
     });
-    this.fragmentMeshes.set(seed, { key, cells });
+    this.fragmentMeshes.set(seed, {
+      left,
+      right,
+      top,
+      bottom,
+      size,
+      width: rect.width,
+      height: rect.height,
+      cells,
+    });
     return cells;
   }
 
