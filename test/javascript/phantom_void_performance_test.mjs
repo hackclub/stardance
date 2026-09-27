@@ -186,3 +186,35 @@ test("hidden and offscreen ads stop rendering; resume resets cadence samples", (
     }
   }
 });
+
+test("pointer speed ignores high polling rates and coarse timestamps", () => {
+  const rect = { left: 0, bottom: 200 };
+  const pointerState = () => ({
+    interactive: true,
+    layout: { height: 200 },
+    mouseVel: { x: 0, y: 0 },
+    lastMove: null,
+    canvasTarget: { getBoundingClientRect: () => rect },
+    pointerPosition: methods.pointerPosition,
+  });
+  const move = (controller, clientX, timeStamp) =>
+    methods.track.call(controller, { clientX, clientY: 100, timeStamp });
+
+  const firefox = pointerState();
+  for (let i = 0; i < 200; i++) move(firefox, 100 + (i % 2), Math.floor(i / 4));
+  assert.ok(
+    Math.hypot(firefox.mouseVel.x, firefox.mouseVel.y) < 0.5,
+    "1px jitter at 1000Hz with repeated timestamps must not read as a flick",
+  );
+  assert.deepEqual(firefox.mouse, { x: 101, y: 100 });
+
+  const flick = pointerState();
+  move(flick, 0, 0);
+  move(flick, 5000, 20);
+  assert.ok(Math.hypot(flick.mouseVel.x, flick.mouseVel.y) <= 3);
+
+  const steady = pointerState();
+  for (let i = 0; i <= 30; i++) move(steady, i * 4, i * (1000 / 60));
+  assert.ok(Math.abs(steady.mouseVel.x - 1.2) < 0.01);
+  assert.equal(steady.mouseVel.y, 0);
+});

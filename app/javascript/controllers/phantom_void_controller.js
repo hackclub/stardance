@@ -5,6 +5,9 @@ const MAX_PIXEL = 4;
 const QUALITY_FRAME_BUDGET_MS = 1000 / 30;
 const QUALITY_WINDOW_MS = 2000;
 const MAX_CLICKS = 6;
+const VELOCITY_WINDOW_MS = 1000 / 60;
+const MAX_POINTER_SPEED = 3;
+const VELOCITY_SMOOTHING = 0.5;
 const CLICK_LIFE_S = 2.5;
 const STILL_TIME_S = 12;
 
@@ -328,14 +331,28 @@ export default class extends Controller {
     // Keep pointer/click coordinates in CSS pixels so quality changes cannot
     // move an existing ripple. Scrolling only needs this one viewport read.
     const { x, y } = this.pointerPosition(e.clientX, e.clientY);
-    if (this.lastMove) {
-      const dt = Math.max(0.001, (e.timeStamp - this.lastMove.at) / 1000);
-      const height = Math.max(1, this.layout?.height || 1);
-      this.mouseVel.x = (x - this.lastMove.x) / height / dt;
-      this.mouseVel.y = (y - this.lastMove.y) / height / dt;
-    }
-    this.lastMove = { x, y, at: e.timeStamp };
     this.mouse = { x, y };
+    if (!this.lastMove) {
+      this.lastMove = { x, y, at: e.timeStamp };
+      return;
+    }
+    // Firefox delivers pointermove at the mouse's polling rate (up to 1000Hz)
+    // with coarse timestamps, so speed is sampled over at least a 60Hz frame,
+    // smoothed, and capped instead of taken from two consecutive events.
+    const elapsed = e.timeStamp - this.lastMove.at;
+    if (elapsed < VELOCITY_WINDOW_MS) return;
+    const height = Math.max(1, this.layout?.height || 1);
+    const scale = 1000 / height / elapsed;
+    let vx = (x - this.lastMove.x) * scale;
+    let vy = (y - this.lastMove.y) * scale;
+    const speed = Math.hypot(vx, vy);
+    if (speed > MAX_POINTER_SPEED) {
+      vx *= MAX_POINTER_SPEED / speed;
+      vy *= MAX_POINTER_SPEED / speed;
+    }
+    this.mouseVel.x += (vx - this.mouseVel.x) * VELOCITY_SMOOTHING;
+    this.mouseVel.y += (vy - this.mouseVel.y) * VELOCITY_SMOOTHING;
+    this.lastMove = { x, y, at: e.timeStamp };
   }
 
   get interactive() {
