@@ -3146,17 +3146,12 @@ body:has(.certification-ysws) {
   color: var(--color-space-text-muted);
   font-size: var(--font-size-xs);
   box-shadow: 0 4px 16px hsl(245 55% 4% / 0.5);
+  cursor: pointer;
+  font-family: var(--font-family-text);
 
-  &__title {
-    color: var(--color-brand-mint);
-    font-weight: 700;
-  }
-
-  &__item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    white-space: nowrap;
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-mint);
+    outline-offset: 2px;
   }
 }
 

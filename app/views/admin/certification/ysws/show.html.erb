@@ -6,7 +6,14 @@
   ysws_controllers = "certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert"
   ysws_controllers += " certification--ysws--keyboard-shortcuts" if @ysws_review_shortcuts
 %>
-<main class="certification-ysws" role="main" data-controller="<%= ysws_controllers %>" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>">
+<main class="certification-ysws" role="main" data-controller="<%= ysws_controllers %>" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>"
+      <% if @ysws_review_shortcuts %>
+        data-certification--ysws--keyboard-shortcuts-catalog-value="<%= Certification::YswsShortcuts::CATALOG.to_json %>"
+        data-certification--ysws--keyboard-shortcuts-settings-value="<%= (current_user.preference&.ysws_shortcuts || {}).to_json %>"
+        data-certification--ysws--keyboard-shortcuts-reserved-value="<%= Certification::YswsShortcuts::RESERVED.to_json %>"
+        data-certification--ysws--keyboard-shortcuts-url-value="<%= admin_certification_ysws_shortcuts_path %>"
+      <% end %>>
+  <%= render "admin/certification/ysws/shortcut_settings" if @ysws_review_shortcuts %>
   <%= render Admin::Certification::MACAnalysisBannerComponent.new(analysis: @mac_analysis, repo_url: @review.project&.repo_url, total_minutes: @review.original_minutes) %>
 
   <!-- Header Section -->
