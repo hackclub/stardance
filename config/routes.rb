@@ -968,6 +968,7 @@ Rails.application.routes.draw do
 
       get "devlogs/:devlog_id/commits", to: "devlog_commits#index", as: "devlog_commits"
 
+      resource :ysws_shortcuts, only: [ :update ], controller: "ysws_shortcuts"
       get "review", to: "ysws#index", as: "ysws_reviews"
       get "review/dashboard", to: "ysws/dashboard#show", as: "ysws_dashboard"
       get "review/:id", to: "ysws#show", as: "ysws_review"

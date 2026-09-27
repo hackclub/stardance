@@ -30,4 +30,13 @@ class User::Preference < ApplicationRecord
   belongs_to :user
 
   validates :user_id, uniqueness: true
+  validate :valid_ysws_shortcuts, if: :will_save_change_to_ysws_shortcuts?
+
+  private
+
+  def valid_ysws_shortcuts
+    Certification::YswsShortcuts.errors(ysws_shortcuts).each do |message|
+      errors.add(:ysws_shortcuts, message)
+    end
+  end
 end

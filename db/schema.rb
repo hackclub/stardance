@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_032633) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1662,6 +1662,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.boolean "streak_slack_status_enabled", default: true, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.jsonb "ysws_shortcuts", default: {}, null: false
     t.index ["leaderboard_optin"], name: "index_user_preferences_on_leaderboard_optin"
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
   end
