@@ -75,7 +75,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
       BukuX3::Assignment.stub(:buku?, ->(_) { flunk "premature role disclosure" }) do
         render_inline BukuX3StatusComponent.new(user: @user)
       end
-      assert_no_selector ".buku-x3-status"
+      assert_public_progress_only
     end
   end
 
@@ -86,20 +86,40 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     @event.update!(unlocked_at: 1.minute.ago)
     Flipper.disable(:bukux3)
     render_inline BukuX3StatusComponent.new(user: @user)
-    assert_no_selector ".buku-x3-status"
+    assert_public_progress_only
   end
 
   test "signed out and incomplete accounts cannot see a role" do
-    render_inline BukuX3StatusComponent.new(user: nil)
+    BukuX3::Assignment.stub(:buku?, ->(_) { flunk "must not compute an undisclosed role" }) do
+      render_inline BukuX3StatusComponent.new(user: nil)
+      assert_public_progress_only
+      @user.update!(onboarded_at: nil)
+      render_inline BukuX3StatusComponent.new(user: @user)
+      assert_public_progress_only
+    end
+  end
+
+  test "public progress works without the event flag or an event record" do
+    Flipper.disable(:bukux3)
+    BukuX3::Event.stub(:current, nil) do
+      render_inline BukuX3StatusComponent.new(user: nil)
+    end
+    assert_public_progress_only
+    assert_selector "[role='meter'][aria-valuenow='25']"
+    assert_selector ".buku-x3-status__hours", text: "0 h shipped", count: 2
+  end
+
+  test "compact private reminder stays hidden for guests and incomplete accounts" do
+    render_inline BukuX3StatusComponent.new(user: nil, compact: true)
     assert_no_selector ".buku-x3-status"
     @user.update!(onboarded_at: nil)
-    render_inline BukuX3StatusComponent.new(user: @user)
+    render_inline BukuX3StatusComponent.new(user: @user, compact: true)
     assert_no_selector ".buku-x3-status"
   end
 
   test "panel preview cannot bypass gates outside development" do
     render_inline BukuX3StatusComponent.new(user: nil, preview: true, preview_role: "bean")
-    assert_no_selector ".buku-x3-status"
+    assert_public_progress_only
   end
 
   test "development preview uses an explicit role without assigning an account" do
@@ -111,5 +131,13 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     assert_selector ".buku-x3-status__role", text: "you're a bean"
     assert_no_selector ".buku-x3-status__preview"
     assert_selector "img[src*='events/bukux3/bean']"
+  end
+
+  private
+
+  def assert_public_progress_only
+    assert_selector ".buku-x3-status [role='meter']"
+    assert_no_selector ".buku-x3-status__identity, .buku-x3-status__toggle, .buku-x3-status--interactive"
+    assert_no_selector ".buku-x3-status--buku, .buku-x3-status--bean"
   end
 end

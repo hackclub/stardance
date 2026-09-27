@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# Private role reminder. Call sites pass the signed-in viewer, never a profile
-# or project owner; do not cache this fragment across users.
+# Public team progress with an optional private role reminder. Call sites pass
+# the viewer, never a profile/project owner; do not cache across users.
 class BukuX3StatusComponent < ViewComponent::Base
   def initialize(user:, compact: false, preview: false, preview_role: "buku")
     @user = user
@@ -11,6 +11,10 @@ class BukuX3StatusComponent < ViewComponent::Base
   end
 
   def render?
+    !compact? || role_visible?
+  end
+
+  def role_visible?
     return true if preview?
 
     @user.present? && @user.onboarded? && Flipper.enabled?(:bukux3, @user) &&

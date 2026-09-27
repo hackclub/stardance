@@ -67,7 +67,8 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".visual-novel[data-visual-novel-dismiss-thing-value='bukux3_intro']", count: 1
     assert_select "dialog.buku-x3-reveal", count: 0
-    assert_select ".buku-x3-status", count: 0
+    assert_select ".buku-x3-status [role='meter']", count: 1
+    assert_select ".buku-x3-status__identity, .buku-x3-status__toggle", count: 0
   end
 
   test "reveal endpoint requires the intro to be completed" do
@@ -118,7 +119,8 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
       get home_path(buku_preview: "bean")
     end
     assert_response :success
-    assert_select ".buku-x3-status", count: 0
+    assert_select ".buku-x3-status [role='meter']", count: 1
+    assert_select ".buku-x3-status__identity, .buku-x3-status__toggle", count: 0
     assert_select "turbo-frame#buku_x3_home_status", count: 1
   end
 end

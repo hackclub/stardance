@@ -1,20 +1,22 @@
-<section class="buku-x3-status <%= 'buku-x3-status--compact' if compact? %> buku-x3-status--<%= buku? ? 'buku' : 'bean' %>"
+<section class="buku-x3-status <%= 'buku-x3-status--compact' if compact? %> <%= "buku-x3-status--#{buku? ? 'buku' : 'bean'}" if role_visible? %> <%= 'buku-x3-status--interactive' if role_visible? && !compact? %>"
          aria-label="<%= compact? ? 'your private event role' : 'bukus versus beans' %>"
          data-controller="buku-x3-status"
          data-buku-x3-status-live-hours-value="<%= (compact? ? {} : team_hours).to_json %>"
          data-action="blackhole:progress@window->buku-x3-status#update">
-  <% unless compact? %>
+  <% if role_visible? && !compact? %>
     <button type="button" class="buku-x3-status__toggle" aria-label="show your event role" aria-pressed="false"
             data-buku-x3-status-target="toggle"
             data-action="click->buku-x3-status#toggleRole keydown.esc->buku-x3-status#dismissRole"></button>
   <% end %>
-  <div class="buku-x3-status__identity">
-    <%= image_tag icon, class: "buku-x3-status__icon", alt: "", width: 120, height: 132 %>
-    <div>
-      <p class="buku-x3-status__role">you're a <strong><%= role_name %></strong></p>
-      <p class="buku-x3-status__reminder"><%= reminder %></p>
+  <% if role_visible? %>
+    <div class="buku-x3-status__identity">
+      <%= image_tag icon, class: "buku-x3-status__icon", alt: "", width: 120, height: 132 %>
+      <div>
+        <p class="buku-x3-status__role">you're a <strong><%= role_name %></strong></p>
+        <p class="buku-x3-status__reminder"><%= reminder %></p>
+      </div>
     </div>
-  </div>
+  <% end %>
   <% unless compact? %>
     <div class="buku-x3-status__damage">
       <p class="buku-x3-status__label"><strong data-buku-x3-status-target="amount"><%= display_percent %>% damaged</strong></p>

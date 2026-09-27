@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 import { Delaunay } from "d3";
 
 const CARD_SURFACES =
-  ".feed-post-card, .feed-composer, .rocket-progress, .rail-widget, .raffle-widget, .phantom-promo, .sidebar__logo-img, .sidebar__user-card";
+  ".feed-post-card, .feed-composer, .rail-widget, .raffle-widget, .phantom-promo, .sidebar__logo-img, .sidebar__user-card";
 const MEDIA_CONTENT = "img, video, iframe, svg";
 const SIDEBAR_SURFACES = [
   "#primary-nav",
@@ -441,6 +441,7 @@ export default class extends Controller {
         priority: element.style.getPropertyPriority("clip-path"),
         seed: this.surfaceSeed(element),
         card: cards.includes(element),
+        proportional: element.matches(".sidebar__logo-img"),
       });
       element.style.setProperty("clip-path", `url(#${clip.id})`);
       this.surfaceResize.observe(element);
@@ -494,6 +495,7 @@ export default class extends Controller {
         protectedRects,
         excludedRects,
         surface.card,
+        surface.proportional,
       );
       if (surface.lastPath !== path) {
         surface.path.setAttribute("d", path);
@@ -840,6 +842,7 @@ export default class extends Controller {
     protectedRects = [],
     excludedRects = [],
     card = true,
+    proportional = false,
   ) {
     const cells = this.fragmentCells(rect, size, seed);
     this.fragmentFields ||= new Map();
@@ -851,6 +854,7 @@ export default class extends Controller {
       cached.height === rect.height &&
       cached.size === size &&
       cached.card === card &&
+      cached.proportional === proportional &&
       cached.protectedRects === protectedRects &&
       cached.excludedRects === excludedRects
     )
@@ -877,6 +881,12 @@ export default class extends Controller {
         bounds.top < safe.bottom &&
         bounds.bottom > safe.top;
       if (excludedRects.some(overlaps)) continue;
+      // The logo dissolves throughout the whole event, independently of the
+      // delayed image/text stages. Stable uniform thresholds track damage.
+      if (proportional) {
+        field.push({ cell, start: random(x, y, seed + 12) * 0.93 });
+        continue;
+      }
       const protectedContent = protectedRects.some(overlaps);
       const imageContent = protectedRects.some(
         (area) => area.kind === "image" && overlaps(area),
@@ -922,6 +932,7 @@ export default class extends Controller {
       height: rect.height,
       size,
       card,
+      proportional,
       protectedRects,
       excludedRects,
       field,
@@ -936,6 +947,7 @@ export default class extends Controller {
     protectedRects = [],
     excludedRects = [],
     card = true,
+    proportional = false,
   ) {
     const holes = [];
     for (const entry of this.fragmentField(
@@ -945,10 +957,13 @@ export default class extends Controller {
       protectedRects,
       excludedRects,
       card,
+      proportional,
     )) {
       const { cell, start } = entry;
       const { cx, cy, vertices } = cell;
       let erosion = clamp((this.level - start) / 0.07);
+      // Polygon area scales quadratically; keep proportional damage linear.
+      if (proportional) erosion = Math.sqrt(erosion);
       erosion *= 1 - this.repairStrength(cell, rect);
       if (!erosion) continue;
       if (entry.erosion !== erosion) {
