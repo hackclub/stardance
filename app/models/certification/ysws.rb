@@ -17,7 +17,8 @@
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
 #  claimed_by_id         :bigint
-#  post_ship_event_id    :bigint           not null
+#  funding_request_id    :bigint
+#  post_ship_event_id    :bigint
 #  project_id            :bigint           not null
 #  reviewer_id           :bigint
 #  ship_cert_id          :bigint
@@ -27,6 +28,7 @@
 # Indexes
 #
 #  index_certification_ysws_reviews_on_claimed_by_id       (claimed_by_id)
+#  index_certification_ysws_reviews_on_funding_request_id  (funding_request_id)
 #  index_certification_ysws_reviews_on_post_ship_event_id  (post_ship_event_id)
 #  index_certification_ysws_reviews_on_project_id          (project_id)
 #  index_certification_ysws_reviews_on_reviewer_id         (reviewer_id)
@@ -37,6 +39,7 @@
 # Foreign Keys
 #
 #  fk_rails_...  (claimed_by_id => users.id)
+#  fk_rails_...  (funding_request_id => certification_funding_requests.id)
 #  fk_rails_...  (post_ship_event_id => post_ship_events.id)
 #  fk_rails_...  (project_id => projects.id)
 #  fk_rails_...  (reviewer_id => users.id)

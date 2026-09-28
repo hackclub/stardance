@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_032633) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_201123) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -208,6 +208,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_032633) do
   end
 
   create_table "certification_funding_requests", force: :cascade do |t|
+    t.datetime "airtable_synced_at"
     t.integer "approved_amount_cents"
     t.datetime "claim_expires_at"
     t.datetime "claimed_at"
@@ -346,9 +347,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_032633) do
     t.bigint "claimed_by_id"
     t.datetime "created_at", null: false
     t.datetime "demo_checked_at", precision: nil
+    t.bigint "funding_request_id"
     t.string "in_unified_db"
     t.integer "original_minutes"
-    t.bigint "post_ship_event_id", null: false
+    t.bigint "post_ship_event_id"
     t.bigint "project_id", null: false
     t.datetime "repo_checked_at", precision: nil
     t.datetime "returned_at"
@@ -361,6 +363,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_032633) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["claimed_by_id"], name: "index_certification_ysws_reviews_on_claimed_by_id"
+    t.index ["funding_request_id"], name: "index_certification_ysws_reviews_on_funding_request_id"
     t.index ["post_ship_event_id"], name: "index_certification_ysws_reviews_on_post_ship_event_id"
     t.index ["project_id"], name: "index_certification_ysws_reviews_on_project_id"
     t.index ["reviewer_id"], name: "index_certification_ysws_reviews_on_reviewer_id"
@@ -1892,6 +1895,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_032633) do
   add_foreign_key "certification_ship_reviews", "post_ship_events", on_delete: :nullify
   add_foreign_key "certification_ship_reviews", "projects"
   add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"
+  add_foreign_key "certification_ysws_reviews", "certification_funding_requests", column: "funding_request_id"
   add_foreign_key "certification_ysws_reviews", "certification_ship_reviews", column: "ship_cert_id"
   add_foreign_key "certification_ysws_reviews", "post_ship_events"
   add_foreign_key "certification_ysws_reviews", "projects"
@@ -1975,10 +1979,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_032633) do
   add_foreign_key "raffle_draws", "raffle_participants", column: "winner_participant_id"
   add_foreign_key "raffle_draws", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_participants", "raffle_weeks", column: "signup_week_id"
-  add_foreign_key "raffle_participants", "users"
   add_foreign_key "raffle_referrals", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_referrals", "raffle_weeks", column: "credited_week_id"
-  add_foreign_key "raffle_referrals", "users", column: "referred_user_id"
   add_foreign_key "raffle_weekly_claims", "raffle_participants", column: "participant_id"
   add_foreign_key "raffle_weekly_claims", "raffle_weeks", column: "week_id"
   add_foreign_key "raffle_weeks", "raffle_participants", column: "winner_participant_id"
