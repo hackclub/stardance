@@ -933,6 +933,9 @@ Rails.application.routes.draw do
         scope module: :funding_requests do
           resource :claim, only: [ :create, :destroy ]
         end
+        collection do
+          post :sync_all_to_airtable
+        end
       end
 
       resources :permanent_rejection_nominations, only: [ :index, :show, :create ] do
