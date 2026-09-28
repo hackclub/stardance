@@ -412,7 +412,7 @@ module Certification
     after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? }
     after_save_commit :post_approval_to_hardware_feed!, if: -> { saved_change_to_status? && approved? }
     after_save_commit :issue_hcb_grant!, if: -> { issues_grant? && hcb_grant_hashid.blank? && latest_for_project? }
-    after_save_commit :sync_to_airtable!, if: -> { saved_change_to_status? && decided? }
+    after_save_commit :sync_to_airtable!, if: -> { saved_change_to_status? && approved? }
     after_create_commit :post_submission_to_hardware_review_channel!
 
     def queue_mismatch_flagged_label = "design funding"

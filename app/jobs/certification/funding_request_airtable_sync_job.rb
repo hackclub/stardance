@@ -30,7 +30,7 @@ module Certification
         .includes(:reviewer, :user, project: { banner_attachment: :blob })
         .find(funding_request_id)
 
-      return unless @funding_request.decided?
+      return unless @funding_request.approved?
 
       Rails.logger.info "[FundingRequestAirtableSyncJob] Starting sync for funding_request ##{@funding_request.id}"
 
