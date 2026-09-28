@@ -1,5 +1,4 @@
 class Admin::Certification::PermanentRejectionNominationsController < Admin::Certification::ApplicationController
-  before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action -> { @body_class = "app-layout-page" }
   before_action :set_nomination, only: [ :show, :approve, :deny ]
 

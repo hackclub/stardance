@@ -1,5 +1,4 @@
 class Projects::QueueMismatchesController < ApplicationController
-  before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_project
   before_action :set_review
 

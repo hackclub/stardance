@@ -5,8 +5,6 @@ class Admin::Certification::HardwareReviewsControllerTest < ActionDispatch::Inte
   HCB_GRANT_RESPONSE = { "id" => "test_grant_hwq" }.freeze
 
   setup do
-    Flipper.enable(:hardware_flow)
-
     @reviewer = create_user(slack_id: "U_HWQ_REV", display_name: "hwq-reviewer")
     @reviewer.grant_role!(:admin)
 
@@ -24,8 +22,6 @@ class Admin::Certification::HardwareReviewsControllerTest < ActionDispatch::Inte
 
     sign_in @reviewer
   end
-
-  teardown { Flipper.disable(:hardware_flow) }
 
   test "the design queue lists only funding requests" do
     get design_admin_certification_hardware_reviews_path

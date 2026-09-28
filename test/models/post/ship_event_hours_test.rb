@@ -4,7 +4,6 @@ require "test_helper"
 # funding flow. See Post::ShipEvent#hours.
 class Post::ShipEventHoursTest < ActiveSupport::TestCase
   def setup
-    Flipper.enable(:hardware_flow)
     @owner = User.create!(
       email: "owner-#{SecureRandom.hex(6)}@example.com",
       display_name: "Owner#{SecureRandom.hex(3)}",

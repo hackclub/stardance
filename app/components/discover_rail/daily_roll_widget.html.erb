@@ -33,9 +33,7 @@
               data-copy-text-value="<%= helpers.roll_share_text(roll) %>"
               data-action="click->copy#copy">copy to share</button>
 
-      <% if helpers.reroll_enabled?(user) %>
-        <%= render "daily_rolls/reroll_control", user: user, roll: roll, block: "daily-roll-widget", size: :small %>
-      <% end %>
+      <%= render "daily_rolls/reroll_control", user: user, roll: roll, block: "daily-roll-widget", size: :small %>
     </div>
   <% end %>
 

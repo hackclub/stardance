@@ -6,11 +6,6 @@ module DailyRollsHelper
     number_with_delimiter(value)
   end
 
-  # Whether the earned-reroll feature is live for this user.
-  def reroll_enabled?(user)
-    Flipper.enabled?(:rng_reroll, user)
-  end
-
   # State of the earned reroll for today's roll:
   #   :used     — already rerolled today
   #   :unlocked — coded more than REROLL_MIN_SECONDS today on a linked project

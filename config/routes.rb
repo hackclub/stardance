@@ -487,7 +487,6 @@ Rails.application.routes.draw do
       member do
         delete :cancel
       end
-      resource :flex_image, only: [ :show ], module: :orders, defaults: { format: :png }
     end
     resource :region, only: [ :update ]
     get "category/:slug", to: "items#category", as: :category

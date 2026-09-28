@@ -46,10 +46,6 @@
 require "test_helper"
 
 class ProjectTest < ActiveSupport::TestCase
-  setup do
-    Flipper.enable(:hardware_flow)
-  end
-
   test "a valid hardware_stage marks the project as hardware" do
     project = Project.create!(title: "Soldering rig", hardware_stage: "build")
 

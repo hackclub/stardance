@@ -7,7 +7,6 @@
 class Admin::Certification::HardwareReviewsController < Admin::Certification::ApplicationController
   include HardwareReviewQueue
 
-  before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_project, only: [ :show, :flag_for_fraud, :recordings ]
   before_action -> { head :not_found unless @project.hardware? }, only: [ :show, :flag_for_fraud, :recordings ]
 

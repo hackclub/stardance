@@ -11,7 +11,7 @@ class Gorse::Recommendations
   end
 
   def posts(limit: DEFAULT_LIMIT, category: "feed")
-    if post_recommendations_enabled?
+    if Gorse.enabled?
       recommended_posts(limit, category:)
     else
       []
@@ -19,7 +19,7 @@ class Gorse::Recommendations
   end
 
   def post_candidates(limit: DEFAULT_LIMIT, category: "feed")
-    if post_recommendations_enabled?
+    if Gorse.enabled?
       recommended_post_candidates(limit, category:)
     else
       []
@@ -27,7 +27,7 @@ class Gorse::Recommendations
   end
 
   def projects(limit: DEFAULT_LIMIT)
-    if enabled?(:gorse_project_recommendations)
+    if user.present? && Gorse.enabled?
       recommended_projects(limit)
     else
       []
@@ -36,20 +36,6 @@ class Gorse::Recommendations
 
   private
     attr_reader :user, :client
-
-    def enabled?(flag)
-      user.present? && Gorse.enabled? && Flipper.enabled?(flag, user)
-    end
-
-    def post_recommendations_enabled?
-      return false unless Gorse.enabled?
-
-      if user.present?
-        Flipper.enabled?(:gorse_personalized_feed, user)
-      else
-        Flipper.enabled?(:gorse_personalized_feed)
-      end
-    end
 
     def recommended_posts(limit, category:)
       diversify_posts(recommended_post_candidates(limit, category:), limit:)

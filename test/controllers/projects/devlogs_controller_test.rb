@@ -4,7 +4,6 @@ require "tempfile"
 
 class Projects::DevlogsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:hardware_flow)
     @owner = User.create!(slack_id: "U_DEVLOG_OWNER", display_name: "devlog_owner", email: "devlog_owner@example.test")
     @project = Project.create!(title: "No Hackatime Yet", description: "Still needs setup")
     @project.memberships.create!(user: @owner, role: :owner)

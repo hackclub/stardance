@@ -44,9 +44,7 @@
                   data-copy-text-value="<%= roll_share_text(roll) %>"
                   data-action="click->copy#copy">copy to share</button>
 
-          <% if reroll_enabled?(current_user) %>
-            <%= render "daily_rolls/reroll_control", user: current_user, roll: roll, block: "rng-hero", size: :large %>
-          <% end %>
+          <%= render "daily_rolls/reroll_control", user: current_user, roll: roll, block: "rng-hero", size: :large %>
         <% end %>
       </div>
       <% if for_today && Rails.env.development? %>

@@ -24,34 +24,17 @@ Rails.application.config.after_initialize do
         git_commit_2025-12-25
         voting
         shop_backlogged
-        kitchen_comic
         grant_stardust
         voting_locked
         fraud_daily_summary
         shop_order_daily_summary
         shipping
-        show_and_tell_live
-        missions
-        new_onboarding
         gorse_recommendations
-        gorse_personalized_feed
-        gorse_project_recommendations
-        feed_seen_mixer
-        week_1_release
-        hardware_flow
         hardware_action_items
         hardware_review_undo
-        public_hardware_reviews
         ship_event_payouts
-        payout_recommendations
         disable_internal_sw_dash_reviews
-        sharable_purchase
         no_shigimi_eyes
-        devlog_review_pace
-        reviewer_progress_panel
-        mac_analysis
-        sticky_streaks
-        public_api_2026-08-28
         virality_bonus
         ysws_review_shortcuts
         bukux2

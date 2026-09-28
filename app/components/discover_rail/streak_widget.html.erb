@@ -99,7 +99,7 @@
       <% end %>
     </div>
 
-    <% if !sticky_started? && sticky_streaks_enabled? %>
+    <% unless sticky_started? %>
       <%= render "sticky_streaks/start" %>
     <% end %>
 

@@ -189,67 +189,6 @@
     }
   }
 
-  // Per-reviewer pace widget, sits beside the queue filters and shows the
-  // running devlogs-per-day average for this review week plus the catch-up count.
-  // Superseded by the dashboard's progress panel when that flag is on.
-  & &__goal {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    align-self: flex-end;
-    gap: var(--space-xxxs);
-    padding: var(--space-xs) var(--space-s);
-    background: var(--color-set-1-bg);
-    border: 2px solid var(--color-set-1-fg-secondary);
-    border-radius: var(--profile-radius);
-  }
-
-  // The two paths to locked in, side by side rather than stacked — the widget is a
-  // column, and two full-size figures under each other make it twice as tall.
-  & &__goal-paces {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xxs) var(--space-l);
-  }
-
-  & &__goal-primary {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-xs);
-  }
-
-  & &__goal-note {
-    color: var(--color-set-1-fg-secondary);
-    font-size: var(--font-size-xs);
-  }
-
-  // Locked in — clearing either daily average — earns the same top-spot gradient
-  // the #1 leaderboard row wears. It's a light surface, so every label inside
-  // flips to the dark set-1 background colour to stay legible.
-  & &__goal--locked-in {
-    background: var(--gradient-extra-highlight) center / cover no-repeat;
-
-    .ysws-queue__goal-count,
-    .ysws-queue__goal-label,
-    .ysws-queue__goal-note {
-      color: var(--color-set-1-bg);
-    }
-  }
-
-  & &__goal-count {
-    color: var(--color-brand-highlight);
-    font-size: var(--font-size-xl);
-    font-weight: 700;
-  }
-
-  & &__goal-label {
-    color: var(--color-set-1-fg-secondary);
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
   & &__reset-filters {
     display: inline-flex;
     align-items: center;

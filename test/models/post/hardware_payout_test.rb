@@ -6,13 +6,11 @@ require "test_helper"
 # from software ships never holds a hardware payout.
 class Post::HardwarePayoutTest < ActiveSupport::TestCase
   setup do
-    Flipper.enable(:hardware_flow)
     Flipper.enable(:ship_event_payouts)
     @owner = create_user(slack_id: "U_HWP_OWNER", display_name: "hwp-owner")
   end
 
   teardown do
-    Flipper.disable(:hardware_flow)
     Flipper.disable(:ship_event_payouts)
   end
 

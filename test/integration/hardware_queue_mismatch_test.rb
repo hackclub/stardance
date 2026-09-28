@@ -4,18 +4,10 @@ require "test_helper"
 # flags it instead of deciding it, and the builder answers on their project page.
 class HardwareQueueMismatchTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:hardware_flow)
-    Flipper.enable(:week_1_release)
-
     @owner = create_user(slack_id: "U_QM_OWNER", display_name: "qm-owner", verified: true)
     @reviewer = create_user(slack_id: "U_QM_REV", display_name: "qm-rev")
     @reviewer.grant_role!(:admin)
     @outsider = create_user(slack_id: "U_QM_OUT", display_name: "qm-out", verified: true)
-  end
-
-  teardown do
-    Flipper.disable(:hardware_flow)
-    Flipper.disable(:week_1_release)
   end
 
   # --- design queue: "you've already built this" -----------------------------

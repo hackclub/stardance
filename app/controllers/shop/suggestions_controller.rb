@@ -1,6 +1,4 @@
 class Shop::SuggestionsController < Shop::BaseController
-  before_action -> { head :not_found unless Flipper.enabled?(:shop_suggestions, current_user) }
-
   def index
     authorize ShopSuggestion
     @new_suggestions = ShopSuggestion.kept.pending.includes(:user, :shop_suggestion_votes).order(created_at: :desc).limit(6)

@@ -7,7 +7,6 @@ require "test_helper"
 # Project.sort_timeline_entries).
 class ProjectTimelineTest < ActiveSupport::TestCase
   setup do
-    Flipper.enable(:hardware_flow)
     @owner = create_user(slack_id: "U_PTL_OWNER", display_name: "ptlowner", verified: true)
     @project = Project.create!(title: "Rover PTL", hardware_stage: "design")
     @project.memberships.create!(user: @owner, role: :owner)

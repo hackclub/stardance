@@ -1,5 +1,4 @@
 class Admin::Shop::SuggestionsController < Admin::ApplicationController
-  before_action -> { head :not_found unless Flipper.enabled?(:shop_suggestions, current_user) }
   before_action :set_suggestion, only: [ :accept, :reject, :delete ]
 
   def accept

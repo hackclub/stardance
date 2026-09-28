@@ -4,7 +4,6 @@ module Admin
   module MegaDashboard
     class QueueTest < ActiveSupport::TestCase
       setup do
-        Flipper.enable(:hardware_flow)
         # Funding requests require a verified, YSWS-eligible owner.
         @owner = ::User.create!(
           slack_id: "U_QUEUE_OWNER", display_name: "queue-owner", email: "queue-owner@example.test",
@@ -15,8 +14,6 @@ module Admin
           description: "Build something", hardware: true
         )
       end
-
-      teardown { Flipper.disable(:hardware_flow) }
 
       test "the hardware design queue counts only what its dash can hand out" do
         reviewable = funding_request(hardware_project("design"))

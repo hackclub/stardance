@@ -9,7 +9,6 @@ module Admin
       include HardwareReviewQueue
 
       skip_before_action :authorize_mission_management
-      before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
       before_action :set_project, only: [ :show, :flag_for_fraud, :recordings ]
 
       def index

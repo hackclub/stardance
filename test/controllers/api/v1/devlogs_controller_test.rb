@@ -2,19 +2,12 @@ require "test_helper"
 require "base64"
 
 class Api::V1::DevlogsControllerTest < ActionDispatch::IntegrationTest
-  API_FLAG = :"public_api_2026-08-28"
-
   setup do
     @user = User.create!(slack_id: "U_API_DEVLOGS", display_name: "api_reader", email: "api_reader@example.test", verification_status: "verified")
     @user.regenerate_api_key
-    Flipper.enable(API_FLAG, @user)
 
     @project = Project.create!(title: "Nebula Drift", description: "A space sim")
     @devlog = create_devlog(body: "Wired up the starfield shader", project: @project)
-  end
-
-  teardown do
-    Flipper.disable(API_FLAG, @user)
   end
 
   test "index requires an api key" do
@@ -29,14 +22,6 @@ class Api::V1::DevlogsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
     assert_equal "Invalid API key", response.parsed_body["error"]
-  end
-
-  test "index is forbidden when the api flag is off for the user" do
-    Flipper.disable(API_FLAG, @user)
-
-    get api_v1_devlogs_path, headers: auth_headers
-
-    assert_response :forbidden
   end
 
   test "index returns devlogs with media, comments and pagination" do

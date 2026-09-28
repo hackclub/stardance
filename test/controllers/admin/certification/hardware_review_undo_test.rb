@@ -15,7 +15,6 @@ class Admin::Certification::HardwareReviewUndoTest < ActionDispatch::Integration
   end
 
   setup do
-    Flipper.enable(:hardware_flow)
     Flipper.enable(:hardware_review_undo)
     @reviewer = create_user(slack_id: "U_UNDO_C_REV", display_name: "undo-c-rev")
     @reviewer.grant_role!(:admin)
@@ -30,7 +29,6 @@ class Admin::Certification::HardwareReviewUndoTest < ActionDispatch::Integration
   end
 
   teardown do
-    Flipper.disable(:hardware_flow)
     Flipper.disable(:hardware_review_undo)
   end
 

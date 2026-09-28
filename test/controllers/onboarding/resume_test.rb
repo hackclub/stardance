@@ -2,16 +2,7 @@ require "test_helper"
 
 # Behavior for interrupted signup-wizard sessions: resuming a fresh guest,
 # restarting a stale one, and expiring a stale guest who lands on /home.
-# All of this is gated on the :new_onboarding flag.
 class Onboarding::ResumeTest < ActionDispatch::IntegrationTest
-  setup do
-    Flipper.enable(:new_onboarding)
-  end
-
-  teardown do
-    Flipper.disable(:new_onboarding)
-  end
-
   # A guest part-way through the wizard (no project, onboarded_at nil).
   def in_progress_guest(email: "resume_me@example.com", **attrs)
     User.create!(email: email, display_name: User.placeholder_display_name_from_email(email), **attrs)
@@ -77,16 +68,6 @@ class Onboarding::ResumeTest < ActionDispatch::IntegrationTest
 
   test "a guest who finished the wizard is not pulled back into onboarding from /home" do
     guest = in_progress_guest(age_attestation: "teen_13_18", onboarded_at: Time.current)
-    sign_in guest
-
-    get home_path
-
-    assert_response :success
-  end
-
-  test "with the flag off an in-progress guest on /home is left alone" do
-    Flipper.disable(:new_onboarding)
-    guest = in_progress_guest(age_attestation: "teen_13_18")
     sign_in guest
 
     get home_path

@@ -230,7 +230,7 @@
               <% ship_event  = ship.project.last_ship_event %>
               <% wait_days   = ((Time.current - ship.created_at) / 1.day).floor %>
               <% overdue     = wait_days > ::Certification::Ship::SLA_DAYS %>
-              <% review_path  = ship.project&.hardware? && Flipper.enabled?(:hardware_flow, current_user) ? admin_certification_hardware_review_path(ship.project) : admin_certification_ship_path(ship) %>
+              <% review_path  = ship.project&.hardware? ? admin_certification_hardware_review_path(ship.project) : admin_certification_ship_path(ship) %>
               <tr class="ship-queue__row<%= own_project ? ' ship-queue__row--own' : ' ship-queue__row--link' %>"
                   <% unless own_project %> onclick="window.location = <%= review_path.to_json %>"<% end %>>
                 <td class="ship-queue__cell-project">
@@ -303,7 +303,7 @@
           <% ship_event  = ship.project.last_ship_event %>
           <% wait_days   = ((Time.current - ship.created_at) / 1.day).floor %>
           <% overdue     = wait_days > ::Certification::Ship::SLA_DAYS %>
-          <% review_path  = ship.project&.hardware? && Flipper.enabled?(:hardware_flow, current_user) ? admin_certification_hardware_review_path(ship.project) : admin_certification_ship_path(ship) %>
+          <% review_path  = ship.project&.hardware? ? admin_certification_hardware_review_path(ship.project) : admin_certification_ship_path(ship) %>
           <% card_body = capture do %>
             <div class="ship-queue__card-top">
               <span class="ship-queue__project-title"><%= ship.project&.title || "Deleted Project" %></span>

@@ -8,7 +8,6 @@ module Notifications
     # arrives - so each surface is rendered here.
     class ReviewQueueMismatchTest < ActionDispatch::IntegrationTest
       setup do
-        Flipper.enable(:hardware_flow)
         @owner = create_user(slack_id: "U_RQM_OWNER", display_name: "rqm-owner", verified: true)
         @reviewer = create_user(slack_id: "U_RQM_REV", display_name: "rqm-rev")
         @reviewer.grant_role!(:admin)
@@ -24,8 +23,6 @@ module Notifications
           user: @owner, complexity_tier: 2, requested_amount_cents: 6_000, status: :pending
         )
       end
-
-      teardown { Flipper.disable(:hardware_flow) }
 
       def flag!
         @request.flag_queue_mismatch!(reviewer: @reviewer, reason: "This looks finished already")

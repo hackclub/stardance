@@ -34,9 +34,7 @@ class Project::Magic
       project.update!(marked_fire_at: Time.current, marked_fire_by: user)
     end
     enqueue_magic_jobs
-    if Flipper.enabled?(:week_2_release)
-      project.users.each { |member| member.award_achievement!(:super_star) }
-    end
+    project.users.each { |member| member.award_achievement!(:super_star) }
     true
   end
 

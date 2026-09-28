@@ -215,27 +215,10 @@ class ProjectsController < ApplicationController
   end
   private :prepare_project_show_context
 
-  # Who can see a project's hardware review history (funding requests + ship
-  # verdicts) on its page:
-  #   - reviewers always can - they need the history to do their job;
-  #   - the project's own members and admins can while the surface's rollout flag
-  #     is on for them (the amount asked for and the reviewer's feedback are
-  #     otherwise the team's business);
-  #   - and when the +public_hardware_reviews+ flag is on, anyone viewing the
-  #     project can - logged in or not.
-  def hardware_review_history_visible?(rollout_flag)
-    return true if Flipper.enabled?(:public_hardware_reviews)
-    return false unless current_user
-    return true if current_user.can_review?
-    return false unless Flipper.enabled?(rollout_flag, current_user)
-
-    @is_member || current_user.admin?
-  end
-  private :hardware_review_history_visible?
-
-  # Decided Shipwright reviews. Same audience as the funding history below.
+  # Ordinary ship verdicts remain reviewer-only. Permanent rejections have
+  # their own submitter/staff visibility rules.
   def visible_ship_decisions
-    history_visible = hardware_review_history_visible?(:week_1_release)
+    history_visible = current_user&.can_review?
     @project.ship_reviews
             .decided
             .includes(:reviewer, post_ship_event: :post)
@@ -248,7 +231,7 @@ class ProjectsController < ApplicationController
   # Project#timeline_funding_requests), so a returned review keeps its place as
   # newer devlogs are posted rather than only the latest request showing.
   def visible_funding_requests
-    history_visible = hardware_review_history_visible?(:hardware_flow)
+    history_visible = current_user && (@is_member || current_user.admin? || current_user.can_review?)
     @project.timeline_funding_requests.includes(:reviewer, :user).select do |review|
       review.permanently_rejected? ? permanent_rejection_visible?(review) : history_visible
     end
@@ -271,7 +254,6 @@ class ProjectsController < ApplicationController
   def visible_queue_mismatch
     return nil unless current_user
     return nil unless @is_member || current_user.admin?
-    return nil unless Flipper.enabled?(:hardware_flow, current_user)
 
     @project.review_awaiting_queue_answer
   end

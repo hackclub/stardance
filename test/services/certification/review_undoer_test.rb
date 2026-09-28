@@ -21,7 +21,6 @@ class Certification::ReviewUndoerTest < ActiveSupport::TestCase
   end
 
   setup do
-    Flipper.enable(:hardware_flow)
     @owner = create_user(slack_id: "U_UNDO_OWNER", display_name: "undo-owner", verified: true)
     @reviewer = create_user(slack_id: "U_UNDO_REV", display_name: "undo-rev")
     @reviewer.grant_role!(:admin)

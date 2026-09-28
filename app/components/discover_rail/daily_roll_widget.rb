@@ -8,7 +8,7 @@ module DiscoverRail
     register_as :daily_roll
 
     def render?
-      user.present? && Flipper.enabled?(:week_2_release, user)
+      user.present?
     end
 
     def roll

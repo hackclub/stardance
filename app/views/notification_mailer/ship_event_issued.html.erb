@@ -44,19 +44,6 @@
   </p>
 <% end %>
 
-<% if @recommended_items.present? %>
-  <p style="margin:24px 0 10px;font-size:15px;font-weight:700;color:#1a1a2e;">What you can grab with your stardust</p>
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 4px;border-collapse:separate;border-spacing:0 6px;">
-    <% @recommended_items.each do |item| %>
-      <tr>
-        <td style="padding:10px 16px;font-size:14px;background:#faf8ef;border-radius:6px;">
-          <a href="<%= shop_item_url(item) %>" style="color:#1a1a2e;text-decoration:none;font-weight:600;"><%= item.name %></a><% if item.recommended_from_wishlist? %> <span style="display:inline-block;padding:1px 8px;background:#eadcff;color:#5b3ca0;border-radius:999px;font-size:11px;font-weight:600;vertical-align:middle;">★ On your wishlist</span><% end %><span style="color:#6b6961;"> — <%= number_with_precision(item.recommended_price, precision: 0) %> stardust</span>
-        </td>
-      </tr>
-    <% end %>
-  </table>
-<% end %>
-
 <div style="margin:24px 0 4px;">
   <a href="<%= my_balance_url %>" style="display:inline-block;padding:11px 22px;background:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;font-size:14px;line-height:1;">View balance</a>
 </div>

@@ -81,14 +81,6 @@ module User::Streakable
     streak_activities.where("coded_seconds > 0").maximum(:activity_date)
   end
 
-  def sticky_streaks_enabled? = StickyStreak.enabled_for?(self)
-
-  # The run to show and redeem against, or nil while the challenge is switched
-  # off. Read this rather than the raw association.
-  def current_sticky_streak
-    sticky_streak if sticky_streaks_enabled?
-  end
-
   def streak_week_activities(activities: nil, today: streak_today_date)
     week_start = today.beginning_of_week(:sunday)
     build_day_list(week_start, week_start + 6.days, today, activities: activities)
@@ -106,7 +98,7 @@ module User::Streakable
     )
     completed = activities_by_date.values.select(&:completed?).map(&:activity_date).to_set
 
-    sticky = current_sticky_streak
+    sticky = sticky_streak
 
     (cal_start..cal_end).map do |date|
       done = completed.include?(date)
@@ -169,7 +161,7 @@ module User::Streakable
 
   def build_day_list(from, to, today, activities: nil)
     activities_by_date = index_streak_activities(activities, from..to)
-    sticky = current_sticky_streak
+    sticky = sticky_streak
 
 
     (from..to).map do |date|

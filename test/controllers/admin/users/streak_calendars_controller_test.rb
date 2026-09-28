@@ -64,7 +64,6 @@ class Admin::Users::StreakCalendarsControllerTest < ActionDispatch::IntegrationT
   end
 
   test "a sticker day keeps its art without nesting a button inside the day button" do
-    Flipper.enable(:sticky_streaks)
     StickyStreak.create!(user: @member, started_on: @today)
     StreakActivity.create!(user: @member, activity_date: @today,
                            coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
@@ -77,8 +76,6 @@ class Admin::Users::StreakCalendarsControllerTest < ActionDispatch::IntegrationT
     assert_select ".streak-calendar__cell--pickable .streak-mark__sticker"
     assert_select ".streak-calendar__cell--pickable button", count: 0
     assert_select "[data-action='sticker-zoom#open']", count: 0
-  ensure
-    Flipper.disable(:sticky_streaks)
   end
 
   test "the credit modal renders the calendar wired to the date field" do

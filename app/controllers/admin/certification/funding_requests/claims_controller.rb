@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class Admin::Certification::FundingRequests::ClaimsController < Admin::Certification::ApplicationController
-  before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_funding_request
 
   # POST /admin/certification/funding/:funding_request_id/claim
