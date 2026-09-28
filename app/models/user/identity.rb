@@ -55,4 +55,8 @@ class User::Identity < ApplicationRecord
                if: -> { provider == "hackatime" && saved_change_to_access_token_ciphertext? }
   after_create_commit -> { Raffle::Referrals::Credit.run_safely(user) }, if: -> { provider == "hack_club" }
   after_destroy_commit -> { Rails.cache.delete("hackatime_api_key:#{uid}") }, if: -> { provider == "hackatime" }
+
+  def clear_access_token!
+    update_columns(access_token_ciphertext: nil, access_token_bidx: nil)
+  end
 end
