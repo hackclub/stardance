@@ -103,11 +103,11 @@ production:
     concurrency: 1
     description: "Notify project owners nearing the per-devlog payout cap on un-devlogged time"
 
-  activity_daily_summary:
-    class: ActivityDailySummaryJob
-    schedule: every day at 10am America/New_York
-    concurrency: 1
-    description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
+  # activity_daily_summary:
+  #   class: ActivityDailySummaryJob
+  #   schedule: every day at 10am America/New_York
+  #   concurrency: 1
+  #   description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
 
   fraud_daily_summary:
     class: FraudDailySummaryJob
