@@ -93,9 +93,11 @@ module Certification
         "ship_certed_at" => nil,
         "airtable_synced_at" => Time.current.iso8601,
 
-        # Hours — funding requests don't have devlog hours
-        "Optional - Override Hours Spent" => nil,
+        # Hours
+        "Optional - Override Hours Spent" => hours_at_submission,
         "Optional - Override Hours Spent Justification" => build_justification,
+        "hours_pre_deflation" => hours_at_submission,
+        "is_hardware" => true,
 
         # Rejection — these are approved, so no rejection
         "rejection_reason" => nil,
@@ -207,6 +209,18 @@ module Certification
       return nil unless banner&.attached?
 
       blob_url(banner)
+    end
+
+    def hours_at_submission
+      return @hours_at_submission if defined?(@hours_at_submission)
+
+      total_seconds = @funding_request.project
+        .devlogs
+        .joins(:post)
+        .where(posts: { created_at: ...@funding_request.created_at })
+        .sum(:duration_seconds)
+
+      @hours_at_submission = (total_seconds / 3600.0).round(2)
     end
 
     def report_status

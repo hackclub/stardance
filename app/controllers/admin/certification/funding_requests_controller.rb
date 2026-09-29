@@ -8,7 +8,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
   def sync_all_to_airtable
     authorize :admin, :index?
 
-    approved_ids = ::Certification::FundingRequest.where(status: "approved").pluck(:id)
+    approved_ids = ::Certification::FundingRequest.where(status: "approved", airtable_synced_at: nil).pluck(:id)
     approved_ids.each { |id| Certification::FundingRequestAirtableSyncJob.perform_later(id) }
 
     redirect_to admin_root_path, notice: "Enqueued #{approved_ids.size} approved funding requests for Airtable sync."
