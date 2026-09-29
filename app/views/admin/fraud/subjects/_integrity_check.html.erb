@@ -38,12 +38,19 @@
             <dd class="fraud-subject__vital-value"><%= project.ship_status.to_s.humanize %></dd>
           </div>
 
-          <%# The number a fraud verdict actually turns on, so it carries the
-              weight the rest of the row gives up. %>
+          <%# The hours this one ship claims, which is the number a fraud
+              verdict turns on, so it carries the weight the rest of the row
+              gives up. The project's lifetime total rides along as context,
+              and only when the project shipped more than once. %>
+          <% ship_hours = check.ship_event.window_hours.round(1) %>
+          <% project_hours = (project.duration_seconds / 3600.0).round(1) %>
           <div class="fraud-subject__vital fraud-subject__vital--lead">
-            <dt class="fraud-subject__vital-label">Tracked time</dt>
+            <dt class="fraud-subject__vital-label"><%= ship_hours == project_hours ? "Tracked time" : "Tracked this ship" %></dt>
             <dd class="fraud-subject__vital-value">
-              <%= pluralize((project.duration_seconds / 3600.0).round(1), "hour") %>
+              <%= pluralize(ship_hours, "hour") %>
+              <% if ship_hours != project_hours %>
+                <span class="fraud-subject__vital-aside"><%= project_hours %> total project hours</span>
+              <% end %>
             </dd>
           </div>
 

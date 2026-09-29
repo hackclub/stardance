@@ -2,8 +2,17 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
   include HardwareReviewUndoable
 
   before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
-  before_action :set_funding_request
-  before_action :set_body_class
+  before_action :set_funding_request, except: :sync_all_to_airtable
+  before_action :set_body_class, except: :sync_all_to_airtable
+
+  def sync_all_to_airtable
+    authorize :admin, :index?
+
+    approved_ids = ::Certification::FundingRequest.where(status: "approved", airtable_synced_at: nil).pluck(:id)
+    approved_ids.each { |id| Certification::FundingRequestAirtableSyncJob.perform_later(id) }
+
+    redirect_to admin_root_path, notice: "Enqueued #{approved_ids.size} approved funding requests for Airtable sync."
+  end
 
   def update
     authorize @funding_request

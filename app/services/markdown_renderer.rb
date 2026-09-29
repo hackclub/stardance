@@ -6,7 +6,7 @@ class MarkdownRenderer
 
   # Bump on any rendered-output change (sanitizer, shortcodes, Rouge, link
   # hardening) — the cache key uses it to invalidate deployment-wide.
-  RENDERER_VERSION      = "v7".freeze
+  RENDERER_VERSION      = "v8".freeze
   CACHE_NAMESPACE       = "markdown".freeze
   GUIDE_CACHE_NAMESPACE = "guide-markdown".freeze
   CACHE_EXPIRES_IN      = 7.days
@@ -41,7 +41,7 @@ class MarkdownRenderer
       raw = get_markdown(text)
       doc = Nokogiri::HTML::DocumentFragment.parse(raw)
       highlight_code_blocks(doc)
-      sanitised = sanitize_html(doc.to_html, extra_tags: %w[u], extra_attributes: %w[target rel class])
+      sanitised = sanitize_html(doc.to_html, extra_tags: %w[u input], extra_attributes: %w[target rel class type checked disabled])
       doc = Nokogiri::HTML::DocumentFragment.parse(sanitised)
       remove_images(doc) unless allow_images
       render_slack_emotes(doc)

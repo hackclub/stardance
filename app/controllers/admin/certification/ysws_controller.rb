@@ -367,6 +367,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @review = ::Certification::Ysws.includes(:devlog_reviews).find(params[:id])
     authorize @review, :update?
 
+    # wtf is happening here????
     @review.check_and_update_unified_db_status!
 
     if @review.in_unified_db.present?

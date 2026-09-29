@@ -6,6 +6,7 @@ export default class extends Controller {
 
   async complete(event) {
     event.preventDefault();
+    if (this.buttonTarget.disabled) return;
 
     if (
       !confirm(
@@ -15,10 +16,40 @@ export default class extends Controller {
       return;
     }
 
+    const buttonContents = [...this.buttonTarget.childNodes];
+    const controls = [
+      ...this.element.querySelectorAll(
+        ".devlog-item:not(.devlog-item--frozen) input, .devlog-item:not(.devlog-item--frozen) textarea, .devlog-item:not(.devlog-item--frozen) button",
+      ),
+    ];
+    const enabledControls = controls.filter((control) => !control.disabled);
+    const active = document.activeElement;
+    const selection =
+      active instanceof HTMLTextAreaElement
+        ? [
+            active.selectionStart,
+            active.selectionEnd,
+            active.selectionDirection,
+          ]
+        : null;
+    enabledControls.forEach((control) => (control.disabled = true));
     this.buttonTarget.disabled = true;
     this.buttonTarget.textContent = "Completing...";
+    let redirecting = false;
 
     try {
+      const pending = [];
+      window.dispatchEvent(
+        new CustomEvent("devlog-review:flush", { detail: { pending } }),
+      );
+      const saved = await Promise.all(pending);
+      if (saved.some((success) => !success)) {
+        this.showFlash(
+          "Some devlog edits could not be saved. Review them and try completing again.",
+          "error",
+        );
+        return;
+      }
       const csrfToken = document.querySelector(
         'meta[name="csrf-token"]',
       )?.content;
@@ -36,6 +67,7 @@ export default class extends Controller {
       const data = await response.json();
 
       if (response.ok) {
+        redirecting = true;
         this.showFlash(
           data.message ||
             "Review completed successfully! Redirecting to review queue...",
@@ -47,8 +79,6 @@ export default class extends Controller {
         const errorMessage =
           data.error || data.errors?.join(", ") || "Failed to complete review";
         this.showFlash(errorMessage, "error");
-        this.buttonTarget.disabled = false;
-        this.buttonTarget.textContent = "Complete Review";
       }
     } catch (error) {
       console.error("Error completing review:", error);
@@ -56,8 +86,20 @@ export default class extends Controller {
         "An unexpected error occurred. Please try again.",
         "error",
       );
-      this.buttonTarget.disabled = false;
-      this.buttonTarget.textContent = "Complete Review";
+    } finally {
+      if (!redirecting) {
+        enabledControls.forEach((control) => (control.disabled = false));
+        this.buttonTarget.disabled = false;
+        this.buttonTarget.replaceChildren(...buttonContents);
+        if (
+          active?.isConnected &&
+          enabledControls.includes(active) &&
+          document.activeElement === document.body
+        ) {
+          active.focus({ preventScroll: true });
+          if (selection) active.setSelectionRange(...selection);
+        }
+      }
     }
   }
 

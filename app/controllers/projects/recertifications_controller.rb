@@ -1,10 +1,15 @@
 class Projects::RecertificationsController < ApplicationController
   include ActionItemGate
 
+  before_action :set_paper_trail_whodunnit
   before_action :set_project
 
   def create
     authorize @project, :request_recertification?
+
+    if (cooldown = recertification_cooldown_block)
+      redirect_to project_path(@project), alert: cooldown and return
+    end
 
     if (link_blocker = @project.link_blocker_message)
       redirect_to project_path(@project),
@@ -16,6 +21,10 @@ class Projects::RecertificationsController < ApplicationController
 
       if latest_review&.pending?
         redirect_to project_path(@project), alert: "A review is already pending for this project." and return
+      end
+
+      if (cooldown = recertification_cooldown_block)
+        redirect_to project_path(@project), alert: cooldown and return
       end
 
       return if action_items_block_resubmission?(latest_review)
@@ -34,6 +43,15 @@ class Projects::RecertificationsController < ApplicationController
   end
 
   private
+
+  def user_for_paper_trail = impersonating? ? real_user&.id : current_user&.id
+
+  def recertification_cooldown_block
+    return nil if policy(@project).bypass_recertification_cooldown?
+
+    available_at = @project.recertification_available_at
+    available_at && helpers.recertification_cooldown_message(available_at)
+  end
 
   def set_project
     @project = Project.find(params[:project_id])

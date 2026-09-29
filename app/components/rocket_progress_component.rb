@@ -24,6 +24,10 @@ class RocketProgressComponent < ViewComponent::Base
   def remaining = progress.remaining_hours
   def complete? = progress.complete?
 
+  def heading
+    complete? && !Flipper.enabled?(:bukux3, user) ? "The rocket is being built..." : "Rocket repair"
+  end
+
   def contribution? = progress.user_hours.positive?
   def fill_percent = [ hours / goal.to_f * 100, 100 ].min.round(4)
   def contribution_percent = hours.positive? ? (progress.user_hours.to_f / hours * 100).clamp(0, 100).round(4) : 0

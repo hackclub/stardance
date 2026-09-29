@@ -6,7 +6,7 @@ class Home::FeedsController < ApplicationController
   RECOMMENDATION_POOL = 100 # after this, we fallback to SQL
   BACKFILL_OVERSAMPLE = 10
   GORSE_TIMEOUT = 0.75
-  TABS = %w[for_you following popular newest new_builders].freeze
+  TABS = %w[for_you hardware following popular newest new_builders].freeze
   FeedPage = Struct.new(:page, :limit, :offset, :next, keyword_init: true)
 
   skip_before_action :remember_page
@@ -25,6 +25,7 @@ class Home::FeedsController < ApplicationController
 
   def load_feed
     case @current_tab
+    when "hardware"      then load_legacy_for_you_feed(category: "feed_hardware")
     when "following"     then load_following_feed
     when "popular"       then paginate_and_filter(popular_scope, "popular")
     when "newest"        then paginate_and_filter(newest_scope, "newest")
@@ -43,13 +44,20 @@ class Home::FeedsController < ApplicationController
     load_legacy_for_you_feed
   end
 
-  def load_legacy_for_you_feed
-    recommended = recommended_posts
-    backfill = filtered_feed_scope(Gorse::PostPayload.recommendable_feed_scope(current_user))
+  def load_legacy_for_you_feed(category: "feed")
+    gorse_posts = category == "feed_hardware" ? recommendations.posts(limit: RECOMMENDATION_POOL, category:) : recommended_posts
+    recommended = if category == "feed" && hardware_interest? && gorse_posts.size < RECOMMENDATION_POOL
+      (gorse_posts + blended_sql_posts).uniq(&:id).first(RECOMMENDATION_POOL)
+    else
+      gorse_posts
+    end
+    scope = category == "feed_hardware" ? Gorse::PostPayload.feed_scope(current_user) : Gorse::PostPayload.recommendable_feed_scope(current_user)
+    scope = Gorse::PostPayload.hardware_scope(scope) if category == "feed_hardware"
+    backfill = filtered_feed_scope(scope)
       .where.not(id: recommended.map(&:id))
 
     @pagy = feed_pagy
-    @feed_posts, @feed_post_sources, has_next = compose_feed(recommended, backfill, @pagy)
+    @feed_posts, @feed_post_sources, has_next = compose_feed(recommended, backfill, @pagy, gorse_post_ids: gorse_posts.map(&:id).to_set)
     @pagy.next = @pagy.page + 1 if has_next
 
     preload_feed_associations(@feed_posts)
@@ -96,10 +104,14 @@ class Home::FeedsController < ApplicationController
   end
 
   def build_mixed_feed_session(store, base_offset:)
-    gorse_posts = recommendations.post_candidates(limit: RECOMMENDATION_POOL)
-    fresh_posts = filtered_feed_scope(Gorse::PostPayload.recommendable_feed_scope(current_user))
-      .limit(RECOMMENDATION_POOL)
-      .to_a
+    gorse_posts = recommended_candidates
+    fresh_posts = if hardware_interest?
+      blended_sql_posts
+    else
+      filtered_feed_scope(Gorse::PostPayload.recommendable_feed_scope(current_user))
+        .limit(RECOMMENDATION_POOL)
+        .to_a
+    end
     preload(fresh_posts, :postable)
 
     candidates = (gorse_posts + fresh_posts).uniq(&:id)
@@ -240,7 +252,37 @@ class Home::FeedsController < ApplicationController
   end
 
   def recommended_posts
-    recommendations.posts(limit: RECOMMENDATION_POOL)
+    return recommendations.posts(limit: RECOMMENDATION_POOL) unless hardware_interest?
+
+    recommended_candidates
+  end
+
+  def recommended_candidates
+    general = recommendations.post_candidates(limit: RECOMMENDATION_POOL)
+    return general unless hardware_interest?
+
+    hardware = recommendations.post_candidates(limit: RECOMMENDATION_POOL / 3, category: "feed_hardware")
+    blend_hardware_posts(general, hardware)
+  end
+
+  def blend_hardware_posts(general, hardware)
+    hardware = hardware.uniq(&:id)
+    hardware_ids = hardware.map(&:id).to_set
+    general = general.uniq(&:id).reject { |post| hardware_ids.include?(post.id) }
+    blended = general.each_slice(2).flat_map.with_index { |pair, index| pair + Array(hardware[index]) }
+    (blended + hardware.drop((general.size + 1) / 2)).first(RECOMMENDATION_POOL)
+  end
+
+  def blended_sql_posts
+    scope = Gorse::PostPayload.recommendable_feed_scope(current_user)
+    general = filtered_feed_scope(scope).limit(RECOMMENDATION_POOL).to_a
+    hardware = filtered_feed_scope(Gorse::PostPayload.hardware_scope(scope))
+      .limit(RECOMMENDATION_POOL / 3).to_a
+    blend_hardware_posts(general, hardware)
+  end
+
+  def hardware_interest?
+    current_user&.interests&.include?("hardware")
   end
 
   def feed_pagy
@@ -250,10 +292,10 @@ class Home::FeedsController < ApplicationController
     FeedPage.new(page: page, limit: limit, offset: offset)
   end
 
-  def compose_feed(recommended, backfill, pagy)
+  def compose_feed(recommended, backfill, pagy, gorse_post_ids: recommended.map(&:id).to_set)
     page_candidate_limit = pagy.limit + 1
     rec_slice = pagy.offset < recommended.size ? Array(recommended[pagy.offset, page_candidate_limit]) : []
-    candidates = rec_slice.map { |post| [ post, "recommended" ] }
+    candidates = rec_slice.map { |post| [ post, gorse_post_ids.include?(post.id) ? "recommended" : "quality_latest" ] }
 
     remaining = page_candidate_limit - rec_slice.size
     if remaining.positive?

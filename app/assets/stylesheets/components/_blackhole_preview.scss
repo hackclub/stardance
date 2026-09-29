@@ -1,0 +1,145 @@
+.event-simulator {
+  position: fixed;
+  right: var(--space-m);
+  bottom: var(--space-m);
+  z-index: 9998;
+  width: min(360px, calc(100vw - 2 * var(--space-m)));
+  max-height: 80dvh;
+  overflow: auto;
+  border: 2px solid var(--color-brand-lilac);
+  border-radius: 8px;
+  background: var(--color-set-1-bg);
+  color: var(--color-space-text);
+  font-size: var(--font-size-m);
+
+  &__toggle {
+    padding: var(--space-m);
+    cursor: pointer;
+  }
+  &__controls {
+    padding: 0 var(--space-m) var(--space-m);
+    display: grid;
+    gap: var(--space-s);
+  }
+  &__field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+  &__field input {
+    max-width: 45%;
+    accent-color: var(--color-brand-lilac);
+  }
+  &__field input[type="number"] {
+    background: var(--color-set-2-bg);
+    color: inherit;
+    border: 1px solid var(--color-set-2-fg-secondary);
+    border-radius: 8px;
+    padding: var(--space-xxs);
+  }
+  &__hint {
+    color: var(--color-set-1-fg-secondary);
+    margin: 0;
+  }
+  &__status {
+    color: var(--color-brand-lilac);
+    margin: 0;
+  }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+  &__actions button,
+  &__actions a {
+    cursor: pointer;
+    border: 1px solid var(--color-brand-lilac);
+    border-radius: 999px;
+    background: var(--color-set-2-bg);
+    color: inherit;
+    padding: var(--space-xxs) var(--space-xs);
+    font: inherit;
+  }
+}
+
+.blackhole {
+  &__masks {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  &__dust {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9997;
+  }
+
+  &__text {
+    // An untransformed document-space origin: scrolling text copies move with
+    // the browser's scroll layer instead of chasing it through animation frames.
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+
+  &__text[hidden] {
+    display: none !important;
+  }
+
+  &__text-copy {
+    position: absolute !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    max-width: none !important;
+    max-height: none !important;
+
+    &--fixed {
+      position: fixed !important;
+    }
+  }
+
+  &__text-copy[hidden] {
+    display: none !important;
+  }
+
+  &__text-copy,
+  &__text-copy * {
+    color: var(--color-brand-off-white) !important;
+    -webkit-text-fill-color: var(--color-brand-off-white) !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    outline-color: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    pointer-events: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  &__text-copy * {
+    clip-path: none !important;
+  }
+
+  &__text-copy::before,
+  &__text-copy::after,
+  &__text-copy:is(img, svg),
+  &__text-copy *::before,
+  &__text-copy *::after,
+  &__text-copy img,
+  &__text-copy svg,
+  &__text-copy canvas,
+  &__text-copy .blackhole__text-excluded,
+  &__text-copy .blackhole__text-excluded * {
+    visibility: hidden !important;
+  }
+}

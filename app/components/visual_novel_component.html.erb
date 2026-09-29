@@ -4,7 +4,13 @@
      aria-labelledby="visual-novel-speaker"
      aria-describedby="visual-novel-line"
      data-controller="visual-novel"
+     data-turbo-temporary
+     data-action="turbo:before-cache@document->visual-novel#beforeCache"
      data-visual-novel-lines-value="<%= lines.to_json %>"
+     data-visual-novel-shake-lines-value="<%= shake_lines.to_json %>"
+     data-visual-novel-next-scene-url-value="<%= next_scene_url %>"
+     data-visual-novel-next-label-value="<%= next_label %>"
+     data-visual-novel-close-label-value="<%= close_label %>"
      data-visual-novel-dismiss-thing-value="<%= dismiss_thing %>">
   <div class="visual-novel__veil" data-action="click->visual-novel#advance"></div>
 
@@ -14,7 +20,7 @@
     <div class="visual-novel__box" data-action="click->visual-novel#advance">
       <p class="visual-novel__speaker" id="visual-novel-speaker"><%= speaker %></p>
 
-      <button type="button" class="visual-novel__skip" data-action="click->visual-novel#finish:stop">Skip</button>
+      <button type="button" class="visual-novel__skip" data-action="click->visual-novel#finish:stop"><%= skip_label %></button>
 
       <p class="visual-novel__line" id="visual-novel-line" data-visual-novel-target="line"><%= lines.first %></p>
 
@@ -28,7 +34,7 @@
 
         <button type="button"
                 class="visual-novel__advance"
-                aria-label="Next line"
+                aria-label="<%= next_label %>"
                 data-visual-novel-target="advance"
                 data-action="click->visual-novel#advance:stop">
           <svg class="visual-novel__advance-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">

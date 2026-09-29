@@ -1,0 +1,39 @@
+<% content_for :title, "Viral mentions" %>
+
+<h2>Viral mentions</h2>
+
+<%= link_to "Submit a mention", new_project_mention_path(@project), class: "action-button" %>
+
+<% if @mentions.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>URL</th>
+        <th>Platform</th>
+        <th>Status</th>
+        <th>Submitted</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @mentions.each do |mention| %>
+        <tr>
+          <td><%= link_to truncate(mention.url, length: 60), mention.url, target: "_blank", rel: "noopener noreferrer" %></td>
+          <td><%= mention.platform&.titleize || "—" %></td>
+          <td>
+            <% case mention.status %>
+            <% when :approved %>
+              <span class="status-pill status-pill--approved">Approved</span>
+            <% when :rejected %>
+              <span class="status-pill status-pill--rejected">Rejected</span>
+            <% else %>
+              <span class="status-pill status-pill--pending">Pending review</span>
+            <% end %>
+          </td>
+          <td><%= time_ago_in_words(mention.created_at) %> ago</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No mentions submitted yet.</p>
+<% end %>

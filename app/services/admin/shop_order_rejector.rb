@@ -1,6 +1,8 @@
 module Admin
   class ShopOrderRejector
-    Result = Data.define(:order, :rejected, :message) do
+    # `review` is set when the submission recorded a vote towards a high-value
+    # order's second rejection instead of rejecting it outright.
+    Result = Data.define(:order, :rejected, :message, :review) do
       def rejected? = rejected
     end
 
@@ -28,7 +30,8 @@ module Admin
     end
 
     def call
-      return failure("This is a high-value order and requires 2 fraud dept reviews before rejection (#{order.reviews.count}/2 so far).") if order.requires_additional_review?
+      vote = record_rejection_vote
+      return vote if vote
 
       old_state = order.aasm_state
       order.internal_rejection_reason = internal_reason
@@ -47,6 +50,25 @@ module Admin
     private
 
     attr_reader :order, :actor, :reason, :internal_reason, :joe_case_url, :fraud_project_id
+
+    # A high-value order needs two reviewers to agree before it is rejected, so
+    # the first submission records a vote and the second one, holding the same
+    # form, rejects for real. Returns nil once the order can be rejected.
+    def record_rejection_vote
+      return nil unless order.requires_additional_review?(ShopOrderReview::REJECT)
+
+      review = order.record_review(user: actor, verdict: ShopOrderReview::REJECT, reason: internal_reason)
+      return failure(review.errors.full_messages.to_sentence) unless review.persisted?
+      return nil unless order.requires_additional_review?(ShopOrderReview::REJECT)
+
+      Result.new(
+        order: order,
+        rejected: false,
+        review: review,
+        message: "Rejection recorded (#{order.review_count(ShopOrderReview::REJECT)}/#{ShopOrderReview::REQUIRED_COUNT}). " \
+                 "Order ##{order.id} now waits on another reviewer."
+      )
+    end
 
     def reject_accessories
       order.accessory_orders.select(&:may_mark_rejected?).count do |accessory|
@@ -77,7 +99,7 @@ module Admin
       )
     end
 
-    def success(message) = Result.new(order:, rejected: true, message:)
-    def failure(message) = Result.new(order:, rejected: false, message:)
+    def success(message) = Result.new(order:, rejected: true, message:, review: nil)
+    def failure(message) = Result.new(order:, rejected: false, message:, review: nil)
   end
 end

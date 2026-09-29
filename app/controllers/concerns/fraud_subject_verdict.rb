@@ -53,8 +53,8 @@ module FraudSubjectVerdict
   # A bulk action settles a whole pile in one submission. Each item is swapped
   # and claimed exactly as it would have been one at a time, so the reviewer is
   # paid the same either way.
-  def render_fraud_subject_verdicts(settled, refresh_integrity: false)
-    render turbo_stream: fraud_subject_verdict_streams(settled, refresh_integrity: refresh_integrity)
+  def render_fraud_subject_verdicts(settled, refresh_integrity: false, claims: nil)
+    render turbo_stream: fraud_subject_verdict_streams(settled, refresh_integrity: refresh_integrity, claims: claims)
   end
 
   def fraud_subject_verdict_streams(settled, refresh_integrity: false, claims: nil)

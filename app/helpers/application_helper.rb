@@ -231,6 +231,10 @@ module ApplicationHelper
     "unavailable"
   end
 
+  def local_event_simulator?
+    Rails.env.development? && request.host.in?(%w[localhost 127.0.0.1 ::1 [::1]])
+  end
+
   private
 
   def find_achievement_asset(icon_name)

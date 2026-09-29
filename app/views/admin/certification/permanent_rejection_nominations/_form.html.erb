@@ -1,0 +1,34 @@
+<% direct = current_user.admin? %>
+<div class="hardware-review__fraud-modal-card">
+  <% if local_assigns[:modal] %>
+    <button type="button" class="hardware-review__fraud-modal-close"
+            data-action="click->modal#close" aria-label="Close">&times;</button>
+  <% end %>
+  <h3 id="permanent-rejection-title" class="hardware-review__fraud-modal-title"><%= direct ? "Permanently reject project" : "Nominate for permanent rejection" %></h3>
+  <p id="permanent-rejection-reason-help" class="hardware-review__fraud-modal-note">
+    <%= direct ? "This takes effect immediately and prevents future funding or certification. The builder will receive your justification." : "An admin will decide. Until then, this project leaves the review queue and the builder is not notified. Your justification is shared only if approved." %>
+  </p>
+  <% if nomination.errors.any? %>
+    <div class="permanent-rejection__warning" role="alert"><%= nomination.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <%= form_with url: admin_certification_permanent_rejection_nominations_path, class: "hardware-review__fraud-form" do |form| %>
+    <%= hidden_field_tag :review_type, nomination.reviewable.is_a?(Certification::FundingRequest) ? "funding" : "ship" %>
+    <%= hidden_field_tag :review_id, nomination.reviewable_id %>
+    <%= form.label :reason, "Justification (required)", for: "permanent-rejection-reason" %>
+    <%= form.text_area :reason, value: nomination.reason, required: true, maxlength: 10_000, rows: 6,
+          id: "permanent-rejection-reason", class: "hardware-review__fraud-form-input",
+          placeholder: "Why should this project be rejected permanently, rather than returned for changes?",
+          aria: { describedby: "permanent-rejection-reason-help" } %>
+    <div class="hardware-review__fraud-form-actions">
+      <% if local_assigns[:modal] %>
+        <button type="button" class="action-btn action-btn--small action-btn--secondary"
+                data-action="click->modal#close">Cancel</button>
+      <% else %>
+        <%= link_to "Cancel", admin_certification_hardware_review_path(nomination.project), class: "action-btn action-btn--small action-btn--secondary" %>
+      <% end %>
+      <%= form.submit direct ? "Permanently reject" : "Send nomination",
+            class: "action-btn action-btn--small action-btn--destructive",
+            data: { disable_with: "Submitting…", turbo_confirm: direct ? "Permanently reject this project? The builder will be notified and cannot resubmit it." : nil } %>
+    </div>
+  <% end %>
+</div>

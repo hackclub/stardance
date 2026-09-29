@@ -19,6 +19,9 @@ application.register("admin-ledger-chart", AdminLedgerChartController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import BukuActivityChartController from "./buku_activity_chart_controller";
+application.register("buku-activity-chart", BukuActivityChartController);
+
 import BulkSelectController from "./bulk_select_controller";
 application.register("bulk-select", BulkSelectController);
 
@@ -247,6 +250,9 @@ application.register("hackatime-link", HackatimeLinkController);
 import HcbChartController from "./hcb_chart_controller";
 application.register("hcb-chart", HcbChartController);
 
+import HourFunnelController from "./hour_funnel_controller";
+application.register("hour-funnel", HourFunnelController);
+
 import HeroWarpController from "./hero_warp_controller";
 application.register("hero-warp", HeroWarpController);
 
@@ -319,6 +325,9 @@ application.register("parallax", ParallaxController);
 import PayoutReviewController from "./payout_review_controller";
 application.register("payout-review", PayoutReviewController);
 
+import PhantomVoidController from "./phantom_void_controller";
+application.register("phantom-void", PhantomVoidController);
+
 import PostMenuController from "./post_menu_controller";
 application.register("post-menu", PostMenuController);
 
@@ -351,6 +360,9 @@ application.register("project-thumbs-scroll", ProjectThumbsScrollController);
 
 import ProjectTypeController from "./project_type_controller";
 application.register("project-type", ProjectTypeController);
+
+import QueueFilterController from "./queue_filter_controller";
+application.register("queue-filter", QueueFilterController);
 
 import RatingDashboardChartController from "./rating_dashboard_chart_controller";
 application.register("rating-dashboard-chart", RatingDashboardChartController);
@@ -477,3 +489,12 @@ application.register("workshop-countdown", WorkshopCountdownController);
 
 import MihiModeController from "./mihi_mode_controller";
 application.register("mihi-mode", MihiModeController);
+
+import BlackholeController from "./blackhole_controller";
+application.register("blackhole", BlackholeController);
+
+import BukuX3RevealController from "./buku_x3_reveal_controller";
+application.register("buku-x3-reveal", BukuX3RevealController);
+
+import BukuX3StatusController from "./buku_x3_status_controller";
+application.register("buku-x3-status", BukuX3StatusController);

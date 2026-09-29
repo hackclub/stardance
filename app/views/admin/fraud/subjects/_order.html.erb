@@ -58,7 +58,7 @@
             second one also approves it. %>
         <details class="fraud-subject__second-review">
           <summary class="fraud-subject__verdict fraud-subject__verdict--accept">
-            Approve (<%= order.reviews.size %>/<%= ShopOrderReview::REQUIRED_COUNT %> reviews)
+            Approve (<%= order.review_count(ShopOrderReview::APPROVE) %>/<%= ShopOrderReview::REQUIRED_COUNT %> reviews)
           </summary>
 
           <%= form_with url: review_order_admin_shop_order_path(order), class: "fraud-subject__verdict-form" do |f| %>
@@ -76,9 +76,15 @@
 
       <% if policy(order).reject? %>
         <%# Closed, this sits inline with the other buttons; open, the SCSS gives
-            it the full row so the form has somewhere to go. %>
+            it the full row so the form has somewhere to go. On a high-value
+            order the same form records the first rejection and lands the
+            second, so it says which one it is about to be. %>
         <details class="fraud-subject__reject">
-          <summary class="fraud-subject__verdict fraud-subject__verdict--reject">Reject</summary>
+          <summary class="fraud-subject__verdict fraud-subject__verdict--reject">
+            Reject<% if order.high_value? %>
+              (<%= order.review_count(ShopOrderReview::REJECT) %>/<%= ShopOrderReview::REQUIRED_COUNT %> reviews)
+            <% end %>
+          </summary>
 
           <%= form_with url: reject_admin_shop_order_path(order), class: "fraud-subject__verdict-form" do |f| %>
             <%= hidden_field_tag :fraud_subject_id, user.id %>

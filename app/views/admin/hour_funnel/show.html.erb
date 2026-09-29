@@ -1,0 +1,145 @@
+<% content_for :title, "Hour Funnel" %>
+<% details = @funnel[:details] %>
+<% devlogged = @funnel[:nodes].find { |node| node[:key] == "devlogged" } %>
+<% in_airtable = @funnel[:nodes].find { |node| node[:key] == "airtable_synced" } %>
+
+<div class="hour-funnel"
+     data-controller="hour-funnel"
+     data-hour-funnel-nodes-value="<%= @funnel[:nodes].to_json %>"
+     data-hour-funnel-links-value="<%= @funnel[:links].to_json %>">
+  <%= link_to "← back to admin", admin_root_path, class: "hour-funnel__back" %>
+
+  <header class="hour-funnel__header">
+    <div>
+      <h1>Hour Funnel</h1>
+      <p class="hour-funnel__subtitle">
+        Every hour ever devlogged and where it is now: deleted, waiting to ship,
+        or on its way through ship certification, the YSWS review, integrity and Airtable.
+      </p>
+    </div>
+    <div class="hour-funnel__controls">
+      <nav class="hour-funnel__units" aria-label="Unit">
+        <% @funnel[:unit_labels].each do |unit, label| %>
+          <button type="button" class="<%= class_names("hour-funnel__unit", "is-active" => unit == :hours) %>"
+                  data-hour-funnel-target="unitButton"
+                  data-action="hour-funnel#setUnit"
+                  data-hour-funnel-unit-param="<%= unit %>"><%= label %></button>
+        <% end %>
+      </nav>
+      <%= button_to "Recompute", refresh_admin_hour_funnel_path, class: "hour-funnel__refresh" %>
+    </div>
+  </header>
+
+  <p class="hour-funnel__note">
+    All time, software and hardware. Computed <%= time_ago_in_words(@generated_at) %> ago.
+    Ships start at the shipped node; a markdown or deduction takes hours but not the ship, so in the ships unit those nodes drop out.
+    Hardware skips the integrity check, so its ships pass through their own node.
+    Deleted and banned work flows to the stage it had reached when it went, then leaves from there.
+  </p>
+
+  <div class="hour-funnel__tiles">
+    <div class="hour-funnel__tile">
+      <span class="hour-funnel__tile-value"><%= hour_funnel_hours(devlogged[:hours]) %></span>
+      <span class="hour-funnel__tile-label">Devlogged, all time</span>
+      <span class="hour-funnel__tile-note"><%= number_with_delimiter(details["devlogs"]) %> devlogs</span>
+    </div>
+    <div class="hour-funnel__tile">
+      <span class="hour-funnel__tile-value"><%= hour_funnel_hours(in_airtable[:hours]) %></span>
+      <span class="hour-funnel__tile-label">Made it into Airtable</span>
+      <span class="hour-funnel__tile-note">
+        <%= hour_funnel_share(in_airtable[:hours], devlogged[:hours]) %> of devlogged ·
+        <%= pluralize(in_airtable[:ships], "ship") %> ·
+        <%= hour_funnel_hours(details["unified_db_hours"]) %> picked up by the Unified DB
+      </span>
+    </div>
+    <div class="hour-funnel__tile">
+      <% if @unified %>
+        <span class="hour-funnel__tile-value"><%= hour_funnel_hours(@unified.hours) %></span>
+        <span class="hour-funnel__tile-label">In the Unified YSWS DB, per Airtable</span>
+        <span class="hour-funnel__tile-note">
+          <%= pluralize(number_with_delimiter(@unified.records), "record") %> tagged Stardance ·
+          the funnel counts <%= hour_funnel_hours(details["unified_db_hours"]) %> on
+          <%= pluralize(details["unified_db_ships"], "ship") %> as picked up
+        </span>
+      <% else %>
+        <span class="hour-funnel__tile-value">—</span>
+        <span class="hour-funnel__tile-label">In the Unified YSWS DB, per Airtable</span>
+        <span class="hour-funnel__tile-note">Not reachable right now: no unified key configured or Airtable did not answer.</span>
+      <% end %>
+    </div>
+    <div class="hour-funnel__tile">
+      <span class="hour-funnel__tile-value"><%= hour_funnel_hours(details["raw_over_cap_hours"]) %></span>
+      <span class="hour-funnel__tile-label">Over the 10h/devlog payout cap</span>
+      <span class="hour-funnel__tile-note">
+        Logged in shipped windows but never payable ·
+        <%= pluralize(details["raw_over_cap_devlogs"], "devlog") %> on
+        <%= pluralize(details["raw_over_cap_ships"], "ship") %>
+      </span>
+    </div>
+  </div>
+
+  <div class="hour-funnel__sankey-wrap">
+    <div class="hour-funnel__sankey" data-hour-funnel-target="chart" role="img"
+         aria-label="Sankey of devlogged hours through shipping, certification and Airtable"></div>
+    <div class="hour-funnel__sankey-tooltip" data-hour-funnel-target="tooltip" hidden></div>
+  </div>
+
+  <ul class="hour-funnel__legend">
+    <li><span class="hour-funnel__legend-key hour-funnel__legend-key--kept"></span> flows on</li>
+    <li><span class="hour-funnel__legend-key hour-funnel__legend-key--held"></span> waiting on someone</li>
+    <li><span class="hour-funnel__legend-key hour-funnel__legend-key--lost"></span> lost</li>
+  </ul>
+
+  <details class="hour-funnel__details">
+    <summary>Every node as a table</summary>
+    <table class="hour-funnel__table">
+      <thead>
+        <tr>
+          <th scope="col">Node</th>
+          <th scope="col">Hours</th>
+          <th scope="col">Of devlogged</th>
+          <th scope="col">Ships</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @funnel[:nodes].each do |node| %>
+          <tr>
+            <th scope="row">
+              <span class="hour-funnel__legend-key hour-funnel__legend-key--<%= node[:kind] %>"></span>
+              <%= node[:label] %>
+            </th>
+            <td><%= hour_funnel_hours(node[:hours]) %></td>
+            <td><%= hour_funnel_share(node[:hours], devlogged[:hours]) %></td>
+            <td>
+              <% if node[:partial] %>
+                affects <%= number_with_delimiter(node[:ships_affected]) %>
+              <% elsif node[:stage] == "devlogged" %>
+                —
+              <% else %>
+                <%= number_with_delimiter(node[:ships]) %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <% by_key = @funnel[:nodes].index_by { |node| node[:key] } %>
+    <dl class="hour-funnel__breakdown">
+      <dt>Devlog deleted</dt>
+      <dd><%= hour_funnel_hours(by_key["deleted"][:hours]) %> before any ship · <%= hour_funnel_hours(by_key["gone_devlog_deleted"][:hours]) %> after the ship that carried them, shown leaving the stage they had reached</dd>
+      <dt>Banned</dt>
+      <dd><%= hour_funnel_hours(details["banned_before_ship_hours"]) %> never shipped · <%= hour_funnel_hours(by_key["gone_banned"][:hours]) %> shipped first, on <%= pluralize(by_key["gone_banned"][:ships], "ship") %> · <%= hour_funnel_hours(by_key["integrity_banned"][:hours]) %> more on the ships integrity itself banned</dd>
+      <dt>Project deleted</dt>
+      <dd><%= hour_funnel_hours(details["project_deleted_before_ship_hours"]) %> never shipped · <%= hour_funnel_hours(by_key["gone_project_deleted"][:hours]) %> shipped first, on <%= pluralize(by_key["gone_project_deleted"][:ships], "ship") %></dd>
+      <dt>Not shipped yet</dt>
+      <dd><%= hour_funnel_hours(details["unshipped_never_hours"]) %> on projects that never shipped · <%= hour_funnel_hours(details["unshipped_after_ship_hours"]) %> logged after the latest ship</dd>
+      <dt>Recert opened by YSWS</dt>
+      <dd><%= hour_funnel_hours(details["recert_from_ysws_hours"]) %> on <%= pluralize(details["recert_from_ysws_ships"], "ship") %> sent back to ship cert by a YSWS reviewer</dd>
+      <dt>Hardware</dt>
+      <dd><%= hour_funnel_hours(details["hardware_hours"]) %> devlogged on hardware projects · <%= hour_funnel_hours(details["design_phase_hours"]) %> of it in the design phase, which YSWS certifies but payouts never count</dd>
+      <dt>Auto-rejected by YSWS</dt>
+      <dd><%= hour_funnel_hours(details["auto_rejected_hours"]) %> rejected without a reviewer (ban or project deletion)</dd>
+    </dl>
+  </details>
+</div>

@@ -101,16 +101,52 @@ class Shop::HCBGrantFulfillableTest < ActiveSupport::TestCase
     assert @order.reload.pending?
   end
 
-  test "a cancelled grant is replaced rather than topped up" do
-    ShopCardGrant.create!(user: @user, shop_item: @item, hcb_grant_hashid: "grt_dead", expected_amount_cents: 100)
+  test "a grant HCB reports closed is replaced rather than topped up" do
+    ShopCardGrant::CLOSED_STATUSES.each do |status|
+      order = @user.shop_orders.create!(
+        shop_item: @item, quantity: 1,
+        frozen_address: { "country" => "US", "primary" => true }
+      )
+      ShopCardGrant.where(user: @user, shop_item: @item).delete_all
+      ShopCardGrant.create!(user: @user, shop_item: @item, hcb_grant_hashid: "grt_#{status}", expected_amount_cents: 100)
 
-    HCBService.stub(:show_card_grant, { "status" => "canceled" }) do
-      HCBService.stub(:create_card_grant, GRANT_RESPONSE) do
-        HCBService.stub(:rename_transaction, true) { @item.fulfill!(@order) }
+      HCBService.stub(:show_card_grant, { "status" => status }) do
+        HCBService.stub(:create_card_grant, GRANT_RESPONSE) do
+          HCBService.stub(:topup_card_grant, ->(**) { flunk "HCB refuses a top-up on a #{status} grant" }) do
+            HCBService.stub(:rename_transaction, true) { @item.fulfill!(order) }
+          end
+        end
+      end
+
+      assert_equal "grt_test", order.reload.shop_card_grant.hcb_grant_hashid,
+                   "a #{status} grant must be replaced, not reused"
+    end
+  end
+
+  # HCB 403s every card_grants#show for a restricted OAuth token, so the status
+  # read fails and the buyer gets a separate grant rather than a top-up. The
+  # order still disburses its own amount exactly once - nobody is paid twice -
+  # but the balance ends up split across cards. Pinned so the fallback stays
+  # deliberate, and so this starts merging again once HCB grants the scope.
+  test "an unreadable grant status falls back to a separate grant" do
+    ShopCardGrant.create!(user: @user, shop_item: @item, hcb_grant_hashid: "grt_live", expected_amount_cents: 100)
+
+    forbidden = ->(**) { raise HCBError, 'HCB returned 403: {"error":"not_authorized"}' }
+
+    topups = 0
+    HCBService.stub(:show_card_grant, forbidden) do
+      HCBService.stub(:topup_card_grant, ->(**) { topups += 1; GRANT_RESPONSE }) do
+        HCBService.stub(:create_card_grant, GRANT_RESPONSE) do
+          HCBService.stub(:rename_transaction, true) { @item.fulfill!(@order) }
+        end
       end
     end
 
+    assert_equal 0, topups, "the top-up can't be attempted when the status can't be read"
     assert_equal "grt_test", @order.reload.shop_card_grant.hcb_grant_hashid
+    assert_equal 2, ShopCardGrant.where(user: @user, shop_item: @item).count,
+                 "the buyer is left holding two grants - the fragmentation this records"
+    assert @order.reload.fulfilled?, "the order is still fulfilled for its own amount"
   end
 
   test "a second order tops up the existing grant" do

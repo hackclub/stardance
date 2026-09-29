@@ -1,0 +1,6 @@
+<% if @batch_counts && params[:shop_item_id].blank? %>
+  <% batch_count = @batch_counts[order.shop_item_id].to_i %>
+  <% if batch_count > 1 %>
+    <br><small><%= link_to "see all (#{batch_count})", admin_shop_orders_path(preserved_filter_params.merge(shop_item_id: order.shop_item_id)) %></small>
+  <% end %>
+<% end %>

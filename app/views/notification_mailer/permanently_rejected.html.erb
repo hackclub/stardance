@@ -1,0 +1,7 @@
+<h1>Your hardware project was permanently rejected</h1>
+<p>An administrator has completed the review of <strong><%= @record&.project&.title %></strong>.</p>
+<p>This is a final decision, not a request for changes. This project cannot be submitted for funding or build certification again.</p>
+<h2>Reason for this decision</h2>
+<%= simple_format(@record&.feedback, {}, sanitize: true) %>
+<p>Your project and devlogs remain available. This decision applies to this project; it is not an account ban.</p>
+<%= link_to "View project and decision", @record&.project ? project_url(@record.project) : root_url %>

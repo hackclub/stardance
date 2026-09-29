@@ -39,6 +39,10 @@ class ProjectPolicy < ApplicationPolicy
         (member? || user&.can_review?) && record.needs_changes?
     end
 
+    def bypass_recertification_cooldown?
+        user&.can_review? && !member?
+    end
+
     def request_mission_resubmission?
         (member? || user&.admin?) && record.last_ship_event&.mission_submission&.rejected?
     end

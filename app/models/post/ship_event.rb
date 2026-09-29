@@ -159,9 +159,17 @@ class Post::ShipEvent < ApplicationRecord
   # funding — unlike hours_at_ship, which on hardware drops explicit design
   # work and anything logged before the funding request.
   def window_devlogs_count
-    return 0 unless post&.project && post.created_at
+    return 0 unless post&.project_id && post.created_at
 
     window_devlogs.count
+  end
+
+  # The hours those devlogs add up to: the raw claim this ship makes, which is
+  # what the GOI reviews and what an integrity deduction comes off.
+  def window_hours
+    return 0.0 unless post&.project_id && post.created_at
+
+    window_devlogs.sum("post_devlogs.duration_seconds").to_f / 3600
   end
 
   private
@@ -201,15 +209,26 @@ class Post::ShipEvent < ApplicationRecord
   end
 
   def window_devlogs
-    project.posts.of_devlogs(join: true)
-           .where("posts.created_at >= ? AND posts.created_at <= ?", ship_window_start_time, post.created_at)
-           .where(post_devlogs: { deleted_at: nil })
+    scope = project_posts.of_devlogs(join: true)
+                         .where("posts.created_at <= ?", post.created_at)
+                         .where(post_devlogs: { deleted_at: nil })
+
+    previous_ship_at ? scope.where("posts.created_at >= ?", previous_ship_at) : scope
   end
 
-  def ship_window_start_time
-    project.posts.of_ship_events
-           .where("posts.created_at < ?", post.created_at)
-           .maximum(:created_at) || project.created_at
+  # The ship before this one closes the earlier window. Without one the window
+  # runs back to the project's first devlog.
+  def previous_ship_at
+    project_posts.of_ship_events
+                 .where("posts.created_at < ?", post.created_at)
+                 .maximum(:created_at)
+  end
+
+  # Found by id rather than through the association: Project's default scope
+  # hides a soft-deleted project, which is exactly the shape a banned shipper's
+  # work takes when a fraud reviewer opens it.
+  def project_posts
+    Post.where(project_id: post.project_id)
   end
 
   def project_can_be_shipped

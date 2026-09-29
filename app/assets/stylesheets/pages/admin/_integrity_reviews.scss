@@ -539,6 +539,13 @@
     align-items: stretch;
   }
 
+  // Lifetime hours sit under the ship's own figure as quiet context.
+  & &__value-aside {
+    display: block;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+
   & &__value--block {
     text-align: left;
     margin-top: var(--space-xs);

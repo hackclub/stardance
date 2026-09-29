@@ -4,18 +4,28 @@ module Certification
 
     CLAIM_TTL = 30.minutes
     HARDWARE_REVIEW_CHANNEL = "C0BPN8XPSPN"
+    HARDWARE_GENERAL_CHANNEL = "C0BPUM5N3RR"
     HARDWARE_APPROVAL_FEED_CHANNEL = "C0BUR6M0ZQT"
+    HARDWARE_INVITE_CHANNELS = [ HARDWARE_REVIEW_CHANNEL, HARDWARE_GENERAL_CHANNEL ].freeze
 
     # A reviewer's actual verdicts. The queue-routing corrections (misfiled,
     # withdrawn) are not decisions: they earn no bounty, stamp no decided_at,
     # and stay out of every queue statistic.
-    DECIDED_STATUSES = %w[approved returned].freeze
+    DECIDED_STATUSES = %w[approved returned permanently_rejected].freeze
     # Everything that ever counted as work in this queue. A rerouted review is
     # excluded exactly like an unsubmitted one: it got no verdict, and the work
     # reappears as its own record in the queue it belonged in.
     QUEUED_STATUSES = (DECIDED_STATUSES + %w[pending]).freeze
 
+    included do
+      validate :respect_permanent_rejection
+    end
+
     class_methods do
+      def without_rejection_hold
+        where.not(project_id: Certification::PermanentRejectionNomination.blocking.select(:project_id))
+      end
+
       def decided
         where(status: DECIDED_STATUSES)
       end
@@ -42,7 +52,7 @@ module Certification
       def atomic_claim!(record_id, user)
         now = Time.current
         expires = now + CLAIM_TTL
-        updated = where(id: record_id, status: statuses[:pending])
+        updated = without_rejection_hold.where(id: record_id, status: statuses[:pending])
           .where("reviewer_id IS NULL OR claim_expires_at IS NULL OR claim_expires_at < ? OR reviewer_id = ?", now, user.id)
           .update_all(reviewer_id: user.id, claimed_at: now, claim_expires_at: expires, updated_at: now)
         updated.zero? ? nil : find(record_id)
@@ -98,6 +108,8 @@ module Certification
     end
 
     def post_submission_to_hardware_review_channel!
+      return if prior_hardware_submission_exists?
+
       routes = Rails.application.routes.url_helpers
       url_opts = (Rails.application.config.action_controller.default_url_options || {})
                    .reverse_merge(host: "stardance.hackclub.com", protocol: "https")
@@ -125,11 +137,22 @@ module Certification
       return unless owner&.slack_id.present?
       return if owner.hardware_channel_invited_at.present?
 
-      InviteToSlackChannelJob.perform_later(owner.id, HARDWARE_REVIEW_CHANNEL)
+      InviteToSlackChannelJob.perform_later(owner.id, HARDWARE_INVITE_CHANNELS)
+    end
+
+    def prior_hardware_submission_exists?
+      fundings = Certification::FundingRequest.where(project_id: project_id)
+      ships = Certification::Ship.where(project_id: project_id)
+
+      fundings = fundings.where.not(id: id) if is_a?(Certification::FundingRequest)
+      ships = ships.where.not(id: id) if is_a?(Certification::Ship)
+
+      fundings.exists? || ships.exists?
     end
 
     def post_approval_to_hardware_feed!
       return unless approved?
+      return if project&.current_mission&.hardware?
 
       locals = notification_locals.slice(:project_title, :project_url, :reviewer_name, :feedback)
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
@@ -155,6 +178,9 @@ module Certification
     end
 
     def post_verdict_to_hardware_review_channel!
+      return if project&.current_mission&.hardware?
+      return if permanently_rejected?
+
       locals = notification_locals.slice(:project_title, :project_url, :approved, :reviewer_name, :feedback)
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
       locals[:owner_slack_id] = owner&.slack_id
@@ -289,9 +315,12 @@ module Certification
     # next reviewer through the queue picks it up rather than the one who
     # flagged it.
     def dispute_queue_mismatch!
-      return false unless misfiled?
+      with_lock do
+        return false unless misfiled?
 
-      transaction do
+        # Match verdict/undo lock order: review, then project. Mission changes
+        # hold the project lock and must not overlap a return to pending.
+        project.lock!
         update!(status: :pending, reviewer: nil, claim_expires_at: nil, claimed_at: nil)
         restore_to_public_surfaces!
       end
@@ -357,6 +386,30 @@ module Certification
     end
 
     private
+
+    # Applies to normal verdict endpoints, stale forms, queue conversions and
+    # new submissions too, not just the nomination UI. Only an approved
+    # nomination may introduce the terminal status.
+    def respect_permanent_rejection
+      return unless project && (new_record? || will_save_change_to_status?)
+
+      if permanently_rejected? && status_in_database != "permanently_rejected"
+        unless Certification::PermanentRejectionNomination.approved.exists?(reviewable: self)
+          errors.add(:base, "Permanent rejection requires an approved nomination.")
+        end
+      elsif project.hardware_review_blocked?
+        errors.add(:base, project.permanently_rejected? ?
+          "This project was permanently rejected and cannot be submitted or reviewed again." :
+          "This project is still under review.")
+      end
+    end
+
+    def notify_permanent_rejection!
+      Notifications::Hardware::PermanentlyRejected.notify(recipient: owner, actor: reviewer, record: self)
+    rescue StandardError => e
+      Rails.logger.error("#{self.class} ##{id} permanent rejection notification failed: #{e.message}")
+      Sentry.capture_exception(e)
+    end
 
     # The most recent PaperTrail version that flipped this record into `misfiled`.
     # Memoized: previously_misfiled? and misfiling_flag both read it on the same

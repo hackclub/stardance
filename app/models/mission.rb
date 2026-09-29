@@ -312,12 +312,27 @@ class Mission < ApplicationRecord
     submission_guide.to_s.split(/\r?\n/)
   end
 
+  # A bullet's text can wrap onto a following line or two (pasted from
+  # somewhere hard-wrapped, or just a long requirement) with no blank line
+  # before it — that continuation has no "- " of its own, so fold it back
+  # into the bullet it follows rather than losing it or letting it get
+  # mistaken for the outro. A blank line before the trailing text is what
+  # marks it as a genuine outro paragraph instead.
   def submission_criteria
-    submission_guide_lines.filter_map do |line|
+    lines = submission_guide_lines
+    last_bullet = lines.rindex { |l| l.strip.start_with?("- ", "* ") }
+    return [] unless last_bullet
+
+    criteria = []
+    lines[0...criteria_end_index(lines, last_bullet)].each do |line|
       stripped = line.strip
-      next unless stripped.start_with?("- ", "* ")
-      stripped.sub(/^[\-\*]\s+/, "").presence
+      if stripped.start_with?("- ", "* ")
+        criteria << stripped.sub(/^[\-\*]\s+/, "")
+      elsif criteria.any? && stripped.present?
+        criteria[-1] = "#{criteria[-1]} #{stripped}"
+      end
     end
+    criteria
   end
 
   def submission_guide_intro
@@ -329,9 +344,9 @@ class Mission < ApplicationRecord
   def submission_guide_outro
     return nil if submission_guide.blank?
     lines = submission_guide_lines
-    first_bullet = lines.find_index { |l| l.strip.start_with?("- ", "* ") }
-    return nil unless first_bullet
-    after = lines[first_bullet..].drop_while { |l| l.strip.start_with?("- ", "* ") || l.strip.empty? }
+    last_bullet = lines.rindex { |l| l.strip.start_with?("- ", "* ") }
+    return nil unless last_bullet
+    after = lines[criteria_end_index(lines, last_bullet)..].drop_while(&:blank?)
     after.join("\n").strip.presence
   end
 
@@ -392,6 +407,15 @@ class Mission < ApplicationRecord
   end
 
   private
+
+  # First line after the last bullet where a blank line breaks the run —
+  # everything before it is still the bullet's own wrapped continuation,
+  # everything from it onward is the outro.
+  def criteria_end_index(lines, last_bullet)
+    idx = last_bullet + 1
+    idx += 1 while idx < lines.length && lines[idx].strip.present?
+    idx
+  end
 
   def migrate_attached_projects_to_hardware
     Mission::MigrateProjectsToHardwareJob.perform_later(id, PaperTrail.request.whodunnit)

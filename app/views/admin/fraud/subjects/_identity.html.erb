@@ -40,6 +40,19 @@
           <% if policy(user).adjust_balance? %>
             <%= render "admin/users/adjust_balance", user: user, balance: balance %>
           <% end %>
+
+          <%# The ledger is a whole page of rows, so it is fetched only when a
+              reviewer opens it and takes the full width of the panel it hangs
+              off rather than the balance's own column. %>
+          <details class="fraud-subject__balance-history">
+            <summary class="fraud-subject__balance-toggle">Balance history</summary>
+
+            <%= turbo_frame_tag "fraud-subject-balance",
+                                src: admin_fraud_subject_balance_path(user),
+                                loading: "lazy" do %>
+              <p class="fraud-subject__balance-loading">Loading balance history...</p>
+            <% end %>
+          </details>
         </dd>
       </div>
 

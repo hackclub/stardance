@@ -1,6 +1,18 @@
 <% records_fraud_details = Admin::ShopOrderRejector.records_fraud_details?(order, current_user) %>
+<%# A high-value order takes two rejections. Submitting this form casts one of
+    them, and the last one rejects the order outright, so the form says which
+    of the two it is about to be. %>
+<% rejections = order.review_count(ShopOrderReview::REJECT) + 1 %>
+<% records_vote_only = order.requires_additional_review?(ShopOrderReview::REJECT) && rejections < ShopOrderReview::REQUIRED_COUNT %>
 <dialog id="reject-modal">
   <h2>Reject Order #<%= order.id %></h2>
+
+  <% if order.high_value? && order.requires_additional_review?(ShopOrderReview::REJECT) %>
+    <p>
+      High-value order: this is rejection <%= rejections %> of <%= ShopOrderReview::REQUIRED_COUNT %>.
+      <%= records_vote_only ? "The order is rejected once another reviewer agrees." : "It rejects the order." %>
+    </p>
+  <% end %>
 
   <%= form_with url: reject_admin_shop_order_path(order), method: :post, local: true do |f| %>
     <%= hidden_field_tag :return_view, params[:return_view] if params[:return_view].present? %>
@@ -30,7 +42,7 @@
 
     <div>
       <button type="button" onclick="document.getElementById('reject-modal').close()">Cancel</button>
-      <%= f.submit "Reject Order" %>
+      <%= f.submit records_vote_only ? "Record Rejection" : "Reject Order" %>
     </div>
   <% end %>
 </dialog>

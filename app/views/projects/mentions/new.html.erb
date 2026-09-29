@@ -1,0 +1,36 @@
+<% content_for :title, "Submit a viral mention" %>
+
+<main class="mention-form">
+  <header class="mention-form__header">
+    <h1 class="mention-form__title">Submit a viral mention</h1>
+    <p class="mention-form__hint">
+      Got traction on an external platform? Paste the link below.
+      <%= link_to "Learn more", guide_path(:virality_bonus), class: "mention-form__hint-link" %>
+    </p>
+  </header>
+
+  <%= form_with model: @mention, url: project_mentions_path(@project), class: "settings-form" do |f| %>
+    <% if @mention.errors.any? %>
+      <div class="settings-form__errors">
+        <% @mention.errors.full_messages.each do |msg| %>
+          <p><%= msg %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="settings-form__field">
+      <%= f.label :url, "Link", class: "settings-form__label" %>
+      <%= f.url_field :url, required: true, placeholder: "https://...", class: "settings-form__input" %>
+    </div>
+
+    <div class="settings-form__field">
+      <%= f.label :submitter_notes, "Notes (optional)", class: "settings-form__label" %>
+      <%= f.text_area :submitter_notes, rows: 2, placeholder: "Any context for the reviewer", class: "settings-form__input" %>
+    </div>
+
+    <div class="mention-form__actions">
+      <%= f.submit "Submit", class: "action-button" %>
+      <%= link_to "Cancel", project_path(@project), class: "action-button action-button--secondary", data: { turbo_frame: "_top" } %>
+    </div>
+  <% end %>
+</main>

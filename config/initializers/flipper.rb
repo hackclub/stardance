@@ -52,10 +52,14 @@ Rails.application.config.after_initialize do
         mac_analysis
         sticky_streaks
         public_api_2026-08-28
+        virality_bonus
         ysws_review_shortcuts
         bukux2
         mihimode
+        blackhole
+        bukux3
       ].each { |flag| Flipper.add(flag) }
+      Flipper.add(:bukux2_preview_complete) if Rails.env.development?
     end
   rescue StandardError => e
     Rails.logger.warn "Could not initialize flipper: #{e.message}"

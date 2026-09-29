@@ -15,6 +15,8 @@
 @use "components/action_items";
 @use "components/action_button";
 @use "components/mihi_mode_toggle";
+@use "components/blackhole_preview";
+@use "components/buku_x3_status";
 @use "components/special_action_button";
 @use "components/input";
 @use "components/input-group";
@@ -62,9 +64,11 @@
 @use "components/settings-form";
 @use "components/slack_doodle";
 @use "components/sticker_promo";
+@use "components/phantom_promo_widget";
 @use "components/sticker_promo_widget";
 @use "components/vega_sprite";
 @use "components/visual_novel";
+@use "components/buku_x3_reveal";
 @use "components/rocket_progress";
 
 // Pages
@@ -108,13 +112,17 @@
 @use "pages/certification/ships/show" as certification_ships_show;
 @use "pages/certification/ships/monitor" as certification_ships_monitor;
 @use "pages/certification/hardware_review" as certification_hardware_review;
+@use "pages/certification/permanent_rejections" as
+  certification_permanent_rejections;
 @use "pages/certification/recording_gallery" as certification_recording_gallery;
 @use "pages/certification/lapse_player" as certification_lapse_player;
 @use "pages/certification/mystats" as certification_mystats;
 @use "pages/certification/payouts" as certification_payouts;
+@use "pages/queue" as queue_page;
 @use "pages/raffle";
 @use "pages/notifications" as notifications_page;
 @use "pages/notification_settings" as notification_settings_page;
 @use "pages/data_exports" as data_exports_page;
 @use "pages/rng";
+@use "pages/mention_form";
 @use "landing/landing_footer";

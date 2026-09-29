@@ -10,6 +10,11 @@
 #     schedule: at 5am every day
 
 production:
+  buku_x3_refresh:
+    class: BukuX3::RefreshJob
+    schedule: every minute
+    description: "Record the rocket goal transition and reconcile the open-ended buku event"
+
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
@@ -98,11 +103,11 @@ production:
     concurrency: 1
     description: "Notify project owners nearing the per-devlog payout cap on un-devlogged time"
 
-  activity_daily_summary:
-    class: ActivityDailySummaryJob
-    schedule: every day at 10am America/New_York
-    concurrency: 1
-    description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
+  # activity_daily_summary:
+  #   class: ActivityDailySummaryJob
+  #   schedule: every day at 10am America/New_York
+  #   concurrency: 1
+  #   description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
 
   fraud_daily_summary:
     class: FraudDailySummaryJob

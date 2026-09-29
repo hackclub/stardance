@@ -65,7 +65,9 @@
   <% end %>
 
   <p class="feed-home__empty">
-    <% if @current_tab == "new_builders" %>
+    <% if @current_tab == "hardware" %>
+      No hardware builds here yet. Check back later!
+    <% elsif @current_tab == "new_builders" %>
       No new builders right now. Check back later!
     <% elsif @current_tab == "following" %>
       Nothing here yet. Follow some people or projects to see their posts here!

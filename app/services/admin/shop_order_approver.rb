@@ -13,7 +13,10 @@ module Admin
     def call
       return failure("You cannot approve your own order.") if order.user_id == actor.id
       return failure("This order has already been processed.") unless order.pending? || order.awaiting_verification_call?
-      return failure("This is a high-value order and requires 2 fraud dept reviews before approval (#{order.reviews.count}/2 so far).") if order.requires_additional_review?
+      if order.requires_additional_review?(ShopOrderReview::APPROVE)
+        return failure("This is a high-value order and requires #{ShopOrderReview::REQUIRED_COUNT} fraud dept approvals before it can be approved " \
+                       "(#{order.review_count(ShopOrderReview::APPROVE)}/#{ShopOrderReview::REQUIRED_COUNT} so far).")
+      end
 
       return fulfill_immediately if order.shop_item.respond_to?(:fulfill!)
 

@@ -49,6 +49,7 @@
               <% if order.mission_submission.present? %>
                 <br><span class="shop-orders__mission-badge" title="Redeemed for free via the &quot;<%= order.mission_submission.mission.name %>&quot; mission">🎖️ Free via mission</span>
               <% end %>
+              <%= render "batch_link", order: order if @view == "fulfillment" %>
             </td>
             <td>
               <span>

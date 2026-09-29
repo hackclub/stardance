@@ -44,6 +44,9 @@ export default class extends Controller {
     // Debounce timers
     this.minutesDebounceTimer = null;
     this.notesDebounceTimer = null;
+    this.saveQueue = Promise.resolve(true);
+    this.failedUpdates = {};
+    this.latestUpdates = {};
 
     // Set initial visual state
     this.updateVisualState(this.statusValue);
@@ -60,7 +63,7 @@ export default class extends Controller {
 
   // Update approved minutes (debounced)
   updateMinutes(event) {
-    const minutes = parseInt(event.target.value, 10);
+    let minutes = parseInt(event.target.value, 10);
 
     // Ignore invalid numeric input so we do not send NaN/null to the server
     if (Number.isNaN(minutes)) {
@@ -74,7 +77,7 @@ export default class extends Controller {
         `DevlogReview #${this.idValue}: Cannot set negative minutes`,
       );
       event.target.value = 0;
-      return;
+      minutes = 0;
     }
 
     this.updateHoursDisplay(minutes);
@@ -84,6 +87,7 @@ export default class extends Controller {
 
     // Debounce for 500ms
     this.minutesDebounceTimer = setTimeout(() => {
+      this.minutesDebounceTimer = null;
       // console.log(`DevlogReview #${this.idValue}: Updating minutes to ${minutes}`);
       this.sendUpdate({ approved_minutes: minutes });
     }, 500);
@@ -132,46 +136,42 @@ export default class extends Controller {
 
     // Debounce for 1000ms (longer for text input)
     this.notesDebounceTimer = setTimeout(() => {
+      this.notesDebounceTimer = null;
       //console.log(`DevlogReview #${this.idValue}: Updating notes`);
       this.sendUpdate({ justification: notes });
     }, 1000);
   }
 
-  // Handle quick adjust buttons
-  // Sends any debounced edit straight away instead of waiting its timer out, and
-  // hands the in-flight request back through event.detail.pending. The review
-  // flow awaits those before it submits, so a justification typed a moment
-  // earlier can't be missed by the server's completion checks.
-  //
-  // The timer handles are never cleared once they fire, so a card the reviewer
-  // touched at any point re-sends its current field values here even when
-  // nothing is actually outstanding. That is deliberate: the resend carries
-  // exactly what is on screen, Rails issues no UPDATE when nothing changed, and
-  // all the cards flush concurrently — so over-sending costs a round trip, while
-  // under-sending would lose a justification.
+  // Flush debounced edits and wait for this card's ordered requests. Failures
+  // remain dirty until retried, so completion cannot silently lose a note.
   flush(event) {
-    const pending = event?.detail?.pending;
-    const collect = (save) => {
-      if (pending) pending.push(save);
-    };
-
+    const minutes = parseInt(this.minutesInputTarget.value, 10);
+    if (Number.isNaN(minutes) || minutes < 0) {
+      event.detail.pending.push(Promise.resolve(false));
+      return;
+    }
+    // A newer decision may already be queued behind the failed one. Retry its
+    // latest value, never the stale failed payload.
+    const data = Object.fromEntries(
+      Object.keys(this.failedUpdates).map((key) => [
+        key,
+        this.latestUpdates[key],
+      ]),
+    );
     if (this.minutesDebounceTimer) {
       clearTimeout(this.minutesDebounceTimer);
       this.minutesDebounceTimer = null;
-
-      const minutes = parseInt(this.minutesInputTarget.value, 10);
-      if (!Number.isNaN(minutes) && minutes >= 0) {
-        collect(this.sendUpdate({ approved_minutes: minutes }));
-      }
+      data.approved_minutes = minutes;
     }
-
     if (this.notesDebounceTimer) {
       clearTimeout(this.notesDebounceTimer);
       this.notesDebounceTimer = null;
-      collect(
-        this.sendUpdate({ justification: this.notesTextareaTarget.value }),
-      );
+      data.justification = this.notesTextareaTarget.value;
     }
+    if (Object.keys(data).length) this.sendUpdate(data);
+    event.detail.pending.push(
+      this.saveQueue.then(() => Object.keys(this.failedUpdates).length === 0),
+    );
   }
 
   // Grow the notes textarea to fit its content so long justifications aren't
@@ -187,7 +187,7 @@ export default class extends Controller {
   }
 
   quickAdjust(event) {
-    const action = event.target.dataset.adjustAction;
+    const action = event.currentTarget.dataset.adjustAction;
     const parsed = parseInt(this.minutesInputTarget.value, 10);
     const currentMinutes = Number.isNaN(parsed)
       ? this.originalMinutesValue
@@ -232,8 +232,21 @@ export default class extends Controller {
     this.hoursDisplayTarget.textContent = `(${(minutes / 60).toFixed(1)}h)`;
   }
 
-  // Send update to server
-  async sendUpdate(data) {
+  // Serialize saves per card: rapid keyboard decisions must reach the server
+  // in order. Apply minutes locally now, never from a stale network response.
+  sendUpdate(data) {
+    Object.assign(this.latestUpdates, data);
+    if (data.approved_minutes !== undefined) {
+      clearTimeout(this.minutesDebounceTimer);
+      this.minutesDebounceTimer = null;
+      this.minutesInputTarget.value = data.approved_minutes;
+      this.updateHoursDisplay(data.approved_minutes);
+    }
+    this.saveQueue = this.saveQueue.then(() => this.performUpdate(data));
+    return this.saveQueue;
+  }
+
+  async performUpdate(data) {
     const url = `/admin/certification/devlog_reviews/${this.idValue}`;
     const csrfToken = document.querySelector(
       'meta[name="csrf-token"]',
@@ -251,7 +264,8 @@ export default class extends Controller {
 
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
+        Object.keys(data).forEach((key) => delete this.failedUpdates[key]);
         //console.log(`DevlogReview #${this.idValue}: Update successful`, result.devlog_review);
 
         // Update visual state if status changed
@@ -260,26 +274,27 @@ export default class extends Controller {
           this.updateVisualState(data.status);
         }
 
-        // Update input field and hours display if minutes were changed
-        if (data.approved_minutes !== undefined) {
-          this.minutesInputTarget.value = data.approved_minutes;
-          this.updateHoursDisplay(data.approved_minutes);
-        }
-
         // The Time Stats card is server-rendered and this endpoint answers with
         // JSON, so it can't know a decision changed unless we say so. Dispatched
         // last, once the status value and input hold the saved state.
         this.dispatch("saved", { prefix: "devlog-review" });
+        return true;
       } else {
+        Object.assign(this.failedUpdates, data);
         console.error(
           `DevlogReview #${this.idValue}: Update failed`,
           result.errors,
         );
-        alert(`Update failed: ${result.errors.join(", ")}`);
+        alert(
+          `Update failed: ${result.errors?.join(", ") || "Please try again."}`,
+        );
+        return false;
       }
     } catch (error) {
+      Object.assign(this.failedUpdates, data);
       console.error(`DevlogReview #${this.idValue}: Network error`, error);
       alert("Network error. Please check your connection and try again.");
+      return false;
     }
   }
 
