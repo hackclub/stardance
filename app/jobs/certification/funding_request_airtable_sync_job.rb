@@ -1,5 +1,6 @@
 # Syncs an approved funding request to Airtable.
-# Triggered when a reviewer approves a hardware design funding request.
+# Uses the same field schema as YswsAirtableSyncJob so downstream
+# automations work identically for both record types.
 module Certification
   class FundingRequestAirtableSyncJob < ApplicationJob
     include Rails.application.routes.url_helpers
@@ -35,7 +36,7 @@ module Certification
       Rails.logger.info "[FundingRequestAirtableSyncJob] Starting sync for funding_request ##{@funding_request.id}"
 
       fields = build_airtable_fields
-      table.upsert(fields, "funding_request_id")
+      table.upsert(fields, "ship_cert_id")
 
       @funding_request.update_column(:airtable_synced_at, Time.current)
 
@@ -51,9 +52,12 @@ module Certification
       primary_address = user_data[:addresses]&.first || {}
 
       banner_url = banner_url_for_project(project)
+      screenshot_attachments = banner_url.present? ? [ { "url" => banner_url } ] : []
 
       {
-        "funding_request_id" => @funding_request.id.to_s,
+        # Identity — prefixed to avoid collisions with YSWS ship_cert_id values
+        "ship_cert_id" => "funding_request_#{@funding_request.id}",
+        "review_id" => "funding_request_#{@funding_request.id}",
 
         # User PII
         "user_slack_id" => user_data[:slack_id],
@@ -62,6 +66,7 @@ module Certification
         "Last Name" => user_data[:last_name],
         "user_display_name" => user_data[:display_name],
         "Birthday" => user_data[:birthday],
+        "How did you hear about this?" => user.ref,
 
         # Address
         "Address (Line 1)" => primary_address["line_1"],
@@ -73,28 +78,74 @@ module Certification
 
         # Project
         "project_name" => project.title,
-        "project_id" => project.id.to_s,
+        "ai_declaration" => project.ai_declaration,
+        "project_update_description" => project.update_description,
         "Code URL" => project.repo_url,
         "Playable URL" => project.demo_url,
+        "readme_url" => project.readme_url,
         "Description" => project.description,
-        "Screenshot" => banner_url.present? ? [ { "url" => banner_url } ] : [],
+        "Screenshot" => screenshot_attachments,
 
-        # Funding details
-        "complexity_tier" => @funding_request.tier_code,
-        "requested_amount_cents" => @funding_request.requested_amount_cents,
-        "approved_amount_cents" => @funding_request.approved_amount_cents,
-        "status" => @funding_request.status,
-        "feedback" => @funding_request.feedback,
-        "submitter_note" => @funding_request.submitter_note,
-        "issues_grant" => @funding_request.issues_grant?,
-        "awards_design_kit" => @funding_request.awards_design_kit?,
-        "hcb_grant_hashid" => @funding_request.hcb_grant_hashid,
-
-        # Review data
+        # Review Data
         "reviewer" => @funding_request.reviewer&.display_name || @funding_request.reviewer&.email || "Unknown",
-        "decided_at" => @funding_request.decided_at&.iso8601,
-        "airtable_synced_at" => Time.current.iso8601
+        "ship_certifier" => nil,
+        "reviewed_at" => @funding_request.decided_at&.iso8601,
+        "ship_certed_at" => nil,
+        "airtable_synced_at" => Time.current.iso8601,
+
+        # Hours — funding requests don't have devlog hours
+        "Optional - Override Hours Spent" => nil,
+        "Optional - Override Hours Spent Justification" => build_justification,
+
+        # Rejection — these are approved, so no rejection
+        "rejection_reason" => nil,
+        "rejected_at" => nil,
+
+        # Ship event timestamps — not applicable
+        "ship_end" => nil,
+        "ship_start" => nil,
+
+        # Report status
+        "report_status" => report_status,
+
+        # Integrity — not applicable for funding requests
+        "integrity_id" => nil,
+        "integrity_status" => "not_applicable",
+        "integrity_flags" => 0,
+        "fraud_data" => nil,
+
+        # Double-dip flag
+        "flagged_double_dipped" => ::Certification::UnifiedYswsService.double_dipped?(project.repo_url)
       }
+    end
+
+    def build_justification
+      project = @funding_request.project
+      reviewer_name = @funding_request.reviewer&.display_name || @funding_request.reviewer&.email || "Unknown"
+
+      lines = []
+      lines << "This is a hardware design funding request (not a YSWS review)."
+      lines << "Tier: #{@funding_request.tier_code}" if @funding_request.tier_code.present?
+
+      if @funding_request.requested_amount_cents
+        lines << "Requested amount: $#{"%.2f" % (@funding_request.requested_amount_cents / 100.0)}"
+      end
+      if @funding_request.approved_amount_cents
+        lines << "Approved amount: $#{"%.2f" % (@funding_request.approved_amount_cents / 100.0)}"
+      end
+
+      lines << "Issues HCB grant: #{@funding_request.issues_grant? ? "Yes" : "No"}"
+      lines << "Awards design kit: #{@funding_request.awards_design_kit? ? "Yes" : "No"}"
+      lines << "HCB grant hashid: #{@funding_request.hcb_grant_hashid}" if @funding_request.hcb_grant_hashid.present?
+      lines << ""
+      lines << "Reviewer feedback: #{@funding_request.feedback}" if @funding_request.feedback.present?
+      lines << "Submitter note: #{@funding_request.submitter_note}" if @funding_request.submitter_note.present?
+      lines << ""
+      lines << "Reviewed by #{reviewer_name} on #{@funding_request.decided_at&.strftime("%Y-%m-%d")}."
+      lines << ""
+      lines << "The Stardance project can be found at https://stardance.hackclub.com/projects/#{project.id}"
+
+      lines.join("\n").strip
     end
 
     def extract_user_data(user)
@@ -156,6 +207,19 @@ module Certification
       return nil unless banner&.attached?
 
       blob_url(banner)
+    end
+
+    def report_status
+      user = @funding_request.user
+      project = @funding_request.project
+
+      if user.banned?
+        "banned"
+      elsif Project::Report.where(project_id: project.id, status: :pending).exists?
+        "pending_reports"
+      else
+        ""
+      end
     end
 
     def table
