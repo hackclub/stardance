@@ -48,6 +48,11 @@ class FraudPayoutRun < ApplicationRecord
     changes = JSON.parse(changes) if changes.is_a?(String)
     state_change = changes["aasm_state"]
     return nil unless state_change.is_a?(Array) && state_change[1].in?(REVIEW_STATES)
+    # whodunnit is not always a user id: jobs and console scripts stamp their
+    # own name, and auto-approval settles a review state under
+    # "Shop::AutoApprovable". Those reviews were nobody's work to pay for.
+    return nil unless version.whodunnit.match?(/\A\d+\z/)
+
     version.whodunnit.to_i
   end
 
@@ -63,9 +68,14 @@ class FraudPayoutRun < ApplicationRecord
         reviewer_by_order_id[version.item_id.to_i] ||= reviewer_id if reviewer_id
       end
 
+    # A reviewer id that no longer names a user cannot be paid, and a line
+    # pointing at one fails the run's foreign key, which rolls back the whole
+    # month rather than the one line nobody could be paid for.
+    payable = User.where(id: reviewer_by_order_id.values.uniq).pluck(:id).to_set
+
     orders
       .group_by { |order| reviewer_by_order_id[order.id] }
-      .reject { |reviewer_id, _| reviewer_id.nil? }
+      .select { |reviewer_id, _| payable.include?(reviewer_id) }
   end
 
   aasm timestamps: true do

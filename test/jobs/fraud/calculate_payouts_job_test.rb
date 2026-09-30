@@ -194,6 +194,32 @@ class Fraud::CalculatePayoutsJobTest < ActiveJob::TestCase
     assert_nil system_order.reload.fraud_payout_line_id
   end
 
+  test "a state change stamped by a system actor pays nobody and still settles the run" do
+    auto_approved = create_order(@buyer, @item)
+    PaperTrail.request(whodunnit: "Shop::AutoApprovable") do
+      auto_approved.update!(aasm_state: "awaiting_periodical_fulfillment")
+    end
+
+    Fraud::CalculatePayoutsJob.perform_now
+
+    run = FraudPayoutRun.sole
+    assert_equal [ @reviewer1.id, @reviewer2.id ].sort, run.lines.pluck(:user_id).sort
+    assert_nil auto_approved.reload.fraud_payout_line_id
+  end
+
+  test "a reviewer id that no longer names a user is left out of the run" do
+    order = create_order(@buyer, @item)
+    PaperTrail.request(whodunnit: User.maximum(:id).succ) do
+      order.update!(aasm_state: "on_hold")
+    end
+
+    Fraud::CalculatePayoutsJob.perform_now
+
+    run = FraudPayoutRun.sole
+    assert_equal [ @reviewer1.id, @reviewer2.id ].sort, run.lines.pluck(:user_id).sort
+    assert_nil order.reload.fraud_payout_line_id
+  end
+
   test "does nothing when no eligible orders" do
     ShopOrder.update_all(aasm_state: "pending")
 
