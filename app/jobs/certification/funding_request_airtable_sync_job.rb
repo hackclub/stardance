@@ -121,7 +121,10 @@ module Certification
 
         # Hackatime
         "hackatime_uid" => user.hackatime_identity&.uid,
-        "hackatime_keys" => project.hackatime_keys.join(",").presence
+        "hackatime_keys" => project.hackatime_keys.join(",").presence,
+
+        # Devlogs snapshot
+        "devlogs_json" => build_devlogs_json
       }
     end
 
@@ -213,6 +216,29 @@ module Certification
       return nil unless banner&.attached?
 
       blob_url(banner)
+    end
+
+    def build_devlogs_json
+      devlogs = @funding_request.project
+        .devlogs
+        .includes(:post, attachments_attachments: :blob)
+        .joins(:post)
+        .where(posts: { created_at: ...@funding_request.created_at })
+        .order(created_at: :asc)
+
+      devlogs.map do |devlog|
+        image_urls = devlog.attachments.select(&:image?).filter_map { |a| blob_url(a) }
+
+        {
+          id: devlog.id,
+          body: devlog.body,
+          duration_seconds: devlog.duration_seconds,
+          hours: devlog.duration_seconds ? (devlog.duration_seconds / 3600.0).round(2) : 0,
+          phase: devlog.phase,
+          created_at: devlog.created_at.iso8601,
+          images: image_urls
+        }
+      end.to_json
     end
 
     def hours_at_submission
