@@ -139,6 +139,26 @@
   }
 
   &__label {
+    // Sit just above the rope, clearing the midpoint's dashed overhang.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.405 - var(--space-s));
+    z-index: 1;
+    text-align: center;
+    transform: translateY(-100%);
+  }
+
+  &__deadline {
+    // Mirror the label just below the rope.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.619 + var(--space-s));
+    z-index: 1;
+    margin: 0;
+    font-size: var(--font-size-s);
+    font-style: italic;
     text-align: center;
   }
 
