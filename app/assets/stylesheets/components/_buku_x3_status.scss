@@ -149,19 +149,6 @@
     transform: translateY(-100%);
   }
 
-  &__deadline {
-    // Mirror the label just below the rope.
-    position: absolute;
-    left: calc(var(--character-width) * 0.93);
-    right: calc(var(--character-width) * 0.93);
-    top: calc(var(--character-width) * 0.619 + var(--space-s));
-    z-index: 1;
-    margin: 0;
-    font-size: var(--font-size-s);
-    font-style: italic;
-    text-align: center;
-  }
-
   &__tug {
     --character-width: clamp(64px, 24cqi, 160px);
 
