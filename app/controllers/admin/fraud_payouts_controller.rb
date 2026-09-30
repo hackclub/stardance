@@ -46,7 +46,7 @@ module Admin
           object_changes: { aasm_state: %w[pending_approval rejected] }.to_json
         )
 
-        redirect_to admin_fraud_payout_path(@run), notice: "Payout run rejected. Orders have been released for the next run."
+        redirect_to admin_fraud_payout_path(@run), notice: "Payout run rejected. Its payouts have been released for the next run."
       else
         redirect_to admin_fraud_payout_path(@run), alert: "Payout run cannot be rejected in its current state."
       end
@@ -55,7 +55,7 @@ module Admin
     def trigger
       authorize FraudPayoutRun
 
-      ::Fraud::CalculatePayoutsJob.perform_later(manual: true, triggered_by: current_user)
+      ::Fraud::CalculatePayoutsJob.perform_later(triggered_by: current_user)
 
       redirect_to admin_fraud_payouts_path, notice: "Manual payout calculation has been queued."
     end

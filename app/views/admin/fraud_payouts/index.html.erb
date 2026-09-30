@@ -10,14 +10,14 @@
       <%= button_to "Trigger Manual Run", trigger_admin_fraud_payouts_path,
           method: :post,
           class: "aorder__btn aorder__btn--secondary",
-          data: { confirm: "Calculate payouts for all unpaid reviewed orders since the last run. Continue?" } %>
+          data: { confirm: "Pay out every completed review that has not been paid yet. Continue?" } %>
     <% end %>
   </div>
 
   <div class="aorder__card" style="margin-bottom: var(--space-l);">
     <div class="aorder__card-header">
       <h2 class="aorder__card-title">Your Estimated Payout</h2>
-      <span class="aorder__card-subtitle">Issued automatically on the last day of each month</span>
+      <span class="aorder__card-subtitle">Issued when a payout run is triggered</span>
     </div>
     <div class="aorder__card-body">
       <div style="font-size: var(--font-size-xxl); font-family: var(--font-family-subtitle); font-weight:700; color: var(--color-space-text);">
@@ -101,7 +101,7 @@
               <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Run</th>
               <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
               <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Period</th>
-              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Orders</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Items</th>
               <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Total Tickets</th>
               <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Approved By</th>
               <th style="padding: var(--space-s) var(--space-m);"></th>
@@ -131,7 +131,7 @@
         </table>
       <% else %>
         <p style="padding: var(--space-m); color: var(--color-space-text-muted); font-family: var(--font-family-text); font-size: var(--font-size-s); text-align: center; margin: 0;">
-          No payout runs yet. Trigger a manual run or wait for the scheduled job.
+          No payout runs yet. Trigger a run to pay out completed reviews.
         </p>
       <% end %>
     </div>

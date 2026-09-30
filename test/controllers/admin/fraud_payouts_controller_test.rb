@@ -54,7 +54,7 @@ class Admin::FraudPayoutsControllerTest < ActionDispatch::IntegrationTest
     sign_in @admin
 
     assert_enqueued_with(job: ::Fraud::CalculatePayoutsJob,
-                         args: [ { manual: true, triggered_by: @admin } ]) do
+                         args: [ { triggered_by: @admin } ]) do
       post trigger_admin_fraud_payouts_path
     end
 
