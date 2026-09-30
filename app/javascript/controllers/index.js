@@ -202,6 +202,9 @@ application.register("discover-rail-panel", DiscoverRailPanelController);
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
 
+import TopBannerController from "./top_banner_controller";
+application.register("top-banner", TopBannerController);
+
 import EmojiPickerController from "./emoji_picker_controller";
 application.register("emoji-picker", EmojiPickerController);
 
