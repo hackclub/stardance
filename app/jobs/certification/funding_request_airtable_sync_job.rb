@@ -117,7 +117,11 @@ module Certification
         "fraud_data" => nil,
 
         # Double-dip flag
-        "flagged_double_dipped" => ::Certification::UnifiedYswsService.double_dipped?(project.repo_url)
+        "flagged_double_dipped" => ::Certification::UnifiedYswsService.double_dipped?(project.repo_url),
+
+        # Hackatime
+        "hackatime_uid" => user.hackatime_identity&.uid,
+        "hackatime_keys" => project.hackatime_keys.join(",").presence
       }
     end
 
