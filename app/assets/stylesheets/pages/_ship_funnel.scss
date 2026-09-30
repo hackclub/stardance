@@ -47,8 +47,9 @@
     padding: 3px;
   }
 
-  .admin-content & button#{&}__toggle-button {
+  :is(.admin-content, body) & button#{&}__toggle-button {
     background: transparent;
+    border: 0;
     border-radius: 999px;
     box-shadow: none;
     color: var(--ship-funnel-muted);
@@ -109,7 +110,7 @@
     }
   }
 
-  .admin-content & button#{&}__refresh {
+  :is(.admin-content, body) & button#{&}__refresh {
     background: transparent;
     border: 1px solid var(--color-space-border);
     border-radius: 999px;
@@ -236,4 +237,9 @@
     font-size: var(--font-size-s);
     margin: 0;
   }
+}
+
+// The public page has no admin padding around it.
+.ship-funnel-page {
+  padding: var(--space-l) var(--space-m);
 }

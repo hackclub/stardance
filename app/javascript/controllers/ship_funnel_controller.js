@@ -15,6 +15,7 @@ export default class extends Controller {
   static MIN_COLUMN = 175;
   static HEIGHT = 900;
   static LABEL_ROOM = 190;
+  static NODE_PADDING = 30;
 
   static KIND = {
     Devlogged: "path",
@@ -194,8 +195,16 @@ export default class extends Controller {
   }
 
   render() {
-    const { MIN_COLUMN, HEIGHT, LABEL_ROOM, KIND, LEGEND, ORDER, COLUMN } =
-      this.constructor;
+    const {
+      MIN_COLUMN,
+      HEIGHT,
+      LABEL_ROOM,
+      NODE_PADDING,
+      KIND,
+      LEGEND,
+      ORDER,
+      COLUMN,
+    } = this.constructor;
     const links = this.linksForView();
     const targets = new Set(links.map((link) => link.target));
     const total = sum(
@@ -245,7 +254,7 @@ export default class extends Controller {
       .nodeId((node) => node.name)
       .nodeAlign(sankeyLeft)
       .nodeWidth(12)
-      .nodePadding(30)
+      .nodePadding(NODE_PADDING)
       .nodeSort((a, b) => order(a.name) - order(b.name))
       .linkSort(
         (a, b) =>

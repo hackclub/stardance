@@ -545,6 +545,12 @@ Rails.application.routes.draw do
   get "auth/:provider/callback", to: "sessions#create"
   get "/auth/failure", to: "sessions#failure"
   delete "logout", to: "sessions#destroy"
+  namespace :stats do
+    resource :ship_funnel, only: [ :show ], controller: "ship_funnel" do
+      post :refresh
+    end
+  end
+
   get "dev_login", to: "sessions#dev_login", as: :dev_login_auto if Rails.env.development? || Rails.env.test?
   get "dev_login/:id", to: "sessions#dev_login", as: :dev_login if Rails.env.development? || Rails.env.test?
 
@@ -658,9 +664,6 @@ Rails.application.routes.draw do
     resource :funnel, only: [ :show ], controller: "funnel"
     resource :rating_dashboard, only: [ :show ], controller: "rating_dashboard"
     resource :hour_funnel, only: [ :show ], controller: "hour_funnel" do
-      post :refresh
-    end
-    resource :ship_funnel, only: [ :show ], controller: "ship_funnel" do
       post :refresh
     end
 

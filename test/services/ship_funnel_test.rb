@@ -1,6 +1,6 @@
 require "test_helper"
 
-class Admin::ShipFunnelTest < ActiveSupport::TestCase
+class ShipFunnelTest < ActiveSupport::TestCase
   include UserFactory
 
   setup { @user = create_user(slack_id: "u-ship-funnel", display_name: "shipfunnel") }
@@ -39,7 +39,7 @@ class Admin::ShipFunnelTest < ActiveSupport::TestCase
 
   def funnel
     @funnel ||= Certification::YswsAirtable.stub(:table, Struct.new(:rows) { def all(**) = rows }.new([])) do
-      Admin::ShipFunnel.new.to_h
+      ShipFunnel.new.to_h
     end
   end
 
