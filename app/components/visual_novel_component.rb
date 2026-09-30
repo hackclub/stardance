@@ -34,7 +34,7 @@ class VisualNovelComponent < ViewComponent::Base
     "stardance is disintegrating and the rocket is FALLING APART, it's falling apart, holy crap",
     "help us fix the rocket so we can go home, or...",
     "!!!",
-    "...or tear it apart so we'll keep stardancing forever...!",
+    "...or tear it apart to trap the beans here forever...!",
     "will you be a bean or a buku buku?"
   ].freeze
 

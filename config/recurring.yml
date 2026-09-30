@@ -24,6 +24,12 @@ production:
     schedule: every hour at minute 42
     description: "Delete user data exports and attached ZIPs after seven days"
 
+  refresh_ship_funnel:
+    class: ShipFunnelRefreshJob
+    args: [ { force: true } ]
+    schedule: every hour at minute 20
+    description: "Rebuild the ship funnel's cached numbers for the public /stats/ship_funnel page"
+
   refresh_materialized_all_signups:
     class: RefreshMaterializedAllSignupsJob
     schedule: every 2 minutes
@@ -103,11 +109,11 @@ production:
     concurrency: 1
     description: "Notify project owners nearing the per-devlog payout cap on un-devlogged time"
 
-  activity_daily_summary:
-    class: ActivityDailySummaryJob
-    schedule: every day at 10am America/New_York
-    concurrency: 1
-    description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
+  # activity_daily_summary:
+  #   class: ActivityDailySummaryJob
+  #   schedule: every day at 10am America/New_York
+  #   concurrency: 1
+  #   description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
 
   fraud_daily_summary:
     class: FraudDailySummaryJob

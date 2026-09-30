@@ -4,7 +4,7 @@
   --sidebar-inset-y: var(--space-s); // tiny top + bottom edges
 
   position: fixed;
-  top: var(--sidebar-inset-y);
+  top: calc(var(--sidebar-inset-y) + var(--top-banner-height, 0px));
   bottom: var(--sidebar-inset-y);
   left: var(--sidebar-inset);
   width: var(--sidebar-width);

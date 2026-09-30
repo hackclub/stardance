@@ -195,7 +195,7 @@ $onboarding-card-border: rgba(255, 255, 255, 0.5);
   justify-content: center;
   padding: 0.6rem 1rem;
   position: sticky;
-  top: 0;
+  top: var(--top-banner-height, 0px);
   z-index: 50;
   body.signed-in:not(.app-layout-page) & {
     margin-left: calc(-1 * var(--sidebar-reserved));

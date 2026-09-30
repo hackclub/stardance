@@ -41,6 +41,7 @@
       <%= admin_page_button "Raffles", admin_raffles_path, enabled: policy(:admin).access_raffles? %>
       <%= admin_page_button "Rating Hangtime", admin_rating_dashboard_path, enabled: policy(:rating_dashboard).show? %>
       <%= admin_page_button "Hour Funnel", admin_hour_funnel_path, enabled: policy(:hour_funnel).show? %>
+      <%= admin_page_button "Jeremy Funnel", stats_ship_funnel_path, enabled: Pundit.policy!(pundit_user, :ship_funnel).refresh? %>
     </div>
   </section>
 
@@ -75,6 +76,11 @@
       <%= admin_page_button "Flipper", admin_flipper_path, enabled: policy(:admin).access_flipper? %>
       <%= admin_page_button "Jobs", admin_mission_control_jobs_path, enabled: policy(:admin).access_jobs? %>
       <%= admin_page_button "Import Devlogs", new_admin_devlog_import_path, enabled: policy(:admin).import_devlogs? %>
+      <%= button_to "Sync Funding Requests to Airtable",
+            sync_all_to_airtable_admin_certification_funding_requests_path,
+            method: :post,
+            class: "btn-secondary admin-dashboard__button",
+            data: { turbo_confirm: "This will enqueue all approved funding requests for Airtable sync. Continue?" } %>
     </div>
   </section>
 </div>

@@ -3,6 +3,7 @@ require "json"
 
 module HCAService
   class Error < StandardError; end
+  class Unauthorized < Error; end
 
   module_function
 
@@ -18,7 +19,7 @@ module HCAService
     "#{host}/backend#{path}"
   end
 
-  def me(access_token)
+  def me!(access_token)
     raise ArgumentError, "access_token is required" if access_token.blank?
 
     response = connection.get("/api/v1/me") do |req|
@@ -26,15 +27,28 @@ module HCAService
       req.headers["Accept"] = "application/json"
     end
 
+    raise Unauthorized, "HCA /me returned 401" if response.status == 401
+
     unless response.success?
       Rails.logger.warn("HCA /me fetch failed with status #{response.status}")
       return nil
     end
 
     JSON.parse(response.body)
+  end
+
+  def me(access_token)
+    me!(access_token)
+  rescue Unauthorized
+    nil
   rescue StandardError => e
     Rails.logger.warn("HCA /me fetch error: #{e.class}: #{e.message}")
     nil
+  end
+
+  def identity!(access_token)
+    result = me!(access_token)
+    result&.dig("identity") || {}
   end
 
   def identity(access_token)

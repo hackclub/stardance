@@ -52,6 +52,33 @@ export default class extends Controller {
   // (f, 0–9, Home/End) fall through to the skin.
   onKeydown = (event) => {
     if (!this.lightbox || event.altKey) return;
+    if (event.key === "Tab") {
+      // Walk the composed tree so the skin's shadow controls and slotted
+      // speed buttons stay in their native tab order.
+      const controls = [];
+      const visit = (element) => {
+        if (
+          element.tabIndex >= 0 &&
+          !element.matches(":disabled, [disabled], [aria-disabled='true']") &&
+          element.getClientRects().length
+        )
+          controls.push(element);
+        const children =
+          element instanceof HTMLSlotElement
+            ? element.assignedElements({ flatten: true })
+            : (element.shadowRoot || element).children;
+        for (const child of children) visit(child);
+      };
+      visit(this.lightbox);
+      const first = controls[0];
+      const last = controls.at(-1);
+      const active = event.composedPath()[0];
+      if (event.shiftKey && active === first)
+        this.consume(event, () => last?.focus());
+      else if (!event.shiftKey && active === last)
+        this.consume(event, () => first?.focus());
+      return;
+    }
     if (event.key === "Escape") return this.consume(event, this.closeLightbox);
     // Ctrl/⌘ + Shift + ←/→ pages between recordings (plain and shift-only
     // arrows stay bound to scrubbing).
@@ -89,6 +116,7 @@ export default class extends Controller {
   // ── Lightbox ─────────────────────────────────────────────────────────────
   showLightbox(sources, index) {
     this.closeLightbox();
+    this.returnFocus = document.activeElement;
     this.sources = sources;
     this.index = index;
     this.cache = new Map(); // src → Promise<objectURL | null>
@@ -117,6 +145,12 @@ export default class extends Controller {
     window.addEventListener("keydown", this.onKeydown, true);
 
     this.mountVideo();
+    this.onFocusIn = () => {
+      if (!box.contains(document.activeElement))
+        close.focus({ preventScroll: true });
+    };
+    document.addEventListener("focusin", this.onFocusIn);
+    close.focus({ preventScroll: true });
   }
 
   mountVideo() {
@@ -348,11 +382,15 @@ export default class extends Controller {
   closeLightbox = () => {
     this.stopReverse();
     window.removeEventListener("keydown", this.onKeydown, true);
+    if (this.onFocusIn) document.removeEventListener("focusin", this.onFocusIn);
     this.fetches?.abort();
     this.cache?.forEach((pending) =>
       pending.then((url) => url && URL.revokeObjectURL(url)),
     );
     this.lightbox?.remove();
     this.lightbox = this.video = this.cache = this.fetches = null;
+    if (this.returnFocus?.isConnected)
+      this.returnFocus.focus({ preventScroll: true });
+    this.returnFocus = null;
   };
 }

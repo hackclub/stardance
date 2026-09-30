@@ -23,7 +23,19 @@
 require "test_helper"
 
 class ShopCardGrantTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
+  test "only a status HCB actually reported closes a grant" do
+    ShopCardGrant::CLOSED_STATUSES.each do |status|
+      assert ShopCardGrant.closed_grant?({ "status" => status }), "#{status} is terminal"
+    end
+
+    assert_not ShopCardGrant.closed_grant?({ "status" => "active" })
+  end
+
+  # Blank is "we couldn't read it", not "it's still live". Callers that spend
+  # money have to raise on an unreadable status rather than let this answer for
+  # them - see Shop::HCBGrantFulfillable.
+  test "an empty payload never closes a grant" do
+    assert_not ShopCardGrant.closed_grant?(nil)
+    assert_not ShopCardGrant.closed_grant?({})
+  end
 end

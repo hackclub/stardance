@@ -141,7 +141,14 @@
   }
 
   &__label {
+    // Sit just above the rope, clearing the midpoint's dashed overhang.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.405 - var(--space-s));
+    z-index: 1;
     text-align: center;
+    transform: translateY(-100%);
   }
 
   &__tug {

@@ -1,0 +1,62 @@
+{
+  "next": { "label": "Next devlog", "bindings": ["j"], "notes": true },
+  "previous": { "label": "Previous devlog", "bindings": ["k"], "notes": true },
+  "approve": {
+    "label": "Approve",
+    "bindings": ["q", "a"],
+    "notes": true,
+    "selector": ".btn-approve"
+  },
+  "reject": {
+    "label": "Reject",
+    "bindings": ["w", "r"],
+    "notes": true,
+    "selector": ".btn-reject"
+  },
+  "half": {
+    "label": "Set current time to 50%",
+    "bindings": ["1"],
+    "notes": true,
+    "selector": ".adjust-btn[data-adjust-action=\"50%\"]"
+  },
+  "quarter": {
+    "label": "Set current time to 25%",
+    "bindings": ["2"],
+    "notes": true,
+    "selector": ".adjust-btn[data-adjust-action=\"25%\"]"
+  },
+  "add15": { "label": "Add 15 minutes", "bindings": ["equals"], "notes": true },
+  "add30": { "label": "Add 30 minutes", "bindings": ["plus"], "notes": true },
+  "cut15": {
+    "label": "Cut 15 minutes",
+    "bindings": ["minus"],
+    "notes": true,
+    "selector": ".adjust-btn[data-adjust-action=\"-15\"]"
+  },
+  "cut30": {
+    "label": "Cut 30 minutes",
+    "bindings": ["underscore"],
+    "notes": true,
+    "selector": ".adjust-btn[data-adjust-action=\"-30\"]"
+  },
+  "recordings": {
+    "label": "Open recordings",
+    "bindings": ["t"],
+    "notes": true
+  },
+  "notes": {
+    "label": "Focus internal notes",
+    "bindings": ["ctrl+space", "meta+space"],
+    "notes": false
+  },
+  "complete": {
+    "label": "Complete review (press twice)",
+    "bindings": ["ctrl+enter", "meta+enter"],
+    "notes": false
+  },
+  "help": {
+    "label": "Shortcut settings",
+    "bindings": ["question"],
+    "notes": false
+  }
+}

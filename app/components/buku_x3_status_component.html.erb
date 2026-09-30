@@ -19,8 +19,8 @@
   <% end %>
   <% unless compact? %>
     <div class="buku-x3-status__damage">
-      <p class="buku-x3-status__label"><strong data-buku-x3-status-target="amount"><%= display_percent %>% damaged</strong></p>
       <div class="buku-x3-status__tug">
+        <p class="buku-x3-status__label" data-buku-x3-status-target="amount"><%= display_percent %>% damaged</p>
         <div class="buku-x3-status__team buku-x3-status__team--buku">
           <div class="buku-x3-status__character-frame">
             <%= image_tag "events/bukux3/buku-pulling.png", class: "buku-x3-status__character", alt: "", width: 2752, height: 2064 %>
