@@ -49,6 +49,11 @@ export default class extends Controller {
     }
 
     this._focusComments = Boolean(event.detail.comments);
+    // Lets a caller style a comments-only panel (doomscroll hides the post).
+    this.dialogTarget.classList.toggle(
+      "post-panel--comments",
+      this._focusComments,
+    );
 
     const params = new URLSearchParams();
     if (card?.dataset.mediaVariant) {
@@ -190,5 +195,6 @@ export default class extends Controller {
     this.frameTarget.innerHTML = this._loadingHTML;
     this._draft = null;
     this._focusComments = false;
+    this.dialogTarget.classList.remove("post-panel--comments");
   }
 }

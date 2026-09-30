@@ -1,0 +1,660 @@
+// Doomscroll mode for the home feed (:doomscroll), toggled by
+// doomscroll_controller. The feed frame lifts into a full-screen stack of
+// phone-shaped posts, one per screen, paged by the controller. The tabs float
+// over it — a filter panel on wide screens, a small bar otherwise — so the
+// switch that turned it on can turn it back off.
+
+// Scroll lock on the page behind the stack while it's open.
+.feed-home-doomscroll-open {
+  overflow: hidden;
+}
+
+// While doomscroll is open the app sidebar's own links step aside, and the
+// feed tabs take their place (see .feed-home--doomscroll-in-sidebar).
+.sidebar__nav-list {
+  transition:
+    opacity 200ms ease,
+    visibility 200ms;
+}
+
+.feed-home-doomscroll-open .sidebar__nav-list {
+  visibility: hidden;
+  opacity: 0;
+}
+
+// A comment button in doomscroll opens just the comments — the post is
+// already on screen behind the panel.
+.feed-home-doomscroll-open .post-panel--comments .devlog-detail__post {
+  display: none;
+}
+
+// The switch sits at the right end of the tab row, next to "For you".
+.feed-tabs__doomscroll {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 34px;
+  margin-left: auto;
+  padding-left: var(--space-s);
+  color: var(--color-space-text-muted);
+  font-size: calc(var(--font-size-s) * 1.15);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+// Visually hidden but still focusable and announced as a switch.
+.feed-tabs__doomscroll-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.feed-tabs__doomscroll-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 22px;
+  border: 2px solid var(--color-space-border);
+  border-radius: 999px;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-space-text-muted);
+    transition:
+      transform 150ms ease,
+      background-color 150ms ease;
+  }
+}
+
+.feed-tabs__doomscroll-input:checked + .feed-tabs__doomscroll-track {
+  border-color: var(--color-brand-lilac);
+  background: var(--color-brand-lilac);
+
+  &::after {
+    transform: translateX(16px);
+    background: var(--color-space-bg);
+  }
+}
+
+.feed-tabs__doomscroll-input:focus-visible + .feed-tabs__doomscroll-track {
+  outline: 2px solid var(--color-brand-cream);
+  outline-offset: 2px;
+}
+
+.feed-tabs__doomscroll:has(.feed-tabs__doomscroll-input:checked) {
+  color: var(--color-space-text);
+}
+
+// The vignette over the stack, shared by the open state and the zoom back out.
+@mixin feed-doomscroll-vignette {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgb(0 0 0 / 65%) 100%
+  );
+}
+
+// The glide between posts, matched to doomscroll_controller's easing.
+$feed-doomscroll-glide: 560ms cubic-bezier(0.22, 1, 0.36, 1);
+
+.feed-home--doomscroll {
+  // A purple-grey night of its own rather than the site's blue, with the
+  // brand lilac as the accent.
+  --feed-doomscroll-bg: hsl(268, 14%, 8%);
+  --feed-doomscroll-surface: hsl(268, 12%, 13%);
+  --feed-doomscroll-raised: hsl(268, 11%, 19%);
+  --feed-doomscroll-line: hsl(268, 10%, 34%);
+  --feed-doomscroll-line-soft: hsl(268 10% 40% / 45%);
+  --feed-doomscroll-accent: var(--color-brand-lilac);
+
+  // Room above each post for the floating tab bar.
+  --feed-doomscroll-top: 3.75rem;
+  // One page: the viewport, less the tab bar and a bottom gutter.
+  --feed-doomscroll-page: calc(
+    100dvh - var(--feed-doomscroll-top) - var(--space-m)
+  );
+  // Posts are shaped like a phone screen, 9:16 at full page height.
+  --feed-doomscroll-screen: calc(var(--feed-doomscroll-page) * 9 / 16);
+  // Width of the action rail beside each post.
+  --feed-doomscroll-rail: 3.5rem;
+  // Space the rail takes beside the post's box, and where the rail sits in it.
+  --feed-doomscroll-rail-gutter: calc(
+    var(--feed-doomscroll-rail) + var(--space-m)
+  );
+  --feed-doomscroll-rail-right: 0px;
+  // How far the post's own content stays from the card's right edge.
+  --feed-doomscroll-content-end: calc(
+    var(--feed-doomscroll-rail-gutter) + var(--space-l)
+  );
+
+  &::after {
+    @include feed-doomscroll-vignette;
+
+    animation: feed-doomscroll-fade-in 480ms ease-out;
+  }
+
+  // A small, dark bar floating over the stack.
+  .feed-tabs {
+    position: fixed;
+    top: var(--space-xs);
+    left: 50%;
+    z-index: 111;
+    gap: var(--space-xxs);
+    max-width: calc(100vw - 2 * var(--space-m));
+    padding: 3px;
+    border: 1px solid var(--feed-doomscroll-line-soft);
+    border-radius: 999px;
+    background: var(--feed-doomscroll-surface);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 55%);
+    transform: translateX(-50%);
+    animation: feed-doomscroll-fade-in 360ms ease-out;
+  }
+
+  .feed-tabs__tab {
+    min-height: 26px;
+    padding: 0 10px;
+    border-width: 1px;
+    font-size: var(--font-size-s);
+  }
+
+  .feed-tabs__tab--active {
+    border-color: var(--feed-doomscroll-accent);
+    background: color-mix(
+      in srgb,
+      var(--feed-doomscroll-accent) 16%,
+      transparent
+    );
+  }
+
+  .feed-tabs__doomscroll {
+    min-height: 26px;
+    padding-inline: var(--space-xs) var(--space-xxs);
+    font-size: var(--font-size-s);
+  }
+
+  .feed-tabs__doomscroll-track {
+    width: 32px;
+    height: 18px;
+
+    &::after {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  .feed-tabs__doomscroll-input:checked + .feed-tabs__doomscroll-track::after {
+    transform: translateX(14px);
+    background: var(--feed-doomscroll-surface);
+  }
+
+  // Direct child only: later pages nest their own .feed-home__frame inside.
+  // Its scrolling is driven entirely by doomscroll_controller, one post at a
+  // time, so the reader can never come to rest between two posts.
+  > .feed-home__frame {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    gap: var(--space-m);
+    padding: var(--feed-doomscroll-top) var(--space-m) var(--space-m);
+    overflow: hidden;
+    background: var(--feed-doomscroll-bg);
+    // Zooms in over the page as it opens.
+    animation: feed-doomscroll-zoom-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  // Compact, Starscroll-sized type with room to breathe inside the screen.
+  // Posts either side of the one on screen sit back a little, so each glide
+  // lands with the new post settling forward into place.
+  .feed-home__frame > .feed-post-card {
+    --feed-content-offset: 0px;
+    --feed-avatar-size: 30px;
+    // Where the post's box ends; widened below when a rail sits beside it.
+    --feed-doomscroll-box-end: 0px;
+
+    gap: var(--space-xs);
+    padding: var(--space-l);
+    contain-intrinsic-size: auto var(--feed-doomscroll-page);
+    opacity: 0.35;
+    scale: 0.94;
+    transition:
+      opacity $feed-doomscroll-glide,
+      scale $feed-doomscroll-glide;
+
+    .feed-post-card__byline,
+    .feed-post-card__duration,
+    .feed-post-card__body {
+      font-size: var(--font-size-s);
+    }
+
+    .feed-post-card__body {
+      line-height: 1.4;
+    }
+  }
+
+  .feed-home__frame > .feed-post-card--doomscroll-current {
+    opacity: 1;
+    scale: 1;
+  }
+
+  // The profile leads at the top of each screen, like a phone app.
+  .feed-post-card {
+    justify-content: flex-start;
+    width: min(100%, var(--feed-doomscroll-screen));
+    height: var(--feed-doomscroll-page);
+    margin-inline: auto;
+    overflow: clip;
+  }
+
+  // The stack is a fixed-height flex column that overflows on purpose — keep
+  // posts (and the nested page frames holding later ones) at full size rather
+  // than squeezing them all onto one screen.
+  .feed-home__frame > * {
+    flex-shrink: 0;
+  }
+
+  // Likes, comments and reposts sit in a rail just outside the post's box,
+  // Starscroll-style. The card widens to hold the rail and its box is drawn by
+  // ::before instead, so the card still clips its own content. Scoped to
+  // on-screen posts so a quoted post inside one keeps its footer.
+  .feed-home__frame > .feed-post-card:has(> .feed-post-card__actions) {
+    --feed-doomscroll-box-end: var(--feed-doomscroll-rail-gutter);
+
+    isolation: isolate;
+    width: min(
+      100%,
+      calc(var(--feed-doomscroll-screen) + var(--feed-doomscroll-rail-gutter))
+    );
+    padding-right: var(--feed-doomscroll-content-end);
+    border-color: transparent;
+    background: transparent;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0 var(--feed-doomscroll-box-end) 0 0;
+      z-index: -1;
+      border: 2px solid var(--feed-doomscroll-line);
+      border-radius: var(--profile-radius, var(--border-radius));
+      background: var(--feed-doomscroll-surface);
+    }
+
+    > .feed-post-card__overlay-link {
+      right: var(--feed-doomscroll-box-end);
+    }
+  }
+
+  .feed-home__frame > .feed-post-card > .feed-post-card__actions {
+    position: absolute;
+    right: var(--feed-doomscroll-rail-right);
+    bottom: var(--space-l);
+    z-index: 2;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-m);
+    width: var(--feed-doomscroll-rail);
+    margin: 0;
+    padding: 0;
+
+    .feed-post-card__like {
+      order: -1;
+    }
+
+    .feed-post-card__action,
+    .like-button__btn {
+      flex-direction: column;
+      gap: 4px;
+      font-size: var(--font-size-s);
+      font-weight: 600;
+    }
+
+    .feed-post-card__action-icon,
+    .like-button__icon {
+      box-sizing: content-box;
+      width: 22px;
+      height: 22px;
+      padding: 12px;
+      border: 2px solid var(--feed-doomscroll-line-soft);
+      border-radius: 50%;
+      background: var(--feed-doomscroll-raised);
+    }
+
+    // Pop-ups open leftward, into the post, so its edge doesn't clip them.
+    .feed-post-card__repost-panel,
+    .feed-post-card__menu {
+      right: calc(100% + var(--space-xs));
+      bottom: 0;
+      left: auto;
+      transform: none;
+    }
+  }
+
+  // Starscroll's layout: the media fills the whole phone screen, the profile
+  // sits over its top and the caption over its foot, each on a gradient that
+  // keeps it legible.
+  .feed-home__frame > .feed-post-card:has(> .feed-post-card__media) {
+    justify-content: flex-end;
+
+    > .feed-post-card__header {
+      margin-bottom: auto;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 2px calc(var(--feed-doomscroll-box-end) + 2px) 2px 2px;
+      z-index: 0;
+      pointer-events: none;
+      border-radius: var(--profile-radius, var(--border-radius));
+      background:
+        linear-gradient(
+          to bottom,
+          color-mix(in srgb, var(--feed-doomscroll-bg) 85%, transparent) 0%,
+          transparent 22%
+        ),
+        linear-gradient(
+          to top,
+          color-mix(in srgb, var(--feed-doomscroll-bg) 95%, transparent) 0%,
+          color-mix(in srgb, var(--feed-doomscroll-bg) 70%, transparent) 25%,
+          transparent 55%
+        );
+    }
+
+    > :not(
+      .feed-post-card__media,
+      .feed-post-card__actions,
+      .feed-post-card__overlay-link
+    ) {
+      position: relative;
+      z-index: 1;
+    }
+
+    > .feed-post-card__media {
+      position: absolute;
+      inset: 2px calc(var(--feed-doomscroll-box-end) + 2px) 2px 2px;
+      z-index: 0;
+      overflow: hidden;
+      border-radius: var(--profile-radius, var(--border-radius));
+
+      .feed-post-card__media-stage,
+      .feed-post-card__media-viewport,
+      .feed-post-card__media-slide {
+        height: 100%;
+      }
+
+      .feed-post-card__media-viewport {
+        border-radius: 0;
+      }
+
+      .feed-post-card__media-slide {
+        position: relative;
+        aspect-ratio: auto;
+        max-height: none;
+        background: var(--feed-doomscroll-bg);
+
+        // A blurred copy of the media fills the letterbox around it
+        // (doomscroll_controller sets the image).
+        &::before {
+          content: "";
+          position: absolute;
+          inset: -12%;
+          background: var(--feed-doomscroll-backdrop, none) center / cover
+            no-repeat;
+          filter: blur(28px) brightness(0.55);
+        }
+
+        > * {
+          position: relative;
+        }
+      }
+
+      // Carousel dots move to the top, out from under the caption.
+      .feed-post-card__media-dots {
+        position: absolute;
+        top: var(--space-s);
+        inset-inline: 0;
+        z-index: 1;
+        padding: 0;
+      }
+    }
+  }
+
+  // A long caption or a quoted post scrolls within the screen instead of
+  // pushing the post past it; the controller lets these scroll first.
+  .feed-home__frame
+    > .feed-post-card
+    .feed-post-card__body:not(.feed-post-card__body--clamped),
+  .feed-post-card__repost-preview {
+    max-height: 30dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  // A quoted post keeps its normal, compact card inside the one on screen.
+  .feed-post-card__repost-preview .feed-post-card {
+    width: auto;
+    height: auto;
+    margin-inline: 0;
+
+    .feed-post-card__media-slide {
+      aspect-ratio: 16 / 9;
+      height: auto;
+      max-height: 420px;
+    }
+  }
+
+  // Horizontal shelves don't fit a one-post-per-screen stack.
+  .feed-shelf {
+    display: none;
+  }
+
+  // On a phone the screen already is the shape, and there's no room beside
+  // the post, so it goes full width and the rail overlays its right edge.
+  @media (max-width: 640px) {
+    --feed-doomscroll-screen: 100%;
+    --feed-doomscroll-rail-gutter: 0px;
+    --feed-doomscroll-rail-right: var(--space-s);
+    --feed-doomscroll-content-end: calc(
+      var(--feed-doomscroll-rail) + var(--space-l)
+    );
+
+    .feed-tabs {
+      max-width: calc(100vw - 2 * var(--space-xs));
+    }
+
+    > .feed-home__frame {
+      padding-inline: var(--space-xs);
+    }
+  }
+}
+
+// Beside a full-height app sidebar (doomscroll_controller measures it): the
+// sidebar stays in view, the stack fills the window to its right, and the feed
+// tabs sit exactly where the sidebar's own links were, in the same type — so
+// the links appear to turn into the filters.
+.feed-home--doomscroll.feed-home--doomscroll-in-sidebar {
+  // Matches .sidebar__nav-list and .sidebar__nav-link (_sidebar.scss).
+  --feed-doomscroll-nav-gap: 14px;
+  --feed-doomscroll-nav-type: 1.76rem;
+  --feed-doomscroll-nav-type-active: 2.04rem;
+  --feed-doomscroll-top: var(--space-m);
+
+  &::after,
+  > .feed-home__frame {
+    left: var(--feed-doomscroll-stack-left);
+  }
+
+  .feed-tabs {
+    top: var(--feed-doomscroll-nav-top);
+    left: var(--feed-doomscroll-nav-left);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--feed-doomscroll-nav-gap);
+    width: var(--feed-doomscroll-nav-width);
+    max-width: none;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .feed-tabs__tab,
+  .feed-tabs__doomscroll {
+    color: var(--color-space-text);
+    font-family: var(--font-family-text);
+    font-size: var(--feed-doomscroll-nav-type);
+    font-weight: 400;
+    line-height: 1.2;
+    text-transform: lowercase;
+  }
+
+  .feed-tabs__tab {
+    justify-content: flex-start;
+    min-height: 0;
+    padding: var(--space-xxs) 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    transition: font-size 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      background: none;
+    }
+  }
+
+  // Active like the sidebar's: larger, in italic Playfair, lilac.
+  .feed-tabs__tab--active {
+    color: var(--feed-doomscroll-accent);
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-size: var(--feed-doomscroll-nav-type-active);
+    font-style: italic;
+    font-weight: 700;
+  }
+
+  .feed-tabs__doomscroll {
+    justify-content: space-between;
+    min-height: 0;
+    margin: var(--space-xxs) 0 0;
+    padding: var(--space-s) 0 0;
+    border-top: 1px solid var(--feed-doomscroll-line-soft);
+  }
+
+  // Full-size switch again, to sit with the larger type.
+  .feed-tabs__doomscroll-track {
+    width: 38px;
+    height: 22px;
+
+    &::after {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .feed-tabs__doomscroll-input:checked + .feed-tabs__doomscroll-track::after {
+    transform: translateX(16px);
+  }
+
+  // The sidebar's own type and spacing step down here too.
+  @media (max-width: 1500px) {
+    --feed-doomscroll-nav-gap: 11px;
+    --feed-doomscroll-nav-type: 1.32rem;
+    --feed-doomscroll-nav-type-active: 1.52rem;
+  }
+}
+
+// Leaving doomscroll: the normal feed zooms back out from the post that was on
+// screen while the vignette lifts.
+.feed-home--doomscroll-returning {
+  &::after {
+    @include feed-doomscroll-vignette;
+
+    animation: feed-doomscroll-fade-out 420ms ease-out forwards;
+  }
+
+  > .feed-home__frame {
+    transform-origin: 50% var(--feed-doomscroll-origin-y, 50%);
+    animation: feed-doomscroll-zoom-out 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+// The zoomed-out feed briefly overhangs the column; don't let it add a
+// horizontal scrollbar while it settles.
+html:has(.feed-home--doomscroll-returning) {
+  overflow-x: clip;
+}
+
+@keyframes feed-doomscroll-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes feed-doomscroll-zoom-out {
+  from {
+    opacity: 0.4;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes feed-doomscroll-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes feed-doomscroll-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-tabs__doomscroll-track,
+  .feed-tabs__doomscroll-track::after {
+    transition: none;
+  }
+
+  .feed-home--doomscroll::after,
+  .feed-home--doomscroll .feed-tabs,
+  .feed-home--doomscroll > .feed-home__frame,
+  .feed-home--doomscroll-returning::after,
+  .feed-home--doomscroll-returning > .feed-home__frame {
+    animation: none;
+  }
+
+  .feed-home--doomscroll .feed-home__frame > .feed-post-card,
+  .feed-home--doomscroll .feed-tabs__tab {
+    transition: none;
+  }
+}

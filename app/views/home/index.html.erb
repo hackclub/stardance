@@ -5,7 +5,7 @@
 <% end %>
 
 <div class="app-layout">
-  <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
+  <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs doomscroll" data-feed-tabs-feed-url-value="<%= home_feed_path %>" data-action="turbo:frame-load->doomscroll#refresh">
     <%= turbo_frame_tag "buku_x3_home_status", class: ("buku-x3-home-preview" if Rails.env.development?), data: { controller: "buku-x3-status", action: "buku-x3-reveal:complete@window->buku-x3-status#refresh" } do %>
       <% preview_role = params[:buku_preview].presence_in(%w[buku bean]) if Rails.env.development? %>
       <% event_status = BukuX3StatusComponent.new(user: current_user, preview: preview_role.present?, preview_role: preview_role) %>
@@ -47,10 +47,18 @@
         <% end %>
         <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="popular" data-action="feed-tabs#switch">Popular</button>
         <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="newest" data-action="feed-tabs#switch">Newest</button>
+        <% if Flipper.enabled?(:doomscroll, current_user) %>
+          <label class="feed-tabs__doomscroll">
+            <span class="feed-tabs__doomscroll-label">Doomscroll</span>
+            <input type="checkbox" role="switch" class="feed-tabs__doomscroll-input"
+                   data-doomscroll-target="toggle" data-action="doomscroll#toggle">
+            <span class="feed-tabs__doomscroll-track" aria-hidden="true"></span>
+          </label>
+        <% end %>
       </nav>
     <% end %>
 
-    <%= turbo_frame_tag "home_feed", src: home_feed_path, target: "_top", class: "feed-home__frame" do %>
+    <%= turbo_frame_tag "home_feed", src: home_feed_path, target: "_top", class: "feed-home__frame", data: { doomscroll_target: "feed" } do %>
       <div class="feed-loading" role="status" aria-live="polite">
         <span class="feed-loading__spinner" aria-hidden="true"></span>
         <span class="feed-loading__label">Loading the feed&hellip;</span>

@@ -220,6 +220,9 @@ application.register("feed-engagement", FeedEngagementController);
 import FeedKeyboardController from "./feed_keyboard_controller";
 application.register("feed-keyboard", FeedKeyboardController);
 
+import DoomscrollController from "./doomscroll_controller";
+application.register("doomscroll", DoomscrollController);
+
 import FeedTabsController from "./feed_tabs_controller";
 application.register("feed-tabs", FeedTabsController);
 
