@@ -18,8 +18,14 @@
   border-bottom: 2px solid #92400e;
 }
 
+// Pinned above everything, including the fixed sidebar. top_banner_controller
+// publishes its height so the page and sidebar start below it.
 .top-banner--announcement {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   padding-inline: 2.5rem;
   text-align: center;
   background: var(--color-brand-yellow);

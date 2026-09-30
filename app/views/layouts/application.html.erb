@@ -91,7 +91,7 @@
     <div class="top-banners">
       <% unless cookies[:deadline_extension_dismissed] %>
         <div class="top-banner top-banner--announcement" role="region" aria-label="announcement"
-             data-controller="dismissable" data-dismissable-cookie-value="deadline_extension_dismissed">
+             data-controller="dismissable top-banner" data-dismissable-cookie-value="deadline_extension_dismissed">
           <p class="top-banner__text">stardance has been extended another month! the new deadline is october 31 :)</p>
           <button type="button" class="top-banner__dismiss" aria-label="Dismiss announcement"
                   data-action="click->dismissable#dismiss">&times;</button>
