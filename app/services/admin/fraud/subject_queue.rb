@@ -74,6 +74,7 @@ module Admin
       def self.flags
         ::Project::Report.pending
           .where(reason: ::Project::Report::FRAUD_REVIEW_REASONS)
+          .joins(:project)
           .joins("INNER JOIN project_memberships ON project_memberships.project_id = project_reports.project_id")
           .select("project_memberships.user_id AS user_id, project_reports.created_at AS created_at")
       end
@@ -88,7 +89,14 @@ module Admin
       def self.integrity_checks
         ::Certification::Integrity.pending.past_goi
           .joins("INNER JOIN posts ON posts.postable_id = certification_integrities.ship_event_id AND posts.postable_type = 'Post::ShipEvent'")
-          .select("posts.user_id AS user_id, certification_integrities.created_at AS created_at")
+          .select(<<~SQL.squish)
+            posts.user_id AS user_id,
+            GREATEST(
+              certification_integrities.created_at,
+              (SELECT MIN(certification_ysws_reviews.reviewed_at) FROM certification_ysws_reviews
+               WHERE certification_ysws_reviews.post_ship_event_id = certification_integrities.ship_event_id)
+            ) AS created_at
+          SQL
       end
 
       # The same three sources, narrowed to one person. The subject page and the

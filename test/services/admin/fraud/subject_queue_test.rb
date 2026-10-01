@@ -56,6 +56,24 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     assert_empty subjects
   end
 
+  test "a flag on a deleted project drops out, as it does on the subject page" do
+    user = user_with_flag(age: 20.days.ago)
+    user.projects.sole.update_column(:deleted_at, Time.current)
+
+    assert_empty subjects
+    assert_empty Admin::Fraud::SubjectQueue.flags_for(user)
+  end
+
+  test "an integrity check waits from the GOI review that let it through, not from when it was opened" do
+    user = create_user(slack_id: "u-goi-late", display_name: "goilate")
+    check = pending_integrity_for(user, age: 28.days.ago, goi: :none)
+    goi_review_for(check.ship_event, user: user, project: check.ship_event.post.project, state: :completed, at: 2.hours.ago)
+    ordered = user_with_order(age: 1.day.ago)
+
+    assert_equal [ ordered.id, user.id ], ranked_ids
+    assert_in_delta 2.hours.ago, subjects.find { |row| row.user_id == user.id }.oldest_at, 1.minute
+  end
+
   test "a flag on a team project surfaces every member" do
     owner = create_user(slack_id: "u-owner", display_name: "owner")
     teammate = create_user(slack_id: "u-mate", display_name: "mate")
@@ -210,19 +228,19 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     Project::Membership.create!(project: project, user: user, role: :owner)
     ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
     Post.create!(project: project, user: user, postable: ship_event)
-    goi_review_for(ship_event, user: user, project: project, state: goi)
+    goi_review_for(ship_event, user: user, project: project, state: goi, at: age)
     check = Certification::Integrity.create!(ship_event: ship_event, status: status)
     check.update_column(:created_at, age)
     check
   end
 
-  def goi_review_for(ship_event, user:, project:, state:)
+  def goi_review_for(ship_event, user:, project:, state:, at: Time.current)
     return if state == :none
 
     Certification::Ysws.create!(
       user: user, project: project, post_ship_event: ship_event, original_minutes: 60,
-      reviewed_at: (Time.current if state == :completed),
-      returned_at: (Time.current if state == :returned)
+      reviewed_at: (at if state == :completed),
+      returned_at: (at if state == :returned)
     )
   end
 
