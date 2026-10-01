@@ -710,10 +710,17 @@ class ShopOrder < ApplicationRecord
 
     user.ledger_entries.create!(
       amount: total_cost_with_modifiers,
-      reason: "Refund for rejected order of #{shop_item.name.pluralize(quantity)}",
+      reason: "Refund for #{refund_kind} order of #{shop_item.name.pluralize(quantity)}",
       created_by: "System",
       ledgerable: self
     )
+  end
+
+  def refund_kind
+    return "rejected" if rejected?
+    return "returned" if aasm.from_state == :fulfilled
+
+    "cancelled"
   end
 
   def fraud_related_project_exists

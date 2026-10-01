@@ -1,0 +1,13 @@
+header "↩️ Order ##{order.id} Refunded"
+
+section "Your order has been refunded.", markdown: true
+
+section "Order Details:",
+  fields: [
+    mrkdwn_text("*Order ID:* #{order.id}"),
+    mrkdwn_text("*Item:* #{order.shop_item.name}"),
+    mrkdwn_text("*Quantity:* #{order.quantity}"),
+    mrkdwn_text("*Stardust Refunded:* :stardust: #{order.total_cost_with_modifiers.to_i}"),
+  ]
+
+divider

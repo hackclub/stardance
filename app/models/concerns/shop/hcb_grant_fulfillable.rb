@@ -32,7 +32,8 @@ module Shop::HCBGrantFulfillable
 
   def fulfill_grant!(shop_order)
     amount_cents = (usd_cost * shop_order.quantity * 100).to_i
-    grant_rec = ShopCardGrant.find_or_initialize_by(user: shop_order.user, shop_item: self)
+    grant_rec = ShopCardGrant.where(user: shop_order.user, shop_item: self).order(:id).last ||
+                ShopCardGrant.new(user: shop_order.user, shop_item: self)
 
     # A claimed row with no grant id means an earlier attempt called HCB and
     # never learned the outcome. Creating another grant here is how someone

@@ -74,6 +74,12 @@
                     <% elsif order.grant? && order.shop_card_grant.present? %>
                       <div class="my-orders__grant-actions">
                         <%= render ActionButtonComponent.new(text: "Open Grant", href: order.shop_card_grant.hcb_url, size: :large, variant: :primary, target: "_blank") %>
+                        <% if Flipper.enabled?(:grant_returns, current_user) %>
+                          <%= button_to "Return Grant", return_grant_shop_order_path(order),
+                                        method: :post,
+                                        class: "action-btn action-btn--large action-btn--secondary",
+                                        form: { onsubmit: "return confirm('Return this grant? It will be cancelled on HCB, Only grants that have not been used can be returned')" } %>
+                        <% end %>
                       </div>
                     <% else %>
                       <span class="my-orders__status-hint">We have ordered the item for you! <% if order.external_ref.present? %><%= order.external_ref %><% else %>You should check your emails :)<% end %></span>

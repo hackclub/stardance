@@ -23,6 +23,7 @@
 class ShopCardGrant < ApplicationRecord
   belongs_to :user
   belongs_to :shop_item
+  has_many :shop_orders
 
   # HCB statuses a grant can never come back from: `canceled` (the recipient or
   # an admin pulled it) and `expired` (HCB timed it out and returned the money).

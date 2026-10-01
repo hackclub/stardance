@@ -13,7 +13,8 @@ module Notifications
         "awaiting_verification"           => { priority: :high,     template: "awaiting_verification",       headline: "needs verification" },
         "awaiting_verification_call"      => { priority: :critical, template: "awaiting_verification_call",  headline: "needs a verification call" },
         "awaiting_periodical_fulfillment" => { priority: :medium,   template: "awaiting_fulfillment",        headline: "is queued for fulfillment" },
-        "fulfilled"                       => { priority: :high,     template: "fulfilled",                   headline: "was fulfilled" }
+        "fulfilled"                       => { priority: :high,     template: "fulfilled",                   headline: "was fulfilled" },
+        "refunded"                        => { priority: :medium,   template: "refunded",                    headline: "was refunded" }
       }.freeze
 
       DEFAULT_CONFIG = { priority: :medium, template: "default", headline: nil }.freeze

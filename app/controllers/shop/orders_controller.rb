@@ -198,6 +198,20 @@ class Shop::OrdersController < Shop::BaseController
     end
   end
 
+  def return_grant
+    authorize :shop
+
+    unless Flipper.enabled?(:grant_returns, current_user)
+      redirect_to shop_orders_path, alert: "Returning grants isn't available yet."
+      return
+    end
+
+    order = current_user.shop_orders.find(params[:id])
+    result = Shop::GrantReturner.new(order).call
+    flash_key = result.returned? ? :notice : :alert
+    redirect_to shop_orders_path, flash_key => result.message
+  end
+
   private
 
   # The free-price accessor differs by gate; it must be set before save so the
