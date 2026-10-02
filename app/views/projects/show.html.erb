@@ -485,7 +485,7 @@
                 <%= render "projects/fire_controls", project: @project %>
 
                 <% if !@project.draft? && is_member && Flipper.enabled?(:virality_bonus, current_user) %>
-                  <%= link_to "Submit viral mention", new_project_mention_path(@project), data: { turbo_frame: "_top" } %>
+                  <%= link_to "Submit viral mention", new_project_mention_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "_top" } %>
                   <%= render "shared/help_tooltip", text: "Got traction on Reddit, HN, GitHub, or another platform? Submit a link and earn bonus stardust.", position: "top" %>
                 <% end %>
 

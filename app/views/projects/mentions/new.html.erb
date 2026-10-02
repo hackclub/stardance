@@ -29,8 +29,8 @@
     </div>
 
     <div class="mention-form__actions">
-      <%= f.submit "Submit", class: "action-button" %>
-      <%= link_to "Cancel", project_path(@project), class: "action-button action-button--secondary", data: { turbo_frame: "_top" } %>
+      <%= f.submit "Submit", class: "action-btn action-btn--small action-btn--primary" %>
+      <%= link_to "Cancel", project_path(@project), class: "action-btn action-btn--small action-btn--secondary", data: { turbo_frame: "_top" } %>
     </div>
   <% end %>
 </main>
