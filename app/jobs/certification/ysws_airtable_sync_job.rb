@@ -54,7 +54,7 @@ module Certification
       fields = build_airtable_fields(review, rejection_info)
 
       # Upsert to Airtable
-      table.upsert(fields, "ship_cert_id")
+      table.upsert(fields, "ship_event_id")
 
       # Update sync timestamp
       review.update_column(:airtable_synced_at, Time.current)
@@ -226,11 +226,8 @@ module Certification
         nil
       end
 
-      # Get ship cert info. ship_cert_id_value is the Airtable upsert key, so it
-      # keeps falling back to the ship event id to stay unique per review; the
-      # cert itself resolves through the project for reships (see
-      # Certification::Ysws#effective_ship_cert).
-      ship_cert_id_value = review.ship_cert_id&.to_s || review.post_ship_event_id&.to_s
+      # Get ship cert info. The cert resolves through the project for reships
+      # (see Certification::Ysws#effective_ship_cert).
       ship_cert = review.effective_ship_cert
 
       # Get shop orders
@@ -269,7 +266,8 @@ module Certification
       {
         # Identity
         "review_id" => review.id.to_s, # tik
-        "ship_cert_id" => ship_cert_id_value, # tik
+        "ship_event_id" => review.post_ship_event_id.to_s,
+        "ship_cert_id" => review.ship_cert_id&.to_s, # tik
 
         # User PII
         "user_slack_id" => user_data[:slack_id], # tik
