@@ -11,7 +11,7 @@ class Admin::Shop::StickyStreakRewardsController < Admin::ApplicationController
     @rewards = { "standard" => StickyStreakReward.by_day(:standard),
                  "second" => StickyStreakReward.by_day(:second) }
 
-    first_runs = StickyStreak.where(kind: FIRST_RUN_KINDS)
+    first_runs = StickyStreak.where(kind: FIRST_RUN_KINDS).not_superseded
     second_runs = StickyStreak.kind_second
     @day_stats = { "standard" => StickyStreak.day_stats(first_runs),
                    "second" => StickyStreak.day_stats(second_runs) }

@@ -14,6 +14,9 @@
       shrink as people drop out. Segments are drawn as a share of all <%= total_runs %> runs.
       Hover a bar for that day's numbers.
     </p>
+    <% if local_assigns[:note] %>
+      <p><%= note %></p>
+    <% end %>
 
     <ul class="sticky-funnel__legend">
       <li class="sticky-funnel__key sticky-funnel__key--successful">Successful</li>

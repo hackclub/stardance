@@ -167,6 +167,14 @@ class StickyStreak < ApplicationRecord
     claims.create!(day_number: day, shop_order: shop_order)
   end
 
+  # Runs worth counting in the funnel. A first run a restart has closed out is
+  # left out, so someone who restarted is represented once, by their retry,
+  # rather than twice with a dead run dragging the curve down. Unscoped
+  # subqueries so chaining this onto a narrower scope cannot leak into them.
+  def self.not_superseded
+    where.not(id: unscoped.kind_first.where(user_id: unscoped.kind_retry.select(:user_id)))
+  end
+
   # Per-day funnel across the given runs, for the admin overview: how many
   # people banked that day, how many are living it right now, and how many
   # still have it ahead of them. The three sum to everyone who had not broken

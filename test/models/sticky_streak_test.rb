@@ -230,6 +230,29 @@ class StickyStreakTest < ActiveSupport::TestCase
     assert StickyStreakReward.new(day_number: 8, shop_item: @item, track: :standard).valid?
   end
 
+  test "a restarted first run drops out of the funnel so its owner counts once" do
+    complete_days(1)
+    log_seconds(2, 0)
+    restart = restart!
+    StreakActivity.create!(user: @user, activity_date: restart.date_for(1),
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+
+    counted = StickyStreak.where(kind: %w[first retry]).not_superseded
+
+    assert_equal [ restart ], counted.to_a
+    stats = StickyStreak.day_stats(counted).index_by(&:day)
+    assert_equal [ 0, 1, 0 ], counts(stats[1]), "only the restart is on the board"
+    assert_equal [ 0, 0, 1 ], counts(stats[2])
+  end
+
+  test "a second streak does not supersede the run that earned it" do
+    StickyStreak.create!(user: @user, kind: :second, started_on: @today)
+
+    counted = StickyStreak.where(kind: %w[first retry]).not_superseded
+
+    assert_equal [ @streak ], counted.to_a
+  end
+
   test "day_stats can be narrowed to one kind of run" do
     # Day 4 of the first run and day 1 of the second streak are the same date,
     # so one activity row settles both.
