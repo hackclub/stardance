@@ -15,10 +15,11 @@ module StickyStreaksHelper
     ),
     retry: StartCopy.new(
       summary: "Restart your streak",
-      body: "Your run ended early, but you get one more go. Start again from day 1 and keep it alive " \
-            "for all #{StickyStreak::LENGTH} days. Stickers you already claimed won't come round twice, " \
-            "so you'll be picking up the ones you missed. This is your last chance: break it and the " \
-            "challenge is over.",
+      body: "You lost your sticky streak run before reaching the end, but don't worry: you just " \
+            "got a second chance! When you click restart, you'll get another #{StickyStreak::LENGTH} days to keep " \
+            "coding and try making it to the end. You won't be able to claim any stickers you " \
+            "already claimed, but you'll be able to claim new ones! But be warned: this is your " \
+            "last chance!",
       cta: "Restart my streak"
     ),
     second: StartCopy.new(
