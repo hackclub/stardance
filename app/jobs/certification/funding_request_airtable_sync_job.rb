@@ -143,9 +143,7 @@ module Certification
 
     def build_custom_justification
       project = @funding_request.project
-      reviewer_name = @funding_request.reviewer&.display_name || @funding_request.reviewer&.email || "Unknown"
       submitted_at = @funding_request.created_at&.strftime("%Y-%m-%d %H:%M UTC")
-      decided_at = @funding_request.decided_at&.strftime("%Y-%m-%d %H:%M UTC")
       total_hours = hours_at_submission || 0
       requested = @funding_request.requested_amount_cents ? "$#{"%.2f" % (@funding_request.requested_amount_cents / 100.0)}" : "N/A"
       approved = @funding_request.approved_amount_cents ? "$#{"%.2f" % (@funding_request.approved_amount_cents / 100.0)}" : "N/A"
@@ -159,9 +157,7 @@ module Certification
 
         It was then reviewed by the following reviewers:
 
-        #{@funding_request.status.capitalize} by #{reviewer_name} at #{decided_at}
-
-        This project was approved by #{reviewer_name} at #{decided_at}
+        #{verdict_history}
 
         Other data:
 
@@ -175,8 +171,6 @@ module Certification
 
     def build_hackpad_justification
       project = @funding_request.project
-      reviewer_name = @funding_request.reviewer&.display_name || @funding_request.reviewer&.email || "Unknown"
-      decided_at = @funding_request.decided_at&.strftime("%Y-%m-%d %H:%M UTC")
       total_hours = hours_at_submission || 0
 
       <<~TEXT.strip
@@ -188,9 +182,7 @@ module Certification
 
         It was then reviewed by the following reviewers:
 
-        #{@funding_request.status.capitalize} by #{reviewer_name} at #{decided_at}
-
-        This project was approved by #{reviewer_name} at #{decided_at}
+        #{verdict_history}
 
         Because consistent timetracking was not strictly enforced, many hackpads are missing time. This, in addition to the 600+ hackpads that have manually had their time checked in the ~2 years the program has been running, means that we are setting all hackpad designs to 10 hours (despite the median being 15) unless it is of note, in which case there will be a justification below indicating otherwise.
 
@@ -296,6 +288,20 @@ module Certification
 
     def hackpad_project?
       @funding_request.project.current_mission&.slug == "hackpad"
+    end
+
+    def verdict_history
+      requests = @funding_request.project
+        .certification_funding_requests
+        .where.not(decided_at: nil)
+        .includes(:reviewer)
+        .order(decided_at: :asc)
+
+      requests.map do |fr|
+        name = fr.reviewer&.display_name || fr.reviewer&.email || "Unknown"
+        at = fr.decided_at.strftime("%Y-%m-%d %H:%M UTC")
+        "#{fr.status.capitalize} by #{name} at #{at}"
+      end.join("\n")
     end
 
     def report_status
