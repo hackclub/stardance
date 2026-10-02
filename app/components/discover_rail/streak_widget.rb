@@ -84,13 +84,25 @@ module DiscoverRail
     def first_calendar_month = month_key(StreakActivity::CALENDAR_FIRST_MONTH)
     def last_calendar_month = month_key(StreakActivity::CALENDAR_LAST_MONTH)
 
+    # The newest run, which the claim control's status line talks about.
     def sticky_streak = @sticky_streak ||= user.current_sticky_streak
 
     def sticky_started? = sticky_streak.present?
 
-    def sticky_streaks_enabled? = user.sticky_streaks_enabled?
+    # Runs with a sticker still waiting. A finished run keeps its unclaimed
+    # days while a second streak is under way, so there can be two.
+    def claimable_runs = @claimable_runs ||= user.claimable_sticky_streak_runs
 
-    def sticky_claimable_count = sticky_started? ? sticky_streak.claimable_days.size : 0
+    def sticky_claimable_count = claimable_runs.sum { |run| run.claimable_days.size }
+
+    def startable_sticky_kind = @startable_sticky_kind ||= user.startable_sticky_streak_kind
+
+    # Stickers a restart would give up, so the start prompt can warn first.
+    def sticky_forfeit_count
+      return 0 unless startable_sticky_kind == :retry
+
+      sticky_streak&.claimable_days&.size.to_i
+    end
 
     private
 

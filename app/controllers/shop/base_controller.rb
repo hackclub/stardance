@@ -116,11 +116,22 @@ class Shop::BaseController < ApplicationController
     day = params[:sticky_streak_day].to_i
     return nil if day.zero?
 
-    sticky_streak = current_user.current_sticky_streak
+    sticky_streak = claiming_sticky_streak
     # Each day is claimable once, and only for the sticker it was set to.
     return nil unless sticky_streak&.claimable_day?(day)
     return nil unless sticky_streak.rewards_by_day[day]&.shop_item_id == shop_item.id
 
     StickyStreak::DayClaim.new(sticky_streak: sticky_streak, day: day)
+  end
+
+  # A finished run keeps unclaimed stickers claimable while the next one is
+  # under way, so the claim link names its run. Links rendered before restarts
+  # shipped carry no id, which still means the newest run.
+  def claiming_sticky_streak
+    runs = current_user.current_sticky_streaks
+    id = params[:sticky_streak_id].presence
+    return runs.first unless id
+
+    runs.find { |run| run.id == id.to_i }
   end
 end

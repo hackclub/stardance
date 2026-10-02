@@ -247,6 +247,19 @@
     margin: var(--space-xs) 0;
   }
 
+  // Restarting forfeits any sticker still unclaimed on the broken run, so the
+  // count is called out rather than left in the body copy.
+  &__warning {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    color: var(--color-brand-cream);
+    line-height: 1.45;
+    margin: var(--space-xs) 0;
+    padding: var(--space-xs);
+    border: 1px solid var(--color-brand-salmon);
+    border-radius: 8px;
+  }
+
   &__btn {
     width: 100%;
   }

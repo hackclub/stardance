@@ -16,20 +16,32 @@ class Admin::Shop::StickyStreakRewardsControllerTest < ActionDispatch::Integrati
     @item.save!
   end
 
-  test "the editor lists every challenge day" do
+  test "the editor lists every challenge day on each track" do
     get admin_shop_sticky_streak_rewards_path
 
     assert_response :success
-    assert_select "select[name='days[1]']"
-    assert_select "select[name='days[#{StickyStreak::LENGTH}]']"
+    assert_select "select[name='days[standard][1]']"
+    assert_select "select[name='days[standard][#{StickyStreak::LENGTH}]']"
+    StickyStreak::SECOND_REWARD_DAYS.each { |day| assert_select "select[name='days[second][#{day}]']" }
+    assert_select "select[name='days[second][1]']", count: 0
   end
 
   test "saving sets and clears rewards" do
-    patch admin_shop_sticky_streak_rewards_path, params: { days: { "1" => @item.id.to_s } }
-    assert_equal @item, StickyStreakReward.find_by(day_number: 1).shop_item
+    patch admin_shop_sticky_streak_rewards_path, params: { days: { standard: { "1" => @item.id.to_s } } }
+    assert_equal @item, StickyStreakReward.find_by(track: "standard", day_number: 1).shop_item
 
-    patch admin_shop_sticky_streak_rewards_path, params: { days: { "1" => "" } }
-    assert_nil StickyStreakReward.find_by(day_number: 1)
+    patch admin_shop_sticky_streak_rewards_path, params: { days: { standard: { "1" => "" } } }
+    assert_nil StickyStreakReward.find_by(track: "standard", day_number: 1)
+  end
+
+  test "the two tracks hold their own item for the same day" do
+    other = build_item("Encore Sticker")
+
+    patch admin_shop_sticky_streak_rewards_path,
+          params: { days: { standard: { "7" => @item.id.to_s }, second: { "7" => other.id.to_s } } }
+
+    assert_equal @item, StickyStreakReward.find_by(track: "standard", day_number: 7).shop_item
+    assert_equal other, StickyStreakReward.find_by(track: "second", day_number: 7).shop_item
   end
 
   test "the day overview charts every day once a run exists" do
@@ -56,6 +68,23 @@ class Admin::Shop::StickyStreakRewardsControllerTest < ActionDispatch::Integrati
     assert_response :success
     assert_select ".sticky-funnel__row", count: 0
     assert_select "p", text: /Nobody has started a Sticky Streak yet/
+    assert_select "p", text: /Nobody has started a second streak yet/
+  end
+
+  test "second streaks are charted apart from first runs and restarts" do
+    runner = create_user(slack_id: "U_SSR_SECOND", display_name: "ssr_second")
+    second = StickyStreak.create!(user: runner, kind: :second, started_on: runner.streak_today_date - 1)
+    StreakActivity.create!(user: runner, activity_date: second.date_for(1),
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+
+    get admin_shop_sticky_streak_rewards_path
+
+    assert_response :success
+    assert_select "h3", text: "First runs and restarts, by day"
+    assert_select "h3", text: "Second streaks, by day"
+    # Only the second streak exists, so the first-run funnel stays empty.
+    assert_select ".sticky-funnel__row", count: StickyStreak::LENGTH
+    assert_select "p", text: /Nobody has started a Sticky Streak yet/
   end
 
   test "non-admins are turned away" do
@@ -64,5 +93,15 @@ class Admin::Shop::StickyStreakRewardsControllerTest < ActionDispatch::Integrati
     get admin_shop_sticky_streak_rewards_path
 
     assert_response :not_found
+  end
+
+  private
+
+  def build_item(name)
+    item = ShopItem.new(name: name, description: "sticker", ticket_cost: 5,
+                        type: "ShopItem::ThirdPartyPhysical", enabled: true)
+    item.image.attach(io: StringIO.new(Base64.decode64(PIXEL)), filename: "px.png", content_type: "image/png")
+    item.save!
+    item
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_201123) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_170610) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1546,17 +1546,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_201123) do
     t.datetime "created_at", null: false
     t.integer "day_number", null: false
     t.bigint "shop_item_id", null: false
+    t.string "track", default: "standard", null: false
     t.datetime "updated_at", null: false
-    t.index ["day_number"], name: "index_sticky_streak_rewards_on_day_number", unique: true
     t.index ["shop_item_id"], name: "index_sticky_streak_rewards_on_shop_item_id"
+    t.index ["track", "day_number"], name: "index_sticky_streak_rewards_on_track_and_day_number", unique: true
   end
 
   create_table "sticky_streaks", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "kind", default: "first", null: false
     t.date "started_on", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.index ["user_id"], name: "index_sticky_streaks_on_user_id", unique: true
+    t.index ["user_id", "kind"], name: "index_sticky_streaks_on_user_id_and_kind", unique: true
   end
 
   create_table "streak_activities", force: :cascade do |t|

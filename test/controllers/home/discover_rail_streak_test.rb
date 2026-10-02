@@ -45,7 +45,8 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "a[href=?] .sticky-claim__day",
-                  shop_item_path(StickyStreakReward.find_by(day_number: 1).shop_item, sticky_streak_day: 1),
+                  shop_item_path(StickyStreakReward.find_by(day_number: 1).shop_item,
+                                 sticky_streak_day: 1, sticky_streak_id: streak.id),
                   "Claim day 1"
     assert_select ".streak-widget__toggle-badge", text: /1 sticker to claim/
 
@@ -100,7 +101,7 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
 
   test "clicking a sticker opens the shared zoom dialog" do
     today = @user.streak_today_date
-    StickyStreak.create!(user: @user, started_on: today)
+    streak = StickyStreak.create!(user: @user, started_on: today)
     StreakActivity.create!(user: @user, activity_date: today,
                            coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
     item = sticker
@@ -112,7 +113,8 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select "dialog.sticker-zoom", 1
     assert_select ".streak-widget__week [data-action='sticker-zoom#open'][data-sticker-zoom-name-param=?]",
                   item.name
-    assert_select "[data-sticker-zoom-claim-href-param=?]", shop_item_path(item, sticky_streak_day: 1)
+    assert_select "[data-sticker-zoom-claim-href-param=?]",
+                  shop_item_path(item, sticky_streak_day: 1, sticky_streak_id: streak.id)
     assert_select "[data-sticker-zoom-description-param=?]", item.description
     assert_select "dialog.sticker-zoom [data-sticker-zoom-target='description']", 1
   end
