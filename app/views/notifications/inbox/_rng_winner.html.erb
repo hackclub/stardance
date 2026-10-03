@@ -1,0 +1,8 @@
+<span class="notifications-item__verb">Congratulations! You got first place in the</span>
+<%= link_to "RNG", my_achievements_path, class: "notifications-item__actor" %>
+<% if (won_on = notification.record&.rolled_on) %>
+  <span class="notifications-item__verb">on <%= won_on.strftime("%B %-d, %Y") %></span>
+<% end %>
+<span class="notifications-item__verb">! Redeem your prize</span>
+<%= link_to "here", notification.preview_path, class: "notifications-item__actor" %>
+<span class="notifications-item__verb">.</span>

@@ -28,5 +28,17 @@ module Notifications
     test "is registered" do
       assert_includes Notifications::Registry.all, Notifications::AchievementEarned
     end
+
+    test "is not sent for rng_winner, which has its own dedicated notification" do
+      assert_no_difference -> { Notifications::AchievementEarned.count } do
+        @user.award_achievement!(:rng_winner)
+      end
+    end
+
+    test "is still sent for other achievements" do
+      assert_difference -> { Notifications::AchievementEarned.count }, 1 do
+        @user.award_achievement!(:super_star)
+      end
+    end
   end
 end
