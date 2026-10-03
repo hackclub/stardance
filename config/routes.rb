@@ -722,6 +722,9 @@ Rails.application.routes.draw do
         get  :export_devlogs
         get  :votes
       end
+      scope module: :projects do
+        resource :ship_block, only: [ :create, :destroy ]
+      end
     end
     resources :certificates, only: [ :index ] do
       scope module: :certificates do
