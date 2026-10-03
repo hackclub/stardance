@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class PostComponent < ViewComponent::Base
-  attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :track_engagement, :lazy_media
+  attr_reader :post, :current_user, :theme, :compact, :show_likes, :show_comments, :show_reposts, :show_actions, :track_engagement, :lazy_media, :current_user_reposted_post_ids
 
-  def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, track_engagement: true, lazy_media: false)
+  def initialize(post:, current_user: nil, theme: :feed, compact: false, show_likes: true, show_comments: true, show_reposts: true, show_actions: true, track_engagement: true, lazy_media: false, current_user_reposted_post_ids: nil)
     @post = post
     @current_user = current_user
     @theme = theme
@@ -14,5 +14,6 @@ class PostComponent < ViewComponent::Base
     @show_actions = show_actions
     @track_engagement = track_engagement
     @lazy_media = lazy_media
+    @current_user_reposted_post_ids = current_user_reposted_post_ids
   end
 end
