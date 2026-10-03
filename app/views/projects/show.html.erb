@@ -1007,7 +1007,7 @@
                        payout_review: entry.postable == @votes_for_payout&.dig(:ship_event) ? @votes_for_payout : nil,
                        mission_resubmit_modal_id: mission_modal_id %>
           <% else %>
-            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true) %>
+            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
           <% end %>
         <% end %>
       </section>
