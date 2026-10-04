@@ -59,4 +59,15 @@ class User::Identity < ApplicationRecord
   def clear_access_token!
     update_columns(access_token_ciphertext: nil, access_token_bidx: nil)
   end
+
+  def hca_identity
+    HCAService.identity!(access_token)
+  rescue HCAService::Unauthorized
+    clear_access_token!
+    Rails.logger.info "Cleared revoked HCA token for user #{user_id}"
+    {}
+  rescue StandardError => e
+    Rails.logger.warn("HCA /me fetch error: #{e.class}: #{e.message}")
+    {}
+  end
 end

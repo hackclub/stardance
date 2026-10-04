@@ -894,7 +894,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_to admin_shop_order_path(@order), alert: "User has no Hack Club identity token" and return
     end
 
-    payload = HCAService.identity(identity.access_token)
+    payload = identity.hca_identity
     if payload.blank?
       redirect_to admin_shop_order_path(@order), alert: "Could not fetch verification status from HCA" and return
     end

@@ -20,7 +20,7 @@ class RefreshAllUsersVerificationJobTest < ActiveJob::TestCase
   test "ignores non-fatal ineligible payloads" do
     payload = { "verification_status" => "ineligible", "ysws_eligible" => false, "fatal_rejection" => false }
 
-    HCAService.stub(:identity, payload) do
+    HCAService.stub(:identity!, payload) do
       RefreshAllUsersVerificationJob.perform_now
     end
 
@@ -32,7 +32,7 @@ class RefreshAllUsersVerificationJobTest < ActiveJob::TestCase
   test "rejects and bans on fatal ineligible payloads" do
     payload = { "verification_status" => "ineligible", "ysws_eligible" => false, "fatal_rejection" => true }
 
-    HCAService.stub(:identity, payload) do
+    HCAService.stub(:identity!, payload) do
       RefreshAllUsersVerificationJob.perform_now
     end
 

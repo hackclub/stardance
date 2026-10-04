@@ -303,7 +303,7 @@ class ApplicationController < ActionController::Base
       redirect_to "/auth/hack_club?origin=#{ERB::Util.url_encode(request.fullpath)}" and return
     end
 
-    identity_payload = HCAService.identity(identity.access_token)
+    identity_payload = identity.hca_identity
     if identity_payload.blank?
       flash.now[:alert] = "Couldn't reach the verification server. Try again in a moment."
       return

@@ -10,7 +10,7 @@ class My::VerificationsController < ApplicationController
 
     identity = current_user.hack_club_identity
     if identity&.access_token.present?
-      payload = HCAService.identity(identity.access_token)
+      payload = identity.hca_identity
       current_user.apply_hca_verification_payload!(payload) if payload.present?
     end
 

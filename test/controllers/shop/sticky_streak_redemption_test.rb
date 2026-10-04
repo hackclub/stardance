@@ -132,7 +132,7 @@ class Shop::StickyStreakRedemptionTest < ActionDispatch::IntegrationTest
 
   # User#addresses reads the HCA identity payload, so stubbing the service
   # covers whichever User instance the controller is holding.
-  def with_address(&block) = HCAService.stub(:identity, IDENTITY, &block)
+  def with_address(&block) = HCAService.stub(:identity!, IDENTITY, &block)
 
   def build_item(name, **attributes)
     item = ShopItem.new({ name: name, description: "sticker", ticket_cost: 25,
