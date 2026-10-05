@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import BlackholeController from "../../app/javascript/controllers/blackhole_controller.js";
 
-test("the Phantom ad receives its own card mask without masking its canvas separately", () => {
+test("the Crescent ad receives its own card mask without masking its canvas separately", () => {
   const originalDocument = globalThis.document;
   const style = new Map();
   const ad = {
@@ -10,7 +10,7 @@ test("the Phantom ad receives its own card mask without masking its canvas separ
     isConnected: true,
     parentElement: { closest: () => null },
     closest: () => null,
-    matches: (selector) => selector.split(", ").includes(".phantom-promo"),
+    matches: (selector) => selector.split(", ").includes(".crescent-promo"),
     getBoundingClientRect: () => ({ width: 310, height: 480 }),
     style: {
       getPropertyValue: (name) => style.get(name) || "",
@@ -143,6 +143,48 @@ test("story scenes never become disintegration surfaces", () => {
       assert.equal(controller.surfaces.size, 0);
     }
   } finally {
+    if (originalDocument === undefined) delete globalThis.document;
+    else globalThis.document = originalDocument;
+  }
+});
+
+test("decorative artwork erodes with its card instead of being shielded", () => {
+  const originalDocument = globalThis.document;
+  const box = (left, top, width, height) => ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+  });
+  const image = (decorative) => ({
+    closest: (selector) =>
+      decorative && selector === "[data-blackhole-decorative]" ? {} : null,
+    matches: () => true,
+    getClientRects: () => [box(20, 20, 100, 140)],
+  });
+  const art = image(true);
+  const button = image(false);
+  const originalNodeFilter = globalThis.NodeFilter;
+  globalThis.NodeFilter = { SHOW_TEXT: 4 };
+  try {
+    globalThis.document = {
+      createTreeWalker: () => ({ nextNode: () => false }),
+      createRange: () => ({}),
+    };
+    const ad = {
+      matches: () => false,
+      querySelectorAll: () => [art, button],
+    };
+    const rects = BlackholeController.prototype.protectedRects.call(
+      { localRect: BlackholeController.prototype.localRect },
+      ad,
+      box(0, 0, 310, 480),
+    );
+    assert.equal(rects.length, 1, "only the undecorated image is shielded");
+  } finally {
+    globalThis.NodeFilter = originalNodeFilter;
     if (originalDocument === undefined) delete globalThis.document;
     else globalThis.document = originalDocument;
   }

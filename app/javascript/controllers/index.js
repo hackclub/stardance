@@ -178,6 +178,9 @@ application.register("countdown-clock", CountdownClockController);
 import CountdownController from "./countdown_controller";
 application.register("countdown", CountdownController);
 
+import CrescentSkyController from "./crescent_sky_controller";
+application.register("crescent-sky", CrescentSkyController);
+
 import CurveDrawController from "./curve_draw_controller";
 application.register("curve-draw", CurveDrawController);
 
@@ -333,9 +336,6 @@ application.register("parallax", ParallaxController);
 
 import PayoutReviewController from "./payout_review_controller";
 application.register("payout-review", PayoutReviewController);
-
-import PhantomVoidController from "./phantom_void_controller";
-application.register("phantom-void", PhantomVoidController);
 
 import PostMenuController from "./post_menu_controller";
 application.register("post-menu", PostMenuController);

@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 import { Delaunay } from "d3";
 
 const CARD_SURFACES =
-  ".feed-post-card, .feed-composer, .rail-widget, .raffle-widget, .phantom-promo, .sidebar__logo-img, .sidebar__user-card";
+  ".feed-post-card, .feed-composer, .rail-widget, .raffle-widget, .crescent-promo, .sidebar__logo-img, .sidebar__user-card";
 const MEDIA_CONTENT = "img, video, iframe, svg";
 const SIDEBAR_SURFACES = [
   "#primary-nav",
@@ -14,6 +14,9 @@ const SIDEBAR_SURFACES = [
 const EXCLUDED_SCENES = ".visual-novel, .buku-x3-reveal";
 const PROTECTED_CONTENT =
   "a:not(.feed-post-card__overlay-link), button, input, textarea, select, summary, img, video, iframe, svg, [role='progressbar'], [role='meter'], [contenteditable]";
+// Decorative artwork drawn over a live background (the Crescent ad's sky)
+// erodes with the card: shielding it leaves a hard rectangle in the picture.
+const DECORATIVE = "[data-blackhole-decorative]";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SIMULATOR_KEY = "stardance-event-simulator-v1";
 const MESH_OVERSCAN = 128;
@@ -588,7 +591,11 @@ export default class extends Controller {
     // The post's invisible full-card link must not shield the whole border.
     if (element.matches(MEDIA_CONTENT)) add(surfaceRect, "image");
     element.querySelectorAll(PROTECTED_CONTENT).forEach((child) => {
-      if (nestedCards.some((card) => card.contains(child))) return;
+      if (
+        child.closest(DECORATIVE) ||
+        nestedCards.some((card) => card.contains(child))
+      )
+        return;
       for (const rect of child.getClientRects())
         add(rect, child.matches(MEDIA_CONTENT) ? "image" : "content");
     });

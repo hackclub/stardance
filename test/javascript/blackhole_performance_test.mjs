@@ -174,7 +174,7 @@ test("scroll caching preserves visible polygon geometry without seams", () => {
   }
 });
 
-test("scrolling a Phantom-sized card reuses its decay field but respects changed text bounds", () => {
+test("scrolling an ad-sized card reuses its decay field but respects changed text bounds", () => {
   const previousStyle = globalThis.getComputedStyle;
   globalThis.getComputedStyle = () => ({ zIndex: "5", position: "relative" });
   try {

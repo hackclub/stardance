@@ -653,6 +653,8 @@ Rails.application.routes.draw do
     post :guest_email_no,            to: "wizard#guest_email_no"
   end
 
+  get "promos/crescent", to: "promos#crescent", as: :crescent_promo
+
   namespace :admin, constraints: AdminConstraint do
     # Admin dashboard
     root to: "application#index"

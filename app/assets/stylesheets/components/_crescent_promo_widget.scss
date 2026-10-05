@@ -1,0 +1,510 @@
+// Crescent's ad, in Crescent's own night and type (hackclub/crescent,
+// styles/theme.css and landing.css). The sky shader reads the palette from
+// here, so the card and its canvas never disagree on a colour.
+
+// Crescent's motion springs (lib/motion.ts), sampled for CSS.
+$spring-pop: linear(
+  0,
+  0.041,
+  0.137,
+  0.266,
+  0.397,
+  0.539,
+  0.67,
+  0.785,
+  0.874,
+  0.95,
+  1.007,
+  1.044,
+  1.069,
+  1.081,
+  1.084,
+  1.08,
+  1.072,
+  1.061,
+  1.049,
+  1.038,
+  1.027,
+  1.018,
+  1.01,
+  1.004,
+  0.999,
+  0.996,
+  0.994,
+  0.993,
+  0.993,
+  0.994,
+  0.996,
+  0.998,
+  1
+);
+$spring-rise: linear(
+  0,
+  0.056,
+  0.192,
+  0.363,
+  0.554,
+  0.726,
+  0.881,
+  1.002,
+  1.084,
+  1.137,
+  1.159,
+  1.159,
+  1.144,
+  1.119,
+  1.088,
+  1.059,
+  1.032,
+  1.01,
+  0.993,
+  0.982,
+  0.976,
+  0.974,
+  0.975,
+  0.978,
+  0.983,
+  0.988,
+  0.992,
+  0.997,
+  1,
+  1.002,
+  1.003,
+  1.004,
+  1.003,
+  1.002,
+  1
+);
+$spring-turn: linear(
+  0,
+  0.024,
+  0.084,
+  0.165,
+  0.258,
+  0.355,
+  0.446,
+  0.536,
+  0.619,
+  0.693,
+  0.757,
+  0.81,
+  0.857,
+  0.896,
+  0.927,
+  0.952,
+  0.97,
+  0.985,
+  0.996,
+  1.004,
+  1.009,
+  1.012,
+  1.014,
+  1.014,
+  1.013,
+  1.011,
+  1.008,
+  1.005,
+  1.003,
+  1.001,
+  1
+);
+$spring-card: linear(
+  0,
+  0.04,
+  0.129,
+  0.255,
+  0.388,
+  0.529,
+  0.653,
+  0.769,
+  0.862,
+  0.94,
+  0.996,
+  1.036,
+  1.063,
+  1.077,
+  1.082,
+  1.08,
+  1.073,
+  1.063,
+  1.052,
+  1.041,
+  1.03,
+  1.021,
+  1.013,
+  1.006,
+  1.001,
+  0.998,
+  0.995,
+  0.993,
+  0.994,
+  0.996,
+  0.998,
+  1
+);
+
+// The ceremony's clock, in seconds from the reveal. The sky swells first
+// (crescent_sky_controller.js), the logo rises into it, the hand is dealt
+// with each card turning face up as it lands, then the copy follows.
+$logo-at: 0.15s;
+$deal-at: 0.35s;
+$deal-step: 0.12s;
+$copy-at: 0.75s;
+$copy-step: 0.08s;
+$bob-at: 1.2s;
+
+.crescent-promo {
+  --crescent-void: #0b061d;
+  --crescent-deep: #190c3e;
+  --crescent-mid: #2f1668;
+  --crescent-violet: #56279d;
+  --crescent-magenta: #9443c2;
+  --crescent-pink: #d574d1;
+  --crescent-hot: #f9c1ef;
+  --crescent-spark: #f5ead4;
+  --crescent-cream: #ecdec3;
+  --crescent-cream-soft: rgb(236 222 195 / 72%);
+  --crescent-accent: #ee6462;
+  --crescent-stroke: #190439;
+  --crescent-button: #6632b5;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-l) var(--space-m) var(--space-l);
+  overflow: hidden;
+  border: 1px solid var(--crescent-mid);
+  border-radius: 20px;
+  // What a browser without WebGL2 keeps: the light, without the weather.
+  background: radial-gradient(
+    circle at 50% 42%,
+    var(--crescent-magenta),
+    var(--crescent-violet) 16%,
+    var(--crescent-mid) 32%,
+    var(--crescent-deep) 50%,
+    var(--crescent-void) 70%
+  );
+  color: var(--crescent-cream);
+  text-align: center;
+  isolation: isolate;
+  container-type: inline-size;
+
+  // Terra's portal sits in the middle of a square, leaving empty space under
+  // it; tuck the ad up into that space so the two read as a pair.
+  .terra-portal + & {
+    margin-top: -32px;
+  }
+
+  &__canvas {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__replay {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--crescent-violet);
+    border-radius: 50%;
+    background: rgb(11 6 29 / 60%);
+    color: var(--crescent-cream);
+    cursor: pointer;
+    opacity: 0.7;
+    transition:
+      opacity 0.16s ease,
+      rotate 0.4s $spring-card;
+
+    &:hover {
+      opacity: 1;
+      rotate: 120deg;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--crescent-cream);
+      outline-offset: 2px;
+      opacity: 1;
+    }
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__replay-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  &__logo {
+    width: 64%;
+    height: auto;
+    filter: drop-shadow(0 6px 16px rgb(0 0 0 / 50%));
+  }
+
+  // The hand. Its middle is where the shader puts the light.
+  &__hand {
+    position: relative;
+    width: 100%;
+    height: 168px;
+    margin: var(--space-xs) 0 var(--space-s);
+  }
+
+  &__card {
+    --lean: 0deg;
+    --spread: 0px;
+    --lift: 0px;
+
+    position: absolute;
+    top: 14px;
+    left: calc(50% - 50px);
+    width: 100px;
+    rotate: var(--lean);
+    translate: var(--spread) var(--lift);
+    transition: translate 0.7s $spring-card;
+
+    &--left {
+      --lean: -10deg;
+      --spread: -66px;
+
+      top: 22px;
+    }
+
+    &--middle {
+      --lean: -3.61deg;
+
+      z-index: 1;
+    }
+
+    &--right {
+      --lean: 10deg;
+      --spread: 66px;
+
+      top: 22px;
+    }
+  }
+
+  &:hover &__card--left {
+    --spread: -76px;
+  }
+
+  &:hover &__card--right {
+    --spread: 76px;
+  }
+
+  &__card:hover {
+    --lift: -14px;
+  }
+
+  &__bob {
+    transform-style: preserve-3d;
+  }
+
+  &__flip {
+    position: relative;
+    aspect-ratio: 397 / 555;
+    transform-style: preserve-3d;
+  }
+
+  &__face,
+  &__back {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
+    backface-visibility: hidden;
+  }
+
+  &__back {
+    display: grid;
+    place-items: center;
+    border: 4px solid var(--crescent-violet);
+    background: var(--crescent-deep);
+    transform: rotateY(180deg);
+  }
+
+  &__back-mark {
+    width: 34px;
+  }
+
+  &__tagline {
+    margin: 0;
+    color: var(--crescent-cream);
+    font-family: "Young Serif", Georgia, "Times New Roman", serif;
+    // Sized to the card, so "Ship something every week." holds one line.
+    font-size: 6.4cqi;
+    font-weight: 400;
+    line-height: 1.32;
+    white-space: nowrap;
+    // Stroked rather than shadowed: the sky behind it moves, and only an
+    // outline holds the letterforms against every part of it.
+    -webkit-text-stroke: 0.26em var(--crescent-stroke);
+    paint-order: stroke fill;
+    filter: drop-shadow(0 3px 14px rgb(25 4 57 / 55%));
+  }
+
+  &__accent {
+    color: var(--crescent-accent);
+    font-family: inherit;
+    font-style: normal;
+  }
+
+  &__body {
+    margin: var(--space-xs) 0 var(--space-m);
+    color: var(--crescent-cream-soft);
+    font-family: "National Park", var(--font-family-text);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 55%);
+    text-wrap: balance;
+  }
+
+  &__cta {
+    padding: 12px 22px;
+    border-radius: 8px;
+    background: var(--crescent-button);
+    box-shadow: 0 4px 2px rgb(0 0 0 / 16%);
+    color: var(--crescent-cream);
+    font-family: "National Park", var(--font-family-text);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-decoration: none;
+    transition: transform 0.08s ease;
+
+    &:hover {
+      color: var(--crescent-cream);
+      transform: scale(1.04);
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+
+    &:focus-visible {
+      outline: 3px solid var(--crescent-cream);
+      outline-offset: 3px;
+    }
+  }
+
+  // Held out of sight until the card scrolls into view, then played once.
+  // Only armed where motion is welcome, so everything else just shows.
+  &--armed:not(&--revealed) {
+    :is(
+      .crescent-promo__logo,
+      .crescent-promo__card,
+      .crescent-promo__tagline,
+      .crescent-promo__body,
+      .crescent-promo__cta
+    ) {
+      opacity: 0;
+    }
+  }
+
+  &--revealed {
+    .crescent-promo__logo {
+      animation: crescent-promo-rise 0.98s $spring-rise $logo-at both;
+    }
+
+    @for $i from 1 through 3 {
+      .crescent-promo__card:nth-child(#{$i}) {
+        animation: crescent-promo-deal
+          0.51s
+          $spring-pop
+          ($deal-at + ($i - 1) * $deal-step)
+          both;
+
+        .crescent-promo__bob {
+          animation: crescent-promo-bob
+            4.5s
+            ($bob-at + ($i - 1) * 0.6s)
+            infinite;
+        }
+
+        .crescent-promo__flip {
+          animation: crescent-promo-turn
+            0.79s
+            $spring-turn
+            ($deal-at + ($i - 1) * $deal-step)
+            both;
+        }
+      }
+    }
+
+    .crescent-promo__tagline {
+      animation: crescent-promo-rise 0.98s $spring-rise $copy-at both;
+    }
+
+    .crescent-promo__body {
+      animation: crescent-promo-rise 0.98s $spring-rise ($copy-at + $copy-step)
+        both;
+    }
+
+    .crescent-promo__cta {
+      animation: crescent-promo-rise 0.98s $spring-rise
+        ($copy-at + 2 * $copy-step) both;
+    }
+  }
+}
+
+// A line settling into place, a touch past it and back. Opacity rides the
+// same spring, clamped by the browser, so it fades up with the rise.
+@keyframes crescent-promo-rise {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}
+
+@keyframes crescent-promo-deal {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+@keyframes crescent-promo-turn {
+  from {
+    transform: rotateY(180deg);
+  }
+}
+
+// One sine period, starting from rest so a card never jumps into it.
+@keyframes crescent-promo-bob {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
+  }
+
+  25% {
+    translate: 0 6px;
+    rotate: 1.2deg;
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+
+  75% {
+    translate: 0 -6px;
+    rotate: -1.2deg;
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
+  }
+
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}

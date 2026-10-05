@@ -1,0 +1,38 @@
+<section class="crescent-promo"
+         aria-label="Crescent, a Hack Club YSWS"
+         data-controller="crescent-sky"
+         data-crescent-sky-armed-class="crescent-promo--armed"
+         data-crescent-sky-revealed-class="crescent-promo--revealed"
+         data-action="pointerenter->crescent-sky#enter pointerleave->crescent-sky#leave pointermove->crescent-sky#track">
+  <canvas class="crescent-promo__canvas" data-crescent-sky-target="canvas" aria-hidden="true"></canvas>
+
+  <button type="button"
+          class="crescent-promo__replay"
+          aria-label="Replay the animation"
+          hidden
+          data-crescent-sky-target="replay"
+          data-action="crescent-sky#replay">
+    <%= helpers.inline_svg_tag "icons/refresh.svg", class: "crescent-promo__replay-icon", aria_hidden: true %>
+  </button>
+
+  <%= image_tag "crescent-logo.webp", alt: "Hack Club Crescent", class: "crescent-promo__logo", data: { blackhole_decorative: true } %>
+
+  <div class="crescent-promo__hand" data-crescent-sky-target="light" data-blackhole-decorative aria-hidden="true">
+    <% CARDS.each do |card, face| %>
+      <div class="crescent-promo__card crescent-promo__card--<%= card %>">
+        <div class="crescent-promo__bob">
+          <div class="crescent-promo__flip">
+            <%= image_tag face, alt: "", class: "crescent-promo__face" %>
+            <span class="crescent-promo__back">
+              <%= image_tag "crescent-stars.svg", alt: "", class: "crescent-promo__back-mark" %>
+            </span>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <p class="crescent-promo__tagline">Ship something every week.<br><em class="crescent-promo__accent">Keep the loot.</em></p>
+  <p class="crescent-promo__body">Pick a card, build it, ship it, and spend your stars in the shop.</p>
+  <%= link_to "Onwards!", helpers.crescent_promo_path, class: "crescent-promo__cta", target: "_blank", rel: "noopener" %>
+</section>
