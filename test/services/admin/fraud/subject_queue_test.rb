@@ -74,6 +74,48 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     assert_in_delta 2.hours.ago, subjects.find { |row| row.user_id == user.id }.oldest_at, 1.minute
   end
 
+  test "the dashboard counts each person once, waiting since their oldest item" do
+    user = user_with_flag(age: 3.days.ago)
+    user.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
+    order_for(user, age: 2.days.ago)
+    user_with_order(age: 1.day.ago)
+
+    waits = Admin::MegaDashboard::Queue.find("fraud_queue").open_entered_ats
+
+    assert_equal 2, waits.size
+    assert_in_delta 3.days.ago, waits.min, 1.minute
+  end
+
+  test "the dashboard history is one stay per person, from their first item to their last" do
+    user = create_user(slack_id: "u-stay", display_name: "stay")
+    user.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
+    order_for(user, age: 4.days.ago).update_columns(aasm_state: "rejected", rejected_at: 2.days.ago)
+    pending_integrity_for(user, age: 3.days.ago).update!(status: :manually_passed, reviewer: @reporter, reviewed_at: 1.day.ago)
+    pending_integrity_for(user, age: 6.days.ago, status: :auto_passed)
+
+    pairs = Admin::Fraud::SubjectQueue.history(7.days.ago)
+
+    assert_equal 1, pairs.size
+    assert_in_delta 4.days.ago, pairs.sole.first, 1.minute
+    assert_in_delta 1.day.ago, pairs.sole.last, 1.minute
+  end
+
+  test "the dashboard history leaves out orders that were auto-approved" do
+    buyer = user_with_order(age: 2.days.ago)
+    order = buyer.shop_orders.sole
+    order.update_columns(aasm_state: "awaiting_periodical_fulfillment", awaiting_periodical_fulfillment_at: 2.days.ago)
+    PaperTrail::Version.create!(item_type: "ShopOrder", item_id: order.id, event: "auto_approved", whodunnit: "Shop::AutoApprovable")
+
+    assert_empty Admin::Fraud::SubjectQueue.history(7.days.ago)
+  end
+
+  test "a ban ends a person's stay on the page" do
+    user = user_with_flag(age: 5.days.ago)
+    user.update!(banned: true, banned_at: 2.days.ago)
+
+    assert_in_delta 2.days.ago, Admin::Fraud::SubjectQueue.history(7.days.ago).sole.last, 1.minute
+  end
+
   test "a flag on a team project surfaces every member" do
     owner = create_user(slack_id: "u-owner", display_name: "owner")
     teammate = create_user(slack_id: "u-mate", display_name: "mate")

@@ -19,11 +19,10 @@ module Admin
         @sticker = place_order(build_item(type: "ShopItem::StickyStreakSticker"))
       end
 
-      test "streak stickers stay out of the fraud queue" do
-        pending = Queue.find("fraud_orders").pending.call
+      test "streak stickers stay out of the fraud queue's history" do
+        pairs = Queue.find("fraud_queue").timestamp_pairs(1.day.ago)
 
-        assert_includes pending, @patch
-        assert_not_includes pending, @sticker
+        assert_equal [ [ @patch.created_at.to_i, nil ] ], pairs.map { |entered, decided| [ entered.to_i, decided ] }
       end
 
       test "streak stickers stay out of the fulfillment queue" do
