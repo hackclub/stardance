@@ -1,0 +1,99 @@
+// Registered as colors so the controller reads them back as resolved values.
+@property --terra-portal-deep {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --terra-portal-mid {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --terra-portal-hi {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --terra-portal-glint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+.terra-portal {
+  // Terra's own leaf green, sampled from terra.hackclub.com.
+  --terra-portal-leaf: #96c64e;
+  --terra-portal-deep: color-mix(
+    in oklch,
+    var(--terra-portal-leaf) 60%,
+    var(--color-space-bg)
+  );
+  --terra-portal-mid: color-mix(
+    in srgb,
+    var(--terra-portal-leaf) 65%,
+    var(--color-brand-off-white)
+  );
+  --terra-portal-hi: color-mix(
+    in srgb,
+    var(--terra-portal-leaf) 30%,
+    var(--color-brand-off-white)
+  );
+  --terra-portal-glint: var(--color-brand-cream);
+
+  &__stage {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-off-white);
+      outline-offset: 4px;
+    }
+  }
+
+  // The 70% solid stop is the clear circle the zoom scales up to fill the screen (CLEAR in the controller).
+  &__view {
+    position: absolute;
+    top: 20%;
+    left: 20%;
+    width: 60%;
+    height: 60%;
+    border-radius: 50%;
+    object-fit: cover;
+    mask: radial-gradient(closest-side, #000 70%, transparent 100%);
+  }
+
+  &__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: var(--terra-portal-fx, 1);
+  }
+
+  // Kept rendered but invisible: some browsers throttle or skip work in display: none frames.
+  &__warmup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__arrival {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}

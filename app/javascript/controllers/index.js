@@ -454,6 +454,9 @@ application.register("streak-day-picker", StreakDayPickerController);
 import SubmitOnMetaEnterController from "./submit_on_meta_enter_controller";
 application.register("submit-on-meta-enter", SubmitOnMetaEnterController);
 
+import TerraPortalController from "./terra_portal_controller";
+application.register("terra-portal", TerraPortalController);
+
 import TextareaHintController from "./textarea_hint_controller";
 application.register("textarea-hint", TextareaHintController);
 

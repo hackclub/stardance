@@ -1,0 +1,14 @@
+<section class="terra-portal"
+         aria-label="Terra, a Hack Club YSWS"
+         data-controller="terra-portal"
+         data-terra-portal-image-value="<%= helpers.image_path("terra/terra.jpg") %>">
+  <link rel="preconnect" href="https://terra.hackclub.com">
+  <link rel="preconnect" href="https://api.terra.hackclub.com" crossorigin>
+  <%= link_to URL,
+        class: "terra-portal__stage",
+        aria: { label: "Step through to Terra: code each week, grow your farm, get a laptop" },
+        data: { terra_portal_target: "stage", action: "click->terra-portal#enter" } do %>
+    <%= image_tag "terra/terra.jpg", alt: "", class: "terra-portal__view", data: { terra_portal_target: "view" } %>
+    <canvas class="terra-portal__canvas" data-terra-portal-target="canvas" aria-hidden="true"></canvas>
+  <% end %>
+</section>
