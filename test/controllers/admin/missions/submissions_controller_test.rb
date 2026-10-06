@@ -33,6 +33,19 @@ class Admin::Missions::SubmissionsControllerTest < ActionDispatch::IntegrationTe
     assert_equal 1, Mission::Submission.reviewed_today(@reviewer, mission: @mission)
   end
 
+  test "the review page's reviewed-today count spans every mission" do
+    other_mission = create_mission
+    other = ship_to_mission!(@project, @builder, other_mission, status: "approved")
+    other.update!(reviewed_by: @reviewer, reviewed_at: Time.current)
+
+    sign_in @reviewer
+    get admin_mission_submission_path(@mission.slug, @submission)
+
+    assert_response :success
+    assert_no_match(/First review of the day/, response.body)
+    assert_select ".mission-review__momentum-count", text: "1"
+  end
+
   test "the review page lists decided mission reviews on the same project" do
     earlier_mission = create_mission
     earlier = ship_to_mission!(@project, @builder, earlier_mission, status: "rejected")
