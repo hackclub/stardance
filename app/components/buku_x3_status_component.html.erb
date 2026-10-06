@@ -31,7 +31,7 @@
         <div class="buku-x3-status__rope" role="meter" aria-label="black hole damage"
              aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= percent %>"
              aria-valuetext="<%= display_percent %>% damaged; bukus pull left, beans pull right"
-             data-buku-x3-status-target="meter" style="--tug-position: <%= marker_position %>%">
+             data-buku-x3-status-target="meter" data-leader="<%= leading_team %>" style="--tug-position: <%= marker_position %>%">
           <span class="buku-x3-status__midpoint" aria-hidden="true"></span>
           <span class="buku-x3-status__marker" aria-hidden="true"></span>
         </div>

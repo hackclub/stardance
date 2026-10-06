@@ -9,6 +9,7 @@
     <%= turbo_frame_tag "buku_x3_home_status", class: ("buku-x3-home-preview" if Rails.env.development?), data: { controller: "buku-x3-status", action: "buku-x3-reveal:complete@window->buku-x3-status#refresh" } do %>
       <% preview_role = params[:buku_preview].presence_in(%w[buku bean]) if Rails.env.development? %>
       <%= render BukuX3StatusComponent.new(user: current_user, preview: preview_role.present?, preview_role: preview_role) %>
+      <%= render "buku_leaderboard", teams: @buku_teams if @buku_teams %>
     <% end %>
     <% if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>
       <%= render ActionButtonComponent.new(

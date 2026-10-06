@@ -1,0 +1,7 @@
+<li class="<%= class_names("buku-leaderboard__row", "buku-leaderboard__row--#{team}", "buku-leaderboard__row--first" => rank == 1, "buku-leaderboard__row--prize" => rank <= BukuX3::Leaderboard::PRIZE_PLACES) %>">
+  <span class="buku-leaderboard__rank" aria-label="rank <%= rank %>"><%= rank %></span>
+  <%= link_to entry.user.display_name, profile_path(entry.user.display_name), class: "buku-leaderboard__name", title: entry.user.display_name %>
+  <% if current_user&.id == entry.user.id %><span class="buku-leaderboard__you">you</span><% end %>
+  <span class="buku-leaderboard__hours"><%= number_with_precision(entry.minutes / 60.0, precision: 2, delimiter: ",", strip_insignificant_zeros: true) %></span>
+  <% if rank <= BukuX3::Leaderboard::PRIZE_PLACES %><span class="buku-leaderboard__prize-label">t-shirt spot</span><% end %>
+</li>

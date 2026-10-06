@@ -208,6 +208,8 @@
   }
 
   &__rope {
+    --buku-color: var(--color-brand-off-white);
+    --bean-color: var(--color-brand-off-white);
     // Hand centers in the framed artwork: x=7%/93%, y=45% and 69%.
     // Derive both edges from character width so the grips stay aligned on phones.
     position: absolute;
@@ -220,10 +222,16 @@
     border-radius: 8px;
     background: linear-gradient(
       to right,
-      var(--color-brand-lilac),
-      var(--color-set-2-bg) 50%,
-      var(--color-brand-yellow)
+      var(--buku-color),
+      var(--color-brand-off-white) 50%,
+      var(--bean-color)
     );
+    &[data-leader="buku"] {
+      --buku-color: var(--color-brand-lilac);
+    }
+    &[data-leader="bean"] {
+      --bean-color: var(--color-brand-yellow);
+    }
   }
 
   &__midpoint {

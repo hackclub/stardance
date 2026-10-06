@@ -11,6 +11,7 @@ class HomeController < ApplicationController
     @body_class += " home-welcoming" if @welcoming
 
     load_composer if current_user.present?
+    @buku_teams = BukuX3::Leaderboard.new(BukuX3::Event.current).teams if policy(BukuX3::Event).leaderboard?
   end
 
   private

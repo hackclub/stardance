@@ -36,6 +36,8 @@ export default class extends Controller {
       `${label}; bukus pull left, beans pull right`,
     );
     this.meterTarget.style.setProperty("--tug-position", `${100 - value}%`);
+    this.meterTarget.dataset.leader =
+      value > 50 ? "buku" : value < 50 ? "bean" : "tie";
     this.amountTarget.textContent = label;
     if (hours) this.liveHoursValue = hours;
     const totals = hours || this.liveHoursValue;
@@ -43,6 +45,8 @@ export default class extends Controller {
       maximumFractionDigits: 1,
     });
     for (const team of ["buku", "bean"]) {
+      if (team === "buku" ? !this.hasBukuHoursTarget : !this.hasBeanHoursTarget)
+        continue;
       if (!Number.isFinite(totals[team]) || totals[team] < 0) continue;
       const target =
         team === "buku" ? this.bukuHoursTarget : this.beanHoursTarget;

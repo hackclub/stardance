@@ -1,5 +1,9 @@
 module BukuX3
   class EventPolicy < ApplicationPolicy
+    def leaderboard?
+      Flipper.enabled?(:bukux3, user)
+    end
+
     def show?
       user.present? && Flipper.enabled?(:bukux3, user)
     end
