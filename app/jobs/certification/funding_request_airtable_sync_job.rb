@@ -7,22 +7,11 @@ module Certification
 
     queue_as :literally_whenever
 
-    rescue_from(StandardError) do |error|
-      Sentry.capture_exception(error, level: :fatal,
-        message: "FundingRequestAirtableSyncJob failed for funding_request ##{arguments.first}: #{error.message}",
-        extra: { funding_request_id: arguments.first })
-      raise error
-    end
-
     retry_on Faraday::Error, wait: :exponentially_longer, attempts: 3 do |job, error|
-      Sentry.capture_exception(error, level: :fatal,
-        message: "FundingRequestAirtableSyncJob failed for funding_request ##{job.arguments.first}: #{error.message}",
-        extra: { funding_request_id: job.arguments.first })
+      Rails.error.report(error, severity: :error, context: { funding_request_id: job.arguments.first })
     end
     retry_on Faraday::TimeoutError, wait: 30.seconds, attempts: 2 do |job, error|
-      Sentry.capture_exception(error, level: :fatal,
-        message: "FundingRequestAirtableSyncJob failed for funding_request ##{job.arguments.first}: #{error.message}",
-        extra: { funding_request_id: job.arguments.first })
+      Rails.error.report(error, severity: :error, context: { funding_request_id: job.arguments.first })
     end
     discard_on ActiveRecord::RecordNotFound
 

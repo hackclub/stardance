@@ -409,7 +409,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
   rescue StandardError => e
     skip_authorization unless pundit_policy_authorized?
     Rails.logger.error "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
-    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    Rails.error.report(e, context: { category: "certification.ysws", ysws_review_id: params[:id], user_id: current_user&.id })
     render json: {
       success: false,
       error: "Failed to complete review: #{e.message}. Let AVD know!"
@@ -460,7 +460,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     raise
   rescue StandardError => e
     Rails.logger.error "[YSWS#undo] user=#{current_user&.id} review=#{params[:id]} #{e.class}: #{e.message}"
-    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    Rails.error.report(e, context: { category: "certification.ysws", ysws_review_id: params[:id], user_id: current_user&.id })
     redirect_to admin_certification_ysws_review_path(params[:id]),
                 alert: "Failed to undo review: #{e.message}"
   end
@@ -502,11 +502,10 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
         # response, and the job chains the return itself once it lands.
         ::ExternalDashboard::ShipWebhookJob.perform_later(approved_cert.id)
       else
-        Sentry.capture_message(
+        OperationalAlert.report(
           "YSWS return has no approved ship cert to chain from",
-          level: :error,
-          tags: { category: "certification.ysws" },
-          extra: { ysws_review_id: @review.id, project_id: @review.project_id, new_cert_id: new_cert.id }
+          severity: :error,
+          context: { category: "certification.ysws", ysws_review_id: @review.id, project_id: @review.project_id, new_cert_id: new_cert.id }
         )
       end
     end
@@ -517,7 +516,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       redirect_url: admin_certification_ysws_reviews_path
     }, status: :ok
   rescue StandardError => e
-    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    Rails.error.report(e, context: { category: "certification.ysws", ysws_review_id: params[:id], user_id: current_user&.id })
     render json: { success: false, error: "Failed to return to ship certs: #{e.message}" }, status: :unprocessable_entity
   end
 end

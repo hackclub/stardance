@@ -606,10 +606,10 @@ module Certification
 
     def create_ysws_review_for_ship(ship_event)
       unless owner
-        Sentry.capture_message(
+        OperationalAlert.report(
           "Ship certification approved but no owner found to create YSWS review",
-          level: :error,
-          extra: {
+          severity: :error,
+          context: {
             ship_cert_id: id,
             project_id: project.id,
             ship_event_id: ship_event.id

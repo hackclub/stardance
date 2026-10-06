@@ -46,6 +46,6 @@ class NotificationDeliveryJob < ApplicationJob
     notification.update_column(:email_delivered_at, Time.current)
   rescue StandardError => e
     Rails.logger.error("NotificationDeliveryJob email delivery failed (#{notification.id}): #{e.message}")
-    Sentry.capture_exception(e) if defined?(Sentry)
+    Rails.error.report(e)
   end
 end

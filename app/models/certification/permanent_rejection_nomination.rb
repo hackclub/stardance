@@ -127,6 +127,6 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
     )
   rescue StandardError => e
     Rails.logger.error("PermanentRejectionNomination ##{id} staff notification failed: #{e.message}")
-    Sentry.capture_exception(e)
+    Rails.error.report(e)
   end
 end

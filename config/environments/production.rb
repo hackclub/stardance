@@ -50,14 +50,10 @@ Rails.application.configure do
   config.active_support.report_deprecations = false
 
   # Cache in Redis!
+  # Redis errors are reported via Rails.error by the store's default error_handler.
   config.cache_store = :redis_cache_store, { url: ENV["REDIS_CACHE_URL"],
                                              reconnect_attempts: 2,
-                                             read_timeout: 0.3,
-                                             error_handler: ->(method:, returning:, exception:) {
-                                               Sentry.capture_exception exception, level: "warning",
-                                                                        tags: { method: method, returning: returning }
-                                             }
-  }
+                                             read_timeout: 0.3 }
 
   # Replace the default in-process and non-durable queuing backend for Active Job.
   config.active_job.queue_adapter = :solid_queue

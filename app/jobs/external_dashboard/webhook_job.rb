@@ -14,10 +14,9 @@ module ExternalDashboard
       cert_id = job.arguments.first
       BackfillRun.record(BackfillRun.run_id_from(job.arguments), :failed)
       Rails.logger.warn "[#{job.class.name}] cert=#{cert_id} giving up after #{error.class}: #{error.message}"
-      Sentry.capture_message(
+      OperationalAlert.report(
         "ExternalDashboard webhook gave up after retries",
-        level: :warning,
-        extra: {
+        context: {
           job_class: job.class.name,
           cert_id: cert_id,
           error_class: error.class.name,
@@ -30,10 +29,9 @@ module ExternalDashboard
 
       def log_remote_failure(label, cert_id, result)
         Rails.logger.warn "[#{self.class.name}] cert=#{cert_id} #{label} http=#{result.http_status} error=#{result.error}"
-        Sentry.capture_message(
+        OperationalAlert.report(
           "ExternalDashboard webhook #{label}",
-          level: :warning,
-          extra: {
+          context: {
             job_class: self.class.name,
             cert_id: cert_id,
             http_status: result.http_status,

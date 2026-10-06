@@ -64,7 +64,6 @@
       <script defer data-domain="stardance.hackclub.com" src="https://plausible.hackclub.com/js/script.js"></script>
     <% end %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
-    <%= Sentry.get_trace_propagation_meta.html_safe %> <%# erb_lint:disable ErbSafety %>
   </head>
 
   <body class="<%= !@hide_sidebar ? 'signed-in' : '' %> <%= @body_class %> <%= 'streamer-mode' if session[:streamer_mode] %>"

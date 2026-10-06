@@ -235,7 +235,7 @@ class Shop::OrdersController < Shop::BaseController
     true
   rescue => e
     Rails.logger.error "Free stickers fulfillment failed: #{e.message}"
-    Sentry.capture_exception(e, extra: { order_id: @order.id, user_id: current_user.id })
+    Rails.error.report(e, context: { order_id: @order.id, user_id: current_user.id })
     redirect_to shop_orders_path, alert: "Order placed but fulfillment failed. We'll process it shortly."
     false
   end

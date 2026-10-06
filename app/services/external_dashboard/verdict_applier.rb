@@ -3,7 +3,7 @@ module ExternalDashboard
   # there's one implementation of the lock/idempotency/divergence logic.
   class VerdictApplier
     REPLAY_CLOCK_SKEW = 5.minutes
-    DIVERGENCE_SENTRY_MESSAGE = "ExternalDashboard verdict diverges from local decision".freeze
+    DIVERGENCE_ALERT_MESSAGE = "ExternalDashboard verdict diverges from local decision".freeze
     DIVERGENCE_ALERT_TTL = 1.day
 
     Outcome = Struct.new(:status, :cert, keyword_init: true)
@@ -98,10 +98,9 @@ module ExternalDashboard
       # The poller re-checks every cert in its lookback window on every run, so
       # an unresolved divergence would otherwise re-page on every cycle.
       AlertThrottle.once("external_dashboard:verdict_applier:divergence:#{cert.id}:#{cert.status}:#{target_status}", ttl: DIVERGENCE_ALERT_TTL) do
-        Sentry.capture_message(
-          DIVERGENCE_SENTRY_MESSAGE,
-          level: :warning,
-          extra: { cert_id: cert.id, local_status: cert.status, remote_status: target_status.to_s }
+        OperationalAlert.report(
+          DIVERGENCE_ALERT_MESSAGE,
+          context: { cert_id: cert.id, local_status: cert.status, remote_status: target_status.to_s }
         )
       end
     end

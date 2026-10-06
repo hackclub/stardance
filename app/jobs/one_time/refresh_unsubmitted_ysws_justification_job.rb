@@ -101,7 +101,7 @@ class OneTime::RefreshUnsubmittedYswsJustificationJob < ApplicationJob
     :rewritten
   rescue StandardError => e
     Rails.logger.error "#{LOG_PREFIX} record=#{record.id} failed: #{e.class}: #{e.message}"
-    Sentry.capture_exception(e, extra: { airtable_record_id: record.id })
+    Rails.error.report(e, context: { airtable_record_id: record.id })
     :failed
   end
 

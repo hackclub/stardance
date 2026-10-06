@@ -59,10 +59,9 @@ module Sessions
       end
 
       def invalid_provider_result
-        Sentry.capture_message(
+        OperationalAlert.report(
           "Authentication failed: invalid provider or user already signed in",
-          level: :warning,
-          extra: { provider: auth.provider, user_signed_in: current_user.present? }
+          context: { provider: auth.provider, user_signed_in: current_user.present? }
         )
         fail_result(:invalid_provider, "Authentication failed or user already signed in")
       end
@@ -70,7 +69,7 @@ module Sessions
       def access_token = auth.credentials&.token.to_s
 
       def missing_identity_result
-        Sentry.capture_message("Authentication failed: unable to fetch identity data", level: :warning)
+        OperationalAlert.report("Authentication failed: unable to fetch identity data")
         fail_result(:missing_identity, "Authentication failed")
       end
 
@@ -129,10 +128,10 @@ module Sessions
         existing_identity = user.identities.find_by(provider: "hack_club")
         return identity unless existing_identity
 
-        Sentry.capture_message(
+        OperationalAlert.report(
           "User UID changed on HCA side",
-          level: :info,
-          extra: { user_id: user.id, old_uid: existing_identity.uid, new_uid: uid, slack_id: slack_id }
+          severity: :info,
+          context: { user_id: user.id, old_uid: existing_identity.uid, new_uid: uid, slack_id: slack_id }
         )
         existing_identity.uid = uid
         existing_identity
@@ -181,7 +180,7 @@ module Sessions
         user.save!
         nil
       rescue ActiveRecord::RecordInvalid => e
-        Sentry.capture_exception(e, extra: {
+        Rails.error.report(e, context: {
           user_id: user.id, user_errors: user.errors.full_messages,
           slack_id: fields[:slack_id], uid: fields[:uid], is_new_user: is_new_user
         })
@@ -193,7 +192,7 @@ module Sessions
         identity.save!
         nil
       rescue ActiveRecord::RecordInvalid => e
-        Sentry.capture_exception(e, extra: {
+        Rails.error.report(e, context: {
           identity_id: identity.id, identity_errors: identity.errors.full_messages,
           user_id: user.id, provider: identity.provider, uid: identity.uid,
           existing_identity_for_user: user.identities.find_by(provider: "hack_club")
