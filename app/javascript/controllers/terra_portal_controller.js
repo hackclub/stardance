@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 import ShaderRing from "../terra_portal/shader_ring";
 import SmokeRing from "../terra_portal/smoke_ring";
 
-// Matches the 70% solid stop in .terra-portal__view's mask.
+// Matches the 70% solid stop in .terra-portal__aperture's mask.
 const CLEAR = 0.7;
 const COMPOSITE_SIZE = 2048;
 const MAX_DPR = 2;
@@ -13,7 +13,7 @@ const STILL_TIME_S = 12;
 const COLORS = ["deep", "mid", "hi", "glint"];
 
 export default class extends Controller {
-  static targets = ["stage", "view", "canvas"];
+  static targets = ["stage", "aperture", "view", "canvas"];
   static values = { image: String };
 
   connect() {
@@ -25,6 +25,10 @@ export default class extends Controller {
     this.targetSpeed = 1;
     this.ring = this.buildRing();
     this.ring.setColors(this.readColors());
+    this.magnify = parseFloat(
+      getComputedStyle(this.element).getPropertyValue("--terra-portal-magnify"),
+    );
+    this.ring.setMagnify(this.magnify);
 
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(this.stageTarget);
@@ -222,7 +226,7 @@ export default class extends Controller {
     window.scrollTo({ top: 0, behavior: "instant" });
     root.style.transformOrigin = "0 0";
 
-    const view = this.viewTarget.getBoundingClientRect();
+    const view = this.apertureTarget.getBoundingClientRect();
     const width = root.clientWidth;
     const height = root.clientHeight;
     return {
@@ -235,13 +239,17 @@ export default class extends Controller {
   }
 
   // Scale exponentially about the portal so its clear circle ends up covering the viewport,
-  // sliding the portal to the viewport's centre on the way.
+  // sliding the portal to the viewport's centre on the way. The magnification eases out
+  // alongside so the screenshot arrives at true size.
   applyZoom(zoom, progress) {
     const s = Math.exp(Math.log(zoom.scale) * progress);
     const k = (s - 1) / (zoom.scale - 1);
     const tx = zoom.x * (1 - s) + (zoom.cx - zoom.x) * k;
     const ty = zoom.y * (1 - s) + (zoom.cy - zoom.y) * k;
     document.documentElement.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+    const magnify = this.magnify ** (1 - progress);
+    this.element.style.setProperty("--terra-portal-magnify", magnify);
+    this.ring.setMagnify(magnify);
   }
 
   // Swap the scaled-up portal for the full-resolution screenshot while the next page loads.
@@ -271,6 +279,8 @@ export default class extends Controller {
     document.body.style.removeProperty("top");
     window.scrollTo({ top: this.scrollY, behavior: "instant" });
     this.element.style.removeProperty("--terra-portal-fx");
+    this.element.style.removeProperty("--terra-portal-magnify");
+    this.ring.setMagnify(this.magnify);
     this.targetSpeed = 1;
     this.ring.closeHole();
     this.warping = false;

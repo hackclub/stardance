@@ -7,7 +7,7 @@ void main() { v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos, 0.0, 1.0); }
 const FRAGMENT_SHADER = `
 precision highp float;
 varying vec2 v_uv;
-uniform float u_time, u_surge, u_lens, u_hole;
+uniform float u_time, u_surge, u_lens, u_hole, u_magnify;
 uniform sampler2D u_tex;
 uniform vec3 u_deep, u_mid, u_hi, u_glint;
 const float TAU = 6.2831853;
@@ -82,7 +82,7 @@ void main() {
   float hole = (1.0 - smoothstep(ringR - 0.18, ringR, rr)) * u_hole;
   float sa = a + 1.2 * pow(clamp(r / 0.6, 0.0, 1.0), 3.0) * (1.0 + u_surge * 2.0) * u_lens;
   vec2 q = vec2(cos(sa), sin(sa)) * r * (1.0 - 0.18 * pow(r / 0.6, 2.0) * u_lens);
-  vec3 img = texture2D(u_tex, q / 1.2 + 0.5).rgb;
+  vec3 img = texture2D(u_tex, q / (1.2 * u_magnify) + 0.5).rgb;
   img = mix(img, u_deep * 0.4, smoothstep(0.3, 0.6, r) * 0.5 * u_lens);
 
   gl_FragColor = vec4(img * hole * (1.0 - alpha) + col * alpha, hole + alpha * (1.0 - hole));
@@ -94,6 +94,7 @@ const UNIFORMS = [
   "u_surge",
   "u_lens",
   "u_hole",
+  "u_magnify",
   "u_deep",
   "u_mid",
   "u_hi",
@@ -150,6 +151,10 @@ export default class ShaderRing {
   setDestination(image) {
     const { gl } = this;
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+  }
+
+  setMagnify(magnify) {
+    this.gl.uniform1f(this.uniforms.u_magnify, magnify);
   }
 
   openHole() {

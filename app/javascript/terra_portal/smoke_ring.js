@@ -50,6 +50,7 @@ export default class SmokeRing {
 
   // The hole is the flat image underneath, so there is nothing to hand over.
   setDestination() {}
+  setMagnify() {}
   openHole() {}
   closeHole() {}
 

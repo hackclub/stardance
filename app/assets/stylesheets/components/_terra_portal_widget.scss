@@ -42,6 +42,8 @@
     var(--color-brand-off-white)
   );
   --terra-portal-glint: var(--color-brand-cream);
+  // Enlarges the middle of Terra's page at rest; the zoom eases it back to 1 so the warp lands at true size.
+  --terra-portal-magnify: 2.5;
 
   &__stage {
     position: relative;
@@ -57,15 +59,23 @@
   }
 
   // The 70% solid stop is the clear circle the zoom scales up to fill the screen (CLEAR in the controller).
-  &__view {
+  &__aperture {
     position: absolute;
     top: 20%;
     left: 20%;
     width: 60%;
     height: 60%;
+    overflow: hidden;
     border-radius: 50%;
-    object-fit: cover;
     mask: radial-gradient(closest-side, #000 70%, transparent 100%);
+  }
+
+  &__view {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(var(--terra-portal-magnify));
   }
 
   &__canvas {
