@@ -1,0 +1,3 @@
+<%= turbo_frame_tag "discover_rail_streak" do %>
+  <%= render DiscoverRail::StreakWidget.new(user: current_user) if current_user.present? %>
+<% end %>
