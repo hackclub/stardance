@@ -13,8 +13,8 @@ Sentry.init do |config|
   # Patch Ruby logger to forward logs
   config.enabled_patches = [ :logger ]
 
-  # Capture 50% of transactions and their spans for tracing to not blow up our plan
-  config.traces_sample_rate = 0.5
+  # Capture 25% of transactions and their spans for tracing to not blow up our plan
+  config.traces_sample_rate = 0.25
   # Set profiles_sample_rate to profile 100%
   # of sampled transactions.
   # We recommend adjusting this value in production.
