@@ -6,7 +6,7 @@ class Admin::Certification::FundingRequestsController < Admin::Certification::Ap
   before_action :set_body_class, except: :sync_all_to_airtable
 
   def sync_all_to_airtable
-    authorize :admin, :index?
+    authorize :admin, :sync_funding_requests_to_airtable?
 
     approved_ids = ::Certification::FundingRequest.where(status: "approved").pluck(:id)
     approved_ids.each { |id| Certification::FundingRequestAirtableSyncJob.perform_later(id) }
