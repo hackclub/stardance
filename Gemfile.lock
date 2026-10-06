@@ -123,7 +123,7 @@ GEM
       cgi (~> 0.1)
       connection_pool (>= 2, < 4)
       standardwebhooks (~> 1.0)
-    appsignal (4.10.0)
+    appsignal (4.10.1)
       logger
       rack (>= 2.0.0)
     argon2-kdf (1.0.0)
@@ -523,7 +523,7 @@ GEM
       railties (>= 4.2)
     raabro (1.5.0)
     racc (1.8.1)
-    rack (3.2.6)
+    rack (3.2.7)
     rack-attack (6.8.0)
       rack (>= 1.0, < 4)
     rack-mini-profiler (4.0.1)
