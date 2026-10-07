@@ -98,6 +98,9 @@ class UsersController < ApplicationController
                 .where("projects.id IS NOT NULL OR posts.postable_type = ?", "Post::Repost")
                 .visible_to(current_user)
                 .where(user_id: @user.id)
+                # Super Star posts are authored by the admin who granted them;
+                # they belong on the project, not in that admin's own activity.
+                .where.not(postable_type: "Post::FireEvent")
                 .preload(:postable)
                 .order(created_at: :desc)
 
