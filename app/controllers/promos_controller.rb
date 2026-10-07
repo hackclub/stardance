@@ -7,6 +7,11 @@ class PromosController < ApplicationController
     redirect_to DiscoverRail::CrescentPromoWidget::URL, allow_other_host: true, status: :see_other
   end
 
+  def forge
+    track_event DiscoverRail::ForgePromoWidget::CLICK_EVENT
+    redirect_to DiscoverRail::ForgePromoWidget::URL, allow_other_host: true, status: :see_other
+  end
+
   def wrong_tool
     track_event Feed::WrongToolPromoComponent::CLICK_EVENT
     redirect_to Feed::WrongToolPromoComponent::URL, allow_other_host: true, status: :see_other

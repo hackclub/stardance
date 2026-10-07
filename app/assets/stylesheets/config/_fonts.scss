@@ -56,3 +56,12 @@
   font-display: swap;
   src: url("NationalPark-latin.woff2") format("woff2");
 }
+
+// Forge's display face, for its promo card.
+@font-face {
+  font-family: "IM Fell English";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("IMFellEnglish-latin.woff2") format("woff2");
+}

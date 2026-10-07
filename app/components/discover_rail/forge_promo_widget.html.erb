@@ -1,0 +1,16 @@
+<section class="forge-promo" aria-label="Forge, a Hack Club YSWS" data-controller="forge-promo">
+  <link rel="preconnect" href="https://forge.hackclub.com">
+  <div class="forge-promo__frame">
+    <%= link_to helpers.forge_promo_path,
+          class: "forge-promo__card",
+          aria: { label: "Enter the Forge: get funding for your hardware projects" },
+          data: { forge_promo_target: "card", action: "click->forge-promo#ignite pointerenter->forge-promo#stoke pointerleave->forge-promo#settle" } do %>
+      <%= image_tag "forge/forge-door.webp", alt: "", class: "forge-promo__art" %>
+      <span class="forge-promo__caption">
+        <span class="forge-promo__title">Forge</span>
+        <span class="forge-promo__tagline">Get funding for your hardware projects.</span>
+      </span>
+    <% end %>
+  </div>
+  <canvas class="forge-promo__embers" data-forge-promo-target="embers" aria-hidden="true"></canvas>
+</section>

@@ -235,6 +235,9 @@ application.register("file-upload", FileUploadController);
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
 
+import ForgePromoController from "./forge_promo_controller";
+application.register("forge-promo", ForgePromoController);
+
 import FraudPayoutCelebrationController from "./fraud_payout_celebration_controller";
 application.register(
   "fraud-payout-celebration",
