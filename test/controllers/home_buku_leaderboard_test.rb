@@ -33,6 +33,9 @@ class HomeBukuLeaderboardTest < ActionDispatch::IntegrationTest
       assert_select ".buku-leaderboard__note", count: 0
       assert_select ".buku-leaderboard", text: /top 25 per team|to appear here|ranked by exact minutes/, count: 0
       assert_select ".buku-leaderboard__teaser", count: 0
+      # Names sit inside the status turbo frame, so they must break out of it.
+      assert_select "a.buku-leaderboard__name", count: 10
+      assert_select "a.buku-leaderboard__name:not([data-turbo-frame='_top'])", count: 0
     end
   end
 
