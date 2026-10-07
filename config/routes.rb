@@ -471,6 +471,14 @@ Rails.application.routes.draw do
         resources :devlogs, only: [ :index ]
       end
       resources :devlogs, only: [ :index, :show ]
+
+      # Admin-only endpoints for automating stardust payouts.
+      resources :users, only: [] do
+        collection do
+          get :lookup
+        end
+        resources :balance_adjustments, only: [ :create ]
+      end
     end
     namespace :slack do
       post "events", to: "events#create"
