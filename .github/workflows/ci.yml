@@ -40,6 +40,8 @@ jobs:
             command: yarn prettier --check "app/assets/stylesheets/**/*.{scss,css}"
 
           - name: Zeitwerk
+            # Eager loading pulls in ruby-vips, which needs the runtime library only.
+            system_packages: "libvips42t64"
             rails_env: test
             command: bin/rails zeitwerk:check
 
@@ -99,6 +101,12 @@ jobs:
       DATABASE_URL: postgresql://postgres:password@localhost:5432/stardance_test
     steps:
       - uses: actions/checkout@v7
+
+      - name: Install system dependencies
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: bash .github/scripts/apt-install.sh libvips42t64
 
       - uses: ruby/setup-ruby@v1.321.0
         with:
