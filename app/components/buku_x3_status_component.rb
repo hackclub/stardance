@@ -3,6 +3,9 @@
 # Public team progress with an optional private role reminder. Call sites pass
 # the viewer, never a profile/project owner; do not cache across users.
 class BukuX3StatusComponent < ViewComponent::Base
+  # Short line shown under the rope, e.g. the leaderboard prize.
+  renders_one :tug_note
+
   def initialize(user:, compact: false, preview: false, preview_role: "buku")
     @user = user
     @compact = compact

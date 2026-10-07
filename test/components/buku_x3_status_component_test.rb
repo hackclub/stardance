@@ -65,8 +65,8 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
         render_inline BukuX3StatusComponent.new(user: @user)
       end
     end
-    assert_selector ".buku-x3-status__team--buku .buku-x3-status__hours", exact_text: "1,234.5 h shipped"
-    assert_selector ".buku-x3-status__team--bean .buku-x3-status__hours", exact_text: "67 h shipped"
+    assert_selector ".buku-x3-status__team--buku .buku-x3-status__hours", exact_text: "1,234.5 hrs shipped"
+    assert_selector ".buku-x3-status__team--bean .buku-x3-status__hours", exact_text: "67 hrs shipped"
   end
 
   test "role is never computed before intro and reveal completion" do
@@ -106,7 +106,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     end
     assert_public_progress_only
     assert_selector "[role='meter'][aria-valuenow='25']"
-    assert_selector ".buku-x3-status__hours", text: "0 h shipped", count: 2
+    assert_selector ".buku-x3-status__hours", text: "0 hrs shipped", count: 2
   end
 
   test "compact private reminder stays hidden for guests and incomplete accounts" do

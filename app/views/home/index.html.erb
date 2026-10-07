@@ -8,8 +8,12 @@
   <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
     <%= turbo_frame_tag "buku_x3_home_status", class: ("buku-x3-home-preview" if Rails.env.development?), data: { controller: "buku-x3-status", action: "buku-x3-reveal:complete@window->buku-x3-status#refresh" } do %>
       <% preview_role = params[:buku_preview].presence_in(%w[buku bean]) if Rails.env.development? %>
-      <%= render BukuX3StatusComponent.new(user: current_user, preview: preview_role.present?, preview_role: preview_role) %>
-      <%= render "buku_leaderboard", teams: @buku_teams if @buku_teams %>
+      <%= render BukuX3StatusComponent.new(user: current_user, preview: preview_role.present?, preview_role: preview_role) do |status| %>
+        <% if @buku_teams %>
+          <% status.with_tug_note do %>top five on each team get a <em>limited-edition</em> buku / bean t-shirt<% end %>
+          <%= render "buku_leaderboard", teams: @buku_teams, own: @buku_own %>
+        <% end %>
+      <% end %>
     <% end %>
     <% if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>
       <%= render ActionButtonComponent.new(

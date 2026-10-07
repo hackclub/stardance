@@ -49,12 +49,17 @@
   }
 
   &__toggle {
+    // Hit area over the rope only (matching &__rope's geometry, with a little
+    // vertical slack). Stays visible while &__damage hides so hover holds.
     position: absolute;
-    inset: 0;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.405 - var(--space-xs));
+    height: calc(var(--character-width) * 0.214 + 2 * var(--space-xs));
     z-index: 2;
-    width: 100%;
+    visibility: visible;
     border: 0;
-    border-radius: inherit;
+    border-radius: 8px;
     padding: 0;
     background: transparent;
     cursor: pointer;
@@ -78,7 +83,7 @@
   }
 
   @media (hover: hover) {
-    &--interactive:hover {
+    &--interactive:has(.buku-x3-status__toggle:hover) {
       .buku-x3-status__identity {
         visibility: visible;
         opacity: 1;
@@ -149,6 +154,20 @@
     z-index: 1;
     text-align: center;
     transform: translateY(-100%);
+  }
+
+  &__note {
+    // Centered under the rope, between the two characters.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.619 + var(--space-s));
+    z-index: 1;
+    margin: 0;
+    text-align: center;
+    font-size: var(--font-size-xs);
+    text-wrap: balance;
+    color: var(--color-brand-cream);
   }
 
   &__tug {

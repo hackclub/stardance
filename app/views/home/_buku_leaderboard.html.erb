@@ -1,9 +1,8 @@
 <section class="buku-leaderboard" aria-label="bukus vs beans ship leaderboard">
-  <p class="buku-leaderboard__prize">top five on each team get a <strong>limited-edition buku / bean t-shirt</strong></p>
   <div class="buku-leaderboard__teams">
     <% teams.each do |team, entries| %>
       <section class="buku-leaderboard__team buku-leaderboard__team--<%= team %>" aria-label="<%= team == :buku ? 'bukus' : 'beans' %> top three">
-        <h3 class="buku-leaderboard__heading"><%= team == :buku ? "bukus" : "beans" %><span>h shipped</span></h3>
+        <h3 class="buku-leaderboard__heading"><%= team == :buku ? "bukus" : "beans" %><span>shipped hrs</span></h3>
         <ol class="buku-leaderboard__list">
           <% entries.first(3).each_with_index do |entry, index| %>
             <%= render "buku_leaderboard_row", entry: entry, rank: index + 1, team: team %>
@@ -16,22 +15,27 @@
 
   <details class="buku-leaderboard__details">
     <summary class="buku-leaderboard__toggle">
-      <span class="buku-leaderboard__teaser" aria-hidden="true">
-        <% teams.each_value do |entries| %>
-          <span><% if (entry = entries[3]) %>4 &nbsp; <%= entry.user.display_name %> &nbsp; <%= number_with_precision(entry.minutes / 60.0, precision: 1) %> h<% else %>✦ &nbsp; keep shipping &nbsp; ✦<% end %></span>
-        <% end %>
-      </span>
       <span class="buku-leaderboard__expand">show leaderboard ↓</span>
       <span class="buku-leaderboard__collapse">show less ↑</span>
     </summary>
     <div class="buku-leaderboard__teams buku-leaderboard__teams--rest">
       <% teams.each do |team, entries| %>
         <ol class="buku-leaderboard__list" start="4" aria-label="<%= team == :buku ? 'bukus' : 'beans' %> remaining ranks">
-          <% entries.drop(3).each_with_index do |entry, index| %>
+          <% entries.first(BukuX3::Leaderboard::PRIZE_PLACES).drop(3).each_with_index do |entry, index| %>
             <%= render "buku_leaderboard_row", entry: entry, rank: index + 4, team: team %>
           <% end %>
         </ol>
       <% end %>
     </div>
+    <%# Ranks 1–5 are already listed above, so only show the viewer's row below them. %>
+    <% if own && !(own.rank && own.rank <= BukuX3::Leaderboard::PRIZE_PLACES) %>
+      <div class="buku-leaderboard__teams buku-leaderboard__teams--own">
+        <% teams.each_key do |team| %>
+          <ol class="buku-leaderboard__list" aria-label="your rank">
+            <%= render "buku_leaderboard_row", entry: own.entry, rank: own.rank, team: team if team == own.team %>
+          </ol>
+        <% end %>
+      </div>
+    <% end %>
   </details>
 </section>

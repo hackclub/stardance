@@ -3,11 +3,6 @@
          data-controller="buku-x3-status"
          data-buku-x3-status-live-hours-value="<%= (compact? ? {} : team_hours).to_json %>"
          data-action="blackhole:progress@window->buku-x3-status#update">
-  <% if role_visible? && !compact? %>
-    <button type="button" class="buku-x3-status__toggle" aria-label="show your event role" aria-pressed="false"
-            data-buku-x3-status-target="toggle"
-            data-action="click->buku-x3-status#toggleRole keydown.esc->buku-x3-status#dismissRole"></button>
-  <% end %>
   <% if role_visible? %>
     <div class="buku-x3-status__identity">
       <%= image_tag icon, class: "buku-x3-status__icon", alt: "", width: 120, height: 132 %>
@@ -26,7 +21,7 @@
             <%= image_tag "events/bukux3/buku-pulling.png", class: "buku-x3-status__character", alt: "", width: 2752, height: 2064 %>
           </div>
           <span>bukus</span>
-          <small class="buku-x3-status__hours"><span data-buku-x3-status-target="bukuHours"><%= display_hours(:buku) %></span> h shipped</small>
+          <small class="buku-x3-status__hours"><span data-buku-x3-status-target="bukuHours"><%= display_hours(:buku) %></span> hrs shipped</small>
         </div>
         <div class="buku-x3-status__rope" role="meter" aria-label="black hole damage"
              aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= percent %>"
@@ -40,9 +35,19 @@
             <%= image_tag "events/bukux3/bean-pulling.png", class: "buku-x3-status__character", alt: "", width: 2752, height: 2064 %>
           </div>
           <span>beans</span>
-          <small class="buku-x3-status__hours"><span data-buku-x3-status-target="beanHours"><%= display_hours(:bean) %></span> h shipped</small>
+          <small class="buku-x3-status__hours"><span data-buku-x3-status-target="beanHours"><%= display_hours(:bean) %></span> hrs shipped</small>
         </div>
+        <% if tug_note? %>
+          <p class="buku-x3-status__note"><%= tug_note %></p>
+        <% end %>
+        <% if role_visible? %>
+          <%# Covers only the rope, so the rest of the box stays free for the leaderboard. %>
+          <button type="button" class="buku-x3-status__toggle" aria-label="show your event role" aria-pressed="false"
+                  data-buku-x3-status-target="toggle"
+                  data-action="click->buku-x3-status#toggleRole keydown.esc->buku-x3-status#dismissRole"></button>
+        <% end %>
       </div>
     </div>
+    <%= content %>
   <% end %>
 </section>

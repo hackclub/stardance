@@ -73,6 +73,23 @@ class BukuX3LeaderboardTest < ActiveSupport::TestCase
     assert_equal [ [ @two.id, 1 ] ], rows(:bean)
   end
 
+  test "own standing uses the ranked entry or unranked team minutes, and hides before the reveal" do
+    team = BukuX3::Assignment.buku?(@one) ? :buku : :bean
+    board = BukuX3::Leaderboard.new(@event)
+    contribute(@one, team == :buku, 90)
+
+    own = board.own(@one, board.teams)
+    assert_equal [ team, 1, 90 ], [ own.team, own.rank, own.entry.minutes ]
+
+    @one.preference.update!(leaderboard_optin: false)
+    own = board.own(@one, board.teams)
+    assert_equal [ team, nil, 90 ], [ own.team, own.rank, own.entry.minutes ]
+
+    @one.update!(things_dismissed: [])
+    assert_nil board.own(@one, board.teams)
+    assert_nil board.own(nil, board.teams)
+  end
+
   private
 
   def rows(team)

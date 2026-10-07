@@ -1,14 +1,13 @@
 @use "../config/mixins" as *;
 
 .buku-leaderboard {
-  margin: calc(-1 * var(--space-s)) 0 var(--space-l);
+  margin-top: calc(-1 * var(--space-s));
   color: var(--color-brand-off-white);
   font-size: var(--font-size-s);
 
-  &__prize {
-    margin: 0 0 var(--space-s);
-    text-align: center;
-    color: var(--color-brand-cream);
+  // The mascot labels above already name each team.
+  &__team &__heading {
+    @include visually-hidden;
   }
   &__teams {
     display: grid;
@@ -54,9 +53,13 @@
     padding: var(--space-xxxs) var(--space-xs);
     border-radius: 8px;
   }
+  // Only the winner keeps the full-size box.
+  &__row:not(&__row--first) {
+    min-height: var(--space-l);
+    padding-block: 0;
+    font-size: var(--font-size-s);
+  }
   &__row--buku {
-    --prize-start-position: 50%;
-    --prize-end-position: 100%;
     --prize-start: var(--color-brand-lilac);
     --prize-end: var(--color-set-1-bg);
     --prize-ink: var(--color-set-1-bg);
@@ -64,20 +67,20 @@
     --winner-color: var(--color-brand-lilac);
   }
   &__row--bean {
-    --prize-start-position: 0%;
-    --prize-end-position: 50%;
-    --prize-start: var(--color-set-1-bg);
-    --prize-end: var(--color-brand-yellow);
-    --prize-ink: var(--color-brand-off-white);
-    --prize-hours-ink: var(--color-set-1-bg);
+    --prize-start: var(--color-brand-yellow);
+    --prize-end: var(--color-set-1-bg);
+    --prize-ink: var(--color-set-1-bg);
+    --prize-hours-ink: var(--color-brand-off-white);
     --winner-color: var(--color-brand-yellow);
   }
   &__row--prize {
-    // Mirror the colored plateau and fade across the two teams.
+    // Both teams: a lighter tint of the winner color on the left, fully faded
+    // out just before the hours.
     background: linear-gradient(
       to right,
-      var(--prize-start) var(--prize-start-position),
-      var(--prize-end) var(--prize-end-position)
+      color-mix(in srgb, var(--prize-start) 60%, var(--color-brand-off-white))
+        35%,
+      var(--prize-end) calc(100% - 4.5rem)
     );
     color: var(--prize-ink);
     .buku-leaderboard__hours {
@@ -127,6 +130,26 @@
   }
   &__details {
     margin-top: var(--space-xxxs);
+    // Glide the extra ranks open and closed where ::details-content is supported.
+    interpolate-size: allow-keywords;
+    &::details-content {
+      block-size: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition:
+        block-size 0.35s ease,
+        opacity 0.35s ease,
+        content-visibility 0.35s allow-discrete;
+    }
+    &[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &::details-content {
+        transition: none;
+      }
+    }
   }
   &__toggle {
     position: relative;
@@ -149,31 +172,9 @@
       border-radius: 8px;
     }
   }
-  &__teaser {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-m);
-    width: 100%;
-    height: var(--space-l);
-    overflow: hidden;
-    pointer-events: none;
-    user-select: none;
-    filter: blur(3px);
-    mask-image: linear-gradient(
-      to bottom,
-      var(--color-brand-off-white),
-      transparent
-    );
-    span {
-      overflow: hidden;
-      white-space: nowrap;
-      text-align: center;
-    }
-  }
   &__collapse {
     display: none;
   }
-  &__details[open] &__teaser,
   &__details[open] &__expand {
     display: none;
   }
@@ -183,10 +184,12 @@
   &__teams--rest {
     margin-top: var(--space-xs);
   }
+  &__teams--own {
+    margin-top: var(--space-xxxs);
+  }
 
   @media (max-width: 480px) {
-    &__teams,
-    &__teaser {
+    &__teams {
       gap: var(--space-xs);
     }
     &__row {

@@ -3,6 +3,7 @@ module BukuX3
     LIMIT = 25
     PRIZE_PLACES = 5
     Entry = Data.define(:user, :minutes)
+    Own = Data.define(:team, :entry, :rank)
 
     def initialize(event)
       @event = event
@@ -26,6 +27,19 @@ module BukuX3
       totals.transform_values do |rows|
         rows.filter_map { |id, minutes| Entry.new(user: users[id], minutes: minutes) if users[id] }
       end
+    end
+
+    # The viewer's own standing, even when unranked (opted out or past LIMIT).
+    # Skipped before the reveal so the page never spoils their team.
+    def own(user, teams)
+      return unless user && @event&.active? && user.has_dismissed?(BukuX3RevealComponent::DISMISS_THING)
+
+      team = Assignment.buku?(user) ? :buku : :bean
+      index = teams[team].index { |entry| entry.user.id == user.id }
+      return Own.new(team:, entry: teams[team][index], rank: index + 1) if index
+
+      minutes = @event.contributions.where(user: user, buku: team == :buku).sum(:minutes)
+      Own.new(team:, entry: Entry.new(user: user, minutes: minutes), rank: nil)
     end
   end
 end
