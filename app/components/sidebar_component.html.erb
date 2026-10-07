@@ -140,22 +140,31 @@
         <small class="settings-form__hint">Blur sensitive info like addresses and API keys</small>
       </div>
 
-      <div class="settings-form__field">
+      <%# Effect toggles name the action: "Hide …" / "Turn off …" while on, "Show …" / "Turn on …" while off. %>
+      <div class="settings-form__field settings-form__field--toggle">
         <label class="settings-form__checkbox">
           <%= hidden_field_tag :disintegration_effects_enabled, "0", id: nil %>
           <%= check_box_tag :disintegration_effects_enabled, "1", preference.disintegration_effects_enabled?, id: "disintegration_effects_enabled" %>
-          <span>Show disintegration effects</span>
+          <span class="settings-form__when-on">Hide disintegration effects</span>
+          <span class="settings-form__when-off">Show disintegration effects</span>
         </label>
-        <small class="settings-form__hint">Turn off all fragmenting and dissolving, including particles</small>
+        <small class="settings-form__hint">
+          <span class="settings-form__when-on">Turn off all fragmenting and dissolving, including particles</span>
+          <span class="settings-form__when-off">Turn on all fragmenting and dissolving, including particles</span>
+        </small>
       </div>
 
-      <div class="settings-form__field">
+      <div class="settings-form__field settings-form__field--toggle">
         <label class="settings-form__checkbox">
           <%= hidden_field_tag :particle_effects_enabled, "0", id: nil %>
           <%= check_box_tag :particle_effects_enabled, "1", preference.particle_effects_enabled?, id: "particle_effects_enabled" %>
-          <span>Show disintegration particles</span>
+          <span class="settings-form__when-on">Hide disintegration particles</span>
+          <span class="settings-form__when-off">Show disintegration particles</span>
         </label>
-        <small class="settings-form__hint">Turn off drifting particles</small>
+        <small class="settings-form__hint">
+          <span class="settings-form__when-on">Turn off drifting particles</span>
+          <span class="settings-form__when-off">Turn on drifting particles</span>
+        </small>
       </div>
 
       <% if user.slack_id.present? %>

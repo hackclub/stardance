@@ -71,6 +71,22 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "effect toggles carry both on and off wording for the live swap" do
+    get home_path
+    assert_response :success
+    {
+      "disintegration_effects_enabled" => [ "Hide disintegration effects", "Show disintegration effects", /\ATurn off all fragmenting/, /\ATurn on all fragmenting/ ],
+      "particle_effects_enabled" => [ "Hide disintegration particles", "Show disintegration particles", "Turn off drifting particles", "Turn on drifting particles" ]
+    }.each do |id, (on_title, off_title, on_hint, off_hint)|
+      assert_select ".settings-form__field--toggle:has(input##{id})" do
+        assert_select ".settings-form__checkbox .settings-form__when-on", text: on_title
+        assert_select ".settings-form__checkbox .settings-form__when-off", text: off_title
+        assert_select ".settings-form__hint .settings-form__when-on", text: on_hint
+        assert_select ".settings-form__hint .settings-form__when-off", text: off_hint
+      end
+    end
+  end
+
   test "first load contains only the explanation, never a prefetched role" do
     BukuX3::Assignment.stub(:buku?, ->(_) { flunk "role must wait until after intro" }) do
       get home_path

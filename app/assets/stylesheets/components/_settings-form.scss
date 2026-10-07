@@ -116,6 +116,13 @@
     }
   }
 
+  // Toggles whose title and hint describe the click's action: swap the text
+  // live as the checkbox changes, before the form is saved.
+  &__field--toggle:has(input[type="checkbox"]:checked) &__when-off,
+  &__field--toggle:not(:has(input[type="checkbox"]:checked)) &__when-on {
+    display: none;
+  }
+
   &__hint-link--primary {
     color: var(--color-brand-highlight);
     font-weight: 700;
