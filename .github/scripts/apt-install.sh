@@ -27,7 +27,7 @@ apt_opts=(
 
 install_packages() {
   sudo timeout -k 5 60 apt-get "${apt_opts[@]}" update -y &&
-    sudo timeout -k 5 90 apt-get "${apt_opts[@]}" install -y --no-install-recommends "$@"
+    sudo timeout -k 5 180 apt-get "${apt_opts[@]}" install -y --no-install-recommends "$@"
 }
 
 for attempt in 1 2 3; do

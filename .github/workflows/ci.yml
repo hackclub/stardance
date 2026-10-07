@@ -21,15 +21,12 @@ jobs:
       matrix:
         include:
           - name: Brakeman
-            system_packages: "libblas-dev liblapack-dev"
             command: bin/brakeman --no-pager
 
           - name: RuboCop
-            system_packages: "libblas-dev liblapack-dev"
             command: bin/rubocop -f github
 
           - name: ERB Lint
-            system_packages: "libblas-dev liblapack-dev"
             command: bundle exec erb_lint --lint-all
 
           - name: Prettier JS/TS
@@ -43,7 +40,6 @@ jobs:
             command: yarn prettier --check "app/assets/stylesheets/**/*.{scss,css}"
 
           - name: Zeitwerk
-            system_packages: "libvips-dev libblas-dev liblapack-dev"
             rails_env: test
             command: bin/rails zeitwerk:check
 
@@ -103,12 +99,6 @@ jobs:
       DATABASE_URL: postgresql://postgres:password@localhost:5432/stardance_test
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install system dependencies
-        timeout-minutes: 10
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: bash .github/scripts/apt-install.sh libvips-dev libblas-dev liblapack-dev
 
       - uses: ruby/setup-ruby@v1.321.0
         with:
