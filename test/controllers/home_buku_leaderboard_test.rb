@@ -36,6 +36,8 @@ class HomeBukuLeaderboardTest < ActionDispatch::IntegrationTest
       # Names sit inside the status turbo frame, so they must break out of it.
       assert_select "a.buku-leaderboard__name", count: 10
       assert_select "a.buku-leaderboard__name:not([data-turbo-frame='_top'])", count: 0
+      # Long names fade and scroll on hover via the name controller.
+      assert_select "a.buku-leaderboard__name[data-controller='buku-leaderboard-name']", count: 10
     end
   end
 

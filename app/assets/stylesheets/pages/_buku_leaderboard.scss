@@ -60,32 +60,20 @@
     font-size: var(--font-size-s);
   }
   &__row--buku {
-    --prize-start: var(--color-brand-lilac);
-    --prize-end: var(--color-set-1-bg);
-    --prize-ink: var(--color-set-1-bg);
-    --prize-hours-ink: var(--color-brand-off-white);
     --winner-color: var(--color-brand-lilac);
   }
   &__row--bean {
-    --prize-start: var(--color-brand-yellow);
-    --prize-end: var(--color-set-1-bg);
-    --prize-ink: var(--color-set-1-bg);
-    --prize-hours-ink: var(--color-brand-off-white);
     --winner-color: var(--color-brand-yellow);
   }
   &__row--prize {
-    // Both teams: a lighter tint of the winner color on the left, fully faded
-    // out just before the hours.
-    background: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--prize-start) 60%, var(--color-brand-off-white))
-        35%,
-      var(--prize-end) calc(100% - 4.5rem)
+    // Ranks 2–5: a solid, lighter tint of the winner color so dark text stays
+    // readable across the whole row.
+    background: color-mix(
+      in srgb,
+      var(--winner-color) 60%,
+      var(--color-brand-off-white)
     );
-    color: var(--prize-ink);
-    .buku-leaderboard__hours {
-      color: var(--prize-hours-ink);
-    }
+    color: var(--color-set-1-bg);
   }
   &__row--first {
     background: var(--winner-color);
@@ -102,12 +90,34 @@
     @include visually-hidden;
   }
   &__name {
+    // The buku-leaderboard-name controller toggles the fade classes from the
+    // scroll position, so a cut-off name fades into the row instead of
+    // clipping. Scrollable (without a scrollbar) so touch screens can swipe.
+    --fade-start: 0px;
+    --fade-end: 0px;
+
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-x: auto;
+    scrollbar-width: none;
     white-space: nowrap;
     color: inherit;
     text-decoration: none;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--fade-start),
+      #000 calc(100% - var(--fade-end)),
+      transparent
+    );
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  &__name--fade-start {
+    --fade-start: 1.5em;
+  }
+  &__name--fade-end {
+    --fade-end: 1.5em;
   }
   &__name:hover {
     text-decoration: underline;

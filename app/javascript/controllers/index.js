@@ -22,6 +22,9 @@ application.register("bio-editor", BioEditorController);
 import BukuActivityChartController from "./buku_activity_chart_controller";
 application.register("buku-activity-chart", BukuActivityChartController);
 
+import BukuLeaderboardNameController from "./buku_leaderboard_name_controller";
+application.register("buku-leaderboard-name", BukuLeaderboardNameController);
+
 import BulkSelectController from "./bulk_select_controller";
 application.register("bulk-select", BulkSelectController);
 
