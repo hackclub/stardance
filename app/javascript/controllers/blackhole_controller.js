@@ -47,6 +47,7 @@ export default class extends Controller {
     progressUrl: String,
     awaitingReveal: Boolean,
     particlesEnabled: { type: Boolean, default: true },
+    disintegrationEnabled: { type: Boolean, default: true },
     simulatorEnabled: Boolean,
   };
 
@@ -238,7 +239,9 @@ export default class extends Controller {
     // Scale the visuals without changing the score sent to the tug-of-war.
     const strength =
       (this.simulation?.strength ?? this.visualIntensityValue ?? 100) / 100;
-    this.requested = clamp(damage * strength);
+    // Opting out removes every visual, but the tug-of-war still gets progress.
+    this.requested =
+      this.disintegrationEnabledValue === false ? 0 : clamp(damage * strength);
     if (this.progressUrlValue || this.simulatorEnabledValue) {
       this.dispatch("progress", {
         detail: {

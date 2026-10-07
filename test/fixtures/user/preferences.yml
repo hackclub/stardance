@@ -5,6 +5,7 @@
 # Table name: user_preferences
 #
 #  id                                       :bigint           not null, primary key
+#  disintegration_effects_enabled           :boolean          default(TRUE), not null
 #  leaderboard_optin                        :boolean          default(FALSE), not null
 #  particle_effects_enabled                 :boolean          default(TRUE), not null
 #  search_engine_indexing_off               :boolean          default(FALSE), not null

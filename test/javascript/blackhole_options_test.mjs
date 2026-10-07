@@ -249,6 +249,30 @@ test("admin intensity scales visuals without changing the event score", () => {
   }
 });
 
+test("disintegration opt-out removes all damage but still reports the event score", () => {
+  const controller = {
+    disintegrationEnabledValue: false,
+    progressUrlValue: "/progress",
+    visualIntensityValue: 100,
+    scenesBlocked: () => false,
+    dispatch(name, { detail }) {
+      this.progress = detail;
+    },
+    reset() {
+      this.wasReset = true;
+    },
+    cutSurfaces() {
+      assert.fail("must not fragment surfaces after opting out");
+    },
+  };
+  BlackholeController.prototype.setIntensity.call(controller, 75, {
+    immediate: true,
+  });
+  assert.equal(controller.requested, 0);
+  assert.equal(controller.wasReset, true);
+  assert.equal(controller.progress.percent, 75);
+});
+
 test("cursor repair removes nearby holes, including at full destruction", () => {
   const cell = {
     cx: 50,

@@ -1,9 +1,12 @@
-<%# locals: (particles_enabled: true) %>
+<%# locals: (particles_enabled: true, disintegration_enabled: true) %>
 <details class="event-simulator">
   <summary class="event-simulator__toggle">event simulator · local only</summary>
   <form class="event-simulator__controls" data-blackhole-target="simulatorForm" data-action="input->blackhole#simulate submit->blackhole#simulate">
     <p class="event-simulator__hint">browser-only preview · no real hours or roles are changed</p>
     <p class="event-simulator__status" role="status" data-blackhole-target="simulatorStatus">live event values</p>
+    <% unless disintegration_enabled %>
+      <p class="event-simulator__hint">disintegration is disabled in your user settings</p>
+    <% end %>
     <label class="event-simulator__field">damage (%)
       <input type="range" name="damage" min="0" max="100" step="1" value="25" autocomplete="off">
     </label>
