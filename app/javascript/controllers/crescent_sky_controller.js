@@ -5,11 +5,6 @@ import { Controller } from "@hotwired/stimulus";
 // out into the edges, stars, and the arcs turning round the light. The rock,
 // the bake flags and the scroll parallax stay behind; the clouds drift on the
 // clock instead.
-//
-// It opens the way Crescent's ceremonies do: the first time the card is on
-// screen the sky swells up out of the void, the light climbing its painted
-// steps while the cloud parts outward, and then the arcs sweep in one after
-// another. The rest of the entrance is CSS, keyed off the revealed class.
 
 const PALETTE = [
   "void",
@@ -28,9 +23,6 @@ const QUALITY_WINDOW_MS = 2000;
 const DRIFT_PER_S = 0.008;
 const POINTER_EASE = 2.7;
 const STILL_TIME_S = 20;
-const REVEAL_THRESHOLD = 0.35;
-// Long past the end of the entrance: the sky as it settles.
-const REVEALED_S = 10;
 
 const VERTEX_SHADER = `#version 300 es
 in vec2 a;
@@ -44,7 +36,6 @@ uniform vec2  u_light;   // the light's centre, in canvas pixels
 uniform vec2  u_mouse;   // chased pointer, -1 to 1 across the card
 uniform float u_time;
 uniform float u_drift;   // card-heights the weather has moved
-uniform float u_reveal;  // seconds since the card was first seen
 uniform vec3  u_${PALETTE.join(", u_")};
 
 out vec4 fragColor;
@@ -71,29 +62,21 @@ float fbm(vec2 p) {
   return v;
 }
 
-float easeOut(float x) {
-  x = clamp(x, 0.0, 1.0);
-  return 1.0 - (1.0 - x) * (1.0 - x) * (1.0 - x);
-}
-
 // A shape edge about a pixel wide wherever it lands, not a gradient.
 float hard(float v, float edge) {
   float w = max(fwidth(v) * 0.70, 1e-5);
   return smoothstep(edge - w, edge + w, v);
 }
 
-// Three arcs turning about the light, each on its own clock, each sweeping
-// in from nothing once the sky is up.
+// Three arcs turning about the light, each on its own clock.
 vec3 arcs(vec3 col, vec2 q, float t) {
   float r = length(q);
   float ang = atan(q.y, q.x);
   for (int k = 0; k < 3; k++) {
     float fk = float(k);
-    float drawn = easeOut((u_reveal - 0.75 - fk * 0.2) / 0.7);
-    if (drawn <= 0.0) continue;
-    float arc = smoothstep(0.0028, 0.0, abs(r - (0.235 + fk * 0.082) * (0.92 + 0.08 * drawn)));
+    float arc = smoothstep(0.0028, 0.0, abs(r - (0.235 + fk * 0.082)));
     float a01 = fract((ang + t * (0.020 + fk * 0.012) + fk * 2.1) / 6.28318);
-    float span = (0.30 + 0.12 * fk) * drawn;
+    float span = 0.30 + 0.12 * fk;
     arc *= smoothstep(0.0, 0.06, a01) * smoothstep(span, span - 0.09, a01);
     col += u_spark * arc * 0.34;
   }
@@ -106,14 +89,12 @@ void main() {
   vec2 fp = (gl_FragCoord.xy - u_light) / R;
   float rf = length(fp);
   float t = u_time;
-  float sky = easeOut(u_reveal / 1.3);
 
-  // The light, as a field quantised into flat painted steps. Scaled before
-  // the quantise, so on the way up it climbs the steps rather than dimming.
+  // The light, as a field quantised into flat painted steps.
   float lum = exp(-rf * 3.80) * 0.95;
   lum += (0.5 + 0.5 * sin(6.28318 * (-fp.y / 2.0))) * 0.30;
   lum += (fbm(vec2(p.x * 1.9, (p.y - u_drift) * 2.4)) - 0.5) * 0.24;
-  lum = floor(clamp(lum * sky, 0.0, 1.0) * 6.0 + 0.5) / 6.0;
+  lum = floor(clamp(lum, 0.0, 1.0) * 6.0 + 0.5) / 6.0;
 
   vec3 col = u_void;
   col = mix(col, u_deep, step(0.20, lum));
@@ -141,16 +122,13 @@ void main() {
   float ax = smoothstep(0.28, 0.0, abs(bf.x)) * smoothstep(0.030, 0.0, abs(bf.y));
   float ay = smoothstep(0.28, 0.0, abs(bf.y)) * smoothstep(0.030, 0.0, abs(bf.x));
   starLight += step(0.915, bh) * (0.30 + 0.70 * bs * bs) * (smoothstep(0.05, 0.0, length(bf)) + 0.5 * (ax + ay)) * 0.8;
-  col += u_spark * starLight * sky;
+  col += u_spark * starLight;
 
   // Cloud, denser the further from the light, so it packs into the edges and
-  // leaves the hand clear whatever the noise does. Until the sky is up it
-  // covers everything, and it parts outward from the light as it comes: a
-  // ring of thick cloud whose ragged edge is the noise's own.
+  // leaves the hand clear whatever the noise does.
   vec2 cp = (vec2(p.x, p.y - u_drift) + u_mouse * 0.028) * 1.60;
   float dens = fbm(cp * 1.30) * 0.80;
   dens += smoothstep(0.36, 0.95, length(vec2(fp.x * 0.80, fp.y * 1.20))) * 0.58;
-  dens += clamp((rf - sky * 1.2) / 0.3 + 0.5, 0.0, 1.0) * 0.65;
   float e0 = hard(dens, 0.700);
   col = mix(col, u_mid, e0);
   col = mix(col, u_deep, hard(dens, 0.790));
@@ -163,22 +141,16 @@ void main() {
 }`;
 
 export default class extends Controller {
-  static targets = ["canvas", "light", "replay"];
-  static classes = ["armed", "revealed"];
+  static targets = ["canvas", "light"];
 
   connect() {
     this.still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.time = this.still ? STILL_TIME_S : 0;
-    this.revealedAt = this.still ? this.time - REVEALED_S : null;
     this.target = { x: 0, y: 0 };
     this.mouse = { x: 0, y: 0 };
     this.scale = 1;
     this.visible = false;
     this.layoutDirty = true;
-    if (!this.still) {
-      this.element.classList.add(...this.armedClasses);
-      this.replayTarget.hidden = false;
-    }
 
     this.resizeObserver = new ResizeObserver(() => {
       this.layoutDirty = true;
@@ -188,15 +160,11 @@ export default class extends Controller {
     this.onVisibility = () => this.syncLoop();
     document.addEventListener("visibilitychange", this.onVisibility);
 
-    this.intersectionObserver = new IntersectionObserver(
-      ([entry]) => {
-        this.visible = entry.isIntersecting;
-        if (this.visible && !this.gl) this.boot();
-        if (entry.intersectionRatio >= REVEAL_THRESHOLD) this.reveal();
-        this.syncLoop();
-      },
-      { threshold: [0, REVEAL_THRESHOLD] },
-    );
+    this.intersectionObserver = new IntersectionObserver(([entry]) => {
+      this.visible = entry.isIntersecting;
+      if (this.visible && !this.gl) this.boot();
+      this.syncLoop();
+    });
     this.intersectionObserver.observe(this.element);
   }
 
@@ -232,7 +200,7 @@ export default class extends Controller {
 
     this.gl = gl;
     this.uniforms = Object.fromEntries(
-      ["res", "light", "mouse", "time", "drift", "reveal"].map((name) => [
+      ["res", "light", "mouse", "time", "drift"].map((name) => [
         name,
         gl.getUniformLocation(program, `u_${name}`),
       ]),
@@ -244,21 +212,6 @@ export default class extends Controller {
         hexToRgb(style.getPropertyValue(`--crescent-${name}`)),
       );
     this.draw();
-  }
-
-  reveal() {
-    if (this.revealedAt != null) return;
-    this.revealedAt = this.time;
-    this.element.classList.add(...this.revealedClasses);
-  }
-
-  // Plays the entrance again from the void: the class comes off and back on
-  // across a reflow so every CSS animation restarts with the sky.
-  replay() {
-    this.element.classList.remove(...this.revealedClasses);
-    void this.element.offsetWidth;
-    this.revealedAt = null;
-    this.reveal();
   }
 
   enter(event) {
@@ -327,10 +280,6 @@ export default class extends Controller {
     gl.uniform2f(u.mouse, this.mouse.x, this.mouse.y);
     gl.uniform1f(u.time, this.time);
     gl.uniform1f(u.drift, this.time * DRIFT_PER_S);
-    gl.uniform1f(
-      u.reveal,
-      this.revealedAt == null ? 0 : this.time - this.revealedAt,
-    );
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
