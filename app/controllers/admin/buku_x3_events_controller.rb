@@ -44,7 +44,7 @@ class Admin::BukuX3EventsController < Admin::ApplicationController
   def crescent_promo_clicks
     return if ENV["AHOY_DB_URL"].blank?
 
-    clicks = Ahoy::Event.where(name: DiscoverRail::CrescentPromoWidget::CLICK_EVENT)
+    clicks = Ahoy::Event.where(name: "crescent_promo_clicked")
     { total: clicks.count, people: clicks.distinct.count(:user_id) }
   end
 end

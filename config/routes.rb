@@ -658,7 +658,6 @@ Rails.application.routes.draw do
     post :guest_email_no,            to: "wizard#guest_email_no"
   end
 
-  get "promos/crescent", to: "promos#crescent", as: :crescent_promo
   get "promos/forge", to: "promos#forge", as: :forge_promo
   get "promos/wrong_tool", to: "promos#wrong_tool", as: :wrong_tool_promo
 
