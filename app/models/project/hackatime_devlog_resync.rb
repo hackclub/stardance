@@ -34,10 +34,12 @@ module Project::HackatimeDevlogResync
     end
 
     def resync_devlog_from_hackatime(devlog, post, keys)
+      return if %w[test journal-import].include?(devlog.hackatime_projects_key_snapshot)
+
       if seconds = hackatime_seconds_for_devlog(devlog, post, keys)
         devlog.update_columns(
           duration_seconds: seconds,
-          hackatime_projects_key_snapshot: keys.join(","),
+          hackatime_project_names_snapshot: keys,
           hackatime_pulled_at: Time.current,
           synced_at: nil
         )

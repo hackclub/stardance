@@ -36,7 +36,8 @@ class Projects::DevlogsController < ApplicationController
       # Remember which hardware stage this time was logged in (nil for software)
       # so the ship payout basis can count build-phase time only.
       @devlog.phase = @project.hardware_stage
-      @devlog.hackatime_projects_key_snapshot = test_time_granted? ? "test" : @project.hackatime_keys.join(",")
+      @devlog.hackatime_project_names_snapshot = test_time_granted? ? [] : @project.hackatime_keys
+      @devlog.hackatime_projects_key_snapshot = "test" if test_time_granted?
 
       if @devlog.save
         Post.create!(project: @project, user: current_user, postable: @devlog)

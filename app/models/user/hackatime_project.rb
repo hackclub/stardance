@@ -29,6 +29,12 @@ class User::HackatimeProject < ApplicationRecord
   belongs_to :user
   belongs_to :project, optional: true
 
+  # Formerly linked names can still exist in an author's synced inventory.
+  # Include them when checking whether a legacy snapshot is ambiguous.
+  scope :snapshot_candidates_for, ->(project_id) {
+    where(project_id: project_id).or(where(user_id: Post.where(project_id: project_id).select(:user_id)))
+  }
+
   EXCLUDED_NAMES = [ "Other", "<<LAST_PROJECT>>" ].freeze
 
   validates :name, presence: true
@@ -87,10 +93,21 @@ class User::HackatimeProject < ApplicationRecord
       previous_project = Project.unscoped.find_by(id: project_id_was)
       return if previous_project.nil?
 
-      devlog_uses_key = previous_project.posts
-        .joins("INNER JOIN post_devlogs ON post_devlogs.id = posts.postable_id AND posts.postable_type = 'Post::Devlog'")
-        .where("post_devlogs.hackatime_projects_key_snapshot LIKE ?", "%#{name}%")
-        .exists?
+      devlogs = Post::Devlog.unscoped.joins(:post).where(posts: { project_id: previous_project.id })
+      devlog_uses_key = devlogs.where("? = ANY(post_devlogs.hackatime_project_names_snapshot)", name).exists?
+
+      unless devlog_uses_key
+        known_names = self.class.snapshot_candidates_for(previous_project.id).distinct.pluck(:name)
+        devlog_uses_key = devlogs.where(hackatime_project_names_snapshot: nil).find_each.any? do |devlog|
+          names = devlog.hackatime_project_names(known_names: known_names)
+          if names.nil?
+            # Unresolved legacy data still protects every plausible whole key.
+            ",#{devlog.hackatime_projects_key_snapshot},".include?(",#{name},")
+          else
+            names.include?(name)
+          end
+        end
+      end
 
       if devlog_uses_key
         errors.add(:base, "cannot be unlinked because it was used in a devlog")

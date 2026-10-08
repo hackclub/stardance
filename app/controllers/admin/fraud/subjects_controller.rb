@@ -64,9 +64,16 @@ class Admin::Fraud::SubjectsController < Admin::ApplicationController
       next unless project
 
       key_seconds = Hash.new(0)
+      known_names = User::HackatimeProject.snapshot_candidates_for(project_id).distinct.pluck(:name)
       devlogs_by_project.fetch(project_id, []).each do |post|
-        keys = post.devlog.hackatime_projects_key_snapshot.to_s.split(",").map(&:strip).reject(&:blank?).sort
-        label = keys.any? ? keys.join(" + ") : "No key snapshot"
+        keys = post.devlog.hackatime_project_names(known_names: known_names)
+        label = if keys.nil?
+          "Unresolved snapshot: #{post.devlog.hackatime_projects_key_snapshot}"
+        elsif keys.any?
+          keys.sort.join(" + ")
+        else
+          "No key snapshot"
+        end
         key_seconds[label] += post.devlog.duration_seconds.to_i
       end
 

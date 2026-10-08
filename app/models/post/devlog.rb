@@ -112,11 +112,44 @@ class Post::Devlog < ApplicationRecord
     comments.reject { |comment| comment.user.banned? }.sort_by(&:created_at)
   end
 
-  private
+  # nil means the legacy CSV cannot be resolved without guessing. Keep the
+  # original text as evidence; only a typed snapshot is authoritative.
+  def hackatime_project_names(known_names: nil)
+    return hackatime_project_names_snapshot unless hackatime_project_names_snapshot.nil?
 
-  # Normalize line endings (\r\n for now) to \n
-  def normalize_line_endings
-    self.body = body.gsub("\r\n", "\n") if body.present?
+    snapshot = hackatime_projects_key_snapshot
+    return [] if snapshot.blank? || %w[test journal-import].include?(snapshot)
+    return [ snapshot ] unless snapshot.include?(",")
+
+    if known_names.nil?
+      return nil unless post&.project_id
+
+      known_names = User::HackatimeProject.snapshot_candidates_for(post.project_id).distinct.pluck(:name)
+    end
+
+    # Work backwards, keeping at most two complete interpretations per suffix.
+    # A longest-name match alone would miss ambiguous CSV such as "alpha,beta".
+    names = known_names.uniq.reject(&:empty?)
+    interpretations = {}
+    (snapshot.length - 1).downto(0) do |offset|
+      interpretations[offset] = []
+      names.each do |name|
+        next unless snapshot[offset, name.length] == name
+
+        finish = offset + name.length
+        if finish == snapshot.length
+          interpretations[offset] << [ name ]
+        elsif snapshot[finish] == ","
+          Array(interpretations[finish + 1]).each do |suffix|
+            interpretations[offset] << [ name, *suffix ]
+          end
+        end
+        break if interpretations[offset].length > 1
+      end
+      interpretations[offset] = interpretations[offset].first(2)
+    end
+
+    interpretations[0].first if interpretations[0].one?
   end
 
   after_create_commit :handle_post_creation
@@ -152,11 +185,11 @@ class Post::Devlog < ApplicationRecord
   # persisted per-project breakdown (duration_seconds is one aggregate total),
   # so this reconstructs it live: one Hackatime API call per project key that
   # was linked at devlog-creation time, scoped to the same window duration_seconds
-  # was originally computed from. Cached indefinitely once computed, since a
-  # past devlog's time window never changes.
+  # was originally computed from. Snapshot and window changes invalidate the
+  # cached breakdown; these per-key values are never used to award time.
   def hackatime_project_breakdown
-    keys = hackatime_projects_key_snapshot.to_s.split(",").map(&:strip).reject(&:blank?)
-    return [] if keys.empty? || hackatime_projects_key_snapshot == "test"
+    keys = hackatime_project_names
+    return [] if keys.blank?
 
     author = post&.user
     hackatime_uid = author&.hackatime_identity&.uid
@@ -165,14 +198,17 @@ class Post::Devlog < ApplicationRecord
     project = post.project
     return [] unless project
 
-    Rails.cache.fetch([ "devlog_hackatime_breakdown", id ], expires_in: 30.days) do
+    window_start = project.devlog_window_start(created_at)
+    cache_key = [ "devlog_hackatime_breakdown/v2", id, keys.to_json, window_start, created_at, hackatime_pulled_at ]
+    Rails.cache.fetch(cache_key, expires_in: 30.days) do
       access_token = author.hackatime_identity&.access_token
-      window_start = project.devlog_window_start(created_at)
 
       breakdown = keys.map do |key|
         seconds = HackatimeService.fetch_total_seconds_for_projects(
           hackatime_uid, [ key ], start_date: window_start.iso8601, end_date: created_at.iso8601, access_token: access_token
-        ).to_i
+        )
+        return [] if seconds.nil?
+
         { name: key, seconds: seconds }
       end
 
