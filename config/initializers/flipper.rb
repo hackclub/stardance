@@ -59,6 +59,7 @@ Rails.application.config.after_initialize do
         blackhole
         bukux3
         wrong_tool_promo
+        terra_promo
       ].each { |flag| Flipper.add(flag) }
       Flipper.add(:bukux2_preview_complete) if Rails.env.development?
 
