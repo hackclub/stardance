@@ -181,9 +181,6 @@ application.register("countdown-clock", CountdownClockController);
 import CountdownController from "./countdown_controller";
 application.register("countdown", CountdownController);
 
-import CrescentSkyController from "./crescent_sky_controller";
-application.register("crescent-sky", CrescentSkyController);
-
 import CurveDrawController from "./curve_draw_controller";
 application.register("curve-draw", CurveDrawController);
 
