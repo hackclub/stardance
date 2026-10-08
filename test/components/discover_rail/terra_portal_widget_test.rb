@@ -1,8 +1,15 @@
 require "test_helper"
 
 class DiscoverRail::TerraPortalWidgetTest < ViewComponent::TestCase
-  setup { Flipper.enable(:platform_ads) }
-  teardown { Flipper.disable(:platform_ads) }
+  setup do
+    Flipper.enable(:platform_ads)
+    Flipper.enable(:terra_promo)
+  end
+
+  teardown do
+    Flipper.disable(:terra_promo)
+    Flipper.disable(:platform_ads)
+  end
 
   test "registers under the terra_portal slug" do
     assert_equal DiscoverRail::TerraPortalWidget, DiscoverRail::BaseWidget.registry[:terra_portal]
@@ -16,6 +23,30 @@ class DiscoverRail::TerraPortalWidgetTest < ViewComponent::TestCase
       assert_selector "img.terra-portal__view"
       assert_selector "canvas.terra-portal__canvas"
     end
+  end
+
+  test "Terra is hidden while its flag is off without hiding other program ads" do
+    Flipper.disable(:terra_promo)
+
+    render_inline(DiscoverRail::TerraPortalWidget.new)
+    assert_no_selector ".terra-portal"
+
+    render_inline(DiscoverRail::ForgePromoWidget.new)
+    assert_selector "section"
+  end
+
+  test "Terra supports actor-targeted rollout" do
+    Flipper.disable(:terra_promo)
+    Flipper.enable_actor(:terra_promo, users(:one))
+
+    render_inline(DiscoverRail::TerraPortalWidget.new(user: users(:one)))
+    assert_selector ".terra-portal"
+
+    render_inline(DiscoverRail::TerraPortalWidget.new(user: users(:two)))
+    assert_no_selector ".terra-portal"
+
+    render_inline(DiscoverRail::TerraPortalWidget.new)
+    assert_no_selector ".terra-portal"
   end
 
   test "all program rail ads are hidden while platform ads are off" do
