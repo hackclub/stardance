@@ -1,6 +1,10 @@
 module ApplicationHelper
   def in_beta? = request.host.include?("beta")
 
+  def platform_ads_enabled?(user = current_user)
+    user&.preference&.platform_ads_enabled? != false && Flipper.enabled?(:platform_ads, user)
+  end
+
   # Memoized per request: the feed renders dozens of post cards and Flipper
   # memoization is disabled app-wide, so a per-card check would hit
   # flipper_gates once per card.

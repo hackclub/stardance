@@ -4,6 +4,10 @@ module DiscoverRail
   class CrescentPromoWidget < BaseWidget
     register_as :crescent_promo
 
+    def render?
+      helpers.platform_ads_enabled?(user)
+    end
+
     URL = "https://crescent.hackclub.com/?utm_source=stardance&utm_medium=discover_rail"
     # Ahoy event recorded by PromosController#crescent on every click.
     CLICK_EVENT = "crescent_promo_clicked"

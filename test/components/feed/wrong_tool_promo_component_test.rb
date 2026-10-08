@@ -1,8 +1,15 @@
 require "test_helper"
 
 class Feed::WrongToolPromoComponentTest < ViewComponent::TestCase
-  setup { Flipper.enable(:wrong_tool_promo) }
-  teardown { Flipper.disable(:wrong_tool_promo) }
+  setup do
+    Flipper.enable(:platform_ads)
+    Flipper.enable(:wrong_tool_promo)
+  end
+
+  teardown do
+    Flipper.disable(:wrong_tool_promo)
+    Flipper.disable(:platform_ads)
+  end
 
   test "a sheet to fly the rocket through, and a way to wrong tool" do
     travel_to Feed::WrongToolPromoComponent::ENDS_ON do
@@ -29,6 +36,31 @@ class Feed::WrongToolPromoComponentTest < ViewComponent::TestCase
 
     travel_to Feed::WrongToolPromoComponent::ENDS_ON do
       render_inline Feed::WrongToolPromoComponent.new
+    end
+
+    assert_no_selector ".wrong-tool-promo"
+  end
+
+  test "hidden while platform ads are off" do
+    Flipper.disable(:platform_ads)
+
+    travel_to Feed::WrongToolPromoComponent::ENDS_ON do
+      render_inline Feed::WrongToolPromoComponent.new
+    end
+
+    assert_no_selector ".wrong-tool-promo"
+  end
+
+  test "hidden when the signed-in user opts out" do
+    user = users(:one)
+    user.preference.update!(platform_ads_enabled: false)
+
+    with_controller_class ApplicationController do
+      vc_test_controller.stub(:current_user, user) do
+        travel_to Feed::WrongToolPromoComponent::ENDS_ON do
+          render_inline Feed::WrongToolPromoComponent.new
+        end
+      end
     end
 
     assert_no_selector ".wrong-tool-promo"
