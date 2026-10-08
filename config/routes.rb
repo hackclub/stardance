@@ -726,6 +726,7 @@ Rails.application.routes.draw do
         post :update_ship_status
         post :force_state
         post :reset_devlogs
+        post :resync_hackatime
         post :convert_to_software
         get  :export_devlogs
         get  :votes

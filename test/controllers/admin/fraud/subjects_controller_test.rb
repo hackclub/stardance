@@ -244,7 +244,7 @@ class Admin::Fraud::SubjectsControllerTest < ActionDispatch::IntegrationTest
     Post.create!(project: @project, user: @subject, postable: ship)
 
     devlog = Post::Devlog.create!(body: "Built the thing", duration_seconds: 90.minutes.to_i,
-                                  hackatime_projects_key_snapshot: "api,web", uploading_attachments: true)
+                                  hackatime_project_names_snapshot: [ "api", "web" ], uploading_attachments: true)
     Post.create!(project: @project, user: @subject, postable: devlog)
 
     sign_in @squad
