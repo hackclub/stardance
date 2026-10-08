@@ -95,6 +95,13 @@
             </li>
           <% end %>
         </ul>
+        <% if policy(@project).resync_hackatime? %>
+          <p>Refreshes devlog and ship hours from the linked keys. Paid payouts stay unchanged. Results appear in the Audit Log.</p>
+          <%= form_with url: resync_hackatime_admin_project_path(@project), method: :post,
+                data: { turbo: true, turbo_confirm: "Resync all devlog time for this project using its currently linked Hackatime keys? This updates project and ship hours. Paid payouts will not be changed." } do %>
+            <%= render ActionButtonComponent.new(text: "Resync Hackatime time", size: :small, variant: :secondary, disable_with: "Queueing…") %>
+          <% end %>
+        <% end %>
       <% else %>
         <p class="admin-user-show__muted">No hackatime keys linked.</p>
       <% end %>

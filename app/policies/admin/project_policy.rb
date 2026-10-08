@@ -27,6 +27,10 @@ class Admin::ProjectPolicy < ApplicationPolicy
     user&.admin?
   end
 
+  def resync_hackatime?
+    user&.admin?
+  end
+
   def convert_to_software?
     user&.admin?
   end
