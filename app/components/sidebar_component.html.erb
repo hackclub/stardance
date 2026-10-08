@@ -142,6 +142,15 @@
 
       <div class="settings-form__field">
         <label class="settings-form__checkbox">
+          <%= hidden_field_tag :platform_ads_enabled, "0", id: nil %>
+          <%= check_box_tag :platform_ads_enabled, "1", preference.platform_ads_enabled?, id: "platform_ads_enabled" %>
+          Show program ads
+        </label>
+        <small class="settings-form__hint">Show promotions for other Hack Club programs. Turn off to hide them across Stardance on your account.</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
           <%= hidden_field_tag :disintegration_effects_enabled, "0", id: nil %>
           <%= check_box_tag :disintegration_effects_enabled, "1", preference.disintegration_effects_enabled?, id: "disintegration_effects_enabled" %>
           <span>Show disintegration effects</span>

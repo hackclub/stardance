@@ -17,7 +17,8 @@ module Feed
     ROWS = 6
 
     def render?
-      Date.current <= ENDS_ON && Flipper.enabled?(:wrong_tool_promo, helpers.try(:current_user))
+      Date.current <= ENDS_ON && helpers.platform_ads_enabled?(helpers.try(:current_user)) &&
+        Flipper.enabled?(:wrong_tool_promo, helpers.try(:current_user))
     end
   end
 end
