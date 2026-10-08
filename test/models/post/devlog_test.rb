@@ -2,19 +2,20 @@
 #
 # Table name: post_devlogs
 #
-#  id                              :bigint           not null, primary key
-#  body                            :string
-#  comments_count                  :integer          default(0), not null
-#  deleted_at                      :datetime
-#  duration_seconds                :integer
-#  hackatime_projects_key_snapshot :text
-#  hackatime_pulled_at             :datetime
-#  likes_count                     :integer          default(0), not null
-#  phase                           :string
-#  synced_at                       :datetime
-#  tutorial                        :boolean          default(FALSE), not null
-#  created_at                      :datetime         not null
-#  updated_at                      :datetime         not null
+#  id                               :bigint           not null, primary key
+#  body                             :string
+#  comments_count                   :integer          default(0), not null
+#  deleted_at                       :datetime
+#  duration_seconds                 :integer
+#  hackatime_project_names_snapshot :text             is an Array
+#  hackatime_projects_key_snapshot  :text
+#  hackatime_pulled_at              :datetime
+#  likes_count                      :integer          default(0), not null
+#  phase                            :string
+#  synced_at                        :datetime
+#  tutorial                         :boolean          default(FALSE), not null
+#  created_at                       :datetime         not null
+#  updated_at                       :datetime         not null
 #
 # Indexes
 #
