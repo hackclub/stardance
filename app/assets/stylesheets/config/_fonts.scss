@@ -39,22 +39,13 @@
   src: url("PlayfairDisplay-latin-italic.woff2") format("woff2");
 }
 
-// Crescent's faces, for its promo card: Young Serif is display only, and
-// National Park is only ever set at 700 or 800.
+// Crescent's display face, for its promo card.
 @font-face {
   font-family: "Young Serif";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src: url("YoungSerif-latin.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "National Park";
-  font-style: normal;
-  font-weight: 700 800;
-  font-display: swap;
-  src: url("NationalPark-latin.woff2") format("woff2");
 }
 
 // Forge's display face, for its promo card.

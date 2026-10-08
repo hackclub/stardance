@@ -41,16 +41,21 @@ class ApplicationController < ActionController::Base
   # Slugs are resolved against the widget registry (DiscoverRail::BaseWidget),
   # so naming a slug no widget has claimed is simply ignored. Subclasses that
   # stay silent inherit an empty rail.
+  #
+  # Slugs grouped in an array share their spot in the rail, in a fresh random
+  # order on every request, so no widget in the group always gets the top:
+  #
+  #   discover_rail_widgets :streak, [ :terra_portal, :forge_promo ], :raffle
   class_attribute :discover_rail_widget_slugs, default: [], instance_accessor: false
   class_attribute :discover_rail_context_proc, default: nil, instance_accessor: false
 
   def self.discover_rail_widgets(*slugs, context: nil)
-    self.discover_rail_widget_slugs = slugs.map(&:to_sym)
+    self.discover_rail_widget_slugs = slugs.map { |slug| slug.is_a?(Array) ? slug.map(&:to_sym) : slug.to_sym }
     self.discover_rail_context_proc = context if context
   end
 
   def discover_rail_widgets
-    self.class.discover_rail_widget_slugs
+    self.class.discover_rail_widget_slugs.flat_map { |slug| slug.is_a?(Array) ? slug.shuffle : slug }
   end
   helper_method :discover_rail_widgets
 
