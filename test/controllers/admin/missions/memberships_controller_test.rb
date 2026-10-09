@@ -27,6 +27,13 @@ class Admin::Missions::MembershipsControllerTest < ActionDispatch::IntegrationTe
     assert @mission.memberships.reviewer_role.exists?(user: @reviewer)
   end
 
+  test "a reviewer can be added by email, ignoring case" do
+    @reviewer.update!(email: "nova.reviewer@example.test")
+    add_reviewer("Nova.Reviewer@Example.test")
+    assert @mission.memberships.reviewer_role.exists?(user: @reviewer)
+    assert_equal "Nova_Reviewer added as reviewer.", flash[:reviewers_notice]
+  end
+
   test "a failed add shows its reason inside the reviewers frame" do
     add_reviewer("nobody-by-this-name")
     assert_match(/No user found for "nobody-by-this-name"/, flash[:reviewers_alert])

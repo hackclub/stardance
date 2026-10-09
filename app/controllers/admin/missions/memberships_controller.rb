@@ -14,7 +14,7 @@ module Admin
         user = find_user(query)
 
         if user.nil?
-          back_to_edit requested_role, alert: "No user found for \"#{query}\". Use their username, user ID or Slack ID." and return
+          back_to_edit requested_role, alert: "No user found for \"#{query}\". Use their email, username, user ID or Slack ID." and return
         end
 
         membership = @mission.memberships.new(user: user, role: requested_role)
@@ -55,10 +55,13 @@ module Admin
 
       private
 
-      # Accepts a username (with or without "@", or a profile URL), a numeric
-      # user ID, or a Slack ID.
+      EMAIL_FORMAT = %r{\A[^@\s/]+@[^@\s/]+\.[^@\s/]+\z}
+
+      # Accepts an email, a username (with or without "@", or a profile URL),
+      # a numeric user ID, or a Slack ID.
       def find_user(query)
         return if query.blank?
+        return User.find_by("LOWER(email) = ?", query.downcase) if query.match?(EMAIL_FORMAT)
 
         handle = query.sub(%r{\Ahttps?://[^/]+/}, "").delete_prefix("@")
         (User.find_by(id: query) if query.match?(/\A\d+\z/)) ||

@@ -33,7 +33,7 @@
           method: :post, class: "admin-mission-edit__form" do %>
       <%= hidden_field_tag "mission_membership[role]", "reviewer" %>
       <h3>Add reviewer</h3>
-      <label>Username, user ID or Slack ID <%= text_field_tag "mission_membership[user_id]", nil, required: true, autocomplete: "off", placeholder: "@username" %></label>
+      <label>Email, username, user ID or Slack ID <%= text_field_tag "mission_membership[user_id]", nil, required: true, autocomplete: "off", placeholder: "@username or email" %></label>
       <%= submit_tag "Add reviewer", class: "action-btn action-btn--large action-btn--primary" %>
     <% end %>
   </section>
