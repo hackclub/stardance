@@ -10,21 +10,20 @@ module Admin
       before_action :authorize_owner_change_if_needed, only: [ :create, :destroy, :update ]
 
       def create
-        user_param = membership_params[:user_id]
-        user = User.find_by(id: user_param)
-        user ||= User.find_by(slack_id: user_param)
+        query = membership_params[:user_id].to_s.strip
+        user = find_user(query)
 
         if user.nil?
-          redirect_to edit_admin_mission_path(@mission.slug), alert: "User not found." and return
+          back_to_edit requested_role, alert: "No user found for \"#{query}\". Use their email, username, user ID or Slack ID." and return
         end
 
         membership = @mission.memberships.new(user: user, role: requested_role)
         if membership.save
-          redirect_to edit_admin_mission_path(@mission.slug),
-                      notice: "#{requested_role.to_s.titleize} added."
+          back_to_edit requested_role, notice: "#{user.display_name} added as #{requested_role}."
+        elsif membership.errors.of_kind?(:user_id, :taken)
+          back_to_edit requested_role, alert: "#{user.display_name} is already #{requested_role == :owner ? 'an owner' : 'a reviewer'}."
         else
-          redirect_to edit_admin_mission_path(@mission.slug),
-                      alert: membership.errors.full_messages.to_sentence
+          back_to_edit requested_role, alert: membership.errors.full_messages.to_sentence
         end
       end
 
@@ -51,11 +50,41 @@ module Admin
         end
 
         @membership.destroy!
-        redirect_to edit_admin_mission_path(@mission.slug),
-                    notice: "#{@membership.role.titleize} removed."
+        back_to_edit @membership.role, notice: "#{@membership.role.titleize} removed."
       end
 
       private
+
+      # Accepts an email, a username (with or without "@", or a profile URL),
+      # a numeric user ID, or a Slack ID.
+      def find_user(query)
+        return if query.blank? || query.length > 320
+        return User.find_by("LOWER(email) = ?", query.downcase) if email_like?(query)
+
+        handle = query.sub(%r{\Ahttps?://[^/]+/}, "").delete_prefix("@")
+        (User.find_by(id: query) if query.match?(/\A\d+\z/)) ||
+          User.find_by(slack_id: query) ||
+          User.find_by("LOWER(display_name) = ?", handle.downcase)
+      end
+
+      # Plain string checks rather than a regex: an email has one "@" that
+      # isn't leading (that's "@username") and no "/" (that's a profile URL).
+      # The database lookup is what decides whether it really matches.
+      def email_like?(query)
+        query.count("@") == 1 && !query.start_with?("@") && !query.include?("/")
+      end
+
+      # The reviewers section is a Turbo Frame, so the page-level flash never
+      # reaches it; reviewer messages use their own keys that the frame
+      # renders. Owner forms submit full-page and keep the normal flash.
+      def back_to_edit(role, notice: nil, alert: nil)
+        flash = if role.to_s == "reviewer"
+          { reviewers_notice: notice, reviewers_alert: alert }.compact
+        else
+          { notice:, alert: }.compact
+        end
+        redirect_to edit_admin_mission_path(@mission.slug), flash:
+      end
 
       # The base controller already enforces MissionPolicy#manage? (which
       # admins + owners pass). For owner-role operations, additionally

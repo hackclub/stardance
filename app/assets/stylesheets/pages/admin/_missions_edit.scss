@@ -44,6 +44,20 @@
   color: var(--color-space-text-muted, var(--color-space-text));
 }
 
+// Result of adding/removing inside a section's Turbo Frame.
+.admin-mission-edit__message {
+  margin: 0 0 var(--space-s);
+  padding: var(--space-xs) var(--space-s);
+  border: 1px solid var(--color-brand-lilac);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--color-space-text);
+
+  &--alert {
+    border-color: var(--color-brand-salmon);
+  }
+}
+
 .admin-mission-edit__form {
   display: flex;
   flex-direction: column;
