@@ -60,6 +60,21 @@ class UsersController < ApplicationController
 
   private
 
+  def reposted_post_ids_for(posts)
+    return Set.new unless current_user
+
+    post_ids = posts.map do |post|
+      post.repost? ? post.postable.original_post_id : post.id
+    end.compact
+
+    return Set.new if post_ids.empty?
+
+    Post::Repost
+      .where(user: current_user, original_post_id: post_ids)
+      .pluck(:original_post_id)
+      .to_set
+  end
+
   def set_user
     @user = User.eager_load(:preference)
 
@@ -111,7 +126,9 @@ class UsersController < ApplicationController
     build_posts = -> {
       @pagy, posts = pagy(:offset, scope, limit: ACTIVITY_LIMIT)
       preload_timeline_postables(posts)
-      posts.select { |post| !post.repost? || post.visible_repost_original_for?(current_user) }
+      posts = posts.select { |post| !post.repost? || post.visible_repost_original_for?(current_user) }
+      @reposted_post_ids = reposted_post_ids_for(posts)
+      posts
     }
 
     # Post::Devlog has its own default_scope (SoftDeletable), which the

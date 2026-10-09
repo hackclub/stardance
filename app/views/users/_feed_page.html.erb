@@ -4,7 +4,7 @@
       <% next unless (project = post.project) %>
       <%= render "projects/ship_card", post: post, project: project %>
     <% else %>
-      <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark) %>
+      <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark, current_user_reposted_post_ids: @reposted_post_ids) %>
     <% end %>
   <% end %>
 
