@@ -30,7 +30,11 @@
       <%= render "raffle/shared/week_track", current: @week_number %>
     <% end %>
 
-    <% if current_participant.age_group_teen? && !current_participant.hca_linked? %>
+    <% if raffle_ended? %>
+      <div class="raffle-ended-notice">
+        <p>The AMD GPU raffle event has ended</p>
+      </div>
+    <% elsif current_participant.age_group_teen? && !current_participant.hca_linked? %>
       <div class="raffle-hca-notice">
         <p>
           <strong>Link your Hack Club account</strong> to activate your raffle entry.
@@ -63,6 +67,7 @@
       </div>
     <% end %>
 
+    <% unless raffle_ended? %>
     <div class="raffle-share">
       <span class="raffle-share__label">Your referral link</span>
       <code class="raffle-share__url" tabindex="0" role="button" aria-label="Click to copy referral link"
@@ -121,6 +126,7 @@
         <% end %>
       </div>
     </div>
+    <% end %>
 
     <%= render "raffle/shared/faq" %>
   </section>
