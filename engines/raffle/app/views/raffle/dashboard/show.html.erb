@@ -32,7 +32,7 @@
 
     <% if raffle_ended? %>
       <div class="raffle-ended-notice">
-        <p>The AMD GPU raffle event has ended</p>
+        <p><em>The AMD GPU raffle event has ended.</em></p>
       </div>
     <% elsif current_participant.age_group_teen? && !current_participant.hca_linked? %>
       <div class="raffle-hca-notice">
