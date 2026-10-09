@@ -1,6 +1,8 @@
 class ShopOrderDailySummaryJob < ApplicationJob
   queue_as :literally_whenever
 
+  include ActionView::Helpers::DateHelper
+
   SHOP_ORDER_CHANNEL_ID = "C09N1P69GKZ"
 
   def perform
@@ -147,14 +149,4 @@ class ShopOrderDailySummaryJob < ApplicationJob
     end
   end
 
-  def time_ago_in_words(time)
-    seconds = (Time.current - time).to_i
-    if seconds < 3600
-      "#{seconds / 60}m"
-    elsif seconds < 86400
-      "#{seconds / 3600}h"
-    else
-      "#{seconds / 86400}d #{(seconds % 86400) / 3600}h"
-    end
-  end
 end
