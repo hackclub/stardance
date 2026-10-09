@@ -12,6 +12,13 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
 
   ALL = [
     new(
+      slug: :certificate_earned,
+      name: "Certified Stardancer",
+      description: "Earned your Stardance certificate.",
+      icon: "trophy",
+      earned_check: ->(user) { user.certificate&.approved? }
+    ),
+    new(
       slug: :super_star,
       name: "Super Star",
       description: "Cooked so hard you ended up making a fire project that made our staff very happy!",

@@ -34,6 +34,7 @@ class Certificate < ApplicationRecord
   enum :status, %w[pending approved rejected].index_by(&:itself), default: "pending"
 
   before_validation :generate_code, on: :create
+  after_save :award_certificate_achievement, if: -> { approved? && saved_change_to_status? }
 
   validates :code, presence: true, uniqueness: true, format: { with: CODE_FORMAT }
   validates :name, presence: true, length: { maximum: NAME_MAX_LENGTH }
@@ -82,6 +83,10 @@ class Certificate < ApplicationRecord
   end
 
   private
+
+  def award_certificate_achievement
+    user.award_achievement!(:certificate_earned)
+  end
 
   def generate_code
     return if code.present?
