@@ -458,6 +458,10 @@
     font-weight: 700;
     color: var(--color-space-text);
   }
+
+  .raffle-landing__hero & {
+    margin-top: var(--space-m);
+  }
 }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────

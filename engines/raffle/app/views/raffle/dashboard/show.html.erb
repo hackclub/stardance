@@ -6,7 +6,7 @@
     <div class="raffle-header">
       <div class="raffle-header__text">
         <h1 class="raffle-header__title">GPU Raffle</h1>
-        <p class="raffle-header__sub">Win an AMD Radeon RX 9060 XT every week</p>
+        <% unless raffle_ended? %><p class="raffle-header__sub">Win an AMD Radeon RX 9060 XT every week</p><% end %>
       </div>
       <% if @week %>
         <div class="raffle-header__stats">
@@ -26,7 +26,7 @@
       <% end %>
     </div>
 
-    <% if @week %>
+    <% if @week && !raffle_ended? %>
       <%= render "raffle/shared/week_track", current: @week_number %>
     <% end %>
 
@@ -55,7 +55,7 @@
       </div>
     <% end %>
 
-    <% if @week && @entry_count.to_i > 0 %>
+    <% if @week && @entry_count.to_i > 0 && !raffle_ended? %>
       <div class="raffle-odds">
         <div class="raffle-odds__meter">
           <span class="raffle-odds__fill" style="--raffle-odds-fill: <%= [ (@entry_count.to_f / @week_pool * 100).round, 2 ].max %>%"></span>
@@ -128,12 +128,20 @@
     </div>
     <% end %>
 
-    <%= render "raffle/shared/faq" %>
+    <%= render "raffle/shared/faq" unless raffle_ended? %>
   </section>
 
 <% else %>
   <% content_for :title, "GPU Raffle" %>
   <section class="raffle-landing">
+    <% if raffle_ended? %>
+    <div class="raffle-landing__hero">
+      <h1 class="raffle-header__title">GPU Raffle</h1>
+      <div class="raffle-ended-notice">
+        <p><em>The AMD GPU raffle event has ended.</em></p>
+      </div>
+    </div>
+    <% else %>
     <%= render "raffle/shared/week_track", current: @week_number || 0 %>
 
     <div class="raffle-landing__hero">
@@ -169,5 +177,6 @@
                current_participant: nil, rank: nil %>
 
     <%= render "raffle/shared/faq" %>
+    <% end %>
   </section>
 <% end %>

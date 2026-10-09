@@ -27,7 +27,7 @@
     <section class="project-creation__section" aria-labelledby="project-creation-missions-heading">
       <p class="project-creation__tagline">
         Earn exclusive prizes by completing a mission
-          — plus free stickers &amp; a shot at the <%= link_to "GPU raffle", raffle_base_url %>
+          — plus free stickers<% unless raffle_ended? %> &amp; a shot at the <%= link_to "GPU raffle", raffle_base_url %><% end %>
       </p>
 
       <div class="project-creation__heading-row">
