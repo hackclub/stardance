@@ -319,12 +319,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rails/activestorage@npm:^7.2.302":
-  version: 7.2.302
-  resolution: "@rails/activestorage@npm:7.2.302"
+"@rails/activestorage@npm:^8.1.301":
+  version: 8.1.301
+  resolution: "@rails/activestorage@npm:8.1.301"
   dependencies:
     spark-md5: "npm:^3.0.1"
-  checksum: 10c0/555146ab330b27e0a3d3b24efc7cd814f8ab728586c201b6adc01e5784305947607c731a4612f35614aa9f5dc489d521a11c84e653fbe9ae326fb47b181a58ed
+  checksum: 10c0/4bbbf7918b9a92c51a5b8f5a1d38be260bb4a27b651bb90232a11ba8c867b7d1c1ad6a82ca68c31c9f5c9aeffce5a21f0adf01427e2b172d8b61716b2a3cc006
   languageName: node
   linkType: hard
 
@@ -507,7 +507,7 @@ __metadata:
     "@hotwired/stimulus": "npm:^3.2.2"
     "@hotwired/turbo-rails": "npm:^8.0.23"
     "@rails/actioncable": "npm:^7.2.302"
-    "@rails/activestorage": "npm:^7.2.302"
+    "@rails/activestorage": "npm:^8.1.301"
     "@videojs/html": "npm:10.0.0-rc.2"
     canvas-confetti: "npm:^1.9.4"
     chart.js: "npm:^4.5.1"
