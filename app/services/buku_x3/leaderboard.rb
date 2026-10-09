@@ -3,7 +3,21 @@ module BukuX3
     LIMIT = 25
     PRIZE_PLACES = 5
     Entry = Data.define(:user, :minutes)
-    Own = Data.define(:team, :entry, :rank)
+    Own = Data.define(:team, :entry, :rank) do
+      # The rank just above the viewer and the minutes needed to pass it.
+      # Unranked viewers chase the last listed spot, unless they already have
+      # more minutes (opted out of the leaderboard), so there is nothing to chase.
+      def chase(teams)
+        entries = teams[team]
+        target_rank = rank ? rank - 1 : entries.size
+        return unless target_rank.positive?
+
+        target = entries[target_rank - 1]
+        return if rank.nil? && entry.minutes > target.minutes
+
+        [ target_rank, [ target.minutes - entry.minutes, 1 ].max ]
+      end
+    end
 
     def initialize(event)
       @event = event
