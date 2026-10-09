@@ -20,9 +20,11 @@
 
     <%= image_tag image_url("landing/prizes/star-deco-2.png"), class: "prizes__star-deco-2", alt: "", aria: { hidden: true }, loading: "lazy" %>
 
-    <div data-controller="prize-float" class="prizes__item prizes__item--gpu">
-      <%= image_tag image_url("landing/prizes/amd-rx9060.png"), class: "prizes__item-img", alt: "AMD RX 9060 GPU", loading: "lazy" %>
-    </div>
+    <% unless raffle_ended? %>
+      <div data-controller="prize-float" class="prizes__item prizes__item--gpu">
+        <%= image_tag image_url("landing/prizes/amd-rx9060.png"), class: "prizes__item-img", alt: "AMD RX 9060 GPU", loading: "lazy" %>
+      </div>
+    <% end %>
 
     <div data-controller="prize-float" class="prizes__item prizes__item--rpi">
       <%= image_tag image_url("landing/prizes/raspberry-pi-5.png"), class: "prizes__item-img", alt: "Raspberry Pi 5", loading: "lazy" %>
@@ -35,7 +37,7 @@
     <span class="prizes__label prizes__label--bambu">bambu a1 mini 3d printer</span>
     <span class="prizes__label prizes__label--framework">framework laptop</span>
     <span class="prizes__label prizes__label--ipad">apple ipad</span>
-    <span class="prizes__label prizes__label--gpu">AMD RX 9060 GPU</span>
+    <% unless raffle_ended? %><span class="prizes__label prizes__label--gpu">AMD RX 9060 GPU</span><% end %>
     <span class="prizes__label prizes__label--rpi">Raspberry Pi 5</span>
     <span class="prizes__label prizes__label--quest">Meta Quest 3</span>
   </div>

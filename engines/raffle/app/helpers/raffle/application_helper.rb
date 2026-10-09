@@ -2,14 +2,6 @@ module Raffle
   module ApplicationHelper
     include ::ApplicationHelper
 
-    # The AMD GPU raffle has ended. The dashboard hides the entry and referral
-    # UI (free entry claim, referral link, fraud notice, leaderboard, verified
-    # and pending referrals) and shows an ended notice instead; set this back
-    # to false to bring that UI back unchanged.
-    RAFFLE_ENDED = true
-
-    def raffle_ended? = RAFFLE_ENDED
-
     def referral_display_name(user)
       return "A new participant" unless user
 

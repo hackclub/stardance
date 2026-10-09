@@ -1,6 +1,9 @@
 module ApplicationHelper
   def in_beta? = request.host.include?("beta")
 
+  # See Raffle::ENDED. Shared by the main app and the raffle engine's views.
+  def raffle_ended? = Raffle.ended?
+
   def platform_ads_enabled?(user = current_user)
     user&.preference&.platform_ads_enabled? != false && Flipper.enabled?(:platform_ads, user)
   end
