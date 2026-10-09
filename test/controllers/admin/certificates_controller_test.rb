@@ -34,6 +34,8 @@ class Admin::CertificatesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_certificates_path
     assert @certificate.reload.approved?
     assert_equal @admin.id.to_s, @certificate.versions.last.whodunnit
+    assert @certificate.user.achievements.exists?(achievement_slug: "certificate_earned")
+    assert_not @admin.achievements.exists?(achievement_slug: "certificate_earned")
   end
 
   test "admin can reject a pending name" do
@@ -43,6 +45,7 @@ class Admin::CertificatesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to admin_certificates_path
     assert @certificate.reload.rejected?
+    assert_not @certificate.user.achievements.exists?(achievement_slug: "certificate_earned")
   end
 
   test "approving with a stale name is refused" do
@@ -52,6 +55,7 @@ class Admin::CertificatesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to admin_certificates_path
     assert @certificate.reload.pending?
+    assert_not @certificate.user.achievements.exists?(achievement_slug: "certificate_earned")
     assert_match "changed", flash[:alert]
   end
 
