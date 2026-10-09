@@ -30,7 +30,9 @@ class Certificate::Image < OgImage::Base
     place_asset("logo-lockup.png", x: 48, y: 48)
     place_asset("title-lockup.png", x: 314.5, y: 48)
     place_asset("signature.png", x: 351, y: 360)
-    place_asset("sponsor-logos.png", x: 260, y: 454)
+    #  scale 0.77 sx 274 sy 459
+    #  sponsor-logos.png was here
+    place_asset("sponsor-logos-full.png", x: 274, y: 459, scale: 0.77)
 
     draw_qr_block
     draw_recipient
@@ -54,8 +56,9 @@ class Certificate::Image < OgImage::Base
     draw_border_ring(x: s(24), y: s(24), width: s(794), height: s(547), radius: s(8), opacity: 1.0)
   end
 
-  def place_asset(filename, x:, y:)
+  def place_asset(filename, x:, y:, scale: 1)
     asset = Vips::Image.new_from_file(ASSET_DIR.join(filename).to_s)
+    asset = asset.resize(scale) if scale != 1
     @image = image.composite(asset.copy(interpretation: :srgb), :over, x: [ s(x) ], y: [ s(y) ])
   end
 
