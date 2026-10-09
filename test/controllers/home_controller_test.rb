@@ -23,6 +23,17 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#home_feed[src=?]", home_feed_path
   end
 
+  test "the ended GPU raffle no longer appears in the home rail, even for participants" do
+    @user.raffle_participant || Raffle::Participant.find_or_enroll!(@user)
+    sign_in @user
+
+    get home_path
+
+    assert_response :success
+    assert_select ".raffle-widget", count: 0
+    assert_select "a", text: /GPU Raffle/, count: 0
+  end
+
   test "for you candidate selection keeps authors and projects diverse" do
     posts = [
       Post.new(id: 1, user_id: 1, project_id: 1, postable_type: "Post::Devlog"),
