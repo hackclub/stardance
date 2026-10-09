@@ -4,27 +4,24 @@ class HomeBukuLeaderboardTest < ActionDispatch::IntegrationTest
   setup { Flipper.enable(:bukux3) }
   teardown { Flipper.disable(:bukux3) }
 
-  test "home embeds compact team lists inside the event status box without a separate page link" do
+  test "home shows the team lists in their own box under the event status box without a separate page link" do
     get home_path
     assert_response :success
-    assert_select "turbo-frame#buku_x3_home_status > .buku-x3-status > .buku-leaderboard", count: 1
+    assert_select "turbo-frame#buku_x3_home_status > .buku-x3-status + .buku-leaderboard", count: 1
     assert_select ".buku-leaderboard__team", count: 2
     assert_select ".buku-x3-status__tug .buku-x3-status__note", text: /top five.*limited-edition/
-    assert_select "details.buku-leaderboard__details:not([open]) > summary", count: 1
     assert_select ".buku-leaderboard-promo, a[href='/buku_x3/leaderboard']", count: 0
   end
 
-  test "three preview rows per side and remaining ranks inside disclosure keep five prize spots" do
+  test "all five prize spots per side are listed" do
     entries = 7.times.map { |index| BukuX3::Leaderboard::Entry.new(user: users(:one), minutes: 600 - index) }
     board = Struct.new(:teams) { def own(*) = nil }.new({ buku: entries, bean: entries })
     BukuX3::Leaderboard.stub(:new, board) do
       get home_path
       assert_response :success
       %w[buku bean].each do |team|
-        assert_select ".buku-leaderboard__team--#{team} .buku-leaderboard__row", count: 3
+        assert_select ".buku-leaderboard__team--#{team} .buku-leaderboard__row", count: 5
       end
-      assert_select ".buku-leaderboard__details ol[start='4']", count: 2
-      assert_select ".buku-leaderboard__details .buku-leaderboard__row", count: 4
       assert_select ".buku-leaderboard__row--prize", count: 10
       %w[buku bean].each do |team|
         assert_select ".buku-leaderboard__row--#{team}.buku-leaderboard__row--first", count: 1
@@ -41,7 +38,7 @@ class HomeBukuLeaderboardTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "signed in user's own rank shows inside the disclosure below the prize spots" do
+  test "signed in user's own rank shows below the prize spots" do
     others = 6.times.map { |index| BukuX3::Leaderboard::Entry.new(user: users(:two), minutes: 600 - index) }
     entries = others + [ BukuX3::Leaderboard::Entry.new(user: users(:one), minutes: 10) ]
     own = BukuX3::Leaderboard::Own.new(team: :buku, entry: entries.last, rank: 7)
@@ -50,9 +47,11 @@ class HomeBukuLeaderboardTest < ActionDispatch::IntegrationTest
     BukuX3::Leaderboard.stub(:new, board) do
       get home_path
       assert_response :success
-      assert_select ".buku-leaderboard__details .buku-leaderboard__teams--rest .buku-leaderboard__row", count: 4
-      assert_select ".buku-leaderboard__details .buku-leaderboard__teams--own .buku-leaderboard__rank", text: "7", count: 1
-      assert_select ".buku-leaderboard__details .buku-leaderboard__teams--own .buku-leaderboard__you", count: 1
+      assert_select ".buku-leaderboard__team .buku-leaderboard__row", count: 10
+      assert_select ".buku-leaderboard__teams--own .buku-leaderboard__rank", text: "7", count: 1
+      assert_select ".buku-leaderboard__teams--own .buku-leaderboard__you", count: 1
+      # 595 minutes for rank 6 minus the viewer's 10.
+      assert_select ".buku-leaderboard__teams--own .buku-leaderboard__chase", text: "9.75 hrs until rank 6", count: 1
     end
   end
 
