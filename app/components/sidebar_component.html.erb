@@ -4,7 +4,10 @@
        data-turbo-permanent
        aria-label="Main">
   <%= link_to root_path, class: "sidebar__logo", "aria-label": "Stardance home", data: { turbo: true } do %>
-    <%= image_tag "landing/header/stardance-logo.png", alt: "Hack Club Stardance Challenge", class: "sidebar__logo-img" %>
+    <% ddr = Flipper.enabled?(:ddr, user) %>
+    <%= image_tag(ddr ? "landing/header/ddr.png" : "landing/header/stardance-logo.png",
+          alt: ddr ? "Hack Club Dance Dance Revolution" : "Hack Club Stardance Challenge",
+          class: "sidebar__logo-img") %>
   <% end %>
 
   <nav class="sidebar__nav" aria-label="Primary navigation">
