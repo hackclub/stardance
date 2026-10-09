@@ -9,7 +9,7 @@ class RaffleEndedDashboardTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".raffle-dash"
-    assert_select ".raffle-ended-notice", text: "The AMD GPU raffle event has ended"
+    assert_select ".raffle-ended-notice em", text: "The AMD GPU raffle event has ended."
     assert_select ".raffle-claim, .raffle-hca-notice, .raffle-share, .raffle-fraud-notice", count: 0
     assert_select "button", text: "Claim free entry", count: 0
     assert_select ".raffle-weekpick, .raffle-card, .raffle-cols", count: 0
