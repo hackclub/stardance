@@ -249,3 +249,63 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+  /users/lookup:
+    get:
+      summary: Look up a user by Slack ID
+      tags: [ Admin ]
+      description: "Admin only. Find the Stardance user ID and display name for a Slack ID."
+      operationId: lookupUser
+      parameters:
+        - name: slack_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The matching user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  slack_id: { type: string }
+                  display_name: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /users/{id}/balance_adjustments:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    post:
+      summary: Adjust a user's stardust balance
+      tags: [ Admin ]
+      description: "Admin only. Grant (positive) or deduct (negative) stardust, recorded in the ledger with the given reason."
+      operationId: createBalanceAdjustment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ amount, reason ]
+              properties:
+                amount: { type: integer, description: Non-zero stardust amount }
+                reason: { type: string }
+      responses:
+        "201":
+          description: The ledger entry that was created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  user_id: { type: integer }
+                  amount: { type: integer }
+                  reason: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { description: Invalid amount or missing reason }
