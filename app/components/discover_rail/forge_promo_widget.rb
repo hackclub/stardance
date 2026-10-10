@@ -5,7 +5,7 @@ module DiscoverRail
     register_as :forge_promo
 
     def render?
-      helpers.platform_ads_enabled?(user)
+      helpers.platform_ads_enabled?(user) && Flipper.enabled?(:"forge-promo", user)
     end
 
     URL = "https://forge.hackclub.com/?utm_source=stardance&utm_medium=discover_rail"
