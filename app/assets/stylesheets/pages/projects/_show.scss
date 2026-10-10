@@ -1333,6 +1333,29 @@ turbo-frame#project_hero {
   text-decoration: underline;
 }
 
+.project-show__notice--blocked {
+  background: color-mix(
+    in srgb,
+    var(--color-brand-salmon) 14%,
+    var(--color-set-2-bg)
+  );
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-brand-salmon) 55%, transparent);
+
+  .project-show__notice-title {
+    color: var(--color-brand-salmon);
+  }
+}
+
+.project-show__notice-reason {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0;
+  padding-left: var(--space-s);
+  border-left: 3px solid var(--color-brand-salmon);
+}
+
 .project-show__notice-dismiss {
   position: absolute;
   top: 8px;

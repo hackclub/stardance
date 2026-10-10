@@ -81,15 +81,15 @@
   <% if returned %>
     <% if is_member || current_user&.can_review? %>
       <% recert_modal_id = local_assigns[:recert_modal_id] %>
-      <% cooldown_blocker = local_assigns[:cooldown_blocker] %>
-      <% if (blocker = cooldown_blocker || local_assigns[:link_blocker]) %>
+      <% visible_blocker = local_assigns[:visible_blocker] %>
+      <% if (blocker = visible_blocker || local_assigns[:link_blocker]) %>
         <%= tag.button "Request re-certification",
               type: "button",
               class: "recert-modal__btn recert-modal__btn--primary",
               aria: { disabled: true },
-              data: ({ controller: "tooltip", tooltip_message_value: blocker, tooltip_position_value: "top" } unless cooldown_blocker) %>
-        <% if cooldown_blocker %>
-          <p class="ship-decision-card__blocker-note"><%= cooldown_blocker %></p>
+              data: ({ controller: "tooltip", tooltip_message_value: blocker, tooltip_position_value: "top" } unless visible_blocker) %>
+        <% if visible_blocker %>
+          <p class="ship-decision-card__blocker-note"><%= visible_blocker %></p>
         <% end %>
       <% elsif action_items_enabled? && is_member && decision.gates_resubmission? && recert_modal_id.present? %>
         <button type="button"

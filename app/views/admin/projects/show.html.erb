@@ -10,6 +10,19 @@
     </div>
   <% end %>
 
+  <% if @project.ship_blocked? %>
+    <% ship_block_version = @project.ship_block_version %>
+    <div class="mission-panel mission-panel--empty admin-user-show__banned">
+      <strong>Blocked from shipping</strong>
+      · <%= @project.ship_block_reason %>
+      <% if ship_block_version %>
+        <span class="admin-user-show__muted">
+          (<%= @project.ship_blocked_by(ship_block_version)&.display_name || "Unknown" %>, <%= ship_block_version.created_at.strftime("%Y-%m-%d %H:%M") %>)
+        </span>
+      <% end %>
+    </div>
+  <% end %>
+
   <div class="admin-user-show__grid">
     <div class="mission-panel">
       <h2 class="admin-user-show__section-title">Details</h2>
@@ -120,6 +133,23 @@
         <% else %>
           <%= button_to "Delete Project", delete_admin_project_path(@project), method: :post,
               data: { confirm: "Delete this project?" } %>
+        <% end %>
+      <% end %>
+      <% if @project.ship_blocked? %>
+        <% if policy(@project).unblock_shipping? %>
+          <%= button_to "Unblock Shipping", admin_project_ship_block_path(@project), method: :delete,
+              form: { onsubmit: "return confirm(#{"Unblock this project? The owner will be able to ship and re-certify it again.".to_json})" } %>
+        <% end %>
+      <% elsif policy(@project).block_shipping? %>
+        <button type="button" onclick="document.getElementById('ship-block-modal').showModal()">Block Shipping</button>
+        <%= render layout: "shared/modal", locals: { id: "ship-block-modal", title: "Block Project From Shipping", description: "Blocks shipping, reshipping and re-certification until unblocked. The owner is DM'd this reason with instructions to appeal in #ask-the-shipwrights." } do %>
+          <form action="<%= admin_project_ship_block_path(@project) %>" method="post">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <%= label_tag :reason, "Reason (shown to the project's members)" %>
+            <%= text_area_tag :reason, "", placeholder: "Reason for blocking...", required: true, maxlength: Project::ShipBlock::REASON_MAX_LENGTH %>
+            <button type="submit">Confirm Block</button>
+            <button type="button" onclick="document.getElementById('ship-block-modal').close()">Cancel</button>
+          </form>
         <% end %>
       <% end %>
       <% if policy(@project).convert_to_software? && @project.hardware? %>

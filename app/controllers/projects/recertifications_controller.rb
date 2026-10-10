@@ -7,6 +7,10 @@ class Projects::RecertificationsController < ApplicationController
   def create
     authorize @project, :request_recertification?
 
+    if @project.ship_blocked?
+      redirect_to project_path(@project), alert: Project::ShipBlock::BLOCKED_MESSAGE and return
+    end
+
     if (cooldown = recertification_cooldown_block)
       redirect_to project_path(@project), alert: cooldown and return
     end
@@ -39,7 +43,8 @@ class Projects::RecertificationsController < ApplicationController
 
     redirect_to project_path(@project), notice: "Re-certification requested! Your project is back in the review queue."
   rescue AASM::InvalidTransition
-    redirect_to project_path(@project), alert: "Your project can't be re-submitted right now."
+    redirect_to project_path(@project),
+                alert: @project.ship_blocked? ? Project::ShipBlock::BLOCKED_MESSAGE : "Your project can't be re-submitted right now."
   end
 
   private

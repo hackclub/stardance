@@ -1074,6 +1074,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_112647) do
     t.string "project_type"
     t.text "readme_url"
     t.text "repo_url"
+    t.text "ship_block_reason"
     t.string "ship_status", default: "draft"
     t.datetime "shipped_at"
     t.datetime "synced_at"
