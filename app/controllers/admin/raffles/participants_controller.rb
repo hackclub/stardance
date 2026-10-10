@@ -64,12 +64,9 @@ module Admin
           )
 
           if user.hca_linked?
-            week = ::Raffle::Week.current
-            if week
-              referral.paper_trail_event = "admin_credit"
-              referral.update!(status: :verified, credited_week: week, verified_at: Time.current)
-              @participant.user&.sync_referral_achievements!
-            end
+            referral.paper_trail_event = "admin_credit"
+            referral.update!(status: :verified, credited_week: ::Raffle::Week.current, verified_at: Time.current)
+            @participant.user&.sync_referral_achievements!
           end
         end
 
