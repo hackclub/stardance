@@ -15,15 +15,8 @@ module Admin
 
         case status_param
         when "verified"
-          week = ::Raffle::Week.current
-          unless week
-            return redirect_back fallback_location: admin_raffles_referrals_path,
-                                 allow_other_host: false,
-                                 alert: "Open a raffle week before verifying referrals."
-          end
-
           @referral.paper_trail_event = "manual_verify"
-          @referral.update!(status: :verified, credited_week: week, verified_at: Time.current)
+          @referral.update!(status: :verified, credited_week: ::Raffle::Week.current, verified_at: Time.current)
         when "rejected"
           @referral.paper_trail_event = "manual_reject"
           @referral.update!(status: :rejected, credited_week: nil)

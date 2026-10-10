@@ -1,7 +1,7 @@
 module Raffle
   module Referrals
     # Converts a pending referral when the referred user links their Hack Club
-    # account. Credits the referrer with entries for the currently-active week.
+    # account. Credits the referrer with entries for the active week, if any.
     class Credit
       def self.run_safely(user)
         new(user).run
@@ -27,13 +27,10 @@ module Raffle
         referral.with_lock do
           return referral unless referral.status_pending?
 
-          week = Raffle::Week.current
-          return unless week
-
           referral.paper_trail_event = "credit_referral"
           referral.update!(
             status: :verified,
-            credited_week: week,
+            credited_week: Raffle::Week.current,
             verified_at: Time.current
           )
 
