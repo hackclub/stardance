@@ -4,9 +4,11 @@ class DiscoverRail::TerraPortalWidgetTest < ViewComponent::TestCase
   setup do
     Flipper.enable(:platform_ads)
     Flipper.enable(:"forge-promo")
+    Flipper.enable(:"terra-promo")
   end
 
   teardown do
+    Flipper.disable(:"terra-promo")
     Flipper.disable(:"forge-promo")
     Flipper.disable(:platform_ads)
   end
@@ -42,6 +44,27 @@ class DiscoverRail::TerraPortalWidgetTest < ViewComponent::TestCase
 
     render_inline(DiscoverRail::TerraPortalWidget.new)
     assert_selector ".terra-portal"
+  end
+
+  test "disabling terra promo hides Terra without hiding Forge" do
+    Flipper.disable(:"terra-promo")
+
+    render_inline(DiscoverRail::TerraPortalWidget.new)
+    assert_no_selector ".terra-portal"
+
+    render_inline(DiscoverRail::ForgePromoWidget.new)
+    assert_selector ".forge-promo"
+  end
+
+  test "terra promo supports actor-targeted rollout" do
+    Flipper.disable(:"terra-promo")
+    Flipper.enable_actor(:"terra-promo", users(:one))
+
+    render_inline(DiscoverRail::TerraPortalWidget.new(user: users(:one)))
+    assert_selector ".terra-portal"
+
+    render_inline(DiscoverRail::TerraPortalWidget.new(user: users(:two)))
+    assert_no_selector ".terra-portal"
   end
 
   test "forge promo supports actor-targeted rollout" do
