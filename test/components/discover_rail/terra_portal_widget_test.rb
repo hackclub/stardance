@@ -21,7 +21,7 @@ class DiscoverRail::TerraPortalWidgetTest < ViewComponent::TestCase
   test "all program rail ads are hidden while platform ads are off" do
     Flipper.disable(:platform_ads)
 
-    [ DiscoverRail::TerraPortalWidget, DiscoverRail::ForgePromoWidget ].each do |widget|
+    [ DiscoverRail::TerraPortalWidget, DiscoverRail::ForgePromoWidget, DiscoverRail::MipmapPromoWidget ].each do |widget|
       render_inline(widget.new)
       assert_no_selector "section"
     end
@@ -32,7 +32,7 @@ class DiscoverRail::TerraPortalWidgetTest < ViewComponent::TestCase
     other_user = users(:two)
     user.preference.update!(platform_ads_enabled: false)
 
-    [ DiscoverRail::TerraPortalWidget, DiscoverRail::ForgePromoWidget ].each do |widget|
+    [ DiscoverRail::TerraPortalWidget, DiscoverRail::ForgePromoWidget, DiscoverRail::MipmapPromoWidget ].each do |widget|
       render_inline(widget.new(user: user))
       assert_no_selector "section"
 

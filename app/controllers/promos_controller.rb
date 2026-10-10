@@ -7,6 +7,11 @@ class PromosController < ApplicationController
     redirect_to DiscoverRail::ForgePromoWidget::URL, allow_other_host: true, status: :see_other
   end
 
+  def mipmap
+    track_event DiscoverRail::MipmapPromoWidget::CLICK_EVENT
+    redirect_to DiscoverRail::MipmapPromoWidget::URL, allow_other_host: true, status: :see_other
+  end
+
   def wrong_tool
     track_event Feed::WrongToolPromoComponent::CLICK_EVENT
     redirect_to Feed::WrongToolPromoComponent::URL, allow_other_host: true, status: :see_other

@@ -47,3 +47,20 @@
   font-display: swap;
   src: url("IMFellEnglish-latin.woff2") format("woff2");
 }
+
+// Mipmap's display and text faces, for its promo card.
+@font-face {
+  font-family: "Phudu";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("Phudu-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Sansation";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("Sansation-latin-bold.woff2") format("woff2");
+}

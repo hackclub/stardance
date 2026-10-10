@@ -659,6 +659,7 @@ Rails.application.routes.draw do
   end
 
   get "promos/forge", to: "promos#forge", as: :forge_promo
+  get "promos/mipmap", to: "promos#mipmap", as: :mipmap_promo
   get "promos/wrong_tool", to: "promos#wrong_tool", as: :wrong_tool_promo
 
   namespace :admin, constraints: AdminConstraint do
