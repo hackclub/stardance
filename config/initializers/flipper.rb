@@ -60,6 +60,7 @@ Rails.application.config.after_initialize do
         bukux3
         ddr
         wrong_tool_promo
+        forge-promo
       ].each { |flag| Flipper.add(flag) }
       Flipper.add(:bukux2_preview_complete) if Rails.env.development?
 
