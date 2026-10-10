@@ -1,0 +1,10 @@
+<section class="mipmap-promo" aria-label="Mipmap, a Hack Club YSWS" data-controller="mipmap-promo">
+  <link rel="preconnect" href="https://mipmap.hackclub.com">
+  <%= link_to helpers.mipmap_promo_path,
+        class: "mipmap-promo__card",
+        aria: { label: "Mipmap: learn to make a game without an engine" },
+        data: { mipmap_promo_target: "card", action: "click->mipmap-promo#launch pointerenter->mipmap-promo#brake pointerleave->mipmap-promo#release" } do %>
+    <%= helpers.inline_svg_tag "mipmap/logo.svg", class: "mipmap-promo__logo", aria_hidden: true, data: { mipmap_promo_target: "logo" } %>
+    <span class="mipmap-promo__pitch">You make games. But without an engine? Don't worry, we'll teach you.</span>
+  <% end %>
+</section>
