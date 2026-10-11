@@ -129,8 +129,7 @@ class ProjectsController < ApplicationController
 
     @queue_mismatch_review = visible_queue_mismatch
 
-    # Shipwright verdicts are rendered straight from the review records —
-    # they're private to project members, so they never become Post rows.
+    # Review visibility is checked separately from public Post rows.
     @timeline_entries = Project.sort_timeline_entries(
       @posts + visible_ship_decisions + visible_funding_requests
     )
@@ -215,27 +214,21 @@ class ProjectsController < ApplicationController
   end
   private :prepare_project_show_context
 
-  # Who can see a project's hardware review history (funding requests + ship
-  # verdicts) on its page:
-  #   - reviewers always can - they need the history to do their job;
-  #   - the project's own members and admins can while the surface's rollout flag
-  #     is on for them (the amount asked for and the reviewer's feedback are
-  #     otherwise the team's business);
-  #   - and when the +public_hardware_reviews+ flag is on, anyone viewing the
-  #     project can - logged in or not.
-  def hardware_review_history_visible?(rollout_flag)
-    return true if Flipper.enabled?(:public_hardware_reviews)
+  # Ordinary hardware verdicts are public. Software feedback stays with the
+  # project team, reviewers, admins and helpers.
+  def ship_review_history_visible?
+    return true if @project.hardware?
     return false unless current_user
-    return true if current_user.can_review?
-    return false unless Flipper.enabled?(rollout_flag, current_user)
+    return true if current_user.can_review? || current_user.helper?
+    return false unless Flipper.enabled?(:week_1_release, current_user)
 
-    @is_member || current_user.admin?
+    @is_member
   end
-  private :hardware_review_history_visible?
+  private :ship_review_history_visible?
 
-  # Decided Shipwright reviews. Same audience as the funding history below.
+  # Permanent rejections never inherit ordinary review visibility.
   def visible_ship_decisions
-    history_visible = hardware_review_history_visible?(:week_1_release)
+    history_visible = ship_review_history_visible?
     @project.ship_reviews
             .decided
             .includes(:reviewer, post_ship_event: :post)
@@ -248,26 +241,23 @@ class ProjectsController < ApplicationController
   # Project#timeline_funding_requests), so a returned review keeps its place as
   # newer devlogs are posted rather than only the latest request showing.
   def visible_funding_requests
-    history_visible = hardware_review_history_visible?(:hardware_flow)
     @project.timeline_funding_requests.includes(:reviewer, :user).select do |review|
-      review.permanently_rejected? ? permanent_rejection_visible?(review) : history_visible
+      !review.permanently_rejected? || permanent_rejection_visible?(review)
     end
   end
   private :visible_funding_requests
 
-  # Permanent decisions stay private even when other hardware reviews are public.
-  # A collaborator is not necessarily the person who submitted the review.
+  # Permanent decisions are only for project owners, helpers and review staff.
   def permanent_rejection_visible?(review)
     return false unless current_user
-    return true if current_user.can_review?
+    return true if @is_owner || current_user.can_review? || current_user.helper?
 
-    submitter = review.is_a?(Certification::FundingRequest) ? review.user : (review.verdict_ship_event&.post&.user || review.owner)
-    current_user == submitter || policy([ :admin, review ]).show?
+    policy([ :admin, review ]).show?
   end
   private :permanent_rejection_visible?
 
-  # The "your submission is in the wrong queue" question, if one is open. Same
-  # audience as the funding requests above: members and admins only.
+  # The "your submission is in the wrong queue" question, if one is open.
+  # Members and admins only.
   def visible_queue_mismatch
     return nil unless current_user
     return nil unless @is_member || current_user.admin?

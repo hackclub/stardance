@@ -41,7 +41,6 @@ Rails.application.config.after_initialize do
         hardware_flow
         hardware_action_items
         hardware_review_undo
-        public_hardware_reviews
         ship_event_payouts
         payout_recommendations
         disable_internal_sw_dash_reviews

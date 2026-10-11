@@ -6,11 +6,8 @@
     status means, what happens next) moves into a "?" tooltip on the byline,
     and only falls back to being the body when there is no feedback to show.
 
-    Reviewer feedback names a reviewer and explains a rejection, so it stays with
-    the person who has to act on it: the project owner, plus reviewers who can
-    always see review history. When the public_hardware_reviews flag is on it
-    goes public along with the card. Permanent rejections are always restricted
-    to their submitter and review staff by ProjectsController#visible_funding_requests.
+    Ordinary reviews and feedback are public. Permanent rejections are restricted
+    to project owners, helpers and review staff by ProjectsController#visible_funding_requests.
 
     Locals: funding_request, project, owner (required); resubmit_modal_id
     (optional - when present a returned request offers a resubmit button). %>
@@ -18,8 +15,7 @@
   decided_on = funding_request.decided_at || funding_request.created_at
   reviewer = funding_request.reviewer
   viewer_is_owner = owner.present? && owner == current_user
-  feedback_visible = funding_request.permanently_rejected? || viewer_is_owner || current_user&.can_review? || Flipper.enabled?(:public_hardware_reviews)
-  show_feedback = funding_request.feedback.present? && !funding_request.pending? && feedback_visible
+  show_feedback = funding_request.feedback.present? && !funding_request.pending?
 
   kit_mission = funding_request.kit_mission?
   awards_kit = funding_request.awards_design_kit?
