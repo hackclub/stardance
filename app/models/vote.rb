@@ -35,6 +35,8 @@
 #
 class Vote < ApplicationRecord
   FLAG_COST = 5
+  FLAG_DETAILS_MIN_LENGTH = 20
+  FLAG_DETAILS_MAX_LENGTH = 200
   MAX_BANKED_VOTES = 6
   MIN_SCORE = 1
   MAX_SCORE = 9
@@ -125,14 +127,14 @@ class Vote < ApplicationRecord
     ship_event&.payout_basis_vote_ids&.include?(id) || false
   end
 
-  def flag_for_review_by(user)
+  def flag_for_review_by(user, details:)
     if flaggable_by?(user)
       events.create!(
         event_type: "vote_flagged",
         user: user,
         project: project,
         ship_event: ship_event,
-        properties: { status: "pending" }
+        properties: { status: "pending", details: details }
       )
     else
       false

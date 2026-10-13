@@ -72,7 +72,7 @@ class VoteTest < ActiveSupport::TestCase
     owner, vote = create_reviewable_vote
 
     assert_difference -> { Vote::Event.pending_vote_flags.count }, 1 do
-      assert vote.flag_for_review_by(owner)
+      assert vote.flag_for_review_by(owner, details: "This rating ignored the demo entirely.")
     end
 
     assert vote.pending_flag?
@@ -82,7 +82,7 @@ class VoteTest < ActiveSupport::TestCase
   test "accepted flag discards vote and sends project back to voting" do
     owner, vote = create_reviewable_vote
     reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
-    vote.flag_for_review_by(owner)
+    vote.flag_for_review_by(owner, details: "This rating ignored the demo entirely.")
 
     assert_difference -> { Vote.payout_countable.count }, -1 do
       assert vote.accept_flag(reviewer: reviewer)
@@ -133,7 +133,7 @@ class VoteTest < ActiveSupport::TestCase
   test "rejected flag charges owner and releases payout" do
     owner, vote = create_reviewable_vote
     reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
-    vote.flag_for_review_by(owner)
+    vote.flag_for_review_by(owner, details: "This rating ignored the demo entirely.")
 
     assert_difference -> { owner.ledger_entries.where(created_by: "vote_flag_review").sum(:amount) }, -Vote::FLAG_COST do
       assert vote.reject_flag(reviewer: reviewer)

@@ -82,6 +82,12 @@
                 <% end %>
               </dd>
             </div>
+            <% if flag.properties["details"].present? %>
+              <div class="vote-flags__person">
+                <dt>Flag reason</dt>
+                <dd><%= flag.properties["details"] %></dd>
+              </div>
+            <% end %>
             <% if resolution %>
               <div class="vote-flags__person">
                 <dt>Reviewed by</dt>
