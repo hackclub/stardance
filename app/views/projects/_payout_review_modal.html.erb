@@ -43,9 +43,16 @@
       <% end %>
     </div>
 
-    <div class="payout-review-modal__reasons-wrap"
-         data-controller="payout-review"
-         aria-label="Anonymous rating reasons">
+    <% flaggable_votes = payout_review[:reason_votes].select { |vote| vote.flaggable_by?(current_user) } %>
+
+    <%= form_with url: ship_event_vote_flags_path(payout_review[:ship_event]),
+                  method: :post,
+                  class: "payout-review-modal__reasons-wrap",
+                  "aria-label": "Anonymous rating reasons",
+                  data: { controller: "payout-review vote-flags",
+                          vote_flags_min_length_value: Vote::FLAG_DETAILS_MIN_LENGTH,
+                          vote_flags_max_length_value: Vote::FLAG_DETAILS_MAX_LENGTH,
+                          turbo_confirm: "Flag the selected ratings for review? A rejected flag costs #{Vote::FLAG_COST} stardust each." } do %>
 
       <div class="payout-review-modal__reasons-header">
         <% if payout_review[:review_open] %>
@@ -78,16 +85,43 @@
             <%= simple_format(vote.reason, class: "payout-review-modal__reason-text") %>
             <% if vote.pending_flag? %>
               <span class="payout-review-modal__flag-status">Pending manual review</span>
-            <% elsif vote.flaggable_by?(current_user) %>
-              <%= button_to "Flag reason",
-                            vote_flag_path(vote),
-                            method: :post,
-                            class: "action-btn action-btn--small action-btn--destructive",
-                            form: { data: { turbo_confirm: "An incorrect flag costs #{Vote::FLAG_COST} stardust. Continue?" } } %>
+            <% elsif flaggable_votes.include?(vote) %>
+              <div class="payout-review-modal__flag" data-vote-flags-target="flag">
+                <label class="payout-review-modal__flag-toggle">
+                  <input type="checkbox"
+                         name="flags[<%= vote.id %>][selected]"
+                         value="1"
+                         class="payout-review-modal__flag-checkbox"
+                         data-action="vote-flags#update">
+                  Flag this reason
+                </label>
+                <div class="payout-review-modal__flag-details">
+                  <label class="payout-review-modal__flag-label" for="flag-details-<%= vote.id %>">
+                    What is inaccurate or unfair about this rating?
+                  </label>
+                  <textarea id="flag-details-<%= vote.id %>"
+                            name="flags[<%= vote.id %>][details]"
+                            class="payout-review-modal__flag-textarea"
+                            maxlength="<%= Vote::FLAG_DETAILS_MAX_LENGTH %>"
+                            placeholder="Explain what is wrong with this rating"
+                            data-action="input->vote-flags#update"></textarea>
+                  <span class="payout-review-modal__flag-hint" data-vote-flags-hint></span>
+                </div>
+              </div>
             <% end %>
           </li>
         <% end %>
       </ol>
-    </div>
+
+      <% if flaggable_votes.any? %>
+        <div class="payout-review-modal__flag-actions">
+          <p class="payout-review-modal__flag-summary" data-vote-flags-target="summary" aria-live="polite">Select ratings to flag</p>
+          <button type="submit"
+                  class="action-btn action-btn--small action-btn--destructive"
+                  data-vote-flags-target="submit"
+                  disabled>Flag selected</button>
+        </div>
+      <% end %>
+    <% end %>
   </div>
 </dialog>
