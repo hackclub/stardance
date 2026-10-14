@@ -550,21 +550,6 @@ class ProjectsController < ApplicationController
 
   # These are the same today, but they'll be different tomorrow.
 
-  def reposted_post_ids_for(posts)
-    return Set.new unless current_user
-
-    post_ids = posts.map do |post|
-      post.repost? ? post.postable.original_post_id : post.id
-    end.compact
-
-    return Set.new if post_ids.empty?
-
-    Post::Repost
-      .where(user: current_user, original_post_id: post_ids)
-      .pluck(:original_post_id)
-      .to_set
-  end
-
   def set_project
     @project = Project.find(params[:id])
   end

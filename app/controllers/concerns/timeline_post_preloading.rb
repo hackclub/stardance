@@ -17,6 +17,26 @@ module TimelinePostPreloading
     )
   end
 
+  # The original post ids among `posts` that the current user has reposted, so
+  # Posts::CardComponent can show repost state without a query per card.
+  def reposted_post_ids_for(posts)
+    return Set.new unless current_user
+
+    repost_target_ids = posts.filter_map do |post|
+      if post.postable_type == "Post::Devlog"
+        post.id
+      elsif post.repost?
+        post.postable&.original_post_id
+      end
+    end
+    return Set.new if repost_target_ids.empty?
+
+    Post::Repost
+      .where(user: current_user, original_post_id: repost_target_ids)
+      .pluck(:original_post_id)
+      .to_set
+  end
+
   def preload_timeline_group(records, associations)
     return if records.blank?
 

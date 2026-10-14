@@ -1,5 +1,6 @@
 class Home::FeedsController < ApplicationController
   include OnboardingResumable
+  include TimelinePostPreloading
 
   FEED_LIMIT = 10
   FIRST_PAGE_LIMIT = 3
@@ -400,24 +401,6 @@ class Home::FeedsController < ApplicationController
     return Set.new if devlog_posts.empty?
 
     Like.where(user: current_user, likeable_type: "Post::Devlog", likeable_id: devlog_posts.map(&:postable_id)).pluck(:likeable_id).to_set
-  end
-
-  def reposted_post_ids_for(posts)
-    return Set.new unless current_user
-
-    repost_target_ids = posts.filter_map do |post|
-      if post.postable_type == "Post::Devlog"
-        post.id
-      elsif post.repost?
-        post.postable&.original_post_id
-      end
-    end
-    return Set.new if repost_target_ids.empty?
-
-    Post::Repost
-      .where(user: current_user, original_post_id: repost_target_ids)
-      .pluck(:original_post_id)
-      .to_set
   end
 
   def load_recommended_projects
