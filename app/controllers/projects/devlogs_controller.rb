@@ -248,7 +248,11 @@ class Projects::DevlogsController < ApplicationController
     return apply_test_time_preview if test_time_granted? && hackatime_keys.blank?
     return @preview_time = nil unless hackatime_keys.present?
 
-    seconds = @project.seconds_coded_in_devlog_window(current_user.hackatime_identity&.uid, access_token: current_user.hackatime_identity&.access_token)
+    seconds = @project.unlogged_hackatime_seconds(
+      current_user.hackatime_identity&.uid,
+      user: current_user,
+      access_token: current_user.hackatime_identity&.access_token
+    )
     return apply_test_time_preview if test_time_granted? && seconds.nil?
 
     if seconds.nil?

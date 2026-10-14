@@ -38,7 +38,11 @@ class DevlogCapWarningJob < ApplicationJob
     return if Time.current - window_start < Post::ShipEvent::DEVLOG_CAP_WARNING_SECONDS
     return if already_notified?(project, owner, window_start)
 
-    unposted = project.seconds_coded_in_devlog_window(identity.uid, access_token: identity.access_token).to_i
+    unposted = project.unlogged_hackatime_seconds(
+      identity.uid,
+      user: owner,
+      access_token: identity.access_token
+    ).to_i
     sleep API_PAUSE_SECONDS
     return if unposted < Post::ShipEvent::DEVLOG_CAP_WARNING_SECONDS
 
