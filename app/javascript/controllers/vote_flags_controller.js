@@ -15,11 +15,17 @@ export default class extends Controller {
 
     this.flagTargets.forEach((flag) => this.refreshHint(flag));
 
-    const selected = this.flagTargets.filter((flag) => this.checkboxFor(flag).checked);
+    const selected = this.flagTargets.filter(
+      (flag) => this.checkboxFor(flag).checked,
+    );
     const ready = selected.filter((flag) => this.isReady(this.reasonFor(flag)));
 
-    this.submitTarget.disabled = selected.length === 0 || ready.length !== selected.length;
-    this.summaryTarget.textContent = this.summaryFor(selected.length, ready.length);
+    this.submitTarget.disabled =
+      selected.length === 0 || ready.length !== selected.length;
+    this.summaryTarget.textContent = this.summaryFor(
+      selected.length,
+      ready.length,
+    );
   }
 
   refreshHint(flag) {
@@ -30,7 +36,7 @@ export default class extends Controller {
     hint.textContent = `${length} / ${this.maxLengthValue} · at least ${this.minLengthValue}`;
     hint.classList.toggle(
       "payout-review-modal__flag-hint--short",
-      length > 0 && !this.isReady(reason)
+      length > 0 && !this.isReady(reason),
     );
   }
 
@@ -40,7 +46,8 @@ export default class extends Controller {
 
   summaryFor(selectedCount, readyCount) {
     if (selectedCount === 0) return "Select ratings to flag";
-    if (readyCount !== selectedCount) return `${selectedCount} selected · add a reason to each`;
+    if (readyCount !== selectedCount)
+      return `${selectedCount} selected · add a reason to each`;
 
     return `${selectedCount} selected`;
   }
