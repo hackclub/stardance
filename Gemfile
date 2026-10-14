@@ -100,7 +100,7 @@ gem "omniauth-rails_csrf_protection"
 gem "omniauth_openid_connect"
 gem "omniauth-oauth2"
 gem "omniauth-github", "~> 2.0"
-gem "jwt", "~> 3.2"
+gem "jwt", "~> 3.3"
 
 gem "raffle", path: "engines/raffle"
 gem "slack-ruby-client"
