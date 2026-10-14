@@ -123,7 +123,7 @@ gem "mission_control-jobs"
 gem "view_component"
 gem "phlex-rails"
 gem "aws-sdk-s3"
-gem "rubyzip", "~> 3.5"
+gem "rubyzip", "~> 3.7"
 gem "faraday"
 gem "faraday-retry"
 
