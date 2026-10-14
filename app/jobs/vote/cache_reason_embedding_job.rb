@@ -1,5 +1,5 @@
 class Vote::CacheReasonEmbeddingJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform(vote_id)
     vote_reason_embedder = "Secrets::VoteReasonEmbedder".safe_constantize

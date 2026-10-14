@@ -118,6 +118,33 @@
       </section>
 
       <aside class="ship-review__sidebar">
+        <% if policy(@ship).set_bonus_stardust? %>
+          <div class="ship-review__panel bonus-stardust">
+            <h2 class="ship-review__panel-title">Bonus Stardust</h2>
+            <% if @ship.bonus_stardust.present? %>
+              <p class="bonus-stardust__current">
+                Currently: <strong>+<%= @ship.bonus_stardust %></strong> bonus stardust
+              </p>
+            <% end %>
+            <%= form_with url: set_bonus_stardust_admin_certification_ship_path(@ship), method: :patch, class: "bonus-stardust__form" do %>
+              <div class="bonus-stardust__field">
+                <%= number_field_tag :bonus_stardust, @ship.bonus_stardust,
+                      step: 0.25, min: 0, max: 100, placeholder: "0.0",
+                      autocomplete: "off",
+                      class: "bonus-stardust__input",
+                      id: "bonus-stardust-input" %>
+                <%= submit_tag "Set Bonus", class: "action-btn action-btn--small action-btn--primary" %>
+              </div>
+            <% end %>
+            <% if @ship.stardust_earned.present? %>
+              <div class="bonus-stardust__breakdown">
+                <span class="bonus-stardust__breakdown-label">Total earned:</span>
+                <span class="bonus-stardust__breakdown-value"><%= @ship.stardust_earned %> stardust</span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
         <div class="ship-review__panel"
              data-controller="certification--ships--fraud-report"
              data-certification--ships--fraud-report-ship-id-value="<%= @ship.id %>">

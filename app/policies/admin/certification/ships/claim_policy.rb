@@ -4,11 +4,11 @@
 # destroy? → reviewer can unclaim the ship
 class Admin::Certification::Ships::ClaimPolicy < ApplicationPolicy
   def create?
-    user&.can_review? && not_own_project?
+    can_review_hardware? && not_own_project?
   end
 
   def destroy?
-    return false unless user&.can_review? && not_own_project?
+    return false unless can_review_hardware? && not_own_project?
 
     record.claim_held_by?(user) || (record.reviewer_id == user.id && record.claim_expired?)
   end

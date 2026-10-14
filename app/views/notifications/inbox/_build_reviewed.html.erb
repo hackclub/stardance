@@ -1,0 +1,12 @@
+<% review = notification.record %>
+<% if review&.approved? %>
+  <span class="notifications-item__verb">Your build was</span>
+  <strong>approved</strong>
+<% else %>
+  <span class="notifications-item__verb">Your build</span>
+  <strong>needs changes</strong>
+<% end %>
+<% if review&.project %>
+  <span class="notifications-item__verb">on</span>
+  <%= link_to review.project.title, project_path(review.project), class: "notifications-item__actor" %>
+<% end %>

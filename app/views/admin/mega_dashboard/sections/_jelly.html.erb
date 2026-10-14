@@ -1,0 +1,53 @@
+<%= turbo_frame_tag "mega-dash-jelly", target: "_top" do %>
+  <section class="mega-dash__section mega-dash__panel" aria-labelledby="mega-dash-jelly-title"
+           data-controller="mega-dash-chart"
+           data-mega-dash-chart-data-value="<%= @jelly[:chart_data].to_json %>">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-jelly-title">Support (Jelly)</h2>
+      <span class="mega-dash__note">
+        Last <%= @period %> days ·
+        <% if !@jelly[:configured] %>
+          not configured
+        <% elsif @jelly[:last_synced_at].blank? %>
+          configured, but the sync job has never written anything
+        <% else %>
+          synced <%= time_ago_in_words(@jelly[:last_synced_at]) %> ago<%= " · stale" if @jelly[:stale] %>
+        <% end %>
+      </span>
+    </div>
+
+    <% if !@jelly[:configured] %>
+      <p class="mega-dash__empty">JELLY_API_TOKEN is not set in this environment, so the sync job exits without doing anything.</p>
+    <% else %>
+      <div class="mega-dash__tiles">
+        <%= render "admin/mega_dashboard/tile", label: "New conversations", value: number_with_delimiter(@jelly[:tiles][:arrivals]) %>
+        <%= render "admin/mega_dashboard/tile", label: "Open now", value: number_with_delimiter(@jelly[:tiles][:open]) %>
+        <%= render "admin/mega_dashboard/tile", label: "Awaiting reply", value: number_with_delimiter(@jelly[:tiles][:awaiting_reply]) %>
+        <%= render "admin/mega_dashboard/tile",
+              label: "Median first response",
+              value: mega_dash_duration(@jelly[:tiles][:median_first_response_hours]),
+              note: "from #{pluralize(@jelly[:tiles][:response_sample], "conversation")}" %>
+      </div>
+
+      <% if @jelly[:history_days].zero? %>
+        <p class="mega-dash__empty">No history recorded yet. Charts fill in from the first sync onward.</p>
+      <% else %>
+        <div class="mega-dash__charts">
+          <figure class="mega-dash__chart">
+            <figcaption>Volume</figcaption>
+            <canvas data-mega-dash-chart-target="volume"></canvas>
+          </figure>
+          <figure class="mega-dash__chart">
+            <figcaption>First response time</figcaption>
+            <canvas data-mega-dash-chart-target="latency"></canvas>
+          </figure>
+          <figure class="mega-dash__chart">
+            <figcaption>Awaiting reply</figcaption>
+            <canvas data-mega-dash-chart-target="backlog"></canvas>
+          </figure>
+        </div>
+      <% end %>
+
+    <% end %>
+  </section>
+<% end %>

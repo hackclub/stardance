@@ -1,0 +1,31 @@
+<dialog class="ysws-shortcuts" aria-labelledby="ysws-shortcuts-title" aria-describedby="ysws-shortcuts-description">
+  <form class="ysws-shortcuts__form">
+    <header class="ysws-shortcuts__header">
+      <div>
+        <h2 id="ysws-shortcuts-title">Keyboard shortcuts</h2>
+        <p id="ysws-shortcuts-description">Saved to your account.</p>
+      </div>
+      <button type="button" data-shortcuts="close" aria-label="Close shortcut settings">×</button>
+    </header>
+    <div class="ysws-shortcuts__body">
+      <label class="ysws-shortcuts__modifier">
+        In notes
+        <select data-shortcuts="modifier">
+          <option value="platform">Automatic</option>
+          <option value="none">Off</option>
+        </select>
+      </label>
+      <p class="ysws-shortcuts__notice" data-shortcuts="notice"></p>
+      <p class="ysws-shortcuts__notice">Click a key to change it. + adds another.</p>
+      <div class="ysws-shortcuts__rows" data-shortcuts="rows"></div>
+    </div>
+    <footer class="ysws-shortcuts__footer">
+      <p class="ysws-shortcuts__status" role="status" aria-live="polite" data-shortcuts="status"></p>
+      <div class="ysws-shortcuts__actions">
+        <button type="button" class="ysws-shortcuts__reset" data-shortcuts="reset">Restore defaults</button>
+        <button type="button" data-shortcuts="close">Cancel</button>
+        <button type="submit" class="ysws-shortcuts__save">Save shortcuts</button>
+      </div>
+    </footer>
+  </form>
+</dialog>

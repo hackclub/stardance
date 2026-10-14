@@ -12,7 +12,7 @@ module User::Profile
       variant = GUEST_AVATAR_VARIANTS[(id || 0) % GUEST_AVATAR_VARIANTS.size]
       ActionController::Base.helpers.image_path("avatars/#{variant}.png")
     else
-      "https://cachet.dunkirk.sh/users/#{slack_id}/r"
+      "https://cachet.hackclub.com/users/#{slack_id}/r"
     end
   end
 end

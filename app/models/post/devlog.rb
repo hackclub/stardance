@@ -41,6 +41,7 @@ class Post::Devlog < ApplicationRecord
 
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
+  ATTACHMENT_MAX_SIZE = 50.megabytes
   ACCEPTED_CONTENT_TYPES = %w[
     image/jpeg
     image/png
@@ -65,7 +66,6 @@ class Post::Devlog < ApplicationRecord
   has_many :likes, as: :likeable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
 
-  has_many :lookout_sessions, foreign_key: :devlog_id
 
   # only for images – not for videos or gif!
   has_many_attached :attachments do |attachable|
@@ -90,7 +90,7 @@ class Post::Devlog < ApplicationRecord
 
   validates :attachments,
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
-            size: { less_than: 50.megabytes, message: "is too large (max 50 MB)" },
+            size: { less_than: ATTACHMENT_MAX_SIZE, message: "is too large (max 50 MB)" },
             processable_file: true
   validate :at_least_one_attachment
   validate :at_most_max_attachments
@@ -101,7 +101,23 @@ class Post::Devlog < ApplicationRecord
             },
             allow_nil: true,
             on: :create
+  # Call normalizer prior to validation
+  before_validation :normalize_line_endings
   validates :body, presence: true, length: { maximum: BODY_MAX_LENGTH }
+
+  # The comments a reader should see — the Ruby-side counterpart to
+  # Comment.for_thread, so a preloaded +comments+ association is reused rather
+  # than re-queried per devlog (the API serializes a whole page in one go).
+  def thread_comments
+    comments.reject { |comment| comment.user.banned? }.sort_by(&:created_at)
+  end
+
+  private
+
+  # Normalize line endings (\r\n for now) to \n
+  def normalize_line_endings
+    self.body = body.gsub("\r\n", "\n") if body.present?
+  end
 
   after_create_commit :handle_post_creation
   after_update_commit :update_project_duration_if_changed
@@ -167,6 +183,11 @@ class Post::Devlog < ApplicationRecord
   end
 
   private
+
+  # Normalize line endings (\r\n for now) to \n
+  def normalize_line_endings
+    self.body = body.gsub("\r\n", "\n") if body.present?
+  end
 
   def handle_post_creation
     PostCreationToSlackJob.perform_later(self)

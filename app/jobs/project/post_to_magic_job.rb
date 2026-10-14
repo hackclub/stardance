@@ -1,5 +1,5 @@
 class Project::PostToMagicJob < ApplicationJob
-  queue_as :default
+  queue_as :latency_5m
 
   CHANNEL_ID = "C0A38L9MFEE"
 

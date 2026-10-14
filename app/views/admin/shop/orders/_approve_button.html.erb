@@ -1,0 +1,9 @@
+<% if approvable_order?(order) %>
+  <% confirmation = "Approve order ##{order.id} — #{order.shop_item.name} ×#{order.quantity} — for fulfillment?" %>
+  <%= form_with url: bulk_approve_admin_shop_orders_path, method: :post, local: true,
+                class: "shop-orders__approve-form",
+                html: { onsubmit: "return confirm(#{confirmation.to_json});" } do %>
+    <%= hidden_field_tag "order_ids[]", order.id, id: nil %>
+    <%= render ActionButtonComponent.new(text: "✓ Approve", size: :small) %>
+  <% end %>
+<% end %>

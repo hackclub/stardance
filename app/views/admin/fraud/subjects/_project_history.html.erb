@@ -1,0 +1,64 @@
+<section class="fraud-subject__section" aria-labelledby="fraud-subject-projects">
+  <h2 class="fraud-subject__section-title" id="fraud-subject-projects">
+    Submitted projects
+    <span class="fraud-subject__section-count"><%= project_summaries.size %></span>
+  </h2>
+
+  <% if project_summaries.any? %>
+    <div class="fraud-subject__projects">
+      <% project_summaries.each do |summary| %>
+        <article class="fraud-subject__project">
+          <div class="fraud-subject__item-head">
+            <h3 class="fraud-subject__item-title">
+              <%= link_to summary[:project].title, admin_project_path(summary[:project]) %>
+            </h3>
+            <span class="fraud-subject__item-age">#<%= summary[:project].id %></span>
+          </div>
+
+          <dl class="fraud-subject__facts">
+            <div class="fraud-subject__fact">
+              <dt class="fraud-subject__fact-label">Submissions</dt>
+              <dd class="fraud-subject__fact-value"><%= summary[:submissions].size %></dd>
+            </div>
+            <div class="fraud-subject__fact">
+              <dt class="fraud-subject__fact-label">Status</dt>
+              <dd class="fraud-subject__fact-value">
+                <%= summary[:submissions].map { |ship| ship.certification_status.humanize }.uniq.to_sentence %>
+              </dd>
+            </div>
+            <div class="fraud-subject__fact">
+              <dt class="fraud-subject__fact-label">Stardust gained</dt>
+              <dd class="fraud-subject__fact-value">
+                <%= summary[:payout].positive? ? number_with_delimiter(summary[:payout]) : "None" %>
+              </dd>
+            </div>
+            <div class="fraud-subject__fact">
+              <dt class="fraud-subject__fact-label">Credited time</dt>
+              <dd class="fraud-subject__fact-value">
+                <%= number_with_precision(summary[:total_seconds] / 1.hour.to_f, precision: 2, strip_insignificant_zeros: true) %> hours
+              </dd>
+            </div>
+          </dl>
+
+          <% if summary[:key_seconds].any? %>
+            <h4 class="fraud-subject__mapping-title">Hackatime key mapping</h4>
+            <dl class="fraud-subject__key-mappings">
+              <% summary[:key_seconds].each do |keys, seconds| %>
+                <div class="fraud-subject__key-mapping">
+                  <dt><code><%= keys %></code></dt>
+                  <dd>
+                    <%= number_with_precision(seconds / 1.hour.to_f, precision: 2, strip_insignificant_zeros: true) %> hours logged
+                  </dd>
+                </div>
+              <% end %>
+            </dl>
+          <% else %>
+            <p class="fraud-subject__empty">No credited devlog time or Hackatime key snapshots.</p>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="fraud-subject__empty">No projects submitted.</p>
+  <% end %>
+</section>

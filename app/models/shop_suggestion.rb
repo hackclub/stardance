@@ -43,7 +43,7 @@ class ShopSuggestion < ApplicationRecord
   validates :name, presence: true, length: { minimum: 3, maximum: 200 }
   validates :description, presence: true, length: { minimum: 10, maximum: 5000 }
   validates :url, allow_blank: true, length: { maximum: 2000 }, format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) }
-  validates :usd_cost, presence: true, numericality: { greater_than: 0 }
+  validates :usd_cost, presence: true, numericality: { greater_than: 0, less_than: 1_000_000 }
   validate :sufficient_balance, on: :create
   validate :image_present, on: :create
 

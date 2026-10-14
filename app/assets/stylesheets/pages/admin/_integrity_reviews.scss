@@ -459,7 +459,7 @@
     font-weight: 700;
   }
 
-  // Billy / Joe fraud-tool links — two large-action secondary pills sharing
+  // Telescreen fraud-tool links — two large-action secondary pills sharing
   // the width at the foot of the user card (branding §4.3, dark-bg variant).
   & &__tools {
     display: flex;
@@ -537,6 +537,13 @@
   & &__row--block {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  // Lifetime hours sit under the ship's own figure as quiet context.
+  & &__value-aside {
+    display: block;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
   }
 
   & &__value--block {
@@ -649,7 +656,10 @@
 // accent hue; the fill is a translucent tint of that same hue. Tints are kept
 // local here (rather than as global tokens) since they're specific to these
 // pages. Accent-as-status per branding §1.3.
-.integrity-flags {
+// Scoped to .admin-content on purpose: the admin list baseline there is
+// `.admin-content ul`, which outranks a bare `.integrity-flags` and puts a
+// 24px indent and row margins back on the tag row.
+.admin-content .integrity-flags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);

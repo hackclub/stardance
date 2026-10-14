@@ -24,8 +24,50 @@ class ShopCardGrant < ApplicationRecord
   belongs_to :user
   belongs_to :shop_item
 
+  # HCB statuses a grant can never come back from: `canceled` (the recipient or
+  # an admin pulled it) and `expired` (HCB timed it out and returned the money).
+  # HCB refuses a top-up on either - CardGrantPolicy#topup? requires an active
+  # grant - so a grant in one of these is finished, not reusable.
+  CLOSED_STATUSES = %w[canceled expired].freeze
+
+  class << self
+    # Reads an HCB card-grant payload (the body HCBService.show_card_grant
+    # returns) the same way everywhere a grant's safety is judged - shop
+    # fulfillment (Shop::HCBGrantFulfillable) and hardware review undo
+    # (Certification::ReviewUndoer) - so the field handling lives in one place.
+    #
+    # Only a payload HCB actually gave us can close a grant. A caller that
+    # couldn't read the status has to treat that as unknown rather than passing
+    # blank data in and reading `false` as "still live".
+    def closed_grant?(hcb_data)
+      hcb_data.present? && CLOSED_STATUSES.include?(hcb_data["status"].to_s)
+    end
+
+    # A grant whose remaining balance still equals the amount granted is
+    # untouched; any less has been spent. Missing/unreadable data is treated as
+    # spent (unsafe) rather than assumed clean - this guards real money.
+    # `expected_cents` is the amount we believe was granted, used only when the
+    # payload omits amount_cents.
+    def spent_grant?(hcb_data, expected_cents: nil)
+      return true if hcb_data.blank?
+
+      balance = hcb_data["balance_cents"]
+      return true if balance.nil?
+
+      balance.to_i < (hcb_data["amount_cents"] || expected_cents).to_i
+    end
+  end
+
+  # Raises if HCB can't be reached or refuses the read; callers decide what an
+  # unreadable status should mean for them.
   def hcb_data
     @hcb_data ||= HCBService.show_card_grant(hashid: hcb_grant_hashid)
+  end
+
+  # True when HCB reports this grant cancelled or expired. Raises if the status
+  # can't be read - see #hcb_data.
+  def closed?
+    self.class.closed_grant?(hcb_data)
   end
 
   def hcb_url

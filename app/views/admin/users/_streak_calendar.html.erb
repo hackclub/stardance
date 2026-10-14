@@ -1,0 +1,37 @@
+<%# Clickable month calendar for the credit modal. Paging is a plain frame
+    navigation, so only picking a day needs a Stimulus controller. %>
+<%= turbo_frame_tag "admin_user_streak_calendar" do %>
+  <div class="streak-calendar">
+    <div class="streak-calendar__nav">
+      <% previous_month = date.prev_month %>
+      <% if previous_month >= StreakActivity::CALENDAR_FIRST_MONTH %>
+        <%= link_to "‹",
+              admin_user_streak_calendar_path(user, year: previous_month.year, month: previous_month.month),
+              class: "streak-calendar__nav-btn", aria: { label: "Previous month" } %>
+      <% else %>
+        <span class="streak-calendar__nav-btn streak-calendar__nav-btn--disabled">‹</span>
+      <% end %>
+
+      <span class="streak-calendar__month"><%= date.strftime("%B %Y") %></span>
+
+      <% following_month = date.next_month %>
+      <% if following_month <= StreakActivity::CALENDAR_LAST_MONTH %>
+        <%= link_to "›",
+              admin_user_streak_calendar_path(user, year: following_month.year, month: following_month.month),
+              class: "streak-calendar__nav-btn", aria: { label: "Next month" } %>
+      <% else %>
+        <span class="streak-calendar__nav-btn streak-calendar__nav-btn--disabled">›</span>
+      <% end %>
+    </div>
+
+    <%= render "streaks/month_cells",
+          calendar_days: user.streak_month_calendar(date.year, date.month),
+          pickable: true,
+          zoomable: false %>
+
+    <p class="streak-calendar__legend">
+      <span>Click a day to load it into the date field.</span>
+      <span>Filled star: kept. Empty star: missed. Sticker: a Sticky Streak day.</span>
+    </p>
+  </div>
+<% end %>

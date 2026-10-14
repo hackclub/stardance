@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::ProcessVerifiedOrdersJob < ApplicationJob
-  queue_as :default
+  queue_as :latency_5m
 
   def perform(user_id)
     user = User.find(user_id)
@@ -18,7 +18,7 @@ class Shop::ProcessVerifiedOrdersJob < ApplicationJob
         end
       rescue StandardError => e
         Rails.logger.error "Failed to process order #{order.id} for user #{user_id}: #{e.message}"
-        Sentry.capture_exception(e, extra: { order_id: order.id, user_id: user_id })
+        Rails.error.report(e, context: { order_id: order.id, user_id: user_id })
         next
       end
     end

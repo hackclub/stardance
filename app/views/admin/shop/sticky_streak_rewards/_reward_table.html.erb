@@ -1,0 +1,38 @@
+<%# One track's day-to-item map. Days left blank show as a question mark on
+    everyone's board. %>
+<div class="shop-dashboard__panel">
+  <div class="shop-dashboard__section-header">
+    <h3><%= title %></h3>
+  </div>
+  <p><%= blurb %></p>
+
+  <table class="table-data">
+    <thead>
+      <tr>
+        <th>Day</th>
+        <th></th>
+        <th>Shop item</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% StickyStreak.reward_days_for(track).each do |day| %>
+        <% reward = rewards[day] %>
+        <tr>
+          <td><strong><%= day %></strong></td>
+          <td>
+            <% if reward&.shop_item&.image&.attached? %>
+              <%= image_tag reward.shop_item.image.variant(:carousel_sm), class: "shop-dashboard__thumb" %>
+            <% else %>
+              <div class="shop-dashboard__thumb-placeholder">?</div>
+            <% end %>
+          </td>
+          <td>
+            <%= select_tag "days[#{track}][#{day}]",
+                  options_from_collection_for_select(shop_items, :id, :name, reward&.shop_item_id),
+                  include_blank: "Not set" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,7 @@
+<% review = notification.record %>
+<span class="notifications-item__verb">A reviewer reopened the review of</span>
+<% if review&.project %>
+  <%= link_to review.project.title, project_path(review.project), class: "notifications-item__actor" %>
+<% else %>
+  <strong>your hardware project</strong>
+<% end %>

@@ -1,0 +1,86 @@
+// Per-day funnel on the Sticky Streak rewards dashboard: for each of the 21
+// days, how many runs banked it, are living it, or still have it ahead.
+
+.sticky-funnel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    margin: 0 0 var(--space-s);
+    padding: 0;
+  }
+
+  &__key {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    font-size: var(--font-size-xs);
+    color: var(--color-space-text-muted);
+
+    &::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    &--successful::before {
+      background: var(--color-brand-mint);
+    }
+
+    &--in-progress::before {
+      background: var(--color-brand-yellow);
+    }
+
+    &--potential::before {
+      background: var(--color-brand-lilac);
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  &__day {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-space-text-muted);
+    text-align: right;
+  }
+
+  &__track {
+    display: flex;
+    height: 14px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--color-overlay-light-soft);
+    cursor: help;
+  }
+
+  &__bar {
+    height: 100%;
+
+    &--successful {
+      background: var(--color-brand-mint);
+    }
+
+    &--in-progress {
+      background: var(--color-brand-yellow);
+    }
+
+    &--potential {
+      background: var(--color-brand-lilac);
+    }
+  }
+}

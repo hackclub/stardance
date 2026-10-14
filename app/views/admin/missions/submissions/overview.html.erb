@@ -33,7 +33,8 @@
                   <% end %>
                 </div>
               </div>
-              <%= link_to "Review", admin_mission_submissions_path(m.slug),
+              <% review_path = m.hardware? ? design_admin_mission_hardware_reviews_path(m.slug) : admin_mission_submissions_path(m.slug) %>
+              <%= link_to "Review", review_path,
                     class: "action-btn action-btn--small action-btn--primary" %>
             </li>
           <% end %>

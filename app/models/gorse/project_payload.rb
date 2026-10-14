@@ -64,6 +64,7 @@ class Gorse::ProjectPayload
     end
 
     def rejected_latest_ship?
-      project.ship_events.order(created_at: :desc).first&.certification_status == "rejected"
+      latest = project.ship_events.order(created_at: :desc).first
+      latest.present? && latest.certification_status.in?(Post::ShipEvent::HIDDEN_STATUSES)
     end
 end

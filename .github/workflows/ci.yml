@@ -15,56 +15,58 @@ env:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: Brakeman
-            system_packages: "libblas-dev liblapack-dev"
             command: bin/brakeman --no-pager
 
           - name: RuboCop
-            system_packages: "libblas-dev liblapack-dev"
-            needs_node: true
             command: bin/rubocop -f github
 
           - name: ERB Lint
-            system_packages: "libblas-dev liblapack-dev"
-            needs_node: true
             command: bundle exec erb_lint --lint-all
 
           - name: Prettier JS/TS
-            system_packages: "libblas-dev liblapack-dev"
+            skip_ruby: true
             needs_node: true
             command: yarn prettier --check "app/javascript/**/*.{js,jsx,ts,tsx}"
 
           - name: Prettier SCSS/CSS
-            system_packages: "libblas-dev liblapack-dev"
+            skip_ruby: true
             needs_node: true
             command: yarn prettier --check "app/assets/stylesheets/**/*.{scss,css}"
 
           - name: Zeitwerk
-            system_packages: "libvips-dev libblas-dev liblapack-dev"
+            # Eager loading pulls in ruby-vips, which needs the runtime library only.
+            system_packages: "libvips42t64"
             rails_env: test
             command: bin/rails zeitwerk:check
 
     name: ${{ matrix.name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y ${{ matrix.system_packages }}
+        if: matrix.system_packages
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: bash .github/scripts/apt-install.sh ${{ matrix.system_packages }}
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1.316.0
+        if: ${{ !matrix.skip_ruby }}
+        uses: ruby/setup-ruby@v1.321.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
 
       - name: Set up Node.js
         if: matrix.needs_node
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@v7
         with:
           node-version-file: package.json
 
@@ -83,6 +85,7 @@ jobs:
 
   db_checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -97,12 +100,15 @@ jobs:
       RAILS_ENV: test
       DATABASE_URL: postgresql://postgres:password@localhost:5432/stardance_test
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libblas-dev liblapack-dev
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: bash .github/scripts/apt-install.sh libvips42t64
 
-      - uses: ruby/setup-ruby@v1.316.0
+      - uses: ruby/setup-ruby@v1.321.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true

@@ -2,7 +2,7 @@ class CertificatesController < ApplicationController
   def show
     skip_authorization
 
-    @approved_hours = current_user.approved_ship_hours if current_user && current_user.certificate.nil?
+    @approved_hours = current_user.approved_hours if current_user && current_user.certificate.nil?
 
     @code = Certificate.normalize_code(params[:code]) if params[:code].present?
     return if @code.blank?
@@ -14,7 +14,7 @@ class CertificatesController < ApplicationController
   def create
     authorize Certificate
 
-    certificate = current_user.build_certificate(hours_at_issue: current_user.approved_ship_hours)
+    certificate = current_user.build_certificate(hours_at_issue: current_user.approved_hours)
     request_and_redirect(certificate)
   end
 
@@ -23,7 +23,7 @@ class CertificatesController < ApplicationController
     return render_not_found if certificate.nil?
 
     authorize certificate
-    certificate.hours_at_issue = current_user.approved_ship_hours
+    certificate.hours_at_issue = current_user.approved_hours
     request_and_redirect(certificate)
   end
 
@@ -32,7 +32,7 @@ class CertificatesController < ApplicationController
     return render_not_found if certificate.nil?
 
     authorize certificate
-    certificate.hours_at_issue = current_user.approved_ship_hours
+    certificate.hours_at_issue = current_user.approved_hours
     request_and_redirect(certificate)
   end
 

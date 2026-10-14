@@ -47,20 +47,6 @@
       width: 100%;
     }
 
-    // Backdrop becomes a left-anchored ambient glow
-    .ui-heading__backdrop {
-      inset: 0;
-      width: 50%;
-      border-radius: 0;
-      background: radial-gradient(
-        ellipse at left center,
-        var(--_glow) 0%,
-        transparent 70%
-      );
-      filter: blur(0);
-      animation: none;
-    }
-
     // Surface is a flush bottom-bordered bar — no pill shape
     .ui-heading__surface {
       width: 100%;
@@ -85,7 +71,7 @@
     .ui-heading__title {
       font-size: clamp(1.75rem, 3vw, 2.25rem);
 
-      // Suppress the dot-marker — the left glow is the accent cue here
+      // Suppress the dot-marker — the bottom accent rule is the cue here
       &::before {
         display: none;
       }
@@ -99,18 +85,6 @@
     display: inline-flex;
     justify-content: center;
     padding-inline: var(--space-s);
-  }
-
-  // Blurred ambient glow that sits behind the surface pill
-  &__backdrop {
-    position: absolute;
-    inset: -14px -22px;
-    background: var(--_glow);
-    border-radius: 28px;
-    filter: blur(24px);
-    z-index: 0;
-    pointer-events: none;
-    animation: ui-heading-breathe 5s ease-in-out infinite;
   }
 
   // Main title container — pill for default, flush bar for --full
@@ -159,16 +133,6 @@
     top: 50%;
     transform: translateY(-50%);
     z-index: 2;
-  }
-}
-
-@keyframes ui-heading-breathe {
-  0%,
-  100% {
-    opacity: 0.65;
-  }
-  50% {
-    opacity: 1;
   }
 }
 

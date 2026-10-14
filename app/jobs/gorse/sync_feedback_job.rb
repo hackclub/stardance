@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Gorse::SyncFeedbackJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform(user, item, feedback_type, value: 1, timestamp: Time.current, comment: nil)
     payload = Gorse::FeedbackPayload.new(

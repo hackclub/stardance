@@ -1,4 +1,6 @@
 class Api::V1::BaseController < ActionController::API
+  include ApiAuthenticatable
+
   before_action :authenticate_api_key
 
   private
@@ -22,10 +24,6 @@ class Api::V1::BaseController < ActionController::API
       else
         false
       end
-    end
-
-    def bearer_token
-      request.authorization.to_s[/\ABearer (.+)\z/, 1]
     end
 
     def api_keys

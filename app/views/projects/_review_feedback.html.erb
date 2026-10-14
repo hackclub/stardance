@@ -1,0 +1,13 @@
+<div class="review-feedback">
+  <% review.feedback_segments.each do |segment| %>
+    <% if segment[:type] == :prose %>
+      <div class="review-feedback__prose"><%= simple_format(segment[:text], {}, sanitize: true) %></div>
+    <% else %>
+      <ul class="review-feedback__items">
+        <% segment[:items].each do |item| %>
+          <li class="review-feedback__item"><%= item %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+</div>

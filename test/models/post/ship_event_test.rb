@@ -9,11 +9,13 @@
 #  feedback_video_url         :string
 #  hours_at_payout            :float
 #  hours_at_ship              :float
+#  lifecycle_data_quality     :string
 #  multiplier                 :float
 #  originality_median         :decimal(5, 2)
 #  originality_percentile     :decimal(5, 2)
 #  overall_percentile         :decimal(5, 2)
 #  overall_score              :decimal(5, 2)
+#  paid_at                    :datetime
 #  payout                     :float
 #  payout_basis_locked_at     :datetime
 #  payout_basis_overall_score :decimal(5, 2)
@@ -30,8 +32,16 @@
 #  usability_median           :decimal(5, 2)
 #  usability_percentile       :decimal(5, 2)
 #  votes_count                :integer          default(0), not null
+#  voting_completed_at        :datetime
+#  voting_started_at          :datetime
 #  created_at                 :datetime         not null
 #  updated_at                 :datetime         not null
+#
+# Indexes
+#
+#  index_post_ship_events_on_paid_at              (paid_at)
+#  index_post_ship_events_on_voting_completed_at  (voting_completed_at)
+#  index_post_ship_events_on_voting_started_at    (voting_started_at)
 #
 require "test_helper"
 
@@ -67,6 +77,20 @@ class Post::ShipEventTest < ActiveSupport::TestCase
     ship_event = Post::ShipEvent.new(body: "test", review_instructions: "x" * 2001, uploading_attachments: true)
     ship_event.valid?
     assert_not_empty ship_event.errors[:review_instructions]
+  end
+
+  test "a new ship consumes banked votes and leaves twelve ratings due" do
+    project = Project.create!(title: "Banked vote project #{SecureRandom.hex(4)}")
+    Project::Membership.create!(project: project, user: @owner, role: :owner)
+    @owner.update!(vote_balance: Vote::MAX_BANKED_VOTES)
+
+    ActiveRecord::Base.transaction do
+      ship_event = Post::ShipEvent.new(body: "Ship it", uploading_attachments: true)
+      ship_event.save!(validate: false)
+      Post.create!(project: project, user: @owner, postable: ship_event)
+    end
+
+    assert_equal(-Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT, @owner.reload.vote_balance)
   end
 
   test "refresh_payout_score! stores medians and percentiles" do
@@ -206,7 +230,61 @@ class Post::ShipEventTest < ActiveSupport::TestCase
     assert_nil ship.reload.payout
   end
 
+  test "returning a ship cert returns the mission submission with it" do
+    ship, submission = create_uncertified_mission_ship
+
+    ship.update!(certification_status: "returned")
+
+    assert submission.reload.rejected?
+    assert_equal Post::ShipEvent::UNCERTIFIED_SUBMISSION_MESSAGE, submission.rejection_message
+  end
+
+  test "approving a ship cert certifies a submission still awaiting certification" do
+    ship, submission = create_uncertified_mission_ship
+
+    ship.update!(certification_status: "approved")
+
+    assert submission.reload.pending?
+    assert_not_nil submission.pending_at
+  end
+
+  test "re-certifying a returned ship puts its submission back in the mission queue" do
+    ship, submission = create_uncertified_mission_ship
+    ship.update!(certification_status: "returned")
+
+    ship.reload.update!(certification_status: "approved")
+
+    assert submission.reload.pending?
+    assert_nil submission.rejection_message
+    assert_not_nil submission.pending_at
+  end
+
+  test "re-certifying a ship does not overturn a mission reviewer's rejection" do
+    ship, submission = create_uncertified_mission_ship
+    ship.update!(certification_status: "approved")
+    submission.reload.update!(reviewed_by: @owner, reviewed_at: Time.current, rejection_message: "Missing the write-up")
+    submission.reject!
+
+    ship.reload.update!(certification_status: "returned")
+    ship.reload.update!(certification_status: "approved")
+
+    assert submission.reload.rejected?
+    assert_equal "Missing the write-up", submission.rejection_message
+  end
+
   private
+
+  # A ship still waiting on certification, with the mission submission its
+  # builder filed alongside it.
+  def create_uncertified_mission_ship
+    project = Project.create!(title: "Project #{SecureRandom.hex(4)}", created_at: 3.days.ago)
+    Project::Membership.create!(project: project, user: @owner, role: :owner)
+    ship = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    Post.create!(project: project, user: @owner, postable: ship)
+    submission = Mission::Submission.create!(ship_event: ship, mission: create_mission, payout_path: "voting")
+
+    [ ship.reload, submission ]
+  end
 
   def create_ship_event(hours:, vote_count: 1, scores: [ 6, 6, 6, 6 ], project: nil)
     project ||= Project.create!(title: "Project #{SecureRandom.hex(4)}", created_at: 3.days.ago)

@@ -7,11 +7,24 @@ export default class extends Controller {
   connect() {
     this.submitted = false;
     this.element.addEventListener("submit", this.onSubmit);
+    this.element.addEventListener("turbo:submit-end", this.reset);
   }
 
   disconnect() {
     this.element.removeEventListener("submit", this.onSubmit);
+    this.element.removeEventListener("turbo:submit-end", this.reset);
   }
+
+  reset = () => {
+    this.submitted = false;
+    const buttons = this.element.querySelectorAll(
+      "button[type=submit], input[type=submit]",
+    );
+    buttons.forEach((b) => {
+      b.disabled = false;
+      b.classList.remove("is-submitting");
+    });
+  };
 
   onSubmit = (event) => {
     if (this.submitted) {

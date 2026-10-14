@@ -21,6 +21,17 @@
           placeholder: "Required for rejections. Optional for approvals." %>
   </label>
 
+  <div class="mission-review__detach">
+    <label class="mission-review__detach-option">
+      <%= check_box_tag "mission_submission[detach_project]", "1", false %>
+      Also detach this project from the mission
+    </label>
+    <p class="mission-review__detach-hint">
+      Only applies when rejecting. Frees the project from <%= mission.name %> so
+      the builder can pick a different mission.
+    </p>
+  </div>
+
   <% grants = [] %>
   <% if submission.payout_path == "static_prize" && mission.fixed_stardust_payout&.positive? %>
     <% grants << "#{mission.fixed_stardust_payout} stardust" %>

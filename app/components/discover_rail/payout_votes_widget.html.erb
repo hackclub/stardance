@@ -22,17 +22,13 @@
     </ol>
   <% else %>
     <ol class="payout-checklist__steps">
-      <% ratings_done = votes[:ratings_given] >= votes[:ratings_total] %>
+      <% ratings_done = votes[:ratings_remaining] <= 0 %>
       <li class="payout-checklist__step <%= 'payout-checklist__step--done' if ratings_done %>">
         <span class="payout-checklist__icon"><%= ratings_done ? '✓' : '1' %></span>
         <div class="payout-checklist__body">
-          <span class="payout-checklist__label">Rate <%= votes[:ratings_total] %> projects</span>
-          <div class="payout-checklist__progress-row">
-            <progress class="payout-checklist__bar"
-                      value="<%= votes[:ratings_given] %>"
-                      max="<%= votes[:ratings_total] %>"></progress>
-            <span class="payout-checklist__count"><%= votes[:ratings_given] %>/<%= votes[:ratings_total] %></span>
-          </div>
+          <span class="payout-checklist__label">
+            <%= ratings_done ? "Voting requirement complete" : "Rate #{pluralize(votes[:ratings_remaining], "more project")}" %>
+          </span>
           <% unless ratings_done %>
             <%= link_to "Go rate →", helpers.new_vote_path,
                         class: "payout-checklist__action",

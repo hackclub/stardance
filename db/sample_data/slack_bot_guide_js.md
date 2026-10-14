@@ -45,12 +45,12 @@ Before you start, gather these things:
 A Slack bot that responds to slash commands. A slash command is a command you type starting with a slash — for example:
 
 ```txt
-/dsb-ping
-/dsb-hello
-/dsb-status
+/mybot-ping
+/mybot-hello
+/mybot-status
 ```
 
-When a user runs one of these commands, the bot can show information, send messages, run automations, hit APIs, run workflows, and more. If you make a command like `/dsb-joke`, you can have the bot fetch a joke from an API and send it in the channel.
+When a user runs one of these commands, the bot can show information, send messages, run automations, hit APIs, run workflows, and more. If you make a command like `/mybot-joke`, you can have the bot fetch a joke from an API and send it in the channel.
 
 ---
 
@@ -123,13 +123,19 @@ Scopes tell Slack what your bot is allowed to do.
 
 1. Open **Slash Commands** in the left sidebar and click **Create New Command**.
    ![Image](https://cdn.hackclub.com/019e4e7d-f648-74bc-bbaa-15cea4f1ebb1/image.png)
-2. Enter a command name like `/dsb-ping` and provide a short description and usage hint.
+2. Enter a command name like `/mybot-ping` (replacing mybot with your bot's name) and provide a short description and usage hint.
 3. Click **Save**.
 
 :::callout type="info"
-**Why `/dsb-` and not just `/ping`?** The Hack Club Slack workspace has many bots installed, and generic command names like `/ping` collide with other bots. Prefix yours with a short tag of your bot's name (here `dsb` for "Demo Slack Bot") so commands look like `/dsb-ping`, `/dsb-hello`, etc.
+**Why `/mybot-` and not just `/ping`?** The Hack Club Slack workspace has many bots installed, and generic command names like `/ping` collide with other bots (see below for further explanation). Prefix yours with a short tag of your bot's name (here `mybot` for "My Bot") so commands look like `/mybot-ping`, `/mybot-hello`, etc.
 
 Keep a note of the *exact* command name — it's case-sensitive and you'll reference it in your code.
+:::
+
+:::callout type="warning"
+**Use a unique command name for your bot!**
+
+If you and another person's bot registers the same command name like `/ping`, they will conflict and the latest bot installed using that command name will kick off any other bots using it, and the next that command is run it will run the action set up by the latest bot. If you encounter issues with a command not running an expected action and your command name is one that's quite common, try renaming the command to something less common like the above!
 :::
 
 ### Where to find tokens later
@@ -199,7 +205,7 @@ const app = new App({
   socketMode: true
 });
 
-app.command("/dsb-ping", async ({ command, ack, respond }) => {
+app.command("/mybot-ping", async ({ command, ack, respond }) => {
   const start = Date.now();
   await ack();
   const latency = Date.now() - start;
@@ -213,7 +219,7 @@ app.command("/dsb-ping", async ({ command, ack, respond }) => {
 ```
 
 :::callout type="warning"
-If you used a different slash command name in the Slack dashboard, change `/dsb-ping` here to match.
+If you used a different slash command name in the Slack dashboard, change `/mybot-ping` here to match.
 :::
 
 ### 4. Run the bot
@@ -228,7 +234,7 @@ If it works, you'll see:
 bot is running!
 ```
 
-Test your slash command in Slack — type `/dsb-ping` in any channel. The bot should reply with the latency.
+Test your slash command in Slack — type `/mybot-ping` in any channel. The bot should reply with the latency.
 
 ![image](https://cdn.hackclub.com/019e4e05-aef2-7b7c-8064-8599e2b8b368/image.png)
 
@@ -269,13 +275,13 @@ Your bot is up. Now let's extend it with a help command and a couple of API-back
 ### Help command
 
 ```js
-app.command("/dsb-help", async ({ ack, respond }) => {
+app.command("/mybot-help", async ({ ack, respond }) => {
   await ack();
   await respond({
     text:
 `Available Commands:
-/dsb-ping - Check bot latency
-/dsb-catfact - Get a cat fact`
+/mybot-ping - Check bot latency
+/mybot-catfact - Get a cat fact`
   });
 });
 ```
@@ -299,7 +305,7 @@ const axios = require("axios");
 Then add this command:
 
 ```js
-app.command("/dsb-catfact", async ({ ack, respond }) => {
+app.command("/mybot-catfact", async ({ ack, respond }) => {
   await ack();
 
   try {
@@ -316,7 +322,7 @@ app.command("/dsb-catfact", async ({ ack, respond }) => {
 ### Joke command (one more example)
 
 ```js
-app.command("/dsb-joke", async ({ ack, respond }) => {
+app.command("/mybot-joke", async ({ ack, respond }) => {
   await ack();
 
   try {
@@ -514,7 +520,7 @@ systemctl --user restart slackbot.service   # restart
 ### Ideas to extend your bot
 
 * Daily standup reporter (posts a summary at 9am)
-* Fun facts bot (`/dsb-fact`)
+* Fun facts bot (`/mybot-fact`)
 * Moderation: auto-flag messages with banned words
 * Games: trivia bot with score tracking
 * Integrations: post GitHub PR updates

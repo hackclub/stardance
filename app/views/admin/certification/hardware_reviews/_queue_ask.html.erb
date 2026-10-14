@@ -1,0 +1,11 @@
+<%# The one number that tells a reviewer what they're being asked to decide:
+    the grant amount on design, the build effort on build.
+    Locals: item (required), design (required boolean). %>
+<% if design %>
+  <span class="hardware-queue__ask">$<%= item[:record].requested_amount_dollars %></span>
+  <span class="hardware-queue__ask-note"><%= item[:record].tier_label %></span>
+<% else %>
+  <% hours = item[:record].post_ship_event&.hours_at_ship %>
+  <span class="hardware-queue__ask"><%= hours ? "#{hours.round(1)}h" : "—" %></span>
+  <span class="hardware-queue__ask-note">logged</span>
+<% end %>

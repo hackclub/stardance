@@ -1,0 +1,48 @@
+<%= turbo_frame_tag "mega-dash-overview", target: "_top" do %>
+  <section class="mega-dash__section" aria-labelledby="mega-dash-overview-title">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-overview-title">Queue overview</h2>
+      <span class="mega-dash__note">Flow columns are always the last 7 days, so queues stay comparable.</span>
+    </div>
+
+    <div class="mega-dash__table-scroll">
+      <table class="mega-dash__table">
+        <thead>
+          <tr>
+            <th scope="col">Queue</th>
+            <th scope="col">Open</th>
+            <th scope="col">Oldest</th>
+            <th scope="col">In</th>
+            <th scope="col">Out</th>
+            <th scope="col">Net</th>
+            <th scope="col">Clear in</th>
+            <th scope="col">Median</th>
+            <th scope="col">Overdue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rows.each do |row| %>
+            <tr class="mega-dash__row mega-dash__row--<%= row[:health] %>">
+              <th scope="row">
+                <%= link_to row[:label], row[:url] %>
+                <% if row[:health] == "error" %>
+                  <span class="mega-dash__row-error" title="<%= row[:error] %>">unavailable</span>
+                <% end %>
+              </th>
+              <td><%= number_with_delimiter(row[:depth]) %></td>
+              <td><%= mega_dash_duration(row[:oldest_wait_hours]) %></td>
+              <td><%= number_with_delimiter(row[:arrivals]) %></td>
+              <td><%= number_with_delimiter(row[:decisions]) %></td>
+              <td class="mega-dash__net mega-dash__net--<%= row[:net].positive? ? "growing" : "draining" %>">
+                <%= row[:net].positive? ? "+#{row[:net]}" : row[:net] %>
+              </td>
+              <td><%= row[:days_to_clear] ? "#{row[:days_to_clear]}d" : "—" %></td>
+              <td><%= mega_dash_duration(row[:median_decision_hours]) %></td>
+              <td><%= row[:overdue].zero? ? "—" : number_with_delimiter(row[:overdue]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>

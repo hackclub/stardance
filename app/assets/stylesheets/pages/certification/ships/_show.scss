@@ -395,6 +395,76 @@
   }
 }
 
+.bonus-stardust {
+  border-color: rgba(255, 229, 100, 0.25) !important;
+  background: rgba(255, 229, 100, 0.04) !important;
+
+  &__current {
+    margin: 0 0 var(--space-s);
+    font-size: 0.95rem;
+    color: var(--color-brand-yellow);
+    font-weight: 600;
+
+    strong {
+      font-weight: 800;
+    }
+  }
+
+  &__form {
+    margin-bottom: var(--space-xs);
+  }
+
+  &__field {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  &__input {
+    flex: 1;
+    padding: var(--space-xs) var(--space-s);
+    font-family: inherit;
+    font-size: var(--font-size-m);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-space-text);
+    background: var(--color-space-surface, rgba(255, 255, 255, 0.04));
+    border: 1px solid rgba(255, 229, 100, 0.3);
+    border-radius: 8px;
+    appearance: textfield;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-yellow);
+      outline-offset: 1px;
+    }
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+
+  &__breakdown {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-s);
+    padding-top: var(--space-s);
+    border-top: 1px solid rgba(255, 229, 100, 0.15);
+    font-size: 0.85rem;
+  }
+
+  &__breakdown-label {
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.5));
+  }
+
+  &__breakdown-value {
+    font-weight: 700;
+    color: var(--color-brand-yellow);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 @keyframes ship-review-pop {
   0% {
     transform: scale(1);
@@ -521,6 +591,30 @@
     }
   }
 
+  // The builder's own note, shown read-only above the verdict controls.
+  &__submitter-note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-s) var(--space-m);
+    background: var(--color-overlay-light-soft);
+    border: 1px solid var(--color-overlay-light);
+    border-radius: 8px;
+  }
+
+  &__submitter-note-label {
+    margin: 0;
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--color-space-text-muted);
+  }
+
+  &__submitter-note-body {
+    margin: 0;
+    color: var(--color-space-text);
+    white-space: pre-wrap;
+  }
+
   &__claim-banner {
     display: flex;
     justify-content: space-between;
@@ -614,14 +708,14 @@
       font-weight: 600;
     }
 
-    textarea {
+    textarea,
+    input[type="number"] {
       width: 100%;
       padding: var(--space-s);
       font-family: inherit;
       font-size: var(--font-size-m);
       color: var(--color-space-text);
       background: var(--color-space-surface, rgba(255, 255, 255, 0.04));
-      resize: vertical;
       border: 1px solid var(--color-space-border, rgba(255, 255, 255, 0.18));
       border-radius: 8px;
 
@@ -630,6 +724,16 @@
         outline-offset: 1px;
       }
     }
+
+    textarea {
+      resize: vertical;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
   }
 
   &__actions {
@@ -813,4 +917,45 @@
   white-space: pre-wrap;
   max-height: 200px;
   overflow-y: auto;
+}
+
+// Review verdict buttons on admin pages.
+//
+// admin.scss styles `.admin-content button, .admin-content input[type=submit]`
+// generically. That's (0,2,1) for the submit input, which outranks a plain
+// `.action-btn--primary` (0,1,0) no matter which stylesheet loads last, so
+// every action button on an admin page is flattened into the same dark fill
+// with a barely-visible hover. Scoping under `.admin-content` reaches (0,3,0)
+// and gives these two back their own treatment.
+//
+// Both hover the same way on purpose: outlined at rest, filled with their own
+// accent on hover, so Submit verdict and Unclaim read as a pair.
+.admin-content .review-form__actions {
+  .action-btn--primary {
+    // Matches the feedback textarea's fill (admin.scss gives inputs
+    // --color-space-bg-2), so the controls in this form read as one set.
+    background-color: var(--color-space-bg-2);
+    border-color: var(--color-brand-highlight);
+    color: var(--color-brand-highlight);
+
+    &:hover:not([aria-disabled="true"]),
+    &:focus-visible:not([aria-disabled="true"]) {
+      background-color: var(--color-brand-highlight);
+      color: var(--color-set-1-bg);
+      box-shadow: none;
+    }
+  }
+
+  .action-btn--destructive {
+    background-color: var(--color-space-bg-2);
+    border-color: var(--color-brand-salmon);
+    color: var(--color-brand-salmon);
+
+    &:hover:not([aria-disabled="true"]),
+    &:focus-visible:not([aria-disabled="true"]) {
+      background-color: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+      box-shadow: none;
+    }
+  }
 }

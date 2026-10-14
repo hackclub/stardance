@@ -4,9 +4,9 @@ section "*Job:* `#{job_class}`\n*Job ID:* `#{job_id}`", markdown: true
 
 section "*Error:*\n```#{error_message}```", markdown: true
 
-<% if error_backtrace.present? %>
-section "*Backtrace (first 5 lines):*\n```#{error_backtrace.join("\n")}```", markdown: true
-<% end %>
+if error_backtrace.present?
+  section "*Backtrace (first 5 lines):*\n```#{error_backtrace.join("\n")}```", markdown: true
+end
 
 section "*Arguments:*\n```#{job_arguments.inspect}```", markdown: true
 

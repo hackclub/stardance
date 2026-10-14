@@ -1,14 +1,23 @@
 /* Import page-specific styles */
+@use "pages/admin/dashboard";
+@use "pages/admin/rating_dashboard";
+@use "pages/admin/mega_dashboard";
+@use "pages/admin/hour_funnel";
 @use "pages/admin/missions_edit";
 @use "pages/admin/ysws_reviews";
+@use "pages/admin/ysws_shortcuts";
 @use "pages/admin/integrity_reviews";
 @use "pages/admin/email_templates";
 @use "pages/admin/fraud_dashboard";
+@use "pages/admin/fraud_subjects";
+@use "pages/admin/stardust_deduction";
 @use "pages/admin/ledger_entries";
 @use "pages/admin/vote_flags";
 @use "pages/admin/certificates";
+@use "pages/admin/user_votes";
 @use "pages/shop/admin_shop_shared";
 @use "pages/shop/admin_shop_dashboard";
+@use "pages/shop/sticky_funnel";
 @use "pages/shop/admin_shop_item_form";
 @use "pages/shop/admin_shop_item_show";
 @use "pages/shop/admin_shop_orders";
@@ -69,7 +78,11 @@ body.admin-page {
     font-size: var(--font-size-l);
   }
 
-  a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn) {
+  a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn):not(
+      .ysws-dashboard__reviewer-link--locked-in
+    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link):not(
+      .ship-queue__tab
+    ) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 
@@ -224,7 +237,7 @@ body.admin-page {
 
   /* ── Buttons ───────────────────────────────────────── */
 
-  button,
+  button:not(.action-btn),
   input[type="submit"] {
     display: inline-flex;
     align-items: center;
@@ -319,7 +332,8 @@ body.admin-page {
     content: unset;
   }
 
-  &:disabled {
+  &:disabled,
+  &.disabled {
     background: var(--color-space-surface-faint);
     color: var(--color-space-text-muted);
     cursor: not-allowed;
@@ -494,6 +508,24 @@ button.btn-danger {
   max-width: 90vw;
   width: 400px;
 
+  // This sheet has no global border-box, so a child sized at 100% with its own
+  // padding overflows the dialog. Scope the fix to the modal subtree rather
+  // than reflowing every admin page.
+  &,
+  & *,
+  & *::before,
+  & *::after {
+    box-sizing: border-box;
+  }
+
+  // Roomy enough for a seven-column calendar, and scrolls rather than running
+  // off the viewport once the panel grows.
+  &--wide {
+    width: 540px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
   &__title {
     margin: 0 0 var(--space-s) 0;
     color: var(--color-space-text);
@@ -512,6 +544,13 @@ button.btn-danger {
 }
 
 /* Searchable Select Dropdown */
+
+/* Positioning context for the absolutely-positioned dropdown. Belongs on the
+   same element as data-controller="searchable-select". */
+.searchable-select {
+  position: relative;
+}
+
 .searchable-select-dropdown {
   display: none;
   position: absolute;
@@ -561,11 +600,6 @@ button.btn-danger {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-}
-
-.pagy {
-  display: flex;
-  gap: 0.25rem;
 }
 
 /* Dialog / Modal */
@@ -691,6 +725,18 @@ dialog {
   margin-left: auto;
   color: var(--color-space-text-muted);
   font-size: 0.8rem;
+}
+
+.admin-report-group__resolve-button {
+  border-radius: 999px;
+  background: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
+  font-weight: 600;
+
+  &:hover {
+    background: var(--color-brand-highlight-secondary);
+    color: var(--color-set-1-bg);
+  }
 }
 
 .admin-actions-wrap {

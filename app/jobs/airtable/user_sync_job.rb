@@ -22,7 +22,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
       "last_name" => user.last_name,
       "email" => user.email,
       "slack_id" => user.slack_id,
-      "avatar_url" => "https://cachet.dunkirk.sh/users/#{user.slack_id}/r",
+      "avatar_url" => "https://cachet.hackclub.com/users/#{user.slack_id}/r",
       "has_commented" => user.comments.exists?,
       "has_some_role_of_access" => user.roles.any?,
       "hours" => user.all_time_coding_seconds&.fdiv(3600),
@@ -35,7 +35,10 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
       "synced_at" => Time.now,
       "is_banned" => user.banned,
       "star_id" => user.id.to_s,
-      "ref" => user.ref
+      "ref" => user.ref,
+      # Comma-separated promo week numbers (e.g. "1,3"), blank for users who
+      # earned none, so the Loops property clears rather than going stale.
+      "Loops - stardanceWeeklyStickerEmail" => user.free_sticker_weeks.join(",")
     }
 
     if address.present?
@@ -99,9 +102,9 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
     # Fail closed so a bad lookup never breaks the whole sync, but make it loud:
     # a systemic break here (renamed Airtable field, changed route, bad data)
     # silently drops the payout-email trigger for everyone, so surface it via
-    # Sentry rather than a warn line no one reads.
+    # AppSignal rather than a warn line no one reads.
     Rails.logger.error("UserSyncJob payout_loops_fields failed for user #{user.id}: #{e.message}")
-    Sentry.capture_exception(e) if defined?(Sentry)
+    Rails.error.report(e)
     {}
   end
 end

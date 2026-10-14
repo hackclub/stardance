@@ -1,5 +1,5 @@
 class BroadcastUnseenCountJob < ApplicationJob
-  queue_as :latency_5m
+  queue_as :latency_10s
 
   discard_on ActiveJob::DeserializationError
 

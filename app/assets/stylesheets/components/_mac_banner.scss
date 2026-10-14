@@ -1,0 +1,436 @@
+// MAC pre-screen banner — shown along the top of a YSWS review when the review
+// has a pre-screen analysis (Admin::Certification::MACAnalysisBannerComponent).
+// The whole strip is the <summary> of a <details>, so clicking anywhere on it
+// expands the drawer in place; no JS is involved.
+//
+// Tone comes from the worst flag severity only, never from the flag type, so the
+// flag taxonomy stays out of this stylesheet. Accent-as-status per branding §1.3.
+//
+// The yellow tone is shared with the devlog hint below (.mac-hint--deduction),
+// so it's named rather than inlined in the severity map.
+$mac-tone-yellow: var(--color-brand-yellow);
+$mac-tone-yellow-tint: rgba(255, 229, 100, 0.14);
+
+// Opaque identifiers — commit shas, session ids — are monospaced so they line up
+// when stacked.
+$mac-mono-font: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+// Heartbeat-category colours for the breakdown pie, keyed by the category name
+// slugified. Three come straight from the brand palette; the brand carries no
+// green, so "coding" takes a pastel green in the same register (the similar-pastel
+// fallback branding allows). --color-brand-orange stays out of it: it's reserved
+// for admin markers, so "browsing" uses peach.
+//
+// This set was checked for colour-blind separation rather than eyeballed: the
+// worst adjacent pair clears the normal-vision floor, and the deutan pair sits in
+// the band that requires a second cue — hence the slice gaps and the named legend.
+$mac-category-colors: (
+  "ai-coding": var(--color-brand-salmon),
+  "coding": #7ee787,
+  "building": var(--color-brand-blue),
+  "browsing": var(--color-brand-peach),
+);
+
+$mac-banner-severities:
+  ("green", var(--color-brand-mint), rgba(129, 255, 255, 0.14)),
+  ("yellow", $mac-tone-yellow, $mac-tone-yellow-tint),
+  ("orange", var(--color-brand-peach), rgba(255, 213, 152, 0.16)),
+  ("red", var(--color-brand-salmon), rgba(255, 141, 157, 0.16));
+
+.mac-banner {
+  background: var(--color-set-2-bg);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--space-xs);
+  color: var(--color-space-text);
+  font-family: "Exo 2", sans-serif;
+  font-size: var(--font-size-s);
+  margin-bottom: var(--space-m);
+
+  // Severity accents: a left rail plus a translucent tint of the same hue.
+  @each $severity, $hue, $tint in $mac-banner-severities {
+    &--#{$severity} {
+      background: $tint;
+      border-color: $hue;
+      border-left: 4px solid $hue;
+    }
+  }
+
+  &__drawer {
+    display: block;
+  }
+
+  &__strip {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    list-style: none;
+    padding: var(--space-xs) var(--space-s);
+
+    // Hide the native disclosure marker; the Details affordance stands in for it.
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::marker {
+      content: "";
+    }
+  }
+
+  &__summary {
+    flex: 1 1 20rem;
+    margin: 0;
+    min-width: 0;
+  }
+
+  &__meta {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+  }
+
+  &__toggle {
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    padding: var(--space-xxxs) var(--space-xs);
+    white-space: nowrap;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxxs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__chip {
+    border-radius: 999px;
+    display: inline-block;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: var(--space-xxxs) var(--space-xs);
+    text-transform: uppercase;
+    white-space: nowrap;
+
+    @each $severity, $hue, $tint in $mac-banner-severities {
+      &--#{$severity} {
+        background: $tint;
+        color: $hue;
+      }
+    }
+  }
+
+  &__drawer-body {
+    border-top: 1px solid var(--color-space-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    padding: var(--space-s);
+  }
+
+  &__callout {
+    background: rgba(255, 141, 157, 0.16);
+    border-radius: var(--space-xxxs);
+    color: var(--color-brand-salmon);
+    font-weight: 700;
+    margin: 0;
+    padding: var(--space-xs) var(--space-s);
+  }
+
+  &__section-title {
+    font-size: var(--font-size-s);
+    letter-spacing: 0.05em;
+    margin: 0 0 var(--space-xs);
+    text-transform: uppercase;
+  }
+
+  &__facts {
+    display: grid;
+    gap: var(--space-xxs);
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    margin: 0;
+  }
+
+  // The list-valued signals beside the category breakdown that explains them: the
+  // lists stack down the left half and the breakdown fills the right half, which
+  // stretches to the stack's height. Falls back to one column when the drawer is
+  // too narrow to split.
+  &__detail-grid {
+    display: grid;
+    gap: var(--space-xxs);
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  }
+
+  &__detail-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    margin: 0;
+    min-width: 0;
+  }
+
+  // Also used as a <dl> for the standalone breakdown card, hence the margin reset.
+  &__fact {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--space-xxxs);
+    margin: 0;
+    padding: var(--space-xs);
+
+    // Values that expand into a list or a paragraph get the full row.
+    &--block {
+      grid-column: 1 / -1;
+    }
+  }
+
+  // Key beside the pie rather than stacked under it: stacking made the card far
+  // taller than the signals it sits next to. Wraps back to stacked only when the
+  // card is too narrow to hold both.
+  &__chart {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  // The auto inline margins split whatever space the key leaves, which centres the
+  // pie in the gap rather than pinning it to either edge.
+  &__pie {
+    flex: 0 0 auto;
+    margin-inline: auto;
+    max-width: 100%;
+    width: 8rem;
+  }
+
+  // Slices are stroked, not filled: a dash along a 100-unit circumference is the
+  // share, and a stroke the width of the diameter closes the centre.
+  &__slice {
+    fill: none;
+    // Categories the palette doesn't name still get a visible, neutral slice.
+    stroke: var(--color-brand-lilac);
+  }
+
+  // Sized to its labels, not stretched: growing it was what pushed the pie right.
+  &__legend {
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    gap: var(--space-xxxs);
+    list-style: none;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  // Text keeps its own ink; the swatch beside it carries the identity.
+  &__legend-item {
+    align-items: center;
+    display: flex;
+    font-size: var(--font-size-xs);
+    gap: var(--space-xxs);
+  }
+
+  &__swatch {
+    background: var(--color-brand-lilac);
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    height: 0.6rem;
+    width: 0.6rem;
+  }
+
+  @each $category, $color in $mac-category-colors {
+    &__slice--#{$category} {
+      stroke: $color;
+    }
+
+    &__swatch--#{$category} {
+      background: $color;
+    }
+  }
+
+  &__term {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    margin: var(--space-xxxs) 0 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__placeholder {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  // Unbulleted: signal values are already introduced by their term, so a column
+  // of discs only adds noise to the drawer.
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+
+    &-item--overflow {
+      color: var(--color-space-text-muted);
+    }
+  }
+
+  // A run of list entries sharing a first word, collapsed under it. The native
+  // disclosure marker is the arrow, so only the ids inside need styling.
+  &__group {
+    &-toggle {
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    // Indented under its summary to sit clear of the disclosure arrow.
+    &-list {
+      list-style: none;
+      margin: 0;
+      max-height: 16rem;
+      overflow: auto;
+      padding-left: var(--space-m);
+    }
+
+    &-item {
+      font-family: $mac-mono-font;
+    }
+  }
+
+  &__evidence {
+    border-top: 1px solid var(--color-space-border);
+    padding: var(--space-xs) 0;
+  }
+
+  &__evidence-toggle {
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  &__count {
+    color: var(--color-space-text-muted);
+    font-weight: 400;
+  }
+
+  // Evidence tables can be wide (heartbeat samples carry full user-agent
+  // strings); scroll them inside the drawer rather than the page.
+  &__table-scroll {
+    max-height: 24rem;
+    overflow: auto;
+  }
+
+  &__table {
+    border-collapse: collapse;
+    font-size: var(--font-size-xs);
+    width: 100%;
+
+    th,
+    td {
+      border-bottom: 1px solid var(--color-space-border);
+      padding: var(--space-xxxs) var(--space-xs);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--color-space-text-muted);
+      position: sticky;
+      text-transform: uppercase;
+      top: 0;
+      background: var(--color-set-2-bg);
+    }
+  }
+
+  &__delta {
+    white-space: nowrap;
+  }
+
+  // In-page jump from a recommendation row to the devlog's review card below.
+  &__devlog-link {
+    color: var(--color-brand-blue);
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  // Commit SHA linked back to the repo host. Monospaced so shas line up down the
+  // column, and underlined on hover only — a whole column of underlines competes
+  // with the evidence beside it.
+  &__sha {
+    color: var(--color-brand-blue);
+    font-family: $mac-mono-font;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+}
+
+// Per-devlog recommendation, boxed inside a devlog's Review Decision card.
+// Deliberately not a button: the pre-screen suggests minutes, the reviewer still
+// types them.
+//
+// Blue is the neutral base — a recommendation carrying no comparable claimed
+// figure. A suggested cut takes the banner's yellow flag tone instead.
+.mac-hint {
+  background: rgba(149, 219, 255, 0.1);
+  border: 1px solid var(--color-brand-blue);
+  border-radius: var(--space-xxxs);
+  color: var(--color-brand-blue);
+  font-size: var(--font-size-xs);
+  padding: var(--space-xs);
+
+  // Sat beside the devlog media grid, filling whatever width is left after the
+  // last thumbnail. Wraps to its own full-width row below the media once less
+  // than the flex basis is available.
+  &--aside {
+    flex: 1 1 18rem;
+  }
+
+  // Matches .mac-banner--yellow: a suggested cut is the same class of signal as
+  // a yellow flag on the banner, so it reads the same on the card.
+  &--deduction {
+    background: $mac-tone-yellow-tint;
+    border-color: $mac-tone-yellow;
+    color: $mac-tone-yellow;
+  }
+
+  // The reasoning is what the reviewer actually weighs, so it leads the box at
+  // body size; the suggested number is a supporting detail underneath it.
+  &__reason {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  &__headline {
+    align-items: baseline;
+    display: flex;
+    gap: var(--space-xxs);
+    margin: var(--space-xxs) 0 0;
+  }
+
+  // The claimed figure, shown struck through against the suggestion.
+  &__original {
+    text-decoration: line-through;
+  }
+
+  &__suggested {
+    font-weight: 700;
+  }
+}

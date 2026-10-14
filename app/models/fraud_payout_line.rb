@@ -28,5 +28,11 @@ class FraudPayoutLine < ApplicationRecord
   belongs_to :fraud_payout_run
   belongs_to :user
 
-  has_many :shop_orders, dependent: :nullify
+  has_many :fraud_review_payouts, dependent: :nullify
+
+  def payout_reason
+    people = fraud_review_payouts.size
+
+    "Fraud squad payout for #{people} #{'person'.pluralize(people)} fully reviewed"
+  end
 end

@@ -1,5 +1,5 @@
 class ShopOrderDailySummaryJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   SHOP_ORDER_CHANNEL_ID = "C09N1P69GKZ"
 
@@ -16,6 +16,8 @@ class ShopOrderDailySummaryJob < ApplicationJob
     "ShopItem::ThirdPartyPhysical" => "Third Party Physical",
     "ShopItem::HQMailItem" => "HQ Mail",
     "ShopItem::LetterMail" => "Letter Mail",
+    "ShopItem::NonmachinableLetterMail" => "Nonmachinable Letter Mail",
+    "ShopItem::StickyStreakSticker" => "Sticky Streak Sticker",
     "ShopItem::WarehouseItem" => "Warehouse",
     "ShopItem::FreeStickers" => "Free Stickers",
     "ShopItem::HCBGrant" => "HCB Grant",

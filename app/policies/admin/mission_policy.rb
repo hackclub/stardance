@@ -21,6 +21,15 @@ class Admin::MissionPolicy < ApplicationPolicy
     MissionPolicy.new(user, mission).manage?
   end
 
+  # Reviewing a mission's queue: site admins, the global mission_reviewer role,
+  # or a per-mission reviewer/owner membership (matches the submission queue's
+  # accessible_mission? rule).
+  def review?
+    return true if mission_admin?
+    mission = mission_record
+    mission.is_a?(Mission) && mission.memberships.exists?(user_id: user&.id)
+  end
+
   private
 
   def mission_admin? = user&.admin? || user&.mission_reviewer?

@@ -304,7 +304,7 @@ module SemanticSearch
         .visible_to(viewer)
         .of_ship_events(join: true)
         .where(postable_id: ids)
-        .where.not(post_ship_events: { certification_status: "rejected" })
+        .where.not(post_ship_events: { certification_status: Post::ShipEvent::HIDDEN_STATUSES })
         .includes(:project, :user, :postable)
         .index_by { |post| post.postable_id.to_s }
 

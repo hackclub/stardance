@@ -1,9 +1,9 @@
 class Admin::MessagePolicy < ApplicationPolicy
   def index?
-    user.admin?
+    user&.admin?
   end
 
   def create?
-    user.admin?
+    user&.admin?
   end
 end

@@ -15,7 +15,10 @@
   </div>
 
   <% if current_user %>
-    <%= form_with url: devlog_comments_path(@devlog), scope: :comment, class: "devlog-detail__comment-form" do |f| %>
+    <%= form_with url: devlog_comments_path(@devlog),
+                  scope: :comment,
+                  class: "devlog-detail__comment-form",
+                  data: { controller: "form-submit-once" } do |f| %>
       <div class="devlog-detail__comment-input-row">
         <%= image_tag current_user.avatar, alt: "", class: "devlog-detail__comment-avatar" %>
         <%= f.text_area :body,

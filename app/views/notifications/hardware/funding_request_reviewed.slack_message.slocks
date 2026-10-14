@@ -1,0 +1,25 @@
+if approved
+  header ":tada: Your design was approved!"
+
+  if awards_kit
+    section "*<#{project_url}|#{project_title}>* is approved and has moved to the build phase. Head to your project to redeem your kit.", markdown: true
+  elsif issues_grant
+    section "*<#{project_url}|#{project_title}>* is approved for *$#{amount_dollars}* in funding (#{tier_label}) and has moved to the build phase.", markdown: true
+  elsif kit_mission
+    section "*<#{project_url}|#{project_title}>* is approved and has moved to the build phase. This approval doesn't come with a kit.", markdown: true
+  else
+    section "*<#{project_url}|#{project_title}>* is approved and has moved to the build phase. This approval doesn't come with a grant.", markdown: true
+  end
+
+  section "Log your build hours with a timelapse, then ship when you're ready."
+else
+  header ":pencil: Your funding request needs changes"
+
+  section "*<#{project_url}|#{project_title}>* isn't approved yet. Address the feedback below and resubmit.", markdown: true
+
+  section "*Feedback:* #{feedback}", markdown: true if feedback.present?
+end
+
+actions [
+  button("View project", "view_project", url: project_url)
+]

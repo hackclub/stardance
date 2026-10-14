@@ -1,15 +1,37 @@
 class Projects::RecertificationsController < ApplicationController
+  include ActionItemGate
+
+  before_action :set_paper_trail_whodunnit
   before_action :set_project
 
   def create
     authorize @project, :request_recertification?
 
+    if @project.ship_blocked?
+      redirect_to project_path(@project), alert: Project::ShipBlock::BLOCKED_MESSAGE and return
+    end
+
+    if (cooldown = recertification_cooldown_block)
+      redirect_to project_path(@project), alert: cooldown and return
+    end
+
+    if (link_blocker = @project.link_blocker_message)
+      redirect_to project_path(@project),
+                  alert: "This project's links need fixing before re-certification can be requested. #{link_blocker}." and return
+    end
+
     @project.with_lock do
-      latest_review = @project.ship_reviews.order(created_at: :desc, id: :desc).first
+      latest_review = @project.latest_ship_review
 
       if latest_review&.pending?
         redirect_to project_path(@project), alert: "A review is already pending for this project." and return
       end
+
+      if (cooldown = recertification_cooldown_block)
+        redirect_to project_path(@project), alert: cooldown and return
+      end
+
+      return if action_items_block_resubmission?(latest_review)
 
       @project.resubmit_for_review!
       ship_event = @project.last_ship_event
@@ -21,10 +43,20 @@ class Projects::RecertificationsController < ApplicationController
 
     redirect_to project_path(@project), notice: "Re-certification requested! Your project is back in the review queue."
   rescue AASM::InvalidTransition
-    redirect_to project_path(@project), alert: "Your project can't be re-submitted right now."
+    redirect_to project_path(@project),
+                alert: @project.ship_blocked? ? Project::ShipBlock::BLOCKED_MESSAGE : "Your project can't be re-submitted right now."
   end
 
   private
+
+  def user_for_paper_trail = impersonating? ? real_user&.id : current_user&.id
+
+  def recertification_cooldown_block
+    return nil if policy(@project).bypass_recertification_cooldown?
+
+    available_at = @project.recertification_available_at
+    available_at && helpers.recertification_cooldown_message(available_at)
+  end
 
   def set_project
     @project = Project.find(params[:project_id])

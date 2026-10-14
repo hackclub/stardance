@@ -1,0 +1,11 @@
+header ":arrows_counterclockwise: Quick question about your hardware project"
+
+section "A reviewer thinks *<#{project_url}|#{project_title}>* was submitted to the #{flagged_queue} queue but belongs in #{suggested_queue}.", markdown: true
+
+section "*Their note:* #{reason}", markdown: true if reason.present?
+
+section "Nothing happens until you answer. Head to your project page and tell us which one it is.", markdown: true
+
+actions [
+  button("Answer on your project", "answer_queue_mismatch", url: project_url)
+]

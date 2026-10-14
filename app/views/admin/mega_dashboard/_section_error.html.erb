@@ -1,0 +1,6 @@
+<%= turbo_frame_tag @frame_id, target: "_top" do %>
+  <section class="mega-dash__section mega-dash__section--error">
+    <h2>Section unavailable</h2>
+    <p class="mega-dash__note"><%= @section_error %></p>
+  </section>
+<% end %>

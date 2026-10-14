@@ -1,0 +1,58 @@
+// Past mission verdicts on a project. Shared by the hardware review dash and
+// the mission submission review page, which sit in different panel blocks, so
+// this block styles only its own contents and inherits the panel's surface.
+
+.review-history {
+  &__title {
+    margin: 0 0 var(--space-xs);
+    font-size: var(--font-size-l);
+  }
+
+  &__list {
+    display: grid;
+    gap: var(--space-s);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    padding: var(--space-s);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  &__mission {
+    font-weight: 600;
+  }
+
+  &__meta {
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+    font-size: var(--font-size-s);
+  }
+
+  &__link {
+    margin-left: auto;
+    color: var(--color-brand-lilac);
+    font-size: var(--font-size-s);
+  }
+
+  &__feedback {
+    margin: var(--space-s) 0 0;
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+    white-space: pre-wrap;
+  }
+
+  &__empty {
+    margin: 0;
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
+  }
+}

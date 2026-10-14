@@ -1,0 +1,34 @@
+<% project = @record&.project %>
+<% approved = @record&.approved? %>
+<% feedback = @record&.feedback %>
+
+<% if approved %>
+Your funding request was approved!
+
+<% if project && @record.issues_grant? %>
+"<%= project.title %>" is approved for $<%= @record.final_amount_dollars %> in funding<% if @actor %>, reviewed by @<%= @actor.display_name %><% end %>.
+<% elsif project %>
+"<%= project.title %>" is approved<% if @actor %>, reviewed by @<%= @actor.display_name %><% end %>.
+<% else %>
+Your hardware funding request was approved.
+<% end %>
+
+Your project has moved to the build phase. Log your build hours with a timelapse, then ship when you're ready.
+<% else %>
+Your funding request needs changes
+
+<% if project %>
+"<%= project.title %>" isn't approved yet<% if @actor %>, reviewed by @<%= @actor.display_name %><% end %>.
+<% else %>
+Your hardware funding request was sent back.
+<% end %>
+
+<% if feedback.present? %>
+Reviewer feedback:
+<%= feedback %>
+
+<% end %>
+Update your request and resubmit when you're ready.
+<% end %>
+
+View project: <%= project ? project_url(project) : root_url %>

@@ -1,0 +1,57 @@
+<%= turbo_frame_tag "mega-dash-queue-#{@queue.key}", target: "_top" do %>
+  <section class="mega-dash__section mega-dash__panel" aria-labelledby="mega-dash-<%= @queue.key %>-title"
+           data-controller="mega-dash-chart"
+           data-mega-dash-chart-data-value="<%= @payload[:chart_data].to_json %>">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-<%= @queue.key %>-title"><%= link_to @queue.label, @queue.url %></h2>
+      <span class="mega-dash__note">Last <%= @period %> days</span>
+    </div>
+
+    <div class="mega-dash__tiles">
+      <%= render "admin/mega_dashboard/tile", label: "Outstanding", value: number_with_delimiter(@payload[:tiles][:depth]) %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Avg done per day", value: @payload[:metrics][:decisions_per_day],
+            note: "#{@payload[:metrics][:arrivals_per_day]} arriving" %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Net per day",
+            value: mega_dash_signed(@payload[:metrics][:net_per_day]),
+            note: @payload[:metrics][:days_to_clear] ? "clears in #{@payload[:metrics][:days_to_clear]}d" : "not clearing" %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Over 3 days old",
+            value: number_with_delimiter(@payload[:metrics][:over_three_days]),
+            note: "of #{number_with_delimiter(@payload[:tiles][:depth])} outstanding" %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Median time to review",
+            value: mega_dash_duration(@payload[:tiles][:median_decision_hours]),
+            note: "from #{pluralize(@payload[:tiles][:decided_sample], "decision")}" %>
+    </div>
+
+    <div class="mega-dash__meta">
+      <span>P90 <%= mega_dash_duration(@payload[:metrics][:p90_decision_hours]) %></span>
+      <span>Oldest waiting <%= mega_dash_duration(@payload[:metrics][:oldest_wait_hours]) %></span>
+      <span>SLA <%= @payload[:metrics][:sla_hours] %>h</span>
+      <span class="mega-dash__meta-net mega-dash__meta-net--<%= @payload[:metrics][:net].positive? ? "growing" : "draining" %>">
+        Net <%= @payload[:metrics][:net].positive? ? "+#{@payload[:metrics][:net]}" : @payload[:metrics][:net] %>
+      </span>
+      <% if @payload[:metrics][:days_to_clear] %>
+        <span>Clears in <%= @payload[:metrics][:days_to_clear] %>d at this rate</span>
+      <% end %>
+    </div>
+
+    <div class="mega-dash__charts">
+      <figure class="mega-dash__chart">
+        <figcaption>Volume</figcaption>
+        <canvas data-mega-dash-chart-target="volume"></canvas>
+      </figure>
+      <figure class="mega-dash__chart">
+        <figcaption>Time to decision</figcaption>
+        <canvas data-mega-dash-chart-target="latency"></canvas>
+      </figure>
+      <figure class="mega-dash__chart">
+        <figcaption>Backlog</figcaption>
+        <canvas data-mega-dash-chart-target="backlog"></canvas>
+      </figure>
+    </div>
+
+  </section>
+<% end %>

@@ -1,0 +1,42 @@
+<%# The weekday headers and day cells of a streak month calendar. Shared by the
+    rail widget and the admin credit modal; each supplies its own month nav.
+    Locals:
+      calendar_days: rows from User#streak_month_calendar
+      pickable:      render past/present in-month days as buttons that report
+                     their date to a streak-day-picker controller
+      zoomable:      let a Sticky Streak sticker open the zoom dialog %>
+<% pickable = local_assigns.fetch(:pickable, false) %>
+<% zoomable = local_assigns.fetch(:zoomable, true) %>
+
+<div class="streak-calendar__grid">
+  <% %w[S M T W T F S].each do |d| %>
+    <div class="streak-calendar__day-header"><%= d %></div>
+  <% end %>
+
+  <% calendar_days.each do |day| %>
+    <% tooltip = day[:in_month] ? streak_day_tooltip(day) : nil %>
+    <% choosable = pickable && day[:in_month] && !day[:future] %>
+    <% cell_class = class_names(
+                      "streak-calendar__cell",
+                      "streak-calendar__cell--outside" => !day[:in_month],
+                      "streak-calendar__cell--pickable" => choosable
+                    ) %>
+    <% cell_data = if tooltip
+                     { controller: "tooltip", tooltip_message_value: tooltip }
+                   else
+                     {}
+                   end %>
+    <% if choosable %>
+      <% cell_data.merge!(action: "streak-day-picker#pick",
+                          streak_day_picker_date_param: day[:date].to_s) %>
+      <%= tag.button type: "button", class: cell_class, data: cell_data,
+                     title: "Credit #{day[:date].to_fs(:long)}" do %>
+        <%= render "streaks/month_cell_inner", day: day, zoomable: zoomable %>
+      <% end %>
+    <% else %>
+      <%= tag.div class: cell_class, data: cell_data do %>
+        <%= render "streaks/month_cell_inner", day: day, zoomable: zoomable %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

@@ -10,19 +10,6 @@ module Admin
 
     def index
       authorize :admin
-      if current_user.helper?
-        redirect_to admin_support_path
-      elsif current_user.fraud_dept? && !current_user.admin?
-        redirect_to admin_fraud_path
-      elsif current_user.shop_manager? && !current_user.admin?
-        redirect_to admin_shop_path
-      elsif current_user.has_role?(:raffle_admin) && !current_user.admin?
-        redirect_to admin_raffles_path
-      elsif current_user.workshop_manager? && !current_user.admin?
-        redirect_to admin_workshops_path
-      else
-        redirect_to admin_users_path
-      end
     end
 
     private

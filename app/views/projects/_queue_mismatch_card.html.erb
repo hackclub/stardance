@@ -1,0 +1,82 @@
+<%# A reviewer says this submission went to the wrong hardware queue. Private to
+    project members: the ship it replaces is hidden from every public surface
+    (Post::ShipEvent::HIDDEN_STATUSES) and funding requests were never public.
+    Nothing moves until the builder picks one of the two answers.
+
+    Locals: review, project (required). %>
+<%
+  is_funding = review.is_a?(Certification::FundingRequest)
+  reviewer = review.reviewer
+
+  # The answers name the stage they move the project to ("Design"/"Build", the
+  # labels on the project's own stage toggle) rather than restating the
+  # question, so it's clear what each button actually does.
+  heading, explanation, confirm_label, dispute_label =
+    if is_funding
+      [ "Have you already finished building this?",
+        "A reviewer looked at your funding request and thinks this project is already built, so it belongs in build review rather than design funding.",
+        "Yes, move me to Build",
+        "No, I still need funding" ]
+    else
+      [ "Do you need funding for this build?",
+        "A reviewer looked at your ship and thinks you should get a parts grant first, so it belongs in design funding rather than build review.",
+        "Yes, move me back to Design",
+        "No, I don't need a grant" ]
+    end
+
+  # Only the design side gets a note: re-filing devlogs as build time changes
+  # what the builder is paid for, so it is worth spelling out before they agree.
+  confirm_note = "Your funding request is withdrawn and the hours you've logged so far are re-filed as build time." if is_funding
+%>
+
+<article id="<%= dom_id(review, :queue_mismatch) %>"
+         class="feed-post-card queue-mismatch-card">
+  <header class="feed-post-card__header queue-mismatch-card__header">
+    <% if reviewer %>
+      <%= link_to profile_path(reviewer.display_name), class: "feed-post-card__avatar-link",
+            aria: { label: "@#{reviewer.display_name}" } do %>
+        <%= image_tag reviewer.avatar, alt: "", class: "feed-post-card__avatar" %>
+      <% end %>
+    <% else %>
+      <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">?</span>
+    <% end %>
+
+    <div class="feed-post-card__meta">
+      <p class="feed-post-card__byline">
+        <% if reviewer %>
+          <%= render "shared/username_link", user: reviewer, link_class: "feed-post-card__author",
+                data: { turbo_frame: "_top" }, badge: false %>
+        <% else %>
+          <span class="feed-post-card__author">A reviewer</span>
+        <% end %>
+        <span class="feed-post-card__context">has a question about your submission</span>
+        <time class="feed-post-card__time" datetime="<%= review.updated_at.iso8601 %>"
+              title="<%= l(review.updated_at, format: :long) %>">
+          · <%= time_ago_in_words(review.updated_at) %> ago
+        </time>
+      </p>
+    </div>
+
+    <span class="queue-mismatch-card__badge">Only you can see this</span>
+  </header>
+
+  <div class="feed-post-card__body queue-mismatch-card__body">
+    <h3 class="queue-mismatch-card__heading"><%= heading %></h3>
+    <p><%= explanation %></p>
+    <% if review.internal_reason.present? %>
+      <blockquote class="queue-mismatch-card__reason"><%= review.internal_reason %></blockquote>
+    <% end %>
+    <% if confirm_note %>
+      <p class="queue-mismatch-card__note"><%= confirm_note %></p>
+    <% end %>
+  </div>
+
+  <div class="queue-mismatch-card__actions">
+    <%= button_to confirm_label, project_queue_mismatch_path(project),
+          method: :patch, form: { data: { turbo: false } },
+          class: "action-btn action-btn--small action-btn--primary" %>
+    <%= button_to dispute_label, project_queue_mismatch_path(project),
+          method: :delete, form: { data: { turbo: false } },
+          class: "action-btn action-btn--small action-btn--secondary" %>
+  </div>
+</article>

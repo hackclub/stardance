@@ -9,6 +9,31 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.4.3
+ARG LIBHEIF_VERSION=1.23.2
+ARG LIBHEIF_SHA256=8bd5d41d19dc84536d118b04774709f244df6104ef66d623dad5fa4650143405
+ARG NODE_VERSION=22
+
+FROM docker.io/library/node:$NODE_VERSION-slim AS node
+
+FROM docker.io/library/ruby:$RUBY_VERSION-slim AS libheif-build
+ARG LIBHEIF_VERSION
+ARG LIBHEIF_SHA256
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential cmake pkg-config \
+    libde265-dev libaom-dev libdav1d-dev libx265-dev zlib1g-dev \
+    curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://github.com/strukturag/libheif/releases/download/v${LIBHEIF_VERSION}/libheif-${LIBHEIF_VERSION}.tar.gz \
+    -o libheif.tar.gz && \
+    echo "${LIBHEIF_SHA256}  libheif.tar.gz" | sha256sum -c && \
+    tar xzf libheif.tar.gz && \
+    cd libheif-${LIBHEIF_VERSION} && \
+    cmake --preset=release -DWITH_EXAMPLES=OFF -DENABLE_PLUGIN_LOADING=NO && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
+
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -31,8 +56,14 @@ RUN apt-get update -qq && \
     libopenblas0 \
     liblapack3 \
     ffmpeg \
-    nodejs && \
+    libstdc++6 && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Node runs at build time for assets and at runtime for MJML emails
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+
+COPY --from=libheif-build /usr/local/lib/libheif* /usr/local/lib/
+RUN ldconfig
 
 # Set production environment
 ENV RAILS_ENV="production" \
@@ -55,17 +86,17 @@ RUN apt-get update -qq && \
     liblapack-dev && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Node.js and enable Corepack for Yarn Berry
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y nodejs npm && \
-    npm install -g corepack && \
-    corepack enable && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+# Enable Corepack, which ships with Node, for Yarn Berry
+COPY --from=node /usr/local/lib/node_modules/corepack /usr/local/lib/node_modules/corepack
+RUN ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
+    corepack enable
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
 COPY engines/raffle/raffle.gemspec ./engines/raffle/
-RUN bundle install && \
+COPY bin/install-sqlite-vec-arm64 ./bin/
+RUN ./bin/install-sqlite-vec-arm64 && \
+    bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
 
@@ -107,4 +138,8 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 # Start server via Thruster by default, this can be overwritten at runtime
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD [ "$PROCESS_TYPE" = "worker" ] || curl -fsS -o /dev/null "http://localhost:${HTTP_PORT:-80}/up" || exit 1
+
 CMD ["./bin/thrust", "./bin/rails", "server"]

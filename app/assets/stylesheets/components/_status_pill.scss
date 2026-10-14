@@ -49,8 +49,43 @@
     color: #4ade80;
   }
 
+  // Queue-routing states, not verdicts: peach while it waits on the builder,
+  // dimmed once it has been rolled back.
+  &--misfiled {
+    background: rgba(255, 213, 152, 0.18);
+    color: var(--color-brand-peach);
+  }
+
+  &--withdrawn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-space-text-muted, rgba(255, 255, 255, 0.6));
+  }
+
+  // A reversed (undone) verdict — shown in the admin hardware review history so a
+  // rewound decision reads as reversed rather than silently disappearing. Lilac,
+  // to stay distinct from the violet "returned" pill.
+  &--reversed {
+    background: var(--color-brand-lilac-soft, rgba(235, 183, 255, 0.18));
+    color: var(--color-brand-lilac);
+  }
+
   &--dismissed {
     background: rgba(255, 255, 255, 0.08);
     color: var(--color-space-text-muted, rgba(255, 255, 255, 0.6));
+  }
+
+  &--processing {
+    background: var(--color-brand-blue-soft);
+    color: var(--color-brand-blue);
+  }
+
+  &--completed {
+    background: var(--color-brand-mint-soft);
+    color: var(--color-brand-mint);
+  }
+
+  &--failed {
+    background: var(--color-brand-salmon-soft);
+    color: var(--color-brand-salmon);
   }
 }

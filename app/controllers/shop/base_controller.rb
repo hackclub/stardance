@@ -43,7 +43,7 @@ class Shop::BaseController < ApplicationController
 
     ActiveRecord::Associations::Preloader.new(
       records: items,
-      associations: { image_attachment: [ :blob, :record ] }
+      associations: { image_attachment: :blob }
     ).call
   end
 
@@ -69,6 +69,15 @@ class Shop::BaseController < ApplicationController
     }
   end
 
+  # The approval that unlocks a free redemption for this item: an after-ship
+  # submission, an after-design funding kit, or a completed Sticky Streak day.
+  # Returns the gate record or nil.
+  def load_redeemable_gate(shop_item)
+    load_redeemable_submission(shop_item) ||
+      load_redeemable_funding_request(shop_item) ||
+      load_redeemable_sticky_streak_day(shop_item)
+  end
+
   def load_redeemable_submission(shop_item)
     return nil unless current_user
     submission_id = params[:mission_submission_id]
@@ -79,10 +88,50 @@ class Shop::BaseController < ApplicationController
       .find_by(id: submission_id)
     return nil unless submission
     return nil unless submission.approved?
-    return nil unless submission.shop_order_id.nil?
     return nil unless submission.ship_event&.post&.user_id == current_user.id
-    return nil unless submission.mission.prizes.exists?(shop_item_id: shop_item.id)
+    # Each after-ship prize is claimable once per submission.
+    return nil unless submission.redeemable_prize_for(shop_item)
 
     submission
+  end
+
+  def load_redeemable_funding_request(shop_item)
+    return nil unless current_user
+    funding_request_id = params[:funding_request_id]
+    return nil if funding_request_id.blank?
+
+    funding_request = Certification::FundingRequest
+      .includes(project: [ :memberships, { mission_attachments: :mission } ])
+      .find_by(id: funding_request_id)
+    return nil unless funding_request&.approved?
+    return nil unless funding_request.owner == current_user
+    # Each design kit is claimable once per approved request.
+    return nil unless funding_request.redeemable_prize_for(shop_item)
+
+    funding_request
+  end
+
+  def load_redeemable_sticky_streak_day(shop_item)
+    return nil unless current_user
+    day = params[:sticky_streak_day].to_i
+    return nil if day.zero?
+
+    sticky_streak = claiming_sticky_streak
+    # Each day is claimable once, and only for the sticker it was set to.
+    return nil unless sticky_streak&.claimable_day?(day)
+    return nil unless sticky_streak.rewards_by_day[day]&.shop_item_id == shop_item.id
+
+    StickyStreak::DayClaim.new(sticky_streak: sticky_streak, day: day)
+  end
+
+  # A finished run keeps unclaimed stickers claimable while the next one is
+  # under way, so the claim link names its run. Links rendered before restarts
+  # shipped carry no id, which still means the newest run.
+  def claiming_sticky_streak
+    runs = current_user.current_sticky_streaks
+    id = params[:sticky_streak_id].presence
+    return runs.first unless id
+
+    runs.find { |run| run.id == id.to_i }
   end
 end

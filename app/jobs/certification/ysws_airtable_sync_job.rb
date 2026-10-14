@@ -4,19 +4,13 @@ module Certification
   class YswsAirtableSyncJob < ApplicationJob
     include Rails.application.routes.url_helpers
 
-    queue_as :default
-
-    # rescue_from(StandardError) must be declared FIRST — ActiveJob checks handlers in reverse registration order (last = highest priority), so retry_on declarations below will take precedence over this catch-all for Faraday errors.
-    rescue_from(StandardError) do |error|
-      Sentry.capture_exception(error, level: :fatal, message: "YswsAirtableSyncJob failed for ysws_review ##{arguments.first}: #{error.message}", extra: { ysws_review_id: arguments.first })
-      raise error
-    end
+    queue_as :literally_whenever
 
     retry_on Faraday::Error, wait: :exponentially_longer, attempts: 3 do |job, error|
-      Sentry.capture_exception(error, level: :fatal, message: "YswsAirtableSyncJob failed for ysws_review ##{job.arguments.first}: #{error.message}", extra: { ysws_review_id: job.arguments.first })
+      Rails.error.report(error, severity: :error, context: { ysws_review_id: job.arguments.first })
     end
     retry_on Faraday::TimeoutError, wait: 30.seconds, attempts: 2 do |job, error|
-      Sentry.capture_exception(error, level: :fatal, message: "YswsAirtableSyncJob failed for ysws_review ##{job.arguments.first}: #{error.message}", extra: { ysws_review_id: job.arguments.first })
+      Rails.error.report(error, severity: :error, context: { ysws_review_id: job.arguments.first })
     end
     discard_on ActiveRecord::RecordNotFound
 
@@ -24,10 +18,28 @@ module Certification
       review = find_review(ysws_review_id)
       return unless review
 
+      # An undo can land between #complete enqueuing this job and it running.
+      # Never write a submission row for a review that's back in the queue.
+      if review.pending?
+        Rails.logger.info "[YswsAirtableSyncJob] Skipping review ##{review.id}: back to pending"
+        return
+      end
+
+      # GOI, then integrity, then Airtable. An undecided or not-yet-created check
+      # means the hours are not final; the verdict resyncs the review itself
+      # (Certification::Integrity#resync_completed_review_to_airtable).
+      unless review.project.hardware? || integrity_decided?(review)
+        Rails.logger.info "[YswsAirtableSyncJob] Skipping review ##{review.id}: waiting on integrity"
+        return
+      end
+
       Rails.logger.info "[YswsAirtableSyncJob] Starting sync for review ##{review.id}"
 
       # Check if this review has already been submitted to unified DB
-      check_stardance_review_submitted_unified(review)
+      return if check_stardance_review_submitted_unified(review)
+
+      # the hackatime ban check only runs on a stats fetch, and the users sync can take hours to reach this user
+      review.user.try_sync_hackatime_data!(force: true)
 
       # Check if user is banned
       rejection_info = check_user_status(review)
@@ -63,7 +75,11 @@ module Certification
     # uniquely on the ship event, so a review maps 1-1 to an integrity check.
     # Every synced review must have one — a missing record is a data error.
     # Raises StandardError (not RecordNotFound, which this job discards) so
-    # the rescue_from handler reports it to Sentry.
+    # the job fails and the error gets reported.
+    def integrity_decided?(review)
+      Certification::Integrity.where(ship_event_id: review.post_ship_event_id).where.not(status: :pending).exists?
+    end
+
     def integrity_check_for(review)
       Certification::Integrity.find_by(ship_event_id: review.post_ship_event_id) ||
         raise(StandardError, "No certification integrity for ship event ##{review.post_ship_event_id} (ysws_review ##{review.id})")
@@ -71,15 +87,21 @@ module Certification
 
     def check_stardance_review_submitted_unified(review)
       # Fetch existing Airtable record by review_id
-      existing_record = table.all(filter: "{review_id} = '#{review.id}'").first
+      existing_record = ::Certification::YswsAirtable.record_for(review.id)
 
       # If record exists and has "Automation - YSWS Record ID" populated, it's already in unified DB
       if existing_record && existing_record["Automation - YSWS Record ID"].present?
-        raise StandardError, "This review is already in the unified db"
+        # cache the live answer so later triggers skip this review
+        review.update_column(:in_unified_db, existing_record["Automation - YSWS Record ID"])
+        Rails.logger.info "[YswsAirtableSyncJob] Skipping review ##{review.id}: already in unified db"
+        return true
       end
+
+      false
     rescue Faraday::Error, Norairrecord::RecordNotFoundError => e
       # If Airtable fetch fails, log and allow sync to continue
       Rails.logger.warn "[YswsAirtableSyncJob] Could not check unified DB status: #{e.message}"
+      false
     end
 
     def check_user_status(review)
@@ -90,7 +112,7 @@ module Certification
           rejected: true,
           rejection_reason: "User banned: #{user.banned_reason || 'No reason provided'}"
         }
-      elsif integrity_check_for(review).banned?
+      elsif !review.project.hardware? && integrity_check_for(review).banned?
         {
           rejected: true,
           rejection_reason: "Manual fraud check rejected"
@@ -169,14 +191,15 @@ module Certification
       user_data = extract_user_data(user)
       primary_address = user_data[:addresses]&.first || {}
 
-      integrity_check = integrity_check_for(review)
+      integrity_check = project.hardware? ? nil : integrity_check_for(review)
 
       # Calculate minutes. When the fraud department deducted hours during
       # integrity review, those come off the reviewer-approved total before we
-      # report the override hours to Airtable.
+      # report the override hours to Airtable. Hardware projects skip integrity
+      # checks entirely so there is never a deduction.
       total_original_minutes = devlog_reviews.sum { |dr| dr.original_minutes.to_i }
       total_approved_minutes = review.approved_minutes_total
-      deducted_minutes = integrity_check.deducted? ? integrity_check.deduction_minutes.to_i : 0
+      deducted_minutes = integrity_check&.deducted? ? integrity_check.deduction_minutes.to_i : 0
       net_approved_minutes = [ total_approved_minutes - deducted_minutes, 0 ].max
       hours_spent = (net_approved_minutes / 60.0).round(2)
 
@@ -197,10 +220,12 @@ module Certification
         nil
       end
 
-      # Get ship cert info
+      # Get ship cert info. ship_cert_id_value is the Airtable upsert key, so it
+      # keeps falling back to the ship event id to stay unique per review; the
+      # cert itself resolves through the project for reships (see
+      # Certification::Ysws#effective_ship_cert).
       ship_cert_id_value = review.ship_cert_id&.to_s || review.post_ship_event_id&.to_s
-      ship_cert = review.ship_cert
-      ship_certifier_name = ship_cert&.reviewer&.display_name || ship_cert&.reviewer&.email || "Unknown"
+      ship_cert = review.effective_ship_cert
 
       # Get shop orders
       approved_orders = user.shop_orders
@@ -216,7 +241,7 @@ module Certification
         total_original_minutes: total_original_minutes,
         total_approved_minutes: total_approved_minutes,
         deducted_minutes: deducted_minutes,
-        ship_certifier_name: ship_certifier_name,
+        ship_cert: ship_cert,
         approved_orders: approved_orders
       )
 
@@ -269,7 +294,7 @@ module Certification
 
         # Review Data
         "reviewer" => review.reviewer&.display_name || review.reviewer&.email || "Unknown", # tik
-        "ship_certifier" => ship_certifier_name, # tik
+        "ship_certifier" => ship_certifier_name(ship_cert), # tik
         "reviewed_at" => review.reviewed_at&.iso8601, # tik
         "ship_certed_at" => ship_cert&.decided_at&.iso8601, # tik
         "airtable_synced_at" => Time.current.iso8601, # tik
@@ -289,14 +314,18 @@ module Certification
         # Report status
         "report_status" => report_status(review),
 
-        # Certification integrity
-        "integrity_id" => integrity_check.id.to_s,
-        "integrity_status" => integrity_check.status,
-        "integrity_flags" => integrity_check.flags,
-        "fraud_data" => integrity_check.fraud_detection_data&.to_json,
+        # Certification integrity (hardware projects skip integrity checks)
+        "integrity_id" => integrity_check&.id&.to_s,
+        "integrity_status" => integrity_check&.status || "not_applicable",
+        "integrity_flags" => integrity_check&.flags || 0,
+        "fraud_data" => integrity_check&.fraud_detection_data&.to_json,
 
         # Double-dip flag
-        "flagged_double_dipped" => double_dipped?(project.repo_url)
+        "flagged_double_dipped" => ::Certification::UnifiedYswsService.double_dipped?(project.repo_url),
+
+        # Hackatime
+        "hackatime_uid" => user.hackatime_identity&.uid,
+        "hackatime_keys" => project.hackatime_keys.join(",").presence
       }
     end
 
@@ -331,10 +360,13 @@ module Certification
       "banned" => "Project rejected due to manual review of heartbeats."
     }.freeze
 
-    def build_justification(review:, integrity_check:, devlog_reviews:, total_original_minutes:, total_approved_minutes:, deducted_minutes:, ship_certifier_name:, approved_orders:)
+    def ship_certifier_name(ship_cert)
+      ship_cert&.reviewer&.display_name || ship_cert&.reviewer&.email || "Unknown"
+    end
+
+    def build_justification(review:, integrity_check:, devlog_reviews:, total_original_minutes:, total_approved_minutes:, deducted_minutes:, ship_cert:, approved_orders:)
       project_id = review.project_id
       ysws_review_id = review.id
-      ship_cert_id = review.ship_cert_id
       reviewer_name = review.reviewer&.display_name || review.reviewer&.email || "Unknown"
 
       # Format minutes
@@ -367,18 +399,26 @@ module Certification
       if deducted_minutes.positive?
         deducted_hours = (deducted_minutes / 60.0).round(2)
         deduction_explanation = "Further deducted by #{deducted_hours} hours by the fraud department for hour fraud."
-        deduction_explanation += " Reason: #{integrity_check.decision_justification}" if integrity_check.decision_justification.present?
+        deduction_explanation += " Reason: #{integrity_check.decision_justification}" if integrity_check&.decision_justification.present?
         intro += "\n#{deduction_explanation}"
       end
 
-      integrity_note = INTEGRITY_JUSTIFICATION_NOTES.fetch(integrity_check.status)
+      integrity_note = integrity_check ? INTEGRITY_JUSTIFICATION_NOTES.fetch(integrity_check.status) : "Hardware project — integrity check not applicable."
+
+      # A project with no ship cert at all can't be linked — say so rather than
+      # emitting a URL with an empty id, which reads as a broken review link.
+      ship_cert_line = if ship_cert
+        "The Ship Cert is at https://stardance.hackclub.com/admin/certification/ship/#{ship_cert.id}"
+      else
+        "No ship certification was issued for this project."
+      end
 
       justification = <<~JUSTIFICATION
         #{intro}
 
         In this time they wrote #{devlog_reviews.count} devlogs. #{approval_summary}.
 
-        This project was initially ship certified by #{ship_certifier_name}.
+        This project was initially ship certified by #{ship_certifier_name(ship_cert)}.
 
         Following this it was YSWS reviewed by #{reviewer_name}
 
@@ -391,7 +431,7 @@ module Certification
 
         The Full YSWS Review + devlogs are at https://stardance.hackclub.com/admin/certification/review/#{ysws_review_id}
 
-        The Ship Cert is at https://stardance.hackclub.com/admin/certification/ship/#{ship_cert_id}/
+        #{ship_cert_line}
       JUSTIFICATION
 
       # Add shop orders section if available
@@ -409,8 +449,12 @@ module Certification
         end
       end
 
-      # List the Hackatime project names linked to this project
-      hackatime_project_names = review.project&.hackatime_projects&.pluck(:name) || []
+      # Identify the Hackatime account behind the hours so reviewers can look it
+      # up directly, then list the project names linked to this project.
+      hackatime_uid = review.user&.hackatime_identity&.uid
+      justification += "\n\nUser's Hackatime ID: #{hackatime_uid.presence || "none linked"}"
+
+      hackatime_project_names = review.project&.hackatime_projects&.distinct&.pluck(:name) || []
       justification += if hackatime_project_names.any?
         "\n\nUser's Hackatime Project Names: #{hackatime_project_names.join(", ")}"
       else
@@ -517,7 +561,7 @@ module Certification
     end
 
     # Screams when the Screenshot field comes out empty so the cause is visible
-    # in logs/Sentry instead of failing silently. An empty field with source
+    # in logs/AppSignal instead of failing silently. An empty field with source
     # images present is a real misconfiguration (host/scheme); empty with no
     # source images is expected (some reviews genuinely have no media).
     def log_screenshot_result(review, attachments, screenshot_url, banner_url, posts_to_check, project)
@@ -532,56 +576,10 @@ module Certification
       if had_source_image
         message = "[YswsAirtableSyncJob] review ##{review.id}: source images exist but produced NO Screenshot URLs — #{detail}"
         Rails.logger.error(message)
-        Sentry.capture_message(message, level: :warning, extra: { ysws_review_id: review.id })
+        OperationalAlert.report(message, context: { ysws_review_id: review.id })
       else
         Rails.logger.warn("[YswsAirtableSyncJob] review ##{review.id}: no Screenshot — no source images found. #{detail}")
       end
-    end
-
-    UNIFIED_YSWS_BASE_ID  = "app3A5kJwYqxMLOgh"
-    UNIFIED_YSWS_TABLE_ID = "tblzWWGUYHVH7Zyqf"
-
-    def normalize_code_url(url)
-      return "" if url.blank?
-
-      url
-        .sub(/\Ahttps?:\/\//, "")
-        .sub(/(?:\.git)?\/?(?:#.*)?$/, "")
-    end
-
-    def double_dipped?(repo_url)
-      normalized = normalize_code_url(repo_url)
-      return false if normalized.blank?
-
-      api_key = Rails.application.credentials.dig(:unified_ysws, :airtable_api_key) ||
-                ENV["UNIFIED_READ_ONLY"]
-
-      if api_key.blank?
-        Rails.logger.warn "[YswsAirtableSyncJob] double-dip check skipped: no API key configured (UNIFIED_READ_ONLY)"
-        return false
-      end
-
-      filter  = %Q(FIND("#{normalized}", {Code URL}))
-      encoded = URI.encode_uri_component(filter)
-      url     = "https://api.airtable.com/v0/#{UNIFIED_YSWS_BASE_ID}/#{UNIFIED_YSWS_TABLE_ID}" \
-                "?filterByFormula=#{encoded}&fields[]=Code%20URL"
-
-      response = Faraday.get(url) do |req|
-        req.headers["Authorization"] = "Bearer #{api_key}"
-        req.options.timeout = 10
-      end
-
-      unless response.success?
-        Rails.logger.warn "[YswsAirtableSyncJob] double-dip check failed: HTTP #{response.status} — #{response.body}"
-        return false
-      end
-
-      matches = JSON.parse(response.body).fetch("records", [])
-      Rails.logger.info "[YswsAirtableSyncJob] double-dip check: #{matches.size} match(es) for '#{normalized}'"
-      matches.any?
-    rescue StandardError => e
-      Rails.logger.error "[YswsAirtableSyncJob] double-dip check error: #{e.class}: #{e.message}"
-      false
     end
 
     # True when an earlier review exists for the same project (i.e. this is a
@@ -617,28 +615,7 @@ module Certification
     end
 
     def table
-      @table ||= Norairrecord.table(
-        airtable_api_key,
-        airtable_base_id,
-        table_name
-      )
-    end
-
-    def table_name
-      Rails.application.credentials.dig(:ysws_review, :airtable_table_name) ||
-        ENV["YSWS_REVIEW_AIRTABLE_TABLE"] ||
-        "YSWS Project Submission"
-    end
-
-    def airtable_api_key
-      Rails.application.credentials.dig(:ysws_review, :airtable_api_key) ||
-        Rails.application.credentials&.airtable&.api_key ||
-        ENV["AIRTABLE_API_KEY"]
-    end
-
-    def airtable_base_id
-      Rails.application.credentials.dig(:ysws_review, :airtable_base_id) ||
-        ENV["YSWS_REVIEW_AIRTABLE_BASE_ID"]
+      @table ||= ::Certification::YswsAirtable.table
     end
   end
 end

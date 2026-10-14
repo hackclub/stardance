@@ -98,6 +98,20 @@
     display: block;
   }
 
+  // When the actor's avatar stands in for the glyph, fill the slot and drop the
+  // glyph dimming so the face reads at full strength.
+  &__icon--avatar {
+    opacity: 1;
+  }
+
+  &__icon-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
   &__main {
     flex: 1 1 auto;
     display: flex;

@@ -30,7 +30,6 @@ export default class extends Controller {
 
     this.openSettingsModalFromQueryParam();
     this.openIdvModalFromQueryParam();
-    this.openHardwareOutpostModalFromQueryParam();
   }
 
   disconnect() {
@@ -74,7 +73,17 @@ export default class extends Controller {
   }
 
   backdropClick(event) {
-    if (this.element.tagName !== "DIALOG") {
+    // The real <dialog> is either this element (controller mounted on the
+    // dialog) or the dialogTarget (controller on a wrapper that also holds the
+    // trigger button). Either way, a backdrop click must close it.
+    const dialog =
+      this.element.tagName === "DIALOG"
+        ? this.element
+        : this.hasDialogTarget
+          ? this.dialogTarget
+          : null;
+
+    if (!dialog) {
       if (event.target === this.element) this.close();
       return;
     }
@@ -83,9 +92,9 @@ export default class extends Controller {
     // dialog itself. Clicks on inner content (including synthetic ones from
     // things like fileInput.click(), which bubble up at coords 0,0) have
     // event.target on the descendant — never treat those as backdrop hits.
-    if (event.target !== this.element) return;
+    if (event.target !== dialog) return;
 
-    const rect = this.element.getBoundingClientRect();
+    const rect = dialog.getBoundingClientRect();
     const clickedInside =
       event.clientX >= rect.left &&
       event.clientX <= rect.right &&
@@ -125,26 +134,6 @@ export default class extends Controller {
     }
 
     params.delete("idv_check");
-    const query = params.toString();
-    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${
-      window.location.hash
-    }`;
-    window.history.replaceState(window.history.state, "", nextUrl);
-  }
-
-  // A hardware-create attempt bounces back to /projects/new?hardware=outpost;
-  // pop the Outpost modal open, then strip the param so a refresh won't reopen it.
-  openHardwareOutpostModalFromQueryParam() {
-    if (this.element.id !== "hardware-outpost-modal") return;
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("hardware") !== "outpost") return;
-
-    if (!this.element.open) {
-      this.element.showModal();
-    }
-
-    params.delete("hardware");
     const query = params.toString();
     const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${
       window.location.hash

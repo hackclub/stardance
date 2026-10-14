@@ -8,12 +8,33 @@ class Admin::Certification::HardwareReviewPolicy < ApplicationPolicy
     user&.can_review?
   end
 
+  # The design and build queues are the same permission as the old combined one.
+  def design?
+    index?
+  end
+
+  def build?
+    index?
+  end
+
   def next?
+    index?
+  end
+
+  def skip?
     index?
   end
 
   def show?
     user&.can_review? && not_own_project?
+  end
+
+  # Same bar as Certification::ShipPolicy#report_fraud?: any reviewer may flag,
+  # including on a project they belong to (the fraud report skips the own-project
+  # guard on purpose). Flagging notifies the fraud team; it doesn't decide the
+  # review.
+  def flag_for_fraud?
+    user&.can_review?
   end
 
   private

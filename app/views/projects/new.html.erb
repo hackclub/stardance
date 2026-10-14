@@ -3,8 +3,8 @@
 <dialog class="project-creation-dialog" id="project-creation-dialog" aria-label="Create new project"
         data-controller="project-creation"
         data-home-url="<%= home_path %>">
-    &times;
-  </button>
+  <button type="button" class="project-creation-dialog__close" aria-label="Close"
+          data-action="click->project-creation#close">&times;</button>
 
   <div class="project-creation">
 
@@ -27,7 +27,7 @@
     <section class="project-creation__section" aria-labelledby="project-creation-missions-heading">
       <p class="project-creation__tagline">
         Earn exclusive prizes by completing a mission
-          — plus free stickers &amp; a shot at the <a href="<%= raffle_base_url %>/">GPU raffle</a>
+          — plus free stickers<% unless raffle_ended? %> &amp; a shot at the <%= link_to "GPU raffle", raffle_base_url %><% end %>
       </p>
 
       <div class="project-creation__heading-row">
@@ -56,10 +56,12 @@
                 <div class="project-creation__card-actions">
                   <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
                     <%= hidden_field_tag :mission_slug, mission.slug %>
-                    <%= hidden_field_tag "project[title]", "Untitled" %>
-                    <%= f.button type: :submit, class: "project-creation__card-create-btn" do %>
+                    <% name_prompt_id = "name-prompt-mission-#{mission.id}" %>
+                    <%= f.button type: :button, class: "project-creation__card-create-btn",
+                                 onclick: "openNamePrompt(this, #{name_prompt_id.to_json})" do %>
                       Create
                     <% end %>
+                    <%= render "projects/name_prompt", id: name_prompt_id %>
                   <% end %>
 
                   <%= link_to "Details →", mission_path(mission.slug), class: "project-creation__card-details-link" %>
@@ -81,58 +83,51 @@
 
       <div class="project-creation__blank-buttons">
         <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" } do |f| %>
-          <%= hidden_field_tag "project[title]", "Untitled" %>
-          <%= f.button type: :submit, class: "project-creation__blank-btn" do %>
+          <%= f.button type: :button, class: "project-creation__blank-btn",
+                       onclick: "document.getElementById('name-prompt-software').showModal()" do %>
             New software project +
           <% end %>
+          <%= render "projects/name_prompt", id: "name-prompt-software" %>
         <% end %>
 
         <% if Flipper.enabled?(:hardware_flow, current_user) %>
-          <% if Flipper.enabled?(:hardware_to_outpost, current_user) %>
-            <%# Hardware moved to Outpost — open the Outpost popup instead of the
-                on-Stardance funding/build chooser. %>
-            <button type="button"
-                    class="project-creation__blank-btn project-creation__blank-btn--hardware"
-                    onclick="document.getElementById('hardware-outpost-modal').showModal()">
-              New hardware project +
-            </button>
-          <% else %>
-            <button type="button"
-                    class="project-creation__blank-btn project-creation__blank-btn--hardware"
-                    data-action="project-builder#toggle"
-                    data-project-builder-target="hardwareBtn"
-                    aria-expanded="false"
-                    aria-controls="project-creation-stage-chooser">
-              New hardware project +
-            </button>
-          <% end %>
+          <button type="button"
+                  class="project-creation__blank-btn project-creation__blank-btn--hardware"
+                  data-action="project-builder#toggle"
+                  data-project-builder-target="hardwareBtn"
+                  aria-expanded="false"
+                  aria-controls="project-creation-stage-chooser">
+            New hardware project +
+          </button>
         <% end %>
       </div>
 
-      <% if Flipper.enabled?(:hardware_flow, current_user) && !Flipper.enabled?(:hardware_to_outpost, current_user) %>
+      <% if Flipper.enabled?(:hardware_flow, current_user) %>
       <div id="project-creation-stage-chooser"
            class="project-creation__stage-chooser"
            data-project-builder-target="chooser"
            inert>
         <div class="project-creation__stage-chooser-inner">
           <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" }, class: "project-creation__stage-form" do %>
-            <%= hidden_field_tag "project[title]", "Untitled" %>
             <%= hidden_field_tag "project[hardware_stage]", "design" %>
-            <button type="submit" class="project-creation__stage-option">
-              <span class="project-creation__stage-label">I need Funding</span>
+            <button type="button" class="project-creation__stage-option"
+                    onclick="openNamePrompt(this, 'name-prompt-hardware-design')">
+              <span class="project-creation__stage-label">Design</span>
               <span class="project-creation__stage-title">I need funding to buy parts for my project</span>
               <span class="project-creation__stage-subtext">Submit your design and we'll fund your build</span>
             </button>
+            <%= render "projects/name_prompt", id: "name-prompt-hardware-design" %>
           <% end %>
 
           <%= form_with url: projects_path, method: :post, data: { turbo_frame: "_top" }, class: "project-creation__stage-form" do %>
-            <%= hidden_field_tag "project[title]", "Untitled" %>
             <%= hidden_field_tag "project[hardware_stage]", "build" %>
-            <button type="submit" class="project-creation__stage-option">
-              <span class="project-creation__stage-label">I don't need Funding</span>
-              <span class="project-creation__stage-title">I don't need funding for my project</span>
+            <button type="button" class="project-creation__stage-option"
+                    onclick="openNamePrompt(this, 'name-prompt-hardware-build')">
+              <span class="project-creation__stage-label">Build</span>
+              <span class="project-creation__stage-title">I already have my parts and am ready to build</span>
               <span class="project-creation__stage-subtext">I already have my parts and am ready to start building</span>
             </button>
+            <%= render "projects/name_prompt", id: "name-prompt-hardware-build" %>
           <% end %>
         </div>
       </div>
@@ -141,7 +136,3 @@
 
   </div>
 </dialog>
-
-<% if Flipper.enabled?(:hardware_to_outpost, current_user) %>
-  <%= render "projects/hardware_outpost_modal" %>
-<% end %>

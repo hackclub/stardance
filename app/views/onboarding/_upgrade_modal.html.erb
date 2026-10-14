@@ -1,4 +1,8 @@
-<div class="upgrade-modal" data-controller="upgrade-modal" data-action="click->upgrade-modal#backdropClose">
+<dialog class="upgrade-modal"
+        aria-labelledby="upgrade-modal-title"
+        data-controller="upgrade-modal"
+        data-turbo-temporary
+        data-action="click->upgrade-modal#backdropClose close->upgrade-modal#remove">
   <div class="upgrade-card" data-upgrade-modal-target="card">
     <button type="button"
             class="upgrade-card__close"
@@ -10,4 +14,4 @@
     </button>
     <%= render "onboarding/upgrade_content" %>
   </div>
-</div>
+</dialog>

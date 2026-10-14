@@ -58,6 +58,77 @@ class CertificateTest < ActiveSupport::TestCase
     certificate = user.build_certificate(hours_at_issue: 31)
     assert certificate.request_with("orpheus dino")
     assert certificate.approved?
+    assert user.achievements.exists?(achievement_slug: "certificate_earned")
+  end
+
+  test "approved certificates award the achievement and queue its notification" do
+    user = users(:one)
+
+    assert_difference -> { Notifications::AchievementEarned.where(recipient: user).count }, 1 do
+      assert_difference -> { user.achievements.where(achievement_slug: "certificate_earned").count }, 1 do
+        Certificate.create!(user: user, name: "Test Star", hours_at_issue: 31, status: :approved)
+      end
+    end
+
+    achievement = user.achievements.find_by!(achievement_slug: "certificate_earned")
+    assert_not achievement.notified?
+    assert user.reload.has_pending_achievements?
+    assert_equal "Certified Stardancer", achievement.achievement.name
+    assert_empty achievement.ledger_entries
+  end
+
+  test "pending and rejected certificates do not award the achievement" do
+    user = users(:one)
+    achievement = Achievement.find(:certificate_earned)
+    assert_not achievement.earned_by?(user)
+
+    certificate = user.create_certificate!(name: "Custom Name", hours_at_issue: 31)
+    assert_not achievement.earned_by?(user)
+    certificate.rejected!
+    assert_not achievement.earned_by?(user)
+    assert_not user.achievements.exists?(achievement_slug: "certificate_earned")
+  end
+
+  test "editing and regenerating an approved certificate never awards twice" do
+    user = users(:one)
+    certificate = user.create_certificate!(name: "Test Star", hours_at_issue: 31, status: :approved)
+    earned_at = user.achievements.find_by!(achievement_slug: "certificate_earned").earned_at
+
+    assert_no_difference -> { Notifications::AchievementEarned.where(recipient: user).count } do
+      assert_no_difference -> { user.achievements.where(achievement_slug: "certificate_earned").count } do
+        certificate.update!(hours_at_issue: 60)
+        certificate.pending!
+        certificate.approved!
+      end
+    end
+
+    assert_equal earned_at, user.achievements.find_by!(achievement_slug: "certificate_earned").earned_at
+  end
+
+  test "achievement is rolled back if certificate approval is rolled back" do
+    user = users(:one)
+    certificate = user.create_certificate!(name: "Test Star", hours_at_issue: 31)
+    previously_pending = user.has_pending_achievements?
+
+    Certificate.transaction(requires_new: true) do
+      certificate.approved!
+      assert user.achievements.exists?(achievement_slug: "certificate_earned")
+      raise ActiveRecord::Rollback
+    end
+
+    assert certificate.reload.pending?
+    assert_not user.achievements.exists?(achievement_slug: "certificate_earned")
+    assert_equal previously_pending, user.reload.has_pending_achievements?
+  end
+
+  test "holders of previously approved certificates qualify without requesting again" do
+    user = users(:one)
+    certificate = user.create_certificate!(name: "Existing Holder", hours_at_issue: 31)
+    # Simulate a certificate issued before the achievement existed.
+    certificate.update_column(:status, "approved")
+
+    assert_not user.achievements.exists?(achievement_slug: "certificate_earned")
+    assert Achievement.find(:certificate_earned).earned_by?(user)
   end
 
   test "request_with stores the verified spelling when the match is loose" do
@@ -99,7 +170,7 @@ class CertificateTest < ActiveSupport::TestCase
     assert certificate.pending?
   end
 
-  test "certificate_eligible? keys off approved ship hours" do
+  test "certificate_eligible? keys off approved hours" do
     user = users(:one)
     assert_not user.certificate_eligible?
 
@@ -107,13 +178,41 @@ class CertificateTest < ActiveSupport::TestCase
     assert user.certificate_eligible?
   end
 
-  test "approved ship hours exclude soft-deleted projects" do
+  test "approved hours exclude soft-deleted projects" do
     user = users(:one)
     create_approved_ship(user, hours: 42)
-    assert_equal 42, user.approved_ship_hours
+    assert_equal 42, user.approved_hours
 
     posts(:one).project.soft_delete!(force: true)
-    assert_equal 0, user.approved_ship_hours
+    assert_equal 0, user.approved_hours
     assert_not user.certificate_eligible?
+  end
+
+  test "approved funding counts the design time a hardware ship leaves out" do
+    user = users(:one)
+    user.update_columns(verification_status: "verified", ysws_eligible: true)
+    project = Project.create!(title: "Funded Rover", hardware_stage: "design", created_at: 5.days.ago)
+    Project::Membership.create!(project: project, user: user, role: :owner)
+    create_devlog(project, user, seconds: 2 * 3600, phase: "design", at: 3.days.ago)
+    request = project.certification_funding_requests.create!(
+      user: user, complexity_tier: 1, requested_amount_cents: 2_000, status: :pending
+    )
+    request.update_column(:created_at, 2.days.ago)
+    create_devlog(project, user, seconds: 3 * 3600, phase: "build", at: 1.day.ago)
+
+    assert_equal 0, user.approved_hours
+
+    request.update_column(:status, Certification::FundingRequest.statuses[:approved])
+
+    assert_in_delta 2.0, user.approved_hours, 0.001
+  end
+
+  private
+
+  def create_devlog(project, user, seconds:, phase:, at:)
+    devlog = Post::Devlog.new(body: "work log", duration_seconds: seconds, phase: phase)
+    devlog.uploading_attachments = true
+    devlog.save!
+    Post.create!(project: project, user: user, postable: devlog, created_at: at)
   end
 end

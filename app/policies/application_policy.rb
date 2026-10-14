@@ -57,6 +57,21 @@ class ApplicationPolicy
 
   private
 
+  # Hardware reviews (funding requests + ship certs) can be reviewed by the
+  # global reviewer team, or by a reviewer of the project's hardware mission
+  # (per-mission membership or the global mission_reviewer role).
+  def can_review_hardware?
+    user&.can_review? || hardware_mission_reviewer?
+  end
+
+  def hardware_mission_reviewer?
+    return false unless record.respond_to?(:project)
+    mission = record.project&.current_mission
+    return false unless mission&.hardware?
+
+    user&.mission_reviewer? || mission.memberships.exists?(user_id: user&.id)
+  end
+
   def logged_in?
     user.present? && user.hca_linked?
   end

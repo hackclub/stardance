@@ -617,19 +617,6 @@ turbo-frame#project_hero {
   background: transparent;
 }
 
-.project-show__help {
-  display: inline-grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  font-size: 0.5rem;
-  font-weight: 700;
-  opacity: 0.4;
-  vertical-align: middle;
-}
-
 .project-show__panel-actions {
   display: flex;
   justify-content: flex-end;
@@ -720,6 +707,19 @@ turbo-frame#project_hero {
 
 .project-show__pill--danger {
   gap: 6px;
+}
+
+.project-show__pill--review {
+  border-color: var(--color-brand-orange);
+  color: var(--color-brand-orange);
+
+  &:hover:not(:disabled):not([aria-disabled="true"]),
+  &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
+    background: var(--color-brand-orange-soft);
+    border-color: var(--color-brand-orange);
+    color: var(--color-brand-orange);
+    outline: none;
+  }
 }
 
 .project-show__pill-icon {
@@ -1145,6 +1145,24 @@ turbo-frame#project_hero {
   &--clickable {
     font: inherit;
     cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  &--info {
+    cursor: help;
+
+    &:focus-visible {
+      outline: 2px solid var(--badge-accent, var(--color-brand-mint));
+      outline-offset: 2px;
+    }
+  }
+
+  &--clickable,
+  &--info {
     transition:
       background 120ms ease,
       border-color 120ms ease;
@@ -1161,7 +1179,6 @@ turbo-frame#project_hero {
         var(--badge-accent, var(--color-brand-salmon)) 65%,
         transparent
       );
-      outline: none;
     }
   }
 }
@@ -1182,18 +1199,20 @@ turbo-frame#project_hero {
   }
 }
 
+// Fix the shipped card overflow bug on mobile ( issue #1099 )
 .project-show__latest-ship-stats {
   list-style: none;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-l);
   opacity: 0.75;
 }
 
-.project-show__latest-ship-stats-note {
-  color: var(--color-space-text-muted, #9b99b6);
-  font-size: 0.875rem;
-  margin-left: 0.35rem;
+@media (max-width: 720px) {
+  .project-show__latest-ship-stats {
+    gap: var(--space-s);
+  }
 }
 
 .project-show__latest-ship-media {
@@ -1312,6 +1331,29 @@ turbo-frame#project_hero {
 .project-show__notice-link {
   color: var(--color-space-accent);
   text-decoration: underline;
+}
+
+.project-show__notice--blocked {
+  background: color-mix(
+    in srgb,
+    var(--color-brand-salmon) 14%,
+    var(--color-set-2-bg)
+  );
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-brand-salmon) 55%, transparent);
+
+  .project-show__notice-title {
+    color: var(--color-brand-salmon);
+  }
+}
+
+.project-show__notice-reason {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0;
+  padding-left: var(--space-s);
+  border-left: 3px solid var(--color-brand-salmon);
 }
 
 .project-show__notice-dismiss {
@@ -1818,7 +1860,6 @@ turbo-frame#project_hero {
   .feed-composer__chips,
   .feed-composer__grid,
   .feed-composer__attach-wrap,
-  .feed-composer__info-wrap,
   .feed-composer__toolbar {
     flex-shrink: 0;
   }
@@ -2066,8 +2107,6 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
 
   &::backdrop {
@@ -2082,6 +2121,9 @@ turbo-frame#project_hero {
 }
 
 .ship-modal__panel {
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
@@ -2185,6 +2227,11 @@ turbo-frame#project_hero {
   align-items: center;
   justify-content: center;
   padding: 8px 18px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.1);
@@ -2212,8 +2259,8 @@ turbo-frame#project_hero {
     color: var(--color-set-1-bg);
   }
 
-  &--primary:hover,
-  &--primary:focus-visible {
+  &--primary:hover:not(:disabled),
+  &--primary:focus-visible:not(:disabled) {
     filter: brightness(1.05);
     outline: none;
   }
@@ -2262,8 +2309,6 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
 
   &::backdrop {
@@ -2274,6 +2319,9 @@ turbo-frame#project_hero {
 
 .recert-modal__panel {
   position: relative;
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
@@ -2379,6 +2427,12 @@ turbo-frame#project_hero {
   overflow-wrap: anywhere;
 }
 
+.recert-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
 .recert-modal__actions {
   display: flex;
   gap: var(--space-s);
@@ -2406,8 +2460,16 @@ turbo-frame#project_hero {
     border-color 150ms ease,
     color 150ms ease;
 
-  &:hover,
-  &:focus-visible {
+  // aria-disabled rather than the native attribute where the control still has
+  // to receive hover/focus (e.g. to show a tooltip explaining the block).
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled):not([aria-disabled="true"]),
+  &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
     background: rgba(255, 255, 255, 0.14);
     border-color: rgba(255, 255, 255, 0.35);
     outline: none;
@@ -2418,8 +2480,8 @@ turbo-frame#project_hero {
     border-color: var(--color-brand-salmon);
     color: #08061e;
 
-    &:hover,
-    &:focus-visible {
+    &:hover:not(:disabled):not([aria-disabled="true"]),
+    &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
       filter: brightness(1.08);
       border-color: var(--color-brand-salmon);
       background: var(--color-brand-salmon);
@@ -3042,4 +3104,10 @@ turbo-frame#project_hero {
   &:focus-visible {
     border-color: var(--color-space-text);
   }
+}
+
+.project-show__latest-ship-stats-note {
+  color: var(--color-space-text-muted, #9b99b6);
+  font-size: 0.875rem;
+  margin-left: 0.35rem;
 }

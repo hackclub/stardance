@@ -1,5 +1,5 @@
 class FraudDailySummaryJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   FRAUD_CHANNEL_ID = "C0B239CM64W"
 

@@ -19,6 +19,12 @@
         <%= f.radio_button :reason, "demo_broken", id: "project_report_reason_demo_broken_#{project.id}", class: "report-modal__reason-input" %>
         <%= f.label :reason, "Demo does not work", for: "project_report_reason_demo_broken_#{project.id}", class: "report-modal__reason-label" %>
       </div>
+      <% if project.ship_reviews.approved.exists? %>
+        <div class="report-modal__reason">
+          <%= f.radio_button :reason, Project::Report::SHOULD_NOT_HAVE_BEEN_APPROVED_REASON, id: "project_report_reason_shouldnt_have_been_approved_#{project.id}", class: "report-modal__reason-input" %>
+          <%= f.label :reason, "Project should not have been approved", for: "project_report_reason_shouldnt_have_been_approved_#{project.id}", class: "report-modal__reason-label" %>
+        </div>
+      <% end %>
       <div class="report-modal__reason">
         <%= f.radio_button :reason, "other", id: "project_report_reason_other_#{project.id}", class: "report-modal__reason-input" %>
         <%= f.label :reason, "Other", for: "project_report_reason_other_#{project.id}", class: "report-modal__reason-label" %>
@@ -28,7 +34,7 @@
     <div class="report-modal__details">
       <%= f.text_area :details,
             rows: 4,
-            minlength: 20,
+            minlength: Project::Report::DETAILS_MIN_LENGTH,
             required: true,
             class: "report-modal__textarea",
             placeholder: "Share a short explanation (20+ characters)." %>

@@ -3,6 +3,7 @@
 # Table name: votes
 #
 #  id                            :bigint           not null, primary key
+#  auto_discard_checked_at       :datetime
 #  demo_opened                   :boolean          default(FALSE), not null
 #  discarded                     :boolean          default(FALSE), not null
 #  originality_score             :integer
@@ -34,6 +35,7 @@
 #
 class Vote < ApplicationRecord
   FLAG_COST = 5
+  MAX_BANKED_VOTES = 6
   MIN_SCORE = 1
   MAX_SCORE = 9
 
@@ -98,6 +100,7 @@ class Vote < ApplicationRecord
 
   scope :payout_countable, -> {
     where(discarded: false)
+      .where.not(auto_discard_checked_at: nil)
       .where.not(id: Vote::Event.accepted_vote_flags.select(:vote_id))
   }
 
@@ -150,7 +153,7 @@ class Vote < ApplicationRecord
         ship_event.clear_payout_review
       end
 
-      ShipEventPayoutRefreshJob.perform_later
+      ShipEventPayoutRefreshJob.perform_later(ship_event_id)
       true
     else
       false
@@ -193,20 +196,22 @@ class Vote < ApplicationRecord
   def discarded? = discarded || events.exists?(event_type: "vote_flag_accepted")
 
   def auto_discard!(properties: {})
-    with_lock do
-      return if discarded?
+    discard(
+      event_type: "vote_auto_discarded",
+      actor: user,
+      properties: properties.to_h.merge(automated: true)
+    )
+  end
 
-      update!(discarded: true)
-      events.create!(
-        event_type: "vote_auto_discarded",
-        user: user,
-        project: project,
-        ship_event: ship_event,
-        properties: properties.to_h.merge(automated: true)
-      )
-    end
-
-    ShipEventPayoutRefreshJob.perform_later
+  # Manual counterpart to the automated discarder, for a rating it passed on
+  # that a reviewer knows is bad. The reason rides on the event so the audit
+  # log says why the call was made.
+  def discard_by!(reviewer:, reason:)
+    discard(
+      event_type: "vote_discarded",
+      actor: reviewer,
+      properties: { reason: reason, automated: false }
+    )
   end
 
   private
@@ -233,6 +238,32 @@ class Vote < ApplicationRecord
     errors.add(:project, "does not match ship event") if project_id != expected_project_id
   end
 
+  def discard(event_type:, actor:, properties:)
+    credit_reversed = false
+
+    with_lock do
+      return false if discarded?
+
+      update!(discarded: true)
+      events.create!(
+        event_type: event_type,
+        user: actor,
+        project: project,
+        ship_event: ship_event,
+        properties: properties
+      )
+
+      if Flipper.enabled?(:discarded_vote_credit_reversal, user)
+        user.increment!(:vote_balance, -1)
+        credit_reversed = true
+      end
+    end
+
+    Notifications::Votes::Discarded.notify(recipient: user) if credit_reversed
+    ShipEventPayoutRefreshJob.perform_later(ship_event_id)
+    true
+  end
+
   # Callback
 
   def increment_user_vote_balance
@@ -240,7 +271,7 @@ class Vote < ApplicationRecord
   end
 
   def refresh_ship_event_payout_later
-    ShipEventPayoutRefreshJob.perform_later
+    ShipEventPayoutRefreshJob.perform_later(ship_event_id)
   end
 
   def send_gorse_vote_later
@@ -256,7 +287,7 @@ class Vote < ApplicationRecord
   end
 
   def enqueue_auto_discard
-    Vote::AutoDiscardJob.perform_later(id)
+    Vote::AutoDiscardJob.set(wait: 1.minute).perform_later(id)
   end
 
   def cache_reason_embedding_later

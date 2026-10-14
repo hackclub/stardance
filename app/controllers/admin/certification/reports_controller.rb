@@ -1,4 +1,6 @@
 class Admin::Certification::ReportsController < Admin::Certification::ApplicationController
+    include FraudSubjectVerdict
+
     before_action :set_report, only: [ :show, :review, :dismiss ]
 
     def index
@@ -46,6 +48,9 @@ class Admin::Certification::ReportsController < Admin::Certification::Applicatio
         .values
         .map { |reports| reports.sort_by(&:created_at) }
         .sort_by { |reports| [ -reports.size, reports.first.created_at ] }
+
+      project_ids = @report_groups.filter_map { |reports| reports.first.project_id }
+      @pending_counts_by_project = ::Project::Report.pending.where(project_id: project_ids).group(:project_id).count
     end
 
     def show
@@ -60,6 +65,24 @@ class Admin::Certification::ReportsController < Admin::Certification::Applicatio
     def dismiss
       authorize @report
       update_status(:dismissed, "Report dismissed")
+    end
+
+    def resolve_project
+      authorize ::Project::Report
+
+      project = ::Project.find(params.require(:project_id))
+      resolved_count = 0
+
+      ::Project::Report.transaction do
+        project.reports.pending.lock.find_each do |report|
+          report.paper_trail_event = "bulk_resolve"
+          report.update!(status: :reviewed)
+          resolved_count += 1
+        end
+      end
+
+      redirect_to admin_certification_reports_path,
+        notice: resolved_count.positive? ? "Resolved #{resolved_count} #{'report'.pluralize(resolved_count)} for #{project.title}" : "No open reports to resolve for #{project.title}"
     end
 
     private
@@ -81,6 +104,9 @@ class Admin::Certification::ReportsController < Admin::Certification::Applicatio
             status: [ old_status, @report.status ]
           }
         )
+
+        return render_fraud_subject_verdict(@report, notice_message) if fraud_subject
+
         redirect_to admin_certification_reports_path, notice: notice_message
       else
         redirect_to admin_certification_report_path(@report), alert: "Failed to update report"

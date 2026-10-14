@@ -15,24 +15,28 @@
     <div class="vote-page__info-votes">
       <div class="vote-page__info-votes-header">
         <span class="vote-page__info-label">
-          Ratings given
+          <%= @ratings_needed.positive? ? "Ratings needed for payout" : "Votes banked" %>
           <span class="vote-page__info-hint"
                 data-controller="tooltip"
-                data-tooltip-message-value="Rate <%= @ratings_total %> projects per ship to unlock your payout."
+                data-tooltip-message-value="<%= @ratings_needed.positive? ? "Clear your vote deficit to unlock payout." : "Bank up to #{Vote::MAX_BANKED_VOTES} votes toward future ships." %>"
                 data-tooltip-position-value="bottom"
                 tabindex="0"
                 aria-label="What does this mean?">?</span>
         </span>
         <div class="vote-page__info-right">
-          <span class="vote-page__info-count"><%= @ratings_given %> / <%= @ratings_total %></span>
+          <span class="vote-page__info-count">
+            <%= @ratings_needed.positive? ? "#{@ratings_needed} left" : "#{@banked_votes} / #{Vote::MAX_BANKED_VOTES}" %>
+          </span>
           <%= link_to "#", class: "vote-page__past-ratings" do %>
             Past ratings →
           <% end %>
         </div>
       </div>
-      <progress class="vote-page__info-progress"
-                value="<%= @ratings_given %>"
-                max="<%= @ratings_total %>"></progress>
+      <% unless @ratings_needed.positive? %>
+        <progress class="vote-page__info-progress"
+                  value="<%= @banked_votes %>"
+                  max="<%= Vote::MAX_BANKED_VOTES %>"></progress>
+      <% end %>
     </div>
   </div>
 </header>

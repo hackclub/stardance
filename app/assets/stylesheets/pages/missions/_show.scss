@@ -423,6 +423,16 @@
   gap: 12px;
 }
 
+.mission-home__prize-group-label {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-brand-cream);
+  opacity: 0.75;
+}
+
 .mission-home__prize {
   display: flex;
   align-items: center;

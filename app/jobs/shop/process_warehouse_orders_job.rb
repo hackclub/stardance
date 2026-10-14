@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::ProcessWarehouseOrdersJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
   def perform
     warehouse_orders = ShopOrder
       .joins(:shop_item)
@@ -21,6 +21,11 @@ class Shop::ProcessWarehouseOrdersJob < ApplicationJob
   private
 
   def process_coalesced_orders(orders, user_id, frozen_address)
+    unless frozen_address&.dig("phone_number").present?
+      Rails.logger.warn "Skipping warehouse package for user #{user_id}: no phone number on file for this address"
+      return
+    end
+
     warehouse_pkg = nil
 
     ShopWarehousePackage.transaction do
@@ -35,9 +40,9 @@ class Shop::ProcessWarehouseOrdersJob < ApplicationJob
           aasm_state: order.aasm_state
         )
       end
-    end
 
-    warehouse_pkg.send_to_theseus!
+      warehouse_pkg.send_to_theseus!
+    end
 
     orders.each do |order|
       order.mark_fulfilled!(warehouse_pkg.theseus_package_id, nil, "System - Warehouse Package")

@@ -73,15 +73,11 @@ module Posts
       show_record
     end
 
-    # Where the Record button points for a given project chip, or "" when the
-    # button shouldn't render. Lookout recording is offered for hardware projects,
-    # and for every project once the :lookout flag is on (Lookout becomes the
-    # default time path there). The view keys both the create-URL and the button's
-    # visibility off this one method, so they can never drift apart.
-    def record_url_for(project)
-      return "" unless show_record? && project
-      return "" unless project.hardware? || Flipper.enabled?(:lookout, current_user)
-      helpers.project_lookout_sessions_path(project)
+    # Whether the Record button shows for a given project chip. Timelapses are a
+    # hardware thing, and recording happens on Lapse, which takes no per-project
+    # parameters, so unlike the old in-app recorder there's no URL to vary.
+    def recordable?(project)
+      show_record? && project.present? && project.hardware?
     end
 
     def form_url

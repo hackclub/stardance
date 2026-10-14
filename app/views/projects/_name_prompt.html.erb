@@ -1,0 +1,34 @@
+<%# Asks for the project's name before a create form submits.
+
+    Rendered *inside* the create form it belongs to: a dialog opened with
+    showModal() paints in the top layer but stays a descendant of the form, so
+    its input and submit button associate with that form on their own. That's
+    what keeps this free of JS - no controller has to ferry the name across, and
+    `required` gets native validation for free.
+
+    Locals: id (required, unique per form on the page);
+            cta (optional, submit button label). %>
+<dialog id="<%= id %>" class="project-name-prompt" data-controller="modal"
+        aria-labelledby="<%= id %>-heading">
+  <div class="project-name-prompt__card">
+    <button type="button" class="project-name-prompt__close"
+            data-action="click->modal#close" aria-label="Close">&times;</button>
+
+    <h2 class="project-name-prompt__title" id="<%= id %>-heading">Name your project</h2>
+    <p class="project-name-prompt__lede">Don't overthink it, you can rename it whenever you like.</p>
+
+    <%= label_tag "#{id}-input", "Project name", class: "project-name-prompt__label" %>
+    <%= text_field_tag "project[title]", nil,
+          id: "#{id}-input",
+          class: "project-name-prompt__input",
+          placeholder: "Solar-powered plant waterer",
+          maxlength: Project::TITLE_MAX_LENGTH,
+          required: true,
+          autofocus: true,
+          autocomplete: "off" %>
+
+    <button type="submit" class="action-btn action-btn--large action-btn--primary project-name-prompt__cta">
+      <%= local_assigns.fetch(:cta, "Create project") %>
+    </button>
+  </div>
+</dialog>

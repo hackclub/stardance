@@ -5,7 +5,7 @@
 #  id         :bigint           not null, primary key
 #  board      :string           default("---------"), not null
 #  move_count :integer          default(0), not null
-#  status     :integer          default("in_progress"), not null
+#  status     :integer          default(0), not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #  rsvp_id    :bigint           not null

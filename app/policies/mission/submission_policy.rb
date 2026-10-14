@@ -39,7 +39,7 @@ class Mission::SubmissionPolicy < ApplicationPolicy
 
   def redeem?
     return false unless user.present?
-    submitter? && record.approved? && record.shop_order_id.nil?
+    submitter? && record.approved? && record.prizes_to_claim?
   end
 
   private

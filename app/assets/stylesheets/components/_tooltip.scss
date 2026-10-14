@@ -63,3 +63,17 @@
   border-left-color: var(--color-space-bg-2);
   border-right: 0;
 }
+
+// The "?" trigger rendered by shared/_help_tooltip.
+.help-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.5rem;
+  font-weight: 700;
+  opacity: 0.4;
+  vertical-align: middle;
+}

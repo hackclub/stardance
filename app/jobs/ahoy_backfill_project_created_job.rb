@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class AhoyBackfillProjectCreatedJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     already_tracked = Ahoy::Event

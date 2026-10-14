@@ -6,7 +6,7 @@
 #  error_message  :text
 #  language_stats :jsonb
 #  last_synced_at :datetime
-#  status         :integer          default("pending"), not null
+#  status         :integer          default(0), not null
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
 #  project_id     :bigint           not null

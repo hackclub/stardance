@@ -1,0 +1,64 @@
+<%# One-time "what changed" notice for hardware builders, shown the first time a
+    member opens a hardware project after the Lapse/funding revamp. Persists its
+    dismissal per account (User::StateFlags "hardware_update"), so it only ever
+    appears once. Auto-opens and dismisses through the shared dismissable
+    controller. %>
+<dialog class="hardware-update"
+        data-controller="dismissable"
+        data-dismissable-thing-value="hardware_update"
+        data-dismissable-open-value="true"
+        aria-labelledby="hardware-update-title">
+  <div class="hardware-update__panel">
+    <header class="hardware-update__header">
+      <h2 class="hardware-update__title" id="hardware-update-title">Hardware has been updated!</h2>
+      <p class="hardware-update__lead">A few things about hardware projects have changed. Here's the quick version:</p>
+    </header>
+
+    <ul class="hardware-update__list">
+      <li class="hardware-update__item">
+        <span class="hardware-update__item-title">Record with Lapse</span>
+        <span class="hardware-update__item-body">
+          We're now collecting all new recordings using
+          <a href="https://lapse.hackclub.com" target="_blank" rel="noopener">Lapse</a>. Using Lapse
+          will feel familiar, although it also comes with a bunch of fixes that help you not lose your
+          work. A Hackatime project is now automatically set up for each hardware project for you to
+          assign your timelapses to.
+        </span>
+      </li>
+      <li class="hardware-update__item">
+        <span class="hardware-update__item-title">Get your build funded</span>
+        <span class="hardware-update__item-body">
+          Hardware reviews are now open on platform! This means that we'll start sending out grants
+          within the next few days so you can start building what you designed. For the first week or
+          two while we get through the backlog, expect slightly longer review times.
+        </span>
+      </li>
+      <li class="hardware-update__item">
+        <span class="hardware-update__item-title">Hardware build review</span>
+        <span class="hardware-update__item-body">
+          We're also now starting to review hardware builds. These will be paid out in stardust at a
+          fixed 5 <%= stardust_icon %> per hour you spend building (or the whole time if you don't need
+          funding). Hardware builds are reviewed directly, so peer ratings are not required for payout.
+        </span>
+      </li>
+      <li class="hardware-update__item">
+        <span class="hardware-update__item-title">New guides!</span>
+        <span class="hardware-update__item-body">
+          Are you new to hardware or don't know what's going on?
+          <%= link_to "Check out our new guides on how to do everything hardware!",
+                      guide_path("hardware"), target: "_blank", rel: "noopener" %>
+        </span>
+      </li>
+    </ul>
+
+    <div class="hardware-update__actions">
+      <button type="button" class="action-btn action-btn--large action-btn--secondary"
+              data-action="click->dismissable#dismiss">
+        Got it!
+      </button>
+      <%= link_to "Read the guide", guide_path("hardware"),
+                  class: "action-btn action-btn--large action-btn--primary",
+                  target: "_blank", rel: "noopener" %>
+    </div>
+  </div>
+</dialog>

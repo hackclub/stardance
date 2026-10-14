@@ -1,0 +1,17 @@
+<section class="rail-widget referral-widget" aria-label="Refer a friend">
+  <h3 class="rail-widget__title">Refer a friend!</h3>
+  <p class="rail-widget__body">Referrals earn achievements that unlock shop items. A referral is verified once your friend links their Hack Club account.</p>
+
+  <div class="referral-widget__link">
+    <span class="referral-widget__label">Your referral link</span>
+    <button type="button" class="referral-widget__url"
+            aria-label="Copy referral link <%= referral_url %>"
+            data-controller="tooltip copy" data-tooltip-message-value="Click to copy"
+            data-copy-text-value="<%= referral_url %>" data-action="click->copy#copy"><%= referral_url %></button>
+  </div>
+
+  <div class="referral-widget__stats">
+    <span><strong class="referral-widget__count"><%= verified_count %></strong> verified</span>
+    <span><strong class="referral-widget__count"><%= pending_count %></strong> pending</span>
+  </div>
+</section>

@@ -1,0 +1,13 @@
+<%= turbo_frame_tag "fraud-subject-claim" do %>
+  <% if claim %>
+    <p class="fraud-subject__claim" role="alert">
+      <strong><%= claim.reviewer.display_name %></strong> has this person until
+      <%= l claim.expires_at, format: :short %>.
+      <% if local_assigns[:lost] %>
+        Your verdict was not recorded.
+      <% else %>
+        Leave them be unless you have agreed to take over.
+      <% end %>
+    </p>
+  <% end %>
+<% end %>

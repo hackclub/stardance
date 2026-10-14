@@ -1,6 +1,23 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
 
-<main class="certification-ysws" role="main" data-controller="certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>">
+<%
+  in_review_flow = @flow_mode && @review.pending?
+  # Base Stimulus controllers for the review page; the keyboard-shortcut layer
+  # is appended only when its flag is on so no keydown listener is bound off.
+  ysws_controllers = "certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert"
+  ysws_controllers += " certification--ysws--keyboard-shortcuts" if @ysws_review_shortcuts
+%>
+<main class="certification-ysws<%= " certification-ysws--in-flow" if @flow_mode %>" role="main" data-controller="<%= ysws_controllers %>" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>"
+      <% if @ysws_review_shortcuts %>
+        data-certification--ysws--keyboard-shortcuts-catalog-value="<%= Certification::YswsShortcuts::CATALOG.to_json %>"
+        data-certification--ysws--keyboard-shortcuts-settings-value="<%= (current_user.preference&.ysws_shortcuts || {}).to_json %>"
+        data-certification--ysws--keyboard-shortcuts-reserved-value="<%= Certification::YswsShortcuts::RESERVED.to_json %>"
+        data-certification--ysws--keyboard-shortcuts-url-value="<%= admin_certification_ysws_shortcuts_path %>"
+      <% end %>>
+  <%= render "admin/certification/ysws/shortcut_settings" if @ysws_review_shortcuts %>
+  <%= render "flow_bar", review: @review %>
+  <%= render Admin::Certification::MACAnalysisBannerComponent.new(analysis: @mac_analysis, repo_url: @review.project&.repo_url, total_minutes: @review.original_minutes) %>
+
   <!-- Header Section -->
   <div class="review-detail-header">
     <%= link_to "← back", admin_certification_ysws_reviews_path, class: "btn-secondary slim", "aria-label": "Back to review queue" %>
@@ -50,10 +67,30 @@
           </div>
         <% end %>
 
+        <% if policy(@review).undo? %>
+          <% undo_warning = "It goes back to the pending queue and its Airtable submission record is deleted. " \
+                            "If it already reached the Unified YSWS base, that record will NOT be removed — remove it by hand." %>
+          <%= button_to "undo review",
+                        undo_admin_certification_ysws_review_path(@review),
+                        method: :post,
+                        class: "btn-action btn-undo",
+                        form: { class: "review-detail-header__undo-form",
+                                data: { turbo_confirm: "Undo this review? #{undo_warning} The devlog verdicts are kept." } } %>
+          <%= button_to "undo review + devlogs",
+                        undo_admin_certification_ysws_review_path(@review, reset_devlogs: 1),
+                        method: :post,
+                        class: "btn-action btn-undo",
+                        form: { class: "review-detail-header__undo-form",
+                                data: { turbo_confirm: "Undo this review AND reset all #{pluralize(@review.devlog_reviews.size, "devlog verdict")} to pending? " \
+                                                       "Their justifications and approved minutes are cleared, so the whole review has to be redone. #{undo_warning}" } } %>
+        <% end %>
+
         <% if @review.reviewed_at %>
-          <button class="btn-action btn-undo" disabled>
-            undo review
-          </button>
+          <%= button_to "Resync to Airtable",
+                        resync_admin_certification_ysws_review_path(@review),
+                        method: :post,
+                        class: "btn-action btn-resync",
+                        title: @review.airtable_synced_at ? "Last synced: #{@review.airtable_synced_at.strftime('%Y-%m-%d %H:%M UTC')}" : "Never synced" %>
         <% end %>
 
         <div class="review-detail-header__review-actions">
@@ -63,7 +100,7 @@
 
           <% if @review.pending? && @review.claimed_by?(current_user) %>
             <%= button_to "Unclaim review",
-                          admin_certification_ysws_claim_path(@review),
+                          claim_admin_certification_ysws_review_path(@review),
                           method: :delete,
                           class: "btn-secondary slim",
                           form: { class: "review-detail-header__unclaim-form" } %>
@@ -89,14 +126,28 @@
       <!-- Ship Cert Video Section -->
       <section class="review-card video-card">
         <h3>Ship Cert Video</h3>
-        <% if (ship_cert_video_src = certification_verdict_video_src(@review.ship_cert)) %>
+        <% if (ship_cert_video_src = certification_verdict_video_src(@ship_cert)) %>
+          <% if @ship_cert_from_earlier_ship %>
+            <p class="video-card__source-note">
+              No video for reships — showing video from last ship<% if @ship_cert.decided_at %>
+                <span class="video-card__source-date">(certified <%= @ship_cert.decided_at.strftime("%b %-d, %Y") %>)</span>
+              <% end %>
+            </p>
+          <% end %>
           <video class="video-card__player" src="<%= ship_cert_video_src %>"
-                 controls playsinline preload="metadata" style="width:100%;border-radius:var(--profile-radius)"></video>
+                 controls playsinline preload="metadata"></video>
         <% else %>
           <div class="video-placeholder">
             <div class="placeholder-text">No review video recorded</div>
           </div>
         <% end %>
+      </section>
+
+      <!-- Lapse / Lookout Recordings -->
+      <section class="review-card recordings-card">
+        <%= render "admin/certification/funding_requests/recordings",
+              timelapses: @lapse_timelapses, recordings: @lookout_recordings,
+              telescreen_uid: @lapse_owner_uid %>
       </section>
 
       <% if @review.project.update_description.present? %>
@@ -110,7 +161,10 @@
       <% end %>
 
       <!-- Time Stats Section -->
-      <section class="review-card stats-card">
+      <section class="review-card stats-card"
+               data-controller="certification--ysws--review-totals"
+               data-certification--ysws--review-totals-frozen-minutes-value="<%= @stats[:frozen_deducted_minutes] %>"
+               data-action="devlog-review:saved@window->certification--ysws--review-totals#refresh">
         <h3>Time Stats</h3>
         <div class="stats-grid">
           <div class="stat-box">
@@ -132,9 +186,9 @@
             </div>
           </div>
           <div class="stat-box">
-            <div class="stat-label">Devlogs ≥1hr</div>
-            <div class="stat-value">
-              <%= @stats[:one_hour_plus_count] %>
+            <div class="stat-label">Time Deducted</div>
+            <div class="stat-value" data-certification--ysws--review-totals-target="deducted">
+              <%= (@stats[:deducted_minutes] / 60.0).round(1) %>h
             </div>
           </div>
         </div>
@@ -177,7 +231,11 @@
     </div>
 
     <!-- Right Column -->
-    <div class="review-detail-right" data-certification--ysws--review-sidebar-target="sidebar">
+    <div class="review-detail-right"
+         data-certification--ysws--review-sidebar-target="sidebar"
+         data-controller="certification--ysws--double-dip"
+         data-certification--ysws--double-dip-url-value="<%= double_dip_admin_certification_ysws_review_path(@review) %>"
+         data-certification--ysws--double-dip-outline-class="review-detail-right--double-dipped">
       <!-- Details Card -->
       <section class="review-card details-card">
         <div class="details-list">
@@ -192,10 +250,12 @@
             <span class="detail-key">Submitter:</span>
             <span class="detail-value" style="display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;">
               <span><%= @review.user.display_name || "Unknown User" %></span>
-              <span class="fraud-links" style="display: inline-flex; gap: var(--space-xxs);">
-                <a href="https://billy.3kh0.net/?u=<%= @review.user.slack_id %>" class="fraud-link" target="_blank">Billy</a>
-                <a href="https://joe.fraud.hackclub.com/profile/<%= @review.user.slack_id %>" class="fraud-link" target="_blank">Joe</a>
-              </span>
+              <% if @review.user.slack_id.present? %>
+                <span class="fraud-links" style="display: inline-flex; gap: var(--space-xxs);">
+                  <%= link_to "Hackatime", telescreen_hackatime_url(slack_id: @review.user.slack_id), class: "fraud-link", target: "_blank", rel: "noopener noreferrer" %>
+                  <%= link_to "Telescreen", telescreen_subject_url(@review.user.slack_id), class: "fraud-link", target: "_blank", rel: "noopener noreferrer" %>
+                </span>
+              <% end %>
             </span>
           </div>
 
@@ -270,6 +330,16 @@
             <span class="detail-link-btn disabled" title="No readme URL available">Readme</span>
           <% end %>
         </div>
+
+        <%# Revealed by the double-dip controller once the unified DB responds %>
+        <div class="double-dip-warning" role="alert" hidden
+             data-certification--ysws--double-dip-target="warning">
+          <p class="double-dip-warning__title">This project may have been double dipped</p>
+          <p class="double-dip-warning__detail">
+            This repo is already in the unified DB under
+            <span data-certification--ysws--double-dip-target="programs">another YSWS</span>.
+          </p>
+        </div>
       </section>
 
       <!-- Description Card -->
@@ -305,7 +375,7 @@
               <span class="devlog-review-group__meta">shipped <%= prior_review.created_at.to_date %> · read-only</span>
             </div>
             <% prior_review.devlog_reviews.each do |devlog_review| %>
-              <%= render "devlog_review", devlog_review: devlog_review, frozen: true %>
+              <%= render "devlog_review", devlog_review: devlog_review, frozen: true, mac_recommendation: nil %>
             <% end %>
           </div>
         <% end %>
@@ -317,7 +387,8 @@
             </div>
           <% end %>
           <% @review.devlog_reviews.each_with_index do |devlog_review, index| %>
-            <%= render "devlog_review", devlog_review: devlog_review, frozen: false, sidebar_trigger: index == 0 %>
+            <%= render "devlog_review", devlog_review: devlog_review, frozen: false, sidebar_trigger: index == 0,
+                  mac_recommendation: @mac_analysis&.recommendation_for(devlog_review.id) %>
           <% end %>
         </div>
       </div>
@@ -346,14 +417,22 @@
                 data-action="click->certification--ysws--return-to-ship-cert#open">
           Return to Ship Certs
         </button>
-        <button class="action-btn btn-complete"
-                data-certification--ysws--complete-review-target="button"
-                data-action="click->certification--ysws--complete-review#complete">
-          Complete Review
-        </button>
+        <%= button_to in_review_flow ? "Complete & next" : "Complete Review",
+                      complete_admin_certification_ysws_review_path(@review),
+                      method: :post,
+                      params: (flow_params if in_review_flow),
+                      class: "action-btn btn-complete",
+                      form_class: "action-buttons-grid__form",
+                      form: { data: { turbo: false, action: "submit->certification--ysws--complete-review#complete" } },
+                      data: { certification__ysws__complete_review_target: "button" } %>
       </div>
     </section>
   <% end %>
+
+  <%# Reviewer-visible audit trail for this review — Certification::Ysws is
+      has_paper_trail, so every verdict, claim, and resync already leaves a
+      version behind. Same partial the reports page uses. %>
+  <%= render "admin/shared/audit_log", record: @review, item_type: "Certification::Ysws" %>
 
   <!-- Return to Ship Cert Modal -->
   <div class="return-ship-cert-modal" data-certification--ysws--return-to-ship-cert-target="modal">

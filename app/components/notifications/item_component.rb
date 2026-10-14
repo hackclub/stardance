@@ -15,12 +15,14 @@ module Notifications
       "Notifications::AchievementEarned"                        => "trophy",
       "Notifications::Payouts::ShipEventIssued"                 => "rocket",
       "Notifications::Payouts::VoteDeficitBlocked"              => "thumbs-up",
+      "Notifications::Votes::Discarded"                          => "thumbs-up",
       "Notifications::Projects::SuperStar"                      => "star",
       "Notifications::Projects::DevlogCapApproaching"           => "alert-triangle",
       "Notifications::Missions::SubmissionApproved"             => "check-circle",
       "Notifications::Missions::SubmissionRejected"             => "alert-triangle",
       "Notifications::Missions::SubmissionPendingForReviewer"   => "clipboard",
-      "Notifications::ShopOrders::StatusChanged"                => "bag"
+      "Notifications::ShopOrders::StatusChanged"                => "bag",
+      "Notifications::Hardware::FundingRequestReviewed"         => "check-circle"
     }.freeze
 
     attr_reader :notification
@@ -62,6 +64,14 @@ module Notifications
 
     def avatar_actor
       notification.actor
+    end
+
+    # Whenever a notification is about one person, their avatar stands in for the
+    # glyph in the icon slot (and the separate face row is dropped). An aggregate
+    # keeps the glyph plus its row of faces; a system notification with no actor
+    # keeps its glyph.
+    def avatar_icon?
+      !expandable? && avatar_actor.present?
     end
 
     # All actors behind an aggregated notification, for the expandable list.

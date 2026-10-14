@@ -237,6 +237,9 @@
                   <div class="ship-queue__project-head">
                     <span class="ship-queue__project-title"><%= ship.project&.title || "Deleted Project" %></span>
                     <span class="ship-queue__project-id">#<%= ship.id %></span>
+                    <% if ship.bonus_stardust.present? && ship.bonus_stardust > 0 %>
+                      <span class="ship-queue__bonus-tag">✦ +<%= ship.bonus_stardust %></span>
+                    <% end %>
                   </div>
                   <div class="ship-queue__project-links">
                     <% if ship.project.demo_url.present? %>
@@ -312,6 +315,10 @@
             </div>
             <div class="ship-queue__project-meta">
               <span>#<%= ship.id %></span>
+              <% if ship.bonus_stardust.present? && ship.bonus_stardust > 0 %>
+                <span class="ship-queue__dot" aria-hidden="true">·</span>
+                <span class="ship-queue__bonus-tag">✦ +<%= ship.bonus_stardust %></span>
+              <% end %>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
               <span>by <%= owner&.display_name || "—" %></span>
               <% if ship.project.project_type.present? %>

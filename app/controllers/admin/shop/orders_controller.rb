@@ -1,20 +1,118 @@
 class Admin::Shop::OrdersController < Admin::ApplicationController
+  include FraudSubjectVerdict
+
   before_action :set_paper_trail_whodunnit
-  before_action :set_order, except: [ :index ]
+  before_action :set_order, except: [ :index, :bulk_approve, :bulk_reject ]
 
   # Filter/search params that should survive navigation between the status
   # chips, the group-by-user toggle, and pagination. Centralised here so the
   # views don't each repeat (and risk drifting from) the permit list.
   PRESERVED_FILTER_KEYS = [
     :user_search, :shop_item_id, :status, :date_from, :date_to, :sort, :view,
-    :goob, :region, :item_type, :min_tickets, :max_tickets, :has_tracking,
-    :order_type, { assignee_ids: [] }
+    :goob, :region, :country, :item_type, :min_tickets, :max_tickets, :has_tracking,
+    :order_type, { assignee_ids: [], hidden_types: [] }
   ].freeze
 
-  helper_method :preserved_filter_params
+  # TutorialNothing is never fulfilled by a human, so it's dropped from the
+  # queue outright rather than given a toggle nobody would reach for.
+  ALWAYS_HIDDEN_ITEM_TYPES = %w[ShopItem::TutorialNothing].freeze
+
+  # Item-type groups the fulfillment queue can fold away, one toggle each.
+  # FreeStickers needs no human work and WarehouseItem is fulfilled by the
+  # external warehouse, so those start folded away. Mail is packed by hand and
+  # stays visible — HQ mail and letter mail share a single toggle because
+  # they're worked as one pile. New LetterMail subclasses join the mail group
+  # through ShopItem::LetterMail::TYPES, so they fold with the rest of it.
+  # Sticky Streak stickers get their own toggle rather than folding in with the
+  # mail: they are sent one at a time from the order, not swept up in a batch,
+  # so the mail pile's count means nothing with them mixed in.
+  ITEM_TYPE_TOGGLES = [
+    { label: "Free Stickers", hidden_by_default: true, types: %w[ShopItem::FreeStickers] },
+    { label: "Warehouse Item", hidden_by_default: true, types: %w[ShopItem::WarehouseItem] },
+    { label: "HQ Mail", hidden_by_default: false, types: %w[ShopItem::HQMailItem] + ShopItem::LetterMail::BULK_BATCHED_TYPES },
+    { label: "Streak Stickers", hidden_by_default: false, types: %w[ShopItem::StickyStreakSticker] }
+  ].freeze
+
+  TOGGLEABLE_ITEM_TYPES = ITEM_TYPE_TOGGLES.flat_map { |toggle| toggle[:types] }.freeze
+
+  DEFAULT_HIDDEN_ITEM_TYPES = ITEM_TYPE_TOGGLES.select { |toggle| toggle[:hidden_by_default] }
+                                               .flat_map { |toggle| toggle[:types] }.freeze
+
+  # Number of user groups shown per page when grouping by user.
+  GROUPS_PER_PAGE = 25
+
+  helper_method :preserved_filter_params, :grouped_by_user?, :item_type_toggles,
+                :hidden_item_types, :grouping_toggle_params, :item_type_toggle_params,
+                :item_type_toggle_hidden?, :assigned_to_me?, :assigned_to_me_toggle_params,
+                :approvable_order?
+
+  def approvable_order?(order)
+    policy(order).approve? && order.user_id != current_user.id && order.approvable?
+  end
 
   def preserved_filter_params
     params.permit(*PRESERVED_FILTER_KEYS)
+  end
+
+  # Fulfillment works order-by-order per person, so the queue groups by user
+  # unless explicitly ungrouped. Every other view stays flat by default.
+  def grouped_by_user?
+    return params[:goob] != "false" if @view == "fulfillment"
+
+    params[:goob] == "true"
+  end
+
+  def item_type_toggles
+    ITEM_TYPE_TOGGLES
+  end
+
+  def item_type_toggle_hidden?(toggle)
+    toggle[:types].all? { |type| hidden_item_types.include?(type) }
+  end
+
+  def hidden_item_types
+    @hidden_item_types ||= if @view != "fulfillment"
+      []
+    else
+      toggled = if params.key?(:hidden_types)
+        Array(params[:hidden_types]) & TOGGLEABLE_ITEM_TYPES
+      else
+        DEFAULT_HIDDEN_ITEM_TYPES
+      end
+
+      # An explicit item-type filter beats the folded-away defaults, otherwise
+      # filtering down to a hidden type would come back empty.
+      (toggled | ALWAYS_HIDDEN_ITEM_TYPES) - [ params[:item_type] ]
+    end
+  end
+
+  def grouping_toggle_params
+    preserved_filter_params.merge(goob: !grouped_by_user?)
+  end
+
+  # Shortcut for the assignee filter below: narrowed to just the viewer's own
+  # orders, or off. Mixed selections are made in the filter form itself.
+  def assigned_to_me?
+    Array(params[:assignee_ids]).map(&:to_s) == [ current_user.id.to_s ]
+  end
+
+  def assigned_to_me_toggle_params
+    return preserved_filter_params.except(:assignee_ids) if assigned_to_me?
+
+    preserved_filter_params.merge(assignee_ids: [ current_user.id.to_s ])
+  end
+
+  def item_type_toggle_params(toggle)
+    next_hidden = if item_type_toggle_hidden?(toggle)
+      hidden_item_types - toggle[:types]
+    else
+      hidden_item_types | toggle[:types]
+    end
+
+    # An empty array is dropped from the query string entirely, which would read
+    # back as "no param given" and restore the defaults — send a blank entry so
+    # "nothing hidden" survives the round trip.
+    preserved_filter_params.merge(hidden_types: next_hidden.presence || [ "" ])
   end
 
   def index
@@ -61,7 +159,29 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
     # Apply shared filters to both the orders query and the stats base query
     orders = apply_shared_filters(orders)
-    base = apply_shared_filters(ShopOrder.includes(:shop_item, :user))
+    # Streak stickers stay in the queue below and keep their own toggle count;
+    # they just leave the headline numbers alone.
+    base = apply_shared_filters(ShopOrder.includes(:shop_item, :user).without_streak_stickers)
+
+    # Folded-away item types only come off the list itself — the stats below and
+    # the counts on the toggles stay whole so nothing vanishes silently.
+    if hidden_item_types.any?
+      orders = orders.where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+    end
+
+    if @view == "fulfillment" && params[:shop_item_id].blank?
+      @batch_counts = ShopOrder.where(aasm_state: "awaiting_periodical_fulfillment")
+                               .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+                               .group(:shop_item_id)
+                               .count
+    end
+
+    if @view == "fulfillment"
+      @awaiting_counts_by_type = apply_shared_filters(ShopOrder.joins(:shop_item))
+                                   .where(aasm_state: "awaiting_periodical_fulfillment",
+                                          shop_items: { type: TOGGLEABLE_ITEM_TYPES })
+                                   .group("shop_items.type").count
+    end
 
     @c = {
       pending: base.where(aasm_state: "pending").count,
@@ -80,25 +200,64 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     end
 
     # Sorting - always uses database ordering now
-    orders = case params[:sort]
-    when "id_asc" then orders.order(id: :asc)
-    when "id_desc" then orders.order(id: :desc)
-    when "created_at_asc" then orders.order(created_at: :asc)
-    when "shells_asc" then orders.order(frozen_item_price: :asc)
-    when "shells_desc" then orders.order(frozen_item_price: :desc)
-    else orders.order(created_at: :desc)
+    # The fraud queue is worked oldest-first, and orders the automation would
+    # clear on its own are its lowest priority, so those sink below everything
+    # a person actually has to judge. Applied before the sort below so it stays
+    # the primary key whichever ordering the reviewer picks.
+    @auto_approvable_ids = auto_approvable_ids_in(orders)
+    if @auto_approvable_ids.any?
+      orders = orders.order(
+        Arel.sql(ShopOrder.sanitize_sql_array([ "CASE WHEN shop_orders.id IN (?) THEN 1 ELSE 0 END", @auto_approvable_ids ]))
+      )
     end
 
-    # Grouping
-    if params[:goob] == "true"
-      @grouped_orders = orders.group_by(&:user).map do |user, user_orders|
+    sort_column, sort_direction = case params[:sort]
+    when "id_asc" then [ :id, :asc ]
+    when "id_desc" then [ :id, :desc ]
+    when "created_at_desc" then [ :created_at, :desc ]
+    when "shells_asc" then [ :frozen_item_price, :asc ]
+    when "shells_desc" then [ :frozen_item_price, :desc ]
+    when "batch_size_desc" then [ :batch_size, :desc ]
+    else [ :created_at, :asc ]
+    end
+
+    if sort_column == :batch_size
+      batch_counts_sql = ShopOrder
+        .where(aasm_state: "awaiting_periodical_fulfillment")
+        .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+        .select("shop_item_id AS bc_item_id, COUNT(*) AS batch_count")
+        .group(:shop_item_id)
+        .to_sql
+      orders = orders
+        .joins("LEFT JOIN (#{batch_counts_sql}) bc ON bc.bc_item_id = shop_orders.shop_item_id")
+        .order(Arel.sql("bc.batch_count DESC NULLS LAST, shop_orders.created_at ASC"))
+      sort_column, sort_direction = :created_at, :asc
+    else
+      orders = orders.order(sort_column => sort_direction)
+    end
+
+    # Grouping. Paginate the *users* rather than the orders so every page holds
+    # whole groups — grouping is the fulfillment default, so loading the entire
+    # matching set at once isn't an option. Groups are ordered (and paginated)
+    # by each user's most sort-relevant order — eg. sorting oldest-first
+    # surfaces the user holding the oldest order first, even if that same user
+    # also happens to hold the newest one.
+    if grouped_by_user?
+      aggregate = sort_direction == :asc ? :minimum : :maximum
+      group_extremes = orders.unscope(:includes).reorder(nil).group(:user_id).public_send(aggregate, sort_column)
+      user_ids = group_extremes.sort_by { |user_id, value| [ value, user_id ] }.map(&:first)
+      user_ids.reverse! if sort_direction == :desc
+      @pagy, page_user_ids = pagy(:offset, user_ids, limit: GROUPS_PER_PAGE)
+
+      group_order = page_user_ids.each_with_index.to_h
+      @grouped_orders = orders.where(user_id: page_user_ids).group_by(&:user).map do |user, user_orders|
         {
           user: user,
           orders: user_orders,
           total_items: user_orders.sum(&:quantity),
           total_shells: user_orders.sum { |o| o.total_cost || 0 }
         }
-      end.sort_by { |g| -g[:orders].size }
+      end.sort_by { |g| group_order[g[:user].id] }
     else
       @pagy, @shop_orders = pagy(:offset, orders, limit: 50)
     end
@@ -144,10 +303,9 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     @user_orders = @order.user.shop_orders.where.not(id: @order.id).order(created_at: :desc).limit(10)
     @user_projects = @order.user.projects.includes(:hackatime_projects).order(created_at: :desc)
 
-    # Find sibling LetterMail orders for Theseus coalesce button
-    if @order.shop_item.type == "ShopItem::LetterMail" && @order.awaiting_periodical_fulfillment?
+    if @order.shop_item.is_a?(ShopItem::LetterMail) && @order.awaiting_periodical_fulfillment?
       @theseus_sibling_orders = ShopOrder.joins(:shop_item)
-                                         .where(shop_items: { type: "ShopItem::LetterMail" })
+                                         .where(shop_items: { type: @order.shop_item.type })
                                          .where(user_id: @order.user_id, frozen_address_ciphertext: @order.frozen_address_ciphertext)
                                          .where(aasm_state: "awaiting_periodical_fulfillment")
                                          .where.not(id: @order.id)
@@ -255,52 +413,56 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   def approve
     authorize @order, :approve?
 
-    if @order.user_id == current_user.id
-      redirect_to admin_shop_order_path(@order), alert: "You cannot approve your own order." and return
-    end
+    result = Admin::ShopOrderApprover.new(@order, actor: current_user, tracking_number: params[:tracking_number]).call
 
-    unless @order.pending? || @order.awaiting_verification_call?
-      redirect_to admin_shop_order_path(@order), alert: "This order has already been processed." and return
-    end
+    if result.approved?
+      return render_fraud_subject_verdict(@order, result.message) if fraud_subject
 
-    if @order.requires_additional_review?
-      redirect_to admin_shop_order_path(@order), alert: "This is a high-value order and requires 2 fraud dept reviews before approval (#{@order.reviews.count}/2 so far)." and return
-    end
-
-    old_state = @order.aasm_state
-
-    if @order.shop_item.respond_to?(:fulfill!)
-      @order.approve!
-      redirect_to shop_orders_return_path, notice: "Order approved and fulfilled" and return
-    end
-
-    tracking_number = params[:tracking_number].presence
-
-    if @order.shop_item.requires_verification_call?
-      success = @order.queue_for_verification_call && @order.save
-      notice = "Order queued for verification call"
+      redirect_to shop_orders_return_path, notice: result.message
     else
-      if tracking_number.present?
-        @order.tracking_number = tracking_number
-      end
-      success = @order.queue_for_fulfillment && @order.save
-      notice = "Order approved for fulfillment"
+      redirect_to admin_shop_order_path(@order), alert: result.message
+    end
+  end
+
+  def bulk_approve
+    authorize ShopOrder, :approve?
+
+    orders = ShopOrder.includes(:shop_item, :reviews).where(id: params[:order_ids])
+
+    if orders.empty?
+      redirect_back fallback_location: admin_shop_orders_path, alert: "No orders to approve." and return
     end
 
-    if success
-      ::PaperTrail::Version.create!(
-        item_type: "ShopOrder",
-        item_id: @order.id,
-        event: "update",
-        whodunnit: current_user.id,
-        object_changes: {
-          aasm_state: [ old_state, @order.aasm_state ]
-        }
-      )
-      redirect_to shop_orders_return_path, notice: notice
-    else
-      redirect_to admin_shop_order_path(@order), alert: "Failed to approve order: #{@order.errors.full_messages.join(', ')}"
+    settled, failed = orders.map { |order|
+      Admin::ShopOrderApprover.new(order, actor: current_user).call
+    }.partition(&:approved?)
+
+    render_bulk_order_outcome(settled, failed, verb: "Approved")
+  end
+
+  def bulk_reject
+    authorize ShopOrder, :reject?
+
+    orders = ShopOrder.includes(:reviews, :accessory_orders).where(id: params[:order_ids])
+
+    if orders.empty?
+      redirect_back fallback_location: admin_shop_orders_path, alert: "No orders to reject." and return
     end
+
+    settled, undecided = orders.map { |order|
+      Admin::ShopOrderRejector.new(
+        order,
+        actor: current_user,
+        reason: params[:reason],
+        internal_reason: params[:internal_rejection_reason],
+        joe_case_url: params[:joe_case_url],
+        fraud_project_id: params[:fraud_related_project_id]
+      ).call
+    }.partition(&:rejected?)
+
+    voted, failed = undecided.partition(&:review)
+
+    render_bulk_order_outcome(settled, failed, verb: "Rejected", voted: voted)
   end
 
   def review_order
@@ -310,104 +472,44 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_to admin_shop_order_path(@order), alert: "You cannot review your own order." and return
     end
 
-    success = false
-    notice_message = nil
-    alert_message = nil
+    review = @order.record_review(user: current_user, verdict: params[:verdict], reason: params[:review_reason])
 
-    @order.with_lock do
-      previous_review_count = @order.reviews.count
+    unless review.persisted?
+      alert_message = review.errors.full_messages.to_sentence
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order", error: alert_message) if fraud_subject
 
-      review = @order.reviews.build(
-        user: current_user,
-        verdict: params[:verdict],
-        reason: params[:review_reason]
-      )
-
-      if review.save
-        new_review_count = previous_review_count + 1
-
-        ::PaperTrail::Version.create!(
-          item_type: "ShopOrder",
-          item_id: @order.id,
-          event: "review",
-          whodunnit: current_user.id,
-          object_changes: {
-            review_count: [ previous_review_count, new_review_count ],
-            verdict: review.verdict,
-            reason: review.reason
-          }
-        )
-
-        success = true
-        notice_message = "Review submitted — #{review.verdict} (#{new_review_count}/2)."
-      else
-        alert_message = review.errors.full_messages.to_sentence
-      end
+      return redirect_to admin_shop_order_path(@order), alert: alert_message
     end
 
-    if success
-      redirect_to admin_shop_order_path(@order), notice: notice_message
-    else
-      redirect_to admin_shop_order_path(@order), alert: alert_message
-    end
+    return render_fraud_subject_review(review) if fraud_subject
+
+    redirect_to admin_shop_order_path(@order),
+                notice: "Review submitted - #{review.verdict} " \
+                        "(#{@order.review_count(review.verdict)}/#{ShopOrderReview::REQUIRED_COUNT})."
   end
 
   def reject
     authorize @order, :reject?
 
-    if @order.requires_additional_review?
-      redirect_to admin_shop_order_path(@order), alert: "This is a high-value order and requires 2 fraud dept reviews before rejection (#{@order.reviews.count}/2 so far)." and return
-    end
+    result = Admin::ShopOrderRejector.new(
+      @order,
+      actor: current_user,
+      reason: params[:reason],
+      internal_reason: params[:internal_rejection_reason],
+      joe_case_url: params[:joe_case_url],
+      fraud_project_id: params[:fraud_related_project_id]
+    ).call
 
-    reason = params[:reason].presence || "No reason provided"
+    if result.rejected?
+      return render_fraud_subject_verdict(@order, result.message) if fraud_subject
 
-    if current_user.fraud_dept?
-      internal_reason = params[:internal_rejection_reason]
-      joe_case_url = params[:joe_case_url]
-      fraud_project_id = params[:fraud_related_project_id]
+      redirect_to shop_orders_return_path, notice: result.message
+    elsif result.review
+      return render_fraud_subject_verdict(@order, result.message, claim: result.review) if fraud_subject
+
+      redirect_to admin_shop_order_path(@order), notice: result.message
     else
-      internal_reason = reason
-      joe_case_url = nil
-      fraud_project_id = 1
-    end
-    old_state = @order.aasm_state
-
-    @order.internal_rejection_reason = internal_reason
-    @order.joe_case_url = joe_case_url.presence
-    @order.fraud_related_project_id = fraud_project_id.presence
-
-    if @order.mark_rejected(reason) && @order.save
-      ::PaperTrail::Version.create!(
-        item_type: "ShopOrder",
-        item_id: @order.id,
-        event: "update",
-        whodunnit: current_user.id,
-        object_changes: {
-          aasm_state: [ old_state, @order.aasm_state ],
-          rejection_reason: [ nil, reason ],
-          internal_rejection_reason: [ nil, internal_reason ],
-          joe_case_url: [ nil, joe_case_url.presence ],
-          fraud_related_project_id: [ nil, fraud_project_id.presence ]
-        }.compact_blank
-      )
-
-      n = @order.accessory_orders.select(&:may_mark_rejected?).count { |a|
-        old = a.aasm_state
-        a.internal_rejection_reason = internal_reason
-        a.joe_case_url = joe_case_url.presence
-        a.fraud_related_project_id = fraud_project_id.presence
-        next unless a.mark_rejected(reason) && a.save
-        ::PaperTrail::Version.create!(
-          item_type: "ShopOrder", item_id: a.id, event: "update", whodunnit: current_user.id,
-          object_changes: { aasm_state: [ old, a.aasm_state ], rejection_reason: [ nil, reason ], parent_order_cancelled: [ nil, @order.id ] }
-        )
-      }
-
-      notice = "Order rejected"
-      notice += " (#{n} #{'accessory'.pluralize(n)} also rejected)" if n > 0
-      redirect_to shop_orders_return_path, notice: notice
-    else
-      redirect_to admin_shop_order_path(@order), alert: "Failed to reject order: #{@order.errors.full_messages.join(', ')}"
+      redirect_to admin_shop_order_path(@order), alert: result.message
     end
   end
 
@@ -425,6 +527,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
           aasm_state: [ old_state, @order.aasm_state ]
         }
       )
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order") if fraud_subject
+
       redirect_to shop_orders_return_path, notice: "Order placed on hold"
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to place order on hold: #{@order.errors.full_messages.join(', ')}"
@@ -445,6 +549,8 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
           aasm_state: [ old_state, @order.aasm_state ]
         }
       )
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order") if fraud_subject
+
       redirect_to shop_orders_return_path, notice: "Order released from hold"
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to release order from hold: #{@order.errors.full_messages.join(', ')}"
@@ -579,6 +685,83 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   end
   private
 
+  # Submitted from the per-person fraud page, a bulk verdict answers the way a
+  # single one does: each settled order is claimed onto the reviewer's payout
+  # and swapped in place, rather than reloading the queue and paying nobody.
+  # The per-order outcome shows on the row it settled, so only failures need a
+  # flash of their own.
+  # A review from the fraud page is either one of a high-value order's two,
+  # which pays the reviewer for that review and leaves the order waiting on
+  # someone else, or the approval that completes the pair, which approves the
+  # order. A completed pair of rejections stops at the vote: the rejection
+  # itself needs the reasons the reject form collects.
+  def render_fraud_subject_review(review)
+    @order.reviews.reset
+
+    if review.verdict == ShopOrderReview::APPROVE && !@order.requires_additional_review?(ShopOrderReview::APPROVE)
+      result = Admin::ShopOrderApprover.new(@order, actor: current_user).call
+      return render_fraud_subject_verdict(@order, result.message) if result.approved?
+
+      return render_fraud_subject_item(@order, partial: "admin/fraud/subjects/order", error: result.message)
+    end
+
+    render_fraud_subject_verdict(@order, fraud_subject_review_note(review), claim: review)
+  end
+
+  def fraud_subject_review_note(review)
+    tally = "(#{@order.review_count(review.verdict)}/#{ShopOrderReview::REQUIRED_COUNT})"
+    recorded = review.verdict == ShopOrderReview::APPROVE ? "Approval" : "Rejection"
+
+    return "#{recorded} recorded #{tally}. The order now waits on another reviewer." if @order.requires_additional_review?(review.verdict)
+
+    "#{recorded} recorded #{tally}. The order can now be rejected."
+  end
+
+  # `voted` holds the high-value orders the submission could only vote on. They
+  # settle nothing, but the reviewer is paid for each vote and the rows they
+  # leave behind have to say so, exactly as a single verdict would.
+  def render_bulk_order_outcome(settled, failed, verb:, voted: [])
+    if fraud_subject
+      flash.now[:alert] = bulk_order_failure_message(failed) if failed.any?
+
+      decided = settled + voted
+      return render_fraud_subject_verdicts(
+        decided.map { |result| [ result.order, result.message ] },
+        claims: settled.map(&:order) + voted.map(&:review)
+      )
+    end
+
+    if settled.any?
+      flash[:notice] = "#{verb} #{helpers.pluralize(settled.size, 'order')}: " \
+                       "#{settled.map { |result| "##{result.order.id}" }.to_sentence}"
+    end
+    if voted.any?
+      flash[:notice] = [ flash[:notice], "Recorded a rejection on #{helpers.pluralize(voted.size, 'order')} " \
+                                         "waiting on a second reviewer: #{voted.map { |result| "##{result.order.id}" }.to_sentence}" ].compact.join(" ")
+    end
+    flash[:alert] = bulk_order_failure_message(failed) if failed.any?
+
+    redirect_back fallback_location: admin_shop_orders_path
+  end
+
+  def bulk_order_failure_message(failed)
+    failed.map { |result| "##{result.order.id}: #{result.message}" }.join(" ")
+  end
+
+  # Only the fraud queue cares, and only a pending order can qualify, so the
+  # question is asked about as few rows as possible. Reloaded with just the
+  # associations the predicate reads rather than reusing the list's includes,
+  # which drag in each buyer's projects for nothing.
+  def auto_approvable_ids_in(scope)
+    return [] unless @view == "shop_orders"
+
+    candidates = ShopOrder
+      .where(id: scope.unscope(:includes).reorder(nil).where(aasm_state: "pending").select(:id))
+      .includes(:user, :shop_item, :selected_modifiers, accessory_orders: :shop_item)
+
+    ShopOrder.auto_approvable_ids(candidates)
+  end
+
   def set_order
     @order = ShopOrder.includes(mission_submission: :mission).find(params[:id])
   end
@@ -630,15 +813,34 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       end
     end
 
+    if params[:country].present?
+      country_code = params[:country].upcase
+      if region_visible_to_current_user?(Shop::Regionalizable.country_to_region(country_code))
+        scope = scope.where(country: country_code)
+      end
+    end
+
     if current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
       scope = scope.where(region: current_user.regions)
                    .or(scope.where(region: nil))
                    .or(scope.where(assigned_to_user_id: current_user.id))
+      scope = scope.where(region: params[:region].upcase) if params[:region].present? && current_user.has_region?(params[:region])
     elsif params[:region].present?
       scope = scope.where(region: params[:region].upcase)
     end
 
     scope
+  end
+
+  # A region-restricted fulfillment person (has_regions? but not admin/fraud)
+  # can only ever see their assigned regions — a region/country filter param
+  # is honored for them only when it falls inside that set, so the filter UI
+  # can't be used to widen visibility past what apply_shared_filters already
+  # scopes them to.
+  def region_visible_to_current_user?(region_code)
+    return true unless current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
+
+    current_user.has_region?(region_code)
   end
 
   def shop_orders_return_path
@@ -656,9 +858,10 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
 
     order_ids = (Array(params[:order_ids]).map(&:to_i) | [ @order.id ]).uniq
 
-    @order.user.with_advisory_lock("theseus_send", timeout_seconds: 10) do
+    @order.user.with_advisory_lock("theseus_send/#{@order.user_id}", timeout_seconds: 10) do
       orders_to_send = ShopOrder.joins(:shop_item)
-                                .where(id: order_ids, shop_items: { type: "ShopItem::LetterMail" }, aasm_state: "awaiting_periodical_fulfillment")
+                                .where(id: order_ids, shop_items: { type: @order.shop_item.type }, aasm_state: "awaiting_periodical_fulfillment")
+                                .includes(:selected_modifiers)
                                 .to_a
 
       stale_ids = order_ids - orders_to_send.map(&:id)
@@ -666,7 +869,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
         redirect_to admin_shop_order_path(@order), alert: "Order(s) #{stale_ids.join(', ')} no longer awaiting fulfillment. Please refresh and try again." and return
       end
 
-      letter_id = TheseusService.create_letter(orders_to_send, queue: "stardance-envelope")
+      letter_id = TheseusService.create_letter(orders_to_send, queue: @order.shop_item.class::THESEUS_QUEUE)
       orders_to_send.each { |o| o.mark_fulfilled!(letter_id, nil, "#{current_user.display_name} - Letter Mail (Theseus)") }
 
       notice = "Sent to Theseus (letter #{letter_id})"
@@ -691,7 +894,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_to admin_shop_order_path(@order), alert: "User has no Hack Club identity token" and return
     end
 
-    payload = HCAService.identity(identity.access_token)
+    payload = identity.hca_identity
     if payload.blank?
       redirect_to admin_shop_order_path(@order), alert: "Could not fetch verification status from HCA" and return
     end

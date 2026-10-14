@@ -40,7 +40,6 @@ class Projects::DevlogsController < ApplicationController
 
       if @devlog.save
         Post.create!(project: @project, user: current_user, postable: @devlog)
-        attach_lookout_sessions(@devlog)
         session.delete(test_time_session_key) if test_time_granted?
         track_event "devlog_posted", { project_id: @project.id, devlog_id: @devlog.id, duration_seconds: @devlog.duration_seconds }
         flash[:notice] = "Devlog created successfully"
@@ -234,14 +233,6 @@ class Projects::DevlogsController < ApplicationController
 
   def devlog_params
     params.require(:post_devlog).permit(:body, attachments: [])
-  end
-
-  def attach_lookout_sessions(devlog)
-    ids = Array(params.dig(:post_devlog, :lookout_session_ids)).reject(&:blank?)
-    return if ids.empty?
-
-    @project.lookout_sessions.where(user: current_user, id: ids, devlog_id: nil)
-      .update_all(devlog_id: devlog.id)
   end
 
   def update_devlog_params

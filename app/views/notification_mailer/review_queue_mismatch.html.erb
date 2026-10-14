@@ -1,0 +1,37 @@
+<% project = @record&.project %>
+<% is_funding = @record.is_a?(Certification::FundingRequest) %>
+<% reason = @record&.internal_reason %>
+
+<h1 style="margin:0 0 12px;font-size:22px;font-weight:700;line-height:1.3;color:#1a1a2e;">
+  Quick question about your hardware project
+</h1>
+
+<p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  <% if project %>
+    A reviewer<% if @actor %>, <strong>@<%= @actor.display_name %></strong>,<% end %> thinks
+    <strong><%= project.title %></strong> was submitted to the wrong queue.
+  <% else %>
+    A reviewer thinks your hardware submission was sent to the wrong queue.
+  <% end %>
+</p>
+
+<p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  <% if is_funding %>
+    They think this project is already built, so it belongs in build review rather than design funding.
+  <% else %>
+    They think you should get a parts grant first, so it belongs in design funding rather than build review.
+  <% end %>
+</p>
+
+<% if reason.present? %>
+  <p style="margin:0 0 8px;font-size:15px;line-height:1.55;color:#3a3a4a;"><strong>Their note:</strong></p>
+  <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#3a3a4a;"><%= reason %></p>
+<% end %>
+
+<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#3a3a4a;">
+  Nothing happens until you answer. Head to your project page and tell us which one it is.
+</p>
+
+<div style="margin:24px 0 4px;">
+  <a href="<%= project ? project_url(project) : root_url %>" style="display:inline-block;padding:11px 22px;background:#1a1a2e;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;font-size:14px;line-height:1;">Answer on your project</a>
+</div>

@@ -24,6 +24,14 @@ class Workshop::Rsvp < ApplicationRecord
   belongs_to :workshop
   belongs_to :user
 
+  after_create_commit :sync_to_airtable
+
   # No uniqueness validation: create_or_find_by! needs the DB index's raw
   # RecordNotUnique, not a validation error.
+
+  private
+
+    def sync_to_airtable
+      Airtable::WorkshopRsvpSyncJob.perform_later(user_id, workshop_id)
+    end
 end

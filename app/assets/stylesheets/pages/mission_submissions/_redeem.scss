@@ -1,5 +1,5 @@
-// Mission prize redeem picker (shown when a mission has 0 or ≥2 prizes;
-// a single prize redirects straight to its shop item).
+// Mission prize claim page (shown while 0 or ≥2 prizes are left to claim;
+// a single remaining prize redirects straight to its shop item).
 
 .submission-redeem__breadcrumb {
   margin: var(--space-l) 0 var(--space-xs);
@@ -62,4 +62,16 @@
     align-self: flex-start;
     margin-top: auto;
   }
+}
+
+.submission-redeem__prizes--claimed {
+  margin-top: var(--space-m);
+}
+
+.submission-redeem__prize--claimed {
+  opacity: 0.6;
+}
+
+.submission-redeem__claimed-label {
+  font-weight: 600;
 }

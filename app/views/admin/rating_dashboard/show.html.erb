@@ -1,0 +1,149 @@
+<% content_for :title, "Rating Hangtime" %>
+
+<% status_labels = {
+  "waiting_for_votes" => "Waiting for votes",
+  "entry_blocked" => "Entry blocked",
+  "review_open" => "Review open",
+  "ready_to_pay" => "Ready to pay",
+  "blocked" => "Voted · blocked",
+  "paid" => "Paid"
+} %>
+
+<div class="rating-dashboard">
+  <%= link_to "← back to admin", admin_root_path, class: "rating-dashboard__back" %>
+
+  <header class="rating-dashboard__header">
+    <div>
+      <h1>Rating Hangtime</h1>
+      <p>Approval → 12 countable votes → payout, measured per ship.</p>
+    </div>
+    <nav class="rating-dashboard__periods" aria-label="Chart period">
+      <% { "7" => "7 days", "30" => "30 days", "90" => "90 days", "all" => "All time" }.each do |value, label| %>
+        <%= link_to label, admin_rating_dashboard_path(period: value),
+              class: class_names("rating-dashboard__period", "is-active" => @period == value) %>
+      <% end %>
+    </nav>
+  </header>
+
+  <section class="rating-dashboard__section" aria-labelledby="pipeline-title">
+    <h2 id="pipeline-title">Pipeline now</h2>
+    <div class="rating-dashboard__cards">
+      <% [
+        ["Paid", @counts[:paid], "paid"],
+        ["Unpaid", @counts[:unpaid], nil],
+        ["Waiting for votes", @counts[:waiting_for_votes], "waiting_for_votes"],
+        ["Review open", @counts[:review_open], "review_open"],
+        ["Ready to pay", @counts[:ready_to_pay], "ready_to_pay"],
+        ["Voted · blocked", @counts[:blocked], "blocked"]
+      ].each do |label, value, status| %>
+        <%= link_to admin_rating_dashboard_path(period: @period, status: status), class: "rating-dashboard__card" do %>
+          <span class="rating-dashboard__card-label"><%= label %></span>
+          <strong class="rating-dashboard__card-value"><%= number_with_delimiter(value) %></strong>
+        <% end %>
+      <% end %>
+    </div>
+    <% if @counts[:entry_blocked].positive? %>
+      <p class="rating-dashboard__note"><%= link_to pluralize(@counts[:entry_blocked], "approved ship"), admin_rating_dashboard_path(period: @period, status: "entry_blocked") %> cannot enter voting because links or payable hours are missing.</p>
+    <% end %>
+  </section>
+
+  <section class="rating-dashboard__section" aria-labelledby="hangtime-title">
+    <div class="rating-dashboard__section-heading">
+      <h2 id="hangtime-title">Hangtime · <%= @period == "all" ? "all time" : "last #{@period} days" %></h2>
+      <span class="rating-dashboard__coverage"><%= @metrics[:exact_count] %> exact · <%= @metrics[:estimated_count] %> estimated · <%= @metrics[:unknown_count] %> unknown</span>
+    </div>
+    <div class="rating-dashboard__cards rating-dashboard__cards--metrics">
+      <% [
+        ["Median to 12 votes", @metrics[:rating_median]],
+        ["P90 to 12 votes", @metrics[:rating_p90]],
+        ["Median to payout", @metrics[:payment_median]],
+        ["P90 to payout", @metrics[:payment_p90]],
+        ["Median current wait", @metrics[:current_wait_median]]
+      ].each do |label, seconds| %>
+        <div class="rating-dashboard__card">
+          <span class="rating-dashboard__card-label"><%= label %></span>
+          <strong class="rating-dashboard__card-value rating-dashboard__card-value--time"><%= seconds ? format_seconds(seconds.round, include_days: true) : "—" %></strong>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="rating-dashboard__section rating-dashboard__charts"
+           data-controller="rating-dashboard-chart"
+           data-rating-dashboard-chart-data-value="<%= @chart_data %>">
+    <h2>Trends</h2>
+    <div class="rating-dashboard__chart-grid">
+      <div class="rating-dashboard__chart rating-dashboard__chart--wide"><h3>Waiting queue</h3><canvas data-rating-dashboard-chart-target="queue"></canvas></div>
+      <div class="rating-dashboard__chart rating-dashboard__chart--wide"><h3>Throughput</h3><canvas data-rating-dashboard-chart-target="throughput"></canvas></div>
+      <div class="rating-dashboard__chart"><h3>Median time to 12 votes</h3><canvas data-rating-dashboard-chart-target="rating"></canvas></div>
+      <div class="rating-dashboard__chart"><h3>Median time to payout</h3><canvas data-rating-dashboard-chart-target="payment"></canvas></div>
+    </div>
+  </section>
+
+  <section class="rating-dashboard__section" aria-labelledby="oldest-title">
+    <h2 id="oldest-title">Oldest in voting</h2>
+    <% if @oldest_waiting.any? %>
+      <ol class="rating-dashboard__oldest">
+        <% @oldest_waiting.each do |row| %>
+          <li>
+            <%= link_to row.project&.title || "Unknown project", admin_project_path(row.project), class: "rating-dashboard__oldest-project" %>
+            <span><%= row.votes_count %>/<%= Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT %> votes</span>
+            <strong><%= row.voting_started_at ? time_ago_in_words(row.voting_started_at) : "start unknown" %></strong>
+          </li>
+        <% end %>
+      </ol>
+    <% else %>
+      <p class="rating-dashboard__empty">No ships are waiting for votes.</p>
+    <% end %>
+  </section>
+
+  <% if @blocker_counts.any? %>
+    <section class="rating-dashboard__section" aria-labelledby="blockers-title">
+      <h2 id="blockers-title">Payout blockers</h2>
+      <div class="rating-dashboard__blockers">
+        <% @blocker_counts.sort_by { |_, count| -count }.each do |label, count| %>
+          <span><strong><%= count %></strong> <%= label %></span>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="rating-dashboard__section" aria-labelledby="ships-title">
+    <div class="rating-dashboard__section-heading">
+      <h2 id="ships-title">Ships</h2>
+      <span class="rating-dashboard__coverage"><%= @pagy.count %> results</span>
+    </div>
+
+    <%= form_with url: admin_rating_dashboard_path, method: :get, class: "rating-dashboard__filters" do |form| %>
+      <%= form.search_field :query, value: @query, placeholder: "Project, owner, or ship ID" %>
+      <%= form.select :status, options_for_select([["All statuses", ""]] + status_labels.map { |value, label| [label, value] }, @status) %>
+      <%= form.select :quality, options_for_select([["All data quality", ""], ["Exact", "exact"], ["Estimated", "estimated"], ["Unknown", "unknown"]], @quality) %>
+      <%= form.select :sort, options_for_select([["Voting start", "started"], ["Project", "project"], ["Owner", "owner"], ["Status", "status"], ["Votes", "votes"], ["Hangtime", "hangtime"], ["Paid date", "paid"]], @sort) %>
+      <%= form.select :direction, options_for_select([["Descending", "desc"], ["Ascending", "asc"]], @direction) %>
+      <%= form.hidden_field :period, value: @period %>
+      <%= form.submit "Filter", class: "action-btn action-btn--primary" %>
+      <%= link_to "Clear", admin_rating_dashboard_path(period: @period), class: "action-btn" %>
+    <% end %>
+
+    <div class="rating-dashboard__table-wrap">
+      <table>
+        <thead><tr><th>Ship</th><th>Project / owner</th><th>Status</th><th>Votes</th><th>Entered voting</th><th>Hangtime</th><th>Paid</th><th>Blocker / quality</th></tr></thead>
+        <tbody>
+          <% @rows.each do |row| %>
+            <tr>
+              <td>#<%= row.ship_event.id %></td>
+              <td><%= link_to row.project&.title || "Unknown", admin_project_path(row.project) %><small><%= row.owner&.display_name || "Unknown owner" %></small></td>
+              <td><span class="status-pill"><%= status_labels.fetch(row.status) %></span></td>
+              <td><%= row.votes_count %>/<%= Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT %></td>
+              <td><%= row.voting_started_at&.strftime("%b %-d, %Y") || "—" %></td>
+              <td><%= row.rating_hangtime ? format_seconds(row.rating_hangtime.round, include_days: true) : "—" %></td>
+              <td><%= row.paid_at&.strftime("%b %-d, %Y") || "—" %></td>
+              <td><%= row.blockers.to_sentence.presence || row.ship_event.lifecycle_data_quality&.humanize || "Unknown history" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%== @pagy.series_nav if @pagy.pages > 1 %>
+  </section>
+</div>

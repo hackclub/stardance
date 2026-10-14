@@ -45,6 +45,29 @@ class User::Identity < ApplicationRecord
   validates :provider, uniqueness: { scope: :user_id }
 
   after_create_commit -> { user&.try_sync_hackatime_data! }, if: -> { provider == "hackatime" }
+  # Linking pulls project names in from Hackatime; this pushes the other way, so
+  # hardware projects that predate the link get their Hackatime project seeded.
+  # Also covers a re-link with a fresh token, which is how a member recovers from
+  # a revoked one. Non-deterministic encryption means the ciphertext changes on
+  # every write, so a re-link fires this even when the token itself is unchanged.
+  after_commit -> { User::EnsureHackatimeProjectsJob.perform_later(user_id) },
+               on: %i[create update],
+               if: -> { provider == "hackatime" && saved_change_to_access_token_ciphertext? }
   after_create_commit -> { Raffle::Referrals::Credit.run_safely(user) }, if: -> { provider == "hack_club" }
   after_destroy_commit -> { Rails.cache.delete("hackatime_api_key:#{uid}") }, if: -> { provider == "hackatime" }
+
+  def clear_access_token!
+    update_columns(access_token_ciphertext: nil, access_token_bidx: nil)
+  end
+
+  def hca_identity
+    HCAService.identity!(access_token)
+  rescue HCAService::Unauthorized
+    clear_access_token!
+    Rails.logger.info "Cleared revoked HCA token for user #{user_id}"
+    {}
+  rescue StandardError => e
+    Rails.logger.warn("HCA /me fetch error: #{e.class}: #{e.message}")
+    {}
+  end
 end

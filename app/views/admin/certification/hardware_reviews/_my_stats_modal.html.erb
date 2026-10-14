@@ -1,0 +1,61 @@
+<%# The reviewer's own hardware numbers, in place. The site-wide My Stats page
+    counts Certification::Ship only, so design reviews are invisible there even
+    though the payout balance already includes them.
+    Locals: stats (required, from HardwareReviewsController#my_hardware_stats). %>
+<dialog id="hardware-my-stats" class="hardware-stats" data-controller="modal"
+        aria-labelledby="hardware-my-stats-title">
+  <div class="hardware-stats__card">
+    <button type="button" class="hardware-stats__close" data-action="click->modal#close"
+            aria-label="Close">&times;</button>
+
+    <h2 class="hardware-stats__title" id="hardware-my-stats-title">Your hardware reviews</h2>
+
+    <div class="hardware-stats__headline">
+      <div class="hardware-stats__headline-item">
+        <span class="hardware-stats__headline-value"><%= stats[:today] %></span>
+        <span class="hardware-stats__headline-label">reviewed today</span>
+      </div>
+      <div class="hardware-stats__headline-item">
+        <span class="hardware-stats__headline-value">
+          <%= image_tag "icons/stardust.png", alt: "Stardust", class: "currency-icon" %>
+          <%= number_with_precision(stats[:stardust], precision: 2, strip_insignificant_zeros: true) %>
+        </span>
+        <span class="hardware-stats__headline-label">earned from hardware</span>
+      </div>
+    </div>
+
+    <table class="hardware-stats__table">
+      <thead>
+        <tr>
+          <th scope="col">Queue</th>
+          <th scope="col">Reviewed</th>
+          <th scope="col">Approved</th>
+          <th scope="col">Returned</th>
+          <th scope="col">Approval</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% [ [ "Design", stats[:design] ], [ "Build", stats[:build] ] ].each do |label, tally| %>
+          <tr>
+            <th scope="row"><%= label %></th>
+            <td><%= tally[:total] %></td>
+            <td><%= tally[:approved] %></td>
+            <td><%= tally[:returned] %></td>
+            <td><%= tally[:approval_rate] ? "#{tally[:approval_rate]}%" : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <% rejected_count = stats[:design][:permanently_rejected] + stats[:build][:permanently_rejected] %>
+    <% if rejected_count.positive? %>
+      <p class="hardware-stats__note">Reviewed totals include <%= pluralize(rejected_count, "permanent rejection") %>.</p>
+    <% end %>
+
+    <p class="hardware-stats__note">
+      Payouts cover both queues.
+      <%= link_to "Open full stats and payouts →", admin_certification_mystats_path,
+            class: "hardware-stats__link" %>
+    </p>
+  </div>
+</dialog>

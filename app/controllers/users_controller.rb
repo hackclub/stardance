@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   include TimelinePostPreloading
 
-  discover_rail_widgets :certificate, :achievements, :upcoming_events,
+  discover_rail_widgets :certificate, :achievements, :upcoming_events, :feedback_promo,
                         context: -> { { profile_user: @user } }
 
   before_action :set_user
@@ -61,7 +61,7 @@ class UsersController < ApplicationController
   private
 
   def set_user
-    @user = User.includes(:preference)
+    @user = User.eager_load(:preference)
 
     if params[:username].present?
       @user = @user.find_by!("LOWER(display_name) = ?", params[:username].downcase)
@@ -77,7 +77,7 @@ class UsersController < ApplicationController
   def load_profile(active_tab)
     @active_tab     = active_tab
     @body_class     = "app-layout-page"
-    @projects       = profile_projects
+    @projects       = profile_projects.load
     @activity       = profile_activity
     @stats          = profile_stats
     @follower_count  = @user.followers.where(banned: false).count
@@ -87,9 +87,6 @@ class UsersController < ApplicationController
 
   def profile_projects
     @user.projects
-         .select(:id, :title, :description, :created_at, :updated_at,
-                 :ship_status, :shipped_at, :devlogs_count, :duration_seconds,
-                 :hardware_stage)
          .includes(:users, banner_attachment: :blob, mission_attachments: { mission: { banner_attachment: :blob } })
          .order(created_at: :desc)
   end
@@ -98,9 +95,12 @@ class UsersController < ApplicationController
     can_view_deleted_devlogs = policy(@user).view_deleted_devlogs?
 
     scope = Post.left_outer_joins(:project)
-                .where("projects.deleted_at IS NULL OR posts.postable_type = ?", "Post::Repost")
+                .where("projects.id IS NOT NULL OR posts.postable_type = ?", "Post::Repost")
                 .visible_to(current_user)
                 .where(user_id: @user.id)
+                # Super Star posts are authored by the admin who granted them;
+                # they belong on the project, not in that admin's own activity.
+                .where.not(postable_type: "Post::FireEvent")
                 .preload(:postable)
                 .order(created_at: :desc)
 
@@ -132,7 +132,7 @@ class UsersController < ApplicationController
   end
 
   def hide_rejected_ships(scope)
-    rejected_ids = Post::ShipEvent.where(certification_status: "rejected").pluck(:id)
+    rejected_ids = Post::ShipEvent.where(certification_status: Post::ShipEvent::HIDDEN_STATUSES).pluck(:id)
     scope.where.not(postable_type: "Post::ShipEvent", postable_id: rejected_ids)
   end
 

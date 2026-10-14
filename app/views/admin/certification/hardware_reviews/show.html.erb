@@ -4,203 +4,409 @@
   active_status = @active_review&.status || "idle"
   funding_can_review = @active_review_type == :funding && @funding_request.claim_held_by?(current_user)
   ship_can_review = @active_review_type == :ship && @ship.claim_held_by?(current_user)
+  can_review = funding_can_review || ship_can_review
+  stage_label = @active_review_type == :funding ? "Design funding" : "Build certification"
+  queue_path = hardware_queue_path(@active_review_type == :ship ? "build" : "design")
 %>
 
 <div class="app-layout app-layout--wide"
      data-controller="certification--queue"
      data-certification--queue-server-now-value="<%= Time.current.iso8601 %>">
   <div class="app-layout__main app-layout__main--wide ship-review hardware-review">
-    <%= link_to "← back to hardware queue", admin_certification_hardware_reviews_path, class: "ship-review__back" %>
+    <%= link_to "← back to #{@active_review_type == :ship ? "build" : "design"} queue", queue_path,
+          class: "ship-review__back" %>
 
-    <div class="ship-review__momentum" role="status" aria-live="polite">
-      <% if @reviewed_today.zero? %>
-        <span class="ship-review__momentum-label">First hardware review of the day.</span>
-      <% else %>
-        <span class="ship-review__momentum-count"><%= @reviewed_today %></span>
-        <span class="ship-review__momentum-label">hardware reviews today.</span>
-      <% end %>
-    </div>
-
-    <header class="ship-review__header">
+    <%# Everything needed to start deciding, in one band: what it is, who it's
+        from, and the number the verdict turns on. %>
+    <header class="hardware-review__header">
       <div class="ship-review__title">
         <h1><%= @project.title %></h1>
+        <span class="ship-review__id">#<%= @project.id %></span>
         <span class="status-pill status-pill--<%= active_status %>"><%= active_status.to_s.capitalize %></span>
-        <span class="hardware-review__tag">Hardware · <%= @project.hardware_stage&.capitalize %></span>
+        <% if @active_review %>
+          <span class="hardware-review__tag"><%= stage_label %></span>
+        <% end %>
       </div>
-      <span class="ship-review__id">#<%= @project.id %></span>
+
+      <% if @active_review %>
+        <%= render "admin/certification/hardware_reviews/review_facts", project: @project, owner: @owner,
+              review: @active_review, review_type: @active_review_type %>
+      <% end %>
+
+      <%# Compact link row rather than a definition list further down the page. %>
+      <div class="hardware-review__links">
+        <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
+          <%= link_to "Repo ↗", safe_repo_url, class: "hardware-review__link", target: "_blank", rel: "noopener noreferrer" %>
+          <%# HURT reviewer tooling, preloaded with this project's repo, until it's
+              integrated directly. Only shown when there's a repo to point it at. %>
+          <%= link_to "HURT ↗", "https://hurt-xi.vercel.app/?#{ { repo: safe_repo_url }.to_query }", class: "hardware-review__link", target: "_blank", rel: "noopener noreferrer" %>
+        <% end %>
+        <% if (safe_demo_url = safe_external_url(@project.demo_url)) %>
+          <%= link_to "Demo ↗", safe_demo_url, class: "hardware-review__link", target: "_blank", rel: "noopener noreferrer" %>
+        <% end %>
+        <% if (safe_readme_url = safe_external_url(@project.readme_url)) %>
+          <%= link_to "Readme ↗", safe_readme_url, class: "hardware-review__link", target: "_blank", rel: "noopener noreferrer" %>
+        <% end %>
+        <%= link_to "Project page ↗", project_path(@project), class: "hardware-review__link", target: "_blank", rel: "noopener" %>
+      </div>
     </header>
 
-    <div class="ship-review__body">
+    <div class="ship-review__body hardware-review__body">
       <section class="ship-review__details">
-        <div class="ship-review__panel">
-          <h2 class="ship-review__panel-title">Submission</h2>
-          <dl class="ship-review__meta">
-            <dt>Submitter</dt>
-            <dd><%= @owner&.display_name || "—" %></dd>
-            <dt>Current stage</dt>
-            <dd><%= @project.hardware_stage&.capitalize || "—" %></dd>
-            <% if @active_review_type == :funding %>
-              <dt>Review type</dt>
-              <dd>Design funding</dd>
-              <dt>Submitted</dt>
-              <dd><%= time_ago_in_words(@funding_request.created_at) %> ago</dd>
-              <% if @funding_request.reviewer %>
-                <dt>Reviewer</dt>
-                <dd><%= @funding_request.reviewer.display_name %></dd>
-              <% end %>
-              <dt>Complexity tier</dt>
-              <dd><%= @funding_request.tier_label %>: <%= @funding_request.tier_examples %> (max $<%= @funding_request.tier_max_dollars %>)</dd>
-              <dt>Requested</dt>
-              <dd>$<%= @funding_request.requested_amount_dollars %></dd>
-            <% elsif @active_review_type == :ship %>
-              <dt>Review type</dt>
-              <dd>Build certification</dd>
-              <dt>Submitted</dt>
-              <dd><%= time_ago_in_words(@project.shipped_at || @ship.created_at) %> ago</dd>
-              <% if @ship.reviewer %>
-                <dt>Reviewer</dt>
-                <dd><%= @ship.reviewer.display_name %></dd>
-              <% end %>
-              <dt>Build progress</dt>
-              <dd>
-                <%= pluralize(@project.devlogs.build_phase.where(deleted_at: nil).count, "build devlog") %>
-                · <%= @project.total_ship_hours.round(1) %>h shipped
-              </dd>
-              <% if @project.update_description.present? %>
-                <dt>Update</dt>
-                <dd><%= @project.update_description %></dd>
-              <% end %>
-            <% else %>
-              <dt>Status</dt>
-              <dd>No pending hardware review.</dd>
-            <% end %>
-          </dl>
-        </div>
-
-        <div class="ship-review__panel">
-          <h2 class="ship-review__panel-title">Hardware pipeline</h2>
-          <div class="hardware-review__timeline">
-            <div class="hardware-review__timeline-item">
-              <span class="hardware-review__timeline-label">Design funding</span>
-              <% if @funding_request %>
-                <span class="status-pill status-pill--<%= @funding_request.status %>"><%= @funding_request.status.capitalize %></span>
-                <span class="hardware-review__timeline-meta">
-                  $<%= @funding_request.final_amount_dollars %>
-                  <% if @funding_request.approved? %> approved<% elsif @funding_request.pending? %> requested<% end %>
-                </span>
-              <% else %>
-                <span class="hardware-review__timeline-meta">Skipped</span>
-              <% end %>
-            </div>
-            <div class="hardware-review__timeline-item">
-              <span class="hardware-review__timeline-label">Build certification</span>
-              <% if @ship %>
-                <span class="status-pill status-pill--<%= @ship.status %>"><%= @ship.status.capitalize %></span>
-                <% if @ship.decided_at %>
-                  <span class="hardware-review__timeline-meta"><%= l(@ship.decided_at.to_date, format: :short) %></span>
-                <% end %>
-              <% elsif @project.build_stage? %>
-                <span class="hardware-review__timeline-meta">Waiting for ship</span>
-              <% else %>
-                <span class="hardware-review__timeline-meta">Not reached yet</span>
-              <% end %>
-            </div>
-          </div>
-        </div>
-
-        <%= render "admin/certification/funding_requests/recordings",
-              timelapses: @lapse_timelapses, recordings: @lookout_recordings %>
-
-        <div class="ship-review__panel">
-          <h2 class="ship-review__panel-title">Links</h2>
-          <dl class="ship-review__links">
-            <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
-              <dt>Repo</dt>
-              <dd><%= link_to @project.repo_url, safe_repo_url, target: "_blank", rel: "noopener noreferrer" %></dd>
-            <% end %>
-            <% if (safe_demo_url = safe_external_url(@project.demo_url)) %>
-              <dt>Demo</dt>
-              <dd><%= link_to @project.demo_url, safe_demo_url, target: "_blank", rel: "noopener noreferrer" %></dd>
-            <% end %>
-            <% if (safe_readme_url = safe_external_url(@project.readme_url)) %>
-              <dt>Readme</dt>
-              <dd><%= link_to @project.readme_url, safe_readme_url, target: "_blank", rel: "noopener noreferrer" %></dd>
-            <% end %>
-            <dt>Project</dt>
-            <dd><%= link_to "View project page", project_path(@project), target: "_blank", rel: "noopener" %></dd>
-          </dl>
-        </div>
-
         <% if @project.description.present? %>
           <div class="ship-review__panel">
-            <h2 class="ship-review__panel-title">Description</h2>
+            <h2 class="ship-review__panel-title">What they're building</h2>
             <p class="ship-review__description"><%= @project.description %></p>
           </div>
         <% end %>
 
-        <% if @project.ai_declaration.present? %>
-          <div class="ship-review__panel">
-            <h2 class="ship-review__panel-title">AI Declaration</h2>
-            <p class="ship-review__description"><%= @project.ai_declaration %></p>
+        <%= turbo_frame_tag "hardware-recordings", src: hardware_recordings_path(@project), loading: "lazy" do %>
+          <div class="ship-review__panel" style="min-height: 120px;">
+            <p class="ship-review__loading">Loading recordings…</p>
           </div>
         <% end %>
-      </section>
 
-      <aside class="ship-review__sidebar">
-        <div class="ship-review__panel">
-          <h2 class="ship-review__panel-title">Actions</h2>
-          <% if @active_review_type == :funding %>
-            <% if funding_can_review %>
-              <div class="ship-review__actions">
-                <button type="submit" form="unclaim-form-<%= @funding_request.id %>"
-                        class="action-btn action-btn--large action-btn--destructive">
-                  Unclaim review
-                </button>
-              </div>
-            <% else %>
-              <div class="ship-review__claim">
-                <p>You don't currently hold the claim on this review.</p>
-                <%= button_to "Claim this review", admin_certification_funding_request_claim_path(@funding_request),
-                      method: :post, params: { redirect_to_hardware: @project.id },
-                      class: "action-btn action-btn--large action-btn--primary" %>
-              </div>
-            <% end %>
-          <% elsif @active_review_type == :ship %>
-            <div class="ship-review__actions">
-              <% if ship_can_review %>
-                <button type="submit" form="unclaim-form-<%= @ship.id %>"
-                        class="action-btn action-btn--large action-btn--destructive">
-                  Unclaim review
-                </button>
-              <% else %>
-                <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship),
-                      method: :post, params: { redirect_to_hardware: @project.id },
-                      class: "action-btn action-btn--large action-btn--primary" %>
-              <% end %>
-              <% if @ship.pending? %>
-                <%= form_with url: set_project_type_admin_certification_ship_path(@ship), method: :patch do %>
-                  <%= hidden_field_tag :redirect_to_hardware, @project.id %>
-                  <%= select_tag :project_type,
-                        options_for_select(
-                          [["Unknown", nil, { disabled: true, hidden: @project.project_type.present? }], *Project::AVAILABLE_CATEGORIES.map { |t| [t, t] }],
-                          @project.project_type
-                        ),
-                        onchange: "this.form.requestSubmit()",
-                        class: "ship-queue__select" %>
+        <div class="ship-review__panel hardware-review__history-panel">
+          <h2 class="ship-review__panel-title">Review history</h2>
+          <%# A disputed flag rewinds the review to pending in place, so it never
+              lands in @past_reviews. Surface it here or the next reviewer picks
+              the project up with no idea it has already been round this loop. %>
+          <% bounced = @active_review&.previously_misfiled? %>
+          <% if bounced %>
+            <div class="hardware-review__history-item hardware-review__history-item--bounced">
+              <div class="hardware-review__history-head">
+                <span class="hardware-review__timeline-label">This review</span>
+                <%= render "admin/certification/hardware_reviews/wrong_queue_flag", review: @active_review %>
+                <% if @active_review_type == :funding %>
+                  <span class="hardware-review__timeline-meta">
+                    $<%= @active_review.requested_amount_dollars %> · <%= @active_review.tier_label %>
+                  </span>
                 <% end %>
+              </div>
+              <p class="hardware-review__history-feedback">
+                The builder disagreed, so it's back in this queue for review.
+              </p>
+              <% if @active_review.internal_reason.present? %>
+                <p class="hardware-review__history-feedback hardware-review__history-feedback--internal">
+                  Reviewer note: <%= @active_review.internal_reason %>
+                </p>
               <% end %>
             </div>
-          <% else %>
-            <p class="ship-review__description">Nothing is pending review on this hardware project.</p>
-            <%= link_to "Back to hardware queue", admin_certification_hardware_reviews_path,
-                  class: "action-btn action-btn--small action-btn--secondary" %>
+          <% end %>
+
+          <% if @past_reviews.any? %>
+            <ul class="hardware-review__history">
+              <% @past_reviews.each do |review| %>
+                <% is_funding = review.is_a?(::Certification::FundingRequest) %>
+                <li class="hardware-review__history-item">
+                  <div class="hardware-review__history-head">
+                    <span class="hardware-review__timeline-label"><%= is_funding ? "Design funding" : "Build certification" %></span>
+                    <%# A reversed review keeps its history slot but wears a
+                        "Reversed" badge instead of its (now rewound) verdict. %>
+                    <% if review.reversed_at.present? %>
+                      <span class="status-pill status-pill--reversed">Reversed</span>
+                    <% else %>
+                      <span class="status-pill status-pill--<%= review.status %>"><%= review.status.capitalize %></span>
+                    <% end %>
+                    <%# The submitted facts a normal review shows - amount and tier -
+                        carry on a wrong-queue row too, which reports the submitted
+                        request rather than a verdict it never reached; a reversed
+                        review shows the rewound verdict value instead. %>
+                    <% if is_funding %>
+                      <span class="hardware-review__timeline-meta">
+                        <% if (review.misfiled? || review.withdrawn?) && review.reversed_at.blank? %>
+                          $<%= review.requested_amount_dollars %> · <%= review.tier_label %>
+                        <% elsif review.awards_design_kit? %>
+                          <%= review.design_kit_shop_item&.name || "Kit" %>
+                        <% elsif review.kit_mission? %>
+                          No kit
+                        <% elsif review.approved_without_grant? %>
+                          No grant
+                        <% else %>
+                          $<%= review.final_amount_dollars %> · <%= review.tier_label %>
+                        <% end %>
+                      </span>
+                    <% end %>
+                    <%# The verdict date; for a reversal, when it was reversed; for a
+                        routing correction that never reached a verdict, the flag date. %>
+                    <% review_date = review.reversed_at || review.decided_at || review.misfiling_flag&.dig(:at) %>
+                    <% if review_date %>
+                      <span class="hardware-review__timeline-meta"><%= "reversed " if review.reversed_at %><%= l(review_date.to_date, format: :short) %></span>
+                    <% end %>
+                    <% if review.reviewer %>
+                      <span class="hardware-review__timeline-meta">by <%= review.reviewer.display_name %></span>
+                    <% end %>
+                    <% if review.misfiled? && review.reversed_at.blank? %>
+                      <span class="hardware-review__timeline-meta">Wrong queue, waiting on the builder</span>
+                    <% elsif review.withdrawn? && review.reversed_at.blank? %>
+                      <span class="hardware-review__timeline-meta">Withdrawn, wrong queue</span>
+                    <% end %>
+                    <%# A verdict on a review that had been sent back once as the
+                        wrong queue merges the earlier flag into this one card,
+                        rather than losing that history the moment it's decided. %>
+                    <% if review.decided? && review.previously_misfiled? %>
+                      <%= render "admin/certification/hardware_reviews/wrong_queue_flag", review: review %>
+                    <% end %>
+                  </div>
+                  <% if review.feedback.present? %>
+                    <p class="hardware-review__history-feedback"><%= review.feedback %></p>
+                  <% end %>
+                  <% if is_funding %>
+                    <%= render "admin/certification/funding_requests/feedback_images", funding_request: review %>
+                  <% end %>
+                  <%# internal_reason is the wrong-queue note; surface it only while the
+                      review is still in a routing state (misfiled/withdrawn), never as a
+                      stale note merged onto a real verdict (approved/returned). %>
+                  <% if review.internal_reason.present? && !review.decided? %>
+                    <p class="hardware-review__history-feedback hardware-review__history-feedback--internal">
+                      Reviewer note: <%= review.internal_reason %>
+                    </p>
+                  <% end %>
+                  <%# Only the newest decided review is reversible; the controller
+                      sets @undo_review to it and @undo_preflight to its ledger. %>
+                  <% if @undo_review && review == @undo_review && @undo_preflight %>
+                    <%= render "admin/certification/hardware_reviews/undo_review",
+                          review: review, preflight: @undo_preflight %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% elsif !bounced %>
+            <p class="ship-review__description">This is the first review on this project.</p>
           <% end %>
         </div>
 
+        <%# Internal notes ledger: context for the next reviewer, kept across
+            this project's funding and ship reviews and never shown to the
+            builder. The whole /admin review page is already staff-only. %>
+        <div class="ship-review__panel reviewer-notes">
+          <header class="reviewer-notes__header">
+            <h2 class="ship-review__panel-title reviewer-notes__title">Reviewer notes</h2>
+          </header>
+
+          <% if @review_notes.any? %>
+            <ul class="reviewer-notes__list">
+              <% @review_notes.each do |note| %>
+                <li class="reviewer-notes__item">
+                  <p class="reviewer-notes__meta">
+                    <%= render "shared/username_link", user: note.author, link_class: "reviewer-notes__author", text: note.author.display_name, badge: false %>
+                    <time class="reviewer-notes__time" datetime="<%= note.created_at.iso8601 %>"
+                          title="<%= l(note.created_at, format: :long) %>">
+                      · <%= l(note.created_at, format: :short) %>
+                    </time>
+                  </p>
+                  <p class="reviewer-notes__body"><%= note.body %></p>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="ship-review__description reviewer-notes__empty">No reviewer notes yet.</p>
+          <% end %>
+
+          <%= form_with url: admin_certification_project_review_notes_path(@project),
+                scope: :certification_review_note, method: :post, class: "reviewer-notes__form" do |form| %>
+            <%= form.label :body, "Add a note for the next reviewer", class: "reviewer-notes__label" %>
+            <%= form.text_area :body, rows: 3, class: "reviewer-notes__input",
+                  placeholder: "Context the next reviewer should know (not shown to the builder)" %>
+            <%= form.submit "Add note", class: "action-btn action-btn--small action-btn--secondary" %>
+          <% end %>
+        </div>
+
+        <%# Secondary context: useful when a verdict is borderline, not needed to
+            start reviewing, so it sits below the evidence and the form. %>
+        <details class="hardware-review__more">
+          <summary>More context</summary>
+
+          <div class="ship-review__panel">
+            <h2 class="ship-review__panel-title">Hardware pipeline</h2>
+            <div class="hardware-review__timeline">
+              <div class="hardware-review__timeline-item">
+                <span class="hardware-review__timeline-label">Design funding</span>
+                <% if @funding_request %>
+                  <span class="status-pill status-pill--<%= @funding_request.status %>"><%= @funding_request.status.capitalize %></span>
+                  <span class="hardware-review__timeline-meta">
+                    <% if @funding_request.awards_design_kit? %>
+                      <%= @funding_request.design_kit_shop_item&.name || "Kit" %>
+                    <% elsif @funding_request.kit_mission? %>
+                      Approved, no kit
+                    <% elsif @funding_request.approved_without_grant? %>
+                      Approved, no grant
+                    <% else %>
+                      $<%= @funding_request.final_amount_dollars %>
+                      <% if @funding_request.approved? %> approved<% elsif @funding_request.pending? %> requested<% end %>
+                    <% end %>
+                  </span>
+                <% else %>
+                  <span class="hardware-review__timeline-meta">Skipped</span>
+                <% end %>
+              </div>
+              <div class="hardware-review__timeline-item">
+                <span class="hardware-review__timeline-label">Build certification</span>
+                <% if @ship %>
+                  <span class="status-pill status-pill--<%= @ship.status %>"><%= @ship.status.capitalize %></span>
+                  <% if @ship.decided_at %>
+                    <span class="hardware-review__timeline-meta"><%= l(@ship.decided_at.to_date, format: :short) %></span>
+                  <% end %>
+                <% elsif @project.build_stage? %>
+                  <span class="hardware-review__timeline-meta">Waiting for ship</span>
+                <% else %>
+                  <span class="hardware-review__timeline-meta">Not reached yet</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <% if @active_review_type == :ship && @project.update_description.present? %>
+            <div class="ship-review__panel">
+              <h2 class="ship-review__panel-title">Update notes</h2>
+              <p class="ship-review__description"><%= @project.update_description %></p>
+            </div>
+          <% end %>
+
+          <% if @project.ai_declaration.present? %>
+            <div class="ship-review__panel">
+              <h2 class="ship-review__panel-title">AI declaration</h2>
+              <p class="ship-review__description"><%= @project.ai_declaration %></p>
+            </div>
+          <% end %>
+
+          <% if @active_review&.reviewer %>
+            <div class="ship-review__panel">
+              <h2 class="ship-review__panel-title">Claimed by</h2>
+              <p class="ship-review__description"><%= @active_review.reviewer.display_name %></p>
+            </div>
+          <% end %>
+        </details>
+
+        <%# Read-only fraud-report status — always visible in the details column
+            (unlike the flag control in the sidebar, which needs the claim), so
+            any reviewer can see at a glance whether this project is flagged. %>
+        <div class="ship-review__panel hardware-review__fraud-status">
+          <h2 class="ship-review__panel-title">Fraud report</h2>
+          <% if (fraud_report = @project.pending_fraud_report) %>
+            <p class="hardware-review__fraud-flagged">
+              <span class="hardware-review__fraud-flagged-badge">Flagged for fraud review</span>
+              reported by <%= fraud_report.reporter.display_name %> ·
+              <%= l(fraud_report.created_at.to_date, format: :short) %> · pending
+            </p>
+            <p class="ship-review__description"><%= fraud_report.details %></p>
+          <% else %>
+            <p class="ship-review__description">No fraud report on this project.</p>
+          <% end %>
+        </div>
+      </section>
+
+      <aside class="ship-review__sidebar hardware-review__sidebar">
+        <% if @rejection_nominations.present? %>
+          <section class="permanent-rejection">
+            <h2 class="ship-review__panel-title">Permanent rejection history</h2>
+            <% @rejection_nominations.each do |nomination| %>
+              <details>
+                <summary><%= nomination.status.capitalize %> · <%= nomination.reviewer.display_name %> · <%= l(nomination.created_at.to_date, format: :long) %></summary>
+                <p class="permanent-rejection__reason"><%= nomination.reason %></p>
+                <% if nomination.decided_at %>
+                  <p><%= nomination.status.capitalize %> by <%= nomination.decided_by.display_name %> on <%= l(nomination.decided_at, format: :long) %>.</p>
+                <% end %>
+                <p><%= nomination.approved? ? "The final decision is visible to the builder." : "This nomination is not visible to the builder." %></p>
+                <% if current_user.admin? %>
+                  <%= link_to "View nomination and decision", admin_certification_permanent_rejection_nomination_path(nomination) %>
+                <% end %>
+              </details>
+            <% end %>
+          </section>
+        <% end %>
+        <%# The verdict form is the point of the page, so it leads the sidebar
+            once claimed; the claim prompt takes its place when it isn't. %>
         <% if @active_review_type == :funding && @funding_request.pending? && funding_can_review %>
           <%= render "admin/certification/funding_requests/form", funding_request: @funding_request, redirect_to_hardware: true %>
         <% elsif @active_review_type == :ship && @ship.pending? && ship_can_review %>
           <%= render "admin/certification/ships/form", ship: @ship, can_review: ship_can_review, redirect_to_hardware: true %>
+        <% elsif @active_review_type == :funding %>
+          <div class="ship-review__claim">
+            <p>You don't currently hold the claim on this review.</p>
+            <%= button_to "Claim this review", admin_certification_funding_request_claim_path(@funding_request),
+                  method: :post, params: { redirect_to_hardware: @project.id },
+                  class: "action-btn action-btn--large action-btn--primary" %>
+          </div>
+        <% elsif @active_review_type == :ship %>
+          <div class="ship-review__claim">
+            <p>You don't currently hold the claim on this review.</p>
+            <%= button_to "Claim this review", admin_certification_ship_claim_path(@ship),
+                  method: :post, params: { redirect_to_hardware: @project.id },
+                  class: "action-btn action-btn--large action-btn--primary" %>
+          </div>
+        <% else %>
+          <div class="ship-review__panel">
+            <p class="ship-review__description">Nothing is pending review on this hardware project.</p>
+            <%= link_to "Back to the queue", queue_path, class: "action-btn action-btn--small action-btn--secondary" %>
+          </div>
+        <% end %>
+
+        <% if can_review %>
+          <div class="ship-review__panel hardware-review__secondary-actions">
+            <% if @active_review_type == :ship && @ship.pending? %>
+              <%= form_with url: set_project_type_admin_certification_ship_path(@ship), method: :patch do %>
+                <%= hidden_field_tag :redirect_to_hardware, @project.id %>
+                <%= label_tag :project_type, "Project type", class: "ship-review__panel-title" %>
+                <%= select_tag :project_type,
+                      options_for_select(
+                        [ [ "Unknown", nil, { disabled: true, hidden: @project.project_type.present? } ], *Project::AVAILABLE_CATEGORIES.map { |t| [ t, t ] } ],
+                        @project.project_type
+                      ),
+                      onchange: "this.form.requestSubmit()",
+                      class: "ship-queue__select" %>
+              <% end %>
+            <% end %>
+            <%# Routing, not a verdict: hands the submission back to the builder
+                to confirm it belongs in the other queue. %>
+            <% mismatch_path = @active_review_type == :ship ?
+                 flag_queue_mismatch_admin_certification_ship_path(@ship) :
+                 flag_queue_mismatch_admin_certification_funding_request_path(@funding_request) %>
+            <%# Sending a funded project back to design lets it be funded again:
+                prize redemption is unique per request, not per project. Warn
+                rather than block - a genuinely mis-issued kit is a real case. %>
+            <% funded = @active_review_type == :ship ? @project.delivered_funding_request : nil %>
+            <%= form_with url: mismatch_path, method: :post, class: "hardware-review__mismatch" do |form| %>
+              <%= label_tag :reason, "This shouldn't be in this queue", class: "ship-review__panel-title" %>
+              <% if funded %>
+                <p class="hardware-review__mismatch-warning">
+                  This project already received
+                  <% if funded.awards_design_kit? %>
+                    the <%= funded.design_kit_shop_item&.name || "mission kit" %>.
+                  <% else %>
+                    a $<%= funded.final_amount_dollars %> grant.
+                  <% end %>
+                  Sending it back to design lets it be funded a second time.
+                </p>
+              <% end %>
+              <%= text_area_tag :reason, nil, rows: 2, class: "hardware-review__mismatch-reason",
+                    placeholder: @active_review_type == :ship ?
+                      "Why does this need funding first? (shown to the builder)" :
+                      "Why does this look already built? (shown to the builder)" %>
+              <%= form.submit @active_review_type == :ship ? "Send back: needs funding first" : "Send back: build looks done",
+                    class: "action-btn action-btn--small action-btn--secondary",
+                    data: { disable_with: "Sending…" } %>
+            <% end %>
+
+            <button type="submit" form="unclaim-form-<%= @active_review.id %>"
+                    class="action-btn action-btn--small action-btn--destructive">
+              Unclaim review
+            </button>
+
+            <%# Flag for fraud — a button in this same secondary-actions card. %>
+            <%= render "admin/certification/hardware_reviews/fraud_flag",
+                  project: @project, fraud_flag: @project.pending_fraud_report %>
+
+            <button type="button" class="action-btn action-btn--small action-btn--destructive"
+                    aria-haspopup="dialog" onclick="document.getElementById('hardware-permanent-rejection').showModal()">
+              <%= current_user.admin? ? "Permanently reject project" : "Nominate for permanent rejection" %>
+            </button>
+            <dialog id="hardware-permanent-rejection" class="hardware-review__fraud-modal"
+                    data-controller="modal" aria-labelledby="permanent-rejection-title">
+              <%= render "admin/certification/permanent_rejection_nominations/form", modal: true,
+                    nomination: Certification::PermanentRejectionNomination.new(project: @project, reviewable: @active_review) %>
+            </dialog>
+          </div>
         <% end %>
 
         <% unless @active_review %>
@@ -210,6 +416,7 @@
               <div class="ship-review__verdict-feedback">
                 <h3>Funding feedback</h3>
                 <p><%= @funding_request.feedback %></p>
+                <%= render "admin/certification/funding_requests/feedback_images", funding_request: @funding_request %>
               </div>
             <% end %>
             <% if @ship&.feedback.present? %>

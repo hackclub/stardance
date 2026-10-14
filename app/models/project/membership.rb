@@ -33,7 +33,22 @@ class Project::Membership < ApplicationRecord
   validates :user_id, uniqueness: { scope: :project_id }
   validate :member_limit, on: :create
 
+  # Someone joining a project that is already hardware needs their own Hackatime
+  # project to record Lapse timelapses against, the same as the members who were
+  # here when it turned hardware. The job re-checks every member, which is cheap
+  # because members who already have one are skipped.
+  #
+  # Skipped for the very first membership, which is the owner being attached
+  # during project creation: Project's own after_commit already covers that, and
+  # enqueuing twice just makes two workers redo the same work.
+  after_commit :ensure_hackatime_project, on: :create,
+               if: -> { project&.hardware? && project.memberships.count > 1 }
+
   private
+
+  def ensure_hackatime_project
+    Project::EnsureHackatimeProjectsJob.perform_later(project_id)
+  end
 
   def member_limit
     return unless project

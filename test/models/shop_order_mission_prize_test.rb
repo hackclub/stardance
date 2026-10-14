@@ -47,4 +47,17 @@ class ShopOrderMissionPrizeTest < ActiveSupport::TestCase
     order.send(:freeze_item_price)
     assert_operator order.frozen_item_price.to_i, :>, 0, "a normal purchase must keep the real price"
   end
+
+  test "a funding-request kit redemption is free and clears the mission-prize-only guard" do
+    @item.update!(mission_prize_only: true)
+
+    order = @user.shop_orders.new(shop_item: @item, quantity: 1, frozen_address: @address)
+    order.redeeming_funding_request = Certification::FundingRequest.new
+    order.aasm_state = "pending"
+
+    assert order.save, "kit redemption must succeed: #{order.errors.full_messages.to_sentence}"
+    assert_equal 0, order.frozen_item_price, "a kit redemption must freeze the price to 0"
+    assert_equal 0, @user.reload.balance, "redeeming a kit must not debit stardust"
+    assert_empty @user.ledger_entries.where(ledgerable: order), "a free kit must not create a ledger entry"
+  end
 end

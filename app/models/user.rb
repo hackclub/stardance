@@ -2,63 +2,68 @@
 #
 # Table name: users
 #
-#  id                           :bigint           not null, primary key
-#  age_attestation              :string
-#  approx_balance               :integer          default(0), not null
-#  approx_total_earned          :integer          default(0), not null
-#  banned                       :boolean          default(FALSE), not null
-#  banned_at                    :datetime
-#  banned_reason                :text
-#  bio                          :text
-#  current_streak               :integer          default(0), not null
-#  display_name                 :string
-#  email                        :string
-#  enriched_ref                 :string
-#  experience_level             :string
-#  first_name                   :string
-#  geocoded_country             :string
-#  geocoded_lat                 :float
-#  geocoded_lon                 :float
-#  geocoded_subdivision         :string
-#  granted_roles                :string           default([]), not null, is an Array
-#  guest_email                  :string
-#  has_gotten_free_stickers     :boolean          default(FALSE)
-#  has_pending_achievements     :boolean          default(FALSE), not null
-#  hcb_email                    :string
-#  interests                    :string           default([]), is an Array
-#  internal_notes               :text
-#  ip_address                   :string
-#  last_name                    :string
-#  manual_ysws_override         :boolean
-#  mission_review_notifications :boolean          default(TRUE), not null
-#  onboarded_at                 :datetime
-#  outpost_discount_stardust    :integer          default(0), not null
-#  outpost_email_sent_at        :datetime
-#  ref                          :string
-#  regions                      :string           default([]), is an Array
-#  session_token                :string
-#  shop_region                  :enum
-#  shop_tutorial_completed_at   :datetime
-#  shop_tutorial_started_at     :datetime
-#  streak_synced_at             :datetime
-#  synced_at                    :datetime
-#  things_dismissed             :string           default([]), not null, is an Array
-#  timezone                     :string
-#  user_agent                   :string
-#  user_ref                     :string
-#  verification_checked_at      :datetime
-#  verification_status          :string           default("needs_submission"), not null
-#  vote_balance                 :integer          default(0), not null
-#  votes_count                  :integer
-#  ysws_eligible                :boolean          default(FALSE), not null
-#  created_at                   :datetime         not null
-#  updated_at                   :datetime         not null
-#  slack_id                     :string
+#  id                               :bigint           not null, primary key
+#  age_attestation                  :string
+#  api_key                          :string
+#  approx_balance                   :integer          default(0), not null
+#  approx_total_earned              :integer          default(0), not null
+#  banned                           :boolean          default(FALSE), not null
+#  banned_at                        :datetime
+#  banned_reason                    :text
+#  bio                              :text
+#  current_streak                   :integer          default(0), not null
+#  display_name                     :string
+#  email                            :string
+#  enriched_ref                     :string
+#  experience_level                 :string
+#  first_name                       :string
+#  fraud_review_payouts_disabled_at :datetime
+#  geocoded_country                 :string
+#  geocoded_lat                     :float
+#  geocoded_lon                     :float
+#  geocoded_subdivision             :string
+#  granted_roles                    :string           default([]), not null, is an Array
+#  guest_email                      :string
+#  hardware_channel_invited_at      :datetime
+#  has_gotten_free_stickers         :boolean          default(FALSE)
+#  has_pending_achievements         :boolean          default(FALSE), not null
+#  hcb_email                        :string
+#  interests                        :string           default([]), is an Array
+#  internal_notes                   :text
+#  ip_address                       :string
+#  last_name                        :string
+#  manual_ysws_override             :boolean
+#  mission_review_notifications     :boolean          default(TRUE), not null
+#  onboarded_at                     :datetime
+#  outpost_discount_stardust        :integer          default(0), not null
+#  outpost_email_sent_at            :datetime
+#  ref                              :string
+#  regions                          :string           default([]), is an Array
+#  session_token                    :string
+#  shop_region                      :enum
+#  shop_tutorial_completed_at       :datetime
+#  shop_tutorial_started_at         :datetime
+#  streak_synced_at                 :datetime
+#  synced_at                        :datetime
+#  things_dismissed                 :string           default([]), not null, is an Array
+#  timezone                         :string
+#  user_agent                       :string
+#  user_ref                         :string
+#  verification_checked_at          :datetime
+#  verification_status              :string           default("needs_submission"), not null
+#  vote_balance                     :integer          default(0), not null
+#  votes_count                      :integer
+#  ysws_eligible                    :boolean          default(FALSE), not null
+#  created_at                       :datetime         not null
+#  updated_at                       :datetime         not null
+#  slack_id                         :string
 #
 # Indexes
 #
+#  index_users_on_api_key                    (api_key) UNIQUE
 #  index_users_on_approx_balance             (approx_balance)
 #  index_users_on_approx_total_earned        (approx_total_earned)
+#  index_users_on_display_name_trgm          (display_name) USING gin
 #  index_users_on_email                      (email)
 #  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
@@ -103,6 +108,7 @@ class User < ApplicationRecord
   has_many :project_follows, dependent: :destroy
   has_many :followed_projects, through: :project_follows, source: :project
   has_one :preference, class_name: "User::Preference", dependent: :destroy
+  has_many :data_exports, class_name: "User::DataExport", dependent: :destroy
 
   has_many :follows_as_follower, class_name: "Follow", foreign_key: :follower_id, dependent: :destroy, inverse_of: :follower
   has_many :follows_as_followed, class_name: "Follow", foreign_key: :followed_id, dependent: :destroy, inverse_of: :followed
@@ -121,6 +127,7 @@ class User < ApplicationRecord
   has_many :reviewed_mission_submissions, class_name: "Mission::Submission",
            foreign_key: :reviewed_by_id, dependent: :nullify
   has_many :shop_suggestions, dependent: :destroy
+  has_many :shop_suggestion_votes, dependent: :destroy
   has_many :shop_wishlists, dependent: :destroy
   has_many :wishlisted_shop_items, through: :shop_wishlists, source: :shop_item
   has_many :sold_items, class_name: "ShopItem::HackClubberItem", foreign_key: :user_id
@@ -158,6 +165,10 @@ class User < ApplicationRecord
   def age_blocked?
     age_attestation_ineligible? && manual_ysws_override != true
   end
+
+  # Turned off for a reviewer whose fraud work should not earn stardust. Only
+  # new reviews stop counting: anything already banked still pays out.
+  def fraud_review_payouts_disabled? = fraud_review_payouts_disabled_at.present?
 
   enum :experience_level, {
     none: "none",
@@ -279,6 +290,10 @@ class User < ApplicationRecord
     raffle_participant&.referrals&.status_verified&.count || 0
   end
 
+  def free_sticker_weeks
+    StickerPromo.weeks_for(self)
+  end
+
   REFERRAL_ACHIEVEMENTS = { referral_2: 2, referral_5: 5 }.freeze
 
   def sync_referral_achievements!
@@ -292,6 +307,14 @@ class User < ApplicationRecord
         revoke_achievement!(slug)
       end
     end
+  end
+
+  API_KEY_PREFIX = "sd_sk_".freeze
+
+  # Public-API key. Not auto-assigned on create — only ever set when the user
+  # clicks "Generate"/"Regenerate" in Settings (see My::SettingsController).
+  def regenerate_api_key
+    update!(api_key: "#{API_KEY_PREFIX}#{SecureRandom.hex(20)}")
   end
 
   def ambassador_referral_payload(hours_logged:, hours_approved:)
@@ -333,23 +356,6 @@ class User < ApplicationRecord
                                                   .where(posts: { user_id: id })
                                                   .distinct
                                                   .pluck(:mission_id)
-  end
-
-  # Fires the Outpost email at most once per user, and adds them to the #outpost
-  # Slack channel. Locks the row so concurrent /outpost hits can't enqueue the
-  # work twice.
-  def deliver_outpost_email!
-    return if email.blank?
-
-    with_lock("FOR UPDATE OF users") do
-      return if outpost_email_sent_at.present?
-
-      update_column(:outpost_email_sent_at, Time.current)
-    end
-
-    UserMailer.outpost(self).deliver_later
-    # Slack invite temporarily disabled — re-enable to auto-add users to the #outpost channel.
-    # AddUserToOutpostChannelJob.perform_later(id)
   end
 
   private

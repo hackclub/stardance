@@ -72,9 +72,6 @@
 
     <%= turbo_frame_tag "shop_items" do %>
       <div class="shop-category__items">
-        <% if @slug == "experiences" && !@hardware_flow_enabled %>
-          <%= render "shop/items/outpost_ticket" %>
-        <% end %>
         <% @visible_shop_items.each do |item| %>
           <%= render "shop/items/item_card",
                 item: item,

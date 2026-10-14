@@ -1,0 +1,25 @@
+<%= turbo_frame_tag flag do %>
+  <div class="fraud-subject__item fraud-subject__item--flag">
+    <div class="fraud-subject__item-head">
+      <span class="fraud-subject__item-title"><%= flag.reason_label %></span>
+      <span class="fraud-subject__item-age"><%= time_ago_in_words(flag.created_at) %> ago</span>
+    </div>
+
+    <p class="fraud-subject__item-meta">
+      on <%= link_to flag.project.title, admin_project_path(flag.project) %>,
+      filed by <%= flag.reporter.display_name %>
+    </p>
+
+    <p class="fraud-subject__item-body"><%= flag.details %></p>
+
+    <div class="fraud-subject__item-actions">
+      <%= button_to "Dismiss", dismiss_admin_certification_report_path(flag),
+                    params: { fraud_subject_id: user.id },
+                    class: "fraud-subject__verdict fraud-subject__verdict--accept" %>
+      <%= button_to "Reviewed", review_admin_certification_report_path(flag),
+                    params: { fraud_subject_id: user.id },
+                    class: "fraud-subject__verdict fraud-subject__verdict--reject" %>
+      <%= link_to "Open flag", admin_certification_report_path(flag), class: "fraud-subject__item-action" %>
+    </div>
+  </div>
+<% end %>

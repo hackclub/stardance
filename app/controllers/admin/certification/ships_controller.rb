@@ -1,6 +1,9 @@
 class Admin::Certification::ShipsController < Admin::Certification::ApplicationController
+  include HardwareReviewUndoable
+
   before_action :release_other_claims, only: [ :next ]
-  before_action :set_ship, only: [ :show, :update, :set_project_type, :report_fraud ]
+  before_action :set_ship, only: [ :show, :update, :set_project_type, :set_bonus_stardust, :report_fraud,
+                                   :flag_queue_mismatch, :undo ]
   before_action :set_submitter_context, only: [ :show, :update ]
   before_action :set_body_class, only: [ :index, :show, :update, :logs ]
 
@@ -56,7 +59,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     @to = parse_date(params[:to])
 
     scope = policy_scope(::Certification::Ship)
-              .where.not(status: :pending)
+              .decided
               .includes(:reviewer, project: { memberships: :user })
 
     scope = scope.where(status: @status) unless @status == "all"
@@ -117,6 +120,25 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     end
   end
 
+  # "This shouldn't be in this queue": hands the ship back to the builder to
+  # confirm it belongs in the design queue instead. No verdict is recorded and
+  # no bounty is earned - the reviewer is routing, not deciding.
+  def flag_queue_mismatch
+    authorize @ship
+    if @ship.flag_queue_mismatch!(reviewer: current_user, reason: params[:reason])
+      redirect_to hardware_review_next_path_for(@ship.project, "build"),
+                  notice: "Sent back to the builder to confirm it needs funding first."
+    else
+      redirect_to ship_redirect_path, alert: "This review isn't pending, so it can't be re-routed."
+    end
+  end
+
+  def set_bonus_stardust
+    authorize @ship
+    @ship.update!(bonus_stardust: params[:bonus_stardust].presence)
+    redirect_to admin_certification_ship_path(@ship), notice: "Bonus stardust updated."
+  end
+
   def update
     authorize @ship
     if internal_sw_dash_reviews_disabled? && @ship.external_certification_id.present?
@@ -130,7 +152,9 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
       count = ::Certification::Ship.reviewed_today(current_user)
       notice = "#{verb} \"#{@ship.project.title}.\" That's #{count} reviewed today. Keep going!"
       if params[:redirect_to_hardware].present?
-        redirect_to admin_certification_hardware_review_path(@ship.project_id), notice: notice
+        # Straight on to the next build review; `next` claims it, and falls back
+        # to the queue when there's nothing left.
+        redirect_to hardware_review_next_path_for(@ship.project, "build"), notice: notice
       else
         redirect_to admin_certification_ships_path, notice: notice
       end
@@ -175,6 +199,9 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
     @ship = ::Certification::Ship.find(params[:id])
   end
 
+  # Names the record HardwareReviewUndoable#undo reverses.
+  def review_for_undo = @ship
+
   def set_milestone_context
     @reviews_today = ::Certification::Ship.reviewed_today(current_user)
     @current_multiplier = ::Certification::Ship.multiplier_for_milestone(@reviews_today)
@@ -183,7 +210,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
   def ship_redirect_path
     if params[:redirect_to_hardware].present?
-      admin_certification_hardware_review_path(@ship.project_id)
+      hardware_review_path_for(@ship.project)
     else
       admin_certification_ship_path(@ship)
     end
@@ -243,6 +270,6 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
   end
 
   def ship_params
-    params.require(:certification_ship).permit(:status, :feedback, :verdict_video)
+    params.require(:certification_ship).permit(:status, :feedback, :verdict_video, :payout_multiplier)
   end
 end

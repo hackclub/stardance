@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class AhoyGeocodeJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
   limits_concurrency to: 1, key: "ahoy_geocode", duration: 1.second
 
   def perform(visit_id)

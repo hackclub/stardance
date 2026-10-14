@@ -8,17 +8,24 @@
                       disabled. Used for devlogs belonging to earlier reviews.
     sidebar_trigger - when true, this item triggers the details sidebar in
                       popup mode (only the first item on the page should).
+    mac_recommendation - this devlog's entry from the MAC pre-screen report, or
+                      nil when the pre-screen didn't run, had nothing for it, or
+                      suggested no reduction.
+                      Read-only: it suggests minutes, it never sets them.
 
   Relies on the page-level @repo_info and @devlog_commits for the git graph.
 %>
 <% frozen ||= false %>
 <% sidebar_trigger ||= false %>
-<div class="devlog-item<%= " devlog-item--frozen" if frozen %>"
+<% mac_recommendation ||= nil %>
+<div id="devlog-review-<%= devlog_review.id %>"
+     class="devlog-item<%= " devlog-item--frozen" if frozen %>"
      <% unless frozen %>
        data-controller="certification--ysws--devlog-review"
        data-certification--ysws--devlog-review-id-value="<%= devlog_review.id %>"
        data-certification--ysws--devlog-review-original-minutes-value="<%= devlog_review.original_minutes || 0 %>"
        data-certification--ysws--devlog-review-status-value="<%= devlog_review.status %>"
+       data-action="devlog-review:flush@window->certification--ysws--devlog-review#flush"
      <% end %>
      <%= 'data-certification--ysws--review-sidebar-target="trigger"'.html_safe if sidebar_trigger %>>
   <div class="devlog-main">
@@ -38,13 +45,15 @@
     </div>
 
     <% if devlog_review.post_devlog.body.present? %>
-      <p class="devlog-desc"><%= devlog_review.post_devlog.body %></p>
+      <div class="devlog-desc markdown-content"><%= md(devlog_review.post_devlog.body, allow_images: false) %></div>
     <% else %>
       <p class="devlog-desc empty-body-warning">body was empty, contact @AVD, this shouldn't happen</p>
     <% end %>
 
     <div class="devlog-media-section">
       <div class="media-label">Devlog Media (<%= devlog_review.post_devlog.attachments.size %>)</div>
+      <div class="media-row">
+        <div class="media-row__media">
       <% if devlog_review.post_devlog.attachments.any? %>
         <div class="media-grid">
           <% devlog_review.post_devlog.attachments.each do |attachment| %>
@@ -67,6 +76,25 @@
           <div class="placeholder-text">No media attached</div>
         </div>
       <% end %>
+        </div>
+
+        <%# Read-only on purpose: the pre-screen suggests, the reviewer decides.
+            The reasoning leads — it's what the decision turns on; the suggested
+            number follows it. %>
+        <% if mac_recommendation && mac_recommendation["recommended_minutes"] %>
+          <div class="<%= mac_hint_classes(mac_recommendation) %>">
+            <% if mac_recommendation["justification"].present? %>
+              <p class="mac-hint__reason"><%= mac_recommendation["justification"] %></p>
+            <% end %>
+            <p class="mac-hint__headline">
+              suggests
+              <span class="mac-hint__original"><%= mac_recommendation["original_minutes"].to_i %></span>
+              <span class="mac-hint__arrow" aria-hidden="true">→</span>
+              <span class="mac-hint__suggested"><%= mac_recommendation["recommended_minutes"].to_i %> min</span>
+            </p>
+          </div>
+        <% end %>
+      </div>
     </div>
 
     <div class="devlog-time">
@@ -99,6 +127,20 @@
       </div>
       <%= Certification::CommitGraphBuilder.new(dl_commits).svg %>
     </div>
+
+    <%# Recordings made within this devlog's time window — the Lapse timelapses
+        and Lookout screen recordings that produced its logged time. Only shown
+        when there are any; every recording still appears in the page-level
+        gallery. Only Lapse recordings carry a Telescreen link. %>
+    <% dl_lapses = @devlog_lapses&.dig(devlog_review.post_devlog_id) || [] %>
+    <% dl_lookouts = @devlog_lookouts&.dig(devlog_review.post_devlog_id) || [] %>
+    <% if dl_lapses.any? || dl_lookouts.any? %>
+      <div class="devlog-recordings-section">
+        <%= render "admin/certification/funding_requests/recordings",
+              timelapses: dl_lapses, recordings: dl_lookouts, title: "Recordings",
+              telescreen_uid: @lapse_owner_uid %>
+      </div>
+    <% end %>
   </div>
 
   <!-- Review Decision Panel -->
@@ -180,7 +222,7 @@
                 placeholder="notes..."
                 <% unless frozen %>
                   data-certification--ysws--devlog-review-target="notesTextarea"
-                  data-action="input->certification--ysws--devlog-review#updateNotes"
+                  data-action="input->certification--ysws--devlog-review#updateNotes input->certification--ysws--devlog-review#autogrow"
                 <% end %>
                 <%= "disabled" if frozen %>><%= devlog_review.justification %></textarea>
     </div>

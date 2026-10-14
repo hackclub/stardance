@@ -27,7 +27,7 @@ module DiscoverRail
     end
 
     def hours
-      @hours ||= user.approved_ship_hours
+      @hours ||= user.approved_hours
     end
 
     def required

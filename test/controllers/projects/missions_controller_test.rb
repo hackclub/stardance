@@ -46,6 +46,17 @@ class Projects::MissionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @mission, @project.reload.current_mission
   end
 
+  test "detaches a mission whose submission was rejected and clears it off the ship" do
+    submission = ship_to_mission!(@project, @owner, @mission, status: "rejected")
+    sign_in @owner
+
+    delete project_mission_path(@project)
+
+    assert_redirected_to project_path(@project)
+    assert_nil @project.reload.current_mission
+    assert submission.reload.deleted?
+  end
+
   test "follow_up_targets_for classifies ready and awaiting follow-ups" do
     submission = ship_to_mission!(@project, @owner, @mission)
 

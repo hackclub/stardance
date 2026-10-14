@@ -181,8 +181,49 @@ export default class extends Controller {
         `,
       )
       .join("");
+
     this.popoverTarget.hidden = false;
     menu.hidden = false;
+
+    const selection = window.getSelection();
+    if (selection?.rangeCount) {
+      const range = selection.getRangeAt(0).cloneRange();
+      range.collapse(false);
+
+      let rect = range.getBoundingClientRect();
+      if (rect.height === 0) {
+        const span = document.createElement("span");
+        span.textContent = "\u200b";
+        range.insertNode(span);
+        rect = span.getBoundingClientRect();
+        span.remove();
+      }
+
+      const field = this.popoverTarget.parentElement;
+      const fieldRect = field.getBoundingClientRect();
+
+      if (rect.height > 0) {
+        let top = rect.bottom - fieldRect.top + 4;
+        const popoverHeight = this.popoverTarget.offsetHeight;
+
+        if (
+          rect.bottom + popoverHeight + 8 > window.innerHeight &&
+          rect.top - popoverHeight - 8 > 0
+        ) {
+          top = rect.top - fieldRect.top - popoverHeight - 4;
+        }
+
+        this.popoverTarget.style.top = `${top}px`;
+
+        let left = rect.left - fieldRect.left;
+        const popoverWidth = this.popoverTarget.offsetWidth || 220;
+
+        if (left + popoverWidth > fieldRect.width) {
+          left = fieldRect.width - popoverWidth;
+        }
+        this.popoverTarget.style.left = `${Math.max(0, left)}px`;
+      }
+    }
   }
 
   #suggestionsMenu() {

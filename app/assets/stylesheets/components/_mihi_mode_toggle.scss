@@ -1,0 +1,119 @@
+.mihi-mode-toggle {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  margin: var(--space-xs) 0 var(--space-xl);
+  padding: var(--space-l) var(--space-xl);
+  border: 2px solid var(--color-brand-off-white);
+  border-radius: var(--profile-radius);
+  background: linear-gradient(
+    115deg,
+    var(--color-brand-highlight),
+    var(--color-brand-cream) 48%,
+    var(--color-brand-mint)
+  );
+  color: var(--color-set-1-bg);
+  font-size: var(--font-size-l);
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-shadow:
+    0 10px 30px color-mix(in srgb, var(--color-brand-mint) 24%, transparent),
+    inset 0 2px 0 var(--color-brand-off-white);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+
+  .action-btn__label {
+    position: relative;
+    z-index: 1;
+    color: var(--color-set-1-bg);
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -50% auto -50% -60%;
+    width: 35%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-brand-off-white),
+      transparent
+    );
+    transform: skewX(-20deg);
+    animation: mihi-mode-shine 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--color-set-1-bg);
+    transform: translateY(-3px) rotate(-0.5deg);
+    box-shadow: 0 14px 40px
+      color-mix(in srgb, var(--color-brand-mint) 38%, transparent);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--color-brand-mint);
+    outline-offset: 6px;
+  }
+
+  &[aria-pressed="true"] {
+    opacity: 1;
+    background: var(--color-brand-mint);
+    color: var(--color-set-1-bg);
+    border-color: var(--color-brand-mint);
+    box-shadow: none;
+    cursor: default;
+
+    &::before {
+      animation: none;
+      content: none;
+    }
+  }
+}
+
+@keyframes mihi-mode-shine {
+  0%,
+  45% {
+    left: -60%;
+  }
+  80%,
+  100% {
+    left: 140%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mihi-mode-toggle {
+    transition: none;
+
+    &::before {
+      animation: none;
+      content: none;
+    }
+  }
+}
+
+[data-mihi-image],
+[data-mihi-before]::before,
+[data-mihi-after]::after {
+  background-image: var(--mihi-portrait) !important;
+  background-size: 100% 100% !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  mask-image: none !important;
+  animation: none !important;
+}
+
+svg[data-mihi-image] > *,
+[role="img"][data-mihi-image] > * {
+  visibility: hidden;
+}

@@ -1,0 +1,41 @@
+<%# Verdicts already handed down on this project, so a reviewer sees what it has
+    been through before adding one of their own. Entries can outlive the row they
+    were recorded on: see Mission::Submission::Verdict.
+    Locals: verdicts (required), current (required, the submission being reviewed). %>
+<section class="review-history">
+  <h2 class="review-history__title">Past mission reviews on this project</h2>
+
+  <% if verdicts.any? %>
+    <ul class="review-history__list">
+      <% verdicts.each do |verdict| %>
+        <li class="review-history__item">
+          <div class="review-history__head">
+            <span class="review-history__mission"><%= verdict.mission&.name || "Deleted mission" %></span>
+            <span class="status-pill status-pill--<%= verdict.status %>"><%= verdict.status.titleize %></span>
+            <% if verdict.decided_at %>
+              <span class="review-history__meta"><%= l(verdict.decided_at.to_date, format: :short) %></span>
+            <% end %>
+            <% if verdict.reviewer %>
+              <span class="review-history__meta">by <%= verdict.reviewer.display_name %></span>
+            <% end %>
+            <%# An erased verdict belongs to the submission on screen, so it has
+                nowhere else to link. Admin::Missions::SubmissionsController
+                #pundit_namespace returns the record unwrapped, so `policy`
+                resolves Mission::SubmissionPolicy rather than a namespaced one. %>
+            <% other = verdict.submission if verdict.submission != current %>
+            <% if other&.mission && policy(other).show? %>
+              <%= link_to "Open review",
+                    admin_mission_submission_path(other.mission.slug, other),
+                    class: "review-history__link" %>
+            <% end %>
+          </div>
+          <% if verdict.feedback.present? %>
+            <p class="review-history__feedback"><%= verdict.feedback %></p>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="review-history__empty">No mission review has been decided on this project yet.</p>
+  <% end %>
+</section>

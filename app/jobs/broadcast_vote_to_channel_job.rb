@@ -1,5 +1,5 @@
 class BroadcastVoteToChannelJob < ApplicationJob
-  queue_as :default
+  queue_as :latency_10s
 
   CHANNEL_ID = "C0AFB0JU00P"
 

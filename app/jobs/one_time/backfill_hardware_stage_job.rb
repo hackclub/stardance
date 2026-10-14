@@ -10,7 +10,7 @@
 #
 # DRY RUN BY DEFAULT: logs and returns the candidate ids and writes nothing. Pass
 # dry_run: false to persist. Always dry-run first and eyeball the list — setting
-# hardware_stage flips Project#hardware? to true, which enables the Lookout
+# hardware_stage flips Project#hardware? to true, which enables the timelapse
 # recorder and the hardware shipping/funding gates for that project going forward.
 #
 # Stage defaults to "design", the flow's entry stage, which is the safe choice

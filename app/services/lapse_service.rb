@@ -10,6 +10,11 @@
 # Hackatime id → `hackatime.timelapsesForProject`.
 class LapseService
   BASE_URL = Rails.application.credentials.dig(:lapse, :base_url) || ENV.fetch("LAPSE_BASE_URL", "https://api.lapse.hackclub.com")
+  # Where builders go to actually record. Lapse takes no deep-link parameters
+  # (its index reads only an `error` param), so we send them to the root and they
+  # pick the Hackatime project there: the one Project::EnsureHackatimeProjectsJob
+  # seeded when the project turned hardware.
+  APP_URL = Rails.application.credentials.dig(:lapse, :app_url) || ENV.fetch("LAPSE_APP_URL", "https://lapse.hackclub.com")
   API_KEY  = Rails.application.credentials.dig(:lapse, :api_key) || ENV.fetch("LAPSE_API_KEY", "")
 
   OPEN_TIMEOUT = 3

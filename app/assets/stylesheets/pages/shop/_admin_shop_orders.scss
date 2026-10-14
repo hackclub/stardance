@@ -54,13 +54,53 @@
     min-width: 0;
   }
 
-  &__group-toggle {
+  &__list-toggles {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-s);
 
     a {
       @include s.outlined-pill-link;
+
+      &.is-active {
+        color: var(--color-set-1-bg);
+        background: var(--color-brand-blue);
+        border-color: var(--color-brand-blue);
+      }
     }
+  }
+
+  &__type-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  &__type-toggle {
+    @include s.outlined-pill-link;
+
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+
+    &--hidden {
+      color: var(--color-brand-mint);
+      border-color: var(--color-brand-mint);
+
+      &:hover {
+        color: var(--color-brand-mint);
+        border-color: var(--color-brand-mint);
+      }
+    }
+  }
+
+  &__type-toggle-count {
+    background: var(--color-brand-mint);
+    color: var(--color-space-bg);
+    border-radius: 9999px;
+    padding: 0 0.5em;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
   }
 
   &__stats {
@@ -79,6 +119,13 @@
   &__stats-hint {
     color: s.$set-fg-secondary;
     font-size: var(--font-size-s);
+    margin: 0;
+  }
+
+  &__stats-note {
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-xs);
+    font-style: italic;
     margin: 0;
   }
 
@@ -341,6 +388,72 @@
     }
   }
 
+  &__row-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    white-space: nowrap;
+  }
+
+  &__approve-form {
+    display: inline-flex;
+  }
+
+  &__approve-all {
+    margin-left: var(--space-s);
+  }
+
+  &__approve-dialog {
+    h2 {
+      font-size: var(--font-size-xl);
+      font-weight: 700;
+    }
+  }
+
+  &__approve-list {
+    list-style: none;
+    margin: 0 0 var(--space-s);
+    padding: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__approve-entry {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-m);
+    padding: var(--space-xxs) 0;
+    border-bottom: 1px solid var(--color-space-border);
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+  }
+
+  &__approve-item {
+    min-width: 0;
+  }
+
+  &__approve-cost {
+    color: s.$set-fg-secondary;
+    white-space: nowrap;
+  }
+
+  &__approve-total {
+    margin: 0 0 var(--space-m);
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-s);
+    font-weight: 600;
+  }
+
+  &__approve-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
   &__mission-badge {
     display: inline-block;
     margin-top: var(--space-xxs);
@@ -350,6 +463,37 @@
     color: var(--color-brand-peach);
     font-size: var(--font-size-xs);
     font-weight: 500;
+    white-space: nowrap;
+  }
+
+  // Orders the automation would clear on its own. They sit at the bottom of the
+  // fraud queue and are dimmed so the rows needing a real judgement carry the
+  // eye. Kept legible rather than hidden: a reviewer may still want to look.
+  //
+  // The dimming lands on the cells, not the row: .space-table swaps a solid
+  // zebra background for a translucent hover wash, so fading the row itself
+  // fought that swap and made light rows flash bright then settle darker.
+  // Cells carry no background, so this only touches the content, and the
+  // timing matches the table's own 150ms background transition.
+  &__row--auto-approvable {
+    td {
+      opacity: 0.55;
+      transition: opacity 150ms ease;
+    }
+
+    &:hover td {
+      opacity: 1;
+    }
+  }
+
+  &__auto-approve-tag {
+    display: inline-block;
+    margin-top: var(--space-xxs);
+    padding: var(--space-xxs) var(--space-s);
+    border-radius: calc(var(--border-radius) / 2);
+    background: rgba(129, 255, 255, 0.12);
+    color: s.$set-fg-secondary;
+    font-size: var(--font-size-xs);
     white-space: nowrap;
   }
 }

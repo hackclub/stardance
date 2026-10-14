@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="turbo-visit-control" content="reload">
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <%= active_insights_importmap_tags %>
+  <script type="module"><%# erb_lint:disable AllowedScriptType %>
+    import {Chart, registerables} from "chart.js";
+
+    Chart.register(...registerables);
+
+    import "chartjs-adapter-date-fns";
+    import zoomPlugin from "chartjs-plugin-zoom";
+    import Chartkick from "chartkick";
+
+    window.Chartkick = Chartkick;
+    window.Chart = Chart;
+
+    Chartkick.use(Chart);
+    Chart.register(zoomPlugin);
+
+    document.addEventListener('keydown',(event) => {
+      Object.keys(Chartkick.charts).forEach((key) => {
+        const chart = Chartkick.charts[key].getChartObject()
+        if (event.key === 'Escape' || event.key === 'Esc') {
+          chart.resetZoom()
+        }
+      })
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const disclosure = document.querySelector("[data-insights-disclosure]");
+      const dismissButton = disclosure?.querySelector("[data-insights-disclosure-dismiss]");
+
+      dismissButton?.addEventListener("click", () => disclosure.remove());
+    });
+  </script>
+
+  <title>Active Insights</title>
+  <%= stylesheet_link_tag "active_insights/application" %>
+  <%= stylesheet_link_tag "active_insights_stardance" %>
+  <style><%= yield :style %></style>
+</head>
+<body>
+  <aside class="insights-disclosure" role="note" aria-labelledby="insights-disclosure-title" data-insights-disclosure>
+    <div class="insights-disclosure__content">
+      <strong class="insights-disclosure__title" id="insights-disclosure-title">This dashboard is intentionally public.</strong>
+      <p class="insights-disclosure__body">
+        It exposes aggregate metrics by design. Reports whose only finding is that this page is publicly accessible are not valid security vulnerabilities and waste our team’s time.
+      </p>
+    </div>
+    <button class="insights-disclosure__dismiss" type="button" aria-label="Dismiss notice" data-insights-disclosure-dismiss>&times;</button>
+  </aside>
+
+  <%= yield %>
+</body>
+</html>

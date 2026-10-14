@@ -1,0 +1,76 @@
+<% dash = tag.span("—", class: "fraud-subject__fact-note") %>
+
+<section class="fraud-subject__section" id="fraud-subject-identity-panel" aria-labelledby="fraud-subject-identity">
+  <h2 class="fraud-subject__section-title" id="fraud-subject-identity">Identity</h2>
+
+  <div class="fraud-subject__identity">
+    <%= image_tag user.avatar, alt: "", class: "fraud-subject__avatar" %>
+
+    <dl class="fraud-subject__facts">
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Name</dt>
+        <dd class="fraud-subject__fact-value"><%= user.display_name.presence || dash %></dd>
+      </div>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">User ID</dt>
+        <dd class="fraud-subject__fact-value">#<%= user.id %></dd>
+      </div>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Email</dt>
+        <dd class="fraud-subject__fact-value"><%= user.email.presence || dash %></dd>
+      </div>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Slack ID</dt>
+        <dd class="fraud-subject__fact-value"><%= user.slack_id.presence || dash %></dd>
+      </div>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Verification</dt>
+        <dd class="fraud-subject__fact-value"><%= user.verification_status.humanize %></dd>
+      </div>
+
+      <% balance = user.balance %>
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Balance</dt>
+        <dd class="fraud-subject__fact-value fraud-subject__fact-value--balance">
+          <%= number_with_delimiter(balance) %><%= stardust_icon %>
+          <% if policy(user).adjust_balance? %>
+            <%= render "admin/users/adjust_balance", user: user, balance: balance %>
+          <% end %>
+
+          <%# The ledger is a whole page of rows, so it is fetched only when a
+              reviewer opens it and takes the full width of the panel it hangs
+              off rather than the balance's own column. %>
+          <details class="fraud-subject__balance-history">
+            <summary class="fraud-subject__balance-toggle">Balance history</summary>
+
+            <%= turbo_frame_tag "fraud-subject-balance",
+                                src: admin_fraud_subject_balance_path(user),
+                                loading: "lazy" do %>
+              <p class="fraud-subject__balance-loading">Loading balance history...</p>
+            <% end %>
+          </details>
+        </dd>
+      </div>
+
+      <div class="fraud-subject__fact">
+        <dt class="fraud-subject__fact-label">Banned</dt>
+        <%# The queue only lists unbanned people, but a ban landing mid-review
+            leaves the reviewer on this page, so the state has to be visible. %>
+        <dd class="fraud-subject__fact-value <%= "fraud-subject__fact-value--alert" if user.banned? %>">
+          <% if user.banned? %>
+            Yes
+            <% if user.banned_at %>
+              <span class="fraud-subject__fact-note"><%= time_ago_in_words(user.banned_at) %> ago</span>
+            <% end %>
+          <% else %>
+            No
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>

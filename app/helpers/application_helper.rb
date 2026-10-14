@@ -1,6 +1,13 @@
 module ApplicationHelper
   def in_beta? = request.host.include?("beta")
 
+  # See Raffle::ENDED. Shared by the main app and the raffle engine's views.
+  def raffle_ended? = Raffle.ended?
+
+  def platform_ads_enabled?(user = current_user)
+    user&.preference&.platform_ads_enabled? != false && Flipper.enabled?(:platform_ads, user)
+  end
+
   # Memoized per request: the feed renders dozens of post cards and Flipper
   # memoization is disabled app-wide, so a per-card check would hit
   # flipper_gates once per card.
@@ -58,7 +65,7 @@ module ApplicationHelper
   def admin_tool(compact: false, extra_class: nil, roles: [], &block)
     acting_user = impersonating? ? real_user : current_user
     allowed = acting_user&.admin? || roles.any? { |role| acting_user&.has_role?(role) }
-    return unless allowed && Flipper.enabled?(:shigimi_eyes, acting_user)
+    return unless allowed && !Flipper.enabled?(:no_shigimi_eyes, acting_user)
 
     classes = [ "admin", "tools-do" ]
     classes << "tools-do--inline" if compact
@@ -155,7 +162,7 @@ module ApplicationHelper
 
   def certification_verdict_video_src(cert)
     return if cert.nil?
-    return rails_storage_redirect_path(cert.verdict_video) if cert.verdict_video.attached?
+    return cert.verdict_video.url(disposition: :inline) if cert.verdict_video.attached?
 
     active_storage_redirect_url(safe_external_url(cert.proof_video_url))
   end
@@ -229,6 +236,10 @@ module ApplicationHelper
   rescue RedisClient::ReadTimeoutError, Redis::TimeoutError, Redis::CannotConnectError => e
     Rails.logger.warn("ActiveUserTracker: #{e.class} - #{e.message}")
     "unavailable"
+  end
+
+  def local_event_simulator?
+    Rails.env.development? && request.host.in?(%w[localhost 127.0.0.1 ::1 [::1]])
   end
 
   private

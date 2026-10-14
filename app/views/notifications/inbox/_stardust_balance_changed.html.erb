@@ -8,3 +8,4 @@
 <% if source.present? %>
   <span class="notifications-item__verb">(<%= source %>)</span>
 <% end %>
+<%= link_to "View balance", my_balance_path, class: "notifications-item__actor" %>

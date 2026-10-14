@@ -1,8 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 import Chart from "chart.js/auto";
 
-// Brand palette (docs/branding.md). Cycled when there are more reviewers than
-// colors, since the chart plots a line for every reviewer.
+// Brand palette (docs/branding.md). Cycled when the top reviewer set is wider
+// than the palette.
 const PALETTE = [
   "#81FFFF", // mint
   "#EBB7FF", // lilac
@@ -11,6 +11,8 @@ const PALETTE = [
   "#FFE564", // yellow
   "#FFD598", // peach
 ];
+
+const MAX_SERIES = 10;
 
 export default class extends Controller {
   static targets = ["canvas"];
@@ -22,7 +24,7 @@ export default class extends Controller {
     const { labels = [], series = [] } = this.chartValue || {};
     if (!series.length) return;
 
-    const datasets = series.map((s, i) => {
+    const datasets = series.slice(0, MAX_SERIES).map((s, i) => {
       const color = PALETTE[i % PALETTE.length];
       return {
         label: s.name || "Unknown",
@@ -53,7 +55,14 @@ export default class extends Controller {
           },
         },
         plugins: {
-          legend: { labels: { color: "rgba(255, 255, 255, 0.7)" } },
+          legend: {
+            labels: {
+              boxWidth: 22,
+              boxHeight: 8,
+              color: "rgba(255, 255, 255, 0.7)",
+              padding: 10,
+            },
+          },
         },
       },
     });

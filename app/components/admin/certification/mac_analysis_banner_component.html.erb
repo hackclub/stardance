@@ -1,0 +1,143 @@
+<div class="<%= banner_classes %>" role="status">
+  <details class="mac-banner__drawer">
+    <summary class="mac-banner__strip">
+      <% if analysis.recommend_fraud_flag? %>
+        <span class="mac-banner__chip mac-banner__chip--red">Fraud flag recommended</span>
+      <% end %>
+
+      <p class="mac-banner__summary">
+        <%= analysis.summary_note || "Pre-screen ran but returned no summary." %>
+      </p>
+
+      <% if analysis.flags.any? %>
+        <ul class="mac-banner__chips">
+          <% analysis.flags.each do |flag| %>
+            <li class="<%= chip_classes(flag) %>"><%= flag_label(flag) %></li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <% if generated_ago %>
+        <span class="mac-banner__meta"><%= generated_ago %></span>
+      <% end %>
+
+      <span class="mac-banner__toggle">Details</span>
+    </summary>
+
+    <div class="mac-banner__drawer-body">
+      <% if analysis.recommend_fraud_flag? %>
+        <p class="mac-banner__callout">
+          Recommends a fraud flag<%= ": #{analysis.recommend_fraud_flag_reason}" if analysis.recommend_fraud_flag_reason %>
+        </p>
+      <% end %>
+
+      <% if analysis.flags.any? %>
+        <section class="mac-banner__section">
+          <h4 class="mac-banner__section-title">Flags</h4>
+          <dl class="mac-banner__facts">
+            <% analysis.flags.each do |flag| %>
+              <div class="mac-banner__fact mac-banner__fact--block">
+                <dt class="mac-banner__term">
+                  <span class="<%= chip_classes(flag) %>"><%= flag_label(flag) %></span>
+                </dt>
+                <dd class="mac-banner__value"><%= flag["detail"] %></dd>
+              </div>
+            <% end %>
+          </dl>
+        </section>
+      <% end %>
+
+      <%# The list-valued signals down the left half, with the category breakdown
+          they contextualise filling the right half at their full height. %>
+      <% breakdown = analysis.category_breakdown %>
+      <% if detail_signals.any? || breakdown %>
+        <%# Slices are computed before the grid so an empty breakdown doesn't leave
+            a stray half-width column. %>
+        <section class="mac-banner__section mac-banner__detail-grid">
+          <% if detail_signals.any? %>
+            <dl class="mac-banner__detail-column">
+              <% detail_signals.each do |key, value| %>
+                <div class="mac-banner__fact">
+                  <dt class="mac-banner__term"><%= key.to_s.humanize %></dt>
+                  <dd class="mac-banner__value"><%= format_signal(key, value) %></dd>
+                </div>
+              <% end %>
+            </dl>
+          <% end %>
+
+          <% slices = breakdown ? category_slices(breakdown) : [] %>
+          <% if slices.any? %>
+            <dl class="mac-banner__fact">
+              <dt class="mac-banner__term"><%= breakdown[:title] %></dt>
+              <dd class="mac-banner__value mac-banner__chart">
+                <%= category_legend(slices) %>
+                <%= category_pie(slices) %>
+              </dd>
+            </dl>
+          <% end %>
+        </section>
+      <% end %>
+
+      <% if analysis.devlog_recommendations.any? %>
+        <section class="mac-banner__section">
+          <h4 class="mac-banner__section-title">Devlog time recommendations</h4>
+          <div class="mac-banner__table-scroll">
+            <table class="mac-banner__table">
+              <thead>
+                <tr>
+                  <th>Devlog review</th>
+                  <th>Date</th>
+                  <th>Original</th>
+                  <th>Recommended</th>
+                  <th>Delta</th>
+                  <th>Justification</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% analysis.devlog_recommendations.each do |recommendation| %>
+                  <tr>
+                    <td><%= devlog_review_link(recommendation["devlog_review_id"]) %></td>
+                    <td><%= recommendation["date"] %></td>
+                    <td><%= format_minutes(recommendation["original_minutes"]) %></td>
+                    <td><%= format_minutes(recommendation["recommended_minutes"]) %></td>
+                    <td class="mac-banner__delta"><%= minutes_delta(recommendation) %> min</td>
+                    <td><%= recommendation["justification"] %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% end %>
+
+      <% if analysis.evidence_notes.any? %>
+        <section class="mac-banner__section">
+          <h4 class="mac-banner__section-title">Analyzer notes</h4>
+          <dl class="mac-banner__facts">
+            <% analysis.evidence_notes.each do |key, value| %>
+              <div class="mac-banner__fact mac-banner__fact--block">
+                <dt class="mac-banner__term"><%= key.to_s.humanize %></dt>
+                <dd class="mac-banner__value"><%= value %></dd>
+              </div>
+            <% end %>
+          </dl>
+        </section>
+      <% end %>
+
+      <% if analysis.evidence_tables.any? %>
+        <section class="mac-banner__section">
+          <h4 class="mac-banner__section-title">Evidence</h4>
+          <% analysis.evidence_tables.each do |table| %>
+            <details class="mac-banner__evidence">
+              <summary class="mac-banner__evidence-toggle">
+                <%= table[:title] %> <span class="mac-banner__count">(<%= table[:rows].size %>)</span>
+              </summary>
+
+              <%= evidence_table_tag(table) %>
+            </details>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+  </details>
+</div>

@@ -37,7 +37,11 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+# image_processing 2.x treats the backends as soft deps and requires whichever
+# one it needs, so Bundler does not have to load them itself.
+gem "image_processing", "~> 2.0"
+gem "ruby-vips", require: false
+gem "mini_magick", require: false
 
 # Certificate PDF downloads (wraps the vips-rendered certificate image)
 gem "prawn"
@@ -96,6 +100,7 @@ gem "omniauth-rails_csrf_protection"
 gem "omniauth_openid_connect"
 gem "omniauth-oauth2"
 gem "omniauth-github", "~> 2.0"
+gem "jwt", "~> 3.2"
 
 gem "raffle", path: "engines/raffle"
 gem "slack-ruby-client"
@@ -118,18 +123,17 @@ gem "mission_control-jobs"
 gem "view_component"
 gem "phlex-rails"
 gem "aws-sdk-s3"
+gem "rubyzip", "~> 3.0"
 gem "faraday"
 gem "faraday-retry"
 
 gem "faker", "~> 3.6"
 gem "jsbundling-rails", "~> 1.3"
-gem "stackprof"
-gem "sentry-ruby", "~> 6.6"
-gem "sentry-rails", "~> 6.6"
 
 # for pagination
-gem "pagy", "~> 43.5"
+gem "pagy", "~> 43.6"
 gem "norairrecord"
+gem "anthropic", "~> 1.62"
 
 gem "awesome_print"
 gem "activeinsights"

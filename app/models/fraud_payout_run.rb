@@ -23,27 +23,6 @@ class FraudPayoutRun < ApplicationRecord
   has_many :lines, class_name: "FraudPayoutLine", dependent: :destroy
   belongs_to :approved_by_user, class_name: "User", optional: true
 
-  REVIEW_STATES = %w[awaiting_periodical_fulfillment rejected on_hold].freeze
-
-  # Base scope for PaperTrail versions that could represent a fraud review.
-  def self.reviewer_versions
-    ::PaperTrail::Version
-      .where(item_type: "ShopOrder")
-      .where.not(whodunnit: nil)
-      .where("object_changes ? 'aasm_state'")
-  end
-
-  # Returns the reviewer user ID if the version represents a fraud-review
-  # state transition, nil otherwise.
-  def self.reviewer_from_version(version)
-    changes = version.object_changes
-    return nil if changes.is_a?(String) && changes.start_with?("---")
-    changes = JSON.parse(changes) if changes.is_a?(String)
-    state_change = changes["aasm_state"]
-    return nil unless state_change.is_a?(Array) && state_change[1].in?(REVIEW_STATES)
-    version.whodunnit.to_i
-  end
-
   aasm timestamps: true do
     state :pending_approval, initial: true
     state :approved
@@ -56,8 +35,21 @@ class FraudPayoutRun < ApplicationRecord
 
     event :reject do
       transitions from: :pending_approval, to: :rejected
-      after { release_orders! }
+      after { release_payouts! }
     end
+  end
+
+  # Logged as its own event rather than leaning on the update version: a run
+  # that approves itself at the end of a calculation has no controller around
+  # to set whodunnit.
+  def log_approval!(by:)
+    ::PaperTrail::Version.create!(
+      item_type: "FraudPayoutRun",
+      item_id: id,
+      event: "approved",
+      whodunnit: by&.id.to_s,
+      object_changes: { aasm_state: %w[pending_approval approved] }.to_json
+    )
   end
 
   private
@@ -66,14 +58,14 @@ class FraudPayoutRun < ApplicationRecord
     lines.includes(:user).find_each do |line|
       line.user.ledger_entries.create!(
         amount: line.amount,
-        reason: "Fraud squad payout for #{line.order_count} #{'order'.pluralize(line.order_count)} reviewed",
+        reason: line.payout_reason,
         created_by: "System",
         ledgerable: line
       )
     end
   end
 
-  def release_orders!
-    ShopOrder.where(fraud_payout_line: lines).update_all(fraud_payout_line_id: nil)
+  def release_payouts!
+    FraudReviewPayout.where(fraud_payout_line: lines).update_all(fraud_payout_line_id: nil)
   end
 end

@@ -1,8 +1,22 @@
 # frozen_string_literal: true
 
 class Gorse::PostPayload
+  RECOMMENDATION_MAX_AGE = 6.hours
+
   def initialize(post)
     @post = post
+  end
+
+  def self.recommendable_feed_scope(viewer)
+    feed_scope(viewer).where("posts.created_at >= ?", RECOMMENDATION_MAX_AGE.ago)
+  end
+
+  def self.hardware_scope(scope)
+    hardware_post_ids = Post.where(project_id: Project.hardware.not_deleted.select(:id)).select(:id)
+    hardware_repost_ids = Post::Repost.where(original_post_id: hardware_post_ids).select(:id)
+
+    scope.where(project_id: Project.hardware.not_deleted.select(:id))
+         .or(scope.where(postable_type: "Post::Repost", postable_id: hardware_repost_ids))
   end
 
   def self.feed_scope(viewer)
@@ -13,7 +27,7 @@ class Gorse::PostPayload
             .where(project_id: Project.not_deleted)
             .select("posts.*"),
         Post.of_ship_events(join: true)
-            .where.not(post_ship_events: { certification_status: "rejected" })
+            .where(post_ship_events: { certification_status: "approved" })
             .where(project_id: Project.not_deleted)
             .select("posts.*"),
         # Collapse a viral post's reposts: keep only the most recent repost per
@@ -53,7 +67,15 @@ class Gorse::PostPayload
     attr_reader :post
 
     def categories
-      [ "feed", post_type, post.project&.project_type ].compact_blank.uniq
+      [ "feed", ("feed_hardware" if hardware_feed_post?), post_type, post.project&.project_type ].compact_blank.uniq
+    end
+
+    def hardware_feed_post?
+      %w[devlog ship_event repost].include?(post_type) && hardware_project&.hardware?
+    end
+
+    def hardware_project
+      post.project || (post.postable&.original_post&.project if post.repost?)
     end
 
     def labels
@@ -84,7 +106,7 @@ class Gorse::PostPayload
     end
 
     def hidden_ship_event?
-      post.postable_type == "Post::ShipEvent" && post.postable.certification_status == "rejected"
+      post.postable_type == "Post::ShipEvent" && post.postable.certification_status != "approved"
     end
 
     def has_media?

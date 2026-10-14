@@ -17,8 +17,10 @@ module DiscoverRail
       context[:votes_for_payout]
     end
 
+    # Hardware owes no ratings and awaits none, so every step here would be
+    # either already done or irrelevant.
     def render?
-      votes.present? && !votes[:static_prize] && !votes[:paid_out]
+      votes.present? && !votes[:static_prize] && !votes[:paid_out] && !votes[:hardware]
     end
   end
 end

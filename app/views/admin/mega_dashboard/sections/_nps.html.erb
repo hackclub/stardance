@@ -1,0 +1,48 @@
+<%= turbo_frame_tag "mega-dash-nps", target: "_top" do %>
+  <section class="mega-dash__section" aria-labelledby="mega-dash-nps-title">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-nps-title">NPS</h2>
+      <%= button_to "Refresh themes", admin_mega_dashboard_nps_vibes_path, method: :post, class: "mega-dash__clear-cache" %>
+    </div>
+
+    <% if @nps[:error] %>
+      <p class="mega-dash__empty"><%= @nps[:error] %></p>
+    <% else %>
+      <div class="mega-dash__tiles">
+        <%= render "admin/mega_dashboard/tile", label: "NPS", value: @nps[:score] || "—" %>
+        <%= render "admin/mega_dashboard/tile", label: "Responses", value: number_with_delimiter(@nps[:response_count].to_i) %>
+        <%= render "admin/mega_dashboard/tile", label: "Promoters", value: number_with_delimiter(@nps[:promoters]) %>
+        <%= render "admin/mega_dashboard/tile", label: "Detractors", value: number_with_delimiter(@nps[:detractors]) %>
+      </div>
+    <% end %>
+
+    <% if @nps_vibes.blank? %>
+      <p class="mega-dash__empty">No themes generated yet. Use refresh to build them from the free-text responses.</p>
+    <% elsif @nps_vibes[:error] %>
+      <p class="mega-dash__empty"><%= @nps_vibes[:error] %></p>
+    <% else %>
+      <p class="mega-dash__note">
+        <%= pluralize(@nps_vibes.dig(:meta, :analyzed_count).to_i, "response") %> analyzed ·
+        average score <%= @nps_vibes.dig(:meta, :average_score) || "—" %> ·
+        generated <%= time_ago_in_words(Time.zone.parse(@nps_vibes.dig(:meta, :generated_at).to_s)) %> ago
+      </p>
+
+      <div class="mega-dash__themes">
+        <% { things_did_well: "Doing well", things_to_improve: "To improve" }.each do |key, heading| %>
+          <div class="mega-dash__theme-group">
+            <h3><%= heading %></h3>
+            <ul class="mega-dash__theme-list">
+              <% Array(@nps_vibes[key]).each do |theme| %>
+                <li>
+                  <strong><%= theme[:theme] %></strong>
+                  <span class="mega-dash__note">×<%= theme[:count] %></span>
+                  <p><%= theme[:summary] %></p>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+<% end %>

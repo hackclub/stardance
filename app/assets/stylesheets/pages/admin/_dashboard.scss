@@ -1,0 +1,114 @@
+.admin-dashboard {
+  display: grid;
+  gap: var(--space-l);
+  max-width: 1200px;
+  margin: 0 auto;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-s);
+  }
+
+  &__button {
+    text-align: center;
+  }
+
+  &__metric {
+    padding: var(--space-m);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: 8px;
+    background: var(--color-set-1-bg);
+    color: var(--color-brand-off-white);
+
+    dt {
+      font-size: var(--font-size-m);
+    }
+    dd {
+      margin: var(--space-xs) 0 0;
+      font-size: var(--font-size-xxxl);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--buku {
+      border-color: var(--color-brand-lilac);
+      dd {
+        color: var(--color-brand-lilac);
+      }
+    }
+
+    &--bean {
+      border-color: var(--color-brand-yellow);
+      dd {
+        color: var(--color-brand-yellow);
+      }
+    }
+  }
+
+  &__metric-note {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-s);
+  }
+
+  &__activity-chart {
+    position: relative;
+    height: 320px;
+    min-width: 0;
+  }
+
+  &__event-controls {
+    padding: var(--space-m);
+    border: 2px dashed var(--color-brand-orange);
+    border-radius: 8px;
+    background: var(--color-set-1-bg);
+  }
+
+  &__intensity-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+    margin-bottom: var(--space-m);
+
+    input[type="number"] {
+      width: 100px;
+    }
+  }
+
+  // Filled rather than outlined, so the one page that aggregates every other
+  // dashboard reads as the entry point without needing a bigger tile.
+  &__button--featured {
+    background: var(--color-brand-lilac);
+    border-color: var(--color-brand-lilac);
+    color: var(--color-space-bg) !important;
+    font-weight: 700;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-cream);
+      border-color: var(--color-brand-cream);
+      color: var(--color-space-bg) !important;
+    }
+  }
+
+  &__count-pill {
+    background: var(--color-brand-lilac);
+    color: var(--color-space-bg);
+    border-radius: 999px;
+    padding: 0 0.5em;
+    font-size: 0.75em;
+    font-weight: 700;
+  }
+
+  &__count-pill--muted {
+    background: var(--color-space-surface-strong);
+    color: var(--color-space-text-muted);
+  }
+
+  &__count-note {
+    color: var(--color-space-text-muted);
+    font-size: 0.75em;
+    font-weight: 400;
+  }
+}

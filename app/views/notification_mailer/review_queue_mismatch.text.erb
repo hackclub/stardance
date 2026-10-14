@@ -1,0 +1,25 @@
+<% project = @record&.project %>
+<% is_funding = @record.is_a?(Certification::FundingRequest) %>
+<% reason = @record&.internal_reason %>
+Quick question about your hardware project
+
+<% if project %>
+A reviewer<% if @actor %>, @<%= @actor.display_name %>,<% end %> thinks "<%= project.title %>" was submitted to the wrong queue.
+<% else %>
+A reviewer thinks your hardware submission was sent to the wrong queue.
+<% end %>
+
+<% if is_funding %>
+They think this project is already built, so it belongs in build review rather than design funding.
+<% else %>
+They think you should get a parts grant first, so it belongs in design funding rather than build review.
+<% end %>
+
+<% if reason.present? %>
+Their note:
+<%= reason %>
+
+<% end %>
+Nothing happens until you answer. Head to your project page and tell us which one it is.
+
+Answer on your project: <%= project ? project_url(project) : root_url %>

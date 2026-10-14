@@ -43,8 +43,10 @@ class WorkshopsControllerTest < ActionDispatch::IntegrationTest
     sign_in_linked_three
     workshop = workshops(:upcoming)
 
-    assert_difference -> { workshop.rsvps.count }, 1 do
-      post workshop_rsvp_path(workshop)
+    assert_enqueued_with(job: Airtable::WorkshopRsvpSyncJob, args: [ users(:three).id, workshop.id ]) do
+      assert_difference -> { workshop.rsvps.count }, 1 do
+        post workshop_rsvp_path(workshop)
+      end
     end
     assert_redirected_to workshop_path(workshop)
   end
@@ -53,8 +55,10 @@ class WorkshopsControllerTest < ActionDispatch::IntegrationTest
     sign_in users(:one)
     workshop = workshops(:upcoming)
 
-    assert_no_difference -> { workshop.rsvps.count } do
-      post workshop_rsvp_path(workshop)
+    assert_no_enqueued_jobs only: Airtable::WorkshopRsvpSyncJob do
+      assert_no_difference -> { workshop.rsvps.count } do
+        post workshop_rsvp_path(workshop)
+      end
     end
   end
 

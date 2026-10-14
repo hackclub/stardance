@@ -1,5 +1,5 @@
 class StreakSyncJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform(user_id)
     user = User.find_by(id: user_id)

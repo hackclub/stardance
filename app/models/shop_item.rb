@@ -30,6 +30,7 @@
 #  hcb_keyword_lock                  :string
 #  hcb_merchant_lock                 :string
 #  hcb_one_time_use                  :boolean          default(FALSE)
+#  hcb_org_slug                      :string
 #  hcb_preauthorization_instructions :text
 #  internal_description              :string
 #  limited                           :boolean
@@ -260,6 +261,10 @@ class ShopItem < ApplicationRecord
     instance_variable_defined?(:@recommended_price) ? @recommended_price : ticket_cost
   end
 
+  # User allowed to create/enable shop items without the "check with Amber
+  # first" guard in the admin item form.
+  AMBER_USER_ID = 355
+
   MANUAL_FULFILLMENT_TYPES = [
     "ShopItem::HCBGrant",
     "ShopItem::HCBPreauthGrant",
@@ -275,12 +280,14 @@ class ShopItem < ApplicationRecord
     "ShopItem::HCBPreauthGrant",
     "ShopItem::HQMailItem",
     "ShopItem::LetterMail",
+    "ShopItem::NonmachinableLetterMail",
     "ShopItem::ThirdPartyPhysical",
     "ShopItem::ThirdPartyDigital",
     "ShopItem::WarehouseItem",
     "ShopItem::SpecialFulfillmentItem",
     "ShopItem::HackClubberItem",
     "ShopItem::FreeStickers",
+    "ShopItem::StickyStreakSticker",
     "ShopItem::SillyItemType",
     "ShopItem::OutpostTicket"
   ].freeze
@@ -382,12 +389,25 @@ class ShopItem < ApplicationRecord
     sale_percentage.present? && sale_percentage > 0
   end
 
-  # Per-user effective price. Most items ignore the user and just use the
-  # regional price; ShopItem::OutpostTicket overrides this to subtract the
-  # user's accrued discount. This is the price enforced at purchase (see
-  # ShopOrder#freeze_item_price).
+  # Per-user effective price. Subclasses may override to vary price by user;
+  # the default just uses the regional price. This is the price enforced at
+  # purchase (see ShopOrder#freeze_item_price).
   def price_for_user(_user, region)
     price_for_region(region)
+  end
+
+  # What this item costs Hack Club to fulfill into a region, in USD: the base
+  # cost plus that region's offset, falling back to the catch-all offset. A
+  # blank region means no offset rather than the catch-all, since we do not
+  # know yet where it is going.
+  def usd_cost_for_region(region)
+    (usd_cost || 0) + usd_offset_for_region(region)
+  end
+
+  def usd_offset_for_region(region)
+    return 0 if region.blank?
+
+    send("usd_offset_#{region.downcase}") || usd_offset_xx || 0
   end
 
   def fixed_estimate(price)

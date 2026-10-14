@@ -30,6 +30,24 @@ class Airtable::UserSyncJobTest < ActiveSupport::TestCase
     assert_not fields.key?("Loops - stardancePayoutProject")
   end
 
+  test "field_mapping lists the free sticker weeks the user shipped in" do
+    project = Project.create!(title: "Sticker Chaser")
+    Project::Membership.create!(project: project, user: @user, role: :owner)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    post = Post.create!(project: project, user: @user, postable: ship_event)
+    post.update_column(:created_at, StickerPromo::WEEKS.last.window_start + 1.hour)
+
+    fields = Airtable::UserSyncJob.new.field_mapping(@user)
+
+    assert_equal "3", fields["Loops - stardanceWeeklyStickerEmail"]
+  end
+
+  test "field_mapping sends a blank free sticker weeks value when the user earned none" do
+    fields = Airtable::UserSyncJob.new.field_mapping(@user)
+
+    assert_equal "", fields["Loops - stardanceWeeklyStickerEmail"]
+  end
+
   private
 
   def create_ship_event_payout(title:, amount:)

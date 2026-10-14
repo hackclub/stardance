@@ -1,6 +1,8 @@
 <%
   approved = decision.approved?
-  message = if approved
+  message = if decision.permanently_rejected?
+    "This project can’t be submitted for funding or certification again."
+  elsif approved
     "This project was vetted by Shipwrights and is now up for voting. You can ship again after making more updates."
   else
     "This needs changes before we can consider it shipped. Review the Shipwright feedback, make updates, then ship again."
@@ -9,7 +11,7 @@
   reviewer = decision.reviewer
   reviewer_name = reviewer&.display_name.presence
   returned = decision.returned? && project.needs_changes? &&
-    decision == project.ship_reviews.order(created_at: :desc, id: :desc).first
+    decision == project.latest_ship_review
 %>
 
 <article id="<%= dom_id(decision) %>"
@@ -35,7 +37,7 @@
         <% else %>
           <span class="feed-post-card__author">Shipwrights</span>
         <% end %>
-        <span class="feed-post-card__context"><%= approved ? "approved" : "returned" %></span>
+        <span class="feed-post-card__context"><%= decision.permanently_rejected? ? "permanently rejected" : (approved ? "approved" : "returned") %></span>
         <span class="ship-decision-card__subject">your project</span>
         <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>" title="<%= l(decided_on, format: :long) %>">
           · <%= time_ago_in_words(decided_on) %> ago
@@ -52,7 +54,13 @@
     <section class="feed-post-card__body ship-decision-card__feedback" aria-label="Shipwright feedback">
       <p class="ship-decision-card__feedback-label">Feedback</p>
       <div class="ship-decision-card__feedback-body">
-        <%= simple_format(decision.feedback, {}, sanitize: true) %>
+        <%# Action items are a hardware-only affordance; software feedback stays
+            plain prose, bullets and all. %>
+        <% if action_items_enabled? && project.hardware? && !decision.permanently_rejected? %>
+          <%= render "projects/review_feedback", review: decision %>
+        <% else %>
+          <%= simple_format(decision.feedback, {}, sanitize: true) %>
+        <% end %>
       </div>
     </section>
   <% end %>
@@ -72,12 +80,31 @@
 
   <% if returned %>
     <% if is_member || current_user&.can_review? %>
-      <% confirm_msg = is_member ? "Have you addressed the feedback? This will re-enter the review queue." : "This will request re-certification on behalf of the user. Continue?" %>
-      <%= button_to "Request re-certification",
-            project_recertification_path(project),
-            method: :post,
-            class: "recert-modal__btn recert-modal__btn--primary",
-            form: { data: { turbo_confirm: confirm_msg } } %>
+      <% recert_modal_id = local_assigns[:recert_modal_id] %>
+      <% visible_blocker = local_assigns[:visible_blocker] %>
+      <% if (blocker = visible_blocker || local_assigns[:link_blocker]) %>
+        <%= tag.button "Request re-certification",
+              type: "button",
+              class: "recert-modal__btn recert-modal__btn--primary",
+              aria: { disabled: true },
+              data: ({ controller: "tooltip", tooltip_message_value: blocker, tooltip_position_value: "top" } unless visible_blocker) %>
+        <% if visible_blocker %>
+          <p class="ship-decision-card__blocker-note"><%= visible_blocker %></p>
+        <% end %>
+      <% elsif action_items_enabled? && is_member && decision.gates_resubmission? && recert_modal_id.present? %>
+        <button type="button"
+                class="recert-modal__btn recert-modal__btn--primary"
+                onclick="document.getElementById(<%= recert_modal_id.to_json %>).showModal()">
+          Request re-certification
+        </button>
+      <% else %>
+        <% confirm_msg = is_member ? "Have you addressed the feedback? This will re-enter the review queue." : "This will request re-certification on behalf of the user. Continue?" %>
+        <%= button_to "Request re-certification",
+              project_recertification_path(project),
+              method: :post,
+              class: "recert-modal__btn recert-modal__btn--primary",
+              form: { data: { turbo_confirm: confirm_msg } } %>
+      <% end %>
     <% end %>
   <% end %>
 </article>

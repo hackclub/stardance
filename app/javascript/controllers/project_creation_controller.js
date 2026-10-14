@@ -23,6 +23,12 @@ export default class extends Controller {
   }
 
   backdropClick(event) {
+    // A real backdrop click on a <dialog> fires with event.target === the dialog
+    // itself. Clicks on anything inside bubble up here too, including backdrop
+    // clicks on the nested name prompt, which must not close this dialog (that
+    // would navigate the builder away mid-create).
+    if (event.target !== this.element) return;
+
     const rect = this.element.getBoundingClientRect();
     const inside =
       event.clientX >= rect.left &&

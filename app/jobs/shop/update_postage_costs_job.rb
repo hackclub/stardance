@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 class Shop::UpdatePostageCostsJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     orders = ShopOrder.joins(:shop_item)
-                      .where(shop_items: { type: "ShopItem::LetterMail" })
+                      .where(shop_items: { type: ShopItem::LetterMail::TYPES })
                       .where(aasm_state: "fulfilled")
                       .where(fulfillment_cost: nil)
                       .where.not(external_ref: nil)

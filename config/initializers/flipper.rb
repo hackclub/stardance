@@ -36,16 +36,39 @@ Rails.application.config.after_initialize do
         gorse_recommendations
         gorse_personalized_feed
         gorse_project_recommendations
+        feed_seen_mixer
         week_1_release
         hardware_flow
+        hardware_action_items
+        hardware_review_undo
         ship_event_payouts
-        lookout
         payout_recommendations
-        hardware_to_outpost
         disable_internal_sw_dash_reviews
         sharable_purchase
-        shigimi_eyes
+        no_shigimi_eyes
+        devlog_review_pace
+        reviewer_progress_panel
+        mac_analysis
+        sticky_streaks
+        public_api_2026-08-28
+        ysws_review_flow
+        virality_bonus
+        ysws_review_shortcuts
+        bukux2
+        mihimode
+        blackhole
+        bukux3
+        ddr
+        wrong_tool_promo
+        forge-promo
+        terra-promo
       ].each { |flag| Flipper.add(flag) }
+      Flipper.add(:bukux2_preview_complete) if Rails.env.development?
+
+      unless Flipper.exist?(:platform_ads)
+        Flipper.add(:platform_ads)
+        Flipper.enable(:platform_ads)
+      end
     end
   rescue StandardError => e
     Rails.logger.warn "Could not initialize flipper: #{e.message}"

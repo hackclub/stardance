@@ -19,11 +19,39 @@
 // each cell's data-label attribute.
 
 .ysws-queue {
+  & &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-m);
+    margin-bottom: var(--space-s);
+
+    h1 {
+      margin-bottom: 0;
+    }
+  }
+
+  & &__flow-form {
+    margin: 0;
+    margin-left: auto;
+  }
+
+  // Queue total on the left, integrity toggle pushed out to the right so it
+  // lines up with the trailing edge of the table below.
   & &__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-m);
+    margin-bottom: var(--space-l);
+  }
+
+  & &__summary-total {
     display: flex;
     align-items: baseline;
     gap: var(--space-xs);
-    margin-bottom: var(--space-l);
   }
 
   & &__summary-label {
@@ -62,6 +90,82 @@
     }
   }
 
+  & &__filter--search {
+    flex: 1 1 48rem;
+    min-width: 0;
+    align-self: flex-end;
+  }
+
+  & &__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  & &__search-input[type="search"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    border-radius: 999px;
+    padding: var(--space-xs) var(--space-xl);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text);
+    border: 2px solid var(--color-border-input);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-s);
+
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-decoration {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+  }
+
+  & &__search-icon {
+    position: absolute;
+    left: var(--space-xs);
+    width: 1rem;
+    height: 1rem;
+    pointer-events: none;
+    color: var(--color-space-text-muted);
+  }
+
+  & &__search &__search-clear {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    right: var(--space-xs);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+    line-height: 1;
+
+    &:hover {
+      background: transparent;
+      box-shadow: none;
+    }
+
+    &:not([hidden]) {
+      display: flex;
+    }
+
+    svg {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+  }
+
   & &__select {
     background: var(--color-set-1-bg);
     color: var(--color-space-text);
@@ -77,17 +181,77 @@
     }
   }
 
-  // Per-reviewer goal widget, sits beside the project-type dropdown and counts
-  // down the reviews remaining until the devlog-review goal is reached.
+  // The project-type select stands in for its column title, so it drops the
+  // boxed-control chrome and borrows the surrounding th's type instead.
+  & &__select--header {
+    max-width: 12rem;
+    padding: var(--space-xxs) var(--space-xs);
+    background: transparent;
+    border-color: transparent;
+    // Sit in the header row as the column title: same muted uppercase type as
+    // the plain th labels, with only a hover border hinting it's interactive.
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--color-set-1-fg-secondary);
+      color: var(--color-brand-highlight);
+    }
+
+    // The popup list isn't painted by the header, so it needs its own surface.
+    option {
+      background: var(--color-set-1-bg);
+      color: var(--color-space-text);
+      text-transform: none;
+    }
+  }
+
+  // Per-reviewer pace widget, sits beside the queue filters and shows the
+  // running devlogs-per-day average for this review week plus the catch-up count.
+  // Superseded by the dashboard's progress panel when that flag is on.
   & &__goal {
     display: flex;
-    align-items: baseline;
+    flex-direction: column;
+    align-items: flex-start;
     align-self: flex-end;
-    gap: var(--space-xs);
+    gap: var(--space-xxxs);
     padding: var(--space-xs) var(--space-s);
     background: var(--color-set-1-bg);
     border: 2px solid var(--color-set-1-fg-secondary);
     border-radius: var(--profile-radius);
+  }
+
+  // The two paths to locked in, side by side rather than stacked — the widget is a
+  // column, and two full-size figures under each other make it twice as tall.
+  & &__goal-paces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs) var(--space-l);
+  }
+
+  & &__goal-primary {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+  }
+
+  & &__goal-note {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+
+  // Locked in — clearing either daily average — earns the same top-spot gradient
+  // the #1 leaderboard row wears. It's a light surface, so every label inside
+  // flips to the dark set-1 background colour to stay legible.
+  & &__goal--locked-in {
+    background: var(--gradient-extra-highlight) center / cover no-repeat;
+
+    .ysws-queue__goal-count,
+    .ysws-queue__goal-label,
+    .ysws-queue__goal-note {
+      color: var(--color-set-1-bg);
+    }
   }
 
   & &__goal-count {
@@ -190,10 +354,56 @@
         border: none;
         border-radius: 0;
         margin: 0;
+        // .admin-content sets `overflow: hidden` on tables to clip their rounded
+        // corners. Here the wrapper owns the radius, and that clip would make the
+        // table its own scroll context — stopping the sticky Actions column below
+        // from anchoring to the scroll wrapper. Hand scrolling back to the wrapper.
+        overflow: visible;
       }
 
       th {
         border-bottom: 2px solid var(--color-set-1-fg-secondary);
+      }
+
+      // Pin the Actions column to the right edge of the scroll wrapper so the
+      // View button is always reachable — however wide the other columns get,
+      // the reviewer never has to scroll the table sideways to reach it. The
+      // opaque backing hides cells sliding underneath; the soft left shadow
+      // reads as elevation once the table actually overflows.
+      th:last-child,
+      td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        background: var(--color-set-1-bg);
+        box-shadow: -8px 0 8px -8px rgba(0, 0, 0, 0.35);
+      }
+
+      // Re-composite the thead / zebra / hover tints over the pinned backing so
+      // the sticky cell matches the row it belongs to instead of showing a seam.
+      th:last-child {
+        z-index: 2;
+        background:
+          linear-gradient(
+            var(--color-overlay-light-soft),
+            var(--color-overlay-light-soft)
+          ),
+          var(--color-set-1-bg);
+      }
+
+      tbody tr:nth-child(odd) td:last-child {
+        background:
+          linear-gradient(hsla(228, 18%, 45%, 0.06), hsla(228, 18%, 45%, 0.06)),
+          var(--color-set-1-bg);
+      }
+
+      tbody tr:hover td:last-child {
+        background:
+          linear-gradient(
+            var(--color-overlay-light-soft),
+            var(--color-overlay-light-soft)
+          ),
+          var(--color-set-1-bg);
       }
     }
 
@@ -350,6 +560,45 @@
   }
 }
 
+.admin-content .ysws-queue {
+  .ysws-queue__flow-form {
+    display: inline;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .ysws-queue__flow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 3px 16px;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-brand-highlight);
+    color: var(--color-set-1-bg);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-brand-highlight-secondary);
+      color: var(--color-set-1-bg);
+    }
+
+    &:active {
+      background: var(--color-brand-off-white);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-highlight);
+      outline-offset: 2px;
+    }
+  }
+}
+
 // ============================================================================
 // REVIEW SHOW PAGE STYLES
 // ============================================================================
@@ -375,6 +624,106 @@ body:has(.certification-ysws) {
 
   @media (max-width: 600px) {
     padding: var(--space-m);
+  }
+
+  .ysws-flow-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-m);
+    max-width: 920px;
+    margin-bottom: var(--space-m);
+    padding: var(--space-s);
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-brand-mint) 42%,
+        var(--color-set-2-fg-secondary)
+      );
+    border-radius: 24px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-brand-blue) 16%, var(--color-set-2-bg)),
+      color-mix(in srgb, var(--color-brand-lilac) 14%, var(--color-set-2-bg))
+    );
+    box-shadow: 0 8px 24px var(--color-shadow-deep);
+  }
+
+  .ysws-flow-bar__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .ysws-flow-bar__label {
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+
+    &::before {
+      content: "•";
+      margin-right: var(--space-xxs);
+      color: var(--color-brand-mint);
+    }
+  }
+
+  .ysws-flow-bar__count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding: 0.15rem 0.7rem;
+    border: 1px solid
+      color-mix(in srgb, var(--color-brand-mint) 50%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-brand-mint) 14%, transparent);
+    color: var(--color-brand-mint);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .ysws-flow-bar .ysws-flow-bar__form {
+    margin: 0;
+  }
+
+  .ysws-flow-bar .ysws-flow-bar__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0.3rem 0.9rem;
+    border: 1px solid var(--color-brand-blue);
+    border-radius: 999px;
+    background: var(--color-brand-blue);
+    color: var(--color-set-1-bg);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    line-height: 1.35;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-brand-mint);
+      border-color: var(--color-brand-mint);
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  .ysws-flow-bar .ysws-flow-bar__btn--end {
+    border-color: var(--color-brand-salmon);
+    background: transparent;
+    color: var(--color-brand-salmon);
+
+    &:hover {
+      background: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
   }
 
   h1 {
@@ -416,6 +765,12 @@ body:has(.certification-ysws) {
         font-size: var(--font-size-l);
       }
     }
+  }
+
+  .recordings-card .ship-review__panel {
+    padding: 0;
+    background: none;
+    border: none;
   }
 
   .detail-value {
@@ -745,6 +1100,10 @@ body:has(.certification-ysws) {
       gap: var(--space-s);
     }
 
+    &__undo-form {
+      margin: 0;
+    }
+
     &__unclaim-form {
       margin: 0;
 
@@ -960,12 +1319,24 @@ body:has(.certification-ysws) {
         box-shadow: 0 4px 12px rgba(255, 141, 157, 0.3);
       }
     }
+
+    &.btn-resync {
+      background: rgba(149, 219, 255, 0.1);
+      color: var(--color-brand-blue);
+      border-color: var(--color-brand-blue);
+
+      &:hover:not(:disabled) {
+        background: rgba(149, 219, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(149, 219, 255, 0.3);
+      }
+    }
   }
 
   // Main Grid Layout
   .review-detail-grid {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: minmax(0, 1fr) 400px;
     gap: var(--space-l);
     align-items: start;
   }
@@ -974,6 +1345,7 @@ body:has(.certification-ysws) {
     display: flex;
     flex-direction: column;
     gap: var(--space-l);
+    min-width: 0;
   }
 
   .review-detail-right {
@@ -988,6 +1360,13 @@ body:has(.certification-ysws) {
 
     @media (prefers-reduced-motion: reduce) {
       transition: none;
+    }
+
+    // Repo already submitted to another YSWS — outline the whole sidebar.
+    &--double-dipped {
+      outline: 3px solid var(--color-brand-yellow);
+      outline-offset: var(--space-xs);
+      border-radius: var(--profile-radius);
     }
 
     // Popup mode - triggered when boss note is visible
@@ -1128,6 +1507,13 @@ body:has(.certification-ysws) {
 
     &__player {
       background: #000;
+      display: block;
+      width: 100%;
+      max-width: 72rem;
+      max-height: min(65vh, 42rem);
+      margin-inline: auto;
+      border-radius: var(--profile-radius);
+      object-fit: contain;
     }
 
     .video-placeholder {
@@ -1318,6 +1704,10 @@ body:has(.certification-ysws) {
       padding-bottom: var(--space-xl);
       border-bottom: 1px solid var(--color-space-border);
 
+      // Anchor target for the MAC banner's recommendation rows — keeps the card's
+      // header clear of the top of the viewport when jumped to.
+      scroll-margin-top: var(--space-xxl);
+
       &:last-child {
         border-bottom: none;
         padding-bottom: 0;
@@ -1415,11 +1805,28 @@ body:has(.certification-ysws) {
         letter-spacing: 0.05em;
       }
 
+      // Thumbnails share a row with the MAC pre-screen note (.mac-hint--aside),
+      // which wraps below them on narrow viewports.
+      .media-row {
+        align-items: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-s);
+
+        // Sized to its thumbnails so the note can take the width left over
+        // after the last one; shrinks (re-wrapping the grid) when space is tight.
+        &__media {
+          flex: 0 1 auto;
+          min-width: 0;
+        }
+      }
+
+      // No margin-top: the label sits above .media-row, so the thumbnails must
+      // line up with the top of the note beside them.
       .media-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: var(--space-s);
-        margin-top: var(--space-s);
       }
 
       .media-item {
@@ -1501,6 +1908,31 @@ body:has(.certification-ysws) {
             opacity: 0.8;
           }
         }
+      }
+    }
+
+    .devlog-recordings-section {
+      padding-top: var(--space-m);
+      border-top: 1px solid var(--color-space-border);
+
+      // The shared recordings partial wraps itself in .ship-review__panel card
+      // chrome (surface + large heading). Nested inside a devlog that reads as
+      // a competing card, so strip it back to a compact, labelled gallery that
+      // matches the git/media labels above it.
+      .recording-gallery {
+        padding: 0;
+        background: none;
+        border: none;
+      }
+
+      .ship-review__panel-title {
+        margin: 0 0 var(--space-xs);
+        color: var(--color-space-text-muted);
+        font-family: var(--font-family-sans);
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
     }
 
@@ -1773,6 +2205,15 @@ body:has(.certification-ysws) {
       gap: var(--space-xs);
     }
 
+    .action-buttons-grid__form {
+      width: 50%;
+      margin: 0;
+
+      .action-btn {
+        width: 100%;
+      }
+    }
+
     .action-btn {
       width: 50%;
       padding: var(--space-xs) var(--space-s);
@@ -1814,6 +2255,14 @@ body:has(.certification-ysws) {
         &:hover:not(:disabled) {
           transform: translateY(-2px);
           box-shadow: 0 4px 16px rgba(129, 255, 255, 0.4);
+        }
+
+        // Armed by the first ctrl+enter: a pulsing ring says "press ctrl+enter
+        // again to confirm" before the second press completes the review.
+        &.btn-complete--armed {
+          outline: 3px solid var(--color-brand-off-white);
+          outline-offset: 2px;
+          animation: ysws-complete-arm-pulse 0.7s ease-in-out infinite;
         }
       }
     }
@@ -1955,6 +2404,30 @@ body:has(.certification-ysws) {
           background: rgba(255, 255, 255, 0.05);
         }
       }
+    }
+  }
+
+  // Double-dip warning (sidebar, under the repo / demo / readme links)
+  .double-dip-warning {
+    margin-top: var(--space-m);
+    padding: var(--space-s) var(--space-m);
+    background: rgba(255, 229, 100, 0.15);
+    border: 2px solid var(--color-brand-yellow);
+    border-radius: var(--profile-radius);
+    font-family: var(--font-family-sans);
+
+    &__title {
+      margin: 0;
+      color: var(--color-brand-yellow);
+      font-size: var(--font-size-s);
+      font-weight: 700;
+    }
+
+    &__detail {
+      margin: var(--space-xxs) 0 0;
+      color: var(--color-space-text-muted);
+      font-size: var(--font-size-xs);
+      line-height: 1.5;
     }
   }
 
@@ -2491,8 +2964,9 @@ body:has(.certification-ysws) {
 .ysws-dashboard {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-m);
-  margin-block: var(--space-l);
+  align-items: stretch;
+  gap: var(--space-s);
+  margin-block: var(--space-m);
 
   @media (max-width: 960px) {
     grid-template-columns: 1fr;
@@ -2502,13 +2976,21 @@ body:has(.certification-ysws) {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
-    padding: var(--space-m);
+    padding: var(--space-s);
   }
 
   &__heading {
-    margin: 0 0 var(--space-s);
-    font-size: var(--font-size-l);
+    margin: 0 0 var(--space-xs);
+    font-size: var(--font-size-m);
     color: var(--color-brand-off-white);
+  }
+
+  &__heading-note {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   &__table {
@@ -2517,9 +2999,10 @@ body:has(.certification-ysws) {
 
     th,
     td {
-      padding: var(--space-xs) var(--space-s);
+      padding: var(--space-xxs) var(--space-xs);
       text-align: left;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      line-height: 1.25;
     }
 
     th {
@@ -2540,14 +3023,312 @@ body:has(.certification-ysws) {
     font-variant-numeric: tabular-nums;
   }
 
+  // Sortable leaderboard header: the column title doubles as a rank-by link.
+  // Descending only, so the active column renders as a plain <span> and its arrow
+  // is a state indicator rather than a toggle.
+  &__sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-brand-off-white);
+      text-decoration: none;
+    }
+  }
+
+  &__sort-arrow {
+    font-size: var(--font-size-xs);
+    opacity: 0.4;
+  }
+
+  &__sort--active {
+    color: var(--color-brand-off-white);
+    cursor: default;
+
+    .ysws-dashboard__sort-arrow {
+      opacity: 1;
+    }
+  }
+
+  // Reviewers on pace — clearing the devlog daily average — wear the leaderboard
+  // top-spot gradient. It's a light surface, so cell text flips to the dark navy
+  // set-1 background colour instead of the pale yellow the admin link/table
+  // styles use.
+  //
+  // The selector is deliberately heavy: the global admin table styles in
+  // admin.scss set a background on both `tbody tr:nth-child(odd)` and
+  // `tbody tr:hover`, and a colour on `td`. Those out-specify a lone modifier
+  // class, so without repeating the row class against each state the gradient
+  // vanishes on hover and on every odd row.
+  & &__table tbody tr.ysws-dashboard__row--on-pace {
+    // Lifted so the glow spills over the neighbouring rows' backgrounds instead
+    // of being painted over by them.
+    position: relative;
+
+    &,
+    &:nth-child(odd),
+    &:hover {
+      background: var(--gradient-extra-highlight) center / cover no-repeat;
+      // Two stacked soft lilacs: a tight one to feather the row's hard edge and
+      // a wider one to bleed the glow into the rows above and below.
+      box-shadow:
+        0 0 var(--space-xs) var(--color-brand-lilac-soft),
+        0 0 var(--space-l) var(--color-brand-lilac-soft);
+    }
+
+    td {
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  // Opted out of the global admin link colour in admin.scss so the reviewer name
+  // stays dark navy on the gradient rather than turning yellow.
+  &__reviewer-link--on-pace {
+    color: var(--color-set-1-bg);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-set-1-bg);
+      text-decoration: underline;
+    }
+  }
+
   &__chart {
     position: relative;
-    height: 280px;
+    height: clamp(190px, 18vw, 230px);
+  }
+
+  // "See your progress" — the reviewer's own numbers, sitting under the crew-wide
+  // chart in the same panel. Ruled off from the canvas so the two read as
+  // separate ideas rather than one long block.
+  &__progress {
+    margin-block-start: var(--space-s);
+    padding-block-start: var(--space-s);
+    border-block-start: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &__progress-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    padding: var(--space-xs) var(--space-s);
+    background: var(--color-set-1-bg);
+    border: 2px solid var(--color-set-1-fg-secondary);
+    border-radius: var(--profile-radius);
+  }
+
+  // Locked in — clearing either daily average — earns the same top-spot gradient
+  // the #1 leaderboard row wears, the one loud surface on this panel. It's a light
+  // background, so every label inside flips to the dark set-1 colour to stay legible.
+  &__progress-hero--locked-in {
+    background: var(--gradient-extra-highlight) center / cover no-repeat;
+    border-color: transparent;
+
+    .ysws-dashboard__progress-count,
+    .ysws-dashboard__progress-label,
+    .ysws-dashboard__progress-note {
+      color: var(--color-set-1-bg);
+    }
+  }
+
+  // The two paths to locked in, side by side rather than stacked — the hero is a
+  // column, and two full-size figures under each other make it twice as tall.
+  &__progress-paces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs) var(--space-m);
+  }
+
+  &__progress-primary {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+
+  &__progress-count {
+    color: var(--color-brand-highlight);
+    font-size: var(--font-size-l);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__progress-label {
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__progress-note {
+    margin: 0;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+
+  &__progress-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-xs) var(--space-s);
+    margin-block: var(--space-s) 0;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 520px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__progress-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  &__progress-stat-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__progress-stat-value {
+    margin: 0;
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__progress-stat-note {
+    margin: 0;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+
+  // What the week is worth, sitting under the pace hero it depends on. Kept
+  // outside the hero so the --locked-in gradient's colour flip doesn't apply to it.
+  &__progress-payout {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+
+  &__progress-payout-amount {
+    color: var(--color-brand-highlight);
+    font-size: var(--font-size-s);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__progress-tier {
+    margin-block-start: var(--space-xs);
+  }
+
+  &__progress-tier-note {
+    margin: 0 0 var(--space-xxs);
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xs);
+
+    strong {
+      color: var(--color-brand-off-white);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // Fill percentage arrives as the --tier-fill custom property so the only
+  // inline value is the number itself; all styling stays here.
+  &__progress-tier-track {
+    height: var(--space-xxs);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--space-xxs);
+    overflow: hidden;
+  }
+
+  &__progress-tier-fill {
+    width: var(--tier-fill, 0%);
+    height: 100%;
+    background: var(--color-brand-lilac);
+    border-radius: inherit;
   }
 
   &__empty,
   &__loading {
     color: rgba(255, 255, 255, 0.6);
     font-style: italic;
+  }
+}
+
+// Keyboard-shortcut affordances (:ysws_review_shortcuts). The controller injects
+// <kbd class="kbd-hint"> badges onto the controls each key drives and pins a
+// fixed legend for the navigation keys — both exist only while the flag is on.
+// Top-level (not nested under .certification-ysws) because the legend mounts on
+// <body>.
+.kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--space-xxs);
+  padding: 0 0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  // Inherit the host control's text colour so the badge stays legible on any
+  // surface — dark panels, the mint approve button, the salmon reject button —
+  // and read as a subtle hint rather than a filled chip.
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  font-family: "Exo 2", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.ysws-kbd-legend {
+  position: fixed;
+  // Pinned top-RIGHT, clear of the Complete/checklist actions-card that floats
+  // bottom-right.
+  right: var(--space-m);
+  top: var(--space-m);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-xs) var(--space-s);
+  border: 1px solid var(--color-space-border);
+  border-radius: 999px;
+  background: var(--color-set-2-bg);
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-xs);
+  box-shadow: 0 4px 16px hsl(245 55% 4% / 0.5);
+  cursor: pointer;
+  font-family: var(--font-family-text);
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-mint);
+    outline-offset: 2px;
+  }
+}
+
+// Pulse for the Complete Review button while it's armed for its confirming
+// second ctrl+enter press (certification--ysws--keyboard-shortcuts).
+@keyframes ysws-complete-arm-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 252, 244, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(255, 252, 244, 0.35);
   }
 }

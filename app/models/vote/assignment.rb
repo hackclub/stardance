@@ -71,13 +71,22 @@ class Vote::Assignment < ApplicationRecord
   end
 
   def refresh(matchmaker = Vote::Matchmaker.new(user))
-    if ship_event.certification_status == "rejected"
+    # Hardware left the rating pool, but assignments handed out before that
+    # would keep being served: the branches below only swap a ship out once it's
+    # rejected or already paid.
+    if ship_event.project&.hardware?
+      replace_with(matchmaker.next_ship_event)
+    elsif !ship_event.voting_links_present?
+      replace_with(matchmaker.next_ship_event)
+    elsif ship_event.certification_status.in?(Post::ShipEvent::HIDDEN_STATUSES)
       replace_with(matchmaker.next_ship_event)
     elsif ship_event.payout.present? || ship_event.votes.payout_countable.count >= Post::ShipEvent::VOTES_TO_LEAVE_POOL
       if replacement = matchmaker.next_unpaid_ship_event
         replace_with(replacement)
-      else
+      elsif matchmaker.paid_fallback_allowed?
         self
+      else
+        replace_with(nil)
       end
     else
       self
@@ -154,6 +163,10 @@ class Vote::Assignment < ApplicationRecord
     def ship_event_can_be_assigned
       unless ship_event&.certification_status == "approved"
         errors.add(:ship_event, "must be approved")
+      end
+
+      unless ship_event&.voting_links_present?
+        errors.add(:ship_event, "must have both a demo and repository link")
       end
     end
 

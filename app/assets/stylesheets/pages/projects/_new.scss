@@ -480,3 +480,118 @@
     mask-image: none;
   }
 }
+
+// ── Name prompt ───────────────────────────────────────────────────────────────
+// Popup that collects the project's name before a create form submits. Sits
+// inside the form, so it stacks above the /projects/new dialog in the top layer.
+
+.project-name-prompt {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(440px, calc(100vw - 48px));
+  max-height: fit-content;
+  padding: 0;
+  border: none;
+  background: transparent;
+  overflow: visible;
+
+  &::backdrop {
+    background: rgba(8, 6, 30, 0.75);
+    backdrop-filter: blur(4px);
+  }
+
+  &__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding: var(--space-xl);
+    background: var(--color-set-2-bg);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 24px 60px var(--color-shadow-deep);
+    text-align: left;
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    z-index: 1;
+    appearance: none;
+    background: none;
+    border: none;
+    color: var(--color-space-text-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 150ms ease;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__title {
+    margin: 0;
+    padding-right: var(--space-l);
+    font-size: var(--font-size-l);
+    line-height: 1.15;
+    color: var(--color-space-text);
+  }
+
+  &__lede {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__label {
+    margin-top: var(--space-s);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--color-space-text);
+  }
+
+  &__input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--space-s) var(--space-m);
+    background-color: var(--color-set-1-bg);
+    color: var(--color-space-text);
+    border: 2px solid var(--color-border-input);
+    border-radius: var(--border-radius);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+
+    &::placeholder {
+      color: var(--color-space-text-muted);
+      opacity: 0.5;
+    }
+
+    &:hover {
+      border-color: var(--color-border-input-focus);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-brand-lilac);
+      box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+    }
+  }
+
+  &__cta {
+    margin-top: var(--space-s);
+    width: 100%;
+  }
+}

@@ -1,0 +1,43 @@
+<%# The stardust half of a fraud verdict: hours in, the rate this ship actually
+    paid applied, the balance moved. Rendered wherever a check is reviewed, so
+    it takes the fraud page's subject when it is shown there. %>
+<% rate = check.deduction_rate_per_hour %>
+<% paid = check.ship_event.stardust_per_hour_paid.present? %>
+<%# The fraud page has the shipper in hand; the review page has to go and read
+    them off the ship. %>
+<% recipient = local_assigns[:fraud_subject] || check.ship_event.payout_recipient %>
+<%# The fraud page stacks one of these per check, so the field ids carry the
+    check they belong to. %>
+<% hours_id = "stardust-deduction-hours-#{check.id}" %>
+<% reason_id = "stardust-deduction-reason-#{check.id}" %>
+
+<%= form_with url: admin_certification_integrity_review_deductions_path(check), class: "stardust-deduction" do %>
+  <% if local_assigns[:fraud_subject].present? %>
+    <%= hidden_field_tag :fraud_subject_id, fraud_subject.id %>
+  <% end %>
+
+  <p class="stardust-deduction__rate">
+    Deduct at <%= number_with_precision(rate, precision: 2, strip_insignificant_zeros: true) %><%= stardust_icon %>/hr
+    <span class="stardust-deduction__rate-note">
+      <%= paid ? "what this ship paid per hour" : "flat rate, this ship has not paid out" %>
+    </span>
+  </p>
+
+  <div class="stardust-deduction__fields">
+    <span class="stardust-deduction__field">
+      <%= label_tag :hours, "Hours", for: hours_id, class: "stardust-deduction__label" %>
+      <%= number_field_tag :hours, nil, id: hours_id, step: 0.25, min: 0, required: true, inputmode: "decimal",
+                           autocomplete: "off", class: "stardust-deduction__input stardust-deduction__input--hours" %>
+    </span>
+
+    <span class="stardust-deduction__field stardust-deduction__field--wide">
+      <%= label_tag :reason, "Reason", for: reason_id, class: "stardust-deduction__label" %>
+      <%= text_field_tag :reason, nil, id: reason_id, required: true, autocomplete: "off",
+                         placeholder: "Shown to them in their ledger",
+                         class: "stardust-deduction__input" %>
+    </span>
+
+    <%= submit_tag "Deduct", class: "stardust-deduction__submit",
+                   data: { turbo_confirm: "Take stardust off #{recipient.display_name}'s balance for these hours?" } %>
+  </div>
+<% end %>

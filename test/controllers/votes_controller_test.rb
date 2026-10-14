@@ -61,6 +61,33 @@ class VotesControllerTest < ActionDispatch::IntegrationTest
       assert submitted.properties.key?("score_average")
     end
 
+    test "voter can bank votes up to the future ship credit limit" do
+      @voter.update!(vote_balance: Vote::MAX_BANKED_VOTES - 1)
+
+      get new_rate_url
+      assignment = current_assignment
+      assert_not_nil assignment
+
+      post votes_path, params: {
+        vote_assignment_id: assignment.id,
+        vote: valid_scores.merge(reason: VotesControllerTest::VALID_REASON)
+      }
+
+      assert_redirected_to new_rate_path
+      assert_equal Vote::MAX_BANKED_VOTES, @voter.reload.vote_balance
+    end
+
+    test "voter cannot exceed the future ship credit limit" do
+      @voter.update!(vote_balance: Vote::MAX_BANKED_VOTES)
+
+      assert_no_difference -> { @voter.vote_assignments.count } do
+        get new_rate_url
+      end
+
+      assert_response :success
+      assert_includes response.body, "banked #{Vote::MAX_BANKED_VOTES} votes"
+    end
+
     test "submitting a vote stores readable telemetry on the vote" do
       get new_rate_url
       assignment = current_assignment

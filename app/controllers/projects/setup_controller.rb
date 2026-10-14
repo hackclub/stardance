@@ -6,7 +6,7 @@ class Projects::SetupController < ApplicationController
   before_action :load_setup_project_for_prefill, only: %i[name missions]
   before_action :load_setup_project, only: %i[link_account welcome]
 
-  DEFAULT_PROJECT_TITLE = "Untitled project".freeze
+  DEFAULT_PROJECT_TITLE = Project::SETUP_DEFAULT_TITLE
 
   EXPERIENCE_TO_DIFFICULTIES = {
     "none"        => %w[beginner],
@@ -87,14 +87,6 @@ class Projects::SetupController < ApplicationController
       redirect_to mission_path(mission.slug), alert: "Complete #{unmet} first to unlock this mission." and return
     end
 
-    # Hardware missions would make this project hardware — but hardware lives on
-    # Outpost now. Bounce back to the missions step with the Outpost popup open
-    # instead of attaching it here. Staying in setup keeps this reachable for
-    # guests (the new-project page requires an HCA-linked user).
-    if mission.hardware? && Flipper.enabled?(:hardware_to_outpost, current_user)
-      redirect_to projects_setup_missions_path(hardware: "outpost") and return
-    end
-
     if project.current_mission&.id == mission.id
       redirect_to(next_gate_after_details_path) and return
     end
@@ -116,7 +108,7 @@ class Projects::SetupController < ApplicationController
     # builder's edits on re-attach.
     if is_first_attach
       attrs = {}
-      if project.title.blank? || project.title == DEFAULT_PROJECT_TITLE
+      if project.placeholder_title?
         attrs[:title] = mission.default_project_title.presence || mission.name
       end
       if project.description.blank? && mission.default_project_description.present?

@@ -31,18 +31,19 @@ class ReviewerPayoutRequest < ApplicationRecord
   include AASM
 
   MINIMUM_AMOUNT = 10
+  MAX_AMOUNT = 2_147_483_647 # postgres integer column ceiling — hard stop, not a business cap
+  HISTORY_LIMIT = 100
 
   has_paper_trail
 
   belongs_to :user
   belongs_to :admin, class_name: "User", optional: true
 
-  validates :amount, numericality: { greater_than_or_equal_to: MINIMUM_AMOUNT, only_integer: true }
-  validates :adjusted_amount, numericality: { greater_than: 0, only_integer: true }, allow_nil: true
-  validates :paid_amount, numericality: { greater_than: 0, only_integer: true }, allow_nil: true
+  validates :amount, numericality: { greater_than_or_equal_to: MINIMUM_AMOUNT, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }
+  validates :adjusted_amount, numericality: { greater_than: 0, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }, allow_nil: true
+  validates :paid_amount, numericality: { greater_than: 0, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }, allow_nil: true
   validates :adjust_reason, presence: { message: "is required when adjusting the amount" },
     if: :adjusted?
-  validate :adjusted_amount_cannot_exceed_amount
   validate :sufficient_balance, on: :create
   validate :no_pending_request, on: :create
 
@@ -114,20 +115,24 @@ class ReviewerPayoutRequest < ApplicationRecord
 
   def self.total_earned_for(user)
     return 0 unless user
-    ship = Certification::Ship
-             .where(reviewer: user)
-             .where.not(status: :pending)
-             .sum(:stardust_earned)
-    funding = Certification::FundingRequest
-                .where(reviewer: user)
-                .where.not(status: :pending)
-                .sum(:stardust_earned)
-    ship + funding
+    total_earned_by([ user.id ]).fetch(user.id)
+  end
+
+  def self.total_earned_by(user_ids)
+    ship = Certification::Ship.decided.where(reviewer_id: user_ids).group(:reviewer_id).sum(:stardust_earned)
+    funding = Certification::FundingRequest.decided.where(reviewer_id: user_ids).group(:reviewer_id).sum(:stardust_earned)
+    user_ids.index_with { |id| ship.fetch(id, 0.0) + funding.fetch(id, 0) }
   end
 
   def self.unclaimed_for(user)
     return 0 unless user
-    [ total_earned_for(user) - settled_for(user), 0 ].max
+    unclaimed_by([ user.id ]).fetch(user.id)
+  end
+
+  def self.unclaimed_by(user_ids)
+    earned = total_earned_by(user_ids)
+    settled = settled_by(user_ids)
+    user_ids.index_with { |id| [ earned.fetch(id) - settled.fetch(id), 0 ].max }
   end
 
   def self.pending_for(user)
@@ -135,22 +140,37 @@ class ReviewerPayoutRequest < ApplicationRecord
     find_by(user: user, aasm_state: "pending")
   end
 
-  def self.settled_for(user)
+  def self.available_to_request_for(user)
     return 0 unless user
+    available_to_request_by([ user.id ]).fetch(user.id)
+  end
 
-    # Paid requests settle the requested claim, even when an admin approves less.
-    # The adjustment is a final correction, not a partial payout that remains claimable.
-    where(user: user, aasm_state: "paid").sum(:amount)
+  def self.available_to_request_by(user_ids)
+    unclaimed = unclaimed_by(user_ids)
+    pending = where(user_id: user_ids, aasm_state: "pending").pluck(:user_id, :amount).to_h
+    user_ids.index_with { |id| [ unclaimed.fetch(id) - pending.fetch(id, 0), 0 ].max }
+  end
+
+  def self.history_for(user)
+    return none unless user
+    where(user: user).includes(:admin).order(created_at: :desc).limit(HISTORY_LIMIT)
+  end
+
+  def decided_at
+    return nil if pending?
+    paid_at || updated_at
+  end
+
+  def self.settled_by(user_ids)
+    # Only the requested claim settles against earned stardust. A reduction still
+    # settles the full request (the denied difference isn't reclaimable), and a
+    # bonus above the request is a no-strings top-up, so counting the surplus here
+    # would silently charge it back to the reviewer's future earnings.
+    settled = where(user_id: user_ids, aasm_state: "paid").group(:user_id).sum(:amount)
+    user_ids.index_with { |id| settled.fetch(id, 0) }
   end
 
   private
-
-  def adjusted_amount_cannot_exceed_amount
-    return if adjusted_amount.blank? || amount.blank?
-    return if adjusted_amount <= amount
-
-    errors.add(:adjusted_amount, "cannot exceed the requested amount")
-  end
 
   def sufficient_balance
     return unless user
@@ -181,7 +201,7 @@ class ReviewerPayoutRequest < ApplicationRecord
     user.ledger_entries.create!(
       amount: paid_amount,
       reason: "Shipwrights payout ##{id}",
-      created_by: "#{admin.display_name} (#{admin.id})",
+      created_by: admin ? "#{admin.display_name} (#{admin.id})" : "Shipwrights Dashboard",
       ledgerable: self
     )
   end

@@ -1,7 +1,8 @@
 <%= turbo_frame_tag "profile_feed_page_#{@pagy.page}", target: "_top", class: "profile-feed-page" do %>
   <% @activity.each do |post| %>
     <% if post.postable_type == "Post::ShipEvent" %>
-      <%= render "projects/ship_card", post: post, project: post.project %>
+      <% next unless (project = post.project) %>
+      <%= render "projects/ship_card", post: post, project: project %>
     <% else %>
       <%= render PostComponent.new(post: post, current_user: current_user, theme: :profile_dark) %>
     <% end %>

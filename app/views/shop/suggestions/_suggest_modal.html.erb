@@ -41,7 +41,7 @@
 
         <div class="suggestion-modal__field">
           <%= f.label :usd_cost, "Approx. USD cost" %>
-          <%= f.number_field :usd_cost, placeholder: "29.99", step: "0.01", min: "0.01", required: true %>
+          <%= f.number_field :usd_cost, placeholder: "29.99", step: "0.01", min: "0.01", max: "999999.99", required: true %>
         </div>
 
         <div class="suggestion-modal__field suggestion-modal__field--full">

@@ -67,8 +67,8 @@
             <%= link_to "Repo ↗", @report.project.repo_url, target: "_blank", class: "btn-secondary slim" %>
           <% end %>
           <% if owner&.slack_id.present? %>
-            <%= link_to "Billy ↗", "https://billy.3kh0.net/?u=#{owner.slack_id}", target: "_blank", rel: "noopener", class: "btn-secondary slim" %>
-            <%= link_to "Joe ↗", "https://joe.fraud.hackclub.com/profile/#{owner.slack_id}", target: "_blank", rel: "noopener", class: "btn-secondary slim" %>
+            <%= link_to "Hackatime ↗", telescreen_hackatime_url(slack_id: owner.slack_id), target: "_blank", rel: "noopener noreferrer", class: "btn-secondary slim" %>
+            <%= link_to "Telescreen ↗", telescreen_subject_url(owner.slack_id), target: "_blank", rel: "noopener noreferrer", class: "btn-secondary slim" %>
           <% end %>
         </div>
       <% else %>

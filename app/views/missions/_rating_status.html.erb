@@ -1,3 +1,16 @@
+<%# Hardware projects aren't community-rated; build hours earn a flat per-hour
+    stardust payout instead. %>
+<% if mission.hardware? %>
+  <li class="mission-home__prize mission-home__prize--yellow">
+    <div class="mission-home__prize-tile">
+      <%= stardust_icon(extra_class: "mission-home__prize-img") %>
+    </div>
+    <div class="mission-home__prize-body">
+      <p class="mission-home__prize-title">Gets stardust</p>
+      <p class="mission-home__prize-blurb">The build hours will get <%= Post::ShipEvent::Payouts::HARDWARE_STARDUST_PER_HOUR %> <%= stardust_icon %> per hour.</p>
+    </div>
+  </li>
+<% else %>
 <% rated = mission.submissions_enter_rating? %>
 <% modal_id = "rating-info-modal-#{mission.id}" %>
 <% rewards = [] %>
@@ -46,3 +59,4 @@
     </dialog>
   <% end %>
 </li>
+<% end %>

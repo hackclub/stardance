@@ -130,7 +130,7 @@ write SCSS, reference the variable, not the hex.
 | --- | --- | --- |
 | Set 1 background `#08061E` | `--color-space-bg` | Currently defined as `hsl(245, 55%, 8%)` — approximately the same but not pixel-exact. Prefer the variable; use the hex when an exact match matters. |
 | Set 1–4 backgrounds | `--color-set-1-bg` … `--color-set-4-bg` | ✓ exact |
-| Set N secondary foregrounds | _(no variables yet)_ | Add `--color-set-N-fg-secondary` when first needed. |
+| Set N secondary foregrounds | `--color-set-1-fg-secondary`, `--color-set-2-fg-secondary`, `--color-set-3-fg-secondary` | ✓ exact. Set 4's isn't defined yet; add `--color-set-4-fg-secondary` when first needed. |
 | Accent 1 peach `#FFD598` | `--color-brand-peach` | ✓ exact |
 | Accent 2 yellow `#FFE564` | `--color-brand-yellow` | ✓ exact |
 | Accent 3 salmon `#FF8D9D` | `--color-brand-salmon` | ✓ exact |

@@ -97,6 +97,10 @@
             <p><%= @submission.rejection_message %></p>
           </div>
         <% end %>
+
+        <div class="mission-review__panel">
+          <%= render "review_history", verdicts: @project_review_history, current: @submission %>
+        </div>
       </section>
 
       <aside class="mission-review__sidebar">

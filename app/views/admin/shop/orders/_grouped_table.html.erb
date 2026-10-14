@@ -1,3 +1,7 @@
+<% if grouped_orders.empty? %>
+  <p class="admin-users__empty">No orders found matching the filters.</p>
+<% end %>
+
 <% grouped_orders.each do |group| %>
   <div class="shop-orders__group">
     <div class="shop-orders__group-header">
@@ -12,6 +16,10 @@
         <span><%= pluralize(group[:total_items], 'item') %></span>
         <span><%= group[:total_shells] %> tickets</span>
       </div>
+      <% approvable_orders = group[:orders].select { |order| approvable_order?(order) } %>
+      <% if approvable_orders.size > 1 %>
+        <%= render "approve_all", user: group[:user], orders: approvable_orders %>
+      <% end %>
     </div>
 
     <div>
@@ -32,9 +40,19 @@
           <tr>
             <td>#<%= order.id %></td>
             <td>
-              <%= order.shop_item.name %>
+              <%= order.shop_item.name %><br>
+              <small><%= order.shop_item.type&.demodulize %></small>
               <% if order.mission_submission.present? %>
                 <br><span class="shop-orders__mission-badge" title="Redeemed for free via the &quot;<%= order.mission_submission.mission.name %>&quot; mission">🎖️ Free via mission</span>
+              <% end %>
+              <% if @batch_counts && params[:shop_item_id].blank? %>
+                <% batch_count = @batch_counts[order.shop_item_id].to_i %>
+                <% if batch_count > 1 %>
+                  <br><%= link_to admin_shop_orders_path(preserved_filter_params.merge(shop_item_id: order.shop_item_id)),
+                                  class: "shop-orders__batch-link" do %>
+                    see all (<%= batch_count %>)
+                  <% end %>
+                <% end %>
               <% end %>
             </td>
             <td><%= order.quantity %></td>
@@ -43,10 +61,14 @@
               <span class="badge badge-<%= order.aasm_state %>">
                 <%= order.aasm_state.humanize %>
               </span>
+              <%= render "admin/shop/orders/hold_countdown", order: order %>
             </td>
             <td><%= order.created_at.strftime("%b %d, %Y") %></td>
             <td>
-              <%= link_to "Inspect", admin_shop_order_path(order, return_view: params[:view], return_status: params[:status]) %>
+              <div class="shop-orders__row-actions">
+                <%= link_to "Inspect", admin_shop_order_path(order, return_view: params[:view], return_status: params[:status]) %>
+                <%= render "approve_button", order: order %>
+              </div>
             </td>
           </tr>
         <% end %>

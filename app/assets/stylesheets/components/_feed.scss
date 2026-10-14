@@ -109,6 +109,8 @@
   border-radius: var(--profile-radius, var(--border-radius));
   background: rgba(5, 4, 24, 0.35);
   color: var(--color-space-text);
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .empty-project-banner {
@@ -227,6 +229,7 @@
     text-decoration: none;
     line-height: 1;
     white-space: nowrap;
+    max-width: 100%;
 
     &:hover,
     &:focus-visible,
@@ -327,6 +330,7 @@
   &__field {
     min-width: 0;
     flex: 1;
+    position: relative;
   }
 
   &__label {
@@ -363,6 +367,21 @@
 
   &__textarea-field {
     display: none;
+  }
+
+  &__error {
+    margin: var(--space-xs) 0 0 var(--feed-content-offset);
+    color: var(--color-brand-salmon);
+    font-size: var(--font-size-s);
+    line-height: 1.3;
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      margin-left: 0;
+    }
   }
 
   // The post being quoted, shown below the text box while composing a quote
@@ -449,10 +468,22 @@
     }
   }
 
-  &__tools {
+  &__controls,
+  &__assist {
     display: flex;
     align-items: center;
+    min-width: 0;
+  }
+
+  &__controls {
     gap: var(--space-xxs);
+  }
+
+  &__assist {
+    gap: var(--space-xxs);
+    // Let the tools side (which holds the time-status text) shrink and wrap
+    // instead of overrunning the submit group in a narrow composer/modal.
+    min-width: 0;
   }
 
   // Unverified `!` warning sits just left of the Post button.
@@ -460,6 +491,8 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
+    // Keep the Post button + IDV badge at full size; the tools side gives first.
+    flex-shrink: 0;
   }
 
   &__tool-btn {
@@ -489,14 +522,8 @@
     height: 22px;
   }
 
-  &__emoji-wrap {
-    position: relative;
-  }
-
   &__emoji-popover {
     position: absolute;
-    top: calc(100% + var(--space-xs));
-    left: 0;
     z-index: 100;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -578,6 +605,9 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
+    // Allow the status/warning line to wrap within the shrunk tools side
+    // rather than pushing the toolbar wider than its container.
+    min-width: 0;
 
     &[hidden] {
       display: none;
@@ -587,9 +617,74 @@
   &__info-text {
     font-size: calc(var(--font-size-s) * 1.2);
     color: var(--color-space-text-muted);
+    overflow-wrap: anywhere;
 
     &--warn {
       color: var(--color-brand-salmon);
+    }
+  }
+
+  @media (max-width: 640px) {
+    &__toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "assist assist"
+        "tabs submit";
+      align-items: center;
+      column-gap: var(--space-xs);
+      row-gap: var(--space-xs);
+      margin-left: 0;
+    }
+
+    &__controls {
+      display: contents;
+    }
+
+    &__tabs {
+      grid-area: tabs;
+      justify-self: start;
+    }
+
+    &__assist {
+      grid-area: assist;
+      min-width: 0;
+    }
+
+    &__info,
+    &__info-wrap,
+    &__info-text {
+      min-width: 0;
+    }
+
+    &__info-text {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    &__submit-group {
+      grid-area: submit;
+      justify-self: end;
+    }
+  }
+
+  @media (min-width: 641px) {
+    &__toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-left: calc(var(--feed-content-offset) - 8px);
+    }
+
+    &__controls {
+      display: flex;
+    }
+
+    &__tabs,
+    &__assist,
+    &__submit-group {
+      grid-area: auto;
+      justify-self: auto;
     }
   }
 
@@ -1182,10 +1277,12 @@
     }
   }
 
+  // Opens upward: feed cards carry content-visibility, whose paint containment
+  // clips anything hanging below the card.
   &__repost-panel {
     position: absolute;
     z-index: 5;
-    top: calc(100% + var(--space-xs));
+    bottom: calc(100% + var(--space-xs));
     left: 50%;
     width: max-content;
     min-width: 128px;
@@ -1387,6 +1484,15 @@
     --ship-decision-accent: var(--color-brand-salmon);
   }
 
+  &--permanently_rejected {
+    --ship-decision-accent: var(--color-brand-salmon);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-salmon) 8%,
+      var(--color-set-1-bg)
+    );
+  }
+
   &__subject {
     color: var(--color-space-text);
     font-weight: 400;
@@ -1397,6 +1503,12 @@
     p {
       margin: 0;
     }
+  }
+
+  &__blocker-note {
+    margin: var(--space-xxs) 0 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
   }
 
   &__feedback,
@@ -2263,5 +2375,195 @@
       border-radius: 3px;
       font-size: 0.9em;
     }
+  }
+}
+
+// Funding request on the project timeline. Short by design: the amount and,
+// once decided, the verdict. Mirrors .ship-decision-card so the two review
+// outcomes read as the same kind of event.
+.funding-request-card {
+  // Same border as a ship post, so a funding request reads as part of the same
+  // project story. Only a returned request breaks out of it.
+  --funding-accent: var(--color-brand-highlight);
+
+  position: relative;
+  background: var(--color-set-4-bg);
+  border-color: var(--funding-accent);
+  gap: var(--space-xxs);
+
+  &--returned {
+    --funding-accent: var(--color-brand-salmon);
+  }
+
+  &--permanently_rejected {
+    --funding-accent: var(--color-brand-salmon);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-salmon) 8%,
+      var(--color-set-1-bg)
+    );
+
+    .funding-request-card__amount {
+      flex-shrink: 0;
+    }
+  }
+
+  &__final-note {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  // The byline is a single line but the avatar is 39px, so the shared
+  // flex-start header would leave a dead strip under it before the body.
+  &__header {
+    align-items: center;
+  }
+
+  &__amount {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--funding-accent);
+  }
+
+  &__tier {
+    font-size: var(--font-size-s);
+    font-weight: 500;
+    color: var(--color-space-text-muted);
+  }
+
+  &__message {
+    color: var(--color-space-text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: var(--space-xs);
+    }
+
+    // Reviewer feedback with photos: the whole block opens the feedback modal.
+    &--openable {
+      cursor: pointer;
+    }
+  }
+
+  // One "expand" control for the whole review, anchored bottom-right. Opens the
+  // same feedback modal as clicking the review body. `!important` overrides the
+  // broad `.feed-post-card button { position: relative }` reset, which would
+  // otherwise keep this in flow and stretch it across the flex column.
+  &__expand {
+    position: absolute !important;
+    right: var(--space-m);
+    bottom: var(--space-m);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: var(--space-xxs) var(--space-s);
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    background: rgba(5, 4, 24, 0.35);
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-mint-soft);
+      border-color: var(--color-brand-mint);
+      color: var(--color-space-text);
+      outline: none;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    justify-content: flex-start;
+  }
+}
+
+// A reviewer's "wrong queue?" question. Peach rather than salmon: the builder
+// hasn't done anything wrong, they just have to answer before anything moves.
+.queue-mismatch-card {
+  --queue-mismatch-accent: var(--color-brand-peach);
+
+  background: var(--color-set-4-bg);
+  border-color: var(--queue-mismatch-accent);
+  gap: var(--space-xs);
+
+  &__header {
+    align-items: center;
+  }
+
+  &__badge {
+    margin-left: auto;
+    padding: var(--space-xxs) var(--space-xs);
+    border: 1px solid var(--queue-mismatch-accent);
+    border-radius: 999px;
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--queue-mismatch-accent);
+    white-space: nowrap;
+  }
+
+  &__heading {
+    margin: 0 0 var(--space-xxs);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    color: var(--color-brand-cream);
+  }
+
+  &__body {
+    color: var(--color-space-text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: var(--space-xs);
+    }
+  }
+
+  &__reason {
+    margin: var(--space-xs) 0;
+    padding-left: var(--space-s);
+    border-left: 2px solid var(--queue-mismatch-accent);
+    color: var(--color-space-text-muted);
+  }
+
+  &__note {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    justify-content: flex-start;
   }
 }

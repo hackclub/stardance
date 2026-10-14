@@ -16,6 +16,10 @@ module Admin
       def dismiss?
         index?
       end
+
+      def resolve_project?
+        index?
+      end
     end
   end
 end

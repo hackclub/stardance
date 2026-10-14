@@ -1,0 +1,37 @@
+<%= turbo_frame_tag "fraud-subject-balance" do %>
+  <div class="fraud-subject__balance-panel">
+    <p class="fraud-subject__balance-summary">
+      <%= number_with_delimiter(@user.balance) %> stardust now,
+      across <%= pluralize(@pagy.count, "entry") %>.
+      <%= link_to "Open the admin user page", admin_user_path(@user),
+                  class: "fraud-subject__balance-link", data: { turbo_frame: "_top" } %>
+    </p>
+
+    <% if @entries.any? %>
+      <table class="fraud-subject__balance-table">
+        <thead>
+          <tr>
+            <th scope="col">Reason</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @entries.each do |entry| %>
+            <tr>
+              <td><%= fraud_ledger_reason(entry) %></td>
+              <td class="fraud-subject__balance-amount fraud-subject__balance-amount--<%= entry.amount.negative? ? "negative" : "positive" %>">
+                <%= number_with_sign(entry.amount) %>
+              </td>
+              <td class="fraud-subject__balance-date"><%= entry.created_at.strftime("%b %d, %Y") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <%== @pagy.series_nav if @pagy.pages > 1 %>
+    <% else %>
+      <p class="fraud-subject__balance-empty">No stardust has moved on this account yet.</p>
+    <% end %>
+  </div>
+<% end %>

@@ -1,5 +1,5 @@
 class SupportVibecheckJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     last_vibe = SupportVibes.order(period_end: :desc).first

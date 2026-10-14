@@ -21,7 +21,7 @@
                     markdown_preview_url_value: markdown_preview_path },
             local: true do |f| %>
 
-        <div class="devlog-edit__field">
+        <div class="devlog-edit__field" data-controller="textarea-hint">
           <div class="devlog-edit__field-header">
             <%= f.label :body, "What are you working on?", class: "devlog-edit__label" %>
             <div class="md-tabs" role="tablist">
@@ -45,8 +45,9 @@
                   placeholder: "What are you working on?",
                   data: { markdown_preview_target: "input",
                           controller: "mention-autocomplete",
-                          action: "keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
+                          action: "paste->textarea-hint#paste keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
           </div>
+          <p class="textarea-hint" data-textarea-hint-target="hint">Please write this yourself, humans read it!</p>
           <div class="md-preview markdown-content devlog-edit__preview" data-markdown-preview-target="output" hidden></div>
         </div>
 
