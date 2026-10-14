@@ -312,10 +312,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rails/actioncable@npm:^7.2.302":
-  version: 7.2.302
-  resolution: "@rails/actioncable@npm:7.2.302"
-  checksum: 10c0/c7e8efc2ed8af5991f26aa2f5056fb09f060f2ffcda4fbadd253c546a85e195d3e3d31506cfbe6b6d30ecbf3a82cbe536a569cd9eaf5cf3a0676fdcfb04dee6b
+"@rails/actioncable@npm:^8.1.400":
+  version: 8.1.400
+  resolution: "@rails/actioncable@npm:8.1.400"
+  checksum: 10c0/69dd0c3ef4e72bfe281e0f22b18aea9766057ce6725a47832fd714db889948e439c5918279fcffcf644ed86c16c6abb55bf32fd6d8aad160d4d7ef8773bd9980
   languageName: node
   linkType: hard
 
@@ -506,7 +506,7 @@ __metadata:
     "@fullstory/browser": "npm:^2.1.0"
     "@hotwired/stimulus": "npm:^3.2.2"
     "@hotwired/turbo-rails": "npm:^8.0.23"
-    "@rails/actioncable": "npm:^7.2.302"
+    "@rails/actioncable": "npm:^8.1.400"
     "@rails/activestorage": "npm:^8.1.301"
     "@videojs/html": "npm:10.0.0-rc.2"
     canvas-confetti: "npm:^1.9.4"
