@@ -490,10 +490,10 @@ GEM
       ast (~> 2.4.1)
       racc
     pdf-core (0.10.0)
-    pg (1.6.3)
-    pg (1.6.3-aarch64-linux)
-    pg (1.6.3-arm64-darwin)
-    pg (1.6.3-x86_64-linux)
+    pg (1.7.0)
+    pg (1.7.0-aarch64-linux)
+    pg (1.7.0-arm64-darwin)
+    pg (1.7.0-x86_64-linux)
     phlex (2.4.1)
       refract (~> 1.0)
       zeitwerk (~> 2.7)
@@ -863,7 +863,7 @@ DEPENDENCIES
   omniauth_openid_connect
   pagy (~> 43.6)
   paper_trail
-  pg (~> 1.1)
+  pg (~> 1.7)
   phlex-rails
   prawn
   propshaft
