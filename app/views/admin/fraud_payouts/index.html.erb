@@ -1,0 +1,139 @@
+<% content_for :title, "Fraud Squad Payouts" %>
+
+<div class="aorder">
+  <div class="aorder__header">
+    <div class="aorder__title-group">
+      <h1 class="aorder__title">Fraud Squad Payouts</h1>
+      <p class="aorder__subtitle">Stardust earned by the fraud squad for the people they clear</p>
+    </div>
+    <% if policy(FraudPayoutRun).trigger? %>
+      <%= button_to "Trigger Manual Run", trigger_admin_fraud_payouts_path,
+          method: :post,
+          class: "aorder__btn aorder__btn--secondary",
+          data: { confirm: "Pay out every completed review that has not been paid yet. Continue?" } %>
+    <% end %>
+  </div>
+
+  <div class="aorder__card" style="margin-bottom: var(--space-l);">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">Your Estimated Payout</h2>
+      <span class="aorder__card-subtitle">Issued when a payout run is triggered</span>
+    </div>
+    <div class="aorder__card-body">
+      <div style="font-size: var(--font-size-xxl); font-family: var(--font-family-subtitle); font-weight:700; color: var(--color-space-text);">
+        <%= number_with_delimiter(@my_review_payout&.dig(:amount) || 0) %> <%= stardust_icon %>
+      </div>
+      <div style="font-size: var(--font-size-s); color: var(--color-space-text-muted); font-family: var(--font-family-text); margin-top: var(--space-xxs);">
+        <% if @my_review_payout %>
+          <%= pluralize(@my_review_payout[:people], "person") %> cleared &middot;
+          <%= pluralize(@my_review_payout[:items], "review") %> awaiting the next payout run
+        <% else %>
+          Nothing waiting &middot; clear a person on a fraud subject page to earn
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="aorder__card" style="margin-bottom: var(--space-l);">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">Leaderboard</h2>
+      <span class="aorder__card-subtitle">Everyone who has cleared a person, by stardust earned</span>
+    </div>
+    <div class="aorder__card-body" style="padding: 0;">
+      <% if @leaderboard.any? %>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Reviewer</th>
+              <th>Reviews</th>
+              <th>Flags</th>
+              <th>Shop orders</th>
+              <th>Integrity</th>
+              <th style="text-align: right;">Stardust</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @leaderboard.each_with_index do |row, index| %>
+              <% is_me = row[:user]&.id == current_user.id %>
+              <tr class="<%= "fraud-leaderboard__row--me" if is_me %>">
+                <td class="fraud-leaderboard__rank"><%= index + 1 %></td>
+                <td>
+                  <span class="fraud-leaderboard__reviewer">
+                    <% if row[:user] %>
+                      <%= image_tag row[:user].avatar, alt: "", class: "fraud-leaderboard__avatar", loading: "lazy" %>
+                    <% end %>
+                    <%= row[:user]&.display_name || "Unknown reviewer" %>
+                    <% if is_me %>
+                      <span class="fraud-leaderboard__you">you</span>
+                    <% end %>
+                    <% if row[:user]&.fraud_review_payouts_disabled? %>
+                      <span class="fraud-leaderboard__off" title="New reviews no longer earn stardust">payouts off</span>
+                    <% end %>
+                  </span>
+                </td>
+                <td><%= row[:flags] + row[:orders] + row[:integrities] %></td>
+                <td><%= row[:flags] %></td>
+                <td><%= row[:orders] %></td>
+                <td><%= row[:integrities] %></td>
+                <td style="text-align: right; font-weight: 600;">
+                  <%= number_with_delimiter(row[:amount]) %><%= stardust_icon %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="fraud-payouts__empty">Nobody has cleared a person yet.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="aorder__card">
+    <div class="aorder__card-header">
+      <h2 class="aorder__card-title">Payout Runs</h2>
+    </div>
+    <div class="aorder__card-body" style="padding: 0;">
+      <% if @runs.any? %>
+        <table style="width:100%; border-collapse:collapse; font-family: var(--font-family-text); font-size: var(--font-size-s);">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--color-space-border); background: rgba(255,255,255,0.02);">
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Run</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Period</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Items</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Total Tickets</th>
+              <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Approved By</th>
+              <th style="padding: var(--space-s) var(--space-m);"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @runs.each do |run| %>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);">#<%= run.id %></td>
+                <td style="padding: var(--space-s) var(--space-m);">
+                  <span class="aorder__state-badge aorder__state-badge--<%= run.aasm_state == 'pending_approval' ? 'pending' : run.aasm_state %>">
+                    <%= run.aasm_state.humanize %>
+                  </span>
+                </td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text-muted);">
+                  <%= run.period_start&.strftime("%b %d, %Y") || "All time" %> &rarr; <%= run.period_end.strftime("%b %d, %Y") %>
+                </td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= run.total_orders %></td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text);"><%= number_with_delimiter(run.total_amount) %> <%= stardust_icon %></td>
+                <td style="padding: var(--space-s) var(--space-m); color: var(--color-space-text-muted);"><%= run.approved_by_user&.display_name || "Scheduled run" %></td>
+                <td style="padding: var(--space-s) var(--space-m);">
+                  <%= link_to "View →", admin_fraud_payout_path(run), class: "aorder__btn aorder__btn--secondary", style: "padding: 2px 10px; font-size: 12px;" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p style="padding: var(--space-m); color: var(--color-space-text-muted); font-family: var(--font-family-text); font-size: var(--font-size-s); text-align: center; margin: 0;">
+          No payout runs yet. Trigger a run to pay out completed reviews.
+        </p>
+      <% end %>
+    </div>
+  </div>
+</div>

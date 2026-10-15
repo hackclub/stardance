@@ -1,0 +1,7 @@
+header ":siren1: Time to post a devlog! :siren1:"
+
+section "You've built up *#{unposted_time}* on *#{project.title}* without a devlog. Only up to #{Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG} hours per devlog counts toward your ship payout- post one now to make sure your time is counted!", markdown: true
+
+context [
+  mrkdwn_text("Post a devlog: <https://stardance.hackclub.com/projects/#{project.id}|open your project>")
+]

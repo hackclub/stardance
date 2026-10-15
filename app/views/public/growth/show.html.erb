@@ -1,0 +1,203 @@
+<% content_for :title, "Growth Model" %>
+
+<% admin = policy(:growth).rebuild? %>
+
+<main class="growth">
+  <% if admin %>
+    <%= link_to "← back to admin", admin_root_path, class: "growth__back" %>
+  <% end %>
+
+  <header class="growth__header">
+    <div>
+      <h1>Growth Model</h1>
+      <p class="growth__subtitle">
+        Every Hack Club Auth user, every day, sorted into one state by when they were last active,
+        after <a href="https://blog.duolingo.com/growth-model-duolingo/" target="_blank" rel="noopener">Duolingo's growth model</a>.
+        Banned users and guests are left out.
+      </p>
+    </div>
+    <% if admin %>
+      <%= button_to "Rebuild last #{Public::GrowthController::REBUILD_DAYS} days", rebuild_public_growth_path(metric: @report.metric), class: "growth__rebuild" %>
+    <% end %>
+  </header>
+
+  <% if @report.empty? %>
+    <p class="growth__note">
+      No snapshots yet. They are built nightly; to backfill, run
+      <code>GrowthRefreshJob.perform_now(days: 120)</code> from a console.
+    </p>
+  <% else %>
+    <section class="growth__section">
+      <h2>DAU by metric</h2>
+      <p class="growth__note">
+        Each chart uses its own definition of "active". Bars split each day's active users by where they came from.
+        Last <%= Growth::Report::DAYS %> days, Eastern time.
+      </p>
+      <div class="growth__metrics">
+        <% @report.dau_by_metric.each do |metric, rows| %>
+          <div class="<%= class_names("growth__metric", "growth__metric--selected" => metric == @report.metric) %>" data-controller="fullscreen">
+            <div class="growth__chart-header">
+              <%= link_to public_growth_path(metric:, signups: @report.signups), class: "growth__metric-label" do %>
+                <%= GrowthDailySnapshot::METRIC_LABELS.fetch(metric) %>
+                <% if metric == GrowthDailySnapshot::SOURCE_OF_TRUTH %>
+                  <span class="growth__badge">Source of truth</span>
+                <% end %>
+              <% end %>
+              <%= render "maximise_button" %>
+            </div>
+            <span class="growth__metric-value"><%= growth_users(rows.last&.values_at(*Growth::Report::DAU_PARTS)&.sum.to_i) %> DAU</span>
+            <div class="growth__chart growth__chart--small">
+              <canvas data-controller="growth-chart" data-action="fullscreenchange@document->growth-chart#fullscreenChanged"
+                      data-growth-chart-rows-value="<%= rows.to_json %>"
+                      data-growth-chart-series-value="<%= GrowthHelper::GROWTH_DAU_SERIES.to_json %>"
+                      data-growth-chart-stacked-value="true"
+                      data-growth-chart-compact-value="true"></canvas>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <ul class="growth__legend">
+        <% GrowthHelper::GROWTH_DAU_SERIES.each do |series| %>
+          <li><span class="growth__legend-key growth__legend-key--<%= series[:key] %>"></span> <%= series[:label] %></li>
+        <% end %>
+      </ul>
+    </section>
+
+    <% latest = @report.latest %>
+    <section class="growth__section">
+      <h2><%= GrowthDailySnapshot::METRIC_LABELS.fetch(@report.metric) %></h2>
+      <p class="growth__note">
+        <% unless @report.metric == GrowthDailySnapshot::SOURCE_OF_TRUTH %>
+          For comparison only: the DAU we report and project is
+          <%= link_to GrowthDailySnapshot::METRIC_LABELS.fetch(GrowthDailySnapshot::SOURCE_OF_TRUTH), public_growth_path(signups: @report.signups) %>.
+        <% end %>
+        Pick another metric above to switch this section. Latest day: <%= latest.snapshot_on.to_fs(:long) %>.
+      </p>
+
+      <div class="growth__tiles">
+        <% { "DAU" => latest.dau, "WAU" => latest.wau, "MAU" => latest.mau }.each do |label, value| %>
+          <div class="growth__tile">
+            <span class="growth__tile-value"><%= growth_users(value) %></span>
+            <span class="growth__tile-label"><%= label %></span>
+          </div>
+        <% end %>
+        <div class="growth__tile">
+          <span class="growth__tile-value"><%= growth_percent(latest.mau.positive? ? latest.dau.fdiv(latest.mau) : nil) %></span>
+          <span class="growth__tile-label">DAU / MAU</span>
+        </div>
+        <div class="growth__tile">
+          <span class="growth__tile-value"><%= growth_percent(@report.rate_rows.last["curr"]) %></span>
+          <span class="growth__tile-label">CURR, last <%= Growth::Report::RATE_WINDOW %> days</span>
+        </div>
+      </div>
+
+      <div class="growth__panels">
+        <div class="growth__panel" data-controller="fullscreen">
+          <div class="growth__chart-header">
+            <h3>Active users</h3>
+            <%= render "maximise_button" %>
+          </div>
+          <div class="growth__chart">
+            <canvas data-controller="growth-chart" data-action="fullscreenchange@document->growth-chart#fullscreenChanged"
+                    data-growth-chart-rows-value="<%= @report.audience_rows.to_json %>"
+                    data-growth-chart-series-value="<%= GrowthHelper::GROWTH_AUDIENCE_SERIES.to_json %>"></canvas>
+          </div>
+        </div>
+        <div class="growth__panel" data-controller="fullscreen">
+          <div class="growth__chart-header">
+            <h3>Retention rates, pooled over <%= Growth::Report::RATE_WINDOW %> days</h3>
+            <%= render "maximise_button" %>
+          </div>
+          <div class="growth__chart">
+            <canvas data-controller="growth-chart" data-action="fullscreenchange@document->growth-chart#fullscreenChanged"
+                    data-growth-chart-rows-value="<%= @report.rate_rows.to_json %>"
+                    data-growth-chart-series-value="<%= GrowthHelper::GROWTH_RATE_SERIES.to_json %>"
+                    data-growth-chart-percent-value="true"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <% simulator = @report.simulator %>
+      <div class="growth__panel" data-controller="fullscreen">
+        <div class="growth__chart-header">
+          <h3>Projected DAU</h3>
+          <nav class="growth__toggle" aria-label="Where new signups come from">
+            <% GrowthHelper::GROWTH_SIGNUP_LABELS.each do |signups, label| %>
+              <%= link_to label, public_growth_path(metric: @report.metric, signups:),
+                    class: class_names("growth__toggle-option", "growth__toggle-option--active" => signups == @report.signups) %>
+            <% end %>
+          </nav>
+          <%= render "maximise_button" %>
+        </div>
+        <p class="growth__note">
+          <% if @report.signups == "word_of_mouth" %>
+            New signups scale with yesterday's DAU, as in Duolingo's compounding example: lately
+            <strong><%= number_with_precision(simulator.signups_per_dau * 100, precision: 1) %></strong> new users a day per 100 active users.
+            Every user a better rate keeps brings more users the next day, so the gains compound.
+          <% else %>
+            New signups held at their recent average of <strong><%= number_with_precision(simulator.new_per_day, precision: 1) %></strong> a day,
+            however DAU moves. Gains add up but do not compound.
+          <% end %>
+          Rates are the last <%= Growth::Simulator::WINDOW %> days'. In <%= Growth::Simulator::HORIZON_DAYS %> days, with no change:
+          <strong><%= growth_users(simulator.baseline_dau) %></strong> DAU.
+        </p>
+        <div class="growth__chart growth__chart--tall">
+          <canvas data-controller="growth-chart" data-action="fullscreenchange@document->growth-chart#fullscreenChanged"
+                  data-growth-chart-rows-value="<%= @report.projection_rows.to_json %>"
+                  data-growth-chart-series-value="<%= growth_projection_series(@report.projected_levers).to_json %>"></canvas>
+        </div>
+      </div>
+
+      <div class="growth__panel">
+        <h3>Which rate to improve</h3>
+        <p class="growth__note">
+          Each row improves one rate by <%= number_to_percentage(Growth::Simulator::MONTHLY_LIFT * 100, precision: 0) %>
+          a month, the test Duolingo used to pick CURR, and shows the DAU it adds after <%= Growth::Simulator::HORIZON_DAYS %> days.
+          The last column is what launching that improvement <%= Growth::Simulator::DELAY_DAYS %> days later gives up.
+        </p>
+        <table class="growth__table">
+          <thead>
+            <tr>
+              <th scope="col">Rate</th>
+              <th scope="col">Now</th>
+              <th scope="col">Projected DAU</th>
+              <th scope="col">Added DAU</th>
+              <th scope="col">Lost by waiting <%= Growth::Simulator::DELAY_DAYS %> days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% simulator.levers.each do |lever| %>
+              <tr>
+                <th scope="row"><%= GrowthHelper::GROWTH_RATE_LABELS.fetch(lever.rate) %></th>
+                <td><%= growth_percent(lever.current_rate) %></td>
+                <td><%= growth_users(lever.dau) %></td>
+                <td>+<%= number_with_precision(lever.lift, precision: 1) %></td>
+                <td>−<%= number_with_precision(lever.cost_of_waiting, precision: 1) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+
+  <details class="growth__details">
+    <summary>States and rates</summary>
+    <dl class="growth__definitions">
+      <dt>New</dt><dd>First active day is today.</dd>
+      <dt>Current</dt><dd>Active today and on at least one of the previous 6 days.</dd>
+      <dt>Reactivated</dt><dd>Active today, last active 7 to 29 days ago.</dd>
+      <dt>Resurrected</dt><dd>Active today, last active 30 or more days ago.</dd>
+      <dt>At-risk WAU</dt><dd>Not active today, active in the previous 6 days.</dd>
+      <dt>At-risk MAU</dt><dd>Last active 7 to 29 days ago.</dd>
+      <dt>Dormant</dt><dd>Last active 30 or more days ago.</dd>
+      <dt>NURR</dt><dd>New User Retention Rate: share of yesterday's new users who are active again today.</dd>
+      <dt>CURR</dt><dd>Current User Retention Rate: share of yesterday's current users who are active again today.</dd>
+      <dt>RURR</dt><dd>Reactivated User Retention Rate: share of yesterday's reactivated users who are active again today.</dd>
+      <dt>SURR</dt><dd>Resurrected User Retention Rate: share of yesterday's resurrected users who are active again today.</dd>
+      <dt>iWAURR</dt><dd>At-risk WAU Retention Rate: share of yesterday's at-risk WAU users who came back today.</dd>
+      <dt>Reactivation</dt><dd>Share of yesterday's at-risk MAU users who came back today.</dd>
+      <dt>Resurrection</dt><dd>Share of yesterday's dormant users who came back today.</dd>
+    </dl>
+  </details>
+</main>

@@ -52,6 +52,7 @@ class FeedEventsController < ApplicationController
         ahoy.track("feed_#{event[:item_type]}_#{event[:event_type]}", event)
         record_post_view(event)
         send_gorse_feedback(event)
+        record_suppression(event)
       end
     end
 
@@ -70,7 +71,7 @@ class FeedEventsController < ApplicationController
     rescue ActiveRecord::ActiveRecordError => e
       # This endpoint is fire-and-forget: a failed view write must not 500 the
       # beacon or drop the rest of the event batch.
-      Sentry.capture_exception(e, extra: { post_id: event[:post_id], user_id: current_user.id })
+      Rails.error.report(e, context: { post_id: event[:post_id], user_id: current_user.id })
     end
 
     def recordable_event?(event)
@@ -138,6 +139,15 @@ class FeedEventsController < ApplicationController
           comment: event[:source]
         )
       end
+    end
+
+    def record_suppression(event)
+      return unless event[:event_type].in?(%w[hide not_interested])
+
+      item = find_item(event)
+      return unless item.is_a?(Post)
+
+      Feed::SessionStore.new(user: current_user).suppress(Feed::Mixer.canonical_content_id(item))
     end
 
     def feedback_value(event)

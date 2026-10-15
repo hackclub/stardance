@@ -1,0 +1,14 @@
+<div class="shop-orders__type-toggles">
+  <% item_type_toggles.each do |toggle| %>
+    <% hidden = item_type_toggle_hidden?(toggle) %>
+    <% awaiting = toggle[:types].sum { |type| awaiting_counts[type].to_i } %>
+    <%= link_to admin_shop_orders_path(item_type_toggle_params(toggle)),
+                class: "shop-orders__type-toggle#{' shop-orders__type-toggle--hidden' if hidden}" do %>
+      <%= "#{hidden ? 'Show' : 'Hide'} #{toggle[:label]}" %>
+      <% if hidden && awaiting.positive? %>
+        <span class="shop-orders__type-toggle-count"
+              title="<%= pluralize(awaiting, 'order') %> awaiting fulfillment"><%= awaiting %></span>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

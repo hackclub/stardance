@@ -1,0 +1,25 @@
+<% content_for :title, "Suggestion History" %>
+
+<div class="suggestions-page">
+  <div class="suggestions-page__header">
+    <div class="suggestions-page__heading-group">
+      <h1 class="suggestions-page__title">Suggestion History</h1>
+      <p class="suggestions-page__subtitle">Past suggestions with decisions, most recent first.</p>
+      <%= link_to "← All suggestions", shop_suggestions_path, class: "suggestions-page__back-link" %>
+    </div>
+  </div>
+
+  <% if @decided.any? %>
+    <section class="suggestions-page__section">
+      <div class="suggestions-page__grid">
+        <% @decided.each do |suggestion| %>
+          <%= render "card", suggestion: suggestion, decided_by: @decided_by[suggestion.id] %>
+        <% end %>
+      </div>
+    </section>
+  <% else %>
+    <div class="suggestions-page__empty">
+      <p>No decisions have been made yet.</p>
+    </div>
+  <% end %>
+</div>

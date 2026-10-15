@@ -599,6 +599,28 @@ turbo-frame#profile_tabs {
   align-items: center;
 }
 
+// Wraps the admin-editing-someone-else's-profile notice. The admin_tool box
+// itself (border + padding) must stay hidden until edit mode is entered —
+// hiding only the text inside it still leaves an empty dashed square visible
+// (mirrors .profile__banner-placeholder and friends, which reveal on the
+// .profile--editing class).
+.profile__admin-edit-tool {
+  display: none;
+
+  .profile--editing & {
+    display: inline-block;
+  }
+}
+
+.profile__admin-edit-notice {
+  font-size: 0.85rem;
+  color: var(--color-brand-orange);
+
+  strong {
+    font-weight: 700;
+  }
+}
+
 // Profile action buttons (Edit / Follow / Save / Cancel). Sits inside the
 // set-3 profile card, so this uses the light-bg small-action variant per
 // branding §4.0 / §4.1. Base is the secondary action (transparent +
@@ -820,7 +842,7 @@ turbo-frame#profile_tabs {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: bottom;
+  object-position: center;
   display: block;
   aspect-ratio: 3;
 }

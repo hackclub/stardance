@@ -1,0 +1,42 @@
+<% content_for :title, "Sticky Streak Rewards" %>
+<div class="shop-dashboard">
+  <header class="shop-dashboard__header">
+    <h1 class="shop-dashboard__title">Sticky Streak Rewards</h1>
+    <div class="shop-dashboard__header-actions">
+      <%= link_to "Back to Shop", admin_shop_path, class: "btn-secondary" %>
+    </div>
+  </header>
+
+  <%= render "funnel",
+        title: "First runs and restarts, by day",
+        day_stats: @day_stats["standard"],
+        total_runs: @total_runs["standard"],
+        note: "Someone who restarted counts once, as their restart: the broken run it replaced is left out.",
+        empty_message: "Nobody has started a Sticky Streak yet." %>
+
+  <%= render "funnel",
+        title: "Second streaks, by day",
+        day_stats: @day_stats["second"],
+        total_runs: @total_runs["second"],
+        empty_message: "Nobody has started a second streak yet." %>
+
+  <%= form_with url: admin_shop_sticky_streak_rewards_path, method: :patch do |f| %>
+    <%= render "reward_table",
+          title: "First runs and restarts",
+          track: "standard",
+          rewards: @rewards["standard"],
+          shop_items: @shop_items,
+          blurb: "Pick the shop item each of the #{StickyStreak::LENGTH} days pays out. A restart skips every day whose sticker the person already took home, so it only pays for the ones they missed. Clearing a day that has already been claimed does not affect the orders already placed." %>
+
+    <%= render "reward_table",
+          title: "Second streaks",
+          track: "second",
+          rewards: @rewards["second"],
+          shop_items: @shop_items,
+          blurb: "A second streak still runs for #{StickyStreak::LENGTH} days, but it only pays out on days #{StickyStreak::SECOND_REWARD_DAYS.to_sentence}. These items are separate from the ones above." %>
+
+    <div class="shop-dashboard__panel">
+      <%= f.submit "Save rewards", class: "btn-primary" %>
+    </div>
+  <% end %>
+</div>

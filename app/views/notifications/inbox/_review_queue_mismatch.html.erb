@@ -1,0 +1,7 @@
+<% review = notification.record %>
+<span class="notifications-item__verb">A reviewer has a</span>
+<strong>question about your submission</strong>
+<% if review&.project %>
+  <span class="notifications-item__verb">on</span>
+  <%= link_to review.project.title, project_path(review.project), class: "notifications-item__actor" %>
+<% end %>

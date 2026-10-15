@@ -10,6 +10,9 @@ module Certification
     end
 
     def call
+      return if ship_cert_id && Certification::Ysws.exists?(ship_cert_id: ship_cert_id)
+      return if Certification::Ysws.exists?(post_ship_event_id: ship_event.id, reviewed_at: nil, returned_at: nil)
+
       hours_worked = ship_event.hours_at_ship.to_f
       original_minutes = (hours_worked * 60).to_i
 

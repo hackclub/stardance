@@ -1,0 +1,59 @@
+<% content_for :title, @workshop.title %>
+
+<div class="admin-workshops">
+  <h1><%= @workshop.title %></h1>
+  <p><%= link_to "← Back to workshops", admin_workshops_path %></p>
+
+  <div class="card">
+    <h3>Details</h3>
+    <p><strong>Starts:</strong> <%= workshop_time(@workshop.starts_at) %></p>
+    <p><strong>Ends:</strong> <%= workshop_time(@workshop.ends_at) %></p>
+    <p>
+      <strong>Zoom link:</strong>
+      <% if @workshop.zoom_link.present? %>
+        <%= link_to @workshop.zoom_link, @workshop.zoom_link, target: "_blank", rel: "noopener" %>
+      <% else %>
+        <span>not set yet (add it shortly before start)</span>
+      <% end %>
+    </p>
+    <p><strong>Public page:</strong> <%= link_to workshop_url(@workshop), workshop_path(@workshop) %></p>
+    <% if @workshop.rsvps_notified_at.present? %>
+      <p><strong>RSVPs notified:</strong> <%= workshop_time(@workshop.rsvps_notified_at) %></p>
+    <% end %>
+    <% if @workshop.description.present? %>
+      <%= simple_format(@workshop.description) %>
+    <% end %>
+    <p>
+      <%= link_to "Edit", edit_admin_workshop_path(@workshop), class: "btn-secondary" %>
+      <%= button_to "Delete", admin_workshop_path(@workshop), method: :delete, class: "btn-secondary", form: { data: { turbo_confirm: "Delete this workshop? RSVPs and attendance records go with it." } } %>
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>RSVPs (<%= @rsvps.size %>)</h3>
+    <% if @rsvps.any? %>
+      <ul>
+        <% @rsvps.each do |rsvp| %>
+          <li><%= link_to rsvp.user.display_name, admin_user_path(rsvp.user) %> · <%= workshop_time(rsvp.created_at) %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p>No RSVPs yet.</p>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <h3>Attendees (<%= @attendances.size %>)</h3>
+    <% if @attendances.any? %>
+      <ul>
+        <% @attendances.each do |attendance| %>
+          <li><%= link_to attendance.user.display_name, admin_user_path(attendance.user) %> · joined <%= workshop_time(attendance.created_at) %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p>No one has joined yet.</p>
+    <% end %>
+  </div>
+
+  <%= render "admin/shared/audit_log", record: @workshop, item_type: "Workshop" %>
+</div>

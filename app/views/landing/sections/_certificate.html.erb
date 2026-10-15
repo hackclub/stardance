@@ -1,0 +1,35 @@
+<section class="landing-certificate">
+  <h2 class="landing-certificate__title">
+    Get a certificate.
+  </h2>
+
+  <p class="landing-certificate__desc">
+    Log <%= Certificate::REQUIRED_APPROVED_HOURS %> hours of verified project work
+    and earn a Certificate of Achievement.
+  </p>
+
+  <div class="landing-certificate__recognizers">
+    <p class="landing-certificate__recognizers-label">Recognized by</p>
+    <div class="landing-certificate__recognizers-logos">
+      <%= image_tag "certificate/recognizers/mit.png", alt: "MIT", class: "landing-certificate__recognizer-logo" %>
+      <%= image_tag "certificate/recognizers/github.png", alt: "GitHub", class: "landing-certificate__recognizer-logo" %>
+      <%= image_tag "certificate/recognizers/amd.png", alt: "AMD", class: "landing-certificate__recognizer-logo" %>
+
+      <%= image_tag "certificate/recognizers/cac.webp", alt: "Congressional App Challenge", class: "landing-certificate__recognizer-logo" %>
+    </div>
+  </div>
+
+  <div class="landing-certificate__showcase"
+       data-controller="tilt-3d" data-tilt-3d-max-value="14">
+    <div class="landing-certificate__sheen" aria-hidden="true"></div>
+    <%= image_tag "certificate/preview.webp",
+          alt: "A Stardance Certificate of Achievement",
+          class: "landing-certificate__img",
+          loading: "lazy",
+          draggable: false %>
+  </div>
+
+  <%= render ActionButtonComponent.new(
+        text: "Learn more →", size: :large, variant: :primary,
+        href: certificate_path) %>
+</section>

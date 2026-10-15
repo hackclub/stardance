@@ -19,7 +19,6 @@
 #
 #  fk_rails_...  (user_id => users.id)
 #
-#  fk_rails_...  (user_id => users.id)
 
 class ShopWarehousePackage < ApplicationRecord
   has_encrypted :frozen_address, type: :json
@@ -31,6 +30,14 @@ class ShopWarehousePackage < ApplicationRecord
   validates :theseus_package_id, uniqueness: true, allow_nil: true
 
   BONUS_STICKER_COUNT = 3
+
+  # Included in every warehouse package, on top of the ordered items.
+  ALWAYS_INCLUDED_SKUS = {
+    "Pri/SD/4x6/1st" => 1,
+    "Sti/SD/Ori/1st" => 2,
+    "Sti/Sta/Free/1st" => 2,
+    "Sti/Sti/Fla/Top" => 2
+  }.freeze
 
   def send_to_theseus!
     return theseus_package_id if theseus_package_id.present? && !theseus_package_id.start_with?("MANUAL_FIX_NEEDED_")
@@ -57,10 +64,7 @@ class ShopWarehousePackage < ApplicationRecord
 
     non_sticker_count = contents.count { |c| !c[:sku].start_with?("Sti/") }
     contents += bonus_stickers if non_sticker_count >= BONUS_STICKER_COUNT
-    contents << {
-      sku: "Pri/Sta/4x6/1st",
-      quantity: 1
-    }
+    contents += always_included_contents
     update!(frozen_contents: contents)
     Rails.logger.info "Sending warehouse package #{id} to Theseus for user #{user_id} with orders #{shop_orders.pluck(:id).join(', ')}\nContents: #{contents.inspect}"
 
@@ -137,8 +141,14 @@ class ShopWarehousePackage < ApplicationRecord
 
   private
 
+  def always_included_contents
+    ALWAYS_INCLUDED_SKUS.map { |sku, quantity| { sku:, quantity: } }
+  end
+
+  # Drawn from the pool minus the always-included stickers, so a package never
+  # ships the same sticker as both a guaranteed insert and a bonus.
   def bonus_stickers
-    ShopItem::HC_STICKERS.shuffle.take(BONUS_STICKER_COUNT).map do |sku|
+    (ShopItem::HC_STICKERS - ALWAYS_INCLUDED_SKUS.keys).shuffle.take(BONUS_STICKER_COUNT).map do |sku|
       { sku:, quantity: 1 }
     end
   end

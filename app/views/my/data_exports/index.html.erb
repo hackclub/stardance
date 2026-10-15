@@ -1,0 +1,66 @@
+<% content_for :title, "Export My Data" %>
+<% @active_nav_slug = "data_exports" %>
+
+<div class="app-layout">
+  <main class="app-layout__main data-exports-page">
+    <header class="data-exports-page__header">
+      <h1 class="data-exports-page__title">Export My Data</h1>
+      <p class="data-exports-page__description">
+        Download a ZIP file containing all your projects, devlogs, images, and profile data.
+        Exports are automatically deleted after 7 days.
+      </p>
+    </header>
+
+    <div class="data-exports-page__actions">
+      <%= button_to "Request Export", my_data_exports_path,
+                    method: :post,
+                    class: "action-btn action-btn--large action-btn--primary" %>
+    </div>
+
+    <% if @data_exports.any? %>
+      <div class="data-exports-page__list">
+        <% @data_exports.each do |export| %>
+          <div class="data-export-item">
+            <div class="data-export-item__info">
+              <span class="status-pill status-pill--<%= export.status %>"><%= export.status.humanize %></span>
+              <span class="data-export-item__date">
+                <%= export.created_at.strftime("%b %d, %Y at %H:%M") %>
+              </span>
+              <% if export.download_available? %>
+                <span class="data-export-item__expiry">
+                  Available until <%= export.expires_at.strftime("%b %d, %Y at %H:%M") %>
+                </span>
+              <% end %>
+              <% if export.failed? && export.error_message.present? %>
+                <span class="data-export-item__error"><%= export.error_message %></span>
+              <% end %>
+            </div>
+            <div class="data-export-item__actions">
+              <% if export.download_available? %>
+                <%= link_to "Download", my_data_export_path(export),
+                            class: "action-btn action-btn--small action-btn--secondary" %>
+              <% elsif export.processing? %>
+                <span class="data-export-item__processing">Generating&hellip;</span>
+              <% elsif export.pending? %>
+                <span class="data-export-item__processing">Queued&hellip;</span>
+              <% end %>
+              <%= button_to "Delete", my_data_export_path(export),
+                            method: :delete,
+                            class: "action-btn action-btn--small action-btn--destructive",
+                            form: { data: { turbo_confirm: "Delete this export? This cannot be undone." } } %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="data-exports-page__empty">
+        <p class="data-exports-page__empty-title">No exports yet</p>
+        <p class="data-exports-page__empty-hint">
+          Click "Request Export" above to start generating your data archive.
+        </p>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

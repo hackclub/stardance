@@ -67,10 +67,17 @@ module Posts
     end
 
     # Only the /home composer shows the "Record a timelapse" button (toggled per
-    # selected project's hardware status by the composer controller). The project
-    # page has its own dedicated record button, so its composer leaves this off.
+    # selected project by the composer controller). The project page has its own
+    # dedicated record button, so its composer leaves this off.
     def show_record?
       show_record
+    end
+
+    # Whether the Record button shows for a given project chip. Timelapses are a
+    # hardware thing, and recording happens on Lapse, which takes no per-project
+    # parameters, so unlike the old in-app recorder there's no URL to vary.
+    def recordable?(project)
+      show_record? && project.present? && project.hardware?
     end
 
     def form_url

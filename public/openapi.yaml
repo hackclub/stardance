@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: Stardance API
+  version: "1"
+  description: |
+    A read-only public API for Stardance projects and devlogs. You need an
+    API key to use this! Go to your [account settings](/?settings=1) to get
+    one.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        Include your API key via `Authorization: Bearer YOUR_API_KEY`. You
+        can find or regenerate your API key in your
+        [account settings](/?settings=1).
+  schemas:
+    Project:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        ship_status: { type: string }
+        repo_url: { type: string, nullable: true }
+        demo_url: { type: string, nullable: true }
+        readme_url: { type: string, nullable: true }
+        ai_declaration: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        devlog_ids:
+          type: array
+          items: { type: integer }
+        banner_url: { type: string, format: uri, nullable: true, description: Full-size banner image }
+        banner_thumb_url: { type: string, format: uri, nullable: true, description: 400x210 webp thumbnail }
+    Comment:
+      type: object
+      properties:
+        id: { type: integer }
+        body: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        author:
+          type: object
+          properties:
+            id: { type: integer }
+            display_name: { type: string }
+            avatar: { type: string, format: uri }
+    Devlog:
+      type: object
+      properties:
+        id: { type: integer }
+        body: { type: string }
+        duration_seconds: { type: integer, nullable: true, description: Time logged for this devlog }
+        likes_count: { type: integer }
+        comments_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        media:
+          type: array
+          description: Images and videos attached to the devlog
+          items:
+            type: object
+            properties:
+              url: { type: string, format: uri }
+              content_type: { type: string }
+        comments:
+          type: array
+          items: { $ref: "#/components/schemas/Comment" }
+    Pagination:
+      type: object
+      properties:
+        current_page: { type: integer }
+        total_pages: { type: integer }
+        total_count: { type: integer }
+        next_page: { type: integer, nullable: true }
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    page:
+      name: page
+      in: query
+      required: false
+      schema: { type: integer }
+      description: Page number for pagination
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema: { type: integer, maximum: 100 }
+      description: Number of results per page (defaults to 25, max 100)
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: "Limit cannot exceed 100" }
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: "Invalid API key" }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: "Resource not found" }
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying
+          schema: { type: integer }
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+          example: { error: "rate_limited", message: "Too many requests. Please slow down." }
+paths:
+  /projects:
+    get:
+      summary: List projects
+      tags: [ Projects ]
+      description: "Fetch a list of projects. Ratelimit: 5 reqs/min, 20 reqs/min if searching."
+      operationId: listProjects
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: query
+          in: query
+          required: false
+          schema: { type: string }
+          description: Search projects by title or description
+      responses:
+        "200":
+          description: A page of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items: { $ref: "#/components/schemas/Project" }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /projects/{id}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      summary: Get a project
+      tags: [ Projects ]
+      description: "Fetch a specific project by ID. Ratelimit: 30 reqs/min."
+      operationId: getProject
+      responses:
+        "200":
+          description: A single project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /projects/{id}/devlogs:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      summary: List project devlogs
+      tags: [ Projects ]
+      description: "Fetch a page of devlogs for a specific project, newest first. Ratelimit: 20 reqs/min."
+      operationId: listProjectDevlogs
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: A page of the project's devlogs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devlogs:
+                    type: array
+                    items: { $ref: "#/components/schemas/Devlog" }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /devlogs:
+    get:
+      summary: List devlogs
+      tags: [ Devlogs ]
+      description: "Fetch a page of devlogs across all projects, newest first. Ratelimit: 5 reqs/min."
+      operationId: listDevlogs
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: A page of devlogs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devlogs:
+                    type: array
+                    items: { $ref: "#/components/schemas/Devlog" }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /devlogs/{id}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      summary: Get a devlog
+      tags: [ Devlogs ]
+      description: "Fetch a specific devlog by ID. Ratelimit: 30 reqs/min."
+      operationId: getDevlog
+      responses:
+        "200":
+          description: A single devlog
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Devlog" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /users/lookup:
+    get:
+      summary: Look up a user by Slack ID
+      tags: [ Admin ]
+      description: "Admin only. Find the Stardance user ID and display name for a Slack ID."
+      operationId: lookupUser
+      parameters:
+        - name: slack_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The matching user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  slack_id: { type: string }
+                  display_name: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /users/{id}/balance_adjustments:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    post:
+      summary: Adjust a user's stardust balance
+      tags: [ Admin ]
+      description: "Admin only. Grant (positive) or deduct (negative) stardust, recorded in the ledger with the given reason."
+      operationId: createBalanceAdjustment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ amount, reason ]
+              properties:
+                amount: { type: integer, description: Non-zero stardust amount }
+                reason: { type: string }
+      responses:
+        "201":
+          description: The ledger entry that was created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  user_id: { type: integer }
+                  amount: { type: integer }
+                  reason: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { description: Invalid amount or missing reason }

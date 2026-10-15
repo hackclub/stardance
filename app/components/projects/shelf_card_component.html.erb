@@ -10,7 +10,7 @@
   <span class="project-shelf-card__body">
     <span class="project-shelf-card__title"><%= project.title %></span>
     <% if description.present? %>
-      <span class="project-shelf-card__description"><%= truncate(strip_tags(description), length: 120) %></span>
+      <span class="project-shelf-card__description"><%= truncate(plain_description, length: 120) %></span>
     <% end %>
   </span>
 <% end %>

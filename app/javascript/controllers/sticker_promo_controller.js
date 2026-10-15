@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["dialog"];
+  static values = { key: String };
 
   connect() {
     this.dialogTarget.showModal();
@@ -30,7 +31,7 @@ export default class extends Controller {
         "Content-Type": "application/json",
         "X-CSRF-Token": token || "",
       },
-      body: JSON.stringify({ thing_name: "sticker_promo" }),
+      body: JSON.stringify({ thing_name: this.keyValue }),
     }).catch(() => {});
   }
 }

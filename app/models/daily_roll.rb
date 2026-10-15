@@ -6,12 +6,13 @@
 #
 # Table name: daily_rolls
 #
-#  id         :bigint           not null, primary key
-#  rolled_on  :date             not null
-#  value      :integer          not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  user_id    :bigint           not null
+#  id           :bigint           not null, primary key
+#  reroll_value :integer
+#  rolled_on    :date             not null
+#  value        :integer          not null
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#  user_id      :bigint           not null
 #
 # Indexes
 #
@@ -28,6 +29,15 @@ class DailyRoll < ApplicationRecord
   # a roll of 1, so we may as well use the whole dial.
   MAX_VALUE = 2_147_483_647
   LEADERBOARD_SIZE = 5
+
+  # Coding time (in seconds, on a linked Stardance project, today) that
+  # unlocks the one earned reroll. See DailyRollsHelper#reroll_state.
+  REROLL_MIN_SECONDS = 300
+
+  # A roll's standing is its own value plus any earned reroll. Summed as
+  # bigint in SQL so two near-max int4 rolls (~4.29B total) can't overflow
+  # the way `value + reroll_value` would as plain int4.
+  TOTAL_SQL = "daily_rolls.value::bigint + COALESCE(daily_rolls.reroll_value, 0)"
 
   # The Monday rng goes live. Days are numbered from it (day 1, day 2, …);
   # pre-launch test rolls show "day -1".
@@ -80,6 +90,8 @@ class DailyRoll < ApplicationRecord
   validates :rolled_on, presence: true, uniqueness: { scope: :user_id }
 
   scope :on, ->(date) { where(rolled_on: date) }
+  # Leaderboard order: biggest total first, earliest roll wins ties.
+  scope :ranked, -> { order(Arel.sql("(#{TOTAL_SQL}) DESC, daily_rolls.created_at ASC")) }
 
   # Rolls for the user today, or returns their existing roll if they already
   # did. Safe under concurrent clicks thanks to the unique [user, date] index.
@@ -111,31 +123,75 @@ class DailyRoll < ApplicationRecord
   end
 
   # Ties go to whoever rolled first. limit + offset keep a busy day's board
-  # paginated so it never loads every roll at once.
+  # paginated so it never loads every roll at once. Ordered by the summed
+  # total (first roll + reroll), so a reroll can lift you up the board.
   def self.leaderboard(date = Date.current, limit: LEADERBOARD_SIZE, offset: 0)
-    on(date).order(value: :desc, created_at: :asc).limit(limit).offset(offset).includes(:user)
+    on(date).ranked.limit(limit).offset(offset).includes(:user)
   end
 
   def rank
     self.class.on(rolled_on)
-        .where("value > :value OR (value = :value AND created_at < :at)", value: value, at: created_at)
+        .where("(#{TOTAL_SQL}) > :t OR ((#{TOTAL_SQL}) = :t AND daily_rolls.created_at < :at)", t: total, at: created_at)
         .count + 1
   end
 
+  # The number that represents this roll on the board: the first roll plus
+  # any earned reroll. reroll_value is nil until the user spends their reroll.
+  def total
+    value + reroll_value.to_i
+  end
+
+  def rerolled?
+    reroll_value.present?
+  end
+
   # One variant from the matching tier, stable per roll (seeded by id, or by
-  # value before it's saved) so it doesn't reshuffle on every page load.
+  # total before it's saved) so it doesn't reshuffle on every page load.
+  # Keyed to the total so a reroll's bigger number gets a bigger-tier quip.
   def flavor
-    variants = FLAVORS.find { |threshold, _| value >= threshold }&.last
-    variants && variants[(id || value) % variants.size]
+    variants = FLAVORS.find { |threshold, _| total >= threshold }&.last
+    variants && variants[(id || total) % variants.size]
   end
 
   def tone
-    TONES.find { |threshold, _| value >= threshold }&.last
+    TONES.find { |threshold, _| total >= threshold }&.last
   end
 
   # "day 1", "day 2", … counting from LAUNCH_ON; "day -1" before launch.
   def day_label
     number = rolled_on < LAUNCH_ON ? -1 : (rolled_on - LAUNCH_ON).to_i + 1
     "day #{number}"
+  end
+
+  # Date range daily-roll leaderboards are considered final for the
+  # rng_winner achievement: from launch through two days ago. Today's board is
+  # still open, and yesterday's is held back one extra day (the range end is
+  # exclusive) so a late reroll can still change who topped it.
+  def self.winnable_range
+    Date.new(2026, 7, 1)...(Date.current - 1)
+  end
+
+  def self.topped_a_day(user)
+    where(user: user).where(rolled_on: winnable_range).any? { |roll| roll.rank == 1 }
+  end
+
+  # Grants the rng_winner achievement to whoever topped each day's board.
+  # Runs daily (see RngWinnerNotificationJob) so winners who never load
+  # /achievements still get it — that page only grants lazily on visit.
+  def self.grant_winner_achievements!
+    winnable_range.each do |date|
+      winner = leaderboard(date, limit: 1).first
+      winner&.user&.award_achievement!(:rng_winner)
+    end
+  end
+
+  # The user's earliest #1 finish, or nil — the actual day they won, which
+  # can differ from when the achievement was granted.
+  def self.first_win(user)
+    winnable_range.each do |date|
+      top = leaderboard(date, limit: 1).first
+      return top if top&.user_id == user.id
+    end
+    nil
   end
 end

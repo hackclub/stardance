@@ -1,0 +1,67 @@
+<%#
+  Certification integrities for this user, shown just below Actions on the admin
+  user page. The outline tone reflects the integrity's status:
+  auto_passed → blue, pending → yellow, manually_passed → green,
+  deducted / banned → red.
+%>
+<% tones = {
+     "auto_passed"      => "blue",
+     "pending"          => "amber",
+     "manually_passed"  => "green",
+     "deducted"         => "red",
+     "banned"           => "red"
+   } %>
+
+<div class="mission-panel">
+  <h2 class="admin-user-show__section-title">Certification Integrity</h2>
+  <ul class="admin-user-show__integrities">
+    <% integrities.each do |integrity| %>
+      <li class="admin-user-show__integrity admin-user-show__integrity--<%= tones.fetch(integrity.status, "blue") %>">
+        <dl class="admin-user-show__integrity-fields">
+          <div class="admin-user-show__integrity-field">
+            <dt>Status</dt>
+            <dd><span class="admin-user-show__integrity-status"><%= integrity.status.humanize %></span></dd>
+          </div>
+          <div class="admin-user-show__integrity-field">
+            <dt>ID</dt>
+            <dd>
+              <%= link_to "##{integrity.id}",
+                          admin_certification_integrity_review_path(integrity),
+                          class: "admin-user-show__link" %>
+            </dd>
+          </div>
+          <div class="admin-user-show__integrity-field">
+            <dt>Reviewed</dt>
+            <dd>
+              <%= integrity.reviewed_at&.strftime("%Y-%m-%d %H:%M") ||
+                  content_tag(:span, "Not yet reviewed", class: "admin-user-show__muted") %>
+            </dd>
+          </div>
+          <div class="admin-user-show__integrity-field">
+            <dt>Project reviewed</dt>
+            <dd>
+              <% if integrity.project %>
+                <%= link_to integrity.project.title, project_path(integrity.project),
+                            class: "admin-user-show__link" %>
+              <% else %>
+                <span class="admin-user-show__muted">N/A</span>
+              <% end %>
+            </dd>
+          </div>
+          <div class="admin-user-show__integrity-field">
+            <dt>Reviewer</dt>
+            <dd>
+              <% if integrity.reviewer %>
+                <%= link_to integrity.reviewer.display_name,
+                            admin_user_path(integrity.reviewer),
+                            class: "admin-user-show__link" %>
+              <% else %>
+                <span class="admin-user-show__muted">N/A</span>
+              <% end %>
+            </dd>
+          </div>
+        </dl>
+      </li>
+    <% end %>
+  </ul>
+</div>

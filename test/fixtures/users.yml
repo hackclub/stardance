@@ -6,6 +6,7 @@
 #
 #  id                               :bigint           not null, primary key
 #  age_attestation                  :string
+#  api_key                          :string
 #  approx_balance                   :integer          default(0), not null
 #  approx_total_earned              :integer          default(0), not null
 #  banned                           :boolean          default(FALSE), not null
@@ -18,15 +19,16 @@
 #  enriched_ref                     :string
 #  experience_level                 :string
 #  first_name                       :string
+#  fraud_review_payouts_disabled_at :datetime
 #  geocoded_country                 :string
 #  geocoded_lat                     :float
 #  geocoded_lon                     :float
 #  geocoded_subdivision             :string
 #  granted_roles                    :string           default([]), not null, is an Array
 #  guest_email                      :string
+#  hardware_channel_invited_at      :datetime
 #  has_gotten_free_stickers         :boolean          default(FALSE)
 #  has_pending_achievements         :boolean          default(FALSE), not null
-#  has_presentable_hardware_project :boolean          default(FALSE), not null
 #  hcb_email                        :string
 #  interests                        :string           default([]), is an Array
 #  internal_notes                   :text
@@ -60,9 +62,12 @@
 #
 # Indexes
 #
+#  index_users_on_api_key                    (api_key) UNIQUE
 #  index_users_on_approx_balance             (approx_balance)
 #  index_users_on_approx_total_earned        (approx_total_earned)
+#  index_users_on_display_name_trgm          (display_name) USING gin
 #  index_users_on_email                      (email)
+#  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))
 #  index_users_on_lower_email_unique         (lower((email)::text)) UNIQUE WHERE ((email IS NOT NULL) AND ((email)::text <> ''::text))
 #  index_users_on_onboarded_at               (onboarded_at)

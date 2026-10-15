@@ -86,7 +86,7 @@ export default class extends Controller {
       .attr("y", (d) => y(d.label) + y.bandwidth() / 2)
       .attr("dy", "0.35em")
       .attr("text-anchor", "end")
-      .attr("fill", "white")
+      .attr("fill", "#000")
       .attr("font-size", "12px")
       .attr("font-weight", "700")
       .attr("font-family", "var(--font-family-sans)")

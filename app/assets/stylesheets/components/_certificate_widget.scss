@@ -1,0 +1,18 @@
+// Discover-rail certificate widget internals. The card shell (background,
+// border, padding, title) comes from `.rail-widget` in _discover_rail.scss.
+.certificate-widget__text {
+  margin: 0;
+  font-size: var(--font-size-s);
+}
+
+.certificate-widget__code {
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-brand-mint);
+}
+
+.certificate-widget__progress-text {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
+}

@@ -39,8 +39,16 @@ class Post::Devlog < ApplicationRecord
   scope :design_phase, -> { where(phase: "design") }
   scope :build_phase, -> { where(phase: "build") }
 
+  # Devlogs whose Post the viewer may see (see Post.visible_to). The flat
+  # /devlogs/:devlog_id like and comment routes look devlogs up through this,
+  # so a devlog by an author without ID verification can't be reached by id.
+  scope :visible_to, ->(viewer) {
+    where(id: Post.visible_to(viewer).where(postable_type: "Post::Devlog").select(:postable_id))
+  }
+
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
+  ATTACHMENT_MAX_SIZE = 50.megabytes
   ACCEPTED_CONTENT_TYPES = %w[
     image/jpeg
     image/png
@@ -65,7 +73,6 @@ class Post::Devlog < ApplicationRecord
   has_many :likes, as: :likeable, dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
 
-  has_many :lookout_sessions, foreign_key: :devlog_id
 
   # only for images – not for videos or gif!
   has_many_attached :attachments do |attachable|
@@ -90,9 +97,11 @@ class Post::Devlog < ApplicationRecord
 
   validates :attachments,
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
-            size: { less_than: 50.megabytes, message: "is too large (max 50 MB)" },
+            size: { less_than: ATTACHMENT_MAX_SIZE, message: "is too large (max 50 MB)" },
             processable_file: true
-  validate :at_least_one_attachment
+  # Skipped when soft-deleting so a devlog that lost its attachments can
+  # still be deleted.
+  validate :at_least_one_attachment, unless: :will_save_change_to_deleted_at?
   validate :at_most_max_attachments
   validates :duration_seconds,
             numericality: {
@@ -101,7 +110,16 @@ class Post::Devlog < ApplicationRecord
             },
             allow_nil: true,
             on: :create
+  # Call normalizer prior to validation
+  before_validation :normalize_line_endings
   validates :body, presence: true, length: { maximum: BODY_MAX_LENGTH }
+
+  # The comments a reader should see — the Ruby-side counterpart to
+  # Comment.for_thread, so a preloaded +comments+ association is reused rather
+  # than re-queried per devlog (the API serializes a whole page in one go).
+  def thread_comments
+    comments.reject { |comment| comment.user.banned? }.sort_by(&:created_at)
+  end
 
   after_create_commit :handle_post_creation
   after_update_commit :update_project_duration_if_changed
@@ -131,7 +149,47 @@ class Post::Devlog < ApplicationRecord
     result
   end
 
+  # Best-effort per-Hackatime-project time split for this devlog's logged
+  # window — admin-only debug info (see Posts::CardComponent). There's no
+  # persisted per-project breakdown (duration_seconds is one aggregate total),
+  # so this reconstructs it live: one Hackatime API call per project key that
+  # was linked at devlog-creation time, scoped to the same window duration_seconds
+  # was originally computed from. Cached indefinitely once computed, since a
+  # past devlog's time window never changes.
+  def hackatime_project_breakdown
+    keys = hackatime_projects_key_snapshot.to_s.split(",").map(&:strip).reject(&:blank?)
+    return [] if keys.empty? || hackatime_projects_key_snapshot == "test"
+
+    author = post&.user
+    hackatime_uid = author&.hackatime_identity&.uid
+    return [] if hackatime_uid.blank?
+
+    project = post.project
+    return [] unless project
+
+    Rails.cache.fetch([ "devlog_hackatime_breakdown", id ], expires_in: 30.days) do
+      access_token = author.hackatime_identity&.access_token
+      window_start = project.devlog_window_start(created_at)
+
+      breakdown = keys.map do |key|
+        seconds = HackatimeService.fetch_total_seconds_for_projects(
+          hackatime_uid, [ key ], start_date: window_start.iso8601, end_date: created_at.iso8601, access_token: access_token
+        ).to_i
+        { name: key, seconds: seconds }
+      end
+
+      total = breakdown.sum { |b| b[:seconds] }
+      breakdown.each { |b| b[:percent] = total.positive? ? (b[:seconds] * 100.0 / total).round(1) : 0.0 }
+      breakdown.sort_by { |b| -b[:seconds] }
+    end
+  end
+
   private
+
+  # Normalize line endings (\r\n for now) to \n
+  def normalize_line_endings
+    self.body = body.gsub("\r\n", "\n") if body.present?
+  end
 
   def handle_post_creation
     PostCreationToSlackJob.perform_later(self)

@@ -1,0 +1,90 @@
+// One-time "Hardware has been updated!" notice shown to hardware builders.
+// Sits on the dark set-2 card surface the rest of the app's modals use, bordered
+// by its own secondary foreground (branding.md §3).
+.hardware-update {
+  // Explicit centering: a global reset (margin: 0) overrides the UA sheet's
+  // margin: auto, so showModal() would otherwise pin the dialog top-left.
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(32rem, calc(100vw - var(--space-l)));
+  max-height: min(85vh, calc(100vh - var(--space-l)));
+  overflow-y: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-space-text);
+
+  &::backdrop {
+    background: rgba(5, 4, 24, 0.6);
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    padding: var(--space-l);
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__title {
+    margin: 0;
+    // Playfair italic is the system's emphasis face (branding.md §2).
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--font-size-xxl);
+    line-height: 1.15;
+    color: var(--color-space-text);
+  }
+
+  &__lead {
+    margin: 0;
+    color: var(--color-space-text-muted);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__item-title {
+    font-weight: 700;
+    color: var(--color-brand-cream);
+  }
+
+  &__item-body {
+    color: var(--color-space-text-muted);
+    line-height: 1.45;
+
+    a {
+      color: var(--color-brand-cream);
+      text-decoration: underline;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-s);
+  }
+}

@@ -1,13 +1,20 @@
+<% if @pagy.page == 1 %>
+  <%= render Feed::WrongToolPromoComponent.new %>
+<% end %>
+
 <% @feed_posts.each_with_index do |post, index| %>
   <% source = @feed_post_sources&.fetch(post, "quality_latest") || "quality_latest" %>
   <% if post.postable_type == "Post::ShipEvent" %>
+    <% next unless (project = post.project) %>
     <%= render "projects/ship_card",
           post: post,
-          project: post.project,
+          project: project,
           source: source,
           position: index + 1,
           page: @pagy.page,
-          feed_request_id: @feed_request_id %>
+          feed_request_id: @feed_request_id,
+          media_variant: :medium,
+          lazy_media: true %>
   <% else %>
     <%= render Posts::CardComponent.new(
           post: post,
@@ -16,6 +23,8 @@
           position: index + 1,
           page: @pagy.page,
           feed_request_id: @feed_request_id,
+          media_variant: :medium,
+          lazy_media: true,
           current_user_reposted_post_ids: @reposted_post_ids,
           show_views: @show_post_views
         ) %>
@@ -60,7 +69,9 @@
   <% end %>
 
   <p class="feed-home__empty">
-    <% if @current_tab == "new_builders" %>
+    <% if @current_tab == "hardware" %>
+      No hardware builds here yet. Check back later!
+    <% elsif @current_tab == "new_builders" %>
       No new builders right now. Check back later!
     <% elsif @current_tab == "following" %>
       Nothing here yet. Follow some people or projects to see their posts here!

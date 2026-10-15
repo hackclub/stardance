@@ -2,6 +2,9 @@
 
 <div class="admin-users">
   <h1 class="admin-user-show__title">Users</h1>
+  <% if current_user.admin? %>
+    <p><%= link_to "✦ View global Stardust ledger", admin_ledger_entries_path %></p>
+  <% end %>
   <%= form_with url: admin_users_path, method: :get, local: true, class: "admin-users__search" do %>
     <%= text_field_tag :query, params[:query],
       placeholder: "Search by name or email...",
@@ -11,6 +14,9 @@
   <% end %>
 <% if current_user.admin? || current_user.has_role?(:raffle_admin) %>
   <p><%= link_to "→ Raffle admin", admin_raffles_path %></p>
+<% end %>
+<% if current_user.admin? || current_user.workshop_manager? %>
+  <p><%= link_to "→ Workshop admin", admin_workshops_path %></p>
 <% end %>
   <% if @users.any? %>
     <div>
@@ -30,7 +36,10 @@
           <% @users.each do |user| %>
             <tr>
               <td class="space-table__muted"><%= user.id %></td>
-              <td><%= link_to user.display_name, admin_certification_reports_path(reporter_id: user.id) %></td>
+              <td>
+                <%= link_to user.display_name, admin_certification_reports_path(reporter_id: user.id) %>
+                <% if user == current_user %><span class="space-table__muted">(you)</span><% end %>
+              </td>
               <% if policy(user).view_email? %>
                 <td class="space-table__muted"><%= user.email %></td>
               <% end %>

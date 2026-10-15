@@ -7,7 +7,7 @@
   elsif rating_closed
     "Sign up for Stardance to build and ship your own projects, then rate what others have made!"
   else
-    "No projects ready to vote on right now. This is either a really good or bad. Nothing in between"
+    "No projects ready to vote on right now. This is either a really good or bad thing. Nothing in between"
   end
   action_label = current_user ? "My projects" : ("Sign up" if rating_closed)
   action_path = current_user ? profile_projects_path(current_user.display_name) : (root_path if rating_closed)

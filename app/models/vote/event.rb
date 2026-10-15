@@ -54,6 +54,7 @@ class Vote::Event < ApplicationRecord
     vote_flag_accepted
     vote_flag_rejected
     vote_auto_discarded
+    vote_discarded
   ].freeze
 
   CLIENT_EVENT_TYPES = %w[
@@ -89,4 +90,5 @@ class Vote::Event < ApplicationRecord
   scope :accepted_vote_flags, -> { of_type("vote_flag_accepted") }
   scope :resolved_vote_flags, -> { of_type(%w[vote_flag_accepted vote_flag_rejected]) }
   scope :pending_vote_flags, -> { vote_flags.where.not(vote_id: resolved_vote_flags.select(:vote_id)) }
+  scope :reviewed_vote_flags, -> { vote_flags.where(vote_id: resolved_vote_flags.select(:vote_id)) }
 end

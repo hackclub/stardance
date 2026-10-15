@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Shop::RetryFreeStickerOrdersJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     orders = ShopOrder.where(aasm_state: "pending")
@@ -13,7 +13,7 @@ class Shop::RetryFreeStickerOrdersJob < ApplicationJob
       order.mark_stickers_received
     rescue StandardError => e
       Rails.logger.error "RetryFreeStickerOrdersJob: failed to fulfill order #{order.id}: #{e.message}"
-      Sentry.capture_exception(e, extra: { order_id: order.id, user_id: order.user_id })
+      Rails.error.report(e, context: { order_id: order.id, user_id: order.user_id })
     end
   end
 end

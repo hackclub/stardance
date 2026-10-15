@@ -1,0 +1,95 @@
+<% content_for :title, @workshop.title %>
+<% content_for :og_title, "#{@workshop.title} on Stardance" %>
+<% content_for :og_description, truncate(@workshop.description.to_s, length: 200) %>
+<% state = @workshop.state %>
+
+<div class="app-layout">
+  <div class="app-layout__main">
+    <article class="workshop-home"
+             data-controller="workshop-countdown"
+             data-workshop-countdown-starts-at-value="<%= @workshop.starts_at.iso8601 %>"
+             data-workshop-countdown-ends-at-value="<%= @workshop.ends_at.iso8601 %>"
+             data-workshop-countdown-join-window-ms-value="<%= Workshop::JOIN_WINDOW.in_milliseconds %>">
+      <p class="workshop-home__crumb">
+        <span class="workshop-home__crumb-links">
+          <%= link_to "Workshops", workshops_path, class: "workshop-home__crumb-link" %>
+          <% if policy(@workshop).manage? %>
+            <span class="workshop-home__crumb-dot" aria-hidden="true">·</span>
+            <%= link_to "Manage", edit_admin_workshop_path(@workshop), class: "workshop-home__crumb-link" %>
+          <% end %>
+        </span>
+      </p>
+
+      <section class="workshop-home__hero">
+        <%= image_tag "missions/card-star.png", alt: "",
+              aria: { hidden: "true" }, class: "workshop-home__hero-creature" %>
+
+        <ul class="workshop-home__hero-chips">
+          <% status_label = { upcoming: "upcoming", soon: "starting soon", live: "live now", ended: "wrapped up" }.fetch(state) %>
+          <li class="workshop-home__hero-chip workshop-home__hero-chip--<%= state %>"><%= status_label %></li>
+          <% if @rsvp_count >= 10 %>
+            <li class="workshop-home__hero-chip workshop-home__hero-chip--rsvps"><%= @rsvp_count %> people going</li>
+          <% end %>
+        </ul>
+
+        <h1 class="workshop-home__hero-title">
+          <em class="workshop-home__hero-title-accent"><%= @workshop.title %></em>
+        </h1>
+
+        <p class="workshop-home__time">
+          <time datetime="<%= @workshop.starts_at.iso8601 %>" data-workshop-countdown-target="time">
+            <%= @workshop.starts_at.strftime("%A, %B %-d · %-l:%M%P") %> –
+            <%= @workshop.ends_at.strftime("%-l:%M%P") %> UTC
+          </time>
+        </p>
+
+        <% if @workshop.description.present? %>
+          <div class="workshop-home__hero-brief"><%= simple_format(@workshop.description) %></div>
+        <% end %>
+
+        <p class="workshop-home__countdown" data-workshop-countdown-target="label">
+          <% case state %>
+          <% when :ended %>
+            This workshop has ended.
+          <% when :live %>
+            Ends at <%= @workshop.ends_at.strftime("%-l:%M%P") %> UTC
+          <% else %>
+            Starting soon
+          <% end %>
+        </p>
+
+        <div class="workshop-home__hero-actions">
+          <div data-workshop-countdown-target="join" <%= "hidden" unless state.in?([ :soon, :live ]) %>>
+            <% if @workshop.zoom_link.present? %>
+              <%= form_with url: workshop_attendance_path(@workshop), method: :post, local: true, class: "workshop-home__cta-form" do %>
+                <%= render ActionButtonComponent.new(text: "Join the Zoom", type: :submit) %>
+              <% end %>
+            <% else %>
+              <p class="workshop-home__join-pending">The Zoom link will appear here just before the workshop starts. Refresh in a minute!</p>
+            <% end %>
+          </div>
+
+          <% if state.in?([ :upcoming, :soon ]) %>
+            <div data-workshop-countdown-target="rsvp">
+              <% if @rsvped %>
+                <%= form_with url: workshop_rsvp_path(@workshop), method: :delete, local: true, class: "workshop-home__cta-form" do %>
+                  <%= render ActionButtonComponent.new(text: "Remove RSVP", type: :submit, variant: :secondary) %>
+                <% end %>
+              <% else %>
+                <%= form_with url: workshop_rsvp_path(@workshop), method: :post, local: true, class: "workshop-home__cta-form" do %>
+                  <%= render ActionButtonComponent.new(text: "RSVP", type: :submit, variant: :secondary) %>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <% if @rsvped && state == :upcoming %>
+          <p class="workshop-home__rsvp-note">You've RSVP'd! We'll ping you <%= Workshop::JOIN_WINDOW.inspect %> before it starts.</p>
+        <% end %>
+      </section>
+    </article>
+  </div>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

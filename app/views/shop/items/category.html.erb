@@ -72,9 +72,6 @@
 
     <%= turbo_frame_tag "shop_items" do %>
       <div class="shop-category__items">
-        <% if @slug == "experiences" && !@hardware_flow_enabled %>
-          <%= render "shop/items/outpost_ticket" %>
-        <% end %>
         <% @visible_shop_items.each do |item| %>
           <%= render "shop/items/item_card",
                 item: item,
@@ -98,5 +95,3 @@
     <h2>The shop is not opened yet!</h2>
   <% end %>
 </div>
-
-<%= render "shop/items/suggestion_modal" if @show_shop_suggestion_modal %>

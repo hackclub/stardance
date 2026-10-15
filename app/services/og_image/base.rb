@@ -61,17 +61,21 @@ module OgImage
 
     protected
 
-    def draw_rounded_rect(x:, y:, width:, height:, radius: 24, fill: "#ffffff", fill_opacity: 1.0, stroke: nil, stroke_width: 0)
-      r, g, b = hex_to_rgb(fill)
-      rect = rounded_rect_mask(width, height, radius)
+    # Canvas dimensions resolve through the subclass so a renderer can
+    # declare its own WIDTH/HEIGHT constants (e.g. a square canvas).
+    def canvas_width
+      self.class::WIDTH
+    end
 
-      if fill_opacity < 1.0
-        a = (fill_opacity * 255).round
-        overlay = rect * [ r, g, b, a ]
-      else
-        overlay = rect * [ r, g, b ]
-        overlay = overlay.bandjoin(rect * 255) if image.bands == 4
-      end
+    def canvas_height
+      self.class::HEIGHT
+    end
+
+    def draw_rounded_rect(x:, y:, width:, height:, radius: 24, fill: "#ffffff", fill_opacity: 1.0)
+      r, g, b = hex_to_rgb(fill)
+      mask = rounded_rect_mask(width, height, radius)
+      mask = (mask * fill_opacity).cast(:uchar) if fill_opacity < 1.0
+      overlay = solid_rgba(width, height, r, g, b).extract_band(0, n: 3).bandjoin(mask).copy(interpretation: :srgb)
 
       @image = image.composite(overlay, :over, x: [ x ], y: [ y ])
     end
@@ -85,10 +89,10 @@ module OgImage
       fr, fg, fb = hex_to_rgb(frame_color)
       cr, cg, cb = hex_to_rgb(card_color)
 
-      canvas = solid_rgba(WIDTH, HEIGHT, fr, fg, fb)
+      canvas = solid_rgba(canvas_width, canvas_height, fr, fg, fb)
 
-      cw = WIDTH - inset * 2
-      ch = HEIGHT - inset * 2
+      cw = canvas_width - inset * 2
+      ch = canvas_height - inset * 2
       card_mask = rounded_rect_mask(cw, ch, card_radius)
       card = solid_rgba(cw, ch, cr, cg, cb)
       card = card.extract_band(0, n: 3).bandjoin(card_mask)
@@ -97,10 +101,10 @@ module OgImage
       pattern_path = Rails.root.join("app", "assets", "images", "mask", "pattern.png").to_s
       if File.exist?(pattern_path)
         pattern = Vips::Image.new_from_file(pattern_path)
-        pattern = pattern.resize(WIDTH.to_f / pattern.width, vscale: HEIGHT.to_f / pattern.height)
+        pattern = pattern.resize(canvas_width.to_f / pattern.width, vscale: canvas_height.to_f / pattern.height)
 
         pat_rgb = pattern.extract_band(0, n: 3)
-        pat_alpha = pattern.bands >= 4 ? pattern.extract_band(3) : Vips::Image.black(WIDTH, HEIGHT).new_from_image(255).cast(:uchar)
+        pat_alpha = pattern.bands >= 4 ? pattern.extract_band(3) : Vips::Image.black(canvas_width, canvas_height).new_from_image(255).cast(:uchar)
 
         canvas_rgb = canvas.extract_band(0, n: 3)
         canvas_alpha = canvas.extract_band(3)
@@ -118,7 +122,7 @@ module OgImage
     def draw_text(text, x:, y:, size: 48, color: "#ffffff", gravity: "NorthWest", font: nil)
       r, g, b = hex_to_rgb(color)
       face = font || font_name
-      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
+      text_img = Vips::Image.text(pango_escape(text), font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
       w, h = text_img.width, text_img.height
       colored = solid_rgba(w, h, r, g, b).extract_band(0, n: 3)
       overlay = colored.bandjoin(text_img).copy(interpretation: :srgb)
@@ -169,10 +173,10 @@ module OgImage
       br, bg, bb = hex_to_rgb(bg_color)
       cr, cg, cb = hex_to_rgb(card_color)
 
-      canvas = solid_rgba(WIDTH, HEIGHT, br, bg, bb)
+      canvas = solid_rgba(canvas_width, canvas_height, br, bg, bb)
 
-      cw = WIDTH - inset * 2
-      ch = HEIGHT - inset * 2
+      cw = canvas_width - inset * 2
+      ch = canvas_height - inset * 2
       card_mask = rounded_rect_mask(cw, ch, card_radius)
       card = solid_rgba(cw, ch, cr, cg, cb)
       card = card.extract_band(0, n: 3).bandjoin(card_mask)
@@ -181,7 +185,7 @@ module OgImage
       nebula_path = Rails.root.join("app", "assets", "images", "landing", "how-this-works", "nebula-bg.png").to_s
       if File.exist?(nebula_path)
         nebula = Vips::Image.new_from_file(nebula_path)
-        nebula = nebula.resize(WIDTH.to_f / nebula.width, vscale: HEIGHT.to_f / nebula.height)
+        nebula = nebula.resize(canvas_width.to_f / nebula.width, vscale: canvas_height.to_f / nebula.height)
         nebula = ensure_four_bands(nebula)
         neb_rgb = nebula.extract_band(0, n: 3)
         neb_alpha = nebula.extract_band(3)
@@ -195,7 +199,7 @@ module OgImage
 
     def draw_soft_shadow(text, x:, y:, size: 48, gravity: "NorthWest", font: nil, radius: 6, opacity: 0.6, offset: 2)
       face = font || font_name
-      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
+      text_img = Vips::Image.text(pango_escape(text), font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
       w, h = text_img.width, text_img.height
 
       pad = radius * 3
@@ -209,8 +213,8 @@ module OgImage
       shadow_layer = Vips::Image.black(padded_w, padded_h).new_from_image([ 0, 0, 0 ]).cast(:uchar)
       shadow_layer = shadow_layer.bandjoin(shadow_mask).copy(interpretation: :srgb)
 
-      tx, ty = apply_gravity(gravity, x - pad, y - pad, padded_w, padded_h)
-      @image = image.composite(shadow_layer, :over, x: [ tx ], y: [ ty ])
+      tx, ty = apply_gravity(gravity, x, y, w, h)
+      @image = image.composite(shadow_layer, :over, x: [ tx - pad ], y: [ ty - pad ])
     end
 
     def draw_glowing_text(text, x:, y:, size: 48, color: "#ffffff", glow_color: nil, gravity: "NorthWest", glow_radius: 8, glow_opacity: 0.5, font: nil)
@@ -218,7 +222,7 @@ module OgImage
       gr, gg, gb = hex_to_rgb(glow_color)
       face = font || font_name
 
-      text_img = Vips::Image.text(text.to_s, font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
+      text_img = Vips::Image.text(pango_escape(text), font: "#{face} #{size}", fontfile: fontfile_for(face), dpi: 72)
       w, h = text_img.width, text_img.height
 
       pad = glow_radius * 3
@@ -232,8 +236,8 @@ module OgImage
       glow_layer = solid_rgba(padded_w, padded_h, gr, gg, gb).extract_band(0, n: 3)
       glow_layer = glow_layer.bandjoin(glow_mask).copy(interpretation: :srgb)
 
-      tx, ty = apply_gravity(gravity, x - pad, y - pad, padded_w, padded_h)
-      @image = image.composite(glow_layer, :over, x: [ tx ], y: [ ty ])
+      tx, ty = apply_gravity(gravity, x, y, w, h)
+      @image = image.composite(glow_layer, :over, x: [ tx - pad ], y: [ ty - pad ])
 
       draw_text(text, x: x, y: y, size: size, color: color, gravity: gravity, font: font)
     end
@@ -283,18 +287,22 @@ module OgImage
 
     def draw_diagonal_scrim(opacity: 0.55)
       r, g, b = hex_to_rgb("#08061e")
-      h_ramp = Vips::Image.identity(bands: 1).resize(WIDTH / 256.0, vscale: 1.0)
-      h_ramp = h_ramp.linear(-1.0, 255.0).resize(1, vscale: HEIGHT.to_f)
+      h_ramp = Vips::Image.identity(bands: 1).resize(canvas_width / 256.0, vscale: 1.0)
+      h_ramp = h_ramp.linear(-1.0, 255.0).resize(1, vscale: canvas_height.to_f)
 
-      v_ramp = Vips::Image.identity(bands: 1).resize(1, vscale: HEIGHT / 256.0)
-      v_ramp = v_ramp.resize(WIDTH.to_f, vscale: 1.0)
+      v_ramp = Vips::Image.identity(bands: 1).resize(1, vscale: canvas_height / 256.0)
+      v_ramp = v_ramp.resize(canvas_width.to_f, vscale: 1.0)
 
       diag = ((h_ramp + v_ramp) / 2.0 * opacity).cast(:uchar)
-      scrim = solid_rgba(WIDTH, HEIGHT, r, g, b).extract_band(0, n: 3).bandjoin(diag).copy(interpretation: :srgb)
+      scrim = solid_rgba(canvas_width, canvas_height, r, g, b).extract_band(0, n: 3).bandjoin(diag).copy(interpretation: :srgb)
       @image = image.composite(scrim, :over, x: [ 0 ], y: [ 0 ])
     end
 
     private
+
+    def pango_escape(text)
+      CGI.escapeHTML(text.to_s)
+    end
 
     def ensure_four_bands(img)
       if img.bands == 3
@@ -383,14 +391,16 @@ module OgImage
       case gravity
       when "NorthWest"
         [ x, y ]
+      when "North"
+        [ (canvas_width - obj_width) / 2 + x, y ]
       when "NorthEast"
-        [ WIDTH - x - obj_width, y ]
+        [ canvas_width - x - obj_width, y ]
       when "SouthWest"
-        [ x, HEIGHT - y - obj_height ]
+        [ x, canvas_height - y - obj_height ]
       when "SouthEast"
-        [ WIDTH - x - obj_width, HEIGHT - y - obj_height ]
+        [ canvas_width - x - obj_width, canvas_height - y - obj_height ]
       when "Center"
-        [ (WIDTH - obj_width) / 2 + x, (HEIGHT - obj_height) / 2 + y ]
+        [ (canvas_width - obj_width) / 2 + x, (canvas_height - obj_height) / 2 + y ]
       else
         [ x, y ]
       end

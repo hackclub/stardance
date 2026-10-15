@@ -1,14 +1,13 @@
 # Forwards a finished Lookout session's capture timestamps to Hackatime as
 # heartbeats, so the recorded time shows up under the Hackatime project the user
-# chose on the recorder (an existing one or a new one) — falling back to this
-# project's recorder name — which we then link so its hours count toward the
-# Stardance project.
+# chose (an existing one or a new one), falling back to this project's recorder
+# name, which we then link so its hours count toward the Stardance project.
 # See https://github.com/hackclub/lookout/blob/main/docs/integration.md
 #
-# Returns a Result so callers can tell the user what happened. The recorder runs
-# this synchronously from the "where should this time go?" step and surfaces
-# Result#error in the UI when something goes wrong, instead of silently dropping
-# the time (which is what the old fire-and-forget job did).
+# Returns a Result so callers can tell the user what happened. The temporary
+# session-finalize page runs this synchronously from the "where should this time
+# go?" step and surfaces Result#error when something goes wrong, instead of
+# silently dropping the time (which is what the old fire-and-forget job did).
 class LookoutHeartbeatForwarder
   # ok?  -> did the time make it to Hackatime
   # error -> a user-facing sentence explaining a failure (nil on success)
@@ -79,7 +78,7 @@ class LookoutHeartbeatForwarder
   # Link the Hackatime project the time was filed under to the Stardance project
   # so its hours count here, without the user linking it by hand. Idempotent on
   # (user, name). Never steals a project already linked to a *different* Stardance
-  # project — in that case we just leave the time filed under it. Best-effort
+  # project; in that case we just leave the time filed under it. Best-effort
   # (non-bang save): the push already succeeded, so a link hiccup shouldn't fail.
   def link_hackatime_project!(name)
     hp = User::HackatimeProject.find_or_initialize_by(user: @session.user, name: name)

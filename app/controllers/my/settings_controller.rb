@@ -9,6 +9,9 @@ class My::SettingsController < ApplicationController
       leaderboard_optin: params[:leaderboard_optin] == "1",
       search_engine_indexing_off: params[:search_engine_indexing_off] == "1"
     }
+    %i[particle_effects_enabled disintegration_effects_enabled platform_ads_enabled].each do |key|
+      pref_attrs[key] = params[key] == "1" if params.key?(key)
+    end
 
     if current_user.preference.has_attribute?(:streak_slack_status_enabled)
       new_val = params[:streak_slack_status_enabled] == "1"
@@ -36,6 +39,22 @@ class My::SettingsController < ApplicationController
     respond_to do |format|
       format.turbo_stream { head :ok }
       format.html { redirect_back fallback_location: root_path }
+    end
+  end
+
+  def regenerate_api_key
+    current_user.regenerate_api_key
+    warning = "API key regenerated."
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:warning] = warning
+        render turbo_stream: [
+          turbo_stream.replace("api-key-section", partial: "my/settings/api_key", locals: { user: current_user }),
+          turbo_stream.update("flash-region", partial: "shared/flash")
+        ]
+      end
+      format.html { redirect_back fallback_location: root_path, flash: { warning: warning } }
     end
   end
 

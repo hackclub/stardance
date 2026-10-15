@@ -1,0 +1,64 @@
+<% title = mega_dash_title %>
+<% content_for :title, title %>
+
+<div class="mega-dash">
+  <%= link_to "← back to admin", admin_root_path, class: "mega-dash__back" %>
+
+  <header class="mega-dash__header">
+    <div>
+      <h1><%= title %></h1>
+      <p class="mega-dash__subtitle">Every review queue, end to end.</p>
+    </div>
+    <div class="mega-dash__controls">
+      <nav class="mega-dash__periods" aria-label="Period">
+        <% { "7" => "7 days", "30" => "30 days", "90" => "90 days" }.each do |value, label| %>
+          <%= link_to label, admin_mega_dashboard_path(period: value),
+                class: class_names("mega-dash__period", "is-active" => @period == value) %>
+        <% end %>
+      </nav>
+      <%= button_to "Clear cache", admin_mega_dashboard_cache_path, method: :delete, class: "mega-dash__clear-cache" %>
+    </div>
+  </header>
+
+  <%= turbo_frame_tag "mega-dash-overview",
+        src: admin_mega_dashboard_section_path(section: "overview", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading queue overview…</p>
+  <% end %>
+
+  <%= turbo_frame_tag "mega-dash-waterfall",
+        src: admin_mega_dashboard_section_path(section: "waterfall", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading user-facing time…</p>
+  <% end %>
+
+  <%= turbo_frame_tag "mega-dash-nps",
+        src: admin_mega_dashboard_section_path(section: "nps", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading NPS…</p>
+  <% end %>
+
+  <%= turbo_frame_tag "mega-dash-votes",
+        src: admin_mega_dashboard_section_path(section: "votes", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading vote queue…</p>
+  <% end %>
+
+  <%= turbo_frame_tag "mega-dash-jelly",
+        src: admin_mega_dashboard_section_path(section: "jelly", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading support…</p>
+  <% end %>
+
+  <%= turbo_frame_tag "mega-dash-fulfillment",
+        src: admin_mega_dashboard_section_path(section: "fulfillment", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading fulfillment mix…</p>
+  <% end %>
+
+  <% @queues.each do |queue| %>
+    <%= turbo_frame_tag "mega-dash-queue-#{queue.key}",
+          src: admin_mega_dashboard_section_path(section: "queue:#{queue.key}", period: @period), loading: "lazy", target: "_top" do %>
+      <p class="mega-dash__loading">Loading <%= queue.label.downcase %>…</p>
+    <% end %>
+  <% end %>
+
+  <%= turbo_frame_tag "mega-dash-money",
+        src: admin_mega_dashboard_section_path(section: "money", period: @period), loading: "lazy", target: "_top" do %>
+    <p class="mega-dash__loading">Loading payouts and spend…</p>
+  <% end %>
+</div>

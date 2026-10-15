@@ -1,0 +1,10 @@
+header "Your hardware project was permanently rejected"
+
+section "An administrator has completed the review of *<#{project_url}|#{project_title}>*. This is a final decision, not a request for changes. This project cannot be submitted for funding or build certification again.", markdown: true
+section "Reason for this decision:"
+feedback.scan(/.{1,2900}/m).each { |part| section part, markdown: false }
+section "Your project and devlogs remain available. This decision applies to this project; it is not an account ban."
+
+actions [
+  button("View project and decision", "view_project", url: project_url)
+]

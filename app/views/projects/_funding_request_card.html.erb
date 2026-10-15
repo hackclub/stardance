@@ -1,0 +1,150 @@
+<%# A funding request on the project timeline. Deliberately short: the whole
+    point is the amount and, once decided, the verdict.
+
+    The reviewer's feedback is the card's body text, since that is the part
+    written for this project. The verdict's standing explanation (what the
+    status means, what happens next) moves into a "?" tooltip on the byline,
+    and only falls back to being the body when there is no feedback to show.
+
+    Ordinary reviews and feedback are public. Permanent rejections are restricted
+    to project owners, helpers and review staff by ProjectsController#visible_funding_requests.
+
+    Locals: funding_request, project, owner (required); resubmit_modal_id
+    (optional - when present a returned request offers a resubmit button). %>
+<%
+  decided_on = funding_request.decided_at || funding_request.created_at
+  reviewer = funding_request.reviewer
+  viewer_is_owner = owner.present? && owner == current_user
+  show_feedback = funding_request.feedback.present? && !funding_request.pending?
+
+  kit_mission = funding_request.kit_mission?
+  awards_kit = funding_request.awards_design_kit?
+  unclaimed_kits = awards_kit ? funding_request.unredeemed_prizes.to_a : []
+
+  approved_message =
+    if awards_kit && unclaimed_kits.none?
+      "Approved! Everything you claimed is on the way. Log your build hours with a timelapse, then ship when you're ready."
+    elsif awards_kit
+      "Approved, and the project has moved to the build stage. Claim your #{"kit".pluralize(unclaimed_kits.size)} below to get shipped."
+    elsif kit_mission
+      "Approved, and the project has moved to the build stage. This one comes without a kit, so keep logging your build hours and ship when you're ready."
+    elsif funding_request.approved_without_grant?
+      "Approved, and the project has moved to the build stage. This one comes without a grant, so keep logging your build hours and ship when you're ready."
+    else
+      "Approved for $#{funding_request.final_amount_dollars}, and the project has moved to the build stage. Your grant card follows once it has been issued."
+    end
+
+  context, message =
+    case funding_request.status.to_sym
+    when :approved
+      [ kit_mission ? "approved your design" : "approved your funding request", approved_message ]
+    when :returned
+      [ "returned your funding request",
+        "This needs changes before it can be funded. Take a look at the feedback, then submit your design again." ]
+    when :permanently_rejected
+      [ "permanently rejected your project",
+        "This project can’t be submitted for funding or certification again." ]
+    else
+      [ "requested funding",
+        "Waiting on a reviewer. We'll let you know as soon as there's a decision." ]
+    end
+%>
+
+<article id="<%= dom_id(funding_request) %>"
+         class="<%= class_names("feed-post-card", "funding-request-card",
+                                "funding-request-card--#{funding_request.status}") %>">
+  <header class="feed-post-card__header funding-request-card__header">
+    <% if reviewer && !funding_request.pending? %>
+      <%= link_to profile_path(reviewer.display_name), class: "feed-post-card__avatar-link",
+            aria: { label: "@#{reviewer.display_name}" } do %>
+        <%= image_tag reviewer.avatar, alt: "", class: "feed-post-card__avatar" %>
+      <% end %>
+    <% else %>
+      <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">$</span>
+    <% end %>
+
+    <div class="feed-post-card__meta">
+      <p class="feed-post-card__byline">
+        <% if reviewer && !funding_request.pending? %>
+          <%= render "shared/username_link", user: reviewer, link_class: "feed-post-card__author",
+                data: { turbo_frame: "_top" }, badge: false %>
+        <% else %>
+          <span class="feed-post-card__author"><%= owner&.display_name || "Someone" %></span>
+        <% end %>
+        <span class="feed-post-card__context"><%= context %></span>
+        <% if show_feedback && !funding_request.permanently_rejected? %>
+          <%= render "shared/help_tooltip", text: message %>
+        <% end %>
+        <time class="feed-post-card__time" datetime="<%= decided_on.iso8601 %>"
+              title="<%= l(decided_on, format: :long) %>">
+          · <%= time_ago_in_words(decided_on) %> ago
+        </time>
+      </p>
+    </div>
+
+    <% unless kit_mission %>
+      <span class="funding-request-card__amount">
+        $<%= funding_request.requested_amount_dollars %>
+        <span class="funding-request-card__tier"><%= funding_request.tier_label %></span>
+      </span>
+    <% end %>
+  </header>
+
+  <%
+    has_feedback_photos = show_feedback && funding_request.feedback_images.any?(&:persisted?)
+    message_class = class_names("feed-post-card__body", "funding-request-card__message",
+                                "funding-request-card__message--openable" => has_feedback_photos)
+    # The whole review opens the feedback modal; guarded so a thumbnail click
+    # (which opens it too) doesn't re-call showModal on an already-open dialog.
+    open_modal_js =
+      if has_feedback_photos
+        "var d=document.getElementById('feedback-images-#{funding_request.id}'); if (d && !d.open) d.showModal()"
+      end
+  %>
+  <%= tag.div class: message_class, onclick: open_modal_js do %>
+    <% if show_feedback %>
+      <% if action_items_enabled? && !funding_request.permanently_rejected? %>
+        <%= render "projects/review_feedback", review: funding_request %>
+      <% else %>
+        <%= simple_format(funding_request.feedback, {}, sanitize: true) %>
+      <% end %>
+      <%= render "admin/certification/funding_requests/feedback_images", funding_request: funding_request %>
+    <% else %>
+      <p><%= message %></p>
+    <% end %>
+  <% end %>
+
+  <% if funding_request.permanently_rejected? && show_feedback %>
+    <p class="funding-request-card__final-note"><%= message %></p>
+  <% end %>
+
+  <% if funding_request.returned? && viewer_is_owner && resubmit_modal_id.present? %>
+    <div class="funding-request-card__actions">
+      <button type="button" class="action-btn action-btn--small action-btn--primary"
+              onclick="document.getElementById(<%= resubmit_modal_id.to_json %>).showModal()">
+        Submit design again
+      </button>
+    </div>
+  <% end %>
+
+  <% if funding_request.approved? && viewer_is_owner && unclaimed_kits.any? %>
+    <div class="funding-request-card__actions">
+      <% unclaimed_kits.each do |prize| %>
+        <%= link_to "Claim #{prize.shop_item.name}",
+              shop_item_path(prize.shop_item, funding_request_id: funding_request.id),
+              class: "action-btn action-btn--small action-btn--primary" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if has_feedback_photos %>
+    <%= tag.button type: "button", class: "funding-request-card__expand",
+          onclick: open_modal_js, aria: { label: "Expand reviewer feedback" } do %>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
+      </svg>
+      <span>Expand</span>
+    <% end %>
+  <% end %>
+</article>

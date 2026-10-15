@@ -23,9 +23,12 @@ module TheseusService
         shop_orders = Array(shop_orders)
         first_order = shop_orders.first
 
-        item_quantities = shop_orders.group_by { |o| o.shop_item.name }
-                                     .transform_values { |group| group.sum(&:quantity) }
-        rubber_stamps = item_quantities.map { |name, qty| "#{qty}x #{name}" }.join("\n")
+        line_groups = shop_orders.group_by { |o| [ o.shop_item.name, o.selected_modifiers.map(&:name).sort ] }
+        rubber_stamps = line_groups.map do |(name, modifier_names), group|
+          qty = group.sum(&:quantity)
+          label = modifier_names.any? ? "#{name} (#{modifier_names.join(", ")})" : name
+          "#{qty}x #{label}"
+        end.join("\n")
 
         coalesced_key = Digest::SHA256.hexdigest(shop_orders.map(&:id).sort.join("_"))[0, 16]
 

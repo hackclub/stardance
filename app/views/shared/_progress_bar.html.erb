@@ -1,0 +1,8 @@
+<div class="progress-bar <%= local_assigns[:class_name] %>"
+     role="progressbar"
+     aria-valuenow="<%= value %>"
+     aria-valuemin="0"
+     aria-valuemax="<%= max %>"
+     aria-label="<%= label %>">
+  <div class="progress-bar__fill" style="width: <%= [ (value.to_f / max * 100).round, 100 ].min %>%"></div>
+</div>

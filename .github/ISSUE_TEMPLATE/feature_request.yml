@@ -1,0 +1,31 @@
+name: feature request
+description: got an idea? we wanna hear it!
+title: "[feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        thanks for the idea! tell us about it below :)
+  - type: textarea
+    id: problem
+    attributes:
+      label: what's the problem?
+      description: what's annoying, missing, or could be better?
+      placeholder: it bugs me when...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: what do you want to happen?
+      description: describe the thing you'd like to see
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: anything else?
+      description: sketches, links, context — anything that helps
+    validations:
+      required: false

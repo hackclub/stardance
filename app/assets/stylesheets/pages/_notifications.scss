@@ -98,6 +98,20 @@
     display: block;
   }
 
+  // When the actor's avatar stands in for the glyph, fill the slot and drop the
+  // glyph dimming so the face reads at full strength.
+  &__icon--avatar {
+    opacity: 1;
+  }
+
+  &__icon-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
   &__main {
     flex: 1 1 auto;
     display: flex;
@@ -169,6 +183,12 @@
     text-overflow: ellipsis;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
+  }
+
+  // Preview shown in full rather than clamped to one line (e.g. rating feedback).
+  &__preview--full {
+    display: block;
+    white-space: pre-line;
   }
 
   // Preview that jumps somewhere (a comment, a quote-repost): clickable text.

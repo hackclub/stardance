@@ -8,12 +8,13 @@ module MissionReviewable
   SLA_DAYS = 3
 
   class_methods do
-    def available_for(user, mission: nil)
+    # missions: a Mission, a collection of mission ids, or nil for no filter.
+    def available_for(user, missions: nil)
       scope = where(status: "pending").where(
         "(reviewed_by_id IS NULL OR claim_expires_at IS NULL OR claim_expires_at < ?) OR reviewed_by_id = ?",
         Time.current, user.id
       )
-      scope = scope.where(mission_id: mission.id) if mission
+      scope = scope.where(mission_id: missions) if missions
       scope
     end
 
@@ -31,12 +32,12 @@ module MissionReviewable
         .update_all(reviewed_by_id: nil, claim_expires_at: nil, updated_at: Time.current)
     end
 
-    def next_eligible(user, mission: nil, skip_ids: [])
-      scope = available_for(user, mission: mission)
+    def next_eligible(user, missions: nil, skip_ids: [])
+      scope = available_for(user, missions: missions)
       scope = scope.where.not(id: skip_ids) if skip_ids.any?
       scope.order(
         Arel.sql(sanitize_sql_array([ "CASE WHEN reviewed_by_id = ? THEN 0 ELSE 1 END", user.id ])),
-        :created_at
+        Arel.sql("COALESCE(pending_at, created_at)")
       ).first
     end
 
@@ -61,10 +62,10 @@ module MissionReviewable
         new_today: scoped.where(created_at: today..).count,
         decisions_this_week: decided.where(reviewed_at: week..).count,
         new_this_week: scoped.where(created_at: week..).count,
-        oldest_pending: scoped.pending.order(created_at: :asc).first,
+        oldest_pending: scoped.pending.order(Arel.sql("COALESCE(pending_at, created_at)")).first,
         queue_target: QUEUE_TARGET,
         sla_days: SLA_DAYS,
-        overdue_pending: scoped.pending.where("created_at < ?", now - SLA_DAYS.days).count
+        overdue_pending: scoped.pending.where("COALESCE(pending_at, created_at) < ?", now - SLA_DAYS.days).count
       }
     end
 

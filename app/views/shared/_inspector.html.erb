@@ -1,12 +1,12 @@
-<% if current_user&.admin? %>
-<details style="all: revert; border: 1px solid deeppink; display: inline-block; overflow-x: scroll; max-width: 1000px">
-  <summary style="all: revert; font-family: 'Comic Sans MS';">
-    <% if record.is_a?(ActiveRecord::Base) %>
-      <%= record.model_name.human %> record #<%= record.id %>
-    <% else %>
-      inspect <%= defined?(thing) ? thing : 'object' %>
-    <% end %>
-  </summary>
-  <pre style="all: revert; margin: 0; padding: 8px; font-size: 12px;"><%== awesome_inspect(record) %></pre>
-</details>
+<%= admin_tool do %>
+  <details class="inspector">
+    <summary class="inspector__summary">
+      <% if record.is_a?(ActiveRecord::Base) %>
+        <%= record.model_name.human %> record #<%= record.id %>
+      <% else %>
+        inspect <%= defined?(thing) ? thing : 'object' %>
+      <% end %>
+    </summary>
+    <pre class="inspector__body"><%== awesome_inspect(record) %></pre>
+  </details>
 <% end %>

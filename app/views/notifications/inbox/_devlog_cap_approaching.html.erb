@@ -1,0 +1,9 @@
+<span class="notifications-item__verb">You have</span>
+<strong><%= notification.unposted_time_text %></strong>
+<span class="notifications-item__verb">without a devlog on</span>
+<% if notification.record %>
+  <%= link_to notification.record.title, project_path(notification.record), class: "notifications-item__actor" %>
+<% else %>
+  <span class="notifications-item__verb">your project</span>
+<% end %>
+<span class="notifications-item__verb">- post one to make sure your time is counted toward your payout</span>

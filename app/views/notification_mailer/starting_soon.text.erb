@@ -1,0 +1,9 @@
+Your workshop starts in <%= Workshop::JOIN_WINDOW.inspect %>!
+
+<% if @record %>
+<%= @record.title %> is about to begin. Join from the workshop page:
+
+<%= workshop_url(@record) %>
+<% else %>
+A workshop you RSVP'd to is about to begin.
+<% end %>

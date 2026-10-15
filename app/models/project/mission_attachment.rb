@@ -44,12 +44,34 @@ class Project::MissionAttachment < ApplicationRecord
 
   before_validation :default_attached_at, on: :create
 
-  def detach!
+  # Only for a backfill that has verified the latest attachment history under
+  # the project lock. The hardware and single-active-attachment rules still apply.
+  attr_accessor :restoring_historical_mission
+
+  # Both detaching and switching missions come through here. Only a trusted
+  # admin action may bypass the review lock; never pass a request parameter.
+  def detach!(force: false)
     return if detached_at.present?
-    update!(detached_at: Time.current)
+
+    transaction do
+      if project.hardware_review_pending? && !force
+        errors.add(:base, "You can't detach or switch missions while your hardware project is under review.")
+        raise ActiveRecord::RecordInvalid, self
+      end
+
+      update!(detached_at: Time.current)
+      discard_rejected_submissions
+    end
   end
 
   private
+
+  # Leaving a mission also clears the reviews it failed: the rejected
+  # submissions come off their ships, so those ships stop blocking the next
+  # one (see Project#blocking_mission_submission) and read as plain ships.
+  def discard_rejected_submissions
+    project.mission_submissions.rejected.where(mission_id: mission_id).find_each(&:soft_delete!)
+  end
 
   def default_attached_at
     self.attached_at ||= Time.current
@@ -73,6 +95,7 @@ class Project::MissionAttachment < ApplicationRecord
   # Project#may_swap_mission_to?.
   def project_unshipped_or_follow_up
     return unless project_id && project
+    return if restoring_historical_mission
     return if project.may_swap_mission_to?(mission)
 
     errors.add(:base, "Can't attach a mission to a project that has already shipped")

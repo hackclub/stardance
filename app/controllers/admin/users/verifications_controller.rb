@@ -10,7 +10,7 @@ class Admin::Users::VerificationsController < Admin::ApplicationController
       return redirect_to admin_user_path(@user)
     end
 
-    payload = HCAService.identity(identity.access_token)
+    payload = identity.hca_identity
     if payload.blank?
       flash[:alert] = "Could not fetch verification status from HCA."
       return redirect_to admin_user_path(@user)

@@ -86,31 +86,21 @@
 #
 require "test_helper"
 
+# Outpost has ended and nothing sells this any more, but the class has to keep
+# existing: ShopItem is single-table inheritance and production still holds
+# historical ShopItem::OutpostTicket rows with orders against them. Deleting the
+# class would make every one of those records fail to load.
 class ShopItem::OutpostTicketTest < ActiveSupport::TestCase
-  def setup
-    @item = ShopItem::OutpostTicket.new(name: "Outpost Ticket", description: "ticket", ticket_cost: 300)
+  test "the retired type still resolves through STI" do
+    item = ShopItem.new(type: "ShopItem::OutpostTicket").becomes(ShopItem::OutpostTicket)
+
+    assert_kind_of ShopItem, item
+    assert_equal "ShopItem::OutpostTicket", item.type
   end
 
-  test "price_for_user subtracts the accrued discount" do
-    user = User.new(outpost_discount_stardust: 80)
-    assert_equal 220, @item.price_for_user(user, "US")
-  end
+  test "it no longer varies price per user" do
+    item = ShopItem::OutpostTicket.new(name: "Outpost Ticket", description: "ticket", ticket_cost: 300)
 
-  test "price_for_user floors at zero" do
-    user = User.new(outpost_discount_stardust: 400)
-    assert_equal 0, @item.price_for_user(user, "US")
-  end
-
-  test "user effective price and flight stipend" do
-    user = User.new(outpost_discount_stardust: 400)
-    assert_equal 0, user.outpost_effective_price
-    assert_equal 100, user.outpost_flight_stipend
-  end
-
-  test "freeze_item_price enforces the per-user discount at purchase" do
-    user = User.new(outpost_discount_stardust: 50)
-    order = ShopOrder.new(user: user, shop_item: @item, region: "US")
-    order.send(:freeze_item_price)
-    assert_equal 250, order.frozen_item_price
+    assert_equal item.price_for_region("US"), item.price_for_user(User.new, "US")
   end
 end

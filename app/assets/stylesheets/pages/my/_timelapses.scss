@@ -1,0 +1,144 @@
+// Temporary recovery hub listing a builder's Lookout recordings so they can push
+// any un-sent time to Hackatime. Removed with the rest of the recovery surface
+// after the finalize window closes.
+.timelapses {
+  max-width: 40rem;
+  margin: var(--space-xl) auto;
+  padding: var(--space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-set-2-fg-secondary);
+  border-radius: var(--profile-radius);
+  color: var(--color-space-text);
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-xxl);
+  }
+
+  &__lede {
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    line-height: 1.5;
+  }
+
+  &__notice {
+    margin: 0;
+    padding: var(--space-s) var(--space-m);
+    background: var(--color-brand-mint-soft);
+    border-radius: var(--profile-radius);
+    font-size: var(--font-size-s);
+    line-height: 1.5;
+
+    &--closed {
+      background: var(--color-brand-lilac-soft);
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    padding: var(--space-m);
+    background: var(--color-set-1-bg);
+    border: 1px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+  }
+
+  &__item-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxxs);
+    min-width: 0;
+  }
+
+  &__project {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__recheck {
+    margin-left: var(--space-xxs);
+    color: var(--color-brand-mint);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  &__send {
+    padding: var(--space-xxs) var(--space-m);
+    background: var(--color-brand-mint);
+    color: var(--color-set-1-bg);
+    border: none;
+    border-radius: var(--profile-radius);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  &__review {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__status {
+    flex-shrink: 0;
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    white-space: nowrap;
+
+    &--done {
+      color: var(--color-brand-mint);
+    }
+
+    &--closed {
+      color: var(--color-space-text-muted);
+    }
+  }
+}

@@ -1,5 +1,5 @@
 class GuidesController < ApplicationController
-  discover_rail_widgets :upcoming_events
+  discover_rail_widgets :certificate, :upcoming_events
 
   before_action :set_body_class
 

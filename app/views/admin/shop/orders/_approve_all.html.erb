@@ -1,0 +1,43 @@
+<%# "Approve all" for one user's group. The reviewer is committing to several
+    orders at once, so the dialog spells out exactly what is being ordered. %>
+<% dialog_id = "approve-all-#{user.id}" %>
+<%= render ActionButtonComponent.new(
+      text: "✓ Approve all #{orders.size}",
+      size: :small,
+      type: :button,
+      class: "shop-orders__approve-all",
+      onclick: "document.getElementById(#{dialog_id.to_json}).showModal()") %>
+
+<dialog id="<%= dialog_id %>" class="shop-orders__approve-dialog">
+  <h2>Approve <%= pluralize(orders.size, "order") %> for <%= user.display_name %></h2>
+
+  <ul class="shop-orders__approve-list">
+    <% orders.each do |order| %>
+      <li class="shop-orders__approve-entry">
+        <span class="shop-orders__approve-item">
+          #<%= order.id %> · <%= order.shop_item.name %><% if order.quantity > 1 %> ×<%= order.quantity %><% end %>
+        </span>
+        <span class="shop-orders__approve-cost"><%= order.total_cost %> tickets</span>
+      </li>
+    <% end %>
+  </ul>
+
+  <p class="shop-orders__approve-total">
+    <%= pluralize(orders.sum(&:quantity), "item") %> ·
+    <%= orders.sum { |order| order.total_cost || 0 } %> tickets total
+  </p>
+
+  <%= form_with url: bulk_approve_admin_shop_orders_path, method: :post, local: true,
+                class: "shop-orders__approve-actions" do %>
+    <% orders.each do |order| %>
+      <%= hidden_field_tag "order_ids[]", order.id, id: nil %>
+    <% end %>
+    <%= render ActionButtonComponent.new(
+          text: "Cancel",
+          size: :small,
+          variant: :secondary,
+          type: :button,
+          onclick: "document.getElementById(#{dialog_id.to_json}).close()") %>
+    <%= render ActionButtonComponent.new(text: "✓ Approve #{pluralize(orders.size, 'order')}", size: :small) %>
+  <% end %>
+</dialog>

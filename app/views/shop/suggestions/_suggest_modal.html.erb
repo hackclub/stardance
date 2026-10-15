@@ -1,0 +1,100 @@
+<dialog id="suggest-modal"
+        class="suggestion-modal"
+        aria-labelledby="suggest-modal-title"
+        data-controller="modal">
+  <div class="suggestion-modal__panel">
+    <header class="suggestion-modal__header">
+      <div>
+        <h2 id="suggest-modal-title" class="suggestion-modal__title">Suggest a shop item</h2>
+        <p class="suggestion-modal__subtitle">
+          Costs <strong><%= stardust_icon %><%= ShopSuggestion::SUBMISSION_COST %></strong> to submit &mdash; refunded if accepted.
+          You have <strong><%= stardust_icon %><%= current_user.cached_balance %></strong>.
+        </p>
+        <p class="suggestion-modal__subtitle">
+            What's in a shop item? We're not looking to add grants. We're looking to add items with <%= link_to "hacker value", "https://santi.lol/blog/hacker-value/", target: "_blank", rel: "noopener noreferrer", class: "suggestion-modal__link" %>. Please read this before suggesting something, or it will almost certainly get rejected. Additionally, duplicate suggestions will be rejected.
+        </p>
+      </div>
+      <button type="button"
+              class="suggestion-modal__close"
+              data-action="modal#close"
+              aria-label="Close">&#x2715;</button>
+    </header>
+
+    <%= form_with model: suggestion, url: shop_suggestions_path, local: true, multipart: true,
+                  class: "suggestion-modal__form" do |f| %>
+      <% if suggestion.errors.any? %>
+        <div class="suggestion-modal__errors">
+          <strong><%= pluralize(suggestion.errors.count, "error") %>:</strong>
+          <ul>
+            <% suggestion.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="suggestion-modal__grid">
+        <div class="suggestion-modal__field">
+          <%= f.label :name, "Item name" %>
+          <%= f.text_field :name, placeholder: "e.g. Raspberry Pi 5", required: true, minlength: 3, maxlength: 200 %>
+        </div>
+
+        <div class="suggestion-modal__field">
+          <%= f.label :usd_cost, "Approx. USD cost" %>
+          <%= f.number_field :usd_cost, placeholder: "29.99", step: "0.01", min: "0.01", max: "999999.99", required: true %>
+        </div>
+
+        <div class="suggestion-modal__field suggestion-modal__field--full">
+          <%= f.label :description, "Why should we stock this?" %>
+          <%= f.text_area :description, placeholder: "Tell us how this would help hackers...", required: true, minlength: 10, maxlength: 5000, rows: 4 %>
+        </div>
+
+        <div class="suggestion-modal__field">
+          <%= f.label :url, "Link to the item (optional)" %>
+          <%= f.url_field :url, placeholder: "https://..." %>
+        </div>
+
+        <div class="suggestion-modal__field suggestion-modal__field--full">
+          <%= f.label :image, "Photo or screenshot" %>
+          <div class="image-dropzone"
+               data-controller="image-dropzone"
+               data-action="drop->image-dropzone#drop dragover->image-dropzone#dragover dragleave->image-dropzone#dragleave"
+               data-image-dropzone-target="dropZone">
+
+            <div data-image-dropzone-target="preview" hidden>
+              <img class="image-dropzone__preview-img" src="" alt="">
+              <button type="button"
+                      class="image-dropzone__remove-btn"
+                      data-action="image-dropzone#remove"
+                      aria-label="Remove image">
+                <svg aria-hidden="true" viewBox="0 0 320.591 320.591" xmlns="http://www.w3.org/2000/svg">
+                  <path d="m30.391 318.583c-7.86.457-15.59-2.156-21.56-7.288-11.774-11.844-11.774-30.973 0-42.817l257.812-257.813c12.246-11.459 31.462-10.822 42.921 1.424 10.362 11.074 10.966 28.095 1.414 39.875l-259.331 259.331c-5.893 5.058-13.499 7.666-21.256 7.288z" />
+                  <path d="m287.9 318.583c-7.966-.034-15.601-3.196-21.257-8.806l-257.813-257.814c-10.908-12.738-9.425-31.908 3.313-42.817 11.369-9.736 28.136-9.736 39.504 0l259.331 257.813c12.243 11.462 12.876 30.679 1.414 42.922-.456.487-.927.958-1.414 1.414-6.35 5.522-14.707 8.161-23.078 7.288z" />
+                </svg>
+              </button>
+            </div>
+
+            <label class="image-dropzone__label" data-image-dropzone-target="placeholder">
+              <%= inline_svg_tag "icons/paper.svg", class: "image-dropzone__icon", aria: { hidden: true } %>
+              <span>Drop an image here, or click to browse</span>
+              <span class="image-dropzone__hint">JPEG, PNG, WebP, GIF &mdash; max 50 MB</span>
+              <%= f.file_field :image,
+                               accept: "image/*",
+                               required: true,
+                               class: "image-dropzone__file-input",
+                               data: { image_dropzone_target: "fileInput",
+                                       action: "change->image-dropzone#select" } %>
+            </label>
+          </div>
+        </div>
+
+        <div class="suggestion-modal__actions">
+          <div class="suggestion-modal__submit-group">
+            <%= render ActionButtonComponent.new(text: "Suggest", size: :large, variant: :primary, type: :submit) %>
+            <span class="suggestion-modal__submit-cost"><%= stardust_icon %><%= ShopSuggestion::SUBMISSION_COST %></span>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</dialog>

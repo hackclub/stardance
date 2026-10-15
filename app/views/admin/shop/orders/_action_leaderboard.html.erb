@@ -1,136 +1,110 @@
 <%
-  # Get order action stats from PaperTrail versions
-  # Mode can be :fraud (approvals/rejections) or :fulfillment (fulfilled orders)
-  mode = local_assigns[:mode] || :combined
-  time_range = local_assigns[:time_range] || '7_days'
-  limit = local_assigns[:limit]&.to_i || 10
+  mode       = local_assigns[:mode]       || :combined
+  time_range = local_assigns[:time_range] || "7_days"
+  limit      = local_assigns[:limit]&.to_i || 10
 
-  # Build query based on time range
   versions_query = PaperTrail::Version
     .where(item_type: "ShopOrder")
     .where.not(whodunnit: nil)
     .where("object_changes ? 'aasm_state'")
 
-  if time_range == '7_days'
-    versions_query = versions_query.where("created_at >= ?", 7.days.ago)
-  end
+  versions_query = versions_query.where("created_at >= ?", 7.days.ago) if time_range == "7_days"
 
-  recent_versions = versions_query
-
-  # Group by user and count actions by type
-  action_counts = recent_versions.each_with_object(Hash.new { |h, k| h[k] = { approved: 0, rejected: 0, on_hold: 0, fulfilled: 0, total: 0 } }) do |version, counts|
+  action_counts = versions_query.each_with_object(
+    Hash.new { |h, k| h[k] = { approved: 0, rejected: 0, on_hold: 0, fulfilled: 0, total: 0 } }
+  ) do |version, counts|
     user_id = version.whodunnit.to_i
     next if user_id.zero?
 
-    changes = version.object_changes || {}
-
+    changes      = version.object_changes || {}
     state_change = changes["aasm_state"]
     next unless state_change.is_a?(Array) && state_change.length == 2
 
-    new_state = state_change[1]
-    case new_state
+    case state_change[1]
     when "awaiting_periodical_fulfillment"
       counts[user_id][:approved] += 1
-      counts[user_id][:total] += 1
+      counts[user_id][:total]    += 1
     when "rejected"
       counts[user_id][:rejected] += 1
-      counts[user_id][:total] += 1
+      counts[user_id][:total]    += 1
     when "on_hold"
       counts[user_id][:on_hold] += 1
-      counts[user_id][:total] += 1
+      counts[user_id][:total]   += 1
     when "fulfilled"
       counts[user_id][:fulfilled] += 1
-      counts[user_id][:total] += 1
+      counts[user_id][:total]     += 1
     end
   end
 
-  # Filter by mode
   filtered_counts = case mode
   when :fraud
-    action_counts.transform_values do |stats|
-      {
-        approved: stats[:approved],
-        rejected: stats[:rejected],
-        on_hold: stats[:on_hold],
-        total: stats[:approved] + stats[:rejected] + stats[:on_hold]
-      }
-    end.select { |_, stats| stats[:total] > 0 }
+    action_counts.transform_values { |s|
+      { approved: s[:approved], rejected: s[:rejected], on_hold: s[:on_hold],
+        total: s[:approved] + s[:rejected] + s[:on_hold] }
+    }.select { |_, s| s[:total] > 0 }
   when :fulfillment
-    action_counts.transform_values do |stats|
-      {
-        fulfilled: stats[:fulfilled],
-        total: stats[:fulfilled]
-      }
-    end.select { |_, stats| stats[:total] > 0 }
+    action_counts.transform_values { |s|
+      { fulfilled: s[:fulfilled], total: s[:fulfilled] }
+    }.select { |_, s| s[:total] > 0 }
   else
     action_counts
   end
 
-  # Sort by total and take top users based on limit (nil means show all)
-  sorted_users = filtered_counts.sort_by { |_, v| -v[:total] }
-  top_users = limit.nil? ? sorted_users : sorted_users.first(limit)
-  user_ids = top_users.map(&:first)
-  users_by_id = User.where(id: user_ids).index_by(&:id)
+  top_users   = filtered_counts.sort_by { |_, v| -v[:total] }.first(limit)
+  users_by_id = User.where(id: top_users.map(&:first)).index_by(&:id)
 
-  limit_options = [10, nil]
+  # Build bracket standings for fraud mode
+  bracket_by_user = {}
+  if mode == :fraud && top_users.any?
+    all_fraud_counts = filtered_counts.map { |uid, s| { user: uid, total: s[:total] } }
+    bracket_results  = BracketCalculator.new(all_fraud_counts, 1000).calculate
+    bracket_by_user  = bracket_results[:results].index_by { |r| r[:user] }
+  end
 %>
 
 <div class="shop-orders__leaderboard">
   <div class="shop-orders__leaderboard-header">
     <h3 class="shop-orders__leaderboard-title">
-      <% if mode == :fraud %>
-        🕵️ Fraud Team Leaderboard
-      <% elsif mode == :fulfillment %>
-        📦 Fulfillment Team Leaderboard
-      <% else %>
-        🏆 Action Leaderboard
-      <% end %>
-      <small>(<%= time_range == '7_days' ? '7 days' : 'all time' %>)</small>
+      <%= mode == :fraud ? "Fraud Team" : mode == :fulfillment ? "Fulfillment Team" : "Action" %> Leaderboard
+      <small>(<%= time_range == "7_days" ? "7 days" : "all time" %>)</small>
     </h3>
     <div class="shop-orders__leaderboard-toggle">
-      <%= link_to "7 days", admin_shop_orders_path(view: @view, time_range: '7_days', limit: limit), class: "shop-orders__toggle-link #{'is-active' if time_range == '7_days'}" %>
-      <%= link_to "All time", admin_shop_orders_path(view: @view, time_range: 'all_time', limit: limit), class: "shop-orders__toggle-link #{'is-active' if time_range != '7_days'}" %>
-    </div>
-    <div class="shop-orders__leaderboard-toggle">
-      <%= link_to "Top 10", admin_shop_orders_path(view: @view, time_range: time_range, limit: 10), class: "shop-orders__toggle-link #{'is-active' if limit == 10}" %>
-      <%= link_to "All", admin_shop_orders_path(view: @view, time_range: time_range, limit: nil), class: "shop-orders__toggle-link #{'is-active' if limit.nil?}" %>
+      <%= link_to "7 days",   admin_shop_orders_path(view: @view, time_range: "7_days",   limit: limit), class: "shop-orders__toggle-link #{"is-active" if time_range == "7_days"}" %>
+      <%= link_to "All time", admin_shop_orders_path(view: @view, time_range: "all_time", limit: limit), class: "shop-orders__toggle-link #{"is-active" if time_range != "7_days"}" %>
     </div>
   </div>
 
   <% if top_users.any? %>
-    <div>
-    <table class="space-table">
+    <table>
       <thead>
         <tr>
           <th>#</th>
-          <th>User</th>
+          <th>Reviewer</th>
           <% if mode == :fraud || mode == :combined %>
-            <th title="Approved">✓</th>
-            <th title="Rejected">✗</th>
-            <th title="On Hold">⏸</th>
+            <th title="Approved">Appvd</th>
+            <th title="Rejected">Rejd</th>
+            <th title="On Hold">Hold</th>
           <% end %>
           <% if mode == :fulfillment || mode == :combined %>
-            <th title="Fulfilled">📦</th>
+            <th>Fulfilled</th>
           <% end %>
           <th>Total</th>
+          <% if mode == :fraud %>
+            <th>Bracket</th>
+          <% end %>
         </tr>
       </thead>
       <tbody>
         <% top_users.each_with_index do |(user_id, stats), index| %>
-          <% user = users_by_id[user_id] %>
+          <% user    = users_by_id[user_id] %>
+          <% bracket = bracket_by_user[user_id] %>
           <tr>
-            <td>
-              <% if index == 0 %>🥇
-              <% elsif index == 1 %>🥈
-              <% elsif index == 2 %>🥉
-              <% else %><%= index + 1 %>
-              <% end %>
-            </td>
+            <td style="color: var(--color-space-text-muted);"><%= index + 1 %></td>
             <td>
               <% if user %>
                 <%= link_to user.display_name || user.email, admin_user_path(user) %>
               <% else %>
-                <span>User #<%= user_id %></span>
+                User #<%= user_id %>
               <% end %>
             </td>
             <% if mode == :fraud || mode == :combined %>
@@ -141,13 +115,19 @@
             <% if mode == :fulfillment || mode == :combined %>
               <td><%= stats[:fulfilled] %></td>
             <% end %>
-            <td><%= stats[:total] %></td>
+            <td style="font-weight: 600;"><%= stats[:total] %></td>
+            <% if mode == :fraud %>
+              <td>
+                <% if bracket %>
+                  <span class="badge" style="font-size: 10px; padding: 1px 6px; background: rgba(235,183,255,0.14); color: var(--color-brand-lilac);"><%= bracket[:bracket] %></span>
+                <% end %>
+              </td>
+            <% end %>
           </tr>
         <% end %>
       </tbody>
     </table>
-    </div>
   <% else %>
-    <p class="shop-orders__leaderboard-empty">No order actions <%= time_range == '7_days' ? 'in the last 7 days' : 'recorded' %>.</p>
+    <p class="shop-orders__leaderboard-empty">No order actions <%= time_range == "7_days" ? "in the last 7 days" : "recorded" %>.</p>
   <% end %>
 </div>

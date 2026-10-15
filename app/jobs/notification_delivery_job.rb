@@ -1,5 +1,5 @@
 class NotificationDeliveryJob < ApplicationJob
-  queue_as :latency_5m
+  queue_as :latency_10s
 
   discard_on ActiveJob::DeserializationError
 
@@ -46,6 +46,6 @@ class NotificationDeliveryJob < ApplicationJob
     notification.update_column(:email_delivered_at, Time.current)
   rescue StandardError => e
     Rails.logger.error("NotificationDeliveryJob email delivery failed (#{notification.id}): #{e.message}")
-    Sentry.capture_exception(e) if defined?(Sentry)
+    Rails.error.report(e)
   end
 end

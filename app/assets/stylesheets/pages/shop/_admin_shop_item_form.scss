@@ -44,4 +44,55 @@
   .modifier-entry__title {
     color: var(--color-space-text);
   }
+
+  // Two-button segmented control for choosing an HCB source org.
+  &__segmented {
+    display: inline-flex;
+    margin-top: var(--space-xs);
+    border: 2px solid var(--color-set-1-fg-secondary);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  &__segmented-option {
+    margin: 0;
+    cursor: pointer;
+
+    & + & {
+      border-left: 2px solid var(--color-set-1-fg-secondary);
+    }
+  }
+
+  &__segmented-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__segmented-label {
+    display: block;
+    padding: var(--space-xs) var(--space-m);
+    font-size: 0.875rem;
+    color: var(--color-set-1-fg-secondary);
+    transition:
+      background 0.1s,
+      color 0.1s;
+  }
+
+  &__segmented-option:hover &__segmented-label {
+    color: var(--color-space-text);
+  }
+
+  &__segmented-input:checked + &__segmented-label {
+    background: var(--color-brand-mint);
+    color: var(--color-set-1-bg);
+    font-weight: 600;
+  }
+
+  &__segmented-input:focus-visible + &__segmented-label {
+    outline: 2px solid var(--color-brand-mint);
+    outline-offset: 2px;
+  }
 }

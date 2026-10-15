@@ -2,6 +2,11 @@ module Post::ShipEvent::Payouts
   extend ActiveSupport::Concern
 
   PAYOUT_CURVE_VERSION = "stardance_percentile_1_20_v1"
+  # Hardware doesn't ride the vote-percentile curve: a build is funded up front
+  # and certified by a reviewer, so it pays a flat rate instead. Stamped into
+  # payout_curve_version so a snapshot says which rule produced it.
+  HARDWARE_STARDUST_PER_HOUR = 5
+  HARDWARE_PAYOUT_CURVE_VERSION = "stardance_hardware_flat_5_v1"
   PAYOUT_REVIEW_WINDOW = 24.hours
   BROADCAST_CHANNEL_ID = "C0AFB0JU00P"
 
@@ -21,9 +26,17 @@ module Post::ShipEvent::Payouts
           "rejected"
         )
     }
+    # Hardware is never rated, so it can't clear the vote threshold. The
+    # instance-level gates already exempt it; this scope is what
+    # refresh_payouts! actually iterates, so it has to exempt it too or the
+    # flat hardware payout is never issued by the automated sweep.
     scope :ready_for_payout, -> {
       approved.unpaid.voting_payout_path
-        .where(Vote.countable_count_gteq(Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT))
+        .left_outer_joins(post: :project)
+        .where(
+          Vote.countable_count_gteq(Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT)
+              .or(Project.arel_table[:hardware_stage].not_eq(nil))
+        )
     }
   end
 
@@ -146,7 +159,7 @@ module Post::ShipEvent::Payouts
   def issue_payout(force: false)
     return false unless self.class.payout_feature_enabled?(payout_recipient)
 
-    if payout_ready_except_vote_balance? && payout_recipient.vote_balance.negative?
+    if payout_ready_except_vote_balance? && vote_balance_blocked?
       notify_vote_deficit
       return false
     end
@@ -174,6 +187,9 @@ module Post::ShipEvent::Payouts
     if issued
       notify_payout_issued
       broadcast_payout
+      # Jump the recipient to the front of the Airtable sync so their
+      # `Loops - stardancePayout*` contact properties refresh within ~1 min.
+      payout_recipient&.flag_for_resync!
     end
 
     issued
@@ -181,16 +197,16 @@ module Post::ShipEvent::Payouts
 
   def payout_eligible?
     payout_lockable? &&
-      payout_review_due? &&
+      (hardware_payout? || payout_review_due?) &&
       !payout_review_flagged? &&
-      !payout_recipient.vote_balance.negative?
+      !vote_balance_blocked?
   end
 
   def payout_lockable?
     return false unless self.class.payout_feature_enabled?(payout_recipient)
 
     payout_ready_except_vote_balance? &&
-      !payout_recipient.vote_balance.negative? &&
+      !vote_balance_blocked? &&
       hours.positive?
   end
 
@@ -258,11 +274,20 @@ module Post::ShipEvent::Payouts
     end
   end
 
+  # What this ship actually paid per hour, blessing included, so a clawback can
+  # take back the same rate it handed out. Nil until it has paid.
+  def stardust_per_hour_paid
+    return nil if payout.blank? || hours_at_payout.to_f <= 0
+
+    payout / hours_at_payout
+  end
+
   def payout_preview(sample = self.class.payout_score_sample, votes_count: nil, pending_flags_count: nil)
     scores = payout_preview_scores(sample)
     preview_hours = payout_basis_locked_at? ? hours_at_payout.to_f : hours
     preview_percentile = payout_basis_locked_at? ? payout_basis_percentile : scores[:overall_percentile]
-    preview_multiplier = multiplier || payout_multiplier_for_percentile(preview_percentile)
+    preview_multiplier = multiplier ||
+      (hardware_payout? ? (hardware_payout_multiplier_override || HARDWARE_STARDUST_PER_HOUR) : payout_multiplier_for_percentile(preview_percentile))
     preview_blessing = payout_basis_locked_at? ? payout_blessing : payout_blessing_for_snapshot
     preview_votes_count = votes_count || votes.payout_countable.count
     preview_pending_flags_count = pending_flags_count || votes.joins(:events).merge(Vote::Event.pending_vote_flags).count
@@ -291,21 +316,52 @@ module Post::ShipEvent::Payouts
       payout_basis_locked_at: nil,
       payout_curve_version: nil,
       payout_blessing: nil,
-      payout_basis_vote_ids: []
+      payout_basis_vote_ids: [],
+      voting_completed_at: nil
     )
   end
 
+  def sync_voting_completion!
+    return if hardware_payout? || payout.present?
+
+    required = Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
+    counted_votes = votes.payout_countable.order(:created_at, :id).limit(required).to_a
+    if counted_votes.size >= required
+      return if voting_completed_at.present?
+
+      update!(
+        voting_completed_at: counted_votes.last.created_at,
+        lifecycle_data_quality: lifecycle_data_quality || "live"
+      )
+    elsif voting_completed_at.present?
+      payout_basis_locked_at? ? clear_payout_review : update!(voting_completed_at: nil)
+    end
+  end
+
+  # Static-prize missions and hardware builds pay out without community ratings.
+  def goes_to_voting?
+    voting_payout_path? && !hardware_payout?
+  end
+
   private
+    # Hardware ships don't charge vote debt, so their builders have no way to
+    # work a deficit off. Only the voting path holds a payout for it.
+    def vote_balance_blocked?
+      !hardware_payout? && payout_recipient&.vote_balance.to_i.negative?
+    end
+
     def payout_ready_except_vote_balance?
       certification_status == "approved" &&
         payout.blank? &&
         voting_payout_path? &&
-        votes.payout_countable.count >= Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT &&
+        (hardware_payout? || votes.payout_countable.count >= Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT) &&
         payout_recipient.present?
     end
 
     def lock_payout_basis
       self.payout_basis_vote_ids = payout_counted_vote_ids
+      self.voting_completed_at = votes.where(id: payout_basis_vote_ids).maximum(:created_at)
+      self.lifecycle_data_quality ||= "live"
       refresh_payout_score! if overall_percentile.nil?
 
       self.multiplier = payout_multiplier
@@ -313,7 +369,7 @@ module Post::ShipEvent::Payouts
       self.payout_basis_overall_score = overall_score
       self.payout_basis_percentile = overall_percentile
       self.payout_basis_locked_at = Time.current
-      self.payout_curve_version = PAYOUT_CURVE_VERSION
+      self.payout_curve_version = hardware_payout? ? HARDWARE_PAYOUT_CURVE_VERSION : PAYOUT_CURVE_VERSION
       self.payout_blessing = payout_blessing_for_snapshot
 
       save!
@@ -331,15 +387,40 @@ module Post::ShipEvent::Payouts
 
     def capped_reviewed_hardware_minutes
       reviewed_hardware_devlogs.sum do |devlog_review|
+        next 0 unless counts_toward_hardware_payout?(devlog_review)
+
         [ devlog_review.approved_minutes.to_i, Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG * 60 ].min
       end
+    end
+
+    # Only work done once funding was asked for is paid. Time logged before that
+    # belongs to the design the grant was awarded against, not to the build.
+    def counts_toward_hardware_payout?(devlog_review)
+      cutoff = hardware_payout_cutoff
+      return true if cutoff.nil?
+
+      logged_at = Post::Devlog.unscoped { devlog_review.reload_post_devlog&.created_at }
+      logged_at.present? && logged_at >= cutoff
+    end
+
+    # The funding request that unlocked this build. A hardware project that took
+    # the "I don't need funding" path has none, so nothing is excluded for it.
+    def hardware_payout_cutoff
+      return @hardware_payout_cutoff if defined?(@hardware_payout_cutoff)
+
+      @hardware_payout_cutoff =
+        project&.certification_funding_requests
+               &.approved
+               &.minimum(:created_at)
     end
 
     def capped_logged_seconds
       return 0 unless post&.project && post.created_at
 
+      # devlogs_in_ship_window already drops pre-funding and design-phase time
+      # on hardware, so the funding cutoff is applied there.
       devlogs_in_ship_window.pluck("post_devlogs.duration_seconds").sum do |duration_seconds|
-        [ duration_seconds.to_i, Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG.hours.to_i ].min
+        [ duration_seconds.to_i, Post::ShipEvent::MAX_PAYOUT_SECONDS_PER_DEVLOG ].min
       end
     end
 
@@ -350,9 +431,26 @@ module Post::ShipEvent::Payouts
     end
 
     def payout_multiplier
+      if hardware_payout?
+        return hardware_payout_multiplier_override || HARDWARE_STARDUST_PER_HOUR
+      end
+
       percentile = payout_basis_percentile || overall_percentile
 
       payout_multiplier_for_percentile(percentile)
+    end
+
+    def hardware_payout_multiplier_override
+      Certification::Ship
+        .where(post_ship_event_id: id)
+        .where.not(payout_multiplier: nil)
+        .order(decided_at: :desc)
+        .pick(:payout_multiplier)
+    end
+
+    # A hardware build's payout is the flat rate, not the vote curve.
+    def hardware_payout?
+      project&.hardware? || false
     end
 
     def payout_multiplier_for_percentile(percentile)
@@ -408,9 +506,13 @@ module Post::ShipEvent::Payouts
       blockers << "Not approved" unless certification_status == "approved"
       blockers << "Already paid" if payout.present?
       blockers << "Static prize path" unless voting_payout_path?
-      blockers << "Needs #{Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT} countable votes" if votes_count < Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
+      # Hardware is never rated, so a vote count it can't reach isn't a blocker -
+      # showing one tells the builder to collect ratings that are never assigned.
+      if !hardware_payout? && votes_count < Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
+        blockers << "Needs #{Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT} countable votes"
+      end
       blockers << "Missing recipient" if payout_recipient.blank?
-      blockers << "Vote balance deficit" if payout_recipient&.vote_balance.to_i.negative?
+      blockers << "Vote balance deficit" if vote_balance_blocked?
       blockers << "No payable hours" unless preview_hours.to_f.positive?
       blockers << "Pending vote flags" if pending_flags_count.positive?
       blockers
@@ -438,10 +540,8 @@ module Post::ShipEvent::Payouts
     end
 
     def notify_vote_deficit
-      cache_key = "vote_deficit_notified:#{id}"
-      return if Rails.cache.exist?(cache_key)
+      return if Notifications::Payouts::VoteDeficitBlocked.exists?(recipient: payout_recipient, record: self)
 
-      Rails.cache.write(cache_key, true, expires_in: 6.hours)
       Notifications::Payouts::VoteDeficitBlocked.notify(
         recipient: payout_recipient,
         record: self,

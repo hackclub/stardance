@@ -146,6 +146,7 @@ class Onboarding::WizardController < ApplicationController
 
     current_user.update!(interests: selected)
     track_event "onboarding_interests_selected", { interests: selected }
+    invite_to_hardware_channel! if selected.include?("hardware")
     redirect_to onboarding_interests_result_path
   end
 
@@ -172,7 +173,7 @@ class Onboarding::WizardController < ApplicationController
       current_user.update_column(:ref, rsvp.ref)
     end
 
-    redirect_to onboarding_name_path and return if current_user.user_ref.present?
+    redirect_to onboarding_name_path and return if current_user.user_ref.present? and !params[:back]
 
     @suggested_user_ref = rsvp&.user_ref.presence
   end
@@ -252,6 +253,13 @@ class Onboarding::WizardController < ApplicationController
   end
 
   private
+
+  def invite_to_hardware_channel!
+    return unless current_user.slack_id.present?
+    return if current_user.hardware_channel_invited_at.present?
+
+    InviteToSlackChannelJob.perform_later(current_user.id, Certification::Reviewable::HARDWARE_INVITE_CHANNELS)
+  end
 
   def signup_referral_code
     code = cookies[:referral_code].presence

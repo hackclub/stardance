@@ -1,21 +1,31 @@
 <div id="comment_<%= comment.id %>" class="devlog-comment">
   <div class="devlog-comment__header">
     <%= link_to profile_path(comment.user.display_name), class: "devlog-comment__avatar-link" do %>
-      <%= image_tag comment.user.avatar, alt: "", class: "devlog-comment__avatar" %>
+      <%= image_tag comment.user.avatar, alt: "", class: "devlog-comment__avatar", loading: "lazy" %>
     <% end %>
     <div class="devlog-comment__meta">
-      <%= link_to "@#{comment.user.display_name}", profile_path(comment.user.display_name), class: "devlog-comment__author" %><%= render StreakBadgeComponent.new(user: comment.user) %>
+      <%= render "shared/username_link", user: comment.user, link_class: "devlog-comment__author" %>
       <time class="devlog-comment__time" datetime="<%= comment.created_at.iso8601 %>">
         · <%= time_ago_in_words(comment.created_at) %> ago
       </time>
     </div>
     <% if policy(comment).destroy? %>
-      <%= button_to devlog_comment_path(comment.commentable, comment),
-            method: :delete,
-            class: "devlog-comment__delete",
-            form: { onsubmit: "return confirm('Delete this comment?')" },
-            aria: { label: "Delete comment" } do %>
-        &times;
+      <% delete_button = capture do %>
+        <%= button_to devlog_comment_path(comment.commentable, comment),
+              method: :delete,
+              class: "devlog-comment__delete",
+              form: { onsubmit: "return confirm('Delete this comment?')" },
+              aria: { label: "Delete comment" } do %>
+          &times;
+        <% end %>
+      <% end %>
+
+      <% if comment.user == current_user %>
+        <%= delete_button %>
+      <% else %>
+        <%= admin_tool do %>
+          <%= delete_button %>
+        <% end %>
       <% end %>
     <% end %>
   </div>

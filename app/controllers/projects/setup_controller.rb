@@ -6,7 +6,7 @@ class Projects::SetupController < ApplicationController
   before_action :load_setup_project_for_prefill, only: %i[name missions]
   before_action :load_setup_project, only: %i[link_account welcome]
 
-  DEFAULT_PROJECT_TITLE = "Untitled project".freeze
+  DEFAULT_PROJECT_TITLE = Project::SETUP_DEFAULT_TITLE
 
   EXPERIENCE_TO_DIFFICULTIES = {
     "none"        => %w[beginner],
@@ -108,7 +108,7 @@ class Projects::SetupController < ApplicationController
     # builder's edits on re-attach.
     if is_first_attach
       attrs = {}
-      if project.title.blank? || project.title == DEFAULT_PROJECT_TITLE
+      if project.placeholder_title?
         attrs[:title] = mission.default_project_title.presence || mission.name
       end
       if project.description.blank? && mission.default_project_description.present?

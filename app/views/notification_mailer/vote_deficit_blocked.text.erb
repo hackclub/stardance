@@ -8,6 +8,6 @@ Your payout for <% if project_title.present? %>"<%= project_title %>"<% else %>y
 
 <% if votes_needed.positive? %>You need to cast <%= pluralize(votes_needed, "more vote") %> before your payout will be issued.<% else %>Cast more votes to clear the deficit and unblock your payout.<% end %>
 
-Every ship event you submit drops your vote balance by 15. Every vote you cast adds 1 back. Keep voting to maintain a positive balance.
+Every ship event you submit drops your vote balance by <%= Post::ShipEvent::VOTE_COST_PER_SHIP %>. Every vote you cast adds 1 back. Keep voting to maintain a positive balance.
 
 Vote on projects: <%= new_vote_url %>

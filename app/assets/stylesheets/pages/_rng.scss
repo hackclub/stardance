@@ -166,6 +166,20 @@
   margin-top: var(--space-xxs);
 }
 
+// Behavioural-only wrapper around the reroll control (the reroll-poll target).
+// Collapsed out of layout on every surface so the button/note inside is the
+// real flex item — matters in the rail widget, where buttons stretch to fill.
+.reroll-control {
+  display: contents;
+}
+
+// "rerolled +N" — shown once the earned reroll has been spent (the number
+// above already reflects the summed total).
+.rng-hero__reroll-note {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+}
+
 // While rolling, the supporting bits are pulled out of the layout entirely
 // (not just hidden) so there's no reserved blank space under the number; they
 // fade in once the reveal lands.

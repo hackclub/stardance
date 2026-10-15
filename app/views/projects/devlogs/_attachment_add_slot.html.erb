@@ -1,0 +1,11 @@
+<div class="devlog-edit__attachment" data-devlog-edit-target="slot">
+  <div class="devlog-edit__attachment-preview" data-devlog-edit-target="preview"></div>
+  <label class="devlog-edit__attachment-replace">
+    <input type="file"
+           name="post_devlog[attachments][]"
+           accept="<%= Post::Devlog::ACCEPTED_CONTENT_TYPES.join(",") %>"
+           class="devlog-edit__attachment-file-input"
+           data-action="change->devlog-edit#replacePreview">
+    <span class="devlog-edit__attachment-replace-label">Add a screenshot or video</span>
+  </label>
+</div>

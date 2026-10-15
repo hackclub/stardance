@@ -1,0 +1,44 @@
+<section class="rail-widget certificate-widget" aria-label="Stardance certificate">
+  <h3 class="rail-widget__title">Get a certificate!</h3>
+
+  <% if certificate&.approved? %>
+    <p class="certificate-widget__text">
+      Your certificate is ready. Your code is
+      <span class="certificate-widget__code"><%= certificate.code %></span>
+    </p>
+    <%= link_to "View your certificate →", helpers.certificate_path,
+          class: "rail-widget__link", data: { turbo_frame: "_top" } %>
+  <% elsif certificate&.pending? %>
+    <p class="certificate-widget__text">
+      Your certificate name is being reviewed. It'll be ready soon!
+    </p>
+    <%= link_to "Check status →", helpers.certificate_path,
+          class: "rail-widget__link", data: { turbo_frame: "_top" } %>
+  <% elsif certificate&.rejected? %>
+    <p class="certificate-widget__text">
+      Your certificate name wasn't approved. Request again with a different name.
+    </p>
+    <%= link_to "Fix your name →", helpers.certificate_path,
+          class: "rail-widget__link", data: { turbo_frame: "_top" } %>
+  <% else %>
+    <% if eligible? %>
+      <p class="certificate-widget__text">
+        You've logged <strong><%= hours.floor %> approved hours</strong> and earned an official Stardance certificate!
+      </p>
+      <%= link_to "Claim your certificate", helpers.certificate_path,
+            class: "action-btn action-btn--primary action-btn--small",
+            data: { turbo_frame: "_top" } %>
+    <% else %>
+      <p class="certificate-widget__text">
+        Log <strong><%= required %> approved hours</strong> to earn an official Stardance certificate.
+      </p>
+      <%= render "shared/progress_bar",
+            value: hours.floor,
+            max: required,
+            label: "Approved hours toward certificate" %>
+      <p class="certificate-widget__progress-text"><%= hours.floor %> / <%= required %> approved hours</p>
+      <%= link_to "Learn more →", helpers.certificate_path,
+            class: "rail-widget__link", data: { turbo_frame: "_top" } %>
+    <% end %>
+  <% end %>
+</section>

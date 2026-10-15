@@ -24,7 +24,7 @@
                 <% members.first(4).each do |member| %>
                   <li class="project-show__avatars-item">
                     <% if member.slack_id.present? %>
-                      <%= image_tag member.avatar, alt: member.display_name, class: "project-show__avatar" %>
+                      <%= image_tag member.avatar, alt: member.display_name, class: "project-show__avatar", loading: "lazy" %>
                     <% else %>
                       <span class="project-show__avatar project-show__avatar--placeholder">
                         <%= member.display_name.to_s.first&.upcase %>
@@ -37,7 +37,8 @@
             <p class="project-show__authors">
               By
               <% members.each_with_index do |m, i| %>
-                <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= render StreakBadgeComponent.new(user: m) %><%= "," if i < members.length - 2 && members.length > 2 %>
+                <%= " and " if i > 0 && i == members.length - 1 %><%= render "shared/username_link", user: m, link_class: "project-show__author",
+                    data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= "," if i < members.length - 2 && members.length > 2 %>
               <% end %>
             </p>
           </div>
@@ -56,7 +57,7 @@
       </div>
 
       <% if project.description.present? %>
-        <p class="project-show__description"><%= project.description %></p>
+        <div class="project-show__description markdown-content"><%= md(project.description, allow_images: false) %></div>
       <% end %>
 
       <% if project.ai_declaration.present? %>
@@ -74,6 +75,7 @@
         <% if project.fire? %>
           <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
         <% end %>
+        <%= render "projects/report_button", project: project %>
       </div>
     </div>
   </header>

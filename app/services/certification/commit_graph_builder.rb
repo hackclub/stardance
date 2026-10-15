@@ -99,7 +99,7 @@ module Certification
       sha_el   = url ? %(<a href="#{esc(url)}" target="_blank" rel="noopener noreferrer">#{sha_text}</a>) : sha_text
 
       <<~SVG
-        <svg viewBox="0 0 200 88" width="100%" style="overflow:visible" class="commit-graph">
+        <svg viewBox="0 0 200 88" width="420" style="max-width:100%;height:auto;overflow:visible" class="commit-graph">
           #{STYLE}
           <text x="0"  y="12" fill="#{ADDS_COLOR}"  font-size="11" font-family="monospace">+#{adds}</text>
           <text x="40" y="12" fill="#{DELS_COLOR}"  font-size="11" font-family="monospace">-#{dels}</text>

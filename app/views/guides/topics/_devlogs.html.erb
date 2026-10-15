@@ -76,7 +76,7 @@
   After every meaningful chunk of work. "Meaningful" is up to you, but a useful rule:
 </p>
 
-<div class="guide-callout guide-callout--warn">
+<div class="guide-callout guide-callout--warning">
   <span class="guide-callout__icon" aria-hidden="true">⚠️</span>
   <div class="guide-callout__body">
     <p>You need at least one devlog since your last ship to ship again. Don't go too long without posting one — devlogs are how voters and reviewers see that your progress is real.</p>
@@ -86,6 +86,14 @@
 <p>
   Most projects end up with one devlog every 2–4 hours of work. That's a good cadence. Less than that and you'll drift; more than that and they get thin.
 </p>
+
+<% cap_hours = Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG %>
+<div class="guide-callout guide-callout--warning">
+  <span class="guide-callout__icon" aria-hidden="true">⚠️</span>
+  <div class="guide-callout__body">
+    <p>Only up to <%= cap_hours %> hours per devlog counts toward your payout when you ship. If you code for <%= cap_hours + 4 %> hours and post a single devlog, 4 of those hours won't count- post as you go instead.</p>
+  </div>
+</div>
 
 <h2>What to write about</h2>
 

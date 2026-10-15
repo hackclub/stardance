@@ -5,13 +5,14 @@ services:
       dockerfile: dev.Dockerfile
     command: bin/dev
     ports:
-      - "3000:3000"
+      - "${STARDANCE_PORT:-3000}:3000"
     volumes:
       - .:/app
       - node_modules_cache:/app/node_modules
       - bundle_cache:/usr/local/bundle
     environment:
       - RAILS_ENV=development
+      - DATABASE_URL=postgres://postgres:pass@db/stardance_development
       - FERRET=${FERRET:-}
     depends_on:
       - db

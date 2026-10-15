@@ -1,21 +1,52 @@
+<%
+  media_variant = local_assigns.fetch(:variant, :large)
+  lazy = local_assigns.fetch(:lazy, false)
+  admin_viewer = current_user&.admin?
+  ai_flagged = admin_viewer && attachments.any? { |a| a.blob.metadata["ai_generated"] }
+%>
 <% if attachments.any? %>
-  <div class="feed-post-card__media" data-count="<%= attachments.size %>">
-    <div class="feed-post-card__media-viewport">
-      <div class="feed-post-card__media-track">
+  <div class="feed-post-card__media <%= 'ai-detected' if ai_flagged %>"
+       <% if attachments.size > 1 %>
+         data-controller="media-carousel"
+         data-media-carousel-dot-active-class="feed-post-card__media-dot--active"
+         data-media-carousel-arrow-hidden-class="feed-post-card__media-arrow--hidden"
+       <% end %>>
+    <div class="feed-post-card__media-stage">
+      <div class="feed-post-card__media-viewport" <% if attachments.size > 1 %> data-media-carousel-target="viewport"<% end %>>
         <% attachments.each do |attachment| %>
-          <figure class="feed-post-card__media-slide <%= 'ai-detected' if current_user&.admin? && attachment.blob.metadata["ai_generated"] %>">
-            <% if attachment.variable? %>
-              <%= image_tag attachment.variant(:large), alt: "", class: "feed-post-card__image" %>
-            <% elsif attachment.content_type.to_s.start_with?("image/") %>
-              <%= image_tag attachment, alt: "", class: "feed-post-card__image" %>
-            <% elsif attachment.content_type.to_s.start_with?("video/") %>
-              <%= video_tag url_for(attachment), controls: true, class: "feed-post-card__video" %>
-            <% else %>
-              <%= link_to attachment.filename.to_s, url_for(attachment), class: "feed-post-card__file" %>
-            <% end %>
+          <figure class="feed-post-card__media-slide <%= 'ai-detected' if admin_viewer && attachment.blob.metadata["ai_generated"] %>">
+            <%= render "shared/post_media_item", attachment: attachment, variant: media_variant, lazy: lazy %>
           </figure>
         <% end %>
       </div>
+      <% if attachments.size > 1 %>
+        <button type="button"
+                class="feed-post-card__media-arrow feed-post-card__media-arrow--prev feed-post-card__media-arrow--hidden"
+                data-media-carousel-target="prevArrow"
+                data-action="media-carousel#prev"
+                aria-label="Previous image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <button type="button"
+                class="feed-post-card__media-arrow feed-post-card__media-arrow--next"
+                data-media-carousel-target="nextArrow"
+                data-action="media-carousel#next"
+                aria-label="Next image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+      <% end %>
     </div>
+    <% if attachments.size > 1 %>
+      <div class="feed-post-card__media-dots">
+        <% attachments.size.times do |i| %>
+          <button type="button"
+                  class="feed-post-card__media-dot <%= 'feed-post-card__media-dot--active' if i == 0 %>"
+                  data-media-carousel-target="dot"
+                  data-action="media-carousel#goTo"
+                  data-index="<%= i %>"
+                  aria-label="Image <%= i + 1 %>"></button>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 <% end %>

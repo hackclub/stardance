@@ -1,0 +1,17 @@
+if approved
+  header ":tada: Your build was approved!"
+
+  section "*<#{project_url}|#{project_title}>* passed review. Your stardust payout is on its way.", markdown: true
+
+  section "*Feedback:* #{feedback}", markdown: true if feedback.present?
+else
+  header ":pencil: Your build needs changes"
+
+  section "*<#{project_url}|#{project_title}>* isn't approved yet. Address the feedback below and ship again.", markdown: true
+
+  section "*Feedback:* #{feedback}", markdown: true if feedback.present?
+end
+
+actions [
+  button("View project", "view_project", url: project_url)
+]

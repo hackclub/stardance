@@ -3,6 +3,12 @@ class Home::DiscoverRailsController < ApplicationController
 
   def streak
     authorize :home, :index?
+    current_user&.sync_streak_now! if params[:refresh].present?
+    render layout: false
+  end
+
+  def certificate
+    authorize :home, :index?
     render layout: false
   end
 end

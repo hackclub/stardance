@@ -1,0 +1,9 @@
+<%# locals: user:, link_class:, text: nil, data: nil, badge: true
+    Shared "@handle" profile link + streak badge + admin lightning marker,
+    used everywhere a username shows up in a byline (comments, feed cards,
+    leaderboards, notifications). Pass badge: false to omit the streak
+    badge / admin marker (e.g. for reviewer/system bylines). %>
+<%= link_to local_assigns[:text] || "@#{user.display_name}",
+            profile_path(user.display_name),
+            class: link_class,
+            data: local_assigns[:data] %><% if local_assigns.fetch(:badge, true) %><%= render StreakBadgeComponent.new(user: user) %><%= " ⚡" if user.admin? %><% end %><%= admin_tool(compact: true, roles: [ :fraud_dept, :helper, :nda_helper ]) do %><%= link_to "🔨", admin_user_path(user), class: "username-link__admin", data: { turbo_frame: "_top" }, "aria-label": "View #{user.display_name} in admin" %><% end %><% if admin_policy(user).impersonate? %><%= admin_tool(compact: true) do %><%= link_to "👁️", admin_user_impersonation_path(user), class: "username-link__admin", data: { turbo_method: :post, turbo_frame: "_top", turbo_confirm: "Are you sure you want to impersonate #{user.display_name}? You will see the site as they do." }, "aria-label": "Impersonate #{user.display_name}" %><% end %><% end %>

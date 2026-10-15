@@ -4,7 +4,16 @@
     <% logged_minutes = preview_seconds.to_i / 60 %>
     <span class="feed-composer__info-text feed-composer__info-text--warn"><%= hardware ? "Timelapse" : "Code" %> for at least 15m before devlogging (currently <%= logged_minutes %>m logged)</span>
   <% elsif preview_time %>
-    <span class="feed-composer__info-text"><%= preview_time %> will be logged</span>
+    <% over_cap = preview_seconds.to_i > Post::ShipEvent::MAX_PAYOUT_SECONDS_PER_DEVLOG %>
+    <span class="<%= class_names("feed-composer__info-text", "feed-composer__info-text--warn" => over_cap) %>"><%= preview_time %> will be logged</span>
+    <% if over_cap %>
+      <button type="button"
+              class="feed-composer__cap-help"
+              data-controller="tooltip"
+              data-tooltip-message-value="<%= preview_time %> will be logged, but only <%= Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG %>h will count towards the ship or payout. Post at least once every <%= Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG %>h to make all your time count!"
+              data-tooltip-position-value="top"
+              aria-label="Why is my logged time capped?"><span class="feed-composer__cap-help-icon" aria-hidden="true">!</span></button>
+    <% end %>
   <% elsif token_stale %>
     <span class="feed-composer__info-text feed-composer__info-text--warn">Your Hackatime connection expired — <a href="#" onclick="document.getElementById('settings-modal').showModal(); return false;" class="feed-composer__info-link">reconnect in settings</a></span>
   <% else %>

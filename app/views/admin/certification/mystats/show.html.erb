@@ -41,21 +41,22 @@
           </div>
 
           <div class="reviewer-stats__stats-row">
-            <span class="reviewer-stats__stats-label">Daily Rank:</span>
-            <span class="reviewer-stats__stats-value">
-              <%= @current_rank ? "#{@current_rank.ordinalize}" : "—" %>
-            </span>
-          </div>
-
-          <div class="reviewer-stats__stats-row">
-            <span class="reviewer-stats__stats-label">Next Multiplier:</span>
+            <span class="reviewer-stats__stats-label">Today's Multiplier:</span>
             <span class="reviewer-stats__stats-value reviewer-stats__stats-value--highlight">
-              <%= @next_multiplier %>x
+              <%= @current_multiplier %>x
             </span>
           </div>
 
           <div class="reviewer-stats__multiplier-info">
-            Multipliers: 1st: 1.75x | 2nd: 1.5x | 3rd: 1.25x
+            <% if @next_milestone %>
+              <%= @next_milestone[:reviews_needed] %> more today to <strong><%= @next_milestone[:multiplier] %>x</strong> (at <%= @next_milestone[:threshold] %> reviews)
+            <% else %>
+              Max multiplier reached!
+            <% end %>
+          </div>
+
+          <div class="reviewer-stats__multiplier-info">
+            Daily milestones: 5=1.25x · 10=1.5x · 20=1.75x · 40=2x
           </div>
         </div>
       </div>

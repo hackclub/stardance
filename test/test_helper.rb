@@ -3,6 +3,16 @@ require_relative "../config/environment"
 require "rails/test_help"
 require "view_component/test_helpers"
 
+# Fixture loading truncates every fixture-covered table in whatever database
+# the test env resolves to. If `.env.test` is missing, dotenv falls through to
+# `.env`'s development DATABASE_URL and the suite will wipe the dev database.
+# This has happened three times. Refuse to run against anything but a test DB.
+unless ActiveRecord::Base.connection_db_config.database.end_with?("_test")
+  abort "Aborting: test env is connected to " \
+        "#{ActiveRecord::Base.connection_db_config.database.inspect}, not a *_test database. " \
+        "Recreate .env.test with DATABASE_URL pointing at stardance_test before running tests."
+end
+
 # minitest 6 dropped `Object#stub` (the block-style method stubber the suite
 # relies on, e.g. `Foo.stub(:bar, value) { ... }`). Restore the classic
 # minitest 5 implementation when it's absent so tests that lean on `.stub` keep

@@ -1,0 +1,33 @@
+<% content_for :title, "My Reports" %>
+
+<div class="app-layout">
+  <main class="app-layout__main notifications-page">
+    <header class="notifications-page__header">
+      <h1 class="notifications-page__title">My Reports</h1>
+    </header>
+
+    <ol class="notifications-page__list">
+      <% @reports.each do |report| %>
+        <li class="notifications-item">
+          <div class="notifications-item__main">
+            <p class="notifications-item__title">
+              <%= link_to report.project.title, project_path(report.project), class: "notifications-item__actor" %>
+              <span class="status-pill status-pill--<%= report.status %>"><%= report.status.humanize %></span>
+            </p>
+            <p class="notifications-item__preview"><%= report.reason_label %> &mdash; <%= report.details %></p>
+            <p class="notifications-item__time"><%= report.created_at.strftime("%b %d, %Y") %></p>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+
+    <div class="notifications-page__empty" <%= "hidden" if @reports.any? %>>
+      <p class="notifications-page__empty-title">Nothing here yet</p>
+      <p class="notifications-page__empty-hint">Reports you file on projects will show up here so you can track their status.</p>
+    </div>
+
+    <%== @pagy.series_nav if @pagy.pages > 1 %>
+  </main>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

@@ -32,7 +32,7 @@ module Admin
       end
 
       def prize_params
-        params.require(:mission_prize).permit(:shop_item_id, :position)
+        params.require(:mission_prize).permit(:shop_item_id, :position, :category)
       end
 
       def next_position

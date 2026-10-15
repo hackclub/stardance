@@ -1,0 +1,61 @@
+<% content_for :title, "Shop Suggestions" %>
+
+<div class="suggestions-page">
+  <div class="suggestions-page__header">
+    <div class="suggestions-page__heading-group">
+      <h1 class="suggestions-page__title">Shop Suggestions</h1>
+      <p class="suggestions-page__subtitle">Items the community wants in the shop. Accepted suggestions earn back the submission fee.</p>
+      <%= link_to "View history →", history_shop_suggestions_path, class: "suggestions-page__history-link" %>
+    </div>
+    <% if current_user %>
+      <button class="action-btn action-btn--small action-btn--primary"
+              onclick="document.getElementById('suggest-modal').showModal()">
+        Suggest an item
+      </button>
+    <% else %>
+      <%= render ActionButtonComponent.new(text: "Sign in to suggest", href: "/auth/slack", size: :small, variant: :secondary) %>
+    <% end %>
+  </div>
+
+  <div class="suggestions-page__cost-row">
+    <span class="suggestions-page__cost-pill">
+      <%= stardust_icon %> <strong><%= ShopSuggestion::SUBMISSION_COST %></strong> to submit &mdash; refunded if accepted
+    </span>
+    <span class="suggestions-page__cost-pill">
+      <%= stardust_icon %> <strong><%= ShopSuggestionVote::VOTE_COST %></strong> per vote &mdash; max <%= ShopSuggestionVote::DAILY_LIMIT %>/day, once per item per day
+    </span>
+  </div>
+
+  <% if @suggestions.empty? %>
+    <div class="suggestions-page__empty">
+      <p>No suggestions yet &mdash; be the first to suggest something!</p>
+    </div>
+  <% else %>
+    <% if @new_suggestions.any? %>
+      <section class="suggestions-page__section">
+        <h2 class="suggestions-page__section-title">New</h2>
+        <div class="suggestions-page__new-row">
+          <% @new_suggestions.each do |suggestion| %>
+            <%= render "card", suggestion: suggestion %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <section class="suggestions-page__section">
+      <h2 class="suggestions-page__section-title">All suggestions</h2>
+      <div class="suggestions-page__grid">
+        <% @suggestions.each do |suggestion| %>
+          <%= render "card", suggestion: suggestion %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>
+
+<% if current_user %>
+  <%= render "suggest_modal", suggestion: @suggestion || ShopSuggestion.new %>
+  <% if @suggestion&.errors&.any? %>
+    <script>document.getElementById("suggest-modal").showModal()</script>
+  <% end %>
+<% end %>

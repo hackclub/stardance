@@ -17,7 +17,7 @@ module Admin
         index?
       end
 
-      def process_demo_broken?
+      def resolve_project?
         index?
       end
     end

@@ -15,6 +15,10 @@ class ShopPolicy < ApplicationPolicy
     signed_in_any?
   end
 
+  def flex_image?
+    signed_in_any?
+  end
+
   def destroy?
     signed_in_any?
   end

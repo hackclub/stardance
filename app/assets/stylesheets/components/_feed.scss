@@ -1,3 +1,5 @@
+@use "../config/mixins" as *;
+
 .feed-tabs {
   display: flex;
   gap: var(--space-xs);
@@ -58,6 +60,11 @@
   width: 100%;
 }
 
+.feed-home__frame > .feed-post-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 700px;
+}
+
 .feed-loading {
   display: flex;
   flex-direction: column;
@@ -102,6 +109,8 @@
   border-radius: var(--profile-radius, var(--border-radius));
   background: rgba(5, 4, 24, 0.35);
   color: var(--color-space-text);
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .empty-project-banner {
@@ -220,6 +229,7 @@
     text-decoration: none;
     line-height: 1;
     white-space: nowrap;
+    max-width: 100%;
 
     &:hover,
     &:focus-visible,
@@ -320,6 +330,7 @@
   &__field {
     min-width: 0;
     flex: 1;
+    position: relative;
   }
 
   &__label {
@@ -356,6 +367,21 @@
 
   &__textarea-field {
     display: none;
+  }
+
+  &__error {
+    margin: var(--space-xs) 0 0 var(--feed-content-offset);
+    color: var(--color-brand-salmon);
+    font-size: var(--font-size-s);
+    line-height: 1.3;
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      margin-left: 0;
+    }
   }
 
   // The post being quoted, shown below the text box while composing a quote
@@ -442,10 +468,22 @@
     }
   }
 
-  &__tools {
+  &__controls,
+  &__assist {
     display: flex;
     align-items: center;
+    min-width: 0;
+  }
+
+  &__controls {
     gap: var(--space-xxs);
+  }
+
+  &__assist {
+    gap: var(--space-xxs);
+    // Let the tools side (which holds the time-status text) shrink and wrap
+    // instead of overrunning the submit group in a narrow composer/modal.
+    min-width: 0;
   }
 
   // Unverified `!` warning sits just left of the Post button.
@@ -453,6 +491,8 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
+    // Keep the Post button + IDV badge at full size; the tools side gives first.
+    flex-shrink: 0;
   }
 
   &__tool-btn {
@@ -482,14 +522,8 @@
     height: 22px;
   }
 
-  &__emoji-wrap {
-    position: relative;
-  }
-
   &__emoji-popover {
     position: absolute;
-    top: calc(100% + var(--space-xs));
-    left: 0;
     z-index: 100;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -571,6 +605,9 @@
     display: flex;
     align-items: center;
     gap: var(--space-xs);
+    // Allow the status/warning line to wrap within the shrunk tools side
+    // rather than pushing the toolbar wider than its container.
+    min-width: 0;
 
     &[hidden] {
       display: none;
@@ -580,9 +617,74 @@
   &__info-text {
     font-size: calc(var(--font-size-s) * 1.2);
     color: var(--color-space-text-muted);
+    overflow-wrap: anywhere;
 
     &--warn {
       color: var(--color-brand-salmon);
+    }
+  }
+
+  @media (max-width: 640px) {
+    &__toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "assist assist"
+        "tabs submit";
+      align-items: center;
+      column-gap: var(--space-xs);
+      row-gap: var(--space-xs);
+      margin-left: 0;
+    }
+
+    &__controls {
+      display: contents;
+    }
+
+    &__tabs {
+      grid-area: tabs;
+      justify-self: start;
+    }
+
+    &__assist {
+      grid-area: assist;
+      min-width: 0;
+    }
+
+    &__info,
+    &__info-wrap,
+    &__info-text {
+      min-width: 0;
+    }
+
+    &__info-text {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    &__submit-group {
+      grid-area: submit;
+      justify-self: end;
+    }
+  }
+
+  @media (min-width: 641px) {
+    &__toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-left: calc(var(--feed-content-offset) - 8px);
+    }
+
+    &__controls {
+      display: flex;
+    }
+
+    &__tabs,
+    &__assist,
+    &__submit-group {
+      grid-area: auto;
+      justify-self: auto;
     }
   }
 
@@ -594,6 +696,19 @@
     &:hover {
       opacity: 0.75;
     }
+  }
+
+  // Warning mark next to the over-cap time preview; the tooltip explains the
+  // per-devlog payout cap. Same warn-badge look as .idv-badge.
+  &__cap-help {
+    @include warn-badge;
+
+    cursor: help;
+    flex-shrink: 0;
+  }
+
+  &__cap-help-icon {
+    @include warn-badge-icon;
   }
 
   &--dragover {
@@ -736,7 +851,7 @@
   }
 
   a:not(.feed-post-card__overlay-link),
-  button,
+  button:not(.feed-post-card__media-arrow),
   summary,
   input,
   textarea,
@@ -836,6 +951,55 @@
     font-size: calc(var(--font-size-s) * 1.2);
   }
 
+  // Shown only inside the admin_tool box when a deleted devlog is surfaced
+  // to an admin/fraud_dept viewer (see Posts::CardComponent#deleted_devlog?).
+  &__deleted-notice {
+    margin: var(--space-xxs) 0 0;
+    padding-left: var(--feed-content-offset);
+    font-size: calc(var(--font-size-s) * 1.2);
+    color: var(--color-brand-orange);
+  }
+
+  // Admin-only, lazy-loaded Hackatime project breakdown (see
+  // Posts::CardComponent#hackatime_breakdown_url). Collapsed by default;
+  // the turbo-frame inside only fetches once the <details> is opened.
+  &__hackatime-summary {
+    cursor: pointer;
+    font-size: calc(var(--font-size-s) * 1.2);
+    color: var(--color-space-text-muted);
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__hackatime-list {
+    margin: var(--space-xxs) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__hackatime-item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xxs);
+    font-size: calc(var(--font-size-s) * 1.1);
+  }
+
+  &__hackatime-name {
+    font-weight: 600;
+  }
+
+  &__hackatime-percent {
+    color: var(--color-brand-orange);
+  }
+
+  &__hackatime-seconds,
+  &__hackatime-loading,
+  &__hackatime-empty {
+    color: var(--color-space-text-muted);
+  }
+
   &__body {
     padding-left: var(--feed-content-offset);
     font-size: calc(var(--font-size-s) * 1.2);
@@ -861,6 +1025,47 @@
     padding-left: 0;
   }
 
+  &__body-clamp {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__body--clamped {
+    // Roughly five lines of body text; the JS controller unhides the
+    // "Read more" toggle only when the content actually overflows this.
+    max-height: calc(1.4em * 5);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 calc(100% - 2em),
+      transparent
+    );
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2em), transparent);
+  }
+
+  &__read-more {
+    margin-left: var(--feed-content-offset);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-brand-cream);
+    font: inherit;
+    font-size: calc(var(--font-size-s) * 1.2);
+    line-height: 1.4;
+    cursor: pointer;
+    align-self: flex-start;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      margin-left: 0;
+    }
+  }
+
   &__media {
     padding-left: var(--feed-content-offset);
 
@@ -869,47 +1074,114 @@
     }
   }
 
-  &__media-viewport {
-    width: 100%;
-    border-radius: calc(var(--border-radius) * 0.65);
-    background: rgba(5, 4, 24, 0.28);
-    overflow: clip;
+  &__media-stage {
     position: relative;
   }
 
-  &__media-track {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-xxs);
+  &__media-viewport {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
     width: 100%;
+    border-radius: calc(var(--border-radius) * 0.65);
+    background: rgba(5, 4, 24, 0.28);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  // Excluded from the generic interactive-element lift above: that rule's
+  // position: relative would pull the arrows out of their absolute overlay.
+  &__media-arrow {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 64px;
+    display: flex;
+    align-items: center;
+    border: none;
+    padding: 0;
+    color: var(--color-brand-cream);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 150ms ease;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    &--prev {
+      left: 0;
+      justify-content: flex-start;
+      padding-left: var(--space-xs);
+      background: linear-gradient(to right, rgba(5, 4, 24, 0.65), transparent);
+      border-radius: calc(var(--border-radius) * 0.65) 0 0
+        calc(var(--border-radius) * 0.65);
+    }
+
+    &--next {
+      right: 0;
+      justify-content: flex-end;
+      padding-right: var(--space-xs);
+      background: linear-gradient(to left, rgba(5, 4, 24, 0.65), transparent);
+      border-radius: 0 calc(var(--border-radius) * 0.65)
+        calc(var(--border-radius) * 0.65) 0;
+    }
+
+    &:focus-visible {
+      opacity: 1;
+    }
+
+    &--hidden {
+      visibility: hidden;
+    }
+
+    @media (hover: none) {
+      display: none;
+    }
+  }
+
+  &__media-stage:hover &__media-arrow {
+    opacity: 1;
   }
 
   &__media-slide {
-    width: 100%;
-    min-width: 0;
-    min-height: 0;
-    aspect-ratio: 1 / 1;
-    display: grid;
-    place-items: center;
+    flex: 0 0 100%;
+    scroll-snap-align: start;
     margin: 0;
-    border: 1px solid var(--color-space-surface-faint);
-    border-radius: calc(var(--border-radius) * 0.45);
     background: rgba(5, 4, 24, 0.32);
     overflow: hidden;
-  }
-
-  &__media[data-count="1"] &__media-track {
-    grid-template-columns: 1fr;
-  }
-
-  &__media[data-count="1"] &__media-slide {
     aspect-ratio: 16 / 9;
     max-height: 420px;
   }
 
-  &__media[data-count="3"] &__media-slide:first-child {
-    grid-row: span 2;
-    aspect-ratio: auto;
+  &__media-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0 2px;
+  }
+
+  &__media-dot {
+    appearance: none;
+    border: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-space-text-muted);
+    opacity: 0.4;
+    padding: 0;
+    cursor: pointer;
+    transition: opacity 150ms ease;
+
+    &--active {
+      opacity: 1;
+      background: var(--color-brand-cream);
+    }
   }
 
   &__image,
@@ -1005,10 +1277,12 @@
     }
   }
 
+  // Opens upward: feed cards carry content-visibility, whose paint containment
+  // clips anything hanging below the card.
   &__repost-panel {
     position: absolute;
     z-index: 5;
-    top: calc(100% + var(--space-xs));
+    bottom: calc(100% + var(--space-xs));
     left: 50%;
     width: max-content;
     min-width: 128px;
@@ -1075,6 +1349,51 @@
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  &__super-star {
+    padding-left: var(--space-s);
+  }
+
+  &__super-star-title {
+    position: relative;
+    padding: 0 4px;
+
+    background: var(--gradient-extra-highlight) center / cover no-repeat;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--font-h2);
+
+    // underline with gradient
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 6px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient-extra-highlight) center / cover no-repeat;
+      @media (min-width: 1024px) {
+        bottom: 8px;
+      }
+    }
+  }
+
+  &__super-star-header {
+    padding-left: var(--space-s);
+  }
+
+  &__super-star-body {
+    padding-left: var(--space-s);
+    padding-bottom: var(--space-s);
+    font-size: calc(var(--font-size-s) * 1.2);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   .like-button,
@@ -1165,6 +1484,15 @@
     --ship-decision-accent: var(--color-brand-salmon);
   }
 
+  &--permanently_rejected {
+    --ship-decision-accent: var(--color-brand-salmon);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-salmon) 8%,
+      var(--color-set-1-bg)
+    );
+  }
+
   &__subject {
     color: var(--color-space-text);
     font-weight: 400;
@@ -1175,6 +1503,12 @@
     p {
       margin: 0;
     }
+  }
+
+  &__blocker-note {
+    margin: var(--space-xxs) 0 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
   }
 
   &__feedback,
@@ -1333,6 +1667,93 @@
 // Devlog detail page — post + comments thread view.
 // Uses .app-layout__main so it inherits the 722px reading column,
 // centered margins, and responsive breakpoints from _base.scss.
+.post-panel {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(720px, 92vw);
+  width: 100%;
+  position: fixed;
+  top: 4vh;
+  left: 50%;
+  translate: -50% 0;
+  margin: 0;
+  max-height: 92vh;
+  overflow: visible;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  &__content {
+    background: var(--color-space-bg-2, #0d0b2e);
+    border: 2px solid var(--color-space-border);
+    border-radius: var(--profile-radius, var(--border-radius));
+    display: flex;
+    flex-direction: column;
+    max-height: 92vh;
+    overflow: hidden;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    flex-shrink: 0;
+  }
+
+  &__close {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0.25rem;
+    transition: color 120ms ease;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 16px 16px;
+
+    // Comment composer stays pinned while the thread scrolls under it.
+    .devlog-detail__comment-form {
+      position: sticky;
+      bottom: 0;
+      margin-bottom: 0;
+      padding: var(--space-xs) 0;
+      background: var(--color-space-bg-2, #0d0b2e);
+    }
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+
+  @media (max-width: 640px) {
+    max-width: 100vw;
+    max-height: 100dvh;
+    top: 0;
+
+    &__content {
+      max-height: 100dvh;
+      border-radius: 0;
+    }
+  }
+}
+
 .devlog-detail {
   &__thread {
     display: flex;
@@ -1563,273 +1984,6 @@
       &:last-child {
         margin-bottom: 0;
       }
-    }
-  }
-}
-
-.comment-modal {
-  border: none;
-  padding: 0;
-  background: transparent;
-  max-width: min(600px, 92vw);
-  width: 100%;
-  position: fixed;
-  top: 8vh;
-  left: 50%;
-  translate: -50% 0;
-  margin: 0;
-  max-height: 84vh;
-  overflow: visible;
-  cursor: auto;
-
-  &::backdrop {
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(2px);
-  }
-
-  &__content {
-    background: var(--color-space-bg-2, #0d0b2e);
-    border: 2px solid var(--color-space-border);
-    border-radius: var(--profile-radius, var(--border-radius));
-    display: flex;
-    flex-direction: column;
-    max-height: 84vh;
-    overflow: hidden;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    flex-shrink: 0;
-  }
-
-  &__close {
-    appearance: none;
-    background: transparent;
-    border: 0;
-    color: var(--color-space-text-muted);
-    cursor: pointer;
-    font-size: 1.5rem;
-    line-height: 1;
-    padding: 0.25rem;
-    transition: color 120ms ease;
-
-    &:hover {
-      color: var(--color-space-text);
-    }
-  }
-
-  &__body {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 0 16px;
-  }
-
-  // Original-post card — elevated so it stands apart from the replies below.
-  &__op {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--color-space-border);
-    border-radius: 12px;
-    padding: 14px;
-  }
-
-  &__op-eyebrow {
-    color: var(--color-space-text-muted);
-    display: block;
-    font-size: calc(var(--font-size-s) * 0.82);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-  }
-
-  &__op-head {
-    align-items: center;
-    display: flex;
-    gap: 10px;
-  }
-
-  &__op-avatar {
-    border-radius: 50%;
-    flex-shrink: 0;
-    height: 40px;
-    object-fit: cover;
-    width: 40px;
-  }
-
-  &__op-meta {
-    align-items: baseline;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    min-width: 0;
-  }
-
-  &__op-author {
-    color: var(--color-space-text);
-    font-size: calc(var(--font-size-s) * 1.1);
-    font-weight: 600;
-  }
-
-  &__op-time {
-    color: var(--color-space-text-muted);
-    font-size: var(--font-size-s);
-  }
-
-  &__op-body {
-    color: var(--color-space-text);
-    font-size: calc(var(--font-size-s) * 1.1);
-    line-height: 1.5;
-    margin-top: 10px;
-
-    p {
-      margin: 0 0 0.4em;
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
-
-  &__op-media {
-    margin-top: 12px;
-
-    // Drop the feed's avatar-aligned left offset inside the narrower card.
-    .feed-post-card__media {
-      padding-left: 0;
-    }
-  }
-
-  &__thread-left {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    width: 40px;
-  }
-
-  &__thread-right {
-    flex: 1;
-    min-width: 0;
-    padding-bottom: 4px;
-  }
-
-  &__replies-label {
-    color: var(--color-space-text-muted);
-    font-size: calc(var(--font-size-s) * 0.82);
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    margin: 16px 0 4px;
-    text-transform: uppercase;
-  }
-
-  &__replies {
-    display: block;
-  }
-
-  &__replies-list {
-    padding: 2px 0;
-  }
-
-  &__replies-loading,
-  &__replies-empty {
-    color: var(--color-space-text-muted);
-    font-size: calc(var(--font-size-s) * 1.05);
-    margin: 0;
-    padding: 14px 0;
-    text-align: center;
-  }
-
-  // Pinned below the scrolling thread so it stays reachable.
-  &__composer {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    flex-shrink: 0;
-    padding: 0 16px;
-  }
-
-  &__sign-in {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    color: var(--color-space-text-muted);
-    flex-shrink: 0;
-    font-size: calc(var(--font-size-s) * 1.05);
-    margin: 0;
-    padding: 16px;
-
-    a {
-      color: var(--color-brand-highlight);
-    }
-  }
-
-  &__replying-to {
-    color: var(--color-space-text-muted);
-    font-size: calc(var(--font-size-s) * 1.05);
-    margin: 0;
-    padding-top: 10px;
-  }
-
-  &__replying-to-name {
-    color: var(--color-brand-highlight);
-  }
-
-  &__thread-reply {
-    display: flex;
-    gap: 12px;
-    padding-top: 8px;
-  }
-
-  &__reply-avatar {
-    border-radius: 50%;
-    height: 40px;
-    width: 40px;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-
-  &__textarea {
-    background: transparent;
-    border: none;
-    box-sizing: border-box;
-    color: var(--color-space-text);
-    display: block;
-    font-family: inherit;
-    font-size: 1.2rem;
-    min-height: 64px;
-    max-height: 160px;
-    padding: 4px 0;
-    resize: none;
-    width: 100%;
-
-    &::placeholder {
-      color: var(--color-space-text-muted);
-    }
-
-    &:focus {
-      outline: none;
-    }
-  }
-
-  &__footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 12px 0;
-    flex-shrink: 0;
-  }
-
-  @media (max-width: 640px) {
-    top: 0;
-    max-height: 100dvh;
-    width: 100%;
-    max-width: 100vw;
-
-    &__content {
-      border-radius: 0;
-      border-left: 0;
-      border-right: 0;
-      height: 100dvh;
-      max-height: 100dvh;
     }
   }
 }
@@ -2221,5 +2375,195 @@
       border-radius: 3px;
       font-size: 0.9em;
     }
+  }
+}
+
+// Funding request on the project timeline. Short by design: the amount and,
+// once decided, the verdict. Mirrors .ship-decision-card so the two review
+// outcomes read as the same kind of event.
+.funding-request-card {
+  // Same border as a ship post, so a funding request reads as part of the same
+  // project story. Only a returned request breaks out of it.
+  --funding-accent: var(--color-brand-highlight);
+
+  position: relative;
+  background: var(--color-set-4-bg);
+  border-color: var(--funding-accent);
+  gap: var(--space-xxs);
+
+  &--returned {
+    --funding-accent: var(--color-brand-salmon);
+  }
+
+  &--permanently_rejected {
+    --funding-accent: var(--color-brand-salmon);
+    background: color-mix(
+      in srgb,
+      var(--color-brand-salmon) 8%,
+      var(--color-set-1-bg)
+    );
+
+    .funding-request-card__amount {
+      flex-shrink: 0;
+    }
+  }
+
+  &__final-note {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  // The byline is a single line but the avatar is 39px, so the shared
+  // flex-start header would leave a dead strip under it before the body.
+  &__header {
+    align-items: center;
+  }
+
+  &__amount {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--funding-accent);
+  }
+
+  &__tier {
+    font-size: var(--font-size-s);
+    font-weight: 500;
+    color: var(--color-space-text-muted);
+  }
+
+  &__message {
+    color: var(--color-space-text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: var(--space-xs);
+    }
+
+    // Reviewer feedback with photos: the whole block opens the feedback modal.
+    &--openable {
+      cursor: pointer;
+    }
+  }
+
+  // One "expand" control for the whole review, anchored bottom-right. Opens the
+  // same feedback modal as clicking the review body. `!important` overrides the
+  // broad `.feed-post-card button { position: relative }` reset, which would
+  // otherwise keep this in flow and stretch it across the flex column.
+  &__expand {
+    position: absolute !important;
+    right: var(--space-m);
+    bottom: var(--space-m);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: var(--space-xxs) var(--space-s);
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    background: rgba(5, 4, 24, 0.35);
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-mint-soft);
+      border-color: var(--color-brand-mint);
+      color: var(--color-space-text);
+      outline: none;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    justify-content: flex-start;
+  }
+}
+
+// A reviewer's "wrong queue?" question. Peach rather than salmon: the builder
+// hasn't done anything wrong, they just have to answer before anything moves.
+.queue-mismatch-card {
+  --queue-mismatch-accent: var(--color-brand-peach);
+
+  background: var(--color-set-4-bg);
+  border-color: var(--queue-mismatch-accent);
+  gap: var(--space-xs);
+
+  &__header {
+    align-items: center;
+  }
+
+  &__badge {
+    margin-left: auto;
+    padding: var(--space-xxs) var(--space-xs);
+    border: 1px solid var(--queue-mismatch-accent);
+    border-radius: 999px;
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    color: var(--queue-mismatch-accent);
+    white-space: nowrap;
+  }
+
+  &__heading {
+    margin: 0 0 var(--space-xxs);
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    color: var(--color-brand-cream);
+  }
+
+  &__body {
+    color: var(--color-space-text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: var(--space-xs);
+    }
+  }
+
+  &__reason {
+    margin: var(--space-xs) 0;
+    padding-left: var(--space-s);
+    border-left: 2px solid var(--queue-mismatch-accent);
+    color: var(--color-space-text-muted);
+  }
+
+  &__note {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    justify-content: flex-start;
   }
 }

@@ -74,6 +74,10 @@
             <dd><%= builder&.display_name || "—" %></dd>
             <dt>Submitted</dt>
             <dd><%= time_ago_in_words(@submission.created_at) %> ago</dd>
+            <% if @submission.pending_at.present? %>
+              <dt>In queue</dt>
+              <dd><%= time_ago_in_words(@submission.pending_at) %> ago</dd>
+            <% end %>
             <dt>Payout path</dt>
             <dd><%= @submission.payout_path.titleize %></dd>
             <% if @submission.reviewed_by.present? %>
@@ -93,6 +97,10 @@
             <p><%= @submission.rejection_message %></p>
           </div>
         <% end %>
+
+        <div class="mission-review__panel">
+          <%= render "review_history", verdicts: @project_review_history, current: @submission %>
+        </div>
       </section>
 
       <aside class="mission-review__sidebar">

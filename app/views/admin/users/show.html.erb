@@ -29,6 +29,8 @@
         <% end %>
         <dt>Balance</dt>
         <dd><%= @user.balance %> tickets</dd>
+        <dt>Vote Balance</dt>
+        <dd><%= @user.vote_balance %> votes</dd>
         <dt>Roles</dt>
         <dd><%= @user.roles.map { |r| r.to_s.titleize }.join(", ").presence || content_tag(:span, "None", class: "admin-user-show__muted") %></dd>
         <dt>Projects (<%= @all_projects.size %>)</dt>
@@ -115,8 +117,8 @@
                 <%= link_to "→ Slack", "https://hackclub.slack.com/team/#{identity.uid}", target: "_blank" %>
               <% end %>
               <% if identity.provider == "hackatime" %>
-                <%= link_to "→ Billy", "https://billy.3kh0.net/?u=#{identity.uid}", target: "_blank" %>
-                <%= link_to "→ Joe", "https://joe.fraud.hackclub.com/profile/#{identity.uid}", target: "_blank" %>
+                <%= link_to "→ Hackatime", telescreen_hackatime_overview_url(identity.uid), target: "_blank", rel: "noopener noreferrer" %>
+                <%= link_to "→ Telescreen", telescreen_subject_url(identity.uid), target: "_blank", rel: "noopener noreferrer" %>
               <% end %>
               <% if identity.provider == "hack_club" %>
                 <%= link_to "→ IDV", "#{HCAService.backend_url("/identities/#{identity.uid}")}", target: "_blank" %>
@@ -133,33 +135,18 @@
       </dl>
     </div>
   </div>
-  <% if Flipper.enabled?(:hardware_flow, current_user) %>
+  <% if Flipper.enabled?(:hardware_flow, current_user) && @user.earned_achievement?(:manual_outpost_ticket_approval) %>
   <div>
     <h2>Hardware</h2>
-    <div>
-      <% if @user.earned_achievement?(:manual_outpost_ticket_approval) %>
-        <p>Outpost Ticket: <strong>approved</strong></p>
-        <%= button_to "Remove approval ✗", admin_user_presentable_hardware_flag_path(@user),
-                      method: :delete,
-                      disabled: !current_user&.admin?,
-                      title: "Remove the Outpost Ticket approval" %>
-      <% else %>
-        <%= button_to "Approve Outpost Ticket ✓", admin_user_presentable_hardware_flag_path(@user),
-                      method: :post,
-                      disabled: !current_user&.admin?,
-                      title: "Manually approve the Outpost Ticket" %>
-      <% end %>
-    </div>
+    <p>Super Hardware Builder: <strong>yes</strong></p>
   </div>
   <% end %>
-</div>
-<br>
-<div>
-  <div>
-    <h2>Actions</h2>
-    <div>
+
+  <div class="mission-panel">
+    <h2 class="admin-user-show__section-title">Actions</h2>
+    <div class="admin-user-show__actions">
       <% if policy(Message).create? %>
-        <%= link_to "✉️ Send Message", admin_messages_path(slack_id: @user.slack_id) %>
+       <%= render ActionButtonComponent.new(text: "Send Message", href: admin_messages_path(slack_id: @user.slack_id), size: :small, variant: :secondary) %>
       <% end %>
       <% if policy(@user).impersonate? && !impersonating? %>
         <%= button_to "Impersonate User",
@@ -169,15 +156,25 @@
                         confirm: "Are you sure you want to impersonate #{@user.display_name}? You will see the site as they do."
                       } %>
       <% end %>
+      <% if policy(@user).sync_hackatime? %>
       <%= button_to "🔄 Sync Hackatime Data",
                     admin_user_hackatime_sync_path(@user),
                     method: :post,
                     title: "Sync Hackatime Data" %>
+      <% end %>
+      <% if policy(@user).credit_streak_days? %>
+        <button type="button" onclick="document.getElementById('credit-streak-day-modal').showModal()">⭐ Credit Streak Day</button>
+        <%= render layout: "shared/modal", locals: { id: "credit-streak-day-modal", class_name: "modal--wide", title: "Credit a streak day", description: "Marks a day as kept when Hackatime missed the coding time. Streak progress is worked out from these days, so crediting a missed one also repairs the run behind it, including a Sticky Streak that had already broken." } do %>
+          <%= render "admin/users/streak_credit_panel", user: @user %>
+        <% end %>
+      <% end %>
+      <% if policy(@user).refresh_verification? %>
       <%= button_to "🔄 Refresh Verification",
                     admin_user_verification_path(@user),
                     method: :post,
                     title: "Refresh verification status from HCA",
                     data: { confirm: "Refresh verification status for #{@user.display_name}?" } %>
+      <% end %>
       <% if policy(@user).ban? %>
         <% if @user.banned? %>
           <%= button_to "🔓 Unban", admin_user_ban_path(@user), method: :delete,
@@ -197,18 +194,11 @@
       <% end %>
       <% if current_user.admin? %>
         <%
-          all_roles = [
-            { name: 'fraud_dept', disabled: !current_user&.admin? },
-            { name: 'fulfillment_person', disabled: !current_user&.admin? },
-            { name: 'project_certifier', disabled: !current_user&.admin? },
-            { name: 'guardian_of_integrity', disabled: !current_user&.admin? },
-            { name: 'mission_reviewer', disabled: !current_user&.admin? },
-            { name: 'helper', disabled: !current_user&.admin? },
-            { name: 'shop_manager', disabled: !current_user&.admin? },
-            { name: 'admin', disabled: !current_user&.super_admin? },
-          ]
-          promotable_roles = all_roles.reject { |r| @user.has_role?(r[:name]) }
-          demotable_roles = all_roles.select { |r| @user.has_role?(r[:name]) }
+          all_roles = User::Role.all_slugs.reject { |slug| slug == :super_admin }.map do |slug|
+            { name: slug.to_s, disabled: slug == :admin ? !current_user&.super_admin? : !current_user&.admin? }
+          end
+          promotable_roles = all_roles.reject { |r| @user.roles.include?(r[:name].to_sym) }
+          demotable_roles = all_roles.select { |r| @user.roles.include?(r[:name].to_sym) }
         %>
         <% if promotable_roles.any? %>
           <div class="role-dropdown">
@@ -257,56 +247,69 @@
         </script>
       <% end %>
 
-      <% if @user.shop_orders.where(aasm_state: %w[pending awaiting_periodical_fulfillment]).any? %>
-        <button type="button" onclick="document.getElementById('reject-modal-orders').showModal()">
-          ✗ Reject Orders
-        </button>
-        <%= render layout: "shared/modal", locals: { id: "reject-modal-orders", title: "Reject All Orders", description: "This will reject all pending and awaiting fulfillment orders for #{@user.display_name}." } do %>
-          <form action="<%= admin_user_order_rejection_path(@user) %>" method="post">
-            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-            <div>
-              <%= label_tag :reason, "Rejection Reason (optional)" %>
-              <%= text_area_tag :reason, "", placeholder: "Enter reason..." %>
-            </div>
-            <div>
-              <button type="submit">Confirm Reject</button>
-              <button type="button" onclick="document.getElementById('reject-modal-orders').close()">Cancel</button>
-            </div>
-          </form>
+      <% if policy(@user).reject_orders? %>
+        <% if @user.shop_orders.where(aasm_state: %w[pending awaiting_periodical_fulfillment]).any? %>
+          <%# Only a pending order is still in fraud review, so an awaiting-fulfillment-only
+              batch (or a reviewer without the fraud role) never needs the fraud paperwork. %>
+          <% fraud_review_order = @user.shop_orders.find_by(aasm_state: "pending") %>
+          <% show_fraud_fields = fraud_review_order.present? && Admin::ShopOrderRejector.records_fraud_details?(fraud_review_order, current_user) %>
+          <button type="button" onclick="document.getElementById('reject-modal-orders').showModal()">
+            ✗ Reject Orders
+          </button>
+          <%= render layout: "shared/modal", locals: { id: "reject-modal-orders", title: "Reject All Orders", description: "This will reject all pending and awaiting fulfillment orders for #{@user.display_name}." } do %>
+            <form action="<%= admin_user_order_rejection_path(@user) %>" method="post">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <div>
+                <%= label_tag :reason, "Public Rejection Reason (optional)" %>
+                <%= text_area_tag :reason, "", placeholder: "Shown to the user..." %>
+              </div>
+
+              <% if show_fraud_fields %>
+                <div>
+                  <%= label_tag :internal_rejection_reason, "Internal Reason (required, staff only)" %>
+                  <%= text_area_tag :internal_rejection_reason, "", placeholder: "Detailed internal reason for these rejections...", required: true %>
+                </div>
+                <div>
+                  <%= label_tag :fraud_related_project_id, "Related project (required)" %>
+                  <%= select_tag :fraud_related_project_id,
+                                 options_for_select(fraud_related_project_options(@user)),
+                                 include_blank: "Pick a project", required: true %>
+                </div>
+                <div>
+                  <%= label_tag :joe_case_url, "Telescreen case URL (optional)" %>
+                  <%= url_field_tag :joe_case_url, nil, placeholder: "https://telescreen.hackclub.com/cases/...", autocomplete: "off" %>
+                </div>
+              <% end %>
+
+              <div>
+                <button type="submit">Confirm Reject</button>
+                <button type="button" onclick="document.getElementById('reject-modal-orders').close()">Cancel</button>
+              </div>
+            </form>
+          <% end %>
         <% end %>
       <% end %>
 
       <% if policy(@user).adjust_balance? %>
-        <button type="button" onclick="document.getElementById('adjust-balance-modal').showModal()">💰 Adjust Balance</button>
-        <%= render layout: "shared/modal", locals: { id: "adjust-balance-modal", title: "Adjust Balance", description: "Current: #{@user.balance} tickets" } do %>
-          <form action="<%= admin_user_balance_adjustments_path(@user) %>" method="post">
+        <%= render "admin/users/adjust_balance", user: @user, balance: @user.balance %>
+      <% end %>
+
+      <% if policy(@user).view_votes? %>
+        <%= render ActionButtonComponent.new(text: "View Votes", href: admin_user_votes_path(@user), size: :small, variant: :secondary) %>
+      <% end %>
+
+      <% if policy(@user).set_vote_balance? %>
+        <button type="button" onclick="document.getElementById('set-vote-balance-modal').showModal()">Set Vote Balance (<%= @user.vote_balance %>)</button>
+        <%= render layout: "shared/modal", locals: { id: "set-vote-balance-modal", title: "Set Vote Balance", description: "Current: #{@user.vote_balance} votes" } do %>
+          <form action="<%= admin_user_vote_balance_path(@user) %>" method="post">
             <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-            <%= label_tag :amount, "Amount" %>
-            <%= number_field_tag :amount, nil, placeholder: "e.g. 100 or -50", required: true, autocomplete: "off" %>
-            <%= label_tag :reason, "Reason" %>
-            <%= text_area_tag :reason, "", placeholder: "Reason for adjustment...", required: true %>
+            <%= hidden_field_tag :_method, "patch" %>
+            <%= label_tag :vote_balance, "Vote balance" %>
+            <%= number_field_tag :vote_balance, @user.vote_balance, required: true, autocomplete: "off" %>
             <button type="submit">Confirm</button>
-            <button type="button" onclick="document.getElementById('adjust-balance-modal').close()">Cancel</button>
+            <button type="button" onclick="document.getElementById('set-vote-balance-modal').close()">Cancel</button>
           </form>
         <% end %>
-        <%= render ActionButtonComponent.new(text: "View Votes", href: admin_user_votes_path(@user), size: :small, variant: :secondary) %>
-        <button type="button" id="set-vote-bal">Set Vote Balance (<%= @user.vote_balance %>)</button>
-        <script>
-          document.getElementById("set-vote-bal").addEventListener("click", function() {
-            var v = prompt(<%= @user.display_name.to_json %> + ": Set vote balance:", "0");
-            if (v === null) return;
-            var n = parseInt(v, 10);
-            if (isNaN(n)) { alert("not valid number"); return; }
-            var f = document.createElement("form");
-            f.method = "post";
-            f.action = <%= admin_user_vote_balance_path(@user).to_json %>;
-            f.innerHTML = '<input type="hidden" name="authenticity_token" value="' + <%= form_authenticity_token.to_json %> + '">' +
-              '<input type="hidden" name="_method" value="patch">' +
-              '<input type="hidden" name="vote_balance" value="' + n + '">';
-            document.body.appendChild(f);
-            f.submit();
-          });
-        </script>
       <% end %>
 
       <% if current_user.admin? %>
@@ -321,6 +324,18 @@
               <button type="button" onclick="document.getElementById('cancel-grants-modal').close()">Cancel</button>
             </form>
           <% end %>
+        <% end %>
+      <% end %>
+
+      <% if policy(@user).manage_fraud_review_payouts? %>
+        <% if @user.fraud_review_payouts_disabled? %>
+          <%= button_to "Re-enable fraud review payouts", admin_user_fraud_payout_eligibility_path(@user), method: :patch,
+              params: { disabled: "false" },
+              form: { onsubmit: "return confirm(#{("Let #{@user.display_name} earn stardust for fraud reviews again?").to_json})" } %>
+        <% else %>
+          <%= button_to "Disable fraud review payouts", admin_user_fraud_payout_eligibility_path(@user), method: :patch,
+              params: { disabled: "true" },
+              form: { onsubmit: "return confirm(#{("Stop counting #{@user.display_name}'s fraud reviews towards stardust? Anything already banked still pays out.").to_json})" } %>
         <% end %>
       <% end %>
 
@@ -340,34 +355,9 @@
       </div>
     </div>
 
-    <div class="mission-panel">
-      <h2 class="admin-user-show__section-title">Flipper Features</h2>
-      <div class="admin-user-show__actions">
-        <%
-          features = [
-            { key: :shop_open,               label: "Shop" },
-            { key: :"git_commit_2025-12-25", label: "Git Commit" },
-            { key: :kitchen_comic,           label: "Kitchen Comic" },
-            { key: :voting,                  label: "Voting" },
-            { key: :grant_stardust,          label: "Grant Stardust" },
-            { key: :voting_locked,           label: "Voting Lock" },
-          ]
-        %>
-        <% features.each do |f| %>
-          <% if Flipper.enabled?(f[:key], @user) %>
-            <%= button_to admin_user_feature_flag_path(@user, f[:key].to_s),
-                method: :delete, disabled: !current_user&.admin?, title: "Disable #{f[:label]}" do %>
-              <%= f[:label] %> ✓
-            <% end %>
-          <% else %>
-            <%= button_to admin_user_feature_flags_path(@user),
-                method: :post, params: { feature: f[:key].to_s }, disabled: !current_user&.admin?, title: "Enable #{f[:label]}" do %>
-              <%= f[:label] %>
-            <% end %>
-          <% end %>
-        <% end %>
-      </div>
-    </div>
+    <% if @certification_integrities.any? %>
+      <%= render "certification_integrities", integrities: @certification_integrities %>
+    <% end %>
 
     <div class="mission-panel">
       <h2 class="admin-user-show__section-title">Internal Notes</h2>
@@ -387,6 +377,6 @@
   <%= render Admin::PastOrdersComponent.new(user: @user, title: "Shop Orders") %>
   <%= render "admin/shared/ledger_log", entries: @user.ledger_entries, title: "Ledger History" %>
   <% if policy(@user).audit_log? %>
-    <%= render "admin/shared/audit_log", record: @user, limit: 15 %>
+    <%= render "admin/shared/audit_log", record: @user, pagy: @audit_pagy, displayed_versions: @audit_versions %>
   <% end %>
 </div>

@@ -7,7 +7,7 @@
 #  group_count        :integer          default(1), not null
 #  group_key          :string
 #  params             :jsonb            not null
-#  priority           :integer          default(NULL), not null
+#  priority           :integer          default(0), not null
 #  read_at            :datetime
 #  record_type        :string
 #  seen_at            :datetime
@@ -56,6 +56,12 @@ class Notification < ApplicationRecord
   class_attribute :category_description, default: nil
   class_attribute :category_group,       default: "General"
   class_attribute :inbox_record_preloads, default: nil
+  # Whether this type may deliver over email. Default true preserves the
+  # priority-based email defaults; set false to keep a type in-app/Slack only —
+  # used when a type's email is delivered out-of-band (e.g. through the Airtable
+  # -> Loops user sync) rather than the app's SMTP mailer. Overrides preference
+  # and even the critical bypass, so a false here is a hard off for email.
+  class_attribute :email_deliverable, default: true
   # Delay for slack/email delivery so aggregated rows fire one DM/email with
   # the final group_count instead of one per event. nil = immediate.
   class_attribute :digest_delay,         default: nil
@@ -75,10 +81,8 @@ class Notification < ApplicationRecord
   scope :unseen, -> { where(seen_at: nil) }
   scope :unread, -> { where(read_at: nil) }
 
-  # The whole notifications feature (in-app, Slack, email) is behind the
-  # week_2_release flag, gated per recipient.
   def self.enabled_for?(user)
-    user.present? && Flipper.enabled?(:week_2_release, user)
+    user.present?
   end
 
   # Whether this notification type is relevant enough to a user to be worth
@@ -223,7 +227,7 @@ class Notification < ApplicationRecord
     pref = preference_row
 
     slack_on = critical? || channel_enabled?(:slack, pref, defaults)
-    email_on = critical? || channel_enabled?(:email, pref, defaults)
+    email_on = email_deliverable && (critical? || channel_enabled?(:email, pref, defaults))
 
     channels = []
     channels << :slack if slack_on

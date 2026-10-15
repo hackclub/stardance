@@ -17,7 +17,9 @@ module User::ShopAccess
   end
 
   def reject_pending_orders!(reason: "User banned")
-    shop_orders.where(aasm_state: %w[pending awaiting_periodical_fulfillment]).find_each do |order|
+    shop_orders.where(aasm_state: ShopOrder::REJECTABLE_STATES).find_each do |order|
+      order.system_rejection = true
+      order.internal_rejection_reason = reason
       order.mark_rejected(reason)
       order.save!
     end
@@ -27,7 +29,7 @@ module User::ShopAccess
     identity = hack_club_identity
     return [] unless identity&.access_token.present?
 
-    identity_payload = HCAService.identity(identity.access_token)
+    identity_payload = identity.hca_identity
     addresses = identity_payload["addresses"] || []
     phone_number = identity_payload["phone_number"]
     addresses.map { |address| address.merge("phone_number" => phone_number) }
@@ -37,7 +39,7 @@ module User::ShopAccess
     identity = hack_club_identity
     return nil unless identity&.access_token.present?
 
-    identity_payload = HCAService.identity(identity.access_token)
+    identity_payload = identity.hca_identity
     birthday_str = identity_payload["birthday"]
     return nil if birthday_str.blank?
 

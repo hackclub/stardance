@@ -27,7 +27,10 @@
 
   &__media {
     position: relative;
-    aspect-ratio: 9 / 16;
+    // Recordings come in both orientations (landscape Lookout screen captures,
+    // portrait or landscape Lapse timelapses), so the frame is a neutral 16:9
+    // and the clip is letterboxed inside it rather than cropped to portrait.
+    aspect-ratio: 16 / 9;
     overflow: hidden;
     border-radius: 12px;
     background: var(--color-space-card, rgba(255, 255, 255, 0.04));
@@ -52,7 +55,10 @@
   &__video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    // contain, not cover: show the whole frame at its true aspect ratio (a
+    // landscape clip was being cropped into the portrait box). The black
+    // background fills the letterbox bars cleanly.
+    object-fit: contain;
     background: #000;
   }
 
@@ -86,5 +92,27 @@
   &__sub {
     color: var(--color-space-text-muted, rgba(255, 255, 255, 0.7));
     font-size: 0.8rem;
+  }
+
+  // "Open in Telescreen" deep-link on Lapse recordings — a small mint pill,
+  // matching the &__source badge tone but as an actionable outline button.
+  &__telescreen {
+    align-self: flex-start;
+    margin-top: 0.15rem;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--color-brand-mint);
+    border-radius: 999px;
+    color: var(--color-brand-mint);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+
+    &:hover {
+      background: var(--color-brand-mint);
+      color: var(--color-space-bg);
+    }
   }
 }

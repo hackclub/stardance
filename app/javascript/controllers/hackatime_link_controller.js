@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["box", "tags", "dropdown", "addBtn", "placeholder"];
-  static values = { items: Array };
+  static values = { hasExistingDevlogs: Boolean, items: Array };
 
   connect() {
     this.clickOutside = this.closeOnClickOutside.bind(this);
@@ -29,10 +29,22 @@ export default class extends Controller {
     const id = btn.dataset.id;
     const name = btn.dataset.name;
     const hours = btn.dataset.hours;
+    const previouslyLinked = btn.dataset.previouslyLinked === "true";
+
+    if (
+      this.hasExistingDevlogsValue &&
+      !previouslyLinked &&
+      !window.confirm(
+        `Add "${name}"? It will be added to all existing devlogs and their logged time will be recalculated. Once saved, this Hackatime project cannot be removed.`,
+      )
+    ) {
+      return;
+    }
 
     const tag = document.createElement("span");
     tag.className = "project-show__hackatime-tag";
     tag.dataset.hackatimeId = id;
+    tag.dataset.previouslyLinked = previouslyLinked.toString();
     tag.innerHTML = `
       <span class="project-show__hackatime-tag-name">${this.escapeHtml(name)}</span>
       <span class="project-show__hackatime-tag-time">${this.escapeHtml(hours)}h</span>
@@ -65,6 +77,7 @@ export default class extends Controller {
     btn.dataset.id = id;
     btn.dataset.name = name;
     btn.dataset.hours = hours;
+    btn.dataset.previouslyLinked = tag.dataset.previouslyLinked;
     btn.innerHTML = `
       <span class="project-show__hackatime-dropdown-name">${this.escapeHtml(name)}</span>
       <span class="project-show__hackatime-dropdown-time">${this.escapeHtml(hours)}h</span>

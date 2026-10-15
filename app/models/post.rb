@@ -73,6 +73,17 @@ class Post < ApplicationRecord
                  optional: true
     end
 
+    # Approved ship events the user personally authored (distinct from
+    # membership-based User#approved_ship_events, which counts co-members'
+    # ships). Restricted to live projects because Post has no soft-delete of its
+    # own, so without the subquery a soft-deleted (e.g. fraud-removed)
+    # project's ships would still count.
+    scope :approved_ship_events_by, ->(user) {
+      of_ship_events(join: true)
+        .where(user_id: user.id, post_ship_events: { certification_status: "approved" })
+        .where(project_id: Project.select(:id))
+    }
+
     # Restrict to posts whose author has finished identity verification.
     # System posts (user_id IS NULL) are always allowed through — they aren't
     # user-authored. The viewer-aware variant additionally lets a logged-in

@@ -20,7 +20,7 @@
 
   pipeline = [
     { label: "Placed",        sublabel: "Order received" },
-    { label: "Verification",  sublabel: "Identity check" },
+    { label: "Fraud Check",   sublabel: "Fraud Check" },
     { label: "Fulfillment",   sublabel: "Processing" },
     { label: "Done",          sublabel: s == "rejected" ? "Rejected" : s == "refunded" ? "Refunded" : "Fulfilled" }
   ]
@@ -34,6 +34,9 @@
       <h1 class="aorder__title">
         Order #<%= @order.id %>
         <span class="aorder__state-badge aorder__state-badge--<%= display_s %>"><%= display_s.humanize %></span>
+        <% if @order.mission_submission.present? %>
+          <%= link_to "🎖️ Free via mission", admin_mission_path(@order.mission_submission.mission.slug), class: "aorder__mission-badge", title: "Redeemed for free via the \"#{@order.mission_submission.mission.name}\" mission" %>
+        <% end %>
       </h1>
       <p class="aorder__subtitle"><%= @order.shop_item.name %> · <%= @order.created_at.strftime("%b %-d, %Y at %-I:%M%p") %></p>
     </div>
@@ -67,7 +70,7 @@
         <span class="aorder__step-label"><%= step[:label] %></span>
         <span class="aorder__step-sublabel">
           <% if i == step_idx && s == "awaiting_verification_call" %>Verification Call
-          <% elsif i == step_idx && s == "awaiting_verification" %>Identity Check
+          <% elsif i == step_idx && s == "awaiting_verification" %>Fraud Check
           <% elsif i == step_idx && s == "on_hold" %><%= policy(@order).view_on_hold_state? ? "On Hold" : "Pending" %>
           <% else %><%= step[:sublabel] %>
           <% end %>
@@ -107,6 +110,9 @@
           <span class="aorder__row-label">Status</span>
           <span class="aorder__row-value">
             <span class="aorder__state-badge aorder__state-badge--<%= display_s %>"><%= display_s.humanize %></span>
+            <% if policy(@order).view_on_hold_state? %>
+              <%= render "admin/shop/orders/hold_countdown", order: @order %>
+            <% end %>
           </span>
         </div>
         <% unless policy(current_user).view_order_full_details? %>
@@ -128,6 +134,9 @@
             <%= @order.quantity %> × <%= @order.frozen_item_price %> = <strong><%= @order.total_cost %> tickets</strong>
             <% if @order.frozen_modifiers_price.to_i > 0 %>
               + <%= @order.frozen_modifiers_price %> modifiers = <strong><%= @order.total_cost_with_modifiers %> total</strong>
+            <% end %>
+            <% if @order.mission_submission.present? %>
+              <span class="aorder__mission-badge" title="Redeemed for free via the &quot;<%= @order.mission_submission.mission.name %>&quot; mission">🎖️ Free via mission</span>
             <% end %>
           </span>
         </div>
@@ -154,19 +163,18 @@
               <span class="aorder__row-value"><%= @order.fulfilled_by %></span>
             </div>
           <% end %>
-        <% else %><%# view_order_full_details? %>
-          <% if @order.rejection_reason.present? %>
-            <div class="aorder__row">
-              <span class="aorder__row-label">Rejection reason</span>
-              <span class="aorder__row-value" style="color:#f87171;"><%= @order.rejection_reason %></span>
-            </div>
-          <% end %>
-          <% if @order.internal_rejection_reason.present? %>
-            <div class="aorder__row">
-              <span class="aorder__row-label">Internal reason</span>
-              <span class="aorder__row-value" style="color:#f87171;"><%= @order.internal_rejection_reason %></span>
-            </div>
-          <% end %>
+        <% end %>
+        <% if @order.rejection_reason.present? && policy(current_user).view_rejection_reason? %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Rejection reason</span>
+            <span class="aorder__row-value" style="color:#f87171;"><%= @order.rejection_reason %></span>
+          </div>
+        <% end %>
+        <% if @order.internal_rejection_reason.present? && policy(current_user).view_order_full_details? %>
+          <div class="aorder__row">
+            <span class="aorder__row-label">Internal reason</span>
+            <span class="aorder__row-value" style="color:#f87171;"><%= @order.internal_rejection_reason %></span>
+          </div>
         <% end %>
       </div>
     </div>
@@ -204,8 +212,8 @@
               <% if current_user.admin? || current_user.fraud_dept? %>
                 <div class="aorder__fraud-tools">
                   <% if hackatime_identity %>
-                    <%= link_to "Billy", "https://billy.3kh0.net/?u=#{hackatime_identity.uid}", target: "_blank", class: "aorder__fraud-btn" %>
-                    <%= link_to "Joe", "https://joe.fraud.hackclub.com/profile/#{hackatime_identity.uid}", target: "_blank", class: "aorder__fraud-btn" %>
+                    <%= link_to "Hackatime", telescreen_hackatime_overview_url(hackatime_identity.uid), target: "_blank", rel: "noopener noreferrer", class: "aorder__fraud-btn" %>
+                    <%= link_to "Telescreen", telescreen_subject_url(hackatime_identity.uid), target: "_blank", rel: "noopener noreferrer", class: "aorder__fraud-btn" %>
                   <% end %>
                 </div>
               <% end %>
@@ -250,6 +258,27 @@
                   <%= link_to "##{ord.id}", admin_shop_order_path(ord) %>
                   <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><%= truncate(ord.shop_item.name, length: 20) %></span>
                   <span class="aorder__state-badge aorder__state-badge--<%= ord.aasm_state %>" style="padding: 1px 8px; font-size:10px;"><%= ord.aasm_state.humanize %></span>
+                </div>
+              <% end %>
+            </div>
+          </details>
+        <% end %>
+        <% if @user_projects.present? %>
+          <% telescreen_hackatime = @order.user.identities.find { |i| i.provider == "hackatime" } %>
+          <details style="margin-top: var(--space-s);">
+            <summary style="cursor:pointer; font-size: var(--font-size-xs); color: var(--color-space-text-muted); font-family: var(--font-family-text);">▸ Projects (<%= @user_projects.size %>)</summary>
+            <div style="margin-top: var(--space-xs);">
+              <% @user_projects.each do |project| %>
+                <div class="aorder__history-item">
+                  <%= link_to truncate(project.title, length: 30), admin_project_path(project) %>
+                  <% if project.deleted? %>
+                    <span style="font-size:10px; color: var(--color-space-text-muted);">(deleted)</span>
+                  <% end %>
+                  <% if telescreen_hackatime %>
+                    <% project.hackatime_projects.select { |hp| hp.user_id == @order.user.id }.each do |hp| %>
+                      <%= link_to "Telescreen (#{hp.name})", telescreen_hackatime_overview_url(telescreen_hackatime.uid, project: hp.name), target: "_blank", rel: "noopener noreferrer", class: "aorder__fraud-btn" %>
+                    <% end %>
+                  <% end %>
                 </div>
               <% end %>
             </div>
@@ -310,12 +339,12 @@
             <% end %>
           </span>
         </div>
-        <% if policy(current_user).view_order_full_details? %>
-          <% regional_usd_offset = @order.region.present? ? (item.send("usd_offset_#{@order.region.downcase}") || item.send("usd_offset_xx") || 0) : 0 %>
+        <% if policy(current_user).view_usd_cost? %>
+          <% regional_usd_offset = item.usd_offset_for_region(@order.region) %>
           <div class="aorder__row">
             <span class="aorder__row-label">USD cost</span>
             <span class="aorder__row-value">
-              $<%= number_with_precision((item.usd_cost || 0) + regional_usd_offset, precision: 2) %>
+              $<%= number_with_precision(item.usd_cost_for_region(@order.region), precision: 2) %>
               <% if regional_usd_offset != 0 %>
                 <small style="color: var(--color-space-text-muted);">(+<%= @order.region %> offset)</small>
               <% end %>
@@ -449,7 +478,7 @@
           </span>
         </div>
         <div class="aorder__assign-form">
-          <div data-controller="searchable-select">
+          <div class="searchable-select" data-controller="searchable-select">
             <%= form_with url: assign_user_admin_shop_order_path(@order), method: :post, local: true, data: { turbo: false } do |f| %>
               <%= f.hidden_field :assigned_to_user_id, value: @order.assigned_to_user_id, data: { searchable_select_target: "hiddenField" } %>
               <input
@@ -460,8 +489,9 @@
                 autocomplete="off"
                 class="aorder__input"
                 style="width: 100%; box-sizing: border-box;">
-              <div data-searchable-select-target="dropdown">
+              <div class="searchable-select-dropdown" data-searchable-select-target="dropdown">
                 <div
+                  class="searchable-select-option"
                   data-searchable-select-target="option"
                   data-action="click->searchable-select#selectAndSubmit"
                   data-value=""
@@ -471,12 +501,13 @@
                 </div>
                 <% @fulfillment_users.each do |user| %>
                   <div
+                    class="searchable-select-option"
                     data-searchable-select-target="option"
                     data-action="click->searchable-select#selectAndSubmit"
                     data-value="<%= user.id %>"
                     data-label="<%= user.display_name %>"
                     data-search-text="<%= "#{user.display_name} #{user.regions.join(' ')} #{user.id}".downcase %>">
-                    <img src="<%= user.avatar %>" alt="" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;">
+                    <img src="<%= user.avatar %>" alt="" class="searchable-select-avatar" loading="lazy">
                     <span><%= user.display_name %></span>
                     <% if user.has_regions? %>
                       <small style="color: var(--color-space-text-muted);"><%= user.regions.join(", ") %></small>
@@ -494,7 +525,7 @@
         <div class="aorder__row">
           <span class="aorder__row-label">Tracking / Ref</span>
           <span class="aorder__row-value">
-            <% if @order.shop_item.type.in?(%w[ShopItem::LetterMail ShopItem::FreeStickers]) %>
+            <% if @order.shop_item.type.in?(ShopItem::LetterMail::TYPES + %w[ShopItem::FreeStickers]) %>
               <a href="https://mail.hackclub.com/back_office/letters/<%= @order.external_ref %>" target="_blank"><%= @order.external_ref %></a>
             <% else %>
               <%= @order.external_ref %>
@@ -522,12 +553,13 @@
       <% end %>
       <% if @order.joe_case_url.present? %>
         <div class="aorder__row">
-          <span class="aorder__row-label">Joe case</span>
+          <span class="aorder__row-label">Telescreen case</span>
           <span class="aorder__row-value">
+            <% case_url = displayed_telescreen_url(@order.joe_case_url) %>
             <% begin %>
-              <% uri = URI.parse(@order.joe_case_url.to_s) %>
+              <% uri = URI.parse(case_url.to_s) %>
               <% if uri.is_a?(URI::HTTP) && uri.host.present? %>
-                <%= link_to @order.joe_case_url, uri.to_s, target: "_blank", rel: "noopener" %>
+                <%= link_to case_url, uri.to_s, target: "_blank", rel: "noopener noreferrer" %>
               <% else %>
                 <%= @order.joe_case_url %>
               <% end %>
@@ -614,7 +646,9 @@
       <% unless current_user.shop_manager? && !current_user.admin? %>
         <% if @order.high_value? && @order.pending? %>
           <div class="aorder__warning">
-            ⚠️ High-value order (<%= @order.total_cost_with_accessories %> tickets) — requires 2 fraud dept reviews before approval (<%= @order.reviews.count %>/2).
+            ⚠️ High-value order (<%= @order.total_cost_with_accessories %> tickets). It needs <%= ShopOrderReview::REQUIRED_COUNT %> fraud dept reviews
+            agreeing on the same verdict: approvals <%= @order.review_count(ShopOrderReview::APPROVE) %>/<%= ShopOrderReview::REQUIRED_COUNT %>,
+            rejections <%= @order.review_count(ShopOrderReview::REJECT) %>/<%= ShopOrderReview::REQUIRED_COUNT %>.
           </div>
 
           <% unless @order.reviews.exists?(user: current_user) %>
@@ -664,16 +698,18 @@
             <%= hidden_field_tag :return_status, params[:return_status] if params[:return_status].present? %>
             <button type="submit"
               class="aorder__btn aorder__btn--approve"
-              <% unless (@order.pending? || @order.awaiting_verification_call?) && !@order.requires_additional_review? %> disabled<% end %>
+              <% unless @order.approvable? %> disabled<% end %>
               onclick="return confirm('Approve this order for fulfillment?')">✓ Approve</button>
           </form>
 
           <%# Reject %>
           <% if %w[pending awaiting_verification awaiting_verification_call awaiting_periodical_fulfillment on_hold].include?(s) %>
+            <%# Not disabled while a high-value order still needs rejections: the
+                form behind it records this reviewer's, and the second one
+                rejects the order outright. %>
             <button type="button"
               class="aorder__btn aorder__btn--reject"
-              onclick="document.getElementById('reject-modal').showModal()"
-              <% if @order.requires_additional_review? %> disabled<% end %>>✗ Reject</button>
+              onclick="document.getElementById('reject-modal').showModal()">✗ Reject</button>
             <%= render "reject_modal", order: @order %>
           <% end %>
 
@@ -732,7 +768,7 @@
           <% end %>
 
           <%# Theseus (LetterMail) %>
-          <% if @order.awaiting_periodical_fulfillment? && @order.shop_item.type == "ShopItem::LetterMail" && (current_user.admin? || current_user.fulfillment_person?) %>
+          <% if @order.awaiting_periodical_fulfillment? && @order.shop_item.is_a?(ShopItem::LetterMail) && (current_user.admin? || current_user.fulfillment_person?) %>
             <form method="post" action="<%= send_to_theseus_admin_shop_order_path(@order) %>" style="display:contents;">
               <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
               <button type="submit" class="aorder__btn aorder__btn--secondary" onclick="return confirm('Send this order to Theseus?')">📬 Send to Theseus</button>

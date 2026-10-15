@@ -45,6 +45,24 @@ module GitHost
       nil  # Stats not available via CLI; caller falls back to the list commit
     end
 
+    # Returns nil when the repo can't be cloned or listed, so callers can tell
+    # a failure from an empty repo.
+    def fetch_filenames
+      return nil unless repo_url.present?
+
+      Dir.mktmpdir("git_sync") do |tmpdir|
+        clone_path = File.join(tmpdir, "repo")
+
+        unless clone_repo(clone_path)
+          Rails.logger.error("Failed to clone #{repo_url}")
+          return nil
+        end
+
+        output, status = Open3.capture2("git", "-C", clone_path, "ls-tree", "-r", "--name-only", "HEAD")
+        status.success? ? output.split("\n") : nil
+      end
+    end
+
     protected
 
     def parse_url!

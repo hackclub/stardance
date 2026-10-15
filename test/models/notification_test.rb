@@ -7,7 +7,7 @@
 #  group_count        :integer          default(1), not null
 #  group_key          :string
 #  params             :jsonb            not null
-#  priority           :integer          default(NULL), not null
+#  priority           :integer          default(0), not null
 #  read_at            :datetime
 #  record_type        :string
 #  seen_at            :datetime
@@ -58,14 +58,6 @@ class NotificationTest < ActiveSupport::TestCase
     assert_equal "low", notification.priority
   end
 
-  test "notify is a no-op when the week_2_release flag is off for the recipient" do
-    Flipper.disable(:week_2_release)
-
-    assert_no_difference "Notification.count" do
-      assert_nil Notifications::NewFollower.notify(recipient: @bob, actor: @alice)
-    end
-  end
-
   test "notify skips self-notify by default" do
     assert_no_difference "Notification.count" do
       Notifications::NewFollower.notify(recipient: @alice, actor: @alice)
@@ -97,6 +89,19 @@ class NotificationTest < ActiveSupport::TestCase
     assert_no_enqueued_jobs(only: NotificationDeliveryJob) do
       Notifications::NewFollower.notify(recipient: @bob, actor: @alice)
     end
+  end
+
+  test "email_deliverable defaults true so a high-priority type still emails" do
+    notification = Notifications::NewFollower.new(priority: :high)
+    assert_includes notification.effective_channels, :email
+  end
+
+  test "email_deliverable false drops the email channel but keeps slack" do
+    notification = Notifications::Payouts::ShipEventIssued.new(priority: :high)
+    channels = notification.effective_channels
+
+    assert_includes channels, :slack
+    assert_not_includes channels, :email
   end
 
   test "orphaned? returns true when the polymorphic record is missing" do

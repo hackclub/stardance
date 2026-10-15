@@ -2,10 +2,6 @@ class CommentsController < ApplicationController
   before_action :set_commentable
   before_action :set_comment, only: [ :destroy ]
 
-  def index
-    @comments = @commentable.comments.for_thread
-  end
-
   def create
     @comment = @commentable.comments.build(comment_params)
     @comment.user = current_user
@@ -36,7 +32,7 @@ class CommentsController < ApplicationController
 
   def set_commentable
     if params[:devlog_id].present?
-      @commentable = Post::Devlog.find(params[:devlog_id])
+      @commentable = Post::Devlog.visible_to(current_user).find(params[:devlog_id])
     else
       raise ActiveRecord::RecordNotFound, "Commentable not found"
     end

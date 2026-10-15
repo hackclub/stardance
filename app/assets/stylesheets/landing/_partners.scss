@@ -64,6 +64,10 @@
     width: 160px;
   }
 
+  &__logo--framework {
+    width: 200px;
+  }
+
   @media (max-width: 600px) {
     &__row {
       gap: var(--space-l);
@@ -88,6 +92,10 @@
 
     &__logo--codeorg {
       width: 120px;
+    }
+
+    &__logo--framework {
+      width: 160px;
     }
   }
 }

@@ -23,7 +23,13 @@
 require "test_helper"
 
 class Post::DevlogTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
+  test "creates a version through the public version history API" do
+    devlog = post_devlogs(:one)
+
+    version = devlog.create_version!(user: users(:one), previous_body: "Original body")
+
+    assert_equal "Original body", version.previous_body
+    assert_equal 1, version.version_number
+    assert_equal 1, devlog.current_version_number
+  end
 end

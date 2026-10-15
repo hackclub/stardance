@@ -1,0 +1,266 @@
+<% content_for :title, "Certificate" %>
+<% if @certificate %>
+  <% content_for :og_title, "#{@certificate.name}'s Stardance Certificate" %>
+  <% content_for :og_description,
+       "#{pluralize(@certificate.hours_at_issue.floor, "approved hour")} building and shipping
+        projects on Stardance, Hack Club's Summer 2026 challenge.".squish %>
+  <% content_for :og_image, certificate_og_image_url(code: @certificate.code, format: :png) %>
+  <% content_for :twitter_card, "summary_large_image" %>
+<% else %>
+  <% content_for :og_title, "Stardance Certificate" %>
+  <% content_for :og_description, "Earn an official Stardance certificate, or verify one and see the projects behind it." %>
+<% end %>
+<%= content_for :stylesheets do %>
+  <%= stylesheet_link_tag "certificate", "data-turbo-track": "reload" %>
+<% end %>
+
+<main class="certificate-page">
+  <% if current_user %>
+    <%# Hero %>
+    <header class="certificate-page__hero certificate-page__hero--public">
+      <h1 class="certificate-page__display-title" style="text-wrap: balance">
+        Stardance Certificate of Achievement
+      </h1>
+      <p class="certificate-page__hero-desc">
+        Issued by Hack Club to teens with <%= Certificate::REQUIRED_APPROVED_HOURS %> hours
+        of verified project work. Recognized by MIT School of Engineering,
+        GitHub, AMD, and Congressional App Challenge.
+      </p>
+      <div class="certificate-page__showcase certificate-page__showcase--large"
+           data-controller="tilt-3d" data-tilt-3d-max-value="12">
+        <div class="certificate-page__showcase-sheen" aria-hidden="true"></div>
+        <%= image_tag "certificate/preview.webp",
+              alt: "Preview of a Stardance certificate",
+              class: "certificate-page__showcase-img",
+              draggable: false %>
+      </div>
+      <div class="certificate-page__partners">
+        <p class="certificate-page__partners-label">In partnership with</p>
+        <div class="certificate-page__partners-logos">
+          <%= image_tag "landing/partners/nasa.png", alt: "NASA", class: "certificate-page__partner-logo" %>
+          <%= image_tag "landing/partners/amd.png", alt: "AMD", class: "certificate-page__partner-logo" %>
+          <%= image_tag "landing/partners/github.png", alt: "GitHub", class: "certificate-page__partner-logo" %>
+        </div>
+      </div>
+    </header>
+
+    <%# Your certificate / progress %>
+    <section class="certificate-page__mine">
+      <% if (certificate = current_user.certificate) %>
+        <h2 class="certificate-page__section-title">Your certificate</h2>
+        <% if certificate.approved? %>
+          <p class="certificate-page__mine-text">
+            Issued to <strong><%= certificate.name %></strong> with code
+            <span class="certificate-page__mine-code"><%= certificate.code %></span>.
+          </p>
+          <% share_url = certificate_share_url(certificate) %>
+          <div class="certificate-page__actions">
+            <%= render ActionButtonComponent.new(text: "Download certificate", size: :small,
+                  href: download_certificate_path) %>
+            <%= render ActionButtonComponent.new(text: "Add to LinkedIn profile", size: :small,
+                  variant: :secondary, leading_icon: "icons/linkedin.svg",
+                  href: linkedin_add_to_profile_url(certificate),
+                  target: "_blank", rel: "noopener") %>
+            <%= render ActionButtonComponent.new(text: "Share on LinkedIn", size: :small,
+                  variant: :secondary, leading_icon: "icons/linkedin.svg",
+                  href: linkedin_share_url(share_url),
+                  target: "_blank", rel: "noopener") %>
+            <%= render ActionButtonComponent.new(text: "Post on X", size: :small,
+                  variant: :secondary, leading_icon: "icons/x.svg",
+                  href: x_share_url(share_url, text: certificate_share_text(certificate)),
+                  target: "_blank", rel: "noopener") %>
+            <%= render ActionButtonComponent.new(text: "Copy link", size: :small,
+                  variant: :secondary, leading_icon: "icons/link.svg", type: :button,
+                  data: { controller: "tooltip copy", tooltip_message_value: "Click to copy",
+                          copy_text_value: share_url, action: "click->copy#copy" }) %>
+          </div>
+          <details class="certificate-page__regenerate">
+            <summary class="certificate-page__regenerate-toggle">Need to update your name or hours?</summary>
+            <p class="certificate-page__regenerate-text">
+              Regenerating will re-count your approved hours and let you change the name on the certificate.
+            </p>
+            <%= form_with model: certificate, url: regenerate_certificate_path, method: :patch,
+                  class: "certificate-page__request-form" do |form| %>
+              <%= form.text_field :name,
+                    value: certificate.name,
+                    maxlength: Certificate::NAME_MAX_LENGTH,
+                    placeholder: "Name on the certificate",
+                    "aria-label": "Name on the certificate",
+                    class: "certificate-page__name-input" %>
+              <%= render ActionButtonComponent.new(text: "Regenerate certificate", size: :small) %>
+            <% end %>
+            <p class="certificate-page__mine-hint">
+              Names that don't match your verified identity need a quick review before re-issue.
+            </p>
+          </details>
+        <% elsif certificate.pending? %>
+          <p class="certificate-page__mine-text">
+            Your certificate for <strong><%= certificate.name %></strong> is waiting on a quick
+            name review. Since it doesn't match your verified identity, a human checks it first.
+          </p>
+        <% else %>
+          <p class="certificate-page__mine-text">
+            The name <strong><%= certificate.name %></strong> wasn't approved.
+            Try again with a different name:
+          </p>
+          <%= render "certificates/request_form", certificate: certificate, button: "Request again" %>
+          <p class="certificate-page__mine-hint">
+            Names that don't exactly match your verified identity need a quick review before issue.
+          </p>
+        <% end %>
+      <% else %>
+        <h2 class="certificate-page__section-title">Your progress</h2>
+        <%= render "shared/progress_bar",
+              value: @approved_hours.floor,
+              max: Certificate::REQUIRED_APPROVED_HOURS,
+              label: "Approved hours toward certificate",
+              class_name: "certificate-page__progress-bar" %>
+        <p class="certificate-page__progress-text">
+          <%= @approved_hours.floor %> / <%= Certificate::REQUIRED_APPROVED_HOURS %> approved hours
+        </p>
+        <% if @approved_hours >= Certificate::REQUIRED_APPROVED_HOURS %>
+          <p class="certificate-page__mine-text">
+            You've earned a certificate! Enter the name you want printed on it:
+          </p>
+          <%= render "certificates/request_form", certificate: Certificate.new, button: "Request certificate" %>
+          <p class="certificate-page__mine-hint">
+            This is the name printed on your certificate. It can't be changed after issue, and
+            names that don't exactly match your verified identity need a quick review first.
+          </p>
+        <% end %>
+      <% end %>
+    </section>
+
+    <%# About %>
+    <section class="certificate-page__about">
+      <h2 class="certificate-page__section-title">About this certificate</h2>
+      <div class="certificate-page__about-body">
+        <p>
+          Every hour is logged through daily devlogs, reviewed and approved by
+          Hack Club staff, and tied to a shipped project that anyone can try.
+          Each certificate has a unique 6-character verification code linking
+          back to the recipient's work.
+        </p>
+      </div>
+    </section>
+
+    <%# FAQ %>
+    <section class="certificate-page__faq">
+      <h2 class="certificate-page__section-title">FAQ</h2>
+      <%= render "certificates/faq", items: [
+            [ "What hours count towards the certificate?",
+              "All hours that have been devlogged and submitted as part of a ship that has been approved." ],
+            [ "What will show up on the certificate?",
+              "You'll get to choose your name, and there will be a code that lets anyone verify the
+               certificate's authenticity. The code also shows off the projects you've submitted." ],
+            [ "Can I get the certificate sent to me?",
+              "If you want a physical certificate, there will be one available in the shop soon!
+               It's only buyable once you have qualified for the certificate." ]
+          ] %>
+    </section>
+
+    <%# Verify %>
+    <section class="certificate-page__verify">
+      <h2 class="certificate-page__section-title">Verify a certificate</h2>
+      <p class="certificate-page__subtitle">Enter the 6-character code printed on the certificate.</p>
+      <%= render "certificates/verifier" %>
+    </section>
+  <% else %>
+    <%# === LOGGED-OUT VIEW === %>
+    <%# Hero: title + certificate with 3D tilt + sheen %>
+    <header class="certificate-page__hero certificate-page__hero--public">
+      <h1 class="certificate-page__display-title" style="text-wrap: balance">
+        Stardance Certificate of Achievement
+      </h1>
+      <p class="certificate-page__hero-desc">
+        Issued by <a href="https://hackclub.com" class="certificate-page__link">Hack Club</a>,
+        a 501(c)(3) nonprofit, to teens who complete at least
+        <%= Certificate::REQUIRED_APPROVED_HOURS %> hours of verified project work
+        during the Stardance Challenge.
+      </p>
+
+      <div class="certificate-page__showcase certificate-page__showcase--large"
+           data-controller="tilt-3d" data-tilt-3d-max-value="14">
+        <div class="certificate-page__showcase-sheen" aria-hidden="true"></div>
+        <%= image_tag "certificate/preview.webp",
+              alt: "A Stardance Certificate of Achievement showing partner logos from AMD, Hack Club, NASA, and GitHub",
+              class: "certificate-page__showcase-img",
+              draggable: false %>
+      </div>
+
+      <div class="certificate-page__partners">
+        <p class="certificate-page__partners-label">In partnership with</p>
+        <div class="certificate-page__partners-logos">
+          <%= image_tag "landing/partners/nasa.png", alt: "NASA", class: "certificate-page__partner-logo" %>
+          <%= image_tag "landing/partners/amd.png", alt: "AMD", class: "certificate-page__partner-logo" %>
+          <%= image_tag "landing/partners/github.png", alt: "GitHub", class: "certificate-page__partner-logo" %>
+        </div>
+      </div>
+    </header>
+
+    <%# About %>
+    <section class="certificate-page__about">
+      <h2 class="certificate-page__section-title">About this certificate</h2>
+      <div class="certificate-page__about-body">
+        <p>
+          This certificate is issued by
+          <a href="https://hackclub.com" class="certificate-page__link">Hack Club</a>,
+          a 501(c)(3) nonprofit (EIN 81-2908499), to teens who complete at least
+          <%= Certificate::REQUIRED_APPROVED_HOURS %> hours of verified project work
+          during the Stardance Challenge.
+        </p>
+        <p>
+          Every hour is logged through daily devlogs, reviewed and approved by
+          Hack Club staff, and tied to a shipped project that anyone can try.
+          Each certificate has a unique 6-character verification code linking
+          back to the recipient's work.
+        </p>
+      </div>
+    </section>
+
+    <%# Verify %>
+    <section class="certificate-page__verify">
+      <h2 class="certificate-page__section-title">Verify a certificate</h2>
+      <p class="certificate-page__subtitle">
+        Enter the 6-character code printed on the certificate.
+      </p>
+      <%= render "certificates/verifier" %>
+    </section>
+
+    <%# FAQ %>
+    <% hack_club_answer = capture do %>
+      Hack Club is a 501(c)(3) nonprofit that helps teens worldwide build real technical
+      projects through online and in-person hackathons. Over 150,000 teens are part of
+      the community. Learn more at <%= link_to "hackclub.com", "https://hackclub.com", class: "certificate-page__link" %>.
+    <% end %>
+    <section class="certificate-page__faq">
+      <h2 class="certificate-page__section-title">FAQ</h2>
+      <%= render "certificates/faq", items: [
+            [ "What is Stardance Challenge?",
+              "Stardance Challenge is a teen online hackathon run by Hack Club in partnership with
+               NASA, AMD, and GitHub. It is open to any teen 13–18 worldwide, and gives free
+               prizes for each project submitted." ],
+            [ "What is Hack Club?", hack_club_answer ],
+            [ "What does this certificate mean?",
+              "This certificate verifies that the recipient spent at least
+               #{Certificate::REQUIRED_APPROVED_HOURS} hours working on personal projects that
+               have been shipped so anyone can experience it. Each certificate has a unique code
+               that links to the recipient's work." ],
+            [ "How can I earn a certificate?",
+              "Anyone ages 13–18 can earn a certificate by joining Stardance Challenge, logging
+               time on personal technical projects, and shipping them for the community to see.
+               No prior experience required. Guides are provided." ]
+          ] %>
+    </section>
+
+    <%# CTA %>
+    <section class="certificate-page__join">
+      <h2 class="certificate-page__section-title">Teen 13–18?</h2>
+      <p class="certificate-page__subtitle">
+        Join Stardance Challenge to start building projects and earn your own certificate.
+      </p>
+      <%= render ActionButtonComponent.new(text: "Join Stardance Challenge", size: :large,
+            variant: :primary, href: root_path) %>
+    </section>
+  <% end %>
+</main>

@@ -1,0 +1,18 @@
+<%# Report-project pill + its modal. Visible to any signed-in visitor who
+    isn't a project member (or always in dev, so the flow stays testable).
+    `is_member` falls back to a live membership check rather than assuming
+    `false`, so callers that forget to pass it still hide the button from
+    the project's own members. %>
+<% is_member = local_assigns.fetch(:is_member) { current_user.present? && project.users.include?(current_user) } %>
+<% modal_id = "project-report-modal-#{project.id}" %>
+<% if current_user.present? && (!is_member || Rails.env.development?) %>
+  <button type="button"
+          class="project-show__pill project-show__pill--danger"
+          onclick="document.getElementById(<%= modal_id.to_json %>).showModal()"
+          aria-haspopup="dialog">
+    <%= inline_svg_tag "icons/warning.svg", class: "project-show__pill-icon" %>
+    Report
+  </button>
+
+  <%= render "projects/report_modal", project: project, modal_id: modal_id %>
+<% end %>

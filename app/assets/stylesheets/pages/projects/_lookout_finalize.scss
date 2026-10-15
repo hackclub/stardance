@@ -1,0 +1,125 @@
+// Temporary recovery page for Lookout recordings stranded when the in-app
+// recorder was retired. Sits on the dark set-2 surface the app's other notices
+// use; removed once the finalize window closes.
+.lookout-finalize {
+  max-width: 40rem;
+  margin: var(--space-xl) auto;
+  padding: var(--space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-set-2-fg-secondary);
+  border-radius: var(--profile-radius);
+  color: var(--color-space-text);
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-family-subtitle);
+    font-size: var(--font-size-xxl);
+  }
+
+  &__back {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-space-text);
+    }
+  }
+
+  &__notice {
+    margin: 0;
+    padding: var(--space-s) var(--space-m);
+    background: var(--color-brand-mint-soft);
+    border-radius: var(--profile-radius);
+    font-size: var(--font-size-s);
+    line-height: 1.5;
+
+    &--done {
+      border-left: 3px solid var(--color-brand-mint);
+    }
+  }
+
+  &__preview {
+    display: flex;
+  }
+
+  &__video {
+    width: 100%;
+    max-height: 22rem;
+    border-radius: var(--profile-radius);
+    background: var(--color-set-1-bg);
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+
+  &__question {
+    margin: 0;
+    font-size: var(--font-size-l);
+  }
+
+  &__dest {
+    display: flex;
+    gap: var(--space-s);
+    padding: var(--space-m);
+    background: var(--color-set-1-bg);
+    border: 1px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    cursor: pointer;
+  }
+
+  &__radio {
+    margin-top: 0.25rem;
+    accent-color: var(--color-brand-mint);
+  }
+
+  &__dest-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    flex: 1;
+  }
+
+  &__dest-name {
+    font-weight: 600;
+  }
+
+  &__dest-sub {
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  &__select,
+  &__input {
+    width: 100%;
+    padding: var(--space-xxs) var(--space-s);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text);
+    border: 1px solid var(--color-set-2-fg-secondary);
+    border-radius: var(--profile-radius);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+  }
+
+  &__actions {
+    display: flex;
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-s);
+  }
+}

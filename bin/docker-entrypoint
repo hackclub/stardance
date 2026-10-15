@@ -6,6 +6,10 @@ if [ -z "${LD_PRELOAD+x}" ]; then
     export LD_PRELOAD
 fi
 
+if [ "$PROCESS_TYPE" = "worker" ]; then
+  exec bundle exec rails solid_queue:start
+fi
+
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   # If running the rails server then create or migrate existing database...
   ./bin/rails db:prepare

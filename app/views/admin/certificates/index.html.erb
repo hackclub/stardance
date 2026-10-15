@@ -1,0 +1,67 @@
+<% content_for :title, "Certificate reviews" %>
+
+<div class="certificate-reviews">
+  <header class="certificate-reviews__header">
+    <div>
+      <h1 class="certificate-reviews__title">Certificate reviews</h1>
+      <p class="certificate-reviews__subtitle">
+        Custom certificate names awaiting review. Names matching the holder's verified identity issue automatically.
+      </p>
+    </div>
+  </header>
+
+  <section class="certificate-reviews__section">
+    <h2 class="certificate-reviews__section-title">Pending (<%= @pending.size %>)</h2>
+    <% if @pending.any? %>
+      <div class="certificate-reviews__list">
+        <% @pending.each do |certificate| %>
+          <article class="certificate-reviews__card">
+            <div class="certificate-reviews__names">
+              <p class="certificate-reviews__requested"><%= certificate.name %></p>
+              <p class="certificate-reviews__meta">
+                Verified identity: <strong><%= certificate.user.full_name.presence || "(none on file)" %></strong>
+                <span aria-hidden="true">·</span>
+                <%= link_to "@#{certificate.user.display_name}", admin_user_path(certificate.user) %>
+                <span aria-hidden="true">·</span>
+                <%= certificate.hours_at_issue.floor %>h approved
+                <span aria-hidden="true">·</span>
+                requested <%= time_ago_in_words(certificate.created_at) %> ago
+              </p>
+            </div>
+            <div class="certificate-reviews__actions">
+              <%= button_to "Approve", admin_certificate_approval_path(certificate), method: :post,
+                    params: { name: certificate.name }, class: "btn-primary" %>
+              <%= button_to "Reject", admin_certificate_rejection_path(certificate), method: :post,
+                    params: { name: certificate.name }, class: "btn-danger" %>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="certificate-reviews__empty">No names waiting for review.</p>
+    <% end %>
+  </section>
+
+  <section class="certificate-reviews__section">
+    <h2 class="certificate-reviews__section-title">Recently reviewed</h2>
+    <% if @reviewed.any? %>
+      <div class="certificate-reviews__list">
+        <% @reviewed.each do |certificate| %>
+          <article class="certificate-reviews__card certificate-reviews__card--reviewed">
+            <div class="certificate-reviews__names">
+              <p class="certificate-reviews__requested"><%= certificate.name %></p>
+              <p class="certificate-reviews__meta">
+                <%= link_to "@#{certificate.user.display_name}", admin_user_path(certificate.user) %>
+                <span aria-hidden="true">·</span>
+                <%= certificate.code %>
+              </p>
+            </div>
+            <span class="status-pill status-pill--<%= certificate.status %>"><%= certificate.status %></span>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="certificate-reviews__empty">Nothing reviewed yet.</p>
+    <% end %>
+  </section>
+</div>

@@ -5,7 +5,7 @@ module Raffle
         new(user).run
       rescue StandardError => e
         Rails.logger.error("[Raffle::Participants::Enroll] #{e.class}: #{e.message}")
-        Sentry.capture_exception(e) if defined?(Sentry)
+        Rails.error.report(e)
         nil
       end
 

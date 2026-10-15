@@ -76,7 +76,7 @@
             <span class="mission-queue__label">Oldest waiting</span>
             <% if @stats[:oldest_pending] %>
               <span class="mission-queue__metric-value is-negative">
-                <%= time_ago_in_words(@stats[:oldest_pending].created_at) %>
+                <%= time_ago_in_words(@stats[:oldest_pending].queue_entered_at) %>
               </span>
               <span class="mission-queue__metric-hint">in the queue</span>
             <% else %>
@@ -203,7 +203,7 @@
                         class: "mission-queue__project-title") %>
                 </div>
                 <div class="mission-queue__project-meta">
-                  <span><%= time_ago_in_words(s.created_at) %> old</span>
+                  <span><%= time_ago_in_words(s.queue_entered_at) %> old</span>
                   <% if s.pending? %>
                     <span class="mission-queue__dot" aria-hidden="true">·</span>
                     <%= render "admin/missions/submissions/claim_flag", submission: s %>

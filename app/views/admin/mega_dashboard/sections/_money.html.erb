@@ -1,0 +1,53 @@
+<%= turbo_frame_tag "mega-dash-money", target: "_top" do %>
+  <section class="mega-dash__section" aria-labelledby="mega-dash-money-title">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-money-title">Payouts and spend</h2>
+      <span class="mega-dash__note">Ledger totals are all time; the 24h row is the last day.</span>
+    </div>
+
+    <div class="mega-dash__tiles">
+      <%= render "admin/mega_dashboard/tile", label: "Stardust outstanding", value: number_with_delimiter(@money[:ledger][:outstanding]) %>
+      <%= render "admin/mega_dashboard/tile", label: "Granted all time", value: number_with_delimiter(@money[:ledger][:total_granted]) %>
+      <%= render "admin/mega_dashboard/tile", label: "Spent all time", value: number_with_delimiter(@money[:ledger][:total_spent]) %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Utilization",
+            value: @money[:ledger][:utilization] ? "#{@money[:ledger][:utilization]}%" : "—",
+            note: "of granted stardust spent" %>
+    </div>
+
+    <div class="mega-dash__meta">
+      <span>Last 24h: +<%= number_with_delimiter(@money[:ledger][:granted_24h]) %> granted</span>
+      <span>-<%= number_with_delimiter(@money[:ledger][:spent_24h]) %> spent</span>
+      <span><%= pluralize(@money[:ledger][:transactions_24h], "transaction") %></span>
+    </div>
+
+    <h3>HCB</h3>
+    <% if @money[:hcb][:error] %>
+      <p class="mega-dash__empty"><%= @money[:hcb][:error] %></p>
+    <% else %>
+      <div class="mega-dash__tiles">
+        <%= render "admin/mega_dashboard/tile",
+              label: "Balance",
+              value: number_to_currency(@money[:hcb][:balance_cents] / 100.0),
+              note: @money[:hcb][:low] ? "running low" : nil %>
+        <%= render "admin/mega_dashboard/tile", label: "Total raised", value: number_to_currency(@money[:hcb][:total_raised_cents] / 100.0) %>
+        <%= render "admin/mega_dashboard/tile", label: "Total spent", value: number_to_currency(@money[:hcb][:spent_cents] / 100.0) %>
+      </div>
+    <% end %>
+
+    <h3>Program</h3>
+    <% if @money[:program][:error] %>
+      <p class="mega-dash__empty"><%= @money[:program][:error] %></p>
+    <% else %>
+      <div class="mega-dash__meta">
+        <span>Cost/hour <%= @money[:program][:cost_per_hour] || "—" %></span>
+        <span>Budget/hour <%= @money[:program][:budget_per_hour] || "—" %></span>
+        <span>Over budget <%= @money[:program][:over_budget] || "—" %></span>
+        <span>Weighted total <%= @money[:program][:weighted_total] || "—" %></span>
+        <span>Unique shippers <%= number_with_delimiter(@money[:program][:unique_shippers]) %></span>
+        <span>Sign ups <%= number_with_delimiter(@money[:program][:total_sign_ups]) %></span>
+        <span>Grants awarded <%= number_with_delimiter(@money[:program][:grants_awarded]) %></span>
+      </div>
+    <% end %>
+  </section>
+<% end %>

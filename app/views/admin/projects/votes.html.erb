@@ -7,6 +7,10 @@
     <input type="checkbox" id="toggle-reasons" checked>
     Show vote reasons
   </label>
+  <label>
+    <input type="checkbox" id="toggle-discarded" checked>
+    Show discarded votes
+  </label>
 </div>
 
 <div>
@@ -66,18 +70,36 @@
 
 <script>
   (function() {
-    const toggle = document.getElementById("toggle-reasons");
-    if (!toggle) return;
+    const toggleReasons = document.getElementById("toggle-reasons");
+    const toggleDiscarded = document.getElementById("toggle-discarded");
 
-    const setReasonsExpanded = (expanded) => {
-      document.querySelectorAll("td.vote-reasons details").forEach((details) => {
-        details.open = expanded;
+    if (toggleDiscarded) {
+      const setDiscardedVisibility = (visible) => {
+        document.querySelectorAll("tr").forEach((row) => {
+          const statusCell = row.querySelector("td:nth-child(7)");
+          if (statusCell && statusCell.textContent.trim() === "Discarded") {
+            row.style.display = visible ? "" : "none";
+          }
+        });
+      };
+
+      setDiscardedVisibility(toggleDiscarded.checked);
+      toggleDiscarded.addEventListener("change", function() {
+        setDiscardedVisibility(this.checked);
+      });
+    }
+
+    if (toggleReasons) {
+      const setReasonsExpanded = (expanded) => {
+        document.querySelectorAll("td.vote-reasons details").forEach((details) => {
+          details.open = expanded;
+        });
+      };
+
+      setReasonsExpanded(toggleReasons.checked);
+      toggleReasons.addEventListener("change", function() {
+        setReasonsExpanded(this.checked);
       });
     };
-
-    setReasonsExpanded(toggle.checked);
-    toggle.addEventListener("change", function() {
-      setReasonsExpanded(this.checked);
-    });
   })();
 </script>

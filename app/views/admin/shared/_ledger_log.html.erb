@@ -9,12 +9,10 @@
 <% entries = entries.order(created_at: :desc) %>
 <% displayed_entries = entries.limit(limit).includes(:user) %>
 
-<div class="mission-panel">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--space-s);">
-    <h2 class="admin-user-show__section-title" style="margin:0;"><%= stardust_icon %> <%= title %></h2>
-    <span class="admin-user-show__muted"><%= entries.count %> entries</span>
-  </div>
+<details class="admin-section">
+  <summary class="admin-section__summary"><%= stardust_icon %> <%= title %> (<%= entries.count %> entries)</summary>
 
+  <div class="admin-section__content">
   <% if displayed_entries.any? %>
     <div>
     <table class="space-table">
@@ -37,7 +35,7 @@
             <td>
               <% if entry.user %>
                 <div>
-                  <img src="<%= entry.user.avatar %>" alt="" class="space-table__avatar">
+                  <img src="<%= entry.user.avatar %>" alt="" class="space-table__avatar" loading="lazy">
                   <span><%= entry.user.display_name %></span>
                 </div>
               <% else %>
@@ -49,7 +47,7 @@
                 <%= entry.amount.positive? ? "+#{entry.amount}" : entry.amount %> <%= stardust_icon %>
               </span>
             </td>
-            <td><%= truncate(entry.reason.to_s, length: 60) %></td>
+            <td><%= entry.reason %></td>
             <td>
               <code><%= entry.ledgerable_type.underscore.humanize %> #<%= entry.ledgerable_id %></code>
             </td>
@@ -61,4 +59,5 @@
   <% else %>
     <p class="admin-user-show__muted">No ledger entries yet.</p>
   <% end %>
-</div>
+  </div>
+</details>

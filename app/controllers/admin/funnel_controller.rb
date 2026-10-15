@@ -27,7 +27,7 @@ module Admin
     ].freeze
 
     def show
-      authorize :admin, :index?
+      authorize :admin, :access_funnel?
 
       counts = live_counts
       transitions = live_transitions

@@ -4,19 +4,16 @@ module DiscoverRail
   class StickerPromoWidget < BaseWidget
     register_as :sticker_promo
 
-    DEADLINE = Time.new(2026, 6, 30, 4, 59, 0, "+00:00").freeze
-    WINDOW_START = DEADLINE - 7.days
-
     def render?
-      user.present? && user.onboarded? && Time.current < DEADLINE
+      user.present? && user.onboarded? && StickerPromo.active?
     end
 
     def deadline_iso
-      DEADLINE.iso8601
+      StickerPromo.deadline_iso
     end
 
     def eligible?
-      user.projects.where("shipped_at >= ?", WINDOW_START).exists?
+      user.projects.where("shipped_at >= ?", StickerPromo.window_start).exists?
     end
   end
 end

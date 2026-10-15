@@ -1,0 +1,32 @@
+reviewer_slack_id = reviewer&.slack_id
+reviewer_mention = reviewer_slack_id.present? ? "<@#{reviewer_slack_id}>" : "no reviewer on record"
+
+reporter_slack_id = reporter&.slack_id
+reporter_mention = reporter_slack_id.present? ? "<@#{reporter_slack_id}>" : reporter.display_name
+
+owner = project.memberships.owner.first&.user
+owner_slack_id = owner&.slack_id
+owner_mention = owner_slack_id.present? ? "<@#{owner_slack_id}>" : (owner&.display_name || "Unknown")
+
+header "Project Flagged"
+
+section "*<https://stardance.hackclub.com/projects/#{project.id}|#{project.title}>* was flagged: \"#{reason_label}\"", markdown: true
+
+section "Most recent approving reviewer: #{reviewer_mention}", markdown: true
+
+section "Report Details:",
+  fields: [
+    mrkdwn_text("*Reported by:* #{reporter_mention}"),
+    mrkdwn_text("*Project Owner:* #{owner_mention}")
+  ]
+
+divider
+
+section "*Details:*\n#{details}", markdown: true
+
+divider
+
+actions [
+  button("View Project", "view_project", url: "https://stardance.hackclub.com/projects/#{project.id}"),
+  button("View Reporter", "view_reporter", url: "https://stardance.hackclub.com/users/#{reporter.id}")
+]

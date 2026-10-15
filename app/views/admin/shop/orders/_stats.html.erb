@@ -1,6 +1,7 @@
 <div class="shop-orders__stats">
   <h2 class="shop-orders__stats-title">Statistics</h2>
   <p class="shop-orders__stats-hint">Click a status to filter orders:</p>
+  <p class="shop-orders__stats-note">Streak stickers excluded. They are still listed below, under their own toggle.</p>
   <div class="shop-orders__stat-grid">
     <%= link_to admin_shop_orders_path(preserved_filter_params.merge(status: 'pending')),
         class: "shop-orders__stat badge badge-pending" do %>

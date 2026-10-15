@@ -1,5 +1,7 @@
 class Vote::Matchmaker
-  EARLIEST_WEIGHT = 60
+  EARLIEST_BASE_WEIGHT = 60
+  EARLIEST_DAILY_WEIGHT_INCREASE = 5
+  EARLIEST_MAX_WEIGHT = 80
   HOURS_GATE_MULTIPLIER = 3
   HOURS_GATE_EXEMPT_AFTER = 50.0
   PAID_FALLBACK_SAMPLE_SIZE = 50
@@ -18,28 +20,48 @@ class Vote::Matchmaker
   end
 
   def next_ship_event
-    next_unpaid_ship_event || paid_fallback_ship_event
+    next_unpaid_ship_event || (paid_fallback_ship_event if paid_fallback_allowed?)
   end
 
   def next_unpaid_ship_event
     pick_from(gated_pool) || pick_from(ungated_pool)
   end
 
+  def paid_fallback_allowed?
+    @user.vote_balance.negative?
+  end
+
   private
     def pick_from(pool)
-      if rand(100) < EARLIEST_WEIGHT
-        earliest_in(pool) || near_payout_in(pool)
+      earliest = earliest_in(pool)
+      return unless earliest
+
+      if rand(100) < earliest_weight_for(earliest)
+        earliest
       else
-        near_payout_in(pool) || earliest_in(pool)
+        near_payout_in(pool) || earliest
       end
     end
 
     def earliest_in(pool)
-      pool.order(:created_at, Arel.sql("RANDOM()")).first
+      pool.order(
+        Arel.sql("COALESCE(voting_started_at, post_ship_events.created_at) ASC"),
+        Arel.sql("RANDOM()")
+      ).first
     end
 
     def near_payout_in(pool)
-      pool.order(votes_count: :desc, created_at: :asc).first
+      pool.order(
+        Vote.countable_count_for_ship_events.desc,
+        Arel.sql("COALESCE(voting_started_at, post_ship_events.created_at) ASC")
+      ).first
+    end
+
+    def earliest_weight_for(ship_event)
+      voting_started_at = ship_event.voting_started_at || ship_event.created_at
+      days_in_voting = [ (Time.current - voting_started_at) / 1.day, 0 ].max
+
+      [ EARLIEST_BASE_WEIGHT + (days_in_voting * EARLIEST_DAILY_WEIGHT_INCREASE), EARLIEST_MAX_WEIGHT ].min
     end
 
     def gated_pool
@@ -77,6 +99,10 @@ class Vote::Matchmaker
     def candidate_ship_events
       scope = Post::ShipEvent
         .joins(:project)
+        # Hardware is certified by a reviewer against its timelapse, not rated by
+        # peers, so it never enters the pool. Its owner is charged no vote debt
+        # either, so hardware builders neither feed nor draw from this pool.
+        .where(projects: { hardware_stage: nil })
         .where.not(id: @user.votes.select(:ship_event_id))
         .where.not(id: @user.vote_assignments.select(:ship_event_id))
         .where.not(posts: { project_id: @user.projects.select(:id) })

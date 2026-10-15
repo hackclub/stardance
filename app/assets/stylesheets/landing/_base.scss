@@ -1,6 +1,9 @@
 // Page-wide solid background lives on <html>; body stays transparent.
+// scrollbar-gutter keeps the layout from shifting when modals freeze the
+// body and the document scrollbar disappears.
 html {
   background: #08061e !important;
+  scrollbar-gutter: stable;
 }
 
 html body {

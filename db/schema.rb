@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_135606) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
   enable_extension "vector"
 
   # Custom types defined in this database.
@@ -153,6 +154,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["creator_id"], name: "index_blazer_queries_on_creator_id"
   end
 
+  create_table "buku_x3_contributions", force: :cascade do |t|
+    t.boolean "buku", null: false
+    t.datetime "created_at", null: false
+    t.bigint "event_id", null: false
+    t.integer "minutes", default: 0, null: false
+    t.datetime "shipped_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "ysws_review_id", null: false
+    t.index ["event_id", "ysws_review_id"], name: "index_buku_x3_contributions_on_event_id_and_ysws_review_id", unique: true
+    t.index ["event_id"], name: "index_buku_x3_contributions_on_event_id"
+    t.index ["user_id"], name: "index_buku_x3_contributions_on_user_id"
+    t.index ["ysws_review_id"], name: "index_buku_x3_contributions_on_ysws_review_id"
+    t.check_constraint "minutes >= 0", name: "buku_x3_positive_minutes"
+  end
+
+  create_table "buku_x3_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "destruction_minutes", default: 0, null: false
+    t.string "key", null: false
+    t.datetime "unlocked_at"
+    t.datetime "updated_at", null: false
+    t.integer "visual_intensity", default: 100, null: false
+    t.index ["key"], name: "index_buku_x3_events_on_key", unique: true
+    t.check_constraint "destruction_minutes >= 0 AND destruction_minutes <= 300000", name: "buku_x3_destruction_bounds"
+    t.check_constraint "visual_intensity >= 0 AND visual_intensity <= 200", name: "buku_x3_visual_intensity_range"
+  end
+
+  create_table "certificates", force: :cascade do |t|
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.float "hours_at_issue", null: false
+    t.string "name", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["code"], name: "index_certificates_on_code", unique: true
+    t.index ["user_id"], name: "index_certificates_on_user_id", unique: true
+  end
+
   create_table "certification_devlog_reviews", force: :cascade do |t|
     t.integer "approved_minutes"
     t.datetime "created_at", null: false
@@ -167,6 +208,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   end
 
   create_table "certification_funding_requests", force: :cascade do |t|
+    t.datetime "airtable_synced_at"
     t.integer "approved_amount_cents"
     t.datetime "claim_expires_at"
     t.datetime "claimed_at"
@@ -178,11 +220,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "hcb_grant_hashid"
     t.text "internal_reason"
     t.integer "lock_version", default: 0, null: false
+    t.boolean "prizes_waived", default: false, null: false
     t.bigint "project_id", null: false
     t.integer "requested_amount_cents", null: false
+    t.datetime "reversed_at"
     t.bigint "reviewer_id"
     t.integer "stardust_earned"
     t.integer "status", default: 0, null: false
+    t.text "submitter_note"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["decided_at"], name: "index_certification_funding_requests_on_decided_at"
@@ -193,22 +238,103 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["user_id"], name: "index_certification_funding_requests_on_user_id"
   end
 
+  create_table "certification_integrities", force: :cascade do |t|
+    t.datetime "claimed_at"
+    t.bigint "claimed_by_id"
+    t.datetime "created_at", null: false
+    t.text "decision_justification"
+    t.integer "deduction_minutes"
+    t.integer "flags", default: 0, null: false
+    t.jsonb "fraud_detection_data"
+    t.bigint "fraud_review_payout_id"
+    t.datetime "reviewed_at"
+    t.bigint "reviewer_id"
+    t.bigint "ship_event_id", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["claimed_by_id"], name: "index_certification_integrities_on_claimed_by_id"
+    t.index ["fraud_review_payout_id"], name: "index_certification_integrities_on_fraud_review_payout_id"
+    t.index ["reviewer_id"], name: "index_certification_integrities_on_reviewer_id"
+    t.index ["ship_event_id"], name: "index_certification_integrities_on_ship_event_id", unique: true
+    t.index ["status"], name: "index_certification_integrities_on_status"
+  end
+
+  create_table "certification_mac_analyses", force: :cascade do |t|
+    t.datetime "airtable_synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "generated_at", null: false
+    t.jsonb "report", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "ysws_review_id", null: false
+    t.index ["ysws_review_id"], name: "index_certification_mac_analyses_on_ysws_review_id", unique: true
+  end
+
+  create_table "certification_permanent_rejection_nominations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "decided_at"
+    t.bigint "decided_by_id"
+    t.bigint "project_id", null: false
+    t.text "reason", null: false
+    t.bigint "reviewable_id", null: false
+    t.string "reviewable_type", null: false
+    t.bigint "reviewer_id", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_by_id"], name: "idx_on_decided_by_id_c31160fc96"
+    t.index ["project_id"], name: "idx_on_project_id_7a0080ce93"
+    t.index ["project_id"], name: "index_permanent_rejections_active_project", unique: true, where: "(status = ANY (ARRAY[0, 1]))"
+    t.index ["reviewable_type", "reviewable_id"], name: "index_permanent_rejections_reviewable"
+    t.index ["reviewer_id"], name: "idx_on_reviewer_id_b6dd573175"
+    t.check_constraint "status = ANY (ARRAY[0, 1, 2])", name: "permanent_rejection_status"
+  end
+
+  create_table "certification_review_notes", force: :cascade do |t|
+    t.bigint "author_id", null: false
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_certification_review_notes_on_author_id"
+    t.index ["project_id"], name: "index_certification_review_notes_on_project_id"
+  end
+
+  create_table "certification_review_skips", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "reviewable_id", null: false
+    t.string "reviewable_type", null: false
+    t.datetime "skipped_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["reviewable_type", "reviewable_id"], name: "index_certification_review_skips_on_reviewable"
+    t.index ["user_id", "reviewable_type", "reviewable_id"], name: "index_review_skips_unique_reviewer_reviewable", unique: true
+    t.index ["user_id"], name: "index_certification_review_skips_on_user_id"
+  end
+
   create_table "certification_ship_reviews", force: :cascade do |t|
+    t.float "bonus_stardust"
     t.datetime "claim_expires_at"
     t.datetime "claimed_at"
     t.datetime "created_at", null: false
     t.datetime "decided_at"
+    t.string "external_certification_id"
     t.text "feedback"
     t.text "internal_reason"
     t.integer "lock_version", default: 0, null: false
+    t.float "payout_multiplier"
+    t.bigint "post_ship_event_id"
     t.bigint "project_id", null: false
+    t.string "proof_video_url"
     t.text "recert_reason"
     t.bigint "returned_by_id"
+    t.datetime "reversed_at"
     t.bigint "reviewer_id"
     t.float "stardust_earned"
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["decided_at"], name: "index_certification_ship_reviews_on_decided_at"
+    t.index ["external_certification_id"], name: "index_certification_ship_reviews_on_external_certification_id", unique: true
+    t.index ["post_ship_event_id"], name: "index_certification_ship_reviews_on_post_ship_event_id"
+    t.index ["project_id"], name: "index_certification_ship_reviews_on_project_id"
     t.index ["project_id"], name: "index_ship_reviews_unique_pending_project", unique: true, where: "(status = 0)"
     t.index ["reviewer_id"], name: "index_certification_ship_reviews_on_reviewer_id"
     t.index ["status", "claim_expires_at"], name: "idx_on_status_claim_expires_at_c7a5e87a52"
@@ -217,6 +343,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   create_table "certification_ysws_reviews", force: :cascade do |t|
     t.datetime "airtable_synced_at", precision: nil
     t.integer "approved_minutes"
+    t.datetime "claimed_at"
+    t.bigint "claimed_by_id"
     t.datetime "created_at", null: false
     t.datetime "demo_checked_at", precision: nil
     t.string "in_unified_db"
@@ -233,6 +361,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.text "summary_justification"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["claimed_by_id"], name: "index_certification_ysws_reviews_on_claimed_by_id"
     t.index ["post_ship_event_id"], name: "index_certification_ysws_reviews_on_post_ship_event_id"
     t.index ["project_id"], name: "index_certification_ysws_reviews_on_project_id"
     t.index ["reviewer_id"], name: "index_certification_ysws_reviews_on_reviewer_id"
@@ -257,6 +386,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
 
   create_table "daily_rolls", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.integer "reroll_value"
     t.date "rolled_on", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
@@ -264,16 +394,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["rolled_on", "value"], name: "index_daily_rolls_on_rolled_on_and_value"
     t.index ["user_id", "rolled_on"], name: "index_daily_rolls_on_user_id_and_rolled_on", unique: true
     t.index ["user_id"], name: "index_daily_rolls_on_user_id"
-  end
-
-  create_table "devlog_lookout_sessions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "devlog_id", null: false
-    t.bigint "lookout_session_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["devlog_id", "lookout_session_id"], name: "idx_devlog_lookout_sessions_unique", unique: true
-    t.index ["devlog_id"], name: "index_devlog_lookout_sessions_on_devlog_id"
-    t.index ["lookout_session_id"], name: "index_devlog_lookout_sessions_on_lookout_session_id"
   end
 
   create_table "devlog_versions", force: :cascade do |t|
@@ -294,6 +414,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_email_templates_on_name", unique: true
+  end
+
+  create_table "extension_usages", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["project_id", "created_at"], name: "index_extension_usages_on_project_id_and_created_at"
+    t.index ["project_id"], name: "index_extension_usages_on_project_id"
+    t.index ["user_id"], name: "index_extension_usages_on_user_id"
   end
 
   create_table "flipper_features", force: :cascade do |t|
@@ -323,6 +453,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.check_constraint "follower_id <> followed_id", name: "follows_no_self_follow"
   end
 
+  create_table "fraud_payout_lines", force: :cascade do |t|
+    t.integer "amount"
+    t.datetime "created_at", null: false
+    t.bigint "fraud_payout_run_id", null: false
+    t.integer "order_count"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["fraud_payout_run_id"], name: "index_fraud_payout_lines_on_fraud_payout_run_id"
+    t.index ["user_id"], name: "index_fraud_payout_lines_on_user_id"
+  end
+
+  create_table "fraud_payout_runs", force: :cascade do |t|
+    t.string "aasm_state"
+    t.datetime "approved_at"
+    t.bigint "approved_by_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "period_end"
+    t.datetime "period_start"
+    t.integer "total_amount"
+    t.integer "total_orders"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "fraud_review_payouts", force: :cascade do |t|
+    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.integer "flag_count", default: 0, null: false
+    t.bigint "fraud_payout_line_id"
+    t.integer "integrity_count", default: 0, null: false
+    t.integer "order_count", default: 0, null: false
+    t.bigint "reviewer_id", null: false
+    t.bigint "subject_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fraud_payout_line_id"], name: "index_fraud_review_payouts_on_fraud_payout_line_id"
+    t.index ["reviewer_id"], name: "index_fraud_review_payouts_on_reviewer_id"
+    t.index ["subject_id"], name: "index_fraud_review_payouts_on_subject_id"
+  end
+
+  create_table "fraud_subject_claims", force: :cascade do |t|
+    t.datetime "claimed_at", null: false
+    t.datetime "created_at", null: false
+    t.bigint "reviewer_id", null: false
+    t.bigint "subject_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reviewer_id"], name: "index_fraud_subject_claims_on_reviewer_id"
+    t.index ["subject_id"], name: "index_fraud_subject_claims_on_subject_id", unique: true
+  end
+
   create_table "fulfillment_payout_lines", force: :cascade do |t|
     t.integer "amount"
     t.datetime "created_at", null: false
@@ -346,16 +525,65 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "growth_daily_snapshots", force: :cascade do |t|
+    t.integer "at_risk_mau", default: 0, null: false
+    t.integer "at_risk_wau", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "current_users", default: 0, null: false
+    t.integer "dormant_users", default: 0, null: false
+    t.string "metric", null: false
+    t.integer "new_users", default: 0, null: false
+    t.integer "reactivated_users", default: 0, null: false
+    t.integer "resurrected_users", default: 0, null: false
+    t.date "snapshot_on", null: false
+    t.jsonb "transitions", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["metric", "snapshot_on"], name: "index_growth_daily_snapshots_on_metric_and_snapshot_on", unique: true
+  end
+
   create_table "hcb_credentials", force: :cascade do |t|
     t.text "access_token_ciphertext"
     t.string "base_url"
     t.string "client_id"
     t.text "client_secret_ciphertext"
     t.datetime "created_at", null: false
+    t.datetime "expires_at"
     t.string "redirect_uri"
     t.text "refresh_token_ciphertext"
     t.string "slug"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "jelly_conversations", force: :cascade do |t|
+    t.integer "assignee_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "first_response_seconds"
+    t.string "jelly_id", null: false
+    t.datetime "last_inbound_at"
+    t.datetime "last_outbound_at"
+    t.datetime "messages_synced_at"
+    t.datetime "opened_at"
+    t.datetime "remote_updated_at"
+    t.datetime "resolved_at"
+    t.string "status", null: false
+    t.datetime "synced_at"
+    t.datetime "updated_at", null: false
+    t.index ["jelly_id"], name: "index_jelly_conversations_on_jelly_id", unique: true
+    t.index ["remote_updated_at"], name: "index_jelly_conversations_on_remote_updated_at"
+    t.index ["status"], name: "index_jelly_conversations_on_status"
+  end
+
+  create_table "jelly_daily_stats", force: :cascade do |t|
+    t.integer "arrivals"
+    t.integer "awaiting_reply_count"
+    t.datetime "created_at", null: false
+    t.integer "median_first_response_seconds"
+    t.integer "open_count"
+    t.integer "p95_hang_seconds"
+    t.date "recorded_on", null: false
+    t.integer "resolutions"
+    t.datetime "updated_at", null: false
+    t.index ["recorded_on"], name: "index_jelly_daily_stats_on_recorded_on", unique: true
   end
 
   create_table "ledger_entries", force: :cascade do |t|
@@ -385,6 +613,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
 
   create_table "lookout_sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "devlog_id"
     t.integer "duration_seconds", default: 0
     t.string "mode"
     t.bigint "project_id", null: false
@@ -395,6 +624,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "token", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["devlog_id"], name: "index_lookout_sessions_on_devlog_id"
     t.index ["project_id", "status"], name: "index_lookout_sessions_on_project_id_and_status"
     t.index ["project_id"], name: "index_lookout_sessions_on_project_id"
     t.index ["token"], name: "index_lookout_sessions_on_token", unique: true
@@ -412,6 +642,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
+  create_table "mihi_activations", force: :cascade do |t|
+    t.date "activated_on", null: false
+    t.integer "activations_count", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["activated_on", "user_id"], name: "index_mihi_activations_on_activated_on_and_user_id", unique: true
+    t.index ["user_id"], name: "index_mihi_activations_on_user_id"
+  end
+
   create_table "mission_guide_variants", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "body_updated_at"
@@ -420,7 +660,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.bigint "mission_id", null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index ["mission_id", "language"], name: "index_mission_guide_variants_unique_language", unique: true
+    t.index "mission_id, lower((language)::text)", name: "index_mission_guide_variants_unique_language", unique: true
     t.index ["mission_id"], name: "index_mission_guide_variants_on_mission_id"
   end
 
@@ -445,7 +685,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["prerequisite_mission_id"], name: "index_mission_prerequisites_on_prerequisite_mission_id"
   end
 
+  create_table "mission_prize_redemptions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "mission_id", null: false
+    t.bigint "mission_prize_id", null: false
+    t.bigint "shop_order_id", null: false
+    t.bigint "source_id", null: false
+    t.string "source_type", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["mission_id"], name: "index_mission_prize_redemptions_on_mission_id"
+    t.index ["mission_prize_id"], name: "index_mission_prize_redemptions_on_mission_prize_id"
+    t.index ["shop_order_id"], name: "index_mission_prize_redemptions_on_shop_order_id", unique: true
+    t.index ["source_type", "source_id", "mission_prize_id"], name: "index_prize_redemptions_on_source_and_prize", unique: true
+    t.index ["source_type", "source_id"], name: "index_mission_prize_redemptions_on_source"
+    t.index ["user_id"], name: "index_mission_prize_redemptions_on_user_id"
+  end
+
   create_table "mission_prizes", force: :cascade do |t|
+    t.integer "category", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "mission_id", null: false
@@ -488,7 +746,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "language", null: false
     t.bigint "mission_step_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["mission_step_id", "language"], name: "index_mission_step_bodies_unique_language", unique: true
+    t.index "mission_step_id, lower((language)::text)", name: "index_mission_step_bodies_unique_language", unique: true
     t.index ["mission_step_id"], name: "index_mission_step_bodies_on_mission_step_id"
   end
 
@@ -512,6 +770,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.datetime "deleted_at"
     t.bigint "mission_id", null: false
     t.string "payout_path", null: false
+    t.datetime "pending_at"
     t.text "rejection_message"
     t.datetime "reviewed_at"
     t.bigint "reviewed_by_id"
@@ -531,6 +790,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["shop_order_id"], name: "index_mission_submissions_with_shop_order", where: "(shop_order_id IS NOT NULL)"
     t.index ["status", "claim_expires_at"], name: "idx_mission_submissions_on_status_claim_expires"
     t.index ["status", "created_at"], name: "index_mission_submissions_on_status_and_created_at"
+    t.index ["status", "pending_at"], name: "index_mission_submissions_on_status_and_pending_at"
   end
 
   create_table "missions", force: :cascade do |t|
@@ -642,18 +902,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   create_table "post_ship_events", force: :cascade do |t|
     t.string "body"
     t.string "certification_status", default: "pending"
-    t.integer "comments_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "feedback_reason"
     t.string "feedback_video_url"
     t.float "hours_at_payout"
     t.float "hours_at_ship"
-    t.integer "likes_count", default: 0, null: false
+    t.string "lifecycle_data_quality"
     t.float "multiplier"
     t.decimal "originality_median", precision: 5, scale: 2
     t.decimal "originality_percentile", precision: 5, scale: 2
     t.decimal "overall_percentile", precision: 5, scale: 2
     t.decimal "overall_score", precision: 5, scale: 2
+    t.datetime "paid_at"
     t.float "payout"
     t.datetime "payout_basis_locked_at"
     t.decimal "payout_basis_overall_score", precision: 5, scale: 2
@@ -671,6 +931,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.decimal "usability_median", precision: 5, scale: 2
     t.decimal "usability_percentile", precision: 5, scale: 2
     t.integer "votes_count", default: 0, null: false
+    t.datetime "voting_completed_at"
+    t.datetime "voting_started_at"
+    t.index ["paid_at"], name: "index_post_ship_events_on_paid_at"
+    t.index ["voting_completed_at"], name: "index_post_ship_events_on_voting_completed_at"
+    t.index ["voting_started_at"], name: "index_post_ship_events_on_voting_started_at"
   end
 
   create_table "post_views", force: :cascade do |t|
@@ -697,6 +962,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["user_id"], name: "index_posts_on_user_id"
   end
 
+  create_table "privacy_token_uses", primary_key: "jti", id: :string, force: :cascade do |t|
+    t.datetime "used_at", null: false
+    t.index ["used_at"], name: "index_privacy_token_uses_on_used_at"
+  end
+
   create_table "project_follows", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "project_id", null: false
@@ -705,6 +975,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["project_id"], name: "index_project_follows_on_project_id"
     t.index ["user_id", "project_id"], name: "index_project_follows_on_user_id_and_project_id", unique: true
     t.index ["user_id"], name: "index_project_follows_on_user_id"
+  end
+
+  create_table "project_languages", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.jsonb "language_stats"
+    t.datetime "last_synced_at"
+    t.bigint "project_id", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["language_stats"], name: "index_project_languages_on_language_stats", using: :gin
+    t.index ["last_synced_at"], name: "index_project_languages_on_last_synced_at"
+    t.index ["project_id"], name: "index_project_languages_on_project_id_unique", unique: true
+    t.index ["status"], name: "index_project_languages_on_status"
   end
 
   create_table "project_memberships", force: :cascade do |t|
@@ -716,6 +1000,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["project_id", "user_id"], name: "index_project_memberships_on_project_id_and_user_id", unique: true
     t.index ["project_id"], name: "index_project_memberships_on_project_id"
     t.index ["user_id"], name: "index_project_memberships_on_user_id"
+  end
+
+  create_table "project_mentions", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.string "metric_name"
+    t.integer "metric_value"
+    t.string "platform"
+    t.bigint "project_id", null: false
+    t.datetime "rejected_at"
+    t.bigint "reviewer_id"
+    t.text "reviewer_notes"
+    t.text "submitter_notes"
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["project_id"], name: "index_project_mentions_on_project_id"
+    t.index ["reviewer_id"], name: "index_project_mentions_on_reviewer_id"
   end
 
   create_table "project_mission_attachments", force: :cascade do |t|
@@ -736,11 +1037,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   create_table "project_reports", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "details", null: false
+    t.bigint "fraud_review_payout_id"
     t.bigint "project_id", null: false
     t.string "reason", null: false
     t.bigint "reporter_id", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["fraud_review_payout_id"], name: "index_project_reports_on_fraud_review_payout_id"
     t.index ["project_id"], name: "index_project_reports_on_project_id"
     t.index ["reporter_id", "project_id"], name: "index_project_reports_on_reporter_id_and_project_id", unique: true
     t.index ["reporter_id"], name: "index_project_reports_on_reporter_id"
@@ -776,6 +1079,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "project_type"
     t.text "readme_url"
     t.text "repo_url"
+    t.text "ship_block_reason"
     t.string "ship_status", default: "draft"
     t.datetime "shipped_at"
     t.datetime "synced_at"
@@ -784,8 +1088,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.text "update_description"
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_projects_on_deleted_at"
+    t.index ["demo_url"], name: "index_projects_on_demo_url_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["marked_fire_by_id"], name: "index_projects_on_marked_fire_by_id"
     t.index ["nominated_fire_by_id"], name: "index_projects_on_nominated_fire_by_id"
+    t.index ["repo_url"], name: "index_projects_on_repo_url_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["title"], name: "index_projects_on_title_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "raffle_draws", force: :cascade do |t|
@@ -1042,6 +1349,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "hcb_keyword_lock"
     t.string "hcb_merchant_lock"
     t.boolean "hcb_one_time_use", default: false
+    t.string "hcb_org_slug"
     t.text "hcb_preauthorization_instructions"
     t.string "internal_description"
     t.boolean "limited"
@@ -1098,11 +1406,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
 
   create_table "shop_order_reviews", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "fraud_review_payout_id"
     t.text "reason", null: false
     t.bigint "shop_order_id", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.string "verdict", null: false
+    t.index ["fraud_review_payout_id"], name: "index_shop_order_reviews_on_fraud_review_payout_id"
     t.index ["shop_order_id", "user_id"], name: "index_shop_order_reviews_on_shop_order_id_and_user_id", unique: true
     t.index ["shop_order_id"], name: "index_shop_order_reviews_on_shop_order_id"
     t.index ["user_id"], name: "index_shop_order_reviews_on_user_id"
@@ -1112,9 +1422,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "aasm_state"
     t.bigint "assigned_to_user_id"
     t.datetime "awaiting_periodical_fulfillment_at"
+    t.string "country", limit: 2
     t.datetime "created_at", null: false
     t.string "external_ref"
+    t.bigint "fraud_payout_line_id"
     t.bigint "fraud_related_project_id"
+    t.bigint "fraud_review_payout_id"
     t.text "frozen_address_ciphertext"
     t.decimal "frozen_item_price", precision: 6, scale: 2
     t.integer "frozen_modifiers_price", default: 0, null: false
@@ -1139,6 +1452,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.bigint "warehouse_package_id"
     t.index ["aasm_state", "created_at"], name: "idx_shop_orders_aasm_state_created_at_desc", order: { created_at: :desc }
     t.index ["assigned_to_user_id"], name: "index_shop_orders_on_assigned_to_user_id"
+    t.index ["country"], name: "index_shop_orders_on_country"
+    t.index ["fraud_review_payout_id"], name: "index_shop_orders_on_fraud_review_payout_id"
     t.index ["fulfillment_payout_line_id"], name: "index_shop_orders_on_fulfillment_payout_line_id"
     t.index ["parent_order_id"], name: "index_shop_orders_on_parent_order_id"
     t.index ["region"], name: "index_shop_orders_on_region"
@@ -1162,13 +1477,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["slug"], name: "index_shop_sources_on_slug", unique: true
   end
 
-  create_table "shop_suggestions", force: :cascade do |t|
+  create_table "shop_suggestion_votes", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.text "explanation"
-    t.text "item"
-    t.string "link"
+    t.bigint "shop_suggestion_id", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["shop_suggestion_id"], name: "index_shop_suggestion_votes_on_shop_suggestion_id"
+    t.index ["user_id"], name: "index_shop_suggestion_votes_on_user_id"
+  end
+
+  create_table "shop_suggestions", force: :cascade do |t|
+    t.string "aasm_state", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "discarded_at"
+    t.text "name"
+    t.string "rejection_reason"
+    t.bigint "shop_item_id"
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.decimal "usd_cost", precision: 8, scale: 2
+    t.bigint "user_id", null: false
+    t.index ["aasm_state"], name: "index_shop_suggestions_on_aasm_state"
+    t.index ["shop_item_id"], name: "index_shop_suggestions_on_shop_item_id"
     t.index ["user_id"], name: "index_shop_suggestions_on_user_id"
   end
 
@@ -1220,12 +1551,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["payout_given_by_id"], name: "index_show_and_tell_payout_records_on_payout_given_by_id"
   end
 
+  create_table "sticky_streak_claims", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "day_number", null: false
+    t.bigint "shop_order_id", null: false
+    t.bigint "sticky_streak_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_order_id"], name: "index_sticky_streak_claims_on_shop_order_id", unique: true
+    t.index ["sticky_streak_id", "day_number"], name: "index_sticky_streak_claims_on_sticky_streak_id_and_day_number", unique: true
+    t.index ["sticky_streak_id"], name: "index_sticky_streak_claims_on_sticky_streak_id"
+  end
+
+  create_table "sticky_streak_rewards", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "day_number", null: false
+    t.bigint "shop_item_id", null: false
+    t.string "track", default: "standard", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_item_id"], name: "index_sticky_streak_rewards_on_shop_item_id"
+    t.index ["track", "day_number"], name: "index_sticky_streak_rewards_on_track_and_day_number", unique: true
+  end
+
+  create_table "sticky_streaks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "kind", default: "first", null: false
+    t.date "started_on", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "kind"], name: "index_sticky_streaks_on_user_id_and_kind", unique: true
+  end
+
   create_table "streak_activities", force: :cascade do |t|
     t.date "activity_date", null: false
     t.integer "coded_seconds", default: 0, null: false
     t.datetime "created_at", null: false
+    t.datetime "manual_credit_at"
+    t.bigint "manual_credit_by_id"
+    t.string "manual_credit_reason"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["manual_credit_by_id"], name: "index_streak_activities_on_manual_credit_by_id"
     t.index ["user_id", "activity_date"], name: "index_streak_activities_on_user_id_and_activity_date", unique: true
     t.index ["user_id"], name: "index_streak_activities_on_user_id"
   end
@@ -1254,6 +1619,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.bigint "user_id", null: false
     t.index ["user_id", "achievement_slug"], name: "index_user_achievements_on_user_id_and_achievement_slug", unique: true
     t.index ["user_id"], name: "index_user_achievements_on_user_id"
+  end
+
+  create_table "user_activity_days", force: :cascade do |t|
+    t.date "active_on", null: false
+    t.datetime "created_at", null: false
+    t.string "sources", default: [], null: false, array: true
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["active_on"], name: "index_user_activity_days_on_active_on"
+    t.index ["user_id", "active_on"], name: "index_user_activity_days_on_user_id_and_active_on", unique: true
+  end
+
+  create_table "user_data_exports", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.string "zip_filename"
+    t.index ["user_id", "status"], name: "index_user_data_exports_on_user_id_and_status"
+    t.index ["user_id"], name: "index_user_data_exports_on_user_id"
+    t.index ["user_id"], name: "index_user_data_exports_on_user_id_active", unique: true, where: "(((status)::text = 'pending'::text) OR ((status)::text = 'processing'::text))"
   end
 
   create_table "user_hackatime_projects", force: :cascade do |t|
@@ -1296,7 +1683,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["user_id"], name: "index_user_notification_preferences_on_user_id"
   end
 
-  create_table "user_preferences", force: :cascade do |t|
+  create_table "user_preference", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "leaderboard_optin", default: false, null: false
     t.boolean "search_engine_indexing_off", default: false, null: false
@@ -1306,9 +1693,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.boolean "send_notifications_for_new_followers", default: true, null: false
     t.boolean "send_votes_to_slack", default: false, null: false
     t.boolean "stardust_balance_notifications", default: false, null: false
-    t.boolean "streak_slack_status_enabled", default: false, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["leaderboard_optin"], name: "index_user_preference_on_leaderboard_optin"
+    t.index ["user_id"], name: "index_user_preference_on_user_id", unique: true
+  end
+
+  create_table "user_preferences", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "disintegration_effects_enabled", default: true, null: false
+    t.boolean "leaderboard_optin", default: false, null: false
+    t.boolean "particle_effects_enabled", default: true, null: false
+    t.boolean "platform_ads_enabled", default: true, null: false
+    t.boolean "search_engine_indexing_off", default: false, null: false
+    t.boolean "send_notifications_for_followed_projects", default: true, null: false
+    t.boolean "send_notifications_for_followed_users", default: true, null: false
+    t.boolean "send_notifications_for_new_comments", default: true, null: false
+    t.boolean "send_notifications_for_new_followers", default: true, null: false
+    t.boolean "send_votes_to_slack", default: false, null: false
+    t.boolean "stardust_balance_notifications", default: false, null: false
+    t.boolean "streak_slack_status_enabled", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.jsonb "ysws_shortcuts", default: {}, null: false
     t.index ["leaderboard_optin"], name: "index_user_preferences_on_leaderboard_optin"
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
   end
@@ -1325,6 +1732,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
 
   create_table "users", force: :cascade do |t|
     t.string "age_attestation"
+    t.string "api_key"
     t.integer "approx_balance", default: 0, null: false
     t.integer "approx_total_earned", default: 0, null: false
     t.boolean "banned", default: false, null: false
@@ -1338,20 +1746,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.string "enriched_ref"
     t.string "experience_level"
     t.string "first_name"
+    t.datetime "fraud_review_payouts_disabled_at"
     t.string "geocoded_country"
     t.float "geocoded_lat"
     t.float "geocoded_lon"
     t.string "geocoded_subdivision"
     t.string "granted_roles", default: [], null: false, array: true
     t.string "guest_email"
+    t.datetime "hardware_channel_invited_at"
     t.boolean "has_gotten_free_stickers", default: false
     t.boolean "has_pending_achievements", default: false, null: false
-    t.boolean "has_presentable_hardware_project", default: false, null: false
     t.string "hcb_email"
     t.string "interests", default: [], array: true
     t.text "internal_notes"
     t.string "ip_address"
     t.string "last_name"
+    t.string "manual_outpost_ticket_approval"
     t.boolean "manual_ysws_override"
     t.boolean "mission_review_notifications", default: true, null: false
     t.datetime "onboarded_at"
@@ -1378,9 +1788,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.boolean "ysws_eligible", default: false, null: false
     t.index "lower((display_name)::text)", name: "index_users_on_lower_display_name_unique", unique: true, where: "((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))"
     t.index "lower((email)::text)", name: "index_users_on_lower_email_unique", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
+    t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["approx_balance"], name: "index_users_on_approx_balance", order: :desc
     t.index ["approx_total_earned"], name: "index_users_on_approx_total_earned", order: :desc
+    t.index ["display_name"], name: "index_users_on_display_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["email"], name: "index_users_on_email"
+    t.index ["guest_email"], name: "index_users_on_guest_email"
     t.index ["onboarded_at"], name: "index_users_on_onboarded_at"
     t.index ["session_token"], name: "index_users_on_session_token", unique: true
     t.index ["slack_id"], name: "index_users_on_slack_id", unique: true
@@ -1455,6 +1868,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   end
 
   create_table "votes", force: :cascade do |t|
+    t.datetime "auto_discard_checked_at"
     t.datetime "created_at", null: false
     t.boolean "demo_opened", default: false, null: false
     t.boolean "discarded", default: false, null: false
@@ -1476,43 +1890,103 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
     t.index ["user_id"], name: "index_votes_on_user_id"
   end
 
+  create_table "workshop_attendances", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workshop_id", null: false
+    t.index ["user_id"], name: "index_workshop_attendances_on_user_id"
+    t.index ["workshop_id", "user_id"], name: "index_workshop_attendances_on_workshop_id_and_user_id", unique: true
+  end
+
+  create_table "workshop_rsvps", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workshop_id", null: false
+    t.index ["user_id"], name: "index_workshop_rsvps_on_user_id"
+    t.index ["workshop_id", "user_id"], name: "index_workshop_rsvps_on_workshop_id_and_user_id", unique: true
+  end
+
+  create_table "workshops", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "ends_at", null: false
+    t.datetime "rsvps_notified_at"
+    t.datetime "starts_at", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "zoom_link"
+    t.index ["starts_at"], name: "index_workshops_on_starts_at"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "buku_x3_contributions", "buku_x3_events", column: "event_id", on_delete: :cascade
+  add_foreign_key "buku_x3_contributions", "certification_ysws_reviews", column: "ysws_review_id", on_delete: :cascade
+  add_foreign_key "buku_x3_contributions", "users", on_delete: :cascade
+  add_foreign_key "certificates", "users"
   add_foreign_key "certification_devlog_reviews", "certification_ysws_reviews", column: "ysws_review_id"
   add_foreign_key "certification_devlog_reviews", "post_devlogs"
   add_foreign_key "certification_funding_requests", "projects"
   add_foreign_key "certification_funding_requests", "users"
   add_foreign_key "certification_funding_requests", "users", column: "reviewer_id"
+  add_foreign_key "certification_integrities", "fraud_review_payouts"
+  add_foreign_key "certification_integrities", "post_ship_events", column: "ship_event_id"
+  add_foreign_key "certification_integrities", "users", column: "claimed_by_id"
+  add_foreign_key "certification_integrities", "users", column: "reviewer_id"
+  add_foreign_key "certification_mac_analyses", "certification_ysws_reviews", column: "ysws_review_id"
+  add_foreign_key "certification_permanent_rejection_nominations", "projects"
+  add_foreign_key "certification_permanent_rejection_nominations", "users", column: "decided_by_id"
+  add_foreign_key "certification_permanent_rejection_nominations", "users", column: "reviewer_id"
+  add_foreign_key "certification_review_notes", "projects"
+  add_foreign_key "certification_review_notes", "users", column: "author_id"
+  add_foreign_key "certification_review_skips", "users"
+  add_foreign_key "certification_ship_reviews", "post_ship_events", on_delete: :nullify
   add_foreign_key "certification_ship_reviews", "projects"
   add_foreign_key "certification_ship_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ysws_reviews", "certification_ship_reviews", column: "ship_cert_id"
   add_foreign_key "certification_ysws_reviews", "post_ship_events"
   add_foreign_key "certification_ysws_reviews", "projects"
   add_foreign_key "certification_ysws_reviews", "users"
+  add_foreign_key "certification_ysws_reviews", "users", column: "claimed_by_id"
   add_foreign_key "certification_ysws_reviews", "users", column: "reviewer_id"
   add_foreign_key "certification_ysws_reviews", "users", column: "spotchecked_by_id"
   add_foreign_key "comments", "users"
   add_foreign_key "daily_rolls", "users"
-  add_foreign_key "devlog_lookout_sessions", "lookout_sessions"
-  add_foreign_key "devlog_lookout_sessions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "post_devlogs", column: "devlog_id"
   add_foreign_key "devlog_versions", "users"
+  add_foreign_key "extension_usages", "projects"
+  add_foreign_key "extension_usages", "users"
   add_foreign_key "follows", "users", column: "followed_id"
   add_foreign_key "follows", "users", column: "follower_id"
+  add_foreign_key "fraud_payout_lines", "fraud_payout_runs"
+  add_foreign_key "fraud_payout_lines", "users"
+  add_foreign_key "fraud_review_payouts", "fraud_payout_lines"
+  add_foreign_key "fraud_review_payouts", "users", column: "reviewer_id"
+  add_foreign_key "fraud_review_payouts", "users", column: "subject_id"
+  add_foreign_key "fraud_subject_claims", "users", column: "reviewer_id"
+  add_foreign_key "fraud_subject_claims", "users", column: "subject_id"
   add_foreign_key "fulfillment_payout_lines", "fulfillment_payout_runs"
   add_foreign_key "fulfillment_payout_lines", "users"
   add_foreign_key "fulfillment_payout_runs", "users", column: "approved_by_user_id"
   add_foreign_key "ledger_entries", "users"
   add_foreign_key "likes", "users"
+  add_foreign_key "lookout_sessions", "post_devlogs", column: "devlog_id"
   add_foreign_key "lookout_sessions", "projects"
   add_foreign_key "lookout_sessions", "users"
   add_foreign_key "messages", "users"
   add_foreign_key "messages", "users", column: "sent_by_id"
+  add_foreign_key "mihi_activations", "users"
   add_foreign_key "mission_guide_variants", "missions"
   add_foreign_key "mission_memberships", "missions"
   add_foreign_key "mission_memberships", "users"
   add_foreign_key "mission_prerequisites", "missions", column: "dependent_mission_id"
   add_foreign_key "mission_prerequisites", "missions", column: "prerequisite_mission_id"
+  add_foreign_key "mission_prize_redemptions", "mission_prizes"
+  add_foreign_key "mission_prize_redemptions", "missions"
+  add_foreign_key "mission_prize_redemptions", "shop_orders"
+  add_foreign_key "mission_prize_redemptions", "users"
   add_foreign_key "mission_prizes", "missions"
   add_foreign_key "mission_prizes", "shop_items"
   add_foreign_key "mission_section_completions", "mission_steps", on_delete: :cascade
@@ -1537,10 +2011,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   add_foreign_key "posts", "users"
   add_foreign_key "project_follows", "projects"
   add_foreign_key "project_follows", "users"
+  add_foreign_key "project_languages", "projects"
   add_foreign_key "project_memberships", "projects"
   add_foreign_key "project_memberships", "users"
+  add_foreign_key "project_mentions", "projects"
+  add_foreign_key "project_mentions", "users", column: "reviewer_id"
   add_foreign_key "project_mission_attachments", "missions"
   add_foreign_key "project_mission_attachments", "projects"
+  add_foreign_key "project_reports", "fraud_review_payouts"
   add_foreign_key "project_reports", "projects"
   add_foreign_key "project_reports", "users", column: "reporter_id"
   add_foreign_key "project_skips", "projects"
@@ -1576,14 +2054,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"
+  add_foreign_key "shop_order_reviews", "fraud_review_payouts"
   add_foreign_key "shop_order_reviews", "shop_orders"
   add_foreign_key "shop_order_reviews", "users"
+  add_foreign_key "shop_orders", "fraud_review_payouts"
   add_foreign_key "shop_orders", "fulfillment_payout_lines"
   add_foreign_key "shop_orders", "shop_items"
   add_foreign_key "shop_orders", "shop_orders", column: "parent_order_id"
   add_foreign_key "shop_orders", "shop_warehouse_packages", column: "warehouse_package_id"
   add_foreign_key "shop_orders", "users"
   add_foreign_key "shop_orders", "users", column: "assigned_to_user_id", on_delete: :nullify
+  add_foreign_key "shop_suggestion_votes", "shop_suggestions"
+  add_foreign_key "shop_suggestion_votes", "users"
   add_foreign_key "shop_suggestions", "users"
   add_foreign_key "shop_warehouse_packages", "users"
   add_foreign_key "shop_wishlists", "shop_items"
@@ -1592,12 +2074,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   add_foreign_key "show_and_tell_attendances", "users"
   add_foreign_key "show_and_tell_attendances", "users", column: "payout_given_by_id"
   add_foreign_key "show_and_tell_payout_records", "users", column: "payout_given_by_id"
+  add_foreign_key "sticky_streak_claims", "shop_orders"
+  add_foreign_key "sticky_streak_claims", "sticky_streaks"
+  add_foreign_key "sticky_streak_rewards", "shop_items"
+  add_foreign_key "sticky_streaks", "users"
   add_foreign_key "streak_activities", "users"
+  add_foreign_key "streak_activities", "users", column: "manual_credit_by_id", on_delete: :nullify
   add_foreign_key "user_achievements", "users"
+  add_foreign_key "user_activity_days", "users", on_delete: :cascade
+  add_foreign_key "user_data_exports", "users"
   add_foreign_key "user_hackatime_projects", "projects"
   add_foreign_key "user_hackatime_projects", "users"
   add_foreign_key "user_identities", "users"
   add_foreign_key "user_notification_preferences", "users", on_delete: :cascade
+  add_foreign_key "user_preference", "users"
   add_foreign_key "user_preferences", "users"
   add_foreign_key "user_vote_verdicts", "users"
   add_foreign_key "vote_assignments", "post_ship_events", column: "ship_event_id"
@@ -1611,4 +2101,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_165531) do
   add_foreign_key "votes", "post_ship_events", column: "ship_event_id"
   add_foreign_key "votes", "projects"
   add_foreign_key "votes", "users"
+  add_foreign_key "workshop_attendances", "users"
+  add_foreign_key "workshop_attendances", "workshops"
+  add_foreign_key "workshop_rsvps", "users"
+  add_foreign_key "workshop_rsvps", "workshops"
 end

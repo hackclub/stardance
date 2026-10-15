@@ -1,0 +1,15 @@
+<%= turbo_frame_tag dom_id(@devlog, :hackatime_breakdown) do %>
+  <% if @breakdown.blank? %>
+    <p class="feed-post-card__hackatime-empty">No Hackatime project data available for this devlog.</p>
+  <% else %>
+    <ul class="feed-post-card__hackatime-list">
+      <% @breakdown.each do |entry| %>
+        <li class="feed-post-card__hackatime-item">
+          <span class="feed-post-card__hackatime-name"><%= entry[:name] %></span>
+          <span class="feed-post-card__hackatime-percent"><%= entry[:percent] %>%</span>
+          <span class="feed-post-card__hackatime-seconds">(<%= format_seconds(entry[:seconds]) %>)</span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>

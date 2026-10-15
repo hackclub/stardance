@@ -31,6 +31,10 @@ class Post::DevlogPolicy < ApplicationPolicy
         owns?
     end
 
+    def hackatime_breakdown?
+        user&.admin?
+    end
+
     private
 
     def owns?

@@ -1,0 +1,7 @@
+<span class="notifications-item__verb">Workshop</span>
+<% if notification.record %>
+  <%= link_to notification.record.title, workshop_path(notification.record), class: "notifications-item__actor" %>
+<% else %>
+  <strong>a workshop</strong>
+<% end %>
+<span class="notifications-item__verb">starts in <%= Workshop::JOIN_WINDOW.inspect %>! The Zoom link is open.</span>

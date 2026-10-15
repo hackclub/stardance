@@ -1,5 +1,5 @@
 class StreakDailySyncJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   def perform
     User.joins(:hackatime_identity)

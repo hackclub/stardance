@@ -1,0 +1,54 @@
+<%= turbo_frame_tag "mega-dash-waterfall", target: "_top" do %>
+  <section class="mega-dash__section" aria-labelledby="mega-dash-waterfall-title">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-waterfall-title">User-facing time</h2>
+      <span class="mega-dash__note">
+        Median time in each step, for journeys completed in the last <%= @period %> days.
+        <%= @waterfall[:excluded][:estimated_or_unknown] %> rated ships excluded for unusable backfill timestamps.
+      </span>
+    </div>
+
+    <% Admin::MegaDashboard::Waterfall::PATHS.each do |key, label| %>
+      <% summary = @waterfall[:paths][key] %>
+      <div class="mega-dash__waterfall">
+        <div class="mega-dash__waterfall-heading">
+          <h3><%= label %></h3>
+          <% if summary[:count].positive? %>
+            <span class="mega-dash__note">
+              <%= pluralize(summary[:count], "ship") %> ·
+              <%= summary[:rework_rate] %>% reworked
+            </span>
+          <% end %>
+        </div>
+
+        <% if summary[:count].zero? %>
+          <p class="mega-dash__empty">No ships reached payout on this path in the window.</p>
+        <% else %>
+          <div class="mega-dash__journey" role="img"
+               aria-label="<%= summary[:stages].map { |stage| "#{stage[:label]} #{mega_dash_duration(stage[:median_hours])}" }.join(", ") %>">
+            <% summary[:stages].select { |stage| stage[:share].to_f.positive? }.each do |stage| %>
+              <span class="mega-dash__journey-segment mega-dash__journey-segment--<%= stage[:key].dasherize %>"
+                    style="flex-grow: <%= stage[:share] %>"
+                    title="<%= stage[:label] %>: <%= mega_dash_duration(stage[:median_hours]) %> median (<%= stage[:share] %>%)">
+                <span class="mega-dash__journey-segment-value"><%= mega_dash_duration(stage[:median_hours]) %></span>
+              </span>
+            <% end %>
+          </div>
+
+          <ol class="mega-dash__journey-legend">
+            <% summary[:stages].each do |stage| %>
+              <li>
+                <span class="mega-dash__legend-key mega-dash__legend-key--<%= stage[:key].dasherize %>"></span>
+                <%= stage[:label] %>
+                <strong><%= mega_dash_duration(stage[:median_hours]) %></strong>
+                <span class="mega-dash__note">
+                  <%= stage[:share] %>%<%= " · #{pluralize(stage[:count], "ship")}" if stage[:count] < summary[:count] %>
+                </span>
+              </li>
+            <% end %>
+          </ol>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+<% end %>

@@ -9,7 +9,7 @@ divider
 
 section "You need to cast *#{pluralize(votes_needed, 'more vote')}* before your payout will be issued.", markdown: true
 
-section "Remember: every time you ship a project, your vote balance decreases by 15. Every time you vote, it increases by 1. Keep voting to maintain a positive balance!", markdown: true
+section "Remember: every time you ship a project, your vote balance decreases by #{Post::ShipEvent::VOTE_COST_PER_SHIP}. Every time you vote, it increases by 1. Keep voting to maintain a positive balance!", markdown: true
 
 divider
 

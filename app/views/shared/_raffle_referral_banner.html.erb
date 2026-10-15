@@ -1,4 +1,4 @@
-<% if (raffle_referrer = session[:show_raffle_referral_banner]) %>
+<% if !raffle_ended? && (raffle_referrer = session[:show_raffle_referral_banner]) %>
   <% referrer_is_adult = session[:raffle_referrer_is_adult] %>
   <div class="raffle-referral-banner" id="raffle-referral-banner">
     <div class="raffle-referral-banner__body">
@@ -16,7 +16,7 @@
       </p>
     </div>
     <div class="raffle-referral-banner__actions">
-      <a href="<%= raffle_base_url %>/" class="raffle-referral-banner__cta">See the GPU raffle &rarr;</a>
+      <%= link_to "See the GPU raffle →", raffle_base_url, class: "raffle-referral-banner__cta" %>
       <%= button_to dismiss_raffle_banner_path, method: :delete,
             class: "raffle-referral-banner__dismiss",
             form: { style: "display:inline", "aria-label": "Dismiss" } do %>&times;<% end %>

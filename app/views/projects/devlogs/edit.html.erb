@@ -18,10 +18,11 @@
             html: { multipart: true },
             class: "devlog-edit__form",
             data: { controller: "devlog-edit markdown-preview",
-                    markdown_preview_url_value: markdown_preview_path },
+                    markdown_preview_url_value: markdown_preview_path,
+                    devlog_edit_max_attachments_value: Post::Devlog::MAX_ATTACHMENTS },
             local: true do |f| %>
 
-        <div class="devlog-edit__field">
+        <div class="devlog-edit__field" data-controller="textarea-hint">
           <div class="devlog-edit__field-header">
             <%= f.label :body, "What are you working on?", class: "devlog-edit__label" %>
             <div class="md-tabs" role="tablist">
@@ -45,44 +46,51 @@
                   placeholder: "What are you working on?",
                   data: { markdown_preview_target: "input",
                           controller: "mention-autocomplete",
-                          action: "keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
+                          action: "paste->textarea-hint#paste keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
           </div>
+          <p class="textarea-hint" data-textarea-hint-target="hint">Please write this yourself, humans read it!</p>
           <div class="md-preview markdown-content devlog-edit__preview" data-markdown-preview-target="output" hidden></div>
         </div>
 
-        <% if @devlog.attachments.attached? %>
-          <div class="devlog-edit__attachments">
-            <p class="devlog-edit__label">Screenshot</p>
-            <div class="devlog-edit__attachment-grid">
-              <% @devlog.attachments.each do |attachment| %>
-                <div class="devlog-edit__attachment" data-devlog-edit-target="slot">
-                  <div class="devlog-edit__attachment-preview" data-devlog-edit-target="preview">
-                    <% if attachment.content_type.to_s.start_with?("video/") %>
-                      <%= video_tag url_for(attachment), controls: true, class: "devlog-edit__attachment-media" %>
-                    <% elsif attachment.variable? %>
-                      <%= image_tag attachment.variant(:medium), alt: "", class: "devlog-edit__attachment-media" %>
-                    <% else %>
-                      <%= image_tag attachment, alt: "", class: "devlog-edit__attachment-media" %>
-                    <% end %>
-                  </div>
-                  <label class="devlog-edit__attachment-replace">
-                    <input type="hidden"
-                           name="remove_attachment_ids[]"
-                           value="<%= attachment.id %>"
-                           disabled
-                           data-devlog-edit-target="removeFlag">
-                    <input type="file"
-                           name="post_devlog[attachments][]"
-                           accept="<%= Post::Devlog::ACCEPTED_CONTENT_TYPES.join(",") %>"
-                           class="devlog-edit__attachment-file-input"
-                           data-action="change->devlog-edit#replacePreview">
-                    <span class="devlog-edit__attachment-replace-label">Replace</span>
-                  </label>
+        <div class="devlog-edit__attachments">
+          <p class="devlog-edit__label">Screenshot</p>
+          <div class="devlog-edit__attachment-grid" data-devlog-edit-target="grid">
+            <% @devlog.attachments.each do |attachment| %>
+              <div class="devlog-edit__attachment" data-devlog-edit-target="slot">
+                <div class="devlog-edit__attachment-preview" data-devlog-edit-target="preview">
+                  <% if attachment.content_type.to_s.start_with?("video/") %>
+                    <%= video_tag rails_storage_redirect_url(attachment), controls: true, class: "devlog-edit__attachment-media" %>
+                  <% elsif attachment.variable? %>
+                    <%= image_tag attachment.variant(:medium), alt: "", class: "devlog-edit__attachment-media" %>
+                  <% else %>
+                    <%= image_tag attachment, alt: "", class: "devlog-edit__attachment-media" %>
+                  <% end %>
                 </div>
-              <% end %>
-            </div>
+                <label class="devlog-edit__attachment-replace">
+                  <input type="hidden"
+                         name="remove_attachment_ids[]"
+                         value="<%= attachment.id %>"
+                         disabled
+                         data-devlog-edit-target="removeFlag">
+                  <input type="file"
+                         name="post_devlog[attachments][]"
+                         accept="<%= Post::Devlog::ACCEPTED_CONTENT_TYPES.join(",") %>"
+                         class="devlog-edit__attachment-file-input"
+                         data-action="change->devlog-edit#replacePreview">
+                  <span class="devlog-edit__attachment-replace-label">Replace</span>
+                </label>
+              </div>
+            <% end %>
+            <%# Filling an add slot reveals another until the devlog is at
+                MAX_ATTACHMENTS (see devlog_edit_controller.js). %>
+            <% if @devlog.attachments.size < Post::Devlog::MAX_ATTACHMENTS %>
+              <%= render "projects/devlogs/attachment_add_slot" %>
+            <% end %>
           </div>
-        <% end %>
+          <template data-devlog-edit-target="addSlotTemplate">
+            <%= render "projects/devlogs/attachment_add_slot" %>
+          </template>
+        </div>
 
         <div class="devlog-edit__actions">
           <%= render ActionButtonComponent.new(

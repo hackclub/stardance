@@ -317,6 +317,28 @@ html.warped .hero__doodle-arrow.is-falling {
 
 .hero__dev-login {
   margin-top: 0.6em;
+  display: flex;
+  gap: 0.4em;
+}
+
+.hero__dev-login-input {
+  font-family: "Exo 2", sans-serif;
+  font-size: 14px;
+  color: #e2e2e2;
+  background: transparent;
+  border: 1px dashed rgba(226, 226, 226, 0.5);
+  padding: 0.35em 0.75em;
+  border-radius: 4px;
+  width: 10em;
+
+  &::placeholder {
+    color: rgba(226, 226, 226, 0.5);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: rgba(226, 226, 226, 0.8);
+  }
 }
 
 .hero__dev-login-btn {

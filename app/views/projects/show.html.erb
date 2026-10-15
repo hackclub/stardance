@@ -20,15 +20,36 @@
   viewer_follow = @viewer_follow
   total_hours = @total_hours || (@project.duration_seconds / 3600.0).round
   can_edit_project = @can_edit_project
+  is_owner = @is_owner
+  admin_editing_project = @admin_editing_project
   # Only highlight the unfinished sections when the user arrived via the
   # "Complete project info" button (which adds ?complete=1).
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
+  can_delete_project = policy(@project).destroy? && (!@project.shipped? || policy(@project).force_destroy?)
+  ship_block_message = Project::ShipBlock::BLOCKED_MESSAGE if @project.ship_blocked?
+  # Shared by the ship CTA, the returned decision card and the recert modal, and
+  # computed once because link_blocker_message probes the live URLs every call.
+  # Members only: a reviewer opening a returned project shouldn't pay for HTTP
+  # requests to someone else's demo, and a reviewer filing on a builder's behalf
+  # bypasses the cooldown anyway (ProjectPolicy#bypass_recertification_cooldown?).
+  # They still hit the controller and the resubmit_for_review guard when they act.
+  recert_gated = is_member && @project.needs_changes? && ship_block_message.nil?
+  recert_cooldown_at = @project.recertification_available_at if recert_gated
+  recert_visible_blocker = ship_block_message || (recertification_cooldown_message(recert_cooldown_at) if recert_cooldown_at)
+  recert_link_blocker = @project.link_blocker_message if recert_gated && recert_visible_blocker.nil?
 %>
 
 <div class="app-layout" data-controller="profile-modal">
   <div class="app-layout__main">
+    <%= render "shared/inspector", record: @project %>
     <%= turbo_frame_tag "project_hero" do %>
+    <% if can_delete_project %>
+      <%= form_with(url: project_path(@project), method: :delete, id: "delete-project-form", style: "display: none;") do %>
+      <% end %>
+    <% end %>
+
     <% if can_edit_project && (params[:editing].present? || @project.errors.any?) %>
+
       <%= form_with(model: @project,
                     url: project_path(@project),
                     method: :patch,
@@ -84,6 +105,12 @@
                                       "project-form-target": "title"
                                     } %>
 
+                <% if admin_editing_project %>
+                  <%= admin_tool do %>
+                    <p class="project-show__admin-edit-notice">You're editing <strong><%= @project.title %></strong> — this isn't your project just remember that.</p>
+                  <% end %>
+                <% end %>
+
                 <div class="project-show__byline">
                   <% if members.any? %>
                     <ul class="project-show__avatars" aria-hidden="true">
@@ -103,7 +130,8 @@
                   <p class="project-show__authors">
                     By
                     <% members.each_with_index do |m, i| %>
-                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= render StreakBadgeComponent.new(user: m) %><%= "," if i < members.length - 2 && members.length > 2 %>
+                      <%= " and " if i > 0 && i == members.length - 1 %><%= render "shared/username_link", user: m, link_class: "project-show__author",
+                          data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= "," if i < members.length - 2 && members.length > 2 %>
                     <% end %>
                   </p>
                 </div>
@@ -134,11 +162,14 @@
 
             <div class="project-show__edit-grid" data-controller="project-type">
               <div class="project-show__field project-show__field--inline">
-                <span>Project type <%= render "projects/help_tooltip", text: "Software projects track coding time with Hackatime. Hardware projects (electronics, 3D printing, robotics, etc.) record a screen/build timelapse instead." %></span>
-                <% if @project.has_any_funding_request? %>
+                <span>Project type <%= render "shared/help_tooltip", text: "Software projects track coding time with Hackatime. Hardware projects (electronics, 3D printing, robotics, etc.) record a screen/build timelapse instead." %></span>
+                <%# Locked once the project has asked for funding or shipped: the
+                    stage decides how the ship is paid, so the model refuses the
+                    change and a live control here would only fail validation. %>
+                <% if @project.hardware_stage_locked? %>
                   <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project type (locked)">
-                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked">Software</span>
-                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked project-show__stage-choice-label--selected">Hardware</span>
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked <%= "project-show__stage-choice-label--selected" unless @project.hardware? %>">Software</span>
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked <%= "project-show__stage-choice-label--selected" if @project.hardware? %>">Hardware</span>
                   </div>
                 <% else %>
                   <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project type">
@@ -169,13 +200,17 @@
               <div class="project-show__field project-show__field--inline"
                    data-project-type-target="stageSection"
                    <%= "hidden" unless @project.hardware? %>>
-                <span>Project stage <%= render "projects/help_tooltip", text: "\"I need Funding\" means you're still designing and need a grant to buy parts. Submit your design for funding to move to building. \"I don't need Funding\" means you already have your parts and are building." %></span>
-                <% if @project.has_any_funding_request? %>
+                <span>Project stage <%= render "shared/help_tooltip", text: "\"Design\" means you're still designing and need a grant to buy parts. Submit your design for funding to move to building. \"Build\" means you already have your parts and are building." %></span>
+                <% if @project.hardware_stage_locked? %>
                   <% fr = @project.latest_funding_request %>
                   <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project stage (locked)">
                     <span class="project-show__stage-choice-label project-show__stage-choice-label--locked">
-                      <% if fr.approved? %>
+                      <% if fr.nil? %>
+                        Design Stage
+                      <% elsif fr.issues_grant? %>
                         Design Stage — $<%= fr.final_amount_dollars %> approved
+                      <% elsif fr.approved? %>
+                        Design Stage — approved
                       <% elsif fr.pending? %>
                         Design Stage — $<%= fr.requested_amount_dollars %> under review
                       <% else %>
@@ -192,11 +227,11 @@
                   <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project stage">
                     <label class="project-show__stage-choice">
                       <%= form.radio_button :hardware_stage, "design", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
-                      <span class="project-show__stage-choice-label">I need Funding</span>
+                      <span class="project-show__stage-choice-label">Design</span>
                     </label>
                     <label class="project-show__stage-choice">
                       <%= form.radio_button :hardware_stage, "build", class: "project-show__stage-radio", disabled: !@project.hardware?, data: { "project-type-target": "stageRadio" } %>
-                      <span class="project-show__stage-choice-label">I don't need Funding</span>
+                      <span class="project-show__stage-choice-label">Build</span>
                     </label>
                   </div>
                 <% end %>
@@ -215,7 +250,8 @@
                     No Hackatime projects yet — start coding with Hackatime installed to see them here.
                   </span>
                 <% else %>
-                  <div data-controller="hackatime-link">
+                  <div data-controller="hackatime-link"
+                       data-hackatime-link-has-existing-devlogs-value="<%= @project_has_devlogs %>">
                     <div class="project-show__hackatime-picker">
                       <div class="project-show__hackatime-box" role="button" tabindex="0" aria-pressed="false" data-contoller="addBtn" data-action="click->hackatime-link#toggle keydown.enter->hackatime-link#toggle">
                         <div class="project-show__hackatime-add" aria-label="Add Hackatime project">
@@ -228,7 +264,7 @@
                             Link a Project
                           </span>
                           <% @linked_hackatime_projects.each do |hp| %>
-                            <span class="project-show__hackatime-tag" data-hackatime-id="<%= hp.id %>">
+                            <span class="project-show__hackatime-tag" data-hackatime-id="<%= hp.id %>" data-previously-linked="true">
                               <span class="project-show__hackatime-tag-name"><%= hp.name %></span>
                               <span class="project-show__hackatime-tag-time"><%= format_seconds(@hackatime_times[hp.name] || 0) %></span>
                               <button type="button" class="project-show__hackatime-tag-remove" data-action="hackatime-link#remove" data-id="<%= hp.id %>" aria-label="Remove <%= hp.name %>">
@@ -274,7 +310,7 @@
               </div>
 
               <label class="project-show__field project-show__field--inline">
-                <span>AI usage declaration <%= render "projects/help_tooltip", text: "Describe how you used AI in this project (e.g. \"Used ChatGPT for debugging\", \"GitHub Copilot for code completion\"). AI use is OK, but it should feel like your own work! If you didn't use AI, write \"None\"." %></span>
+                <span>AI usage declaration <%= render "shared/help_tooltip", text: "Describe how you used AI in this project (e.g. \"Used ChatGPT for debugging\", \"GitHub Copilot for code completion\"). AI use is OK, but it should feel like your own work! If you didn't use AI, write \"None\"." %></span>
                 <%= form.text_area :ai_declaration,
                                    rows: 2,
                                    maxlength: 1000,
@@ -297,7 +333,7 @@
               <label class="project-show__field project-show__field--inline"
                      data-project-form-target="updateDescriptionContainer"
                      <%= "hidden" if @project.update_description.blank? %>>
-                <span>Update Description <%= render "projects/help_tooltip", text: "Describe the features you've added or updated, and the impact these changes have had on your project overall. Please be specific." %></span>
+                <span>Update Description <%= render "shared/help_tooltip", text: "Describe the features you've added or updated, and the impact these changes have had on your project overall. Please be specific." %></span>
                 <%= form.text_area :update_description,
                                    rows: 3,
                                    maxlength: 1000,
@@ -310,7 +346,7 @@
               <div class="project-show__sparkle" aria-hidden="true"></div>
 
               <label class="project-show__field project-show__field--inline">
-                <span>Demo URL <%= render "projects/help_tooltip", text: @project.hardware? ? "An IRL video of your project working." : "A live URL where anyone can try your project." %></span>
+                <span>Demo URL <%= render "shared/help_tooltip", text: @project.hardware? ? "An IRL video of your project working." : "A live URL where anyone can try your project." %></span>
                 <%= form.url_field :demo_url,
                                    class: "project-show__control",
                                    placeholder: "https://example.com",
@@ -322,7 +358,7 @@
               </label>
 
               <label class="project-show__field project-show__field--inline">
-                <span>Github URL <%= render "projects/help_tooltip", text: "A public repository URL." %></span>
+                <span>Github URL <%= render "shared/help_tooltip", text: "A public repository URL." %></span>
                 <%= form.url_field :repo_url,
                                    class: "project-show__control",
                                    placeholder: "https://github.com/user/repo",
@@ -336,7 +372,7 @@
               <label class="project-show__field project-show__field--inline"
                      data-project-form-target="readmeContainer"
                      <%= "hidden" if @project.readme_url.blank? %>>
-                <span>Readme URL <%= render "projects/help_tooltip", text: "A raw README URL for your project page." %></span>
+                <span>Readme URL <%= render "shared/help_tooltip", text: "A raw README URL for your project page." %></span>
                 <%= form.url_field :readme_url,
                                    class: "project-show__control",
                                    placeholder: "https://raw.githubusercontent.com/user/repo/main/README.md",
@@ -351,6 +387,11 @@
             <div class="project-show__panel-actions">
               <% if @project.fire? %>
                 <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
+              <% end %>
+              <% if can_delete_project %>
+                <button type="button"
+                        class="project-show__pill project-show__pill--destructive"
+                        onclick="document.getElementById('delete-project-modal').showModal()">Delete project</button>
               <% end %>
               <%= link_to "Discard changes", project_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "project_hero" } %>
               <%= form.submit "Save", class: "project-show__pill project-show__pill--save", data: { "project-form-target": "submit" } %>
@@ -387,6 +428,9 @@
                   <% if @project.hardware? %>
                     <span class="project-show__tag project-show__tag--hardware">Hardware</span>
                   <% end %>
+                  <%= admin_tool(compact: true, roles: [ :fraud_dept, :helper, :nda_helper ]) do %>
+                    <%= link_to "🔨", admin_project_path(@project), class: "project-show__admin-link", data: { turbo_frame: "_top" }, "aria-label": "View #{@project.title} in admin" %>
+                  <% end %>
                 </div>
                 <div class="project-show__byline">
                   <% if members.any? %>
@@ -407,7 +451,8 @@
                   <p class="project-show__authors">
                     By
                     <% members.each_with_index do |m, i| %>
-                      <%= " and " if i > 0 && i == members.length - 1 %><%= link_to "@#{m.display_name}", profile_path(m.display_name), class: "project-show__author", data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= render StreakBadgeComponent.new(user: m) %><%= "," if i < members.length - 2 && members.length > 2 %>
+                      <%= " and " if i > 0 && i == members.length - 1 %><%= render "shared/username_link", user: m, link_class: "project-show__author",
+                          data: { turbo_frame: "_top", turbo_prefetch: "true" } %><%= "," if i < members.length - 2 && members.length > 2 %>
                     <% end %>
                   </p>
                 </div>
@@ -426,7 +471,7 @@
             </div>
 
             <% if @project.description.present? %>
-              <p class="project-show__description"><%= @project.description %></p>
+              <div class="project-show__description markdown-content"><%= md(@project.description, allow_images: false) %></div>
             <% end %>
 
             <div class="project-show__read-footer">
@@ -440,6 +485,11 @@
               <div class="project-show__panel-actions">
                 <%= render "projects/fire_controls", project: @project %>
 
+                <% if !@project.draft? && is_member && Flipper.enabled?(:virality_bonus, current_user) %>
+                  <%= link_to "Submit viral mention", new_project_mention_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "_top" } %>
+                  <%= render "shared/help_tooltip", text: "Got traction on Reddit, HN, GitHub, or another platform? Submit a link and earn bonus stardust.", position: "top" %>
+                <% end %>
+
                 <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
                   <%= link_to safe_repo_url,
                               class: "project-show__pill project-show__pill--outline project-show__pill--github",
@@ -452,9 +502,26 @@
                 <% end %>
 
                 <% if can_edit_project %>
-                  <%= link_to "Edit project", project_path(@project, editing: true),
-                              class: "project-show__pill project-show__pill--outline",
-                              data: { turbo_frame: "project_hero" } %>
+                  <% edit_project_link = capture do %>
+                    <%= link_to "Edit project", project_path(@project, editing: true),
+                                class: "project-show__pill project-show__pill--outline",
+                                data: { turbo_frame: "project_hero" } %>
+                  <% end %>
+
+                  <% if admin_editing_project %>
+                    <%= admin_tool do %>
+                      <%= edit_project_link %>
+                    <% end %>
+                  <% else %>
+                    <%= edit_project_link %>
+                  <% end %>
+                <% elsif is_owner && !can_edit_project %>
+                  <button type="button" class="project-show__pill project-show__pill--outline" aria-disabled="true"
+                          data-controller="tooltip"
+                          data-tooltip-message-value="Your project is under review. Editing is locked until it's decided."
+                          data-tooltip-position-value="top">
+                    Edit project
+                  </button>
                 <% end %>
 
                 <% if current_user && !is_member %>
@@ -466,6 +533,14 @@
                                 turbo_frame: "_top"
                               } %>
                 <% end %>
+
+                <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? && !is_member && current_user&.can_review? %>
+                  <%= link_to "Review", admin_certification_hardware_review_path(@project),
+                              class: "project-show__pill project-show__pill--outline project-show__pill--review",
+                              data: { turbo_frame: "_top" } %>
+                <% end %>
+
+                <%= render "projects/report_button", project: @project, is_member: is_member %>
               </div>
             </div>
           </div>
@@ -475,11 +550,25 @@
     <% end %>
 
     <% if is_member %>
+      <% if @project.ship_blocked? %>
+        <section class="project-show__notice project-show__notice--blocked" aria-label="Blocked from shipping">
+          <p class="project-show__notice-title">This project is blocked from shipping</p>
+          <p class="project-show__notice-body">It can't be shipped, reshipped or re-certified until it's unblocked. Devlogs and everything else still work as normal.</p>
+          <div class="project-show__notice-reason">
+            <%= simple_format(h(@project.ship_block_reason), class: "project-show__notice-body") %>
+          </div>
+          <p class="project-show__notice-body">
+            If you think this is a mistake, send a message in
+            <%= link_to "#ask-the-shipwrights", Project::ShipBlock::APPEAL_CHANNEL_URL,
+                        class: "project-show__notice-link", target: "_blank", rel: "noopener noreferrer" %>
+            to appeal it.
+          </p>
+        </section>
+      <% end %>
       <% if @hackatime_linked || @test_time_granted %>
         <%
           no_hackatime_project = @project.hackatime_keys.blank? && !@test_time_granted
-          live_seconds = @project.hackatime_keys.sum { |k| @hackatime_times[k].to_i }
-          unposted_seconds = [ live_seconds - @project.duration_seconds, 0 ].max
+          unposted_seconds = @unposted_seconds.to_i
           enough_time = !no_hackatime_project && (unposted_seconds >= 15 * 60 || @test_time_granted)
           devlog_disabled_message = "Edit this project to add a Hackatime project" if no_hackatime_project
           # Only call it the primary action when devlogging is actually
@@ -489,7 +578,7 @@
           devlog_modifier_class = devlog_primary ? "project-show__action--primary" : "project-show__action--secondary"
         %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? && !Flipper.enabled?(:lookout, current_user) %>
+          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: (@hackatime_linked ? nil : "Link your Hackatime account to start recording") %>
@@ -515,7 +604,7 @@
                   onclick: "document.getElementById('composer-modal-' + #{@project.id.to_json}).showModal()"
                 ) %>
           <% end %>
-          <% unless @project.info_complete? %>
+          <% unless @project.stage_info_complete? %>
             <% if @project.has_devlog_since_last_ship? %>
               <%= render ActionButtonComponent.new(
                     text: "Complete project info",
@@ -542,7 +631,7 @@
                   ) %>
             <% end %>
           <% end %>
-          <% if is_member && current_user && @project.info_complete? %>
+          <% if is_member && current_user && @project.stage_info_complete? %>
             <% unless current_user.identity_verified? %>
               <%= render ActionButtonComponent.new(
                     text: "Verify your identity",
@@ -561,7 +650,9 @@
             <% end %>
           <% end %>
           <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
-            <% if @project.has_pending_funding_request? %>
+            <% if @project.permanently_rejected? %>
+              <%= render ActionButtonComponent.new(text: "Project permanently rejected", variant: :secondary, type: :button, disabled: :hard) %>
+            <% elsif @project.has_pending_funding_request? %>
               <%= render ActionButtonComponent.new(
                     text: "Funding request under review",
                     variant: :secondary,
@@ -573,9 +664,22 @@
                       tooltip_position_value: "top"
                     }
                   ) %>
-            <% elsif !@project.info_complete? %>
+            <% elsif !@project.has_devlog_since_last_ship? %>
               <%= render ActionButtonComponent.new(
-                    text: "Submit Design to Get Project Funding",
+                    text: "Submit for funding",
+                    variant: :primary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    disabled: :soft,
+                    data: {
+                      controller: "tooltip",
+                      tooltip_message_value: "Post at least one devlog before requesting funding!",
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
+            <% elsif !@project.funding_info_complete? %>
+              <%= render ActionButtonComponent.new(
+                    text: "Submit for funding",
                     variant: :primary,
                     type: :button,
                     icon: "icons/rocket.png",
@@ -586,9 +690,24 @@
                       tooltip_position_value: "top"
                     }
                   ) %>
+            <% elsif !owner&.identity_verified? || !owner.ysws_eligible? %>
+              <%= render ActionButtonComponent.new(
+                    text: @project.awards_design_kit? ? "Submit your design" : "Submit for funding",
+                    variant: :primary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    disabled: :soft,
+                    data: {
+                      controller: "tooltip",
+                      tooltip_message_value: owner&.identity_verified? ?
+                        "You're not eligible for YSWS prizes yet, check the Hack Club portal!" :
+                        "Verify your identity before requesting funding!",
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
             <% else %>
               <%= render ActionButtonComponent.new(
-                    text: "Submit Design to Get Project Funding",
+                    text: @project.awards_design_kit? ? "Submit your design" : "Submit for funding",
                     variant: :primary,
                     type: :button,
                     icon: "icons/rocket.png",
@@ -600,7 +719,58 @@
               the ship button stays hidden behind the funding button until the
               grant flips them to the build stage. %>
           <% unless @project.design_stage? %>
-          <% if @project.shippable? %>
+          <% if ship_block_message %>
+            <%= render ActionButtonComponent.new(
+                  text: "Ship your project!",
+                  variant: :secondary,
+                  type: :button,
+                  icon: "icons/rocket.png",
+                  disabled: :soft,
+                  data: {
+                    controller: "tooltip",
+                    tooltip_message_value: ship_block_message,
+                    tooltip_position_value: "top"
+                  }
+                ) %>
+          <% elsif @project.awaiting_ship_review? %>
+            <%= render ActionButtonComponent.new(
+                  text: "Ship your project!",
+                  variant: :secondary,
+                  type: :button,
+                  icon: "icons/rocket.png",
+                  disabled: :soft,
+                  data: {
+                    controller: "tooltip",
+                    tooltip_message_value: "Your project is in review. You can ship again once it's approved.",
+                    tooltip_position_value: "top"
+                  }
+                ) %>
+          <% elsif @project.needs_changes? %>
+            <%# Changes requested: the ship CTA resubmits this same ship for
+                re-certification instead of opening a fresh ship. %>
+            <% if (recert_blocker = recert_visible_blocker || recert_link_blocker) %>
+              <%= render ActionButtonComponent.new(
+                    text: "Ship your project!",
+                    variant: :secondary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    disabled: :soft,
+                    data: {
+                      controller: "tooltip",
+                      tooltip_message_value: recert_blocker,
+                      tooltip_position_value: "top"
+                    }
+                  ) %>
+            <% else %>
+              <%= render ActionButtonComponent.new(
+                    text: "Ship your project!",
+                    variant: :primary,
+                    type: :button,
+                    icon: "icons/rocket.png",
+                    onclick: "document.getElementById('recert-modal-' + #{@project.id.to_json}).showModal()"
+                  ) %>
+            <% end %>
+          <% elsif @project.shippable? %>
             <% if unposted_seconds >= 15 * 60 %>
               <%= render ActionButtonComponent.new(
                     text: "Ship your project!",
@@ -621,7 +791,9 @@
           <% else %>
             <%
               ship_disabled_message =
-                if @project.received_grant? && !@project.has_build_devlog_since_last_ship?
+                if (mission_review_message = @project.mission_review_blocker_message)
+                  mission_review_message
+                elsif @project.received_grant? && !@project.has_build_devlog_since_last_ship?
                   "Post at least one build devlog before you can ship!"
                 elsif !@project.has_devlog_since_last_ship?
                   "Post at least one devlog before shipping!"
@@ -648,9 +820,23 @@
           <% end %>
           <% end %>
         </nav>
+        <% if unposted_seconds >= Post::ShipEvent::DEVLOG_CAP_WARNING_SECONDS %>
+          <%
+            unposted_time = format_hours_minutes(unposted_seconds)
+            over_cap = unposted_seconds > Post::ShipEvent::MAX_PAYOUT_SECONDS_PER_DEVLOG
+          %>
+          <p class="<%= class_names("project-show__devlog-cap-warning", "project-show__devlog-cap-warning--over" => over_cap) %>">
+            <%= inline_svg_tag "icons/warning.svg", class: "project-show__devlog-cap-warning-icon", aria: { hidden: true } %>
+            <% if over_cap %>
+              <span>You have <strong><%= unposted_time %></strong> without a devlog- only <%= Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG %>h of it can count toward your ship payout. Post a devlog now so you don't lose more!</span>
+            <% else %>
+              <span>You have <strong><%= unposted_time %></strong> without a devlog. Only <%= Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG %>h per devlog counts toward your ship payout- post one soon!</span>
+            <% end %>
+          </p>
+        <% end %>
       <% else %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? && !Flipper.enabled?(:lookout, current_user) %>
+          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: "Link your Hackatime account to start recording" %>
@@ -680,20 +866,23 @@
         latest_submission = @latest_ship_post&.postable&.mission_submission
         is_fixed_payout = latest_submission&.payout_path == "static_prize" &&
                           latest_submission&.mission&.fixed_stardust_payout&.positive?
+        skip_voting = is_fixed_payout || @project.hardware?
 
         ship_tour_text = if is_fixed_payout
           "Your ship is now in review. Once it's approved, you'll earn the mission's prizes!"
+        elsif @project.hardware?
+          "Your ship is now in review. Once it's approved, you'll get your payout!"
         else
-          "Yay congrats on your first ship! To get your payout, you need to vote at least #{Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT} times on other people's projects."
+          "Yay congrats on your first ship! To get your payout, you need to vote at least #{Post::ShipEvent::VOTE_COST_PER_SHIP} times on other people's projects."
         end
 
         ship_tour_steps = [
           {
-            selector: is_fixed_payout ? "body" : "[data-onboarding-target='rate']",
+            selector: skip_voting ? "body" : "[data-onboarding-target='rate']",
             text: ship_tour_text,
             padding: 12,
             radius: 12,
-            position: is_fixed_payout ? "center" : nil
+            position: skip_voting ? "center" : nil
           }.compact
         ]
       %>
@@ -755,9 +944,7 @@
             <%= onboarding_mission ? onboarding_mission.name : (@hackatime_linked ? "You're all set — go #{verb}!" : "Welcome to your new project!") %>
           </h2>
 
-          <%# Time-tracking nudge — shown for every new project, mission or not.
-              Suppressed under :lookout; the Track-your-time card owns this message. %>
-          <% unless Flipper.enabled?(:lookout, current_user) %>
+          <%# Time-tracking nudge, shown for every new project, mission or not. %>
           <% if !@hackatime_linked %>
             <p class="project-show__onboarding-header-body">
               <% if onboarding_mission&.has_guide? %>
@@ -768,7 +955,7 @@
             </p>
           <% elsif @project.hackatime_keys.present? %>
             <p class="project-show__onboarding-header-body">
-              Once you have 15 minutes of <%= time_kind %> time, come back and write your first devlog!
+              Once you have 15 minutes of <%= time_kind %> time, come back and write your first devlog! Keep posting devlogs as you build- only up to <%= Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG %> hours per devlog counts toward your payout when you ship.
             </p>
           <% elsif @all_hackatime_projects.present? %>
             <p class="project-show__onboarding-header-body">
@@ -778,7 +965,6 @@
             <p class="project-show__onboarding-header-body">
               Start coding with Hackatime running. Once you have 15 minutes, <%= link_to "edit your project", project_path(@project, editing: true), class: "project-show__onboarding-header-link", data: { turbo_frame: "project_hero" } %> to link your Hackatime project, then write your first devlog!
             </p>
-          <% end %>
           <% end %>
         </header>
 
@@ -801,10 +987,14 @@
             Read on how to start your hardware project!<%= inline_svg_tag "icons/right-arrow.svg", class: "action-btn__icon action-btn__icon--trailing", aria: { hidden: true } %>
           <% end %>
         <% end %>
+      </section>
+    <% end %>
 
-        <% if Flipper.enabled?(:lookout, current_user) %>
-          <%= render "projects/track_time_card", project: @project, hackatime_linked: @hackatime_linked %>
-        <% end %>
+    <%# Pinned above the feed rather than sorted into it: nothing else on the
+        project can move until the builder answers it. %>
+    <% if @queue_mismatch_review %>
+      <section class="project-show__feed" aria-label="Question from a reviewer">
+        <%= render "projects/queue_mismatch_card", review: @queue_mismatch_review, project: @project %>
       </section>
     <% end %>
 
@@ -814,7 +1004,20 @@
         <% ship_index = 0 %>
         <% @timeline_entries.each do |entry| %>
           <% if entry.is_a?(Certification::Ship) %>
-            <%= render "projects/ship_decision_card", decision: entry %>
+            <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
+            <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project,
+                       recert_modal_id: recert_id, link_blocker: recert_link_blocker,
+                       visible_blocker: recert_visible_blocker %>
+          <% elsif entry.is_a?(Certification::FundingRequest) %>
+            <%# The resubmit button reuses the funding modal, which only renders
+                while the project is still in the design stage. It belongs on the
+                latest review only - older returned reviews are history the
+                builder has already moved past. %>
+            <% resubmit_available = Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+            <% resubmit_id = (resubmit_available && entry == @project.latest_funding_request) ? "funding-request-modal-#{@project.id}" : nil %>
+            <%= render "projects/funding_request_card",
+                       funding_request: entry, project: @project, owner: owner,
+                       resubmit_modal_id: resubmit_id %>
           <% elsif entry.postable_type == "Post::ShipEvent" %>
             <% ship_index += 1 %>
             <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes? && ship_index == 1) ? "recert-modal-#{@project.id}" : nil %>
@@ -830,65 +1033,26 @@
                        ship_number: ship_count - ship_index + 1,
                        recert_modal_id: recert_id,
                        is_member: is_member,
-                       payout_review: entry.postable == @votes_for_payout&.dig(:ship_event) ? @votes_for_payout : nil,
+                       payout_review: @payout_reviews[entry.postable_id],
                        mission_resubmit_modal_id: mission_modal_id %>
           <% else %>
-            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark) %>
+            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
           <% end %>
         <% end %>
       </section>
     <% end %>
 
-    <% if @votes_for_payout&.dig(:review_deadline) %>
-      <%= render "projects/payout_review_modal", payout_review: @votes_for_payout %>
-    <% end %>
-
-    <% if current_user.present? && (!is_member || Rails.env.development?) %>
-      <%= render layout: "shared/modal", locals: { id: "project-report-modal", title: "Report project?" } do %>
-        <h2>We want good, high quality projects in Stardance. If you believe this project violates our community guidelines, please let us know why:</h2>
-
-        <%= form_with model: Project::Report.new, url: project_reports_path(@project), local: true do |f| %>
-          <div class="form-field">
-            <div class="form-checkbox">
-              <%= f.radio_button :reason, "low_effort", id: "project_report_reason_low_effort", required: true %>
-              <%= f.label :reason, "Low-effort project", for: "project_report_reason_low_effort" %>
-            </div>
-            <div class="form-checkbox">
-              <%= f.radio_button :reason, "undeclared_ai", id: "project_report_reason_undeclared_ai" %>
-              <%= f.label :reason, "Uses AI but it's undeclared", for: "project_report_reason_undeclared_ai" %>
-            </div>
-            <div class="form-checkbox">
-              <%= f.radio_button :reason, "demo_broken", id: "project_report_reason_demo_broken" %>
-              <%= f.label :reason, "Demo does not work", for: "project_report_reason_demo_broken" %>
-            </div>
-            <div class="form-checkbox">
-              <%= f.radio_button :reason, "other", id: "project_report_reason_other" %>
-              <%= f.label :reason, "Other", for: "project_report_reason_other" %>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <%= f.text_area :details,
-                  rows: 4,
-                  minlength: 20,
-                  required: true,
-                  class: "form-field",
-                  placeholder: "Share a short explanation (20+ characters)." %>
-            <small>Why are you reporting this project? (20+ characters)</small>
-          </div>
-
-          <div class="modal__actions">
-            <%= f.submit "Submit", class: "modal__actions-close" %>
-            <button type="button" class="modal__actions-close" onclick="document.getElementById('project-report-modal').close()">Cancel</button>
-          </div>
-        <% end %>
+    <% @payout_reviews.each_value do |payout_review| %>
+      <% if payout_review[:review_deadline] %>
+        <%= render "projects/payout_review_modal", payout_review: payout_review %>
       <% end %>
     <% end %>
 
   </div>
 
   <% if (is_member || current_user&.can_review?) && @project.needs_changes? %>
-    <%= render "projects/recert_modal", project: @project, is_member: is_member %>
+    <%= render "projects/recert_modal", project: @project, is_member: is_member,
+               link_blocker: recert_link_blocker, visible_blocker: recert_visible_blocker %>
   <% end %>
 
   <% if (is_member || current_user&.admin?) && @rejected_mission_sub %>
@@ -912,7 +1076,7 @@
 
   <% if is_member && @hackatime_linked && @project.has_devlog_since_last_ship? %>
     <%
-      ship_warn_seconds = [ @project.hackatime_keys.sum { |k| @hackatime_times[k].to_i } - @project.duration_seconds, 0 ].max
+      ship_warn_seconds = @unposted_seconds.to_i
       ship_warn_hours = ship_warn_seconds / 3600
       ship_warn_minutes = (ship_warn_seconds % 3600) / 60
       ship_warn_time = ship_warn_hours > 0 ? "#{ship_warn_hours}h #{ship_warn_minutes}m" : "#{ship_warn_minutes}m"
@@ -1016,7 +1180,7 @@
                 <%= image_tag current_user.avatar, alt: current_user.display_name, class: "project-show__avatar project-show__avatar--lg" %>
               </div>
 
-              <div class="ship-modal__preview-content">
+              <div class="ship-modal__preview-content" data-controller="textarea-hint">
                 <p class="project-show__latest-ship-heading">
                   <span class="project-show__latest-ship-author">@<%= current_user.display_name %></span>
                   <span class="project-show__latest-ship-on">on</span>
@@ -1033,7 +1197,8 @@
                       aria: { label: "Ship update" },
                       data: { composer_target: "textarea",
                               controller: "mention-autocomplete",
-                              action: "input->composer#autogrow input->composer#refreshSubmit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
+                              action: "paste->textarea-hint#paste input->composer#autogrow input->composer#refreshSubmit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
+                <p class="textarea-hint" data-textarea-hint-target="hint">Please write this yourself, humans read it!</p>
 
                 <div class="feed-composer__attach-wrap feed-composer__attach-wrap--expanded" data-composer-target="attachWrap">
                   <label class="feed-composer__attach">
@@ -1097,106 +1262,175 @@
             </button>
             <%= form.submit "Ship!", class: "ship-modal__btn ship-modal__btn--primary", data: { disable_with: "Shipping…", composer_target: "submit" } %>
           </div>
+          <%= render BukuX3StatusComponent.new(user: current_user, compact: true) %>
         </div>
       <% end %>
     </dialog>
 
-    <%# Funding request popup — design-stage hardware only. Mirrors the ship
-        post modal but collects a complexity tier + requested amount. %>
-    <% if Flipper.enabled?(:hardware_flow, current_user) && @project.design_stage? %>
-      <dialog id="funding-request-modal-<%= @project.id %>"
-              class="ship-modal ship-modal--post funding-modal--outpost"
-              data-controller="modal"
-              aria-label="Request project funding">
-        <%= form_with url: project_funding_request_path(@project),
-                      method: :post,
-                      data: { turbo: false },
-                      html: { class: "ship-modal__form", data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json, tier_discounts: Certification::FundingRequest.tier_discount_summary.to_json } } do |form| %>
-          <div class="ship-modal__panel funding-modal__panel">
-            <header class="funding-modal__header">
-              <%= image_tag "outpost.png", alt: "Outpost", class: "funding-modal__logo" %>
-              <p class="funding-modal__tagline">The greatest hardware adventure yet. Get your build funded.</p>
-            </header>
+  <% end %>
 
-            <fieldset class="funding-modal__tiers">
-              <legend>Pick your complexity tier</legend>
-              <% Certification::FundingRequest::TIERS.each do |tier_id, t| %>
-                <label class="funding-tier">
-                  <%= form.radio_button :complexity_tier, tier_id, required: true, class: "funding-tier__input", onchange: "fundingValidate(this.form)" %>
-                  <span class="funding-tier__badge funding-tier__badge--<%= t[:code].downcase %>"><%= t[:code] %></span>
-                  <span class="funding-tier__info">
-                    <span class="funding-tier__name"><%= t[:name] %></span>
-                    <span class="funding-tier__examples"><%= t[:examples] %></span>
-                  </span>
-                  <span class="funding-tier__max">up to $<%= t[:max_cents] / 100 %></span>
-                </label>
-              <% end %>
-            </fieldset>
+  <%# Funding request popup — design-stage hardware only. Mirrors the ship
+      post modal but collects a complexity tier + requested amount. %>
+  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? && !@project.permanently_rejected? %>
+    <dialog id="funding-request-modal-<%= @project.id %>"
+            class="ship-modal ship-modal--post funding-modal"
+            data-controller="modal"
+            aria-label="Request project funding">
+      <% returned_design = @project.latest_funding_request %>
+      <% design_gated = action_items_enabled? && returned_design&.returned? && returned_design.gates_resubmission? %>
+      <% if @project.awards_design_kit? %>
+      <%= form_with url: project_funding_request_path(@project),
+                    method: :post,
+                    data: { turbo: false,
+                            controller: ("action-items" if design_gated),
+                            action: ("submit->action-items#guard" if design_gated) }.compact,
+                    html: { class: "ship-modal__form" } do |form| %>
+        <div class="ship-modal__panel funding-modal__panel">
+          <header class="funding-modal__header">
+            <h2 class="funding-modal__title">Submit your design</h2>
+            <p class="funding-modal__tagline">Get your design approved and we'll ship you the kit to build a <%= @project.current_mission.name %>.</p>
+          </header>
 
+          <p class="funding-modal__note">
+            Once a reviewer approves your design, your kit becomes available to redeem and your project moves to the build stage.
+          </p>
+
+          <label class="funding-modal__reviewer-note">
+            <span>Note to reviewer <span class="funding-modal__reviewer-note-optional">(optional)</span></span>
+            <%= form.text_area :submitter_note, rows: 3, maxlength: 10_000,
+                  class: "funding-modal__reviewer-note-input",
+                  placeholder: "Anything you'd like the reviewer to know about your design?" %>
+          </label>
+
+          <% if design_gated %>
+            <%= render "projects/action_items", review: returned_design %>
+          <% end %>
+
+          <div class="ship-modal__actions">
+            <button type="button"
+                    class="ship-modal__btn ship-modal__btn--secondary"
+                    onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
+              Cancel
+            </button>
+            <%= form.submit "Submit design", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit",
+                  data: { disable_with: "Submitting…", action_items_target: ("submit" if design_gated) } %>
+          </div>
+        </div>
+      <% end %>
+      <% else %>
+      <%= form_with url: project_funding_request_path(@project),
+                    method: :post,
+                    data: { turbo: false },
+                    html: { class: "ship-modal__form",
+                            onsubmit: "return fundingSubmit(this)",
+                            data: { tier_maxes: Certification::FundingRequest::TIER_MAX_DOLLARS.to_json,
+                                    controller: ("action-items" if design_gated),
+                                    action: ("submit->action-items#guard" if design_gated) }.compact } do |form| %>
+        <div class="ship-modal__panel funding-modal__panel">
+          <header class="funding-modal__header">
+            <h2 class="funding-modal__title">Get your build funded</h2>
+            <p class="funding-modal__tagline">Tell us what you're making and what it'll cost.</p>
+          </header>
+
+          <fieldset class="funding-modal__tiers">
+            <legend>Pick your complexity tier</legend>
+            <% Certification::FundingRequest::TIERS.each do |tier_id, t| %>
+              <label class="funding-tier funding-tier--<%= t[:code].downcase %>">
+                <%= form.radio_button :complexity_tier, tier_id, required: true, class: "funding-tier__input", onchange: "fundingValidate(this.form)" %>
+                <span class="funding-tier__badge"><%= t[:code] %></span>
+                <span class="funding-tier__info">
+                  <span class="funding-tier__name"><%= t[:name] %></span>
+                  <span class="funding-tier__examples"><%= t[:examples] %></span>
+                </span>
+                <span class="funding-tier__max">up to $<%= t[:max_cents] / 100 %></span>
+              </label>
+            <% end %>
+          </fieldset>
+
+          <div class="funding-modal__request-row">
             <label class="funding-modal__amount">
               <span>Amount requested ($)</span>
               <%= form.number_field :requested_amount, min: 1, step: 1, required: true, class: "funding-modal__amount-input", oninput: "fundingValidate(this.form)" %>
             </label>
-            <p class="funding-request__error" role="alert" hidden></p>
-            <p class="funding-modal__discount" role="status" hidden></p>
 
-            <p class="funding-modal__note">
-              Get your design approved to earn Stardust toward the Outpost Ticket — higher tiers cover more of it.
-              <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
-            </p>
-
-            <label class="funding-modal__bom-check">
-              <input type="checkbox" required onchange="fundingValidate(this.form)">
-              <span>I have a <code>BOM.csv</code> in my repository</span>
-            </label>
-
-            <div class="ship-modal__actions">
-              <button type="button"
-                      class="ship-modal__btn ship-modal__btn--secondary"
-                      onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
-                Cancel
-              </button>
-              <%= form.submit "Submit for funding", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit", data: { disable_with: "Submitting…" } %>
+            <div class="funding-modal__bom">
+              <label class="funding-modal__bom-check">
+                <input type="checkbox" onchange="fundingValidate(this.form)">
+                <span>I have read the <a href="/resources/shipping-hardware" target="_blank" rel="noopener">submission requirements</a> and made sure my project follows them! <strong class="funding-modal__bom-check-text">I understand that not following these requirements will get my project returned.</strong></span>
+              </label>
             </div>
           </div>
-        <% end %>
-      </dialog>
-      <script>
-        function fundingValidate(form) {
-          if (!form) return;
-          var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
-          var discounts = JSON.parse(form.dataset.tierDiscounts || "{}");
-          var tier = form.querySelector('[name="complexity_tier"]:checked');
-          var amountEl = form.querySelector('[name="requested_amount"]');
+          <p class="funding-request__error" role="alert" hidden></p>
+
+          <p class="funding-modal__note">
+            Get your design approved and we'll issue a grant card for the approved amount. Higher tiers fund more.
+            <%= link_to "How tiers work", guide_path("tiers"), class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
+          </p>
+
+          <label class="funding-modal__reviewer-note">
+            <span>Note to reviewer <span class="funding-modal__reviewer-note-optional">(optional)</span></span>
+            <%= form.text_area :submitter_note, rows: 3, maxlength: 10_000,
+                  class: "funding-modal__reviewer-note-input",
+                  placeholder: "Anything you'd like the reviewer to know about your design?" %>
+          </label>
+
+          <% if design_gated %>
+            <%= render "projects/action_items", review: returned_design %>
+          <% end %>
+
+          <div class="ship-modal__actions">
+            <button type="button"
+                    class="ship-modal__btn ship-modal__btn--secondary"
+                    onclick="document.getElementById('funding-request-modal-' + <%= @project.id.to_json %>).close()">
+              Cancel
+            </button>
+            <%= form.submit "Submit for funding", class: "ship-modal__btn ship-modal__btn--primary funding-modal__submit",
+                  data: { disable_with: "Submitting…", action_items_target: ("submit" if design_gated) } %>
+          </div>
+        </div>
+      <% end %>
+      <% end %>
+    </dialog>
+    <script>
+      function fundingValidate(form) {
+        if (!form) return;
+        var maxes = JSON.parse(form.dataset.tierMaxes || "{}");
+        var tier = form.querySelector('[name="complexity_tier"]:checked');
+        var amountEl = form.querySelector('[name="requested_amount"]');
+        var err = form.querySelector(".funding-request__error");
+        var submit = form.querySelector('[type="submit"]');
+        if (!amountEl || !err || !submit) return;
+        var amount = parseFloat(amountEl.value);
+        var max = tier ? maxes[tier.value] : null;
+        if (max != null) amountEl.max = max;
+
+        var over = max != null && !isNaN(amount) && amount > max;
+        err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
+        err.hidden = !over;
+
+        // Only the over-max case disables the button. A missing BOM or an
+        // unacknowledged action item leaves it clickable on purpose, so
+        // submitting can explain what's missing instead of the button going
+        // silently dead — the BOM below, the action items via the Stimulus guard.
+        submit.disabled = over;
+      }
+
+      function fundingSubmit(form) {
+        var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
+        if (bomCheck && !bomCheck.checked) {
           var err = form.querySelector(".funding-request__error");
-          var discountEl = form.querySelector(".funding-modal__discount");
-          var submit = form.querySelector('[type="submit"]');
-          if (!amountEl || !err || !submit) return;
-          var amount = parseFloat(amountEl.value);
-          var max = tier ? maxes[tier.value] : null;
-          if (max != null) amountEl.max = max;
-
-          var bomCheck = form.querySelector('.funding-modal__bom-check input[type="checkbox"]');
-          var bomMissing = bomCheck && !bomCheck.checked;
-          var over = max != null && !isNaN(amount) && amount > max;
-          err.textContent = over ? "This tier funds up to $" + max + ". Lower your request or pick a higher tier." : "";
-          err.hidden = !over;
-          submit.disabled = over || bomMissing;
-
-          if (discountEl) {
-            var d = tier ? discounts[tier.value] : null;
-            if (d) {
-              discountEl.textContent = d.pct >= 100
-                ? "Approved at " + d.code + " tier = a free Outpost Ticket (✦ " + d.sd + ", 100% off)."
-                : "Approved at " + d.code + " tier = " + d.pct + "% off the Outpost Ticket (✦ " + d.sd + ").";
-              discountEl.hidden = false;
-            } else {
-              discountEl.hidden = true;
-            }
+          if (err) {
+            err.textContent = "Confirm you have a BOM.csv in your repository before submitting.";
+            err.hidden = false;
           }
+          bomCheck.focus();
+          return false;
         }
-      </script>
-    <% end %>
+        return true;
+      }
+
+      document.querySelectorAll("form[data-tier-maxes]").forEach(fundingValidate);
+    </script>
   <% end %>
 
   <% if @is_member && @project.current_mission.nil? && !@project.shipped? %>
@@ -1207,7 +1441,7 @@
             <li class="mission-browse-modal__card">
               <div class="mission-browse-modal__card-icon">
                 <% if mission.icon.attached? %>
-                  <%= image_tag mission.icon, alt: "", class: "mission-browse-modal__card-icon-img" %>
+                  <%= image_tag mission.icon_thumb, alt: "", class: "mission-browse-modal__card-icon-img" %>
                 <% else %>
                   <span class="mission-browse-modal__card-icon-fallback" aria-hidden="true">&#10022;</span>
                 <% end %>
@@ -1254,6 +1488,18 @@
 
   <%= render DiscoverRailComponent.new %>
 
+  <dialog id="delete-project-modal" class="delete-project-modal" data-controller="modal">
+    <div class="delete-project-modal__body">
+      <h3 class="delete-project-modal__title">Delete project?</h3>
+      <p class="delete-project-modal__text">Are you sure you want to permanently delete this project? This action cannot be undone.</p>
+      <p class="delete-project-modal__warning">All devlogs, followers, and associated data will be removed.</p>
+      <div class="delete-project-modal__actions">
+        <button type="button" class="delete-project-modal__btn delete-project-modal__btn--cancel" onclick="document.getElementById('delete-project-modal').close()">Cancel</button>
+        <button type="submit" form="delete-project-form" class="delete-project-modal__btn delete-project-modal__btn--delete">Yes, delete it</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="followers-modal"
           class="followers-modal"
           data-profile-modal-target="dialog"
@@ -1266,4 +1512,9 @@
       <p class="followers-modal__loading">Loading…</p>
     </div>
   </dialog>
+
+  <% if is_member && @project.hardware? && current_user && !current_user.has_dismissed?("hardware_update") %>
+    <%= render "projects/hardware_update_modal", project: @project %>
+  <% end %>
+
 </div>

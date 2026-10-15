@@ -1,0 +1,9 @@
+<%= form_with model: certificate, url: certificate_path, class: "certificate-page__request-form" do |form| %>
+  <%= form.text_field :name,
+        value: current_user.full_name,
+        maxlength: Certificate::NAME_MAX_LENGTH,
+        placeholder: "Name on the certificate",
+        "aria-label": "Name on the certificate",
+        class: "certificate-page__name-input" %>
+  <%= render ActionButtonComponent.new(text: button, size: :small) %>
+<% end %>

@@ -1,6 +1,6 @@
 class HomeController < ApplicationController
   include OnboardingResumable
-  discover_rail_widgets :sticker_promo, :streak, :raffle, :outpost, :daily_roll, :upcoming_events
+  discover_rail_widgets :sticker_promo, :streak, :terra_portal, :forge_promo, :mipmap_promo, :feedback_promo, :upcoming_events, :referral, :daily_roll
 
   before_action :resume_or_expire_onboarding!, only: :index, if: -> { current_user.present? }
 
@@ -11,13 +11,18 @@ class HomeController < ApplicationController
     @body_class += " home-welcoming" if @welcoming
 
     load_composer if current_user.present?
+    if policy(BukuX3::Event).leaderboard?
+      leaderboard = BukuX3::Leaderboard.new(BukuX3::Event.current)
+      @buku_teams = leaderboard.teams
+      @buku_own = leaderboard.own(current_user, @buku_teams)
+    end
   end
 
   private
 
   def load_composer
     @devlog = Post::Devlog.new
-    @composer_projects = current_user.projects.order(updated_at: :desc)
+    @composer_projects = current_user.projects.includes(:hackatime_projects).order(updated_at: :desc)
     @selected_project = selected_composer_project
   end
 

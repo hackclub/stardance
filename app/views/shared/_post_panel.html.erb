@@ -1,0 +1,20 @@
+<dialog class="post-panel" aria-label="Post"
+        data-controller="post-panel"
+        data-post-panel-target="dialog"
+        data-action="card-link:navigate@window->post-panel#open pointerdown->post-panel#trackPress click->post-panel#backdropClick">
+  <div class="post-panel__content">
+    <header class="post-panel__header">
+      <button type="button" class="post-panel__close" data-action="post-panel#close" aria-label="Close">&times;</button>
+    </header>
+    <div class="post-panel__body">
+      <div class="devlog-detail__post" data-post-panel-target="cardSlot"></div>
+      <%= turbo_frame_tag "post-panel-comments", target: "_top",
+            data: { post_panel_target: "frame",
+                    action: "turbo:before-frame-render->post-panel#clearPlaceholder turbo:frame-load->post-panel#frameLoaded turbo:submit-end->post-panel#frameSubmitted" } do %>
+        <div class="post-panel__loading">
+          <span class="feed-loading__spinner" aria-hidden="true"></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</dialog>

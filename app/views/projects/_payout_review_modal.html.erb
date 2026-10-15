@@ -1,37 +1,45 @@
-<dialog id="payout-review-modal"
+<% modal_id = "payout-review-modal-#{payout_review[:ship_event].id}" %>
+<dialog id="<%= modal_id %>"
        class="payout-review-modal"
-       aria-labelledby="payout-review-title"
+       aria-labelledby="<%= modal_id %>-title"
        data-controller="modal">
   <div class="payout-review-modal__panel">
     <header class="payout-review-modal__header">
       <div>
         <p class="payout-review-modal__eyebrow">Payout review</p>
-        <h2 id="payout-review-title" class="payout-review-modal__title">
+        <h2 id="<%= modal_id %>-title" class="payout-review-modal__title">
           <%= payout_review[:estimated_payout].to_i %> stardust
         </h2>
         <p class="payout-review-modal__deadline">
-          Automatic payout in
-          <strong data-controller="countdown"
-                  data-countdown-reset-at-value="<%= payout_review[:review_deadline].iso8601 %>"
-                  data-countdown-expired-text-value="processing">calculating…</strong>
-          · <%= l(payout_review[:review_deadline], format: :short) %>
+          <% if payout_review[:paid_out] %>
+            Paid out
+          <% else %>
+            Automatic payout in
+            <strong data-controller="countdown"
+                    data-countdown-reset-at-value="<%= payout_review[:review_deadline].iso8601 %>"
+                    data-countdown-expired-text-value="processing">calculating…</strong>
+            · <%= l(payout_review[:review_deadline], format: :short) %>
+          <% end %>
         </p>
       </div>
       <button type="button"
               class="payout-review-modal__close"
-              onclick="document.getElementById('payout-review-modal').close()"
+              onclick="document.getElementById(<%= modal_id.to_json %>).close()"
               aria-label="Close payout review">×</button>
     </header>
 
     <div class="payout-review-modal__notice">
-      <p>Happy with the ratings? Accept the locked payout immediately. This cannot be undone.</p>
-      <% if payout_review[:review_open] %>
+      <% if payout_review[:paid_out] %>
+        <p>Your payout is complete. The anonymous rating reasons remain available for your reference.</p>
+      <% elsif payout_review[:review_open] %>
+        <p>Happy with the ratings? Accept the locked payout immediately. This cannot be undone.</p>
         <%= button_to "Accept payout now",
                       ship_event_payout_acceptance_path(payout_review[:ship_event]),
                       method: :post,
                       class: "action-btn action-btn--small action-btn--primary",
                       form: { data: { turbo_confirm: "Accept #{payout_review[:estimated_payout].to_i} stardust now? You will no longer be able to flag these ratings." } } %>
       <% else %>
+        <p>Your payout review window has closed.</p>
         <span class="payout-review-modal__processing">Automatic payout is processing.</span>
       <% end %>
     </div>
@@ -41,9 +49,11 @@
          aria-label="Anonymous rating reasons">
 
       <div class="payout-review-modal__reasons-header">
-        <p class="payout-review-modal__flag-cost">
-          Flag only inaccurate or unfair ratings. A rejected flag costs <%= Vote::FLAG_COST %> stardust.
-        </p>
+        <% if payout_review[:review_open] %>
+          <p class="payout-review-modal__flag-cost">
+            Flag only inaccurate or unfair ratings. A rejected flag costs <%= Vote::FLAG_COST %> stardust.
+          </p>
+        <% end %>
         <div class="payout-review-modal__reasons-nav">
           <button type="button"
                   class="payout-review-modal__nav-btn"

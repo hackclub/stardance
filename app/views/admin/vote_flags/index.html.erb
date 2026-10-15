@@ -1,59 +1,188 @@
 <% content_for :title, "Vote flags" %>
 
-<h1 align="center">Vote flags</h1>
+<div class="vote-flags">
+  <header class="vote-flags__header">
+    <div>
+      <h1 class="vote-flags__title">Vote flags</h1>
+      <p class="vote-flags__subtitle">Flagged votes awaiting review, plus the history of past decisions.</p>
+    </div>
 
-<div>
+    <nav class="vote-flags__tabs">
+      <%= link_to admin_vote_flags_path, class: "vote-flags__tab #{'vote-flags__tab--active' if @status == 'pending'}" do %>
+        Pending <span class="vote-flags__tab-count"><%= @pending_count %></span>
+      <% end %>
+      <%= link_to admin_vote_flags_path(status: "reviewed"), class: "vote-flags__tab #{'vote-flags__tab--active' if @status == 'reviewed'}" do %>
+        Reviewed <span class="vote-flags__tab-count"><%= @accepted_count + @rejected_count %></span>
+      <% end %>
+    </nav>
+  </header>
+
+  <div class="vote-flags__stats">
+    <div class="vote-flags__stat">
+      <span class="vote-flags__stat-label">Pending review</span>
+      <span class="vote-flags__stat-value vote-flags__stat-value--pending"><%= @pending_count %></span>
+    </div>
+    <div class="vote-flags__stat">
+      <span class="vote-flags__stat-label">Flags upheld (vote removed)</span>
+      <span class="vote-flags__stat-value vote-flags__stat-value--accepted"><%= @accepted_count %></span>
+    </div>
+    <div class="vote-flags__stat">
+      <span class="vote-flags__stat-label">Flags dismissed (vote kept)</span>
+      <span class="vote-flags__stat-value vote-flags__stat-value--rejected"><%= @rejected_count %></span>
+    </div>
+  </div>
+
   <% if @flags.any? %>
-    <table>
-      <thead>
-        <tr>
-          <th>Flagged</th>
-          <th>Project</th>
-          <th>Flagged by</th>
-          <th>Voter</th>
-          <th>Reason</th>
-          <th>Review</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @flags.each do |flag| %>
-          <% vote = flag.vote %>
-          <tr>
-            <td><%= time_ago_in_words(flag.created_at) %> ago</td>
-            <td>
+    <div class="vote-flags__list">
+      <% @flags.each do |flag| %>
+        <% vote = flag.vote %>
+        <% resolution = @resolutions[flag.vote_id] %>
+        <article class="vote-flags__card">
+          <div class="vote-flags__card-top">
+            <div class="vote-flags__context">
               <% if vote&.project %>
-                <%= link_to truncate(vote.project.title, length: 40), admin_project_path(vote.project) %>
+                <%= link_to truncate(vote.project.title, length: 60), admin_project_path(vote.project), class: "vote-flags__project" %>
               <% else %>
-                Unknown
+                <span class="vote-flags__project">Unknown project</span>
               <% end %>
-            </td>
-            <td><%= flag.user&.display_name || "Unknown" %></td>
-            <td><%= vote&.user&.display_name || "Unknown" %></td>
-            <td><%= simple_format(vote&.reason) %></td>
-            <td>
-              <%= button_to "Discard vote",
-                            admin_vote_flag_approval_path(flag),
-                            method: :post,
-                            form: { data: { turbo_confirm: "Mark this flag correct and discard the vote?" } } %>
-              <%= button_to "Reject flag",
-                            admin_vote_flag_rejection_path(flag),
-                            method: :post,
-                            form: { data: { turbo_confirm: "Reject this flag and charge #{Vote::FLAG_COST} stardust?" } } %>
-              <% if vote&.ship_event %>
-                <%= link_to "Payout review", admin_payout_review_path(vote.ship_event) %>
+              <span class="vote-flags__flagged-at">flagged <%= time_ago_in_words(flag.created_at) %> ago</span>
+            </div>
+
+            <% if resolution %>
+              <span class="vote-flags__outcome vote-flags__outcome--<%= resolution.event_type == 'vote_flag_accepted' ? 'accepted' : 'rejected' %>">
+                <%= resolution.event_type == "vote_flag_accepted" ? "✓ Flag upheld (vote removed)" : "✗ Flag dismissed (vote kept)" %>
+              </span>
+            <% else %>
+              <span class="vote-flags__outcome vote-flags__outcome--pending">Pending review</span>
+            <% end %>
+          </div>
+
+          <dl class="vote-flags__people">
+            <div class="vote-flags__person">
+              <dt>Flagged by</dt>
+              <dd>
+                <% if flag.user %>
+                  <%= link_to flag.user.display_name, admin_user_path(flag.user) %>
+                <% else %>
+                  Unknown
+                <% end %>
+              </dd>
+            </div>
+            <div class="vote-flags__person">
+              <dt>Voter</dt>
+              <dd>
+                <% if vote&.user %>
+                  <% if policy(vote.user).view_votes? %>
+                    <%= link_to vote.user.display_name, admin_user_votes_path(vote.user) %>
+                  <% else %>
+                    <%= vote.user.display_name %>
+                  <% end %>
+                <% else %>
+                  Unknown
+                <% end %>
+              </dd>
+            </div>
+            <% if resolution %>
+              <div class="vote-flags__person">
+                <dt>Reviewed by</dt>
+                <dd>
+                  <% if resolution.user %>
+                    <%= link_to resolution.user.display_name, admin_user_path(resolution.user) %>
+                  <% else %>
+                    Unknown
+                  <% end %>
+                  <span class="vote-flags__muted"><%= time_ago_in_words(resolution.created_at) %> ago</span>
+                </dd>
+              </div>
+            <% end %>
+          </dl>
+
+          <% if vote %>
+            <div class="vote-flags__metrics">
+              <% Vote::SCORE_COLUMNS_BY_CATEGORY.each do |category, column| %>
+                <% score = vote.public_send(column) %>
+                <span class="vote-flags__metric">
+                  <span class="vote-flags__metric-label"><%= category.to_s.titleize %></span>
+                  <span class="vote-flags__metric-value <%= "vote-flags__metric-value--#{score_tone(score)}" if score %>">
+                    <%= score || "—" %>
+                  </span>
+                </span>
               <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+              <span class="vote-flags__metric">
+                <span class="vote-flags__metric-label">Time spent</span>
+                <span class="vote-flags__metric-value <%= 'vote-flags__metric-value--low' if vote.time_taken_to_vote_in_seconds && vote.time_taken_to_vote_in_seconds < 60 %>">
+                  <%= vote_duration_in_words(vote.time_taken_to_vote_in_seconds) %>
+                </span>
+              </span>
+              <span class="vote-flags__metric">
+                <span class="vote-flags__metric-label">Demo</span>
+                <span class="vote-flags__metric-value <%= vote.demo_opened? ? 'vote-flags__metric-value--high' : 'vote-flags__metric-value--low' %>">
+                  <%= vote.demo_opened? ? "Opened" : "Not opened" %>
+                </span>
+              </span>
+              <span class="vote-flags__metric">
+                <span class="vote-flags__metric-label">Repo</span>
+                <span class="vote-flags__metric-value <%= vote.repo_opened? ? 'vote-flags__metric-value--high' : 'vote-flags__metric-value--low' %>">
+                  <%= vote.repo_opened? ? "Opened" : "Not opened" %>
+                </span>
+              </span>
+            </div>
+
+            <% if vote.reason.present? %>
+              <blockquote class="vote-flags__reason"><%= vote.reason %></blockquote>
+            <% end %>
+          <% end %>
+
+          <div class="vote-flags__actions">
+            <% unless resolution %>
+              <div class="vote-flags__action-group" data-controller="modal">
+                <button type="button" class="btn-danger" data-action="click->modal#open">Uphold flag</button>
+                <p class="vote-flags__action-hint">The flag is valid. Removes this vote from the payout pool.</p>
+
+                <dialog class="modal" data-modal-target="dialog" aria-labelledby="uphold-flag-<%= flag.id %>-title">
+                  <h3 id="uphold-flag-<%= flag.id %>-title" class="modal__title">Uphold this flag?</h3>
+                  <p class="modal__description">
+                    The flag is valid. This vote will be removed from the payout calculation. The flagger will not be penalized.
+                  </p>
+                  <div class="modal__actions">
+                    <button type="button" class="btn-secondary" data-action="click->modal#close">Cancel</button>
+                    <%= button_to "Yes, uphold flag", admin_vote_flag_approval_path(flag), method: :post, class: "btn-danger" %>
+                  </div>
+                </dialog>
+              </div>
+
+              <div class="vote-flags__action-group" data-controller="modal">
+                <button type="button" class="btn-secondary" data-action="click->modal#open">Dismiss flag</button>
+                <p class="vote-flags__action-hint">The flag is invalid. Keeps the vote and charges the flagger <%= Vote::FLAG_COST %> stardust.</p>
+
+                <dialog class="modal" data-modal-target="dialog" aria-labelledby="dismiss-flag-<%= flag.id %>-title">
+                  <h3 id="dismiss-flag-<%= flag.id %>-title" class="modal__title">Dismiss this flag?</h3>
+                  <p class="modal__description">
+                    The flag is invalid. The vote will stay in the payout calculation, and the flagger will be charged <%= Vote::FLAG_COST %> stardust for an incorrect flag.
+                  </p>
+                  <div class="modal__actions">
+                    <button type="button" class="btn-secondary" data-action="click->modal#close">Cancel</button>
+                    <%= button_to "Yes, dismiss flag", admin_vote_flag_rejection_path(flag), method: :post, class: "btn-secondary" %>
+                  </div>
+                </dialog>
+              </div>
+            <% end %>
+            <% if vote&.ship_event %>
+              <%= link_to "Payout review", admin_payout_review_path(vote.ship_event) %>
+            <% end %>
+          </div>
+        </article>
+      <% end %>
+    </div>
 
     <% if @pagy.pages > 1 %>
-      <div>
+      <nav class="pagination">
         <%== @pagy.series_nav %>
-      </div>
+      </nav>
     <% end %>
   <% else %>
-    <p>No vote flags are pending.</p>
+    <p class="vote-flags__empty">
+      <%= @status == "reviewed" ? "No vote flags have been reviewed yet." : "No vote flags are pending." %>
+    </p>
   <% end %>
 </div>

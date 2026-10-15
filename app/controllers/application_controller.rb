@@ -7,7 +7,7 @@ class ApplicationController < ActionController::Base
   include Pagy::Method
   include Achievementable
   include Trackable
-  include OutpostEmailing
+  include ExtensionUsageTrackable
 
   before_action :store_referral_code
   before_action :remember_page
@@ -65,6 +65,9 @@ class ApplicationController < ActionController::Base
 
     if session[:user_id]
       scope = User.where(id: session[:user_id])
+                  .eager_load(:preference)
+                  .preload(:hack_club_identity, :hackatime_identity)
+
       scope = scope.eager_load(*Array(preloads)) if preloads.present?
       user = scope.to_a.first
 
@@ -96,6 +99,16 @@ class ApplicationController < ActionController::Base
     impersonating? ? real_user : current_user
   end
 
+  # Gates the hardware "action items" checklist: reviewers turning a returned
+  # review's "- " bullets into a checklist a builder must tick before resubmitting.
+  # Memoized per request since several review cards and the resubmission gate all
+  # ask, and Flipper memoization is disabled app-wide.
+  def action_items_enabled?
+    return @action_items_enabled if defined?(@action_items_enabled)
+    @action_items_enabled = Flipper.enabled?(:hardware_action_items, current_user)
+  end
+  helper_method :action_items_enabled?
+
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
   private
@@ -110,7 +123,7 @@ class ApplicationController < ActionController::Base
   # improvised a bit. a linked list sorta..
   def remember_page
     return unless request.get? && request.format.html?
-    return if request.xhr?
+    return if request.xhr? || turbo_frame_request?
 
     current_path = request.path
     pages = session[:previous_pages] ||= []
@@ -124,7 +137,7 @@ class ApplicationController < ActionController::Base
   end
 
   def client_ip_address
-    request.headers["CF-Connecting-IP"].presence || request.remote_ip
+    RackAttackClient.ip(request)
   end
 
   def prepare_boot_splash
@@ -235,8 +248,8 @@ class ApplicationController < ActionController::Base
 
   def handle_error(exception)
     @body_class = "error-page-body"
-    event_id = Sentry.last_event_id || Sentry.capture_exception(exception)&.event_id
-    @trace_id = event_id || request.request_id
+    Rails.error.report(exception, handled: false)
+    @trace_id = request.request_id
     @exception = exception if current_user&.admin?
 
     raise exception if Rails.env.development? && !params[:show_error_page]
@@ -265,6 +278,7 @@ class ApplicationController < ActionController::Base
 
   def track_active_user
     ActiveUserTracker.track(user_id: current_user&.id, session_id: session.id.to_s)
+    UserActivityDay.track_visit(current_user.id) if current_user && !impersonating?
   end
 
   def apply_dev_override_ref
@@ -290,7 +304,7 @@ class ApplicationController < ActionController::Base
       redirect_to "/auth/hack_club?origin=#{ERB::Util.url_encode(request.fullpath)}" and return
     end
 
-    identity_payload = HCAService.identity(identity.access_token)
+    identity_payload = identity.hca_identity
     if identity_payload.blank?
       flash.now[:alert] = "Couldn't reach the verification server. Try again in a moment."
       return

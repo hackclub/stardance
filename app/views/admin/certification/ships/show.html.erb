@@ -14,11 +14,18 @@
     <% end %>
 
     <div class="ship-review__momentum" role="status" aria-live="polite">
-      <% if @reviewed_today.zero? %>
-        <span class="ship-review__momentum-label">First review of the day. Let's go. Next multiplier: <strong><%= @next_multiplier %>x</strong> (Estimated rank: <%= @next_rank.ordinalize %>)</span>
+      <% if @reviews_today.zero? %>
+        <span class="ship-review__momentum-label">First review of the day. Let's go! Complete <strong>5</strong> to unlock the <strong>1.25x</strong> multiplier.</span>
       <% else %>
-        <span class="ship-review__momentum-count"><%= @reviewed_today %></span>
-        <span class="ship-review__momentum-label">reviewed today. Keep the momentum going. Next multiplier: <strong><%= @next_multiplier %>x</strong> (Estimated rank: <%= @next_rank.ordinalize %>)</span>
+        <span class="ship-review__momentum-count"><%= @reviews_today %></span>
+        <span class="ship-review__momentum-label">
+          reviewed today. Current multiplier: <strong><%= @current_multiplier %>x</strong>
+          <% if @next_milestone %>
+            · <%= @next_milestone[:reviews_needed] %> more to <strong><%= @next_milestone[:multiplier] %>x</strong>
+          <% else %>
+            · Max multiplier reached!
+          <% end %>
+        </span>
       <% end %>
     </div>
 
@@ -37,6 +44,14 @@
           <dl class="ship-review__meta">
             <dt>Submitter</dt>
             <dd><%= @owner&.display_name || "—" %></dd>
+            <dt>Slack</dt>
+            <dd>
+              <% if @owner&.slack_id.present? %>
+                <%= link_to "DM on Slack ↗", "https://hackclub.enterprise.slack.com/archives/#{@owner.slack_id}", target: "_blank", rel: "noopener" %>
+              <% else %>
+                —
+              <% end %>
+            </dd>
             <dt>Submitted</dt>
             <dd><%= time_ago_in_words(@ship.project.shipped_at || @ship.created_at) %> ago</dd>
             <% if @ship.reviewer %>
@@ -103,6 +118,33 @@
       </section>
 
       <aside class="ship-review__sidebar">
+        <% if policy(@ship).set_bonus_stardust? %>
+          <div class="ship-review__panel bonus-stardust">
+            <h2 class="ship-review__panel-title">Bonus Stardust</h2>
+            <% if @ship.bonus_stardust.present? %>
+              <p class="bonus-stardust__current">
+                Currently: <strong>+<%= @ship.bonus_stardust %></strong> bonus stardust
+              </p>
+            <% end %>
+            <%= form_with url: set_bonus_stardust_admin_certification_ship_path(@ship), method: :patch, class: "bonus-stardust__form" do %>
+              <div class="bonus-stardust__field">
+                <%= number_field_tag :bonus_stardust, @ship.bonus_stardust,
+                      step: 0.25, min: 0, max: 100, placeholder: "0.0",
+                      autocomplete: "off",
+                      class: "bonus-stardust__input",
+                      id: "bonus-stardust-input" %>
+                <%= submit_tag "Set Bonus", class: "action-btn action-btn--small action-btn--primary" %>
+              </div>
+            <% end %>
+            <% if @ship.stardust_earned.present? %>
+              <div class="bonus-stardust__breakdown">
+                <span class="bonus-stardust__breakdown-label">Total earned:</span>
+                <span class="bonus-stardust__breakdown-value"><%= @ship.stardust_earned %> stardust</span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
         <div class="ship-review__panel"
              data-controller="certification--ships--fraud-report"
              data-certification--ships--fraud-report-ship-id-value="<%= @ship.id %>">
@@ -213,11 +255,10 @@
                 <p><%= @ship.feedback %></p>
               </div>
             <% end %>
-            <% if @ship.verdict_video.attached? %>
+            <% if (verdict_video_src = certification_verdict_video_src(@ship)) %>
               <div class="ship-review__verdict-video">
                 <h3>Walkthrough Video</h3>
-                <video controls playsinline class="ship-review__video-player">
-                  <source src="<%= url_for(@ship.verdict_video) %>" type="<%= @ship.verdict_video.content_type %>">
+                <video controls playsinline class="ship-review__video-player" src="<%= verdict_video_src %>">
                   Your browser does not support the video tag.
                 </video>
               </div>

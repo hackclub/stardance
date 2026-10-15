@@ -1,0 +1,16 @@
+<%# Rendered for the post panel's turbo frame. target: "_top" so links inside
+    (commenter profiles, sign-in) do full navigations instead of navigating the
+    frame; form submissions still resolve in place via turbo streams. %>
+<%= turbo_frame_tag "post-panel-comments", target: "_top" do %>
+  <div class="devlog-detail__post">
+    <%= render Posts::CardComponent.new(
+          post: panel_post,
+          current_user: current_user,
+          show_comments: false,
+          show_actions: current_user.present?,
+          track_engagement: false,
+          media_variant: media_variant
+        ) %>
+  </div>
+  <%= render "projects/devlogs/comments_section" %>
+<% end %>

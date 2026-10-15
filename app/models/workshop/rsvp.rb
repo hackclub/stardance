@@ -1,0 +1,37 @@
+# == Schema Information
+#
+# Table name: workshop_rsvps
+#
+#  id          :bigint           not null, primary key
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  user_id     :bigint           not null
+#  workshop_id :bigint           not null
+#
+# Indexes
+#
+#  index_workshop_rsvps_on_user_id                  (user_id)
+#  index_workshop_rsvps_on_workshop_id_and_user_id  (workshop_id,user_id) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#  fk_rails_...  (workshop_id => workshops.id)
+#
+class Workshop::Rsvp < ApplicationRecord
+  self.table_name = "workshop_rsvps"
+
+  belongs_to :workshop
+  belongs_to :user
+
+  after_create_commit :sync_to_airtable
+
+  # No uniqueness validation: create_or_find_by! needs the DB index's raw
+  # RecordNotUnique, not a validation error.
+
+  private
+
+    def sync_to_airtable
+      Airtable::WorkshopRsvpSyncJob.perform_later(user_id, workshop_id)
+    end
+end

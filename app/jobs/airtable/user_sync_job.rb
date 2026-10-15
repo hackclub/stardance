@@ -22,7 +22,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
       "last_name" => user.last_name,
       "email" => user.email,
       "slack_id" => user.slack_id,
-      "avatar_url" => "https://cachet.dunkirk.sh/users/#{user.slack_id}/r",
+      "avatar_url" => "https://cachet.hackclub.com/users/#{user.slack_id}/r",
       "has_commented" => user.comments.exists?,
       "has_some_role_of_access" => user.roles.any?,
       "hours" => user.all_time_coding_seconds&.fdiv(3600),
@@ -35,7 +35,10 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
       "synced_at" => Time.now,
       "is_banned" => user.banned,
       "star_id" => user.id.to_s,
-      "ref" => user.ref
+      "ref" => user.ref,
+      # Comma-separated promo week numbers (e.g. "1,3"), blank for users who
+      # earned none, so the Loops property clears rather than going stale.
+      "Loops - stardanceWeeklyStickerEmail" => user.free_sticker_weeks.join(",")
     }
 
     if address.present?
@@ -49,6 +52,59 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
       )
     end
 
+    fields.merge!(payout_loops_fields(user))
     fields
+  end
+
+  private
+
+  # Payout notification data as Loops contact properties, synced through the
+  # `_users` Airtable table (the only sanctioned path to Loops — no direct API).
+  # `Loops - stardancePayoutIssuedAt` is the timestamp property a Loops workflow
+  # (or a filtered campaign) fires on; Stardust/Project + the Rec1-3 items are
+  # templated into the email. All of these `Loops - stardancePayout*` fields exist
+  # on the `_users` table. Recommendations come from ShopItem.affordable_for (full
+  # balance + region + wishlist + live catalog). Per-user latest payout only (one
+  # row per user); blank for users with no genuine ship-event payout; fails closed
+  # to {} so it can never break the sync.
+  def payout_loops_fields(user)
+    # Only genuine positive payouts drive the email. Ship-event ledger entries
+    # also include clawbacks (created_by "manual_ship_event_payout_reversal",
+    # negative amount); if a reversal were the user's latest entry the email
+    # would announce e.g. "-9 stardust", so scope to real payouts of amount > 0.
+    entry = user.ledger_entries
+                .where(ledgerable_type: "Post::ShipEvent", created_by: "ship_event_payout")
+                .where("amount > 0")
+                .order(created_at: :desc)
+                .first
+    return {} unless entry
+
+    fields = {
+      "Loops - stardancePayoutIssuedAt" => entry.created_at&.iso8601,
+      "Loops - stardancePayoutStardust" => entry.amount&.to_i,
+      "Loops - stardancePayoutProject"  => entry.ledgerable&.project&.title
+    }
+
+    urls     = Rails.application.routes.url_helpers
+    opts     = ActionMailer::Base.default_url_options
+    host     = opts[:host] || "stardance.hackclub.com"
+    protocol = opts[:protocol] || "https"
+
+    ShopItem.affordable_for(user, limit: 3).each_with_index do |item, i|
+      n = i + 1
+      fields["Loops - stardancePayoutRec#{n}Name"]  = item.name
+      fields["Loops - stardancePayoutRec#{n}Price"] = item.recommended_price
+      fields["Loops - stardancePayoutRec#{n}Url"]   = urls.shop_item_url(item, host:, protocol:)
+    end
+
+    fields
+  rescue => e
+    # Fail closed so a bad lookup never breaks the whole sync, but make it loud:
+    # a systemic break here (renamed Airtable field, changed route, bad data)
+    # silently drops the payout-email trigger for everyone, so surface it via
+    # AppSignal rather than a warn line no one reads.
+    Rails.logger.error("UserSyncJob payout_loops_fields failed for user #{user.id}: #{e.message}")
+    Rails.error.report(e)
+    {}
   end
 end

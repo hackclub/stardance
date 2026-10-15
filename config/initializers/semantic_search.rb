@@ -6,13 +6,7 @@ Rails.application.config.x.semantic_search.redis = {
   reconnect_attempts: 2,
   read_timeout: 1.0,
   error_handler: ->(method:, returning:, exception:) {
-    if defined?(Sentry)
-      Sentry.capture_exception(
-        exception,
-        level: "warning",
-        tags: { method: method, returning: returning }
-      )
-    end
+    Rails.error.report(exception, context: { method: method, returning: returning })
   }
 }
 Rails.application.config.x.semantic_search.openai_api_key =

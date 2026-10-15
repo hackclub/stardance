@@ -1,0 +1,11 @@
+Your hardware project was permanently rejected
+
+An administrator has completed the review of "<%= @record&.project&.title %>".
+This is a final decision, not a request for changes. This project cannot be submitted for funding or build certification again.
+
+Reason for this decision:
+<%= @record&.feedback %>
+
+Your project and devlogs remain available. This decision applies to this project; it is not an account ban.
+
+View project and decision: <%= @record&.project ? project_url(@record.project) : root_url %>

@@ -84,16 +84,10 @@
 #  fk_rails_...  (default_assigned_user_id => users.id) ON DELETE => nullify
 #  fk_rails_...  (user_id => users.id)
 #
-# The Outpost Ticket: locked behind the "presentable hardware project" flag and
-# discounted per-user by the Stardust accrued from approved funding tiers.
+# Retired: Outpost has ended and nothing sells this any more. The class stays so
+# the 17 historical orders (and the two shop_items rows) still load through STI.
+# ShopItem is single-table inheritance, so removing it would break every one of
+# those records. Prices on existing orders are frozen at purchase time, so no
+# pricing behaviour is needed here.
 class ShopItem::OutpostTicket < ShopItem
-  # Effective price = base price minus the user's accrued Outpost discount,
-  # floored at 0. The overflow past the base becomes a flight stipend
-  # (see User::Wallet#outpost_flight_stipend).
-  def price_for_user(user, region)
-    base = price_for_region(region)
-    return base unless user
-
-    [ 0, base - user.outpost_discount_stardust.to_i ].max
-  end
 end

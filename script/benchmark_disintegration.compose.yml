@@ -1,0 +1,8 @@
+# Opt-in limits for one-off benchmarks only. Do not use this override for bin/dev.
+services:
+  web:
+    cpus: "${BENCH_CPUS:-1}"
+    mem_limit: "${BENCH_MEMORY:-512m}"
+    memswap_limit: "${BENCH_MEMORY:-512m}"
+    volumes:
+      - "${BENCH_RESULTS_DIR:?Set a benchmark output directory}:/benchmark-results"

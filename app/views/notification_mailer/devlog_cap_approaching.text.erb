@@ -1,0 +1,8 @@
+<% project_title = @record&.title %>
+Time to post a devlog!
+
+You've built up <%= @notification.unposted_time_text %> on <% if project_title.present? %>"<%= project_title %>"<% else %>your project<% end %> since your last devlog.
+
+Only up to <%= Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG %> hours per devlog counts toward your payout when you ship- post a devlog now to make sure your time is counted.
+
+<% if @record %>Post a devlog: <%= project_url(@record) %><% end %>

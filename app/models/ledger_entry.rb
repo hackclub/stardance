@@ -23,6 +23,26 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class LedgerEntry < ApplicationRecord
+  CATEGORIES = {
+    "ship_payout" => { label: "Ship payouts", types: [ "Post::ShipEvent" ] },
+    "shop" => { label: "Shop purchases & refunds", types: [ "ShopOrder" ] },
+    "manual" => { label: "Manual grants & adjustments", types: [ "User" ] },
+    "achievement" => { label: "Achievements", types: [ "User::Achievement" ] },
+    "fulfillment" => { label: "Fulfillment payouts", types: [ "FulfillmentPayoutLine" ] },
+    "reviewer" => { label: "Reviewer payouts", types: [ "ReviewerPayoutRequest" ] },
+    "mission" => { label: "Mission payouts", types: [ "Mission::Submission" ] },
+    "show_and_tell" => { label: "Show & tell payouts", types: [ "ShowAndTellAttendance" ] },
+    "vote" => { label: "Vote charges", types: [ "Vote" ] },
+    "other" => { label: "Other", types: [] }
+  }.freeze
+
+  # Positive entries on these hand back stardust the user spent (shop order
+  # refunds, accepted shop suggestion fee refunds) rather than earn new
+  # stardust, so they don't count towards the all-time leaderboard.
+  REFUND_LEDGERABLE_TYPES = %w[ShopOrder ShopSuggestion].freeze
+
+  scope :earnings, -> { where("ledger_entries.amount > 0").where.not(ledgerable_type: REFUND_LEDGERABLE_TYPES) }
+
   belongs_to :ledgerable, polymorphic: true
   belongs_to :user
 
@@ -35,6 +55,13 @@ class LedgerEntry < ApplicationRecord
   after_create :create_audit_log
   after_create :notify_balance_change
   after_create :invalidate_user_balance_cache
+
+  def self.category_key_for(ledgerable_type)
+    CATEGORIES.find { |key, details| key != "other" && details[:types].include?(ledgerable_type) }&.first || "other"
+  end
+
+  def category_key = self.class.category_key_for(ledgerable_type)
+  def category_label = CATEGORIES.fetch(category_key)[:label]
 
   private
 

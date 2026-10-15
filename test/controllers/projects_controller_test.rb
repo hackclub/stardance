@@ -44,6 +44,37 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Used AI to rubber-duck CSS.", @project.ai_declaration
   end
 
+  test "linking and unlinking a Hackatime key is recorded against the owner" do
+    key = User::HackatimeProject.create!(user: @owner, name: "forest-odyssey")
+    sign_in @owner
+
+    patch project_path(@project), params: { project: { title: "Forest Odyssey", hackatime_project_ids: [ key.id ] } }
+
+    assert_equal @project.id, key.reload.project_id
+
+    patch project_path(@project), params: { project: { title: "Forest Odyssey", hackatime_project_ids: [ "" ] } }
+
+    assert_nil key.reload.project_id
+
+    changes = key.versions.where(event: "update").to_h { |version| [ version.changeset["project_id"], version.whodunnit ] }
+    assert_equal @owner.id.to_s, changes[[ nil, @project.id ]], "the link is recorded against the owner"
+    assert_equal @owner.id.to_s, changes[[ @project.id, nil ]], "the unlink is recorded against the owner"
+  end
+
+  test "deleting a draft project records each Hackatime key it released" do
+    key = User::HackatimeProject.create!(user: @owner, name: "forest-odyssey")
+    key.update_columns(project_id: @project.id)
+    sign_in @owner
+
+    delete project_path(@project)
+
+    assert_nil key.reload.project_id
+    version = PaperTrail::Version.find_by!(item_type: "User::HackatimeProject", item_id: key.id.to_s,
+                                           event: "released_by_project_deletion")
+    assert_equal [ @project.id, nil ], version.object_changes["project_id"]
+    assert_equal @owner.id.to_s, version.whodunnit
+  end
+
   test "non-owner sees read-only project shell" do
     sign_in @viewer
 
@@ -229,6 +260,40 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type='hidden'][name='project[hardware_stage]']"
   end
 
+  test "locked software project shows Software as the selected type" do
+    ship = Post::ShipEvent.new(body: "shipped", uploading_attachments: true)
+    ActiveRecord::Base.transaction do
+      ship.save!(validate: false)
+      Post.create!(project: @project, user: @owner, postable: ship)
+    end
+
+    sign_in @owner
+
+    get project_path(@project, editing: true)
+
+    assert_response :success
+    assert_select ".project-show__stage-choice-label--selected", text: "Software", count: 1
+    assert_select ".project-show__stage-choice-label--selected", text: "Hardware", count: 0
+  end
+
+  test "locked hardware project shows Hardware as the selected type" do
+    @project.update!(hardware_stage: "build")
+
+    ship = Post::ShipEvent.new(body: "shipped", uploading_attachments: true)
+    ActiveRecord::Base.transaction do
+      ship.save!(validate: false)
+      Post.create!(project: @project, user: @owner, postable: ship)
+    end
+
+    sign_in @owner
+
+    get project_path(@project, editing: true)
+
+    assert_response :success
+    assert_select ".project-show__stage-choice-label--selected", text: "Hardware", count: 1
+    assert_select ".project-show__stage-choice-label--selected", text: "Software", count: 0
+  end
+
   test "new project dialog offers the hardware project option and stage chooser" do
     sign_in @owner
 
@@ -241,6 +306,45 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='project[hardware_stage]'][value='build']"
   end
 
+  test "every create path on the new project dialog asks for a name first" do
+    sign_in @owner
+
+    get new_project_path
+
+    assert_response :success
+    # Nothing posts a placeholder title any more: each create form carries a
+    # name prompt whose required input supplies project[title].
+    assert_select "input[type='hidden'][name='project[title]']", 0
+    assert_select "dialog.project-name-prompt input[name='project[title]'][required]",
+                  minimum: 3
+    # Software + both hardware stages open a prompt rather than submitting.
+    assert_select "#name-prompt-software"
+    assert_select "#name-prompt-hardware-design"
+    assert_select "#name-prompt-hardware-build"
+    assert_select "button.project-creation__blank-btn[type='button']"
+    assert_select ".project-creation__stage-option[type='submit']", 0
+  end
+
+  test "the name prompt caps the title at the model's limit" do
+    sign_in @owner
+
+    get new_project_path
+
+    assert_response :success
+    assert_select "dialog.project-name-prompt input[name='project[title]'][maxlength=?]",
+                  Project::TITLE_MAX_LENGTH.to_s
+  end
+
+  test "creating a project uses the name the builder typed" do
+    sign_in @owner
+
+    assert_difference -> { Project.count }, 1 do
+      post projects_path, params: { project: { title: "Solar plant waterer" } }
+    end
+
+    assert_equal "Solar plant waterer", Project.order(:created_at).last.title
+  end
+
   test "hardware project record launcher is locked until a Hackatime account is linked" do
     @project.update!(hardware_stage: "build")
     sign_in @owner # has a hack_club identity but no Hackatime identity
@@ -248,9 +352,9 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     get project_path(@project)
 
     assert_response :success
-    # Shown in the actions area, but disabled and without the recorder controller.
+    # Shown in the actions area, but disabled and not yet linking out to Lapse.
     assert_select ".project-show__actions button[aria-disabled='true']", text: /Record a timelapse/
-    assert_select ".project-show__actions [data-controller~='lookout-recorder']", 0
+    assert_select ".project-show__actions a[href=?]", LapseService::APP_URL, 0
   end
 
   test "hardware project record launcher is enabled once a Hackatime account is linked" do
@@ -265,8 +369,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    assert_select ".project-show__actions [data-controller~='lookout-recorder'][data-lookout-recorder-create-url-value=?]",
-                  project_lookout_sessions_path(@project)
+    assert_select ".project-show__actions a[href=?]", LapseService::APP_URL
     assert_select ".project-show__actions button[aria-disabled='true']", text: /Record a timelapse/, count: 0
   end
 
@@ -277,5 +380,99 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "button", text: /Record a timelapse/, count: 0
+  end
+
+  test "software ship feedback renders as prose, not an action-item checklist" do
+    Flipper.enable(:week_1_release)
+    @project.update!(ship_status: "submitted")
+    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- rework the CSS")
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items", 0
+    assert_select ".ship-decision-card__feedback-body", text: /rework the CSS/
+  end
+
+  test "hardware ship feedback renders reviewer action items as a checklist" do
+    Flipper.enable(:week_1_release)
+    Flipper.enable(:hardware_action_items)
+    @project.update!(hardware_stage: "build", ship_status: "submitted")
+    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- add a BOM")
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items li", text: "add a BOM"
+  end
+
+  test "the fund-request submit explains itself instead of a dead button" do
+    @project.update!(hardware_stage: "design")
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    # Clickable by default: the BOM requirement is explained on submit, not by
+    # a silently disabled button.
+    assert_select "form.ship-modal__form[onsubmit='return fundingSubmit(this)']"
+    assert_match(/function fundingSubmit/, response.body)
+    # The acknowledgment check lives only in the Stimulus controller now.
+    assert_no_match(/fundingActionItemsPending/, response.body)
+  end
+
+  test "review shortcut shows for a project certifier and no one else" do
+    @project.update!(hardware_stage: "design")
+
+    sign_in certifier
+    get project_path(@project)
+    assert_response :success
+    assert_select "a.project-show__pill--review[href=?]",
+                  admin_certification_hardware_review_path(@project),
+                  text: "Review"
+
+    sign_in @viewer
+    get project_path(@project)
+    assert_select "a.project-show__pill--review", 0
+  end
+
+  test "an earlier ship keeps its rating reasons after the project ships again" do
+    Flipper.enable(:ship_event_payouts)
+    first_ship = create_ship_with_locked_ratings(locked_at: 3.weeks.ago, payout: 120)
+    second_ship = create_ship_with_locked_ratings(locked_at: 1.hour.ago)
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    assert_select "dialog#payout-review-modal-#{first_ship.id}"
+    assert_select "dialog#payout-review-modal-#{second_ship.id}"
+    assert_select "button", text: "View rating reasons →", count: 1
+    assert_select "button", text: "Review payout →", count: 1
+  ensure
+    Flipper.disable(:ship_event_payouts)
+  end
+
+  private
+
+  def create_ship_with_locked_ratings(locked_at:, payout: nil)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true, certification_status: "approved", hours_at_ship: 1)
+    Post.create!(project: @project, user: @owner, postable: ship_event)
+    ship_event.update_columns(payout_basis_locked_at: locked_at, payout: payout)
+    ship_event
+  end
+
+  def certifier
+    @certifier ||= begin
+      user = User.create!(
+        slack_id: "U_PROJECT_CERTIFIER",
+        display_name: "certifier",
+        email: "certifier@example.test"
+      )
+      user.grant_role!(:project_certifier)
+      user
+    end
   end
 end

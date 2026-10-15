@@ -11,10 +11,13 @@
 <% end %>
 
 <% own_profile = current_user&.id == @user.id %>
+<% admin_editing = !own_profile && current_user&.admin? %>
+<% can_edit_profile = own_profile || admin_editing %>
 <% banner_url = @user.banner.attached? ? url_for(@user.banner) : image_path("profile/default-banner.png") %>
 
 <div class="app-layout" data-controller="profile-modal">
   <div class="app-layout__main">
+    <%= render "shared/inspector", record: @user %>
     <%= turbo_frame_tag "profile_card" do %>
     <%= form_with model: @user, url: user_path(@user), method: :patch, multipart: true,
                   class: "profile",
@@ -28,7 +31,7 @@
     <div class="profile__banner<%= ' profile__banner--empty' unless @user.banner.attached? %>">
       <%= image_tag banner_url, alt: "", class: "profile__banner-image",
                     data: { "profile-edit-target": "banner" } %>
-      <% if own_profile && !@user.banner.attached? %>
+      <% if can_edit_profile && !@user.banner.attached? %>
         <label class="profile__banner-placeholder" data-profile-edit-target="placeholder">
           <span class="profile__banner-placeholder-text">Upload banner</span>
           <%= f.file_field :banner, accept: "image/*",
@@ -46,7 +49,7 @@
         </svg>
       <% end %>
 
-      <% if own_profile && @user.banner.attached? %>
+      <% if can_edit_profile && @user.banner.attached? %>
         <label class="profile__banner-upload" data-profile-edit-target="bannerLabel">
           <span class="profile__banner-upload-text">Change banner</span>
           <%= f.file_field :banner, accept: "image/*",
@@ -65,8 +68,8 @@
           </div>
 
           <div class="profile__identity-text">
-            <h1 class="profile__handle">@<%= @user.display_name %><%= render StreakBadgeComponent.new(user: @user, size: :large) %><% if own_profile %><%= render IdvBadgeComponent.new(user: @user, context: :profile) %><% end %></h1>
-            <% if own_profile %>
+            <h1 class="profile__handle">@<%= @user.display_name %><%= render StreakBadgeComponent.new(user: @user, size: :large) %><%= " ⚡" if @user.admin? %><% if own_profile %><%= render IdvBadgeComponent.new(user: @user, context: :profile) %><% end %></h1>
+            <% if can_edit_profile %>
               <div class="profile__handle-edit"
                    data-controller="username-availability"
                    data-username-availability-url-value="<%= username_availability_path %>"
@@ -102,12 +105,12 @@
       <div class="profile__bio" data-profile-edit-target="bioView">
         <% if @user.bio.present? %>
           <%= render_bio(@user.bio) %>
-        <% elsif own_profile %>
+        <% elsif can_edit_profile %>
           <span class="profile__bio-empty">Add a bio to tell folks who you are.</span>
         <% end %>
       </div>
 
-      <% if own_profile %>
+      <% if can_edit_profile %>
         <div class="profile__bio-editor"
              data-profile-edit-target="bioEdit"
              data-controller="bio-editor"
@@ -163,8 +166,14 @@
           <% end %>
         </p>
 
+        <% if admin_editing %>
+          <%= admin_tool(extra_class: "profile__admin-edit-tool") do %>
+            <p class="profile__admin-edit-notice">You're editing <strong>@<%= @user.display_name %></strong>'s profile, not your own just remember that.</p>
+          <% end %>
+        <% end %>
+
         <div class="profile__actions">
-          <% if own_profile %>
+          <% edit_controls = capture do %>
             <button type="button"
                     class="profile__action-btn"
                     data-action="click->profile-edit#cancel"
@@ -178,6 +187,10 @@
                     class="profile__action-btn profile__action-btn--primary"
                     data-profile-edit-target="saveBtn"
                     hidden>Save</button>
+          <% end %>
+
+          <% if can_edit_profile %>
+            <%= edit_controls %>
           <% elsif current_user %>
             <% if @user.slack_id.present? %>
               <%= link_to "https://hackclub.slack.com/team/#{ERB::Util.url_encode(@user.slack_id)}",
@@ -262,7 +275,7 @@
                 </div>
 
                 <% if project.description.present? %>
-                  <p class="profile-project-card__description"><%= project.description %></p>
+                  <p class="profile-project-card__description"><%= CGI.unescapeHTML(strip_tags(md(project.description, allow_images: false))).squish %></p>
                 <% end %>
 
                 <% mission = project.current_mission %>
@@ -271,7 +284,7 @@
                   <% if mission %>
                     <span class="profile-project-card__mission-badge" title="Active mission: <%= mission.name %>">
                       <% if mission.icon.attached? %>
-                        <%= image_tag mission.icon, class: "profile-project-card__mission-badge-icon", alt: "" %>
+                        <%= image_tag mission.icon_thumb, class: "profile-project-card__mission-badge-icon", alt: "" %>
                       <% end %>
                       <span class="profile-project-card__mission-badge-name"><%= mission.name %></span>
                     </span>
@@ -324,4 +337,5 @@
       <p class="followers-modal__loading">Loading…</p>
     </div>
   </dialog>
+
 </div>

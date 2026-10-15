@@ -1,13 +1,13 @@
 class Admin::ShopSuggestionPolicy < ApplicationPolicy
-  def index?
+  def accept?
     user&.admin?
   end
 
-  def destroy?
+  def reject?
     user&.admin?
   end
 
-  def update?
+  def delete?
     user&.admin?
   end
 end

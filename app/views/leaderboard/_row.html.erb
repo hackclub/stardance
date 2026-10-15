@@ -6,12 +6,12 @@
 
   <%= image_tag user.avatar,
                 alt: "",
-                class: "leaderboard-row__avatar" %>
+                class: "leaderboard-row__avatar",
+                loading: "lazy" %>
 
   <div class="leaderboard-row__identity">
     <p class="leaderboard-row__name">
-      <%= link_to user.display_name, profile_path(user.display_name),
-                  class: "leaderboard-row__name-link" %><%= render StreakBadgeComponent.new(user: user) %>
+      <%= render "shared/username_link", user: user, link_class: "leaderboard-row__name-link", text: user.display_name %>
       <% if is_current_user %>
         <span class="leaderboard-row__you-badge">YOU</span>
       <% end %>

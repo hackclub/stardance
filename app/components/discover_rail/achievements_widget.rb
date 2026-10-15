@@ -37,7 +37,7 @@ module DiscoverRail
     end
 
     def total_count
-      @total_count ||= ::Achievement.countable_for_user(profile_user).size
+      @total_count ||= ::Achievement.countable_for_user(profile_user).size + ::Mission::AchievementProxy.configured_for(profile_user).size
     end
 
     def render?

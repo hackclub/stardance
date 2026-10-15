@@ -34,8 +34,14 @@
             class: "action-btn action-btn--large action-btn--secondary" %>
         <%= link_to "Hardware queue", admin_certification_hardware_reviews_path,
             class: "action-btn action-btn--large action-btn--secondary" %>
-        <%= link_to "Start reviewing", next_admin_certification_ships_path,
-            class: "action-btn action-btn--large action-btn--primary" %>
+        <% if @internal_sw_dash_reviews_disabled %>
+          <%= link_to "Open review dashboard", ExternalDashboard::Client.base_url,
+              target: "_blank", rel: "noopener",
+              class: "action-btn action-btn--large action-btn--primary" %>
+        <% else %>
+          <%= link_to "Start reviewing", next_admin_certification_ships_path,
+              class: "action-btn action-btn--large action-btn--primary" %>
+        <% end %>
       </div>
     </header>
 
@@ -139,9 +145,6 @@
                 <li class="ship-queue__rank">
                   <span class="ship-queue__rank-pos"><%= i + 1 %></span>
                   <span class="ship-queue__rank-name"><%= row[:name] %></span>
-                  <% if period == "daily" && i < 3 %>
-                    <span class="ship-queue__rank-mult"><%= ::Certification::Ship.multiplier_for_rank(i + 1) %>x</span>
-                  <% end %>
                   <span class="ship-queue__rank-count"><%= row[:count] %></span>
                 </li>
               <% end %>
@@ -234,6 +237,9 @@
                   <div class="ship-queue__project-head">
                     <span class="ship-queue__project-title"><%= ship.project&.title || "Deleted Project" %></span>
                     <span class="ship-queue__project-id">#<%= ship.id %></span>
+                    <% if ship.bonus_stardust.present? && ship.bonus_stardust > 0 %>
+                      <span class="ship-queue__bonus-tag">✦ +<%= ship.bonus_stardust %></span>
+                    <% end %>
                   </div>
                   <div class="ship-queue__project-links">
                     <% if ship.project.demo_url.present? %>
@@ -250,7 +256,7 @@
                     <% end %>
                     <% if own_project %>
                       <span class="ship-queue__type-tag ship-queue__type-tag--own">Your Project</span>
-                    <% elsif ship.pending? %>
+                    <% elsif ship.pending? && !@internal_sw_dash_reviews_disabled %>
                       <%= render "claim_flag", ship: ship %>
                     <% end %>
                   </div>
@@ -309,6 +315,10 @@
             </div>
             <div class="ship-queue__project-meta">
               <span>#<%= ship.id %></span>
+              <% if ship.bonus_stardust.present? && ship.bonus_stardust > 0 %>
+                <span class="ship-queue__dot" aria-hidden="true">·</span>
+                <span class="ship-queue__bonus-tag">✦ +<%= ship.bonus_stardust %></span>
+              <% end %>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
               <span>by <%= owner&.display_name || "—" %></span>
               <% if ship.project.project_type.present? %>
@@ -326,7 +336,7 @@
               <div class="ship-queue__card-claim">
                 <span class="ship-queue__type-tag ship-queue__type-tag--own">Your Project</span>
               </div>
-            <% elsif ship.pending? %>
+            <% elsif ship.pending? && !@internal_sw_dash_reviews_disabled %>
               <div class="ship-queue__card-claim"><%= render "claim_flag", ship: ship %></div>
             <% end %>
           <% end %>

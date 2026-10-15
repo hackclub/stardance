@@ -1,6 +1,9 @@
 class HackatimeService
   BASE_URL = "https://hackatime.hackclub.com"
   START_DATE = "2026-05-31"
+  # Tags the heartbeat that brings a project into existence, so it is
+  # distinguishable from real activity (e.g. by Hackatime fraud tooling).
+  SEED_PLUGIN = "stardance-project-seed".freeze
 
   class << self
     def fetch_authenticated_user(access_token)
@@ -19,6 +22,30 @@ class HackatimeService
       nil
     rescue => e
       Rails.logger.error "HackatimeService authenticated/me exception: #{e.message}"
+      nil
+    end
+
+    def lookup_user_id_by_email(email)
+      return nil if email.blank?
+
+      response = admin_connection.post("user/get_user_by_email") do |req|
+        req.headers["Authorization"] = "Bearer #{ENV["HACKATIME_ADMIN_KEY"]}"
+        req.body = { email: email }.to_json
+      end
+
+      if response.success?
+        JSON.parse(response.body)["user_id"]
+      elsif response.status == 404
+        nil # email not known to Hackatime
+      else
+        Rails.logger.error "HackatimeService get_user_by_email error: #{response.status}"
+        nil
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService get_user_by_email timeout: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "HackatimeService get_user_by_email exception: #{e.message}"
       nil
     end
 
@@ -46,6 +73,47 @@ class HackatimeService
       nil
     rescue => e
       Rails.logger.error "HackatimeService exception: #{e.message}"
+      nil
+    end
+
+    # works in all circumstances, even if the user is banned (api locked) and has private data
+    def fetch_trust_level(hackatime_uid)
+      return nil if hackatime_uid.blank?
+
+      response = connection.get("users/#{hackatime_uid}/trust_factor")
+      if response.success?
+        JSON.parse(response.body)["trust_level"]
+      else
+        Rails.logger.error "HackatimeService trust_factor error: #{response.status} - #{response.body}"
+        nil
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService trust_factor timeout: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "HackatimeService trust_factor exception: #{e.message}"
+      nil
+    end
+
+    # raw trust levels from Hackatime (admin batch api, fast, max 2000 uids)
+    def fetch_trust_levels(hackatime_uids)
+      return {} if hackatime_uids.blank?
+
+      response = admin_connection.get("user/info_batch", ids: hackatime_uids.join(",")) do |req|
+        req.headers["Authorization"] = "Bearer #{ENV["HACKATIME_ADMIN_KEY"]}"
+      end
+
+      if response.success?
+        JSON.parse(response.body).fetch("users").to_h { |user| [ user["id"].to_s, user["trust_level"] ] }
+      else
+        Rails.logger.error "HackatimeService user/info_batch error: #{response.status} - #{response.body}"
+        nil
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService user/info_batch timeout: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "HackatimeService user/info_batch exception: #{e.message}"
       nil
     end
 
@@ -91,7 +159,7 @@ class HackatimeService
     # returns an existing key or creates one. Returns the key string or nil.
     #
     # MUST stay public: it's called both internally (resolve_api_key) and with an
-    # explicit receiver by LookoutHeartbeatForwarder. Do NOT add a second
+    # explicit receiver by Project::EnsureHackatimeProjectsJob. Do NOT add a second
     # definition below the `private` keyword — a later same-name def shadows this
     # one and makes it private, which silently breaks every external caller with
     # `NoMethodError (private method 'fetch_api_key')`.
@@ -118,9 +186,9 @@ class HackatimeService
 
     # Push heartbeats to Hackatime on behalf of a user using their API key (NOT
     # the OAuth token — the Wakatime-compatible ingestion endpoint wants the key,
-    # which you can get via fetch_api_key). Used to forward Lookout timelapse
-    # capture timestamps so the time shows up under a Hackatime project the user
-    # can then link. Returns true on success.
+    # which you can get via fetch_api_key). Used to seed the Hackatime project a
+    # hardware builder records Lapse timelapses against (see create_project).
+    # Returns true on success.
     def push_heartbeats(api_key:, heartbeats:)
       return false if api_key.blank? || heartbeats.blank?
 
@@ -146,6 +214,38 @@ class HackatimeService
       false
     end
 
+    # Bring a Hackatime project into existence for the owner of `api_key`.
+    #
+    # Hackatime has no project resource to POST to: a "project" is just a
+    # DISTINCT over the `project` column of heartbeats (hackclub/hackatime
+    # ProjectStatsQuery), so a project exists exactly when some heartbeat carries
+    # its name. One heartbeat is therefore both necessary and sufficient.
+    #
+    # Seeding adds no time. Hackatime derives duration from the gap to the
+    # previous heartbeat and scores the first one in a project as zero
+    # (`LAG(time) ... IS NULL THEN 0` in DashboardData::Snapshots), so the seed
+    # can't invent payable hours.
+    #
+    # The heartbeat is labelled as a project-creation seed rather than left to
+    # pass for real activity. Hackatime's ingest endpoint drops anything outside
+    # its HEARTBEAT_KEYS allowlist, so there's no custom field to use: `plugin`
+    # is the Wakatime-standard "what sent this", and `editor`/`language` are what
+    # its dashboards and fraud tooling group on.
+    def create_project(api_key:, name:, entity:)
+      return false if api_key.blank? || name.blank?
+
+      push_heartbeats(api_key: api_key, heartbeats: [ {
+        type: "app",
+        entity: entity,
+        project: name,
+        category: "coding",
+        editor: "Stardance",
+        language: "Stardance",
+        plugin: SEED_PLUGIN,
+        time: Time.current.to_i
+      } ])
+    end
+
     def fetch_heartbeat_spans(hackatime_uid, project_keys, start_date:, end_date:, access_token: nil)
       return [] if hackatime_uid.blank?
 
@@ -165,6 +265,35 @@ class HackatimeService
       []
     rescue => e
       Rails.logger.error "HackatimeService.fetch_heartbeat_spans exception: #{e.message}"
+      []
+    end
+
+    # Raw heartbeats for the api_key's owner between start_time and end_time (both
+    # ISO8601). Returns an array of heartbeat hashes (string keys, including
+    # "entity" and "project"), or [] on failure. Used to check whether a Lookout
+    # session's time already reached Hackatime by matching heartbeat "entity"
+    # against the session token (see LookoutPushStatus). The endpoint applies no
+    # result cap, so callers bound the window themselves.
+    def fetch_heartbeats(api_key:, start_time:, end_time:)
+      return [] if api_key.blank?
+
+      response = connection.get("my/heartbeats") do |req|
+        req.headers["Authorization"] = "Bearer #{api_key}"
+        req.params["start_time"] = start_time
+        req.params["end_time"] = end_time
+      end
+
+      if response.success?
+        JSON.parse(response.body)["heartbeats"] || []
+      else
+        Rails.logger.error "HackatimeService.fetch_heartbeats error: #{response.status}"
+        []
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService.fetch_heartbeats timeout: #{e.message}"
+      []
+    rescue => e
+      Rails.logger.error "HackatimeService.fetch_heartbeats exception: #{e.message}"
       []
     end
 
@@ -220,6 +349,16 @@ class HackatimeService
         key = fetch_api_key(access_token)
         Rails.cache.write(cache_key, key, expires_in: 1.week) if key.present?
         key
+      end
+
+      # Admin endpoints live under a different path prefix than the public API.
+      def admin_connection
+        @admin_connection ||= Faraday.new(url: "#{BASE_URL}/api/admin/v1") do |conn|
+          conn.options.open_timeout = 10
+          conn.options.timeout = 15
+          conn.headers["Content-Type"] = "application/json"
+          conn.headers["User-Agent"] = Rails.application.config.user_agent
+        end
       end
 
       def connection

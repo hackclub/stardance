@@ -1,5 +1,10 @@
 <section id="shop-wishlist-widget" class="discover-rail__section discover-rail__section--wishlist" aria-label="Wishlist">
-  <h3 class="discover-rail__heading">WISHLIST</h3>
+  <div class="discover-rail__heading-row">
+    <h3 class="discover-rail__heading">WISHLIST</h3>
+    <% if helpers.current_user && Flipper.enabled?(:shop_suggestions, helpers.current_user) %>
+      <%= helpers.link_to "Suggest an item →", helpers.shop_suggestions_path, class: "discover-rail__heading-link" %>
+    <% end %>
+  </div>
   <% if wishlisted_items.any? %>
     <div class="shop-goals__container">
       <div class="shop-goals__items">

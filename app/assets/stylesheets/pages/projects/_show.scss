@@ -208,6 +208,31 @@ turbo-frame#project_hero {
   }
 }
 
+.project-show__admin-link {
+  font-size: 0.85em;
+  text-decoration: none;
+  opacity: 0.85;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// Admin-editing-someone-else's-project notice. Sits inside an admin_tool
+// dashed box, so it only needs its own text color, not the full pill/border
+// treatment. Unlike the profile page's equivalent, this doesn't need a
+// .profile--editing-style CSS reveal — the whole edit form is only rendered
+// server-side when actually in edit mode, so there's no "empty box" case.
+.project-show__admin-edit-notice {
+  margin: 0 0 var(--space-xs);
+  font-size: 0.85rem;
+  color: var(--color-brand-orange);
+
+  strong {
+    font-weight: 700;
+  }
+}
+
 .project-show__title-input {
   padding: 0;
   border: 0;
@@ -592,19 +617,6 @@ turbo-frame#project_hero {
   background: transparent;
 }
 
-.project-show__help {
-  display: inline-grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  font-size: 0.5rem;
-  font-weight: 700;
-  opacity: 0.4;
-  vertical-align: middle;
-}
-
 .project-show__panel-actions {
   display: flex;
   justify-content: flex-end;
@@ -675,10 +687,12 @@ turbo-frame#project_hero {
   }
 }
 
-// Destructive action (Unfollow / Delete). Per branding §4.1 destructive uses
-// salmon (`--color-brand-salmon`) — transparent + salmon-bordered when
-// resting, salmon-filled on hover so the destructive intent is unambiguous.
-.project-show__pill--following {
+// Destructive action (Unfollow / Delete / Report). Per branding §4.1
+// destructive uses salmon (`--color-brand-salmon`) — transparent +
+// salmon-bordered when resting, salmon-filled on hover so the destructive
+// intent is unambiguous.
+.project-show__pill--following,
+.project-show__pill--danger {
   border-color: var(--color-brand-salmon);
   color: var(--color-brand-salmon);
 
@@ -689,6 +703,30 @@ turbo-frame#project_hero {
     color: var(--color-set-1-bg);
     outline: none;
   }
+}
+
+.project-show__pill--danger {
+  gap: 6px;
+}
+
+.project-show__pill--review {
+  border-color: var(--color-brand-orange);
+  color: var(--color-brand-orange);
+
+  &:hover:not(:disabled):not([aria-disabled="true"]),
+  &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
+    background: var(--color-brand-orange-soft);
+    border-color: var(--color-brand-orange);
+    color: var(--color-brand-orange);
+    outline: none;
+  }
+}
+
+.project-show__pill-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: currentColor;
 }
 
 .project-show__read-footer {
@@ -850,6 +888,47 @@ turbo-frame#project_hero {
     height: 1.6em;
     margin-top: -0.15em;
   }
+}
+
+// Nudge shown under the action row when un-devlogged Hackatime time nears the
+// per-devlog payout cap (Post::ShipEvent::DEVLOG_CAP_WARNING_SECONDS).
+.project-show__devlog-cap-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: var(--space-xs) 0 0;
+  padding: 10px 14px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-brand-yellow) 55%, transparent);
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-brand-yellow) 14%,
+    var(--color-set-2-bg)
+  );
+  color: var(--color-brand-cream);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+.project-show__devlog-cap-warning--over {
+  border-color: color-mix(in srgb, var(--color-brand-salmon) 55%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--color-brand-salmon) 14%,
+    var(--color-set-2-bg)
+  );
+}
+
+.project-show__devlog-cap-warning-icon {
+  flex-shrink: 0;
+  width: 1.25em;
+  height: 1.25em;
+  fill: var(--color-brand-yellow);
+}
+
+.project-show__devlog-cap-warning--over .project-show__devlog-cap-warning-icon {
+  fill: var(--color-brand-salmon);
 }
 
 // "Add 15min (test)" button. Pulled out of the actions row and pinned to the
@@ -1066,6 +1145,24 @@ turbo-frame#project_hero {
   &--clickable {
     font: inherit;
     cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  &--info {
+    cursor: help;
+
+    &:focus-visible {
+      outline: 2px solid var(--badge-accent, var(--color-brand-mint));
+      outline-offset: 2px;
+    }
+  }
+
+  &--clickable,
+  &--info {
     transition:
       background 120ms ease,
       border-color 120ms ease;
@@ -1082,7 +1179,6 @@ turbo-frame#project_hero {
         var(--badge-accent, var(--color-brand-salmon)) 65%,
         transparent
       );
-      outline: none;
     }
   }
 }
@@ -1103,12 +1199,20 @@ turbo-frame#project_hero {
   }
 }
 
+// Fix the shipped card overflow bug on mobile ( issue #1099 )
 .project-show__latest-ship-stats {
   list-style: none;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-l);
   opacity: 0.75;
+}
+
+@media (max-width: 720px) {
+  .project-show__latest-ship-stats {
+    gap: var(--space-s);
+  }
 }
 
 .project-show__latest-ship-media {
@@ -1124,8 +1228,10 @@ turbo-frame#project_hero {
   object-fit: cover;
 }
 
+// Wraps instead of squeezing the buttons past the card edge on narrow screens.
 .project-show__latest-ship-cta {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
   align-items: stretch;
 }
@@ -1134,7 +1240,7 @@ turbo-frame#project_hero {
 // set 4 (a light surface), so this is the *light-bg* variant per
 // branding §4.0. Same secondary/primary state matrix as `.project-show__pill`.
 .project-show__latest-ship-btn {
-  flex: 1;
+  flex: 1 1 8rem; // equal widths; wraps to a new row once they'd get narrower
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1227,6 +1333,29 @@ turbo-frame#project_hero {
 .project-show__notice-link {
   color: var(--color-space-accent);
   text-decoration: underline;
+}
+
+.project-show__notice--blocked {
+  background: color-mix(
+    in srgb,
+    var(--color-brand-salmon) 14%,
+    var(--color-set-2-bg)
+  );
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-brand-salmon) 55%, transparent);
+
+  .project-show__notice-title {
+    color: var(--color-brand-salmon);
+  }
+}
+
+.project-show__notice-reason {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0;
+  padding-left: var(--space-s);
+  border-left: 3px solid var(--color-brand-salmon);
 }
 
 .project-show__notice-dismiss {
@@ -1733,7 +1862,6 @@ turbo-frame#project_hero {
   .feed-composer__chips,
   .feed-composer__grid,
   .feed-composer__attach-wrap,
-  .feed-composer__info-wrap,
   .feed-composer__toolbar {
     flex-shrink: 0;
   }
@@ -1870,6 +1998,104 @@ turbo-frame#project_hero {
   }
 }
 
+.delete-project-modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(400px, 92vw);
+  width: 100%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  margin: 0;
+  color: var(--color-space-text);
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  &__body {
+    background: var(--color-space-bg-2, #0d0b2e);
+    border: 1px solid var(--color-space-border);
+    border-radius: var(--border-radius);
+    padding: var(--space-l);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: "Playfair Display", serif;
+    font-style: italic;
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    color: var(--color-brand-salmon);
+  }
+
+  &__text {
+    margin: 0;
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+  }
+
+  &__warning {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--color-space-text-secondary);
+    line-height: 1.4;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-s);
+    justify-content: flex-end;
+    margin-top: var(--space-xs);
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 2px solid var(--color-set-3-bg);
+    background: var(--color-set-2-bg);
+    color: var(--color-space-text);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+
+    &--cancel:hover,
+    &--cancel:focus-visible {
+      border-color: var(--color-brand-highlight-secondary);
+      color: var(--color-brand-highlight-secondary);
+      outline: none;
+    }
+
+    &--delete {
+      background: var(--color-brand-salmon);
+      border-color: var(--color-brand-salmon);
+      color: var(--color-set-1-bg);
+    }
+
+    &--delete:hover,
+    &--delete:focus-visible {
+      filter: brightness(1.05);
+      outline: none;
+    }
+  }
+}
+
 // Ship flow modals (refresher video + ship post) launched from the
 // "Ship your project!" button, replacing the old multi-page wizard.
 .ship-modal {
@@ -1883,8 +2109,6 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
 
   &::backdrop {
@@ -1899,6 +2123,9 @@ turbo-frame#project_hero {
 }
 
 .ship-modal__panel {
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
@@ -2002,6 +2229,11 @@ turbo-frame#project_hero {
   align-items: center;
   justify-content: center;
   padding: 8px 18px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.1);
@@ -2029,8 +2261,8 @@ turbo-frame#project_hero {
     color: var(--color-set-1-bg);
   }
 
-  &--primary:hover,
-  &--primary:focus-visible {
+  &--primary:hover:not(:disabled),
+  &--primary:focus-visible:not(:disabled) {
     filter: brightness(1.05);
     outline: none;
   }
@@ -2079,8 +2311,6 @@ turbo-frame#project_hero {
   left: 50%;
   translate: -50% -50%;
   margin: 0;
-  max-height: 90vh;
-  overflow-y: auto;
   color: var(--color-space-text);
 
   &::backdrop {
@@ -2091,6 +2321,9 @@ turbo-frame#project_hero {
 
 .recert-modal__panel {
   position: relative;
+  // Capped here, not on the dialog: the dialog is transparent, so scrolling it clips this frame.
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-m);
@@ -2196,6 +2429,12 @@ turbo-frame#project_hero {
   overflow-wrap: anywhere;
 }
 
+.recert-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
 .recert-modal__actions {
   display: flex;
   gap: var(--space-s);
@@ -2223,8 +2462,16 @@ turbo-frame#project_hero {
     border-color 150ms ease,
     color 150ms ease;
 
-  &:hover,
-  &:focus-visible {
+  // aria-disabled rather than the native attribute where the control still has
+  // to receive hover/focus (e.g. to show a tooltip explaining the block).
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled):not([aria-disabled="true"]),
+  &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
     background: rgba(255, 255, 255, 0.14);
     border-color: rgba(255, 255, 255, 0.35);
     outline: none;
@@ -2235,8 +2482,8 @@ turbo-frame#project_hero {
     border-color: var(--color-brand-salmon);
     color: #08061e;
 
-    &:hover,
-    &:focus-visible {
+    &:hover:not(:disabled):not([aria-disabled="true"]),
+    &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
       filter: brightness(1.08);
       border-color: var(--color-brand-salmon);
       background: var(--color-brand-salmon);
@@ -2445,8 +2692,26 @@ turbo-frame#project_hero {
   background: var(--color-set-2-bg);
   display: flex;
   flex-direction: column;
-  max-height: 220px;
+  // Not a whole number of rows, so the last visible project is cut off and
+  // the list reads as scrollable even where scrollbars auto-hide.
+  max-height: 300px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-input) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border-input);
+    border-radius: 4px;
+  }
 
   &[hidden] {
     display: none;
@@ -2673,4 +2938,196 @@ turbo-frame#project_hero {
   margin: 0;
   text-align: center;
   padding: var(--space-l) 0;
+}
+
+// -- Report project modal --
+// Shell mirrors .mission-browse-modal (same set-2 surface, border, shadow,
+// centered-fixed positioning); the shared modal partial only supplies the
+// bare <dialog> + h3.modal__title, so this paints all of it.
+.report-modal {
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--profile-radius);
+  box-shadow: 0 24px 60px var(--color-shadow-deep);
+  color: var(--color-space-text);
+  max-width: 460px;
+  padding: var(--space-xl);
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+
+  &::backdrop {
+    background: var(--color-backdrop);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal__title {
+    margin: 0 0 var(--space-l);
+    font-family: "Playfair Display", "Times New Roman", Georgia, serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--font-size-xxxl);
+    line-height: var(--line-height-headers);
+    color: var(--color-space-text);
+    background-color: transparent;
+  }
+}
+
+.report-modal__intro {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-m);
+  line-height: 1.5;
+  margin: 0 0 var(--space-l);
+}
+
+.report-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+}
+
+.report-modal__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.report-modal__reason {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-s);
+  background: var(--color-overlay-light-soft);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+
+  &:hover {
+    background: var(--color-overlay-light);
+    border-color: var(--color-brand-mint);
+  }
+
+  &:has(.report-modal__reason-input:checked) {
+    background: var(--color-brand-mint-soft);
+    border-color: var(--color-brand-mint);
+  }
+}
+
+.report-modal__reason-input {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--color-space-border);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  flex: 0 0 auto;
+
+  &:checked {
+    border-color: var(--color-brand-mint);
+    background: var(--color-brand-mint);
+    box-shadow: inset 0 0 0 3px var(--color-set-2-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-mint);
+    outline-offset: 2px;
+  }
+}
+
+.report-modal__reason-label {
+  flex: 1;
+  cursor: pointer;
+  font-size: var(--font-size-m);
+}
+
+.report-modal__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+}
+
+.report-modal__textarea {
+  width: 100%;
+  resize: vertical;
+  padding: var(--space-s);
+  background: var(--color-overlay-light-soft);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--profile-radius);
+  color: var(--color-space-text);
+  font-family: inherit;
+  font-size: var(--font-size-m);
+
+  &::placeholder {
+    color: var(--color-space-text-muted);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-mint);
+    outline-offset: 1px;
+    border-color: var(--color-brand-mint);
+  }
+}
+
+.report-modal__hint {
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
+}
+
+.report-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-s);
+}
+
+.report-modal__submit,
+.report-modal__cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 16px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.report-modal__submit {
+  background: var(--color-brand-salmon);
+  border-color: var(--color-brand-salmon);
+  color: var(--color-set-1-bg);
+
+  &:hover,
+  &:focus-visible {
+    filter: brightness(0.92);
+  }
+}
+
+.report-modal__cancel {
+  background: transparent;
+  border-color: var(--color-space-border);
+  color: var(--color-space-text);
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-space-text);
+  }
+}
+
+.project-show__latest-ship-stats-note {
+  color: var(--color-space-text-muted, #9b99b6);
+  font-size: 0.875rem;
+  margin-left: 0.35rem;
 }

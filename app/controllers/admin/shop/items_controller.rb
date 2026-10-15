@@ -21,6 +21,10 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
       else
         Shop::Regionalizable::REGION_CODES.each { |c| @shop_item.public_send("enabled_#{c.downcase}=", true) }
       end
+      @shop_item.name        = params[:prefill_name]        if params[:prefill_name].present?
+      @shop_item.description = params[:prefill_description] if params[:prefill_description].present?
+      @shop_item.usd_cost    = params[:prefill_usd_cost]    if params[:prefill_usd_cost].present?
+      @suggestion_id = params[:suggestion_id]
     end
 
     def create
@@ -31,9 +35,17 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         @shop_item.draft = true
         @shop_item.enabled = false
         @shop_item.created_by_user_id = current_user.id
+      elsif warehouse_item_requires_amber_approval?(@shop_item)
+        @shop_item.enabled = false
+        Shop::Regionalizable::REGION_CODES.each { |c| @shop_item.public_send("enabled_#{c.downcase}=", false) }
       end
 
       if @shop_item.save
+        if params[:suggestion_id].present?
+          suggestion = ShopSuggestion.find_by(id: params[:suggestion_id])
+          suggestion&.update!(shop_item: @shop_item)
+          suggestion&.accept!
+        end
         redirect_to admin_shop_item_path(@shop_item), notice: shop_manager? ? "Draft item created." : "Shop item created successfully."
       else
         @shop_item_types = ShopItem::SELECTABLE_TYPES
@@ -114,6 +126,11 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
       current_user.shop_manager? && !current_user.admin?
     end
 
+    def warehouse_item_requires_amber_approval?(item)
+      return false if Rails.env.development?
+      item.type == "ShopItem::WarehouseItem" && current_user.id != ShopItem::AMBER_USER_ID
+    end
+
     def authorize_shop_item_access!(must_be_draft: false)
       if shop_manager?
         authorize @shop_item, :update?
@@ -184,6 +201,7 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         :hcb_merchant_lock,
         :hcb_preauthorization_instructions,
         :hcb_one_time_use,
+        :hcb_org_slug,
         :agh_contents,
         :image,
         :buyable_by_self,
@@ -228,6 +246,11 @@ class Admin::Shop::ItemsController < Admin::ApplicationController
         :requires_ship, :required_ships_count, :required_ships_start_date, :required_ships_end_date,
         :source_region, :buyable_by_self, :accessory_tag, :show_image_in_shop,
         :mission_prize_only,
+        :enabled_us, :enabled_ca, :enabled_eu, :enabled_uk, :enabled_in, :enabled_au, :enabled_xx,
+        :usd_offset_us, :usd_offset_ca, :usd_offset_eu, :usd_offset_uk, :usd_offset_in, :usd_offset_au, :usd_offset_xx,
+        :default_assigned_user_id,
+        :default_assigned_user_id_us, :default_assigned_user_id_eu, :default_assigned_user_id_uk,
+        :default_assigned_user_id_ca, :default_assigned_user_id_au, :default_assigned_user_id_in, :default_assigned_user_id_xx,
         requires_achievement: [], blocked_countries: [],
         unlocking_mission_ids: [],
         shop_category_ids: []

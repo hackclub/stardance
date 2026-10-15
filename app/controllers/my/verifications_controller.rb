@@ -10,14 +10,14 @@ class My::VerificationsController < ApplicationController
 
     identity = current_user.hack_club_identity
     if identity&.access_token.present?
-      payload = HCAService.identity(identity.access_token)
+      payload = identity.hca_identity
       current_user.apply_hca_verification_payload!(payload) if payload.present?
     end
 
     redirect_back fallback_location: profile_path(current_user.display_name), notice: status_message
   rescue StandardError => e
     Rails.logger.warn("Verification refresh failed: #{e.class}: #{e.message}")
-    Sentry.capture_exception(e, extra: { user_id: current_user&.id })
+    Rails.error.report(e, context: { user_id: current_user&.id })
     redirect_back fallback_location: profile_path(current_user.display_name),
                   alert: "Couldn't check your verification status right now — try again in a moment."
   end

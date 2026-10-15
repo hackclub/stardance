@@ -46,7 +46,7 @@ class ShopCategory < ApplicationRecord
   def filter(items)
     return items if virtual_all?
 
-    item_ids = shop_item_ids
-    items.select { |it| item_ids.include?(it.id) }
+    ids = shop_item_categories.map(&:shop_item_id).to_set
+    items.select { |it| ids.include?(it.id) }
   end
 end

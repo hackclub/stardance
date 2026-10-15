@@ -14,8 +14,36 @@ export default class extends Controller {
 
     if (this.opensInNewTab(event)) {
       window.open(this.urlValue, "_blank", "noopener");
-    } else {
+      return;
+    }
+
+    const detail = { url: this.urlValue };
+    const navEvent = this.dispatch("navigate", {
+      detail,
+      cancelable: true,
+    });
+
+    if (!navEvent.defaultPrevented) {
       window.location.href = this.urlValue;
+    }
+  }
+
+  // Comment buttons open the post panel scrolled to its composer; where no
+  // panel is listening, links follow their href and buttons navigate manually.
+  navigateComments(event) {
+    if (!this.urlValue) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+
+    const navEvent = this.dispatch("navigate", {
+      detail: { url: this.urlValue, comments: true },
+      cancelable: true,
+    });
+
+    if (navEvent.defaultPrevented) {
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (event.currentTarget.tagName !== "A") {
+      window.location.href = `${this.urlValue}#comments`;
     }
   }
 

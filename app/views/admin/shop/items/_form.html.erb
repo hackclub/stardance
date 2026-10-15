@@ -1,5 +1,13 @@
-<div class="shop-item-form">
+<%
+  is_amber = current_user.id == ShopItem::AMBER_USER_ID
+  is_warehouse_item = shop_item.type == "ShopItem::WarehouseItem"
+  show_enable_guard = !shop_item.persisted? && !is_amber && !Rails.env.development?
+%>
+<div class="shop-item-form"<% if show_enable_guard %> data-controller="shop-item-enable-guard" data-shop-item-enable-guard-warehouse-value="<%= is_warehouse_item %>" data-shop-item-enable-guard-hold-seconds-value="3"<% end %>>
   <%= form_with model: shop_item.becomes(ShopItem), url: (shop_item.persisted? ? admin_shop_item_path(shop_item) : admin_shop_items_path), method: (shop_item.persisted? ? :patch : :post), local: true do |f| %>
+    <% if defined?(@suggestion_id) && @suggestion_id.present? %>
+      <%= hidden_field_tag :suggestion_id, @suggestion_id %>
+    <% end %>
     <% if shop_item.errors.any? %>
       <div class="shop-item-form__errors">
         <h4><%= pluralize(shop_item.errors.count, "error") %> prohibited this shop item from being saved:</h4>
@@ -19,15 +27,13 @@
           <div class="shop-item-form__field">
             <label class="shop-item-form__label">Type</label>
             <% if shop_item.persisted? %>
-              <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;" data-controller="shop-item-type-converter" data-shop-item-type-converter-url-value="<%= admin_shop_item_path(shop_item) %>">
                 <code><%= shop_item.type %></code>
                 <details style="position: relative;">
                   <summary class="btn-secondary" style="cursor: pointer; font-size: 0.8rem; padding: 2px 8px;">Convert…</summary>
                   <div style="position: absolute; z-index: 10; background: var(--color-tan-400); border: 1px solid var(--color-brown-500); border-radius: 0.5rem; padding: 0.75rem; margin-top: 0.25rem; min-width: 280px;">
-                    <%= form_with url: admin_shop_item_path(shop_item), method: :patch, scope: :shop_item, local: true do |cf| %>
-                      <%= cf.select :type, @shop_item_types, {}, { class: "form-control", style: "margin-bottom: 0.5rem;" } %>
-                      <%= cf.submit "Convert type", class: "btn-primary", style: "width: 100%;" %>
-                    <% end %>
+                    <%= select_tag nil, options_for_select(@shop_item_types), class: "form-control", style: "margin-bottom: 0.5rem;", data: { shop_item_type_converter_target: "select" } %>
+                    <button type="button" class="btn-primary" style="width: 100%;" data-shop-item-type-converter-target="button" data-action="shop-item-type-converter#convert">Convert type</button>
                   </div>
                 </details>
               </div>
@@ -35,12 +41,27 @@
               <%= f.hidden_field :type, value: shop_item.type %>
               <code><%= shop_item.type %></code>
             <% else %>
+              <% type_base_path = new_admin_shop_item_path(
+                   suggestion_id: @suggestion_id.presence,
+                   prefill_name: shop_item.name.presence,
+                   prefill_description: shop_item.description.presence,
+                   prefill_usd_cost: shop_item.usd_cost.presence
+                 ).split("?").first %>
+              <% type_extra_params = {
+                   suggestion_id: @suggestion_id.presence,
+                   prefill_name: shop_item.name.presence,
+                   prefill_description: shop_item.description.presence,
+                   prefill_usd_cost: shop_item.usd_cost.presence
+                 }.compact %>
               <%= select_tag :type,
                     options_for_select(@shop_item_types.map { |t| [t.demodulize.titleize, t] }),
                     include_blank: "Select a type…",
                     class: "form-control",
-                    data: { path: new_admin_shop_item_path },
-                    onchange: "if(this.value) window.location = this.dataset.path + '?type=' + encodeURIComponent(this.value)" %>
+                    data: {
+                      path: type_base_path,
+                      extra: type_extra_params.to_query
+                    },
+                    onchange: "if(this.value){ var qs = 'type=' + encodeURIComponent(this.value); var extra = this.dataset.extra; if(extra) qs += '&' + extra; window.location = this.dataset.path + '?' + qs; }" %>
             <% end %>
           </div>
 
@@ -138,12 +159,18 @@
           <div class="shop-item-form__toggles">
             <% unless current_user.shop_manager? && !current_user.admin? %>
               <label class="shop-item-form__toggle">
-                <%= f.check_box :enabled, id: "shop_item_enabled" %>
+                <%= f.check_box :enabled, id: "shop_item_enabled", data: { shop_item_enable_guard_target: "enabledCheckbox", action: "change->shop-item-enable-guard#refresh" } %>
                 <span class="shop-item-form__toggle-content">
                   <strong>Enabled</strong>
                   <span class="shop-item-form__toggle-desc">Item is visible and purchasable in the shop</span>
                 </span>
               </label>
+
+              <% if show_enable_guard && is_warehouse_item %>
+                <div class="alert alert-warning">
+                  Warehouse items can only be enabled by Amber — this item will be created as disabled. Ping Amber directly if it needs to go live.
+                </div>
+              <% end %>
 
               <label class="shop-item-form__toggle">
                 <%= f.check_box :unlisted %>
@@ -227,7 +254,7 @@
           <div class="shop-item-form__field" style="margin-top: 1rem;">
             <%= f.label :requires_achievement, "Requires Achievements", class: "shop-item-form__label" %>
             <div class="shop-item-form__checkbox-list">
-              <%= f.collection_check_boxes :requires_achievement, Achievement.all.select { |a| !a.hidden? }, ->(a) { a.slug.to_s }, ->(a) { "#{a.name} (#{a.slug})" } do |b| %>
+              <%= f.collection_check_boxes :requires_achievement, Achievement.all, ->(a) { a.slug.to_s }, ->(a) { "#{a.name} (#{a.slug})" } do |b| %>
                 <label class="shop-item-form__checkbox">
                   <%= b.check_box %>
                   <span><%= b.text %></span>
@@ -300,6 +327,24 @@
         <% end %>
 
         <% if shop_item.type.in?(%w[ShopItem::HCBGrant ShopItem::HCBPreauthGrant]) %>
+          <div class="card">
+            <h3>HCB Source Organization</h3>
+            <div class="shop-item-form__field">
+              <span class="shop-item-form__hint">Which HCB organization this grant's card is drawn from.</span>
+              <% selected_org = shop_item.hcb_org_slug.presence || Shop::HCBGrantFulfillable::HCB_ORG_SLUGS.first %>
+              <div class="shop-item-form__segmented" role="radiogroup" aria-label="HCB source organization">
+                <% Shop::HCBGrantFulfillable::HCB_ORG_SLUGS.each do |org| %>
+                  <label class="shop-item-form__segmented-option">
+                    <%= f.radio_button :hcb_org_slug, org, checked: selected_org == org, class: "shop-item-form__segmented-input" %>
+                    <span class="shop-item-form__segmented-label">
+                      <%= org %><% if org == Shop::HCBGrantFulfillable::HCB_ORG_SLUGS.first %> (default)<% end %>
+                    </span>
+                  </label>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <h3>HCB Locks</h3>
             <div class="shop-item-form__field">
@@ -440,8 +485,18 @@
       <div class="shop-item-form__sidebar">
         <div class="card">
           <h3>Actions</h3>
+
+          <% if show_enable_guard && !is_warehouse_item %>
+            <div class="alert alert-warning shop-item-form__enable-alert" data-shop-item-enable-guard-target="alert" hidden>
+              Heads up! If you're adding a new shop item please check with Amber first unless you are confident what you're doing!!
+            </div>
+          <% end %>
+
           <div class="shop-item-form__actions">
-            <%= f.submit shop_item.persisted? ? "Update Item" : "Create Item", class: "btn-primary" %>
+            <%= f.submit shop_item.persisted? ? "Update Item" : "Create Item", class: "btn-primary", data: { shop_item_enable_guard_target: "primaryButton" } %>
+            <% if show_enable_guard && !is_warehouse_item %>
+              <button type="button" class="btn-secondary shop-item-form__hold-button" data-shop-item-enable-guard-target="overrideButton" data-action="mouseenter->shop-item-enable-guard#startHold mouseleave->shop-item-enable-guard#cancelHold click->shop-item-enable-guard#proceed" aria-disabled="true">Hold to confirm…</button>
+            <% end %>
             <%= link_to "Cancel", admin_shop_path, class: "btn-secondary" %>
           </div>
         </div>
@@ -796,6 +851,16 @@
         width: 100%;
         justify-content: center;
         text-decoration: none;
+    }
+
+    .shop-item-form__enable-alert {
+        margin-bottom: 1rem;
+        font-size: 0.8125rem;
+    }
+
+    .shop-item-form__hold-button[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: 0.6;
     }
 
     .shop-item-form__info-box {

@@ -20,6 +20,16 @@
                 } do |form| %>
     <%= hidden_field_tag :vote_assignment_id, assignment.id %>
 
+    <div class="vote-scorecard__review-prompt">
+      <%= inline_svg_tag "icons/terminal.svg", class: "vote-scorecard__review-prompt-icon", aria_hidden: true %>
+      <div>
+        <p class="vote-scorecard__review-prompt-title">Explore before you score</p>
+        <p class="vote-scorecard__review-prompt-body">
+          Take time to try the demo or look through how the project was built so your rating reflects the work.
+        </p>
+      </div>
+    </div>
+
     <% if vote.errors.any? %>
       <div class="vote-scorecard__errors" role="alert">
         <p class="vote-scorecard__errors-title">Check your rating</p>

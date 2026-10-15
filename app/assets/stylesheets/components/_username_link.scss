@@ -1,0 +1,9 @@
+.username-link__admin {
+  font-size: 0.85em;
+  text-decoration: none;
+  opacity: 0.85;
+
+  &:hover {
+    opacity: 1;
+  }
+}

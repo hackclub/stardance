@@ -34,6 +34,12 @@
     }
   }
 
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-l);
+  }
+
   &__section-title {
     margin: 0 0 var(--space-s);
     font-size: 16px;
@@ -66,6 +72,43 @@
     flex-wrap: wrap;
     gap: var(--space-xs);
     align-items: flex-start;
+    background: var(--color-set-3-bg);
+    border-radius: 10px;
+    padding: var(--space-s);
+
+    // button_to wraps in <form> — make it layout-transparent so the button
+    // is the direct flex child instead of the form.
+    form {
+      display: contents;
+    }
+
+    a,
+    button {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--color-space-border);
+      background: var(--color-set-2-bg);
+      color: var(--color-space-text);
+      font-size: 16px;
+      font-family: var(--font-family-text);
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+
+      &:hover {
+        border-color: var(--color-brand-highlight-secondary);
+        color: var(--color-brand-highlight-secondary);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
   }
 
   &__muted {
@@ -81,6 +124,118 @@
     display: inline;
     padding: 2px 8px;
     font-size: 0.8rem;
+  }
+
+  &__streak-credits {
+    list-style: none;
+    margin: var(--space-xs) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  &__streak-credit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  &__streak-credit-message {
+    margin: 0 0 var(--space-s);
+    padding: var(--space-xs) var(--space-s);
+    border-radius: 8px;
+    background: var(--color-overlay-light-soft);
+    color: var(--color-space-text);
+    font-size: 14px;
+
+    &--alert {
+      color: var(--color-brand-salmon);
+    }
+  }
+
+  &__streak-credit-meta {
+    display: block;
+    color: var(--color-space-text-muted);
+    font-size: 14px;
+  }
+
+  &__integrities {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__integrity {
+    border: 2px solid var(--color-space-text-muted);
+    border-radius: 10px;
+    padding: var(--space-s);
+    background: var(--color-set-3-bg);
+
+    &--blue {
+      border-color: var(--color-brand-blue);
+
+      .admin-user-show__integrity-status {
+        color: var(--color-brand-blue);
+      }
+    }
+
+    &--amber {
+      border-color: var(--color-amber-500);
+
+      .admin-user-show__integrity-status {
+        color: var(--color-amber-500);
+      }
+    }
+
+    &--green {
+      border-color: var(--color-green-400);
+
+      .admin-user-show__integrity-status {
+        color: var(--color-green-400);
+      }
+    }
+
+    &--red {
+      border-color: var(--color-brand-salmon);
+
+      .admin-user-show__integrity-status {
+        color: var(--color-brand-salmon);
+      }
+    }
+  }
+
+  &__integrity-status {
+    font-weight: 700;
+  }
+
+  &__integrity-fields {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-s) var(--space-l);
+    margin: 0;
+  }
+
+  &__integrity-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+
+    dt {
+      color: var(--color-space-text-muted);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    dd {
+      margin: 0;
+      color: var(--color-space-text);
+    }
   }
 }
 

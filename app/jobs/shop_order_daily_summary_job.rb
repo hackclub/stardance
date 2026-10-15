@@ -1,5 +1,7 @@
 class ShopOrderDailySummaryJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
+
+  include TimeFormattingHelper
 
   SHOP_ORDER_CHANNEL_ID = "C09N1P69GKZ"
 
@@ -16,6 +18,8 @@ class ShopOrderDailySummaryJob < ApplicationJob
     "ShopItem::ThirdPartyPhysical" => "Third Party Physical",
     "ShopItem::HQMailItem" => "HQ Mail",
     "ShopItem::LetterMail" => "Letter Mail",
+    "ShopItem::NonmachinableLetterMail" => "Nonmachinable Letter Mail",
+    "ShopItem::StickyStreakSticker" => "Sticky Streak Sticker",
     "ShopItem::WarehouseItem" => "Warehouse",
     "ShopItem::FreeStickers" => "Free Stickers",
     "ShopItem::HCBGrant" => "HCB Grant",
@@ -58,7 +62,7 @@ class ShopOrderDailySummaryJob < ApplicationJob
 
       *⏰ Long Hang Time (>48h)*
       • Awaiting >48h: *#{long_awaiting.count}*
-      #{oldest_awaiting&.awaiting_periodical_fulfillment_at ? "• Oldest: *#{time_ago_in_words(oldest_awaiting.awaiting_periodical_fulfillment_at)}* ago" : ""}
+      #{oldest_awaiting&.awaiting_periodical_fulfillment_at ? "• Oldest: *#{duration_in_words(Time.current - oldest_awaiting.awaiting_periodical_fulfillment_at)}* ago" : ""}
 
       *👤 Assigned to Users*
       #{format_assigned_breakdown(assigned_breakdown, user_names)}
@@ -142,17 +146,6 @@ class ShopOrderDailySummaryJob < ApplicationJob
       "📊 *#{backlog}* orders in the queue. Let's keep it moving!"
     else
       "📊 *#{backlog}* orders waiting. Let's chip away at it! 💪"
-    end
-  end
-
-  def time_ago_in_words(time)
-    seconds = (Time.current - time).to_i
-    if seconds < 3600
-      "#{seconds / 60}m"
-    elsif seconds < 86400
-      "#{seconds / 3600}h"
-    else
-      "#{seconds / 86400}d #{(seconds % 86400) / 3600}h"
     end
   end
 end

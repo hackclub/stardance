@@ -1,0 +1,49 @@
+<%# Report-a-project modal. Render alongside `projects/report_button` so the
+    trigger and the dialog it opens stay co-located. IDs are scoped by
+    project so this partial is safe to render more than once per page. %>
+<% modal_id = local_assigns.fetch(:modal_id) { "project-report-modal-#{project.id}" } %>
+<%= render layout: "shared/modal", locals: { id: modal_id, title: "Report project?", class_name: "report-modal" } do %>
+  <p class="report-modal__intro">We want good, high quality projects in Stardance. If you believe this project violates our community guidelines, please let us know why:</p>
+
+  <%= form_with model: Project::Report.new, url: project_reports_path(project), local: true, html: { class: "report-modal__form", data: { turbo_frame: "_top" } } do |f| %>
+    <div class="report-modal__reasons" role="radiogroup" aria-label="Reason for report">
+      <div class="report-modal__reason">
+        <%= f.radio_button :reason, "low_effort", id: "project_report_reason_low_effort_#{project.id}", required: true, class: "report-modal__reason-input" %>
+        <%= f.label :reason, "Low-effort project", for: "project_report_reason_low_effort_#{project.id}", class: "report-modal__reason-label" %>
+      </div>
+      <div class="report-modal__reason">
+        <%= f.radio_button :reason, "undeclared_ai", id: "project_report_reason_undeclared_ai_#{project.id}", class: "report-modal__reason-input" %>
+        <%= f.label :reason, "Uses AI but it's undeclared", for: "project_report_reason_undeclared_ai_#{project.id}", class: "report-modal__reason-label" %>
+      </div>
+      <div class="report-modal__reason">
+        <%= f.radio_button :reason, "demo_broken", id: "project_report_reason_demo_broken_#{project.id}", class: "report-modal__reason-input" %>
+        <%= f.label :reason, "Demo does not work", for: "project_report_reason_demo_broken_#{project.id}", class: "report-modal__reason-label" %>
+      </div>
+      <% if project.ship_reviews.approved.exists? %>
+        <div class="report-modal__reason">
+          <%= f.radio_button :reason, Project::Report::SHOULD_NOT_HAVE_BEEN_APPROVED_REASON, id: "project_report_reason_shouldnt_have_been_approved_#{project.id}", class: "report-modal__reason-input" %>
+          <%= f.label :reason, "Project should not have been approved", for: "project_report_reason_shouldnt_have_been_approved_#{project.id}", class: "report-modal__reason-label" %>
+        </div>
+      <% end %>
+      <div class="report-modal__reason">
+        <%= f.radio_button :reason, "other", id: "project_report_reason_other_#{project.id}", class: "report-modal__reason-input" %>
+        <%= f.label :reason, "Other", for: "project_report_reason_other_#{project.id}", class: "report-modal__reason-label" %>
+      </div>
+    </div>
+
+    <div class="report-modal__details">
+      <%= f.text_area :details,
+            rows: 4,
+            minlength: Project::Report::DETAILS_MIN_LENGTH,
+            required: true,
+            class: "report-modal__textarea",
+            placeholder: "Share a short explanation (20+ characters)." %>
+      <small class="report-modal__hint">Why are you reporting this project? (20+ characters)</small>
+    </div>
+
+    <div class="report-modal__actions">
+      <%= f.submit "Submit", class: "report-modal__submit" %>
+      <button type="button" class="report-modal__cancel" onclick="document.getElementById(<%= modal_id.to_json %>).close()">Cancel</button>
+    </div>
+  <% end %>
+<% end %>

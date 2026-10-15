@@ -1,5 +1,5 @@
 class CleanupGuestUsersJob < ApplicationJob
-  queue_as :background
+  queue_as :literally_whenever
 
   RETENTION = 30.days
   MAX_PER_RUN = 500
@@ -12,10 +12,9 @@ class CleanupGuestUsersJob < ApplicationJob
 
     found = scope.count
     if found > MAX_PER_RUN
-      Sentry.capture_message(
+      OperationalAlert.report(
         "CleanupGuestUsersJob exceeded MAX_PER_RUN; aborting",
-        level: :warning,
-        extra: { found: found, max: MAX_PER_RUN, cutoff: cutoff }
+        context: { found: found, max: MAX_PER_RUN, cutoff: cutoff }
       )
       return
     end

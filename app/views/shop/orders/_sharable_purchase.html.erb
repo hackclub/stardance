@@ -1,0 +1,19 @@
+<div class="sharable-purchase"
+     data-controller="share-purchase"
+     data-share-purchase-url-value="<%= shop_order_flex_image_path(order) %>">
+  <div class="sharable-purchase__preview">
+    <%= image_tag shop_order_flex_image_path(order),
+                  alt: "I bought a #{order.shop_item.name} on Stardance",
+                  class: "sharable-purchase__image",
+                  loading: "lazy" %>
+  </div>
+  <div class="sharable-purchase__content">
+    <h2 class="sharable-purchase__title">You earned this. <em>Flex it.</em></h2>
+    <p class="sharable-purchase__hint">Copy your card and post it anywhere — it points people at your profile.</p>
+    <div class="sharable-purchase__actions">
+      <%= render ActionButtonComponent.new(text: "Copy image", type: :button, size: :small, data: { action: "share-purchase#copy" }) %>
+      <%= render ActionButtonComponent.new(text: "Download PNG", size: :small, variant: :secondary, href: shop_order_flex_image_path(order, download: 1)) %>
+    </div>
+    <p class="sharable-purchase__status" data-share-purchase-target="status" aria-live="polite"></p>
+  </div>
+</div>

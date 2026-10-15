@@ -1,10 +1,23 @@
 /* Import page-specific styles */
+@use "pages/admin/dashboard";
+@use "pages/admin/rating_dashboard";
+@use "pages/admin/mega_dashboard";
+@use "pages/admin/hour_funnel";
 @use "pages/admin/missions_edit";
 @use "pages/admin/ysws_reviews";
+@use "pages/admin/ysws_shortcuts";
+@use "pages/admin/integrity_reviews";
 @use "pages/admin/email_templates";
-@use "pages/certification/reports";
+@use "pages/admin/fraud_dashboard";
+@use "pages/admin/fraud_subjects";
+@use "pages/admin/stardust_deduction";
+@use "pages/admin/ledger_entries";
+@use "pages/admin/vote_flags";
+@use "pages/admin/certificates";
+@use "pages/admin/user_votes";
 @use "pages/shop/admin_shop_shared";
 @use "pages/shop/admin_shop_dashboard";
+@use "pages/shop/sticky_funnel";
 @use "pages/shop/admin_shop_item_form";
 @use "pages/shop/admin_shop_item_show";
 @use "pages/shop/admin_shop_orders";
@@ -65,7 +78,11 @@ body.admin-page {
     font-size: var(--font-size-l);
   }
 
-  a:not(.action-btn) {
+  a:not(.action-btn):not([class*="btn-"]):not(.ysws-queue__view-btn):not(
+      .ysws-dashboard__reviewer-link--locked-in
+    ):not(.ysws-dashboard__sort):not(.ship-queue__row-link):not(
+      .ship-queue__tab
+    ) {
     color: var(--color-brand-highlight);
     text-decoration: none;
 
@@ -220,7 +237,7 @@ body.admin-page {
 
   /* ── Buttons ───────────────────────────────────────── */
 
-  button,
+  button:not(.action-btn),
   input[type="submit"] {
     display: inline-flex;
     align-items: center;
@@ -257,6 +274,12 @@ body.admin-page {
   form.button_to {
     display: inline;
   }
+}
+
+/* In flex/grid contexts the inline rule is overridden — use display:contents
+   so the form disappears from the box model and the button participates directly. */
+.admin-actions-wrap form.button_to {
+  display: contents;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -309,7 +332,8 @@ body.admin-page {
     content: unset;
   }
 
-  &:disabled {
+  &:disabled,
+  &.disabled {
     background: var(--color-space-surface-faint);
     color: var(--color-space-text-muted);
     cursor: not-allowed;
@@ -323,7 +347,9 @@ body.admin-page {
   }
 }
 
-.btn-primary {
+.btn-primary,
+a.btn-primary,
+button.btn-primary {
   @extend %btn-base;
   background: var(--color-brand-blue);
   color: var(--color-set-1-bg);
@@ -335,7 +361,9 @@ body.admin-page {
   }
 }
 
-.btn-secondary {
+.btn-secondary,
+a.btn-secondary,
+button.btn-secondary {
   @extend %btn-base;
   background: var(--color-space-surface);
   color: white;
@@ -343,10 +371,13 @@ body.admin-page {
   &:hover {
     background: var(--color-space-surface-strong);
     box-shadow: var(--shadow);
+    color: white;
   }
 }
 
-.btn-danger {
+.btn-danger,
+a.btn-danger,
+button.btn-danger {
   @extend %btn-base;
   background: #ef4444;
   color: white;
@@ -372,6 +403,13 @@ body.admin-page {
   }
 }
 
+// A .flex row directly after an actions row (badges, buttons) needs a gap of
+// its own — .admin-actions-wrap has no bottom margin since it's also reused
+// inline inside table cells, where extra spacing would misalign content.
+.admin-actions-wrap + .flex {
+  margin-top: var(--space-m);
+}
+
 /* Cards */
 .card {
   background: var(--color-tan-300);
@@ -392,7 +430,7 @@ body.admin-page {
 
 /* Status Badges */
 .badge {
-  padding: 0.375rem 0.5rem 0.3rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -470,6 +508,24 @@ body.admin-page {
   max-width: 90vw;
   width: 400px;
 
+  // This sheet has no global border-box, so a child sized at 100% with its own
+  // padding overflows the dialog. Scope the fix to the modal subtree rather
+  // than reflowing every admin page.
+  &,
+  & *,
+  & *::before,
+  & *::after {
+    box-sizing: border-box;
+  }
+
+  // Roomy enough for a seven-column calendar, and scrolls rather than running
+  // off the viewport once the panel grows.
+  &--wide {
+    width: 540px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
   &__title {
     margin: 0 0 var(--space-s) 0;
     color: var(--color-space-text);
@@ -479,9 +535,22 @@ body.admin-page {
     color: var(--color-space-text-muted);
     margin: 0 0 var(--space-m) 0;
   }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-s);
+  }
 }
 
 /* Searchable Select Dropdown */
+
+/* Positioning context for the absolutely-positioned dropdown. Belongs on the
+   same element as data-controller="searchable-select". */
+.searchable-select {
+  position: relative;
+}
+
 .searchable-select-dropdown {
   display: none;
   position: absolute;
@@ -525,17 +594,16 @@ body.admin-page {
   }
 }
 
+.searchable-select-muted {
+  color: var(--color-space-text-muted);
+}
+
 .searchable-select-avatar {
   width: 20px;
   height: 20px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-}
-
-.pagy {
-  display: flex;
-  gap: 0.25rem;
 }
 
 /* Dialog / Modal */
@@ -609,7 +677,16 @@ dialog {
   border: 1px solid var(--color-space-border);
   border-radius: 0.5rem;
   padding: var(--space-m);
-  margin-top: var(--space-m);
+
+  // When audit-log is used inside admin-section it acts as a layout helper
+  // only — strip its standalone container styles to avoid double borders/bg.
+  .audit-log {
+    margin-top: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible; // no clipping needed — parent card handles it
+  }
 
   &--highlighted {
     border: 2px solid var(--color-brand-yellow);
@@ -634,10 +711,51 @@ dialog {
   margin: 0 0 var(--space-s) 0;
 }
 
+// One card per project on the reports index — groups that project's reports
+// together instead of one long flat table.
+.admin-report-group {
+  margin-bottom: var(--space-m);
+}
+
+.admin-report-group__header {
+  margin-bottom: var(--space-s);
+}
+
+.admin-report-group__title {
+  margin: 0;
+}
+
+.admin-report-group__oldest {
+  margin-left: auto;
+  color: var(--color-space-text-muted);
+  font-size: 0.8rem;
+}
+
+.admin-report-group__resolve-button {
+  border-radius: 999px;
+  background: var(--color-brand-highlight);
+  color: var(--color-set-1-bg);
+  font-weight: 600;
+
+  &:hover {
+    background: var(--color-brand-highlight-secondary);
+    color: var(--color-set-1-bg);
+  }
+}
+
 .admin-actions-wrap {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .admin-section__summary {
@@ -706,11 +824,11 @@ dialog {
 
 /* ── Audit log component ─────────────────────────────────────────── */
 .audit-log {
-  margin-top: var(--space-l);
   border: 1px solid var(--color-space-border);
   border-radius: 8px;
   background: var(--color-space-surface-faint);
-  overflow: hidden;
+  overflow-y: hidden; // clip table corners to card border-radius
+  overflow-x: auto; // horizontal scroll at the card level, not in a nested box
 }
 
 .audit-log__header {
@@ -734,7 +852,7 @@ dialog {
 }
 
 .audit-log__table-wrap {
-  overflow-x: auto;
+  // overflow-x is handled by the parent .audit-log to avoid a nested scroll context
 }
 
 .audit-log__table {
@@ -912,6 +1030,77 @@ dialog {
   padding: var(--space-m);
   text-align: center;
   font-style: italic;
+}
+
+/* ── Audit log filter form ───────────────────────────────────────── */
+
+.admin-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.admin-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+
+  &--inline {
+    align-items: center;
+  }
+}
+
+.admin-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  flex: 1;
+}
+
+.admin-filters__label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-space-text-muted);
+
+  &--checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text);
+    cursor: pointer;
+  }
+}
+
+.admin-filters__input,
+.admin-filters__select {
+  padding: var(--space-xs) var(--space-s);
+  background: var(--color-set-2-bg);
+  border: 1px solid var(--color-space-border);
+  border-radius: 6px;
+  color: var(--color-space-text);
+  font-size: var(--font-size-s);
+  font-family: inherit;
+  outline: none;
+
+  &:focus {
+    border-color: var(--color-brand-highlight);
+  }
+
+  &::placeholder {
+    color: var(--color-space-text-muted);
+  }
+}
+
+.admin-filters__actions {
+  display: flex;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
 }
 
 /* ── Fraud dashboard ─────────────────────────────────────────────── */

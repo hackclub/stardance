@@ -1,37 +1,43 @@
 class Admin::Shop::SuggestionsController < Admin::ApplicationController
-    before_action :set_suggestion, only: [ :dismiss, :disable_for_user ]
+  before_action -> { head :not_found unless Flipper.enabled?(:shop_suggestions, current_user) }
+  before_action :set_suggestion, only: [ :accept, :reject, :delete ]
 
-    def index
-      authorize ShopSuggestion
+  def accept
+    authorize @suggestion
 
-      @pagy, @suggestions = pagy(
-        ShopSuggestion.includes(:user).order(created_at: :desc)
-      )
-    end
+    redirect_to new_admin_shop_item_path(
+      suggestion_id: @suggestion.id,
+      prefill_name: @suggestion.name,
+      prefill_description: @suggestion.description,
+      prefill_usd_cost: @suggestion.usd_cost
+    )
+  end
 
-    def dismiss
-      authorize @suggestion, :destroy?
+  def delete
+    authorize @suggestion
 
-      @suggestion.destroy
+    @suggestion.discard!
 
-      redirect_to admin_shop_suggestions_path, notice: "Suggestion dismissed."
-    end
+    redirect_to shop_suggestions_path, notice: "Suggestion removed."
+  end
 
-    def disable_for_user
-      authorize @suggestion, :update?
+  def reject
+    authorize @suggestion
 
-      user = @suggestion.user
+    @suggestion.update!(rejection_reason: params[:rejection_reason])
+    @suggestion.reject!
 
-      user.dismiss_thing!("shop_suggestion_box")
+    SendSlackDmJob.perform_later(
+      @suggestion.user.slack_id,
+      "Your shop suggestion \"#{@suggestion.name}\" was not approved.#{" Reason: #{@suggestion.rejection_reason}" if @suggestion.rejection_reason.present?}"
+    )
 
-      @suggestion.destroy
+    redirect_to shop_suggestions_path, notice: "Suggestion rejected."
+  end
 
-      redirect_to admin_shop_suggestions_path, notice: "Suggestion box disabled for #{user.display_name}."
-    end
+  private
 
-    private
-
-    def set_suggestion
-      @suggestion = ShopSuggestion.find(params[:id])
-    end
+  def set_suggestion
+    @suggestion = ShopSuggestion.find(params[:id])
+  end
 end

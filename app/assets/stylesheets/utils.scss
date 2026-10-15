@@ -1,5 +1,5 @@
 :root {
-  --color-admin: #ff9100;
+  --color-admin: var(--color-brand-orange);
   --color-dev: #52d831;
 }
 
@@ -16,11 +16,38 @@
 //   box-sizing: border-box;
 // }
 
+.textarea-hint {
+  color: var(--color-space-text-muted);
+  font-size: 0.75rem;
+  margin: 4px 0 0;
+  opacity: 0.6;
+  transition: opacity 200ms ease;
+
+  &--flash {
+    animation: hint-flash 3s ease;
+  }
+}
+
+@keyframes hint-flash {
+  0% {
+    opacity: 0.6;
+    color: var(--color-space-text-muted);
+  }
+  15% {
+    opacity: 1;
+    color: var(--color-brand-salmon);
+  }
+  100% {
+    opacity: 0.6;
+    color: var(--color-space-text-muted);
+  }
+}
+
 .tools-do {
   border: 3px dashed;
   border-radius: 5px;
   display: inline-block;
-  padding: 4px;
+  padding: 6px;
 }
 
 .admin.tools-do {
@@ -31,4 +58,13 @@
 .dev.tools-do {
   background-color: color-mix(in srgb, var(--color-dev) 20%, transparent);
   border-color: var(--color-dev);
+}
+
+.tools-do--inline {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: var(--space-xxxs);
+  padding: 1px 4px;
+  border-radius: 4px;
 }

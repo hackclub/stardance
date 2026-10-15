@@ -37,6 +37,26 @@ class VotesControllerTest < ActionDispatch::IntegrationTest
       assert Vote::Event.of_type("vote_assignment_viewed").where(vote_assignment: assignment).exists?
     end
 
+    test "timeline like buttons read one precomputed set instead of a query per devlog" do
+      ship_post = @target.post
+      devlogs = 3.times.map do |i|
+        devlog = Post::Devlog.new(body: "Progress #{i}", duration_seconds: 1.hour)
+        devlog.uploading_attachments = true
+        devlog.save!
+        Post.create!(project: ship_post.project, user: ship_post.user, postable: devlog, created_at: ship_post.created_at - 1.hour)
+        devlog
+      end
+      Like.create!(user: @voter, likeable: devlogs.first)
+
+      assert_queries_match(/SELECT 1 AS one FROM "likes"/, count: 0) do
+        get new_rate_url
+      end
+
+      assert_response :success
+      assert_select ".vote-page__timeline .like-button__btn--liked", 1
+      assert_select ".vote-page__timeline .like-button__btn", 3
+    end
+
     test "submitting a vote records attempt and submitted events" do
       get new_rate_url
       assignment = current_assignment
@@ -59,6 +79,33 @@ class VotesControllerTest < ActionDispatch::IntegrationTest
       assert_not_nil submitted.vote_id
       assert submitted.properties.key?("feedback_word_count")
       assert submitted.properties.key?("score_average")
+    end
+
+    test "voter can bank votes up to the future ship credit limit" do
+      @voter.update!(vote_balance: Vote::MAX_BANKED_VOTES - 1)
+
+      get new_rate_url
+      assignment = current_assignment
+      assert_not_nil assignment
+
+      post votes_path, params: {
+        vote_assignment_id: assignment.id,
+        vote: valid_scores.merge(reason: VotesControllerTest::VALID_REASON)
+      }
+
+      assert_redirected_to new_rate_path
+      assert_equal Vote::MAX_BANKED_VOTES, @voter.reload.vote_balance
+    end
+
+    test "voter cannot exceed the future ship credit limit" do
+      @voter.update!(vote_balance: Vote::MAX_BANKED_VOTES)
+
+      assert_no_difference -> { @voter.vote_assignments.count } do
+        get new_rate_url
+      end
+
+      assert_response :success
+      assert_includes response.body, "banked #{Vote::MAX_BANKED_VOTES} votes"
     end
 
     test "submitting a vote stores readable telemetry on the vote" do
@@ -169,7 +216,42 @@ class VotesControllerTest < ActionDispatch::IntegrationTest
       assert_not Vote::Event.of_type("vote_repo_opened").where(vote_assignment: assignment).exists?
     end
 
+    test "timeline posts load their authors and projects without a query per post" do
+      get new_rate_url
+      add_timeline_devlogs(2)
+      few = single_row_lookups { get new_rate_url }
+
+      add_timeline_devlogs(3)
+      many = single_row_lookups { get new_rate_url }
+
+      assert_response :success
+      assert_select ".vote-page__timeline .feed-post-card", 6 # five devlogs and the ship
+      assert_equal few, many
+    end
+
     private
+      def add_timeline_devlogs(count)
+        ship_post = @target.post
+        count.times do |i|
+          author = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "author#{SecureRandom.hex(5)}")
+          devlog = Post::Devlog.new(body: "Progress #{i}", duration_seconds: 1.hour)
+          devlog.uploading_attachments = true
+          devlog.save!
+          Post.create!(project: ship_post.project, user: author, postable: devlog, created_at: ship_post.created_at - 1.hour)
+        end
+      end
+
+      # Counts `WHERE id = $1` lookups per table, the shape a per-post N+1 takes.
+      def single_row_lookups(&block)
+        counts = Hash.new(0)
+        callback = lambda do |*, payload|
+          table = payload[:sql][/\ASELECT .* FROM "(users|projects|posts)" WHERE "\1"\."id" = \$1/, 1]
+          counts[table] += 1 if table
+        end
+        ActiveSupport::Notifications.subscribed(callback, "sql.active_record", &block)
+        counts
+      end
+
       def current_assignment
         @voter.vote_assignments.where(status: %w[assigned submitted skipped]).order(:created_at).last
       end

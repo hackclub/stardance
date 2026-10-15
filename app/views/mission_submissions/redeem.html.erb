@@ -1,4 +1,4 @@
-<% content_for :title, "Redeem prize — #{@submission.mission.name}" %>
+<% content_for :title, "Claim prizes — #{@submission.mission.name}" %>
 
 <div class="app-layout">
   <div class="app-layout__main">
@@ -6,8 +6,8 @@
       <p class="submission-redeem__breadcrumb">
         <%= link_to @submission.mission.name, mission_path(@submission.mission.slug) %>
       </p>
-      <h1>Pick a prize</h1>
-      <p>Approved submission for <strong><%= @submission.mission.name %></strong>. Pick which prize you'd like to redeem.</p>
+      <h1>Claim your prizes</h1>
+      <p>Approved submission for <strong><%= @submission.mission.name %></strong>. Every prize below is yours, and each one is claimed on its own.</p>
     </header>
 
     <% if @prizes.any? %>
@@ -18,7 +18,7 @@
             <% if prize.shop_item.description.present? %>
               <p><%= prize.shop_item.description %></p>
             <% end %>
-            <%= link_to "Redeem this prize",
+            <%= link_to "Claim this prize",
                         shop_item_path(prize.shop_item, mission_submission_id: @submission.id),
                         class: "action-btn action-btn--large action-btn--primary" %>
           </li>
@@ -26,6 +26,17 @@
       </ul>
     <% else %>
       <p>This mission has no prizes configured. Contact an admin if you believe this is wrong.</p>
+    <% end %>
+
+    <% if @claimed_prizes.any? %>
+      <ul class="submission-redeem__prizes submission-redeem__prizes--claimed">
+        <% @claimed_prizes.each do |prize| %>
+          <li class="submission-redeem__prize submission-redeem__prize--claimed">
+            <h3><%= prize.shop_item.name %></h3>
+            <p class="submission-redeem__claimed-label">Already claimed</p>
+          </li>
+        <% end %>
+      </ul>
     <% end %>
   </div>
 </div>

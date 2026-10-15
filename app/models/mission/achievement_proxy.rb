@@ -1,6 +1,6 @@
 class Mission::AchievementProxy
   # Mirrors the interface of the static `::Achievement` `Data.define` (slug,
-  # name, description, icon, has_stardust_reward?, stardust_reward, progress)
+  # name, description, icon, has_stardust_reward?, stardust_reward, progress_for)
   # so renderers and ledger logic can treat dynamic mission achievements
   # identically. Resolved lazily from the underlying `Mission` row.
   #
@@ -9,7 +9,7 @@ class Mission::AchievementProxy
   # `User::Achievement.achievement_slug`.
 
   SLUG_RE = /\Amission_(?<mission_slug>[a-z0-9_-]+)_completed\z/
-  ICON_FALLBACK = "icons/star_outline.svg".freeze
+  ICON_FALLBACK = "star_outline".freeze
 
   attr_reader :mission
 
@@ -22,6 +22,18 @@ class Mission::AchievementProxy
     return nil unless match
     mission = Mission.with_deleted.find_by(slug: match[:mission_slug])
     new(mission, slug: slug)
+  end
+
+  # All mission achievements a user should see on their achievements page:
+  # any achievement-configured mission currently visible to them (a locked
+  # teaser, mirroring how unearned static achievements are shown), plus any
+  # mission achievement they've actually earned — even if the mission has
+  # since been disabled/hidden, earned achievements always stay visible.
+  def self.configured_for(user)
+    visible_slugs = Mission.visible_for(user).filter_map(&:achievement_slug)
+    earned_slugs = user ? user.achievements.pluck(:achievement_slug).grep(SLUG_RE) : []
+
+    (visible_slugs + earned_slugs).uniq.filter_map { |slug| find(slug) }.select(&:mission)
   end
 
   def initialize(mission, slug:)
@@ -48,5 +60,14 @@ class Mission::AchievementProxy
 
   def has_stardust_reward? = false
   def stardust_reward      = 0
-  def progress(_user)      = nil
+  def progress_for(_user)  = nil
+
+  # Mission achievements are always shown once a mission is configured with
+  # one (a locked teaser card until earned) — there's no secret/hidden tier
+  # for these like the static achievements have.
+  def visible? = true
+  def shown_to?(_user, earned: nil) = true
+  def display_name(earned: nil) = name
+  def display_description(earned: nil) = description
+  def show_progress?(earned: nil) = false
 end

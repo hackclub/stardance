@@ -29,7 +29,8 @@ module SafeUrl
     # trick) is treated as hostile and rejected outright. We still return a
     # single verified IP so callers can pin the socket to it.
     raise Error, "Host resolves to a non-public IP" unless addresses.all? { |addr| public_ip?(addr) }
-    addresses.first
+    # Prefer IPv4 — many environments lack IPv6 connectivity.
+    addresses.sort_by { |addr| addr.include?(":") ? 1 : 0 }.first
   rescue URI::InvalidURIError, Resolv::ResolvError, ArgumentError => e
     raise Error, e.message
   end

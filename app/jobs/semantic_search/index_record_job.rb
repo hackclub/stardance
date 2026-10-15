@@ -2,7 +2,7 @@
 
 module SemanticSearch
   class IndexRecordJob < ApplicationJob
-    queue_as :default
+    queue_as :latency_5m
 
     def perform(record_class_name, record_id)
       record_class = record_class_name.constantize

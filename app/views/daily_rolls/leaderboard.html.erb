@@ -7,7 +7,7 @@
     <header class="rng-board__header">
       <h1 class="rng-board__title">daily random number</h1>
       <p class="rng-board__subtitle">
-        Get a random number each day, biggest number wins :)
+        Get a random number each day, biggest number wins a <strong>ticket to NASA's Kennedy Space Center</strong> :)
         Today's rolls reset in <span data-controller="countdown" data-countdown-reset-at-value="<%= rng_reset_at.iso8601 %>"><%= time_until_rng_reset %></span>.
       </p>
     </header>
@@ -54,9 +54,9 @@
             <div class="rng-board__pedestal rng-board__pedestal--place-<%= index + 1 %> <%= "rng-board__pedestal--viewer" if current_user&.id == roll.user_id %>">
               <span class="rng-board__medal"><%= index.zero? ? "★" : "##{index + 1}" %></span>
               <%= image_tag roll.user.avatar, alt: "", class: "rng-board__pedestal-avatar" %>
-              <%= link_to roll.user.display_name, profile_path(roll.user.display_name), class: "rng-board__pedestal-name" %>
+              <%= render "shared/username_link", user: roll.user, link_class: "rng-board__pedestal-name", text: roll.user.display_name, badge: false %>
               <% if current_user&.id == roll.user_id %><span class="rng-board__you-tag">you</span><% end %>
-              <span class="rng-board__pedestal-value"><%= formatted_roll_value(roll.value) %></span>
+              <span class="rng-board__pedestal-value"><%= formatted_roll_value(roll.total) %></span>
             </div>
           <% end %>
         </div>
@@ -99,8 +99,8 @@
       <% if @record %>
         <p class="rng-board__alltime">
           All-time best:
-          <%= link_to @record.user.display_name, profile_path(@record.user.display_name), class: "rng-board__alltime-name" %>
-          <span class="rng-board__alltime-value"><%= formatted_roll_value(@record.value) %></span>
+          <%= render "shared/username_link", user: @record.user, link_class: "rng-board__alltime-name", text: @record.user.display_name, badge: false %>
+          <span class="rng-board__alltime-value"><%= formatted_roll_value(@record.total) %></span>
           on <%= link_to rng_date_label(@record.rolled_on, today: @today), rng_date_path(@record.rolled_on, today: @today), class: "rng-board__alltime-date" %>
         </p>
       <% end %>

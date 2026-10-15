@@ -1,107 +1,112 @@
-// Funding request modal (Outpost-branded) + Outpost Ticket extras (shop / balance).
+// Hardware funding request modal.
+//
+// Title and buttons are inherited from .ship-modal. The panel is not: the ship
+// modal's surface is a warm light tan, and funding uses the dark set-2 card
+// surface the rest of the app's modals sit on.
 
-// Outpost palette (from outpost.hackclub.com).
-$outpost-cream: #fcf3de;
-$outpost-ink: #3b312f;
-$outpost-orange: #fe5100;
-$outpost-gold: #feab01;
-$outpost-teal: #34e0ba;
-
-// ---------------------------------------------------------------------------
-// Outpost-branded funding popup. Overrides the inherited ship-modal panel so
-// the dialog reads as Outpost (cream + orange) rather than the space theme.
-// ---------------------------------------------------------------------------
-.funding-modal--outpost {
-  .ship-modal__panel {
-    background: $outpost-cream;
-    color: $outpost-ink;
-    border-radius: 18px;
-  }
-
-  .ship-modal__btn--primary {
-    background: linear-gradient(180deg, $outpost-gold, $outpost-orange);
-    border: none;
-    color: #fff;
-    font-weight: 800;
-
-    &:hover,
-    &:focus-visible {
-      filter: brightness(1.05);
-    }
-  }
-
-  .ship-modal__btn--secondary {
-    background: transparent;
-    border: 2px solid rgba($outpost-ink, 0.25);
-    color: $outpost-ink;
-  }
+.funding-modal .ship-modal__panel {
+  background: var(--color-set-2-bg);
+  // A bordered set takes its own secondary-foreground as the border colour
+  // (branding.md §3), rather than the ship modal's cream highlight.
+  border: 2px solid var(--color-set-2-fg-secondary);
+  color: var(--color-space-text);
 }
 
 .funding-modal__header {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  text-align: center;
-  margin-bottom: 0.75rem;
+  gap: var(--space-xxs);
 }
 
-.funding-modal__logo {
-  width: auto;
-  max-width: 180px;
-  height: auto;
+.funding-modal__title {
+  margin: 0;
+  // Matches .ship-modal__title: Playfair italic is the system's emphasis face.
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-size: var(--font-size-xxl);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-space-text);
 }
 
 .funding-modal__tagline {
   margin: 0;
-  font-weight: 600;
-  color: rgba($outpost-ink, 0.75);
+  color: var(--color-space-text-muted);
 }
 
 .funding-modal__tiers {
   border: none;
   padding: 0;
-  margin: 0 0 1rem;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-s);
 
   legend {
-    font-weight: 800;
     padding: 0;
-    margin-bottom: 0.4rem;
-    color: $outpost-ink;
+    margin-bottom: var(--space-xs);
+    font-weight: 700;
+    color: var(--color-space-text);
   }
 }
 
 .funding-tier {
+  // Each tier owns an accent, and everything that marks the tier reads from it:
+  // the badge, the selected border, the selected fill and the radio. Lilac is
+  // the fallback so an unknown tier still looks deliberate.
+  --funding-tier-accent: var(--color-brand-lilac);
+  --funding-tier-accent-soft: var(--color-brand-lilac-soft);
+
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0.75rem;
-  border: 2px solid rgba($outpost-ink, 0.15);
-  border-radius: 12px;
-  background: rgba(#fff, 0.4);
+  gap: var(--space-s);
+  padding: var(--space-s) var(--space-m);
+  // Set-1 fill inside a lifted panel, per the container rules.
+  background: var(--color-set-1-bg);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--border-radius);
   cursor: pointer;
   transition:
-    border-color 0.12s ease,
-    background 0.12s ease;
+    border-color 120ms ease,
+    background 120ms ease;
 
-  &:hover {
-    border-color: rgba($outpost-orange, 0.5);
+  &--b {
+    --funding-tier-accent: var(--color-brand-mint);
+    --funding-tier-accent-soft: var(--color-brand-mint-soft);
   }
 
-  // Selected tier highlight.
+  &--a {
+    --funding-tier-accent: var(--color-brand-blue);
+    --funding-tier-accent-soft: var(--color-brand-blue-soft);
+  }
+
+  &--s {
+    --funding-tier-accent: var(--color-brand-lilac);
+    --funding-tier-accent-soft: var(--color-brand-lilac-soft);
+  }
+
+  &--x {
+    --funding-tier-accent: var(--color-brand-yellow);
+    --funding-tier-accent-soft: var(--color-brand-yellow-soft);
+  }
+
+  &:hover {
+    border-color: var(--color-border-input-focus);
+  }
+
+  // Selected tier highlights in its own accent, so the fill matches the badge
+  // the builder just clicked rather than reading as one shared purple.
   &:has(.funding-tier__input:checked) {
-    border-color: $outpost-orange;
-    background: color-mix(in srgb, $outpost-orange 10%, #fff);
+    border-color: var(--funding-tier-accent);
+    background: var(--funding-tier-accent-soft);
   }
 
   &__input {
     flex: 0 0 auto;
-    accent-color: $outpost-orange;
+    accent-color: var(--funding-tier-accent);
   }
 
+  // Dark ink on a bright pastel, per the accent guidance.
   &__badge {
     flex: 0 0 auto;
     display: inline-flex;
@@ -109,87 +114,143 @@ $outpost-teal: #34e0ba;
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    border-radius: 8px;
-    font-weight: 900;
-    color: #fff;
-    background: $outpost-orange;
-
-    &--b {
-      background: $outpost-teal;
-      color: $outpost-ink;
-    }
-    &--a {
-      background: #fe8002;
-    }
-    &--s {
-      background: $outpost-orange;
-    }
-    &--x {
-      background: $outpost-gold;
-      color: $outpost-ink;
-    }
+    border-radius: var(--border-radius);
+    font-weight: 800;
+    color: var(--color-set-1-bg);
+    background: var(--funding-tier-accent);
   }
 
   &__info {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+    min-width: 0;
     line-height: 1.25;
   }
 
   &__name {
-    font-weight: 800;
-    color: $outpost-ink;
+    font-weight: 700;
+    color: var(--color-space-text);
   }
 
   &__examples {
-    font-size: 0.85rem;
-    color: rgba($outpost-ink, 0.7);
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
   }
 
   &__max {
     flex: 0 0 auto;
-    font-weight: 800;
-    color: $outpost-orange;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-brand-highlight);
   }
+}
+
+.funding-modal__request-row {
+  --funding-control-height: 3rem;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-m);
+
+  .funding-modal__amount {
+    flex: 0 0 auto;
+  }
+
+  .funding-modal__bom {
+    flex: 1 1 17rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+  }
+}
+
+.funding-modal__bom-hint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--color-space-text-muted);
+  text-wrap: pretty;
 }
 
 .funding-modal__amount {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-  color: $outpost-ink;
+  gap: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-space-text);
 
   input {
-    max-width: 12rem;
-    padding: 0.45rem 0.6rem;
-    border: 2px solid rgba($outpost-ink, 0.25);
-    border-radius: 8px;
-    font-weight: 600;
+    // Explicit: a number input narrows itself once `max` is set on it.
+    width: 12rem;
+    max-width: 100%;
+    min-height: var(--funding-control-height, auto);
+    padding: var(--space-s) var(--space-m);
+    background-color: var(--color-set-1-bg);
+    color: var(--color-space-text);
+    border: 2px solid var(--color-border-input);
+    border-radius: var(--border-radius);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+
+    &:hover {
+      border-color: var(--color-border-input-focus);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-brand-lilac);
+      box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+    }
   }
 }
 
-.funding-modal__discount {
-  margin: 0 0 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
-  background: color-mix(in srgb, $outpost-teal 22%, #fff);
-  border: 1px solid color-mix(in srgb, $outpost-teal 55%, #fff);
-  font-weight: 800;
-  color: #0c6b58;
+.funding-modal__note {
+  margin: 0;
+  font-size: var(--font-size-s);
+  color: var(--color-space-text-muted);
 }
 
-.funding-modal__note {
-  margin: 0 0 0.5rem;
-  font-size: 0.9rem;
-  color: rgba($outpost-ink, 0.8);
+.funding-modal__reviewer-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-space-text);
+}
+
+.funding-modal__reviewer-note-optional {
+  font-weight: 400;
+  color: var(--color-space-text-muted);
+}
+
+.funding-modal__reviewer-note-input {
+  width: 100%;
+  padding: var(--space-s) var(--space-m);
+  background-color: var(--color-set-1-bg);
+  color: var(--color-space-text);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--border-radius);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-m);
+  font-weight: 400;
+  resize: vertical;
+
+  &:hover {
+    border-color: var(--color-border-input-focus);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+  }
 }
 
 .funding-modal__guide-link {
-  font-weight: 700;
-  color: $outpost-orange;
+  font-weight: 600;
+  color: var(--color-brand-lilac);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -197,45 +258,57 @@ $outpost-teal: #34e0ba;
 .funding-modal__bom-check {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: $outpost-ink;
+  gap: var(--space-s);
+  min-height: var(--funding-control-height, auto);
+  padding: var(--space-s) var(--space-m);
+  background: var(--color-overlay-light-soft);
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-s);
+  color: var(--color-space-text);
   cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+
+  &:hover {
+    border-color: var(--color-border-input-focus);
+  }
+
+  &:focus-within {
+    border-color: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+  }
+
+  &:has(input[type="checkbox"]:checked) {
+    background: color-mix(in srgb, var(--color-brand-mint) 8%, transparent);
+    border-color: color-mix(in srgb, var(--color-brand-mint) 45%, transparent);
+  }
 
   input[type="checkbox"] {
-    accent-color: $outpost-orange;
+    accent-color: var(--color-brand-lilac);
+  }
+
+  a {
+    color: var(--color-brand-blue);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   code {
     padding: 0.1rem 0.35rem;
-    background: rgba($outpost-ink, 0.08);
+    background: var(--color-overlay-light-soft);
     border-radius: 4px;
     font-size: 0.85em;
   }
 }
 
-// Inline tier-max validation error (shown on cream — red reads fine).
+// Inline tier-max validation error. Salmon is the system's warn accent.
 .funding-request__error {
-  margin: 0 0 1rem;
-  color: #c0392b;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-// ---------------------------------------------------------------------------
-// Outpost Ticket extras elsewhere (shop order summary, balance page).
-// ---------------------------------------------------------------------------
-.shop-order__summary-outpost {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed rgba(128, 128, 128, 0.4);
-  font-size: 0.9rem;
-
-  p {
-    margin: 0.25rem 0;
-  }
+  margin: 0;
+  color: var(--color-brand-salmon);
+  font-size: var(--font-size-s);
+  font-weight: 600;
 }
 
 .shop-order__achievement-cta {
@@ -245,15 +318,107 @@ $outpost-teal: #34e0ba;
   text-decoration: underline;
 }
 
-.balance-history__outpost {
-  margin-top: 0.25rem;
-  opacity: 0.85;
-}
-
 .review-form__hint {
   margin-top: 0.35rem;
   font-size: 0.85rem;
   opacity: 0.75;
+}
+
+// Reviewer feedback-image upload: a dashed drop target plus a client-side
+// preview grid of the files queued for this verdict (controller:
+// review_feedback_images_controller.js).
+.review-form__images-heading {
+  margin: var(--space-s) 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.review-form__image-drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-xs);
+  padding: var(--space-m);
+  border: 2px dashed var(--color-space-border);
+  border-radius: var(--border-radius);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--color-space-accent);
+  }
+
+  &--dragover {
+    border-color: var(--color-brand-mint);
+    background: var(--color-space-card);
+  }
+}
+
+.review-form__image-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.review-form__image-drop-text {
+  font-size: 0.85rem;
+  color: var(--color-space-text-muted);
+  pointer-events: none;
+}
+
+.review-form__image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-form__image-preview {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: calc(var(--border-radius) * 0.5);
+  overflow: hidden;
+  border: 1px solid var(--color-space-border);
+}
+
+.review-form__image-preview-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-form__image-preview-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.85);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -262,17 +427,17 @@ $outpost-teal: #34e0ba;
 .tier-guide {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin: 1rem 0;
+  gap: var(--space-s);
+  margin: var(--space-m) 0;
 }
 
 .tier-guide__row {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.75rem 1rem;
-  border: 2px solid rgba($outpost-ink, 0.12);
-  border-radius: 12px;
+  gap: var(--space-m);
+  padding: var(--space-s) var(--space-m);
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--border-radius);
 
   .funding-tier__badge {
     width: 2.25rem;
@@ -285,64 +450,11 @@ $outpost-teal: #34e0ba;
 }
 
 .tier-guide__name {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .tier-guide__max {
-  font-weight: 800;
-  color: $outpost-orange;
-}
-
-// ---------------------------------------------------------------------------
-// Discover rail — Outpost promo widget.
-// ---------------------------------------------------------------------------
-.outpost-widget {
-  display: block;
-  background: $outpost-cream;
-  border: 2px solid rgba($outpost-ink, 0.12);
-  border-radius: 14px;
-  padding: var(--space-m);
-  text-decoration: none;
-  color: $outpost-ink;
-  transition:
-    border-color 0.15s ease,
-    transform 0.15s ease;
-  overflow: hidden;
-
-  &:hover {
-    border-color: $outpost-orange;
-    transform: translateY(-1px);
-  }
-}
-
-.outpost-widget__logo {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.outpost-widget__highlights {
-  margin: var(--space-xs) 0 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: rgba($outpost-ink, 0.8);
-
-  li {
-    padding: 0.2rem 0;
-
-    &::before {
-      content: "· ";
-    }
-  }
-}
-
-.outpost-widget__cta {
-  display: block;
-  margin-top: var(--space-xs);
-  font-weight: 800;
-  font-size: var(--font-size-s);
-  color: $outpost-orange;
-  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-brand-highlight);
 }

@@ -12,5 +12,7 @@
       show_reposts: false,
       show_actions: false,
       track_engagement: track_engagement,
-      show_views: show_views
+      show_views: show_views,
+      media_variant: local_assigns.fetch(:media_variant, :large),
+      lazy_media: local_assigns.fetch(:lazy_media, false)
     ) %>

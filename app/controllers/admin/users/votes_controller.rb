@@ -4,7 +4,7 @@ class Admin::Users::VotesController < Admin::ApplicationController
     authorize @user, :view_votes?
 
     @pagy, @votes = pagy(
-      @user.votes.includes(:project, :events).order(created_at: :desc)
+      @user.votes.includes(:project, events: :user).order(created_at: :desc)
     )
   end
 end

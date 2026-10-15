@@ -1,82 +1,46 @@
-# Talks to Lookout (Hack Club's screen-recording time tracker).
-# See https://github.com/hackclub/lookout/blob/main/docs/integration.md
+# Reads a project's historical Lookout recordings for the hardware review pages.
 #
-# Session creation is server-to-server (X-API-Key). Once a session exists, the
-# browser drives recording against the token-authenticated client API, and we
-# poll the same client API server-side to mirror status/duration/video back into
-# our LookoutSession row. Lookout forwards the recording to Hackatime as a
-# project named after `projectName`, which the user then links like any other
-# Hackatime project.
+# Stardance no longer records with Lookout - builders record on Lapse now - but
+# Lookout is still running for the rest of Hack Club, and ~7.3k finished
+# recordings are still attached to projects here. Its stored video URLs are
+# presigned and expire after ~1h, so the stored recording_url is almost always
+# dead and each one has to be refreshed live at render time.
 class LookoutService
   BASE_URL = Rails.application.credentials.dig(:lookout, :base_url) || ENV.fetch("LOOKOUT_BASE_URL", "https://lookout.hackclub.com")
-  API_KEY  = Rails.application.credentials.dig(:lookout, :api_key) || ENV.fetch("LOOKOUT_API_KEY", "")
 
   # Bounds for the review-page recording fetch (see recordings_for_project).
   REVIEW_OPEN_TIMEOUT = 3
   REVIEW_READ_TIMEOUT = 6
   MAX_REVIEW_RECORDINGS = 12
 
-  # Bounds for the token-authenticated client API (status/duration/video polling).
-  # Faraday's default adapter has no timeout, so without these a single hung
-  # Lookout response blocks the caller indefinitely — fine for a one-off browser
-  # poll, but SyncPendingLookoutSessionsJob makes up to 400 sequential calls per
-  # run, so one stuck call would stall the whole run (and back up behind a
-  # concurrency-1, every-5-minutes schedule).
+  # Bounds for the token-authenticated client API (status/timings/stop), used by
+  # the temporary session-finalize recovery flow. See LookoutSessionsController.
   CLIENT_OPEN_TIMEOUT = 5
   CLIENT_READ_TIMEOUT = 10
 
   class << self
-    # Server-to-server. Returns the parsed body ({ token:, sessionId:,
-    # sessionUrl: }) or nil on failure.
-    def create_session(user_id:, project_id:, project_name:)
-      response = internal_connection.post("api/internal/sessions") do |req|
-        req.body = {
-          metadata: {
-            userId: user_id,
-            projectId: project_id,
-            projectName: project_name
-          }
-        }.to_json
-      end
-
-      if response.success?
-        JSON.parse(response.body).symbolize_keys
-      else
-        Rails.logger.error "LookoutService create_session error: #{response.status} - #{response.body}"
-        nil
-      end
-    rescue => e
-      Rails.logger.error "LookoutService create_session exception: #{e.message}"
-      nil
-    end
-
-    # Client API (token-authenticated). Status/duration/video for polling.
+    # Client API (token-authenticated). Current status/duration/video for one
+    # session; nil on failure.
     def fetch_session(token)
       response = client_connection.get("api/sessions/#{token}")
+      return JSON.parse(response.body).symbolize_keys if response.success?
 
-      if response.success?
-        JSON.parse(response.body).symbolize_keys
-      else
-        Rails.logger.error "LookoutService fetch_session error: #{response.status}"
-        nil
-      end
+      Rails.logger.error "LookoutService fetch_session error: #{response.status}"
+      nil
     rescue => e
       Rails.logger.error "LookoutService fetch_session exception: #{e.message}"
       nil
     end
 
-    # Capture timestamps for a finished session, forwarded to Hackatime as
-    # heartbeats. Returns the parsed body (an array, or a hash with a
-    # "timestamps" key) or nil.
+    # Capture timestamps for a session, forwarded to Hackatime as heartbeats
+    # (see LookoutHeartbeatForwarder). Returns the parsed body (an array, or a
+    # hash with a "timestamps" key) or nil.
     def fetch_timings(token)
       response = client_connection.get("api/sessions/#{token}/timings")
+      return JSON.parse(response.body) if response.success?
 
-      if response.success?
-        JSON.parse(response.body)
-      else
-        Rails.logger.error "LookoutService fetch_timings error: #{response.status}"
-        nil
-      end
+      Rails.logger.error "LookoutService fetch_timings error: #{response.status}"
+      nil
     rescue => e
       Rails.logger.error "LookoutService fetch_timings exception: #{e.message}"
       nil
@@ -84,22 +48,19 @@ class LookoutService
 
     def stop_session(token)
       response = client_connection.post("api/sessions/#{token}/stop")
+      return JSON.parse(response.body).symbolize_keys if response.success?
 
-      if response.success?
-        JSON.parse(response.body).symbolize_keys
-      else
-        Rails.logger.error "LookoutService stop_session error: #{response.status}"
-        nil
-      end
+      Rails.logger.error "LookoutService stop_session error: #{response.status}"
+      nil
     rescue => e
       Rails.logger.error "LookoutService stop_session exception: #{e.message}"
       nil
     end
 
-    # The hosted recorder URL the browser opens to record a session. Derived
-    # from the token so we don't need to persist sessionUrl.
-    def session_url_for(token)
-      "#{BASE_URL}/session?token=#{token}"
+    # A single session's playable recording (live-refreshed presigned URL), or
+    # nil when nothing is ready yet. Same display hash as recordings_for_project.
+    def recording_for_session(session)
+      review_recording(session)
     end
 
     # A project's finished Lookout recordings, for the hardware funding review.
@@ -167,14 +128,6 @@ class LookoutService
         conn.options.open_timeout = REVIEW_OPEN_TIMEOUT
         conn.options.timeout = REVIEW_READ_TIMEOUT
         conn.headers["Content-Type"] = "application/json"
-        conn.adapter Faraday.default_adapter
-      end
-    end
-
-    def internal_connection
-      @internal_connection ||= Faraday.new(url: BASE_URL) do |conn|
-        conn.headers["Content-Type"] = "application/json"
-        conn.headers["X-API-Key"] = API_KEY
         conn.adapter Faraday.default_adapter
       end
     end

@@ -3,7 +3,7 @@ class PostCreationToSlackJob < ApplicationJob
 
   discard_on ActiveJob::DeserializationError
 
-  CHANNEL_ID = "C0A3WD1B24R"
+  CHANNEL_ID = "C0BCWBZ22G1"
 
   SLACK_MENTION_PATTERN = /<!(?:here|channel|everyone|subteam\^[A-Z0-9]+)(?:\|[^>]+)?>|@(?:here|channel|everyone)/i
 

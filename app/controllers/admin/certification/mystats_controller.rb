@@ -25,16 +25,9 @@ class Admin::Certification::MystatsController < Admin::Certification::Applicatio
     @returned_count = @reviews.count(&:returned?)
     @approval_rate = @total_count.zero? ? 0 : (@approved_count * 100.0 / @total_count).round
 
-    now = Time.current
-    my_today_reviews = Certification::Ship.where(reviewer_id: current_user.id)
-                                          .where.not(status: :pending)
-                                          .where(decided_at: now.beginning_of_day..)
-    my_count = my_today_reviews.count
-
-    @current_rank = my_count > 0 ? Certification::Ship.rank_for_reviewer_with_count(current_user.id, my_count, now: now) : nil
-
-    @next_rank = Certification::Ship.rank_for_reviewer_with_count(current_user.id, my_count + 1, now: now)
-    @next_multiplier = Certification::Ship.multiplier_for_rank(@next_rank)
+    @reviews_today = Certification::Ship.reviewed_today(current_user)
+    @current_multiplier = Certification::Ship.multiplier_for_milestone(@reviews_today)
+    @next_milestone = Certification::Ship.next_milestone(@reviews_today)
 
     # adding reviews/payouts in one log
     @history_items = []

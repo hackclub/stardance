@@ -1,0 +1,107 @@
+<% decided_by ||= nil %>
+<% card_href = suggestion.accepted? && suggestion.shop_item_id ? shop_item_path(suggestion.shop_item_id) : nil %>
+<div class="suggestion-card<%= ' suggestion-card--linked' if card_href %>"
+     <% if card_href %>
+       data-controller="card-link"
+       data-card-link-url-value="<%= card_href %>"
+       data-action="click->card-link#navigate"
+       role="link"
+       tabindex="0"
+     <% end %>>
+  <div class="suggestion-card__image-wrap">
+    <% if suggestion.image.attached? && suggestion.image.variable? %>
+      <%= image_tag suggestion.image.variant(resize_to_limit: [480, 320], format: :webp),
+                    class: "suggestion-card__image",
+                    alt: suggestion.name,
+                    loading: "lazy" %>
+    <% elsif suggestion.image.attached? %>
+      <%= image_tag suggestion.image, class: "suggestion-card__image", alt: suggestion.name, loading: "lazy" %>
+    <% else %>
+      <div class="suggestion-card__image-placeholder" aria-hidden="true">?</div>
+    <% end %>
+
+    <span class="suggestion-card__status suggestion-card__status--<%= suggestion.aasm_state %>">
+      <%= suggestion.aasm_state.capitalize %>
+    </span>
+  </div>
+
+  <div class="suggestion-card__body">
+    <h2 class="suggestion-card__name"><%= suggestion.name %></h2>
+
+    <div class="suggestion-card__meta">
+      <span class="suggestion-card__usd-cost">~$<%= number_with_precision(suggestion.usd_cost, precision: 2) %></span>
+      <span class="suggestion-card__by">by <%= suggestion.user.display_name %></span>
+    </div>
+
+    <div class="suggestion-card__description-wrap"
+         data-controller="read-more"
+         data-read-more-clamped-class="suggestion-card__description--clamped">
+      <p class="suggestion-card__description suggestion-card__description--clamped" data-read-more-target="body">
+        <%= suggestion.description %>
+      </p>
+      <button type="button"
+              class="suggestion-card__read-more"
+              data-read-more-target="toggle"
+              data-action="read-more#toggle"
+              hidden>Read more</button>
+    </div>
+
+    <% if suggestion.rejected? && suggestion.rejection_reason.present? %>
+      <p class="suggestion-card__rejection-reason">
+        "<%= suggestion.rejection_reason %>"<% if decided_by %> &mdash; rejected by <%= decided_by.display_name %><% end %>
+      </p>
+    <% elsif decided_by %>
+      <p class="suggestion-card__decided-by suggestion-card__decided-by--<%= suggestion.aasm_state %>">
+        <%= suggestion.accepted? ? "accepted" : "rejected" %> by <%= decided_by.display_name %>
+      </p>
+    <% end %>
+  </div>
+
+  <div class="suggestion-card__footer">
+    <span class="suggestion-card__vote-count">&#9650; <%= pluralize(suggestion.vote_count, "vote") %></span>
+
+    <% if current_user && suggestion.pending? && current_user != suggestion.user %>
+      <%= button_to shop_suggestion_votes_path(suggestion),
+                    method: :post,
+                    class: "suggestion-card__vote-btn",
+                    form: { style: "display:contents" } do %>
+        Vote &mdash; <%= ShopSuggestionVote::VOTE_COST %> <%= stardust_icon %>
+      <% end %>
+    <% end %>
+
+    <% if card_href %>
+      <%= link_to "Shop →", card_href, class: "suggestion-card__url-link" %>
+    <% elsif suggestion.url.present? %>
+      <%= link_to "View item →", suggestion.url, target: "_blank", rel: "noopener noreferrer", class: "suggestion-card__url-link" %>
+    <% end %>
+  </div>
+
+  <% if suggestion.pending? && current_user&.admin? %>
+    <div class="admin tools-do suggestion-card__admin-strip">
+      <div class="suggestion-card__admin-row">
+        <%= button_to "Accept →",
+                      accept_admin_shop_suggestion_path(suggestion),
+                      method: :post,
+                      class: "suggestion-card__accept-btn",
+                      form: { style: "display:contents" } %>
+
+        <%= button_to "Delete",
+                      delete_admin_shop_suggestion_path(suggestion),
+                      method: :delete,
+                      class: "suggestion-card__delete-btn",
+                      form: { style: "display:contents",
+                              data: { controller: "confirm",
+                                      confirm_message_value: "Permanently remove \"#{suggestion.name}\"? This cannot be undone.",
+                                      action: "submit->confirm#confirm" } } %>
+      </div>
+
+      <%= form_with url: reject_admin_shop_suggestion_path(suggestion), method: :post,
+                    class: "suggestion-card__reject-form" do |f| %>
+        <%= f.text_field :rejection_reason,
+                         placeholder: "Reason (optional)",
+                         class: "suggestion-card__reject-reason" %>
+        <%= f.submit "Reject", class: "suggestion-card__reject-btn" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

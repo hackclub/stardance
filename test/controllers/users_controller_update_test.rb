@@ -26,6 +26,21 @@ class UsersControllerUpdateTest < ActionDispatch::IntegrationTest
     assert_not_equal "hacked", @alice.reload.bio
   end
 
+  test "admin can update someone else's profile" do
+    @bob.grant_role!(:admin)
+    sign_in @bob
+    patch user_path(@alice), params: { user: { bio: "updated by admin" } }
+    assert_redirected_to user_path(@alice)
+    assert_equal "updated by admin", @alice.reload.bio
+  end
+
+  test "admin editing someone else's profile is attributed in PaperTrail" do
+    @bob.grant_role!(:admin)
+    sign_in @bob
+    patch user_path(@alice), params: { user: { bio: "updated by admin" } }
+    assert_equal @bob.id, @alice.reload.versions.last.whodunnit.to_i
+  end
+
   test "logged-out users cannot update" do
     patch user_path(@alice), params: { user: { bio: "hi" } }
     assert_response :forbidden

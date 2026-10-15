@@ -2,7 +2,11 @@
 
 <div class="app-layout app-layout--wide">
   <div class="app-layout__main app-layout__main--wide sw-payouts sw-payouts--review">
-    <%= link_to "← back to payout reviews", admin_payout_reviews_path, class: "sw-payouts__back" %>
+    <% if policy(:payout_review).index? %>
+      <%= link_to "← Back to payout reviews", admin_payout_reviews_path, class: "sw-payouts__back" %>
+    <% elsif @ship_event.project %>
+      <%= link_to "← Back to project", admin_project_path(@ship_event.project), class: "sw-payouts__back" %>
+    <% end %>
 
     <header class="sw-payouts__header">
       <div>
@@ -11,6 +15,20 @@
         <p class="sw-payouts__subtitle">Read-only payout estimate and rating reason review.</p>
       </div>
     </header>
+
+    <% if @project_ship_events.many? %>
+      <nav class="sw-payouts__ship-nav" aria-label="Project ships">
+        <span class="sw-payouts__ship-nav-label">Project ships</span>
+        <div class="sw-payouts__ship-links">
+          <% @project_ship_events.each do |ship_event| %>
+            <%= link_to "Ship ##{ship_event.id}",
+                  admin_payout_review_path(ship_event),
+                  class: class_names("sw-payouts__ship-link", "is-active": ship_event == @ship_event),
+                  aria: { current: ("page" if ship_event == @ship_event) } %>
+          <% end %>
+        </div>
+      </nav>
+    <% end %>
 
     <section class="sw-payouts__detail">
       <div class="sw-payouts__detail-card">

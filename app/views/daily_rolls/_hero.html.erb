@@ -14,11 +14,11 @@
          data-controller="daily-roll"
          data-daily-roll-base-class-value="rng-hero"
          data-daily-roll-just-rolled-value="<%= just_rolled %>"
-         data-daily-roll-value-value="<%= roll&.value %>">
+         data-daily-roll-value-value="<%= roll&.total %>">
   <% if roll %>
     <span class="rng-hero__label"><%= for_today ? "Your number today" : "Your number · #{date_label}" %></span>
     <div class="rng-hero__result">
-      <span class="rng-hero__number rng-hero__number--<%= roll.tone %>" data-daily-roll-target="number"><%= just_rolled ? "✦" : formatted_roll_value(roll.value) %></span>
+      <span class="rng-hero__number rng-hero__number--<%= roll.tone %>" data-daily-roll-target="number"><%= just_rolled ? "✦" : formatted_roll_value(roll.total) %></span>
       <span class="rng-hero__burst" data-daily-roll-target="burst" aria-hidden="true"></span>
     </div>
     <p class="rng-hero__flavor"><%= roll.flavor %></p>
@@ -43,6 +43,10 @@
                   data-tooltip-message-value="Click to copy"
                   data-copy-text-value="<%= roll_share_text(roll) %>"
                   data-action="click->copy#copy">copy to share</button>
+
+          <% if reroll_enabled?(current_user) %>
+            <%= render "daily_rolls/reroll_control", user: current_user, roll: roll, block: "rng-hero", size: :large %>
+          <% end %>
         <% end %>
       </div>
       <% if for_today && Rails.env.development? %>
@@ -59,7 +63,7 @@
                   form: { data: { turbo: true } },
                   data: { turbo_submits_with: "rolling…" } %>
     <% if anonymous %>
-      <p class="rng-hero__hint">biggest number wins. sign up to get on the board.</p>
+      <p class="rng-hero__hint">biggest number wins a <strong>ticket to NASA's kennedy space center</strong>. sign up to get on the board.</p>
     <% else %>
       <%= link_to "see history", rng_history_path, class: "rng-hero__history-link" %>
     <% end %>

@@ -1,9 +1,13 @@
 class Home::FeedsController < ApplicationController
   include OnboardingResumable
+  include TimelinePostPreloading
 
-  FEED_LIMIT = 20
+  FEED_LIMIT = 10
+  FIRST_PAGE_LIMIT = 3
   RECOMMENDATION_POOL = 100 # after this, we fallback to SQL
-  TABS = %w[for_you following popular newest new_builders].freeze
+  BACKFILL_OVERSAMPLE = 10
+  GORSE_TIMEOUT = 0.75
+  TABS = %w[for_you hardware following popular newest new_builders].freeze
   FeedPage = Struct.new(:page, :limit, :offset, :next, keyword_init: true)
 
   skip_before_action :remember_page
@@ -22,6 +26,7 @@ class Home::FeedsController < ApplicationController
 
   def load_feed
     case @current_tab
+    when "hardware"      then load_legacy_for_you_feed(category: "feed_hardware")
     when "following"     then load_following_feed
     when "popular"       then paginate_and_filter(popular_scope, "popular")
     when "newest"        then paginate_and_filter(newest_scope, "newest")
@@ -35,14 +40,140 @@ class Home::FeedsController < ApplicationController
   end
 
   def load_for_you_feed
-    recommended = recommended_posts
-    backfill = feed_scope.where.not(id: recommended.map(&:id))
+    return load_seen_mixer_feed if seen_mixer_enabled?
+
+    load_legacy_for_you_feed
+  end
+
+  def load_legacy_for_you_feed(category: "feed")
+    gorse_posts = category == "feed_hardware" ? recommendations.posts(limit: RECOMMENDATION_POOL, category:) : recommended_posts
+    recommended = if category == "feed" && hardware_interest? && gorse_posts.size < RECOMMENDATION_POOL
+      (gorse_posts + blended_sql_posts).uniq(&:id).first(RECOMMENDATION_POOL)
+    else
+      gorse_posts
+    end
+    scope = category == "feed_hardware" ? Gorse::PostPayload.feed_scope(current_user) : Gorse::PostPayload.recommendable_feed_scope(current_user)
+    scope = Gorse::PostPayload.hardware_scope(scope) if category == "feed_hardware"
+    backfill = filtered_feed_scope(scope)
+      .where.not(id: recommended.map(&:id))
 
     @pagy = feed_pagy
-    @feed_posts, @feed_post_sources, has_next = compose_feed(recommended, backfill, @pagy)
+    @feed_posts, @feed_post_sources, has_next = compose_feed(recommended, backfill, @pagy, gorse_post_ids: gorse_posts.map(&:id).to_set)
     @pagy.next = @pagy.page + 1 if has_next
 
     preload_feed_associations(@feed_posts)
+  end
+
+  def load_seen_mixer_feed
+    @pagy = feed_pagy
+    store = Feed::SessionStore.new(user: current_user)
+    session = store.read_session(params[:feed_session_id]) if @pagy.page > 1
+    session_status = session.present? ? "hit" : "miss"
+
+    if session.present?
+      @feed_session_id = params[:feed_session_id]
+    else
+      @feed_session_id = SecureRandom.uuid
+      session = build_mixed_feed_session(store, base_offset: @pagy.offset)
+      store.write_session(
+        @feed_session_id,
+        entries: session[:entries],
+        base_offset: session[:base_offset]
+      )
+    end
+
+    entries = session[:entries] || session["entries"] || []
+    base_offset = (session[:base_offset] || session["base_offset"] || 0).to_i
+    local_offset = [ @pagy.offset - base_offset, 0 ].max
+    page_entries = Array(entries[local_offset, @pagy.limit + 1])
+    page_posts = posts_for_session_entries(page_entries)
+    posts_by_id = page_posts.index_by(&:id)
+    visible_entries = page_entries.filter_map do |entry|
+      post_id = (entry[:post_id] || entry["post_id"]).to_i
+      post = posts_by_id[post_id]
+      [ post, entry[:source] || entry["source"] ] if post.present? && visible_post?(post)
+    end
+
+    selected_entries = visible_entries.first(@pagy.limit)
+    @feed_posts = selected_entries.map(&:first)
+    @feed_post_sources = selected_entries.to_h
+    @pagy.next = @pagy.page + 1 if visible_entries.size > @pagy.limit || local_offset + page_entries.size < entries.size
+
+    store.mark_served(@feed_posts.map { |post| Feed::Mixer.canonical_content_id(post) })
+    preload_feed_associations(@feed_posts)
+    instrument_feed_mix(store:, session_status:)
+  end
+
+  def build_mixed_feed_session(store, base_offset:)
+    gorse_posts = recommended_candidates
+    fresh_posts = if hardware_interest?
+      blended_sql_posts
+    else
+      filtered_feed_scope(Gorse::PostPayload.recommendable_feed_scope(current_user))
+        .limit(RECOMMENDATION_POOL)
+        .to_a
+    end
+    preload(fresh_posts, :postable)
+
+    candidates = (gorse_posts + fresh_posts).uniq(&:id)
+    canonical_ids = candidates.filter_map { |post| Feed::Mixer.canonical_content_id(post) }
+    candidate_ids = candidates.map(&:id)
+    posts_by_id = candidates.index_by(&:id)
+    read_post_ids = PostView.where(user: current_user, post_id: candidate_ids + canonical_ids)
+                            .where.not(read_at: nil)
+                            .pluck(:post_id)
+    blocked_content_ids = store.suppressed_ids
+    read_post_ids.each do |post_id|
+      blocked_content_ids << (Feed::Mixer.canonical_content_id(posts_by_id[post_id]) || post_id)
+    end
+
+    result = Feed::Mixer.new(
+      gorse_posts:,
+      fresh_posts:,
+      blocked_content_ids:,
+      served_at: store.served_at,
+      seed: @feed_session_id,
+      max_items: RECOMMENDATION_POOL
+    ).call
+    @feed_mixer_metrics = result.metrics
+
+    {
+      entries: result.entries.map { |entry| { post_id: entry.post.id, source: entry.source } },
+      base_offset:
+    }
+  end
+
+  def posts_for_session_entries(entries)
+    ids = entries.map { |entry| (entry[:post_id] || entry["post_id"]).to_i }
+    Gorse::PostPayload.recommendable_feed_scope(current_user)
+      .where(id: ids)
+      .includes(:user, :project, :postable)
+      .to_a
+  end
+
+  def instrument_feed_mix(store:, session_status:)
+    metrics = (@feed_mixer_metrics || {}).merge(
+      user_id: current_user.id,
+      session_status:,
+      cache_healthy: store.cache_healthy,
+      page: @pagy.page,
+      rendered: @feed_posts.size,
+      rendered_ships: @feed_posts.count { |post| post.postable_type == "Post::ShipEvent" }
+    )
+    ActiveSupport::Notifications.instrument("feed.mixed", metrics)
+  end
+
+  def seen_mixer_enabled?
+    current_user.present? && Flipper.enabled?(:feed_seen_mixer, current_user)
+  end
+
+  def filtered_feed_scope(scope)
+    scope
+      .joins("LEFT JOIN users feed_authors ON feed_authors.id = posts.user_id")
+      .joins("LEFT JOIN projects feed_projects ON feed_projects.id = posts.project_id")
+      .where("feed_projects.id IS NULL OR feed_projects.description IS NOT NULL")
+      .where("feed_authors.banned = FALSE")
+      .order(Arel.sql(quality_latest_order_sql))
   end
 
   def load_following_feed
@@ -122,23 +253,55 @@ class Home::FeedsController < ApplicationController
   end
 
   def recommended_posts
-    Gorse::Recommendations.new(user: current_user).posts(limit: RECOMMENDATION_POOL)
+    return recommendations.posts(limit: RECOMMENDATION_POOL) unless hardware_interest?
+
+    recommended_candidates
+  end
+
+  def recommended_candidates
+    general = recommendations.post_candidates(limit: RECOMMENDATION_POOL)
+    return general unless hardware_interest?
+
+    hardware = recommendations.post_candidates(limit: RECOMMENDATION_POOL / 3, category: "feed_hardware")
+    blend_hardware_posts(general, hardware)
+  end
+
+  def blend_hardware_posts(general, hardware)
+    hardware = hardware.uniq(&:id)
+    hardware_ids = hardware.map(&:id).to_set
+    general = general.uniq(&:id).reject { |post| hardware_ids.include?(post.id) }
+    blended = general.each_slice(2).flat_map.with_index { |pair, index| pair + Array(hardware[index]) }
+    (blended + hardware.drop((general.size + 1) / 2)).first(RECOMMENDATION_POOL)
+  end
+
+  def blended_sql_posts
+    scope = Gorse::PostPayload.recommendable_feed_scope(current_user)
+    general = filtered_feed_scope(scope).limit(RECOMMENDATION_POOL).to_a
+    hardware = filtered_feed_scope(Gorse::PostPayload.hardware_scope(scope))
+      .limit(RECOMMENDATION_POOL / 3).to_a
+    blend_hardware_posts(general, hardware)
+  end
+
+  def hardware_interest?
+    current_user&.interests&.include?("hardware")
   end
 
   def feed_pagy
     page = [ params[:page].to_i, 1 ].max
-    FeedPage.new(page: page, limit: FEED_LIMIT, offset: (page - 1) * FEED_LIMIT)
+    limit = page == 1 ? FIRST_PAGE_LIMIT : FEED_LIMIT
+    offset = page == 1 ? 0 : FIRST_PAGE_LIMIT + (page - 2) * FEED_LIMIT
+    FeedPage.new(page: page, limit: limit, offset: offset)
   end
 
-  def compose_feed(recommended, backfill, pagy)
+  def compose_feed(recommended, backfill, pagy, gorse_post_ids: recommended.map(&:id).to_set)
     page_candidate_limit = pagy.limit + 1
     rec_slice = pagy.offset < recommended.size ? Array(recommended[pagy.offset, page_candidate_limit]) : []
-    candidates = rec_slice.map { |post| [ post, "recommended" ] }
+    candidates = rec_slice.map { |post| [ post, gorse_post_ids.include?(post.id) ? "recommended" : "quality_latest" ] }
 
     remaining = page_candidate_limit - rec_slice.size
     if remaining.positive?
       sql_offset = [ pagy.offset - recommended.size, 0 ].max
-      backfill_posts = backfill.offset(sql_offset).limit(remaining).to_a
+      backfill_posts = backfill.offset(sql_offset).limit(remaining * BACKFILL_OVERSAMPLE).to_a
       # Batch-load postables up front: the visibility filter below reads
       # `post.postable` on every candidate, which would otherwise fire one
       # query per post. preload_feed_associations later deep-loads from here.
@@ -151,24 +314,31 @@ class Home::FeedsController < ApplicationController
       end
     end
 
-    posts, sources = dedupe_by_content(candidates.first(pagy.limit))
-    [ posts, sources, candidates.size > pagy.limit ]
+    diverse_posts, sources = select_diverse_candidates(candidates, limit: page_candidate_limit)
+    posts = diverse_posts.first(pagy.limit)
+    [ posts, sources.slice(*posts), diverse_posts.size > pagy.limit ]
   end
 
-  # don't want to show dupe reposts
-  def dedupe_by_content(candidates)
+  def select_diverse_candidates(candidates, limit:)
     origins = repost_original_ids(candidates.map(&:first))
     posts = []
     sources = {}
-    seen = Set.new
+    seen_content_ids = Set.new
+    seen_user_ids = Set.new
+    seen_project_ids = Set.new
 
     candidates.each do |post, source|
-      key = post.repost? ? origins[post.postable_id] : post.id
-      next if key.nil? || seen.include?(key)
+      content_id = post.repost? ? origins[post.postable_id] : post.id
+      next if content_id.nil? || seen_content_ids.include?(content_id)
+      next if post.user_id.present? && seen_user_ids.include?(post.user_id)
+      next if post.project_id.present? && seen_project_ids.include?(post.project_id)
 
-      seen << key
+      seen_content_ids << content_id
+      seen_user_ids << post.user_id if post.user_id.present?
+      seen_project_ids << post.project_id if post.project_id.present?
       posts << post
       sources[post] = source
+      break if posts.size >= limit
     end
 
     [ posts, sources ]
@@ -182,12 +352,7 @@ class Home::FeedsController < ApplicationController
   end
 
   def feed_scope
-    Gorse::PostPayload.feed_scope(current_user)
-      .joins("LEFT JOIN users feed_authors ON feed_authors.id = posts.user_id")
-      .joins("LEFT JOIN projects feed_projects ON feed_projects.id = posts.project_id")
-      .where("feed_projects.id IS NULL OR feed_projects.description IS NOT NULL")
-      .where("feed_authors.banned = FALSE")
-      .order(Arel.sql(quality_latest_order_sql))
+    filtered_feed_scope(Gorse::PostPayload.feed_scope(current_user))
   end
 
   def quality_latest_order_sql
@@ -229,35 +394,7 @@ class Home::FeedsController < ApplicationController
     ActiveRecord::Associations::Preloader.new(records: records, associations: associations).call
   end
 
-  def liked_devlog_ids_for(posts)
-    return Set.new unless current_user
-
-    devlog_posts = posts.select { |p| p.postable_type == "Post::Devlog" }
-    return Set.new if devlog_posts.empty?
-
-    Like.where(user: current_user, likeable_type: "Post::Devlog", likeable_id: devlog_posts.map(&:postable_id)).pluck(:likeable_id).to_set
-  end
-
-  def reposted_post_ids_for(posts)
-    return Set.new unless current_user
-
-    repost_target_ids = posts.filter_map do |post|
-      if post.postable_type == "Post::Devlog"
-        post.id
-      elsif post.repost?
-        post.postable&.original_post_id
-      end
-    end
-    return Set.new if repost_target_ids.empty?
-
-    Post::Repost
-      .where(user: current_user, original_post_id: repost_target_ids)
-      .pluck(:original_post_id)
-      .to_set
-  end
-
   def load_recommended_projects
-    recommendations = Gorse::Recommendations.new(user: current_user)
     projects = recommendations.projects(limit: 6)
 
     @recommended_projects =
@@ -272,5 +409,12 @@ class Home::FeedsController < ApplicationController
 
   def first_page?
     @pagy.nil? || @pagy.page == 1
+  end
+
+  def recommendations
+    @recommendations ||= Gorse::Recommendations.new(
+      user: current_user,
+      client: Gorse::Client.new(timeout_seconds: GORSE_TIMEOUT)
+    )
   end
 end

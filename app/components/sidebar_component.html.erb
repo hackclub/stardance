@@ -4,7 +4,10 @@
        data-turbo-permanent
        aria-label="Main">
   <%= link_to root_path, class: "sidebar__logo", "aria-label": "Stardance home", data: { turbo: true } do %>
-    <%= image_tag "landing/header/stardance-logo.png", alt: "Hack Club Stardance Challenge", class: "sidebar__logo-img" %>
+    <% ddr = Flipper.enabled?(:ddr, user) %>
+    <%= image_tag(ddr ? "landing/header/ddr.png" : "landing/header/stardance-logo.png",
+          alt: ddr ? "Hack Club Dance Dance Revolution" : "Hack Club Stardance Challenge",
+          class: "sidebar__logo-img") %>
   <% end %>
 
   <nav class="sidebar__nav" aria-label="Primary navigation">
@@ -64,13 +67,17 @@
     <% if signed_in? %>
       <div class="sidebar__user-card">
         <div class="sidebar__user-meta">
-          <div class="sidebar__user-balance">
+          <%= link_to my_balance_path, class: "sidebar__user-balance", title: "View your balance history" do %>
             <%= helpers.stardust_icon(extra_class: "sidebar__user-balance-icon") %>
             <span class="sidebar__user-balance-amount"><%= number_with_delimiter(user.cached_balance) %></span>
-          </div>
-          <%= link_to profile_path(user.display_name), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
-            @<%= user.display_name %>
           <% end %>
+          <div class="sidebar__user-handle-row">
+            <%= link_to profile_path(user.display_name), class: "sidebar__user-meta-handle", data: { turbo: true } do %>
+              @<%= user.display_name %>
+            <% end %>
+            <%= helpers.admin_tool(compact: true) do %><%= link_to "🔨", helpers.admin_user_path(user), class: "username-link__admin", "aria-label": "View #{user.display_name} in admin" %><% end %>
+            <%= helpers.admin_tool(compact: true) do %>#<%= user.id %><% end %>
+          </div>
         </div>
 
         <div class="sidebar__user-actions">
@@ -116,7 +123,7 @@
       <div class="settings-form__field">
         <p class="settings-form__hint">
           Per-category notification controls (Slack, email) moved to a dedicated page:
-          <%= link_to "Manage notifications →", my_notification_settings_path %>
+          <%= link_to "Manage notifications →", my_notification_settings_path, class: "settings-form__hint-link--primary" %>
         </p>
       </div>
 
@@ -134,6 +141,33 @@
           <span>Streamer mode</span>
         </label>
         <small class="settings-form__hint">Blur sensitive info like addresses and API keys</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :platform_ads_enabled, "0", id: nil %>
+          <%= check_box_tag :platform_ads_enabled, "1", preference.platform_ads_enabled?, id: "platform_ads_enabled" %>
+          Show program ads
+        </label>
+        <small class="settings-form__hint">Show promotions for other Hack Club programs. Turn off to hide them across Stardance on your account.</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :disintegration_effects_enabled, "0", id: nil %>
+          <%= check_box_tag :disintegration_effects_enabled, "1", preference.disintegration_effects_enabled?, id: "disintegration_effects_enabled" %>
+          <span>Show disintegration effects</span>
+        </label>
+        <small class="settings-form__hint">Turn on all fragmenting and dissolving, including particles</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :particle_effects_enabled, "0", id: nil %>
+          <%= check_box_tag :particle_effects_enabled, "1", preference.particle_effects_enabled?, id: "particle_effects_enabled" %>
+          <span>Show disintegration particles</span>
+        </label>
+        <small class="settings-form__hint">Turn on drifting particles</small>
       </div>
 
       <% if user.slack_id.present? %>
@@ -162,6 +196,14 @@
         <% end %>
         <small class="settings-form__hint">Links your coding time from Hackatime to your projects</small>
       </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__label">Export Data</label>
+        <%= link_to "Export Data", my_data_exports_path, class: "settings-form__hackatime-btn settings-form__export-btn" %>
+        <small class="settings-form__hint">Download a ZIP of your projects, devlogs, and images</small>
+      </div>
+
+      <%= render "my/settings/api_key", user: user %>
 
       <div class="modal__actions">
         <button type="button" class="modal__actions-close" onclick="document.getElementById('settings-form').reset(); document.getElementById('settings-modal').close()">Cancel</button>

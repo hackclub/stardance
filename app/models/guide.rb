@@ -2,14 +2,14 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
   include ActiveModel::Conversion
   extend ActiveModel::Naming
 
-  self::CATEGORY_ORDER = %i[stardance_101 outpost shipping craft program].freeze
+  self::CATEGORY_ORDER = %i[stardance_101 hardware shipping craft program].freeze
 
   self::CATEGORY_LABELS = {
     stardance_101: "Stardance 101",
     shipping: "Shipping",
     craft: "Craft",
     program: "Program",
-    outpost: "Hardware | Outpost"
+    hardware: "Hardware"
   }.freeze
 
   # Root directory that `markdown:` paths are resolved against.
@@ -98,16 +98,6 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       related: []
     ),
     new(
-      slug: :outpost,
-      title: "Outpost",
-      description: "Everything you need to know about Outpost, a 6-day hardware hackathon + expo we are running with Open Sauce in SF!",
-      category: :outpost,
-      icon: "rocket",
-      reading_minutes: 5,
-      related: %i[starting-hardware shipping-hardware outpost-tiers outpost-faq],
-      markdown: "outpost/outpost.md"
-    ),
-    new(
       slug: :now_what,
       title: "I've set up my account. Now what?",
       description: "Just signed up? Here's the whole Stardance loop — from your first project to spending Stardust — in one place.",
@@ -125,69 +115,38 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       category: :stardance_101,
       icon: "rocket",
       reading_minutes: 2,
-      related: %i[outpost starting-hardware outpost-faq],
-      markdown: "outpost/hardware.md"
+      related: %i[starting-hardware shipping-hardware tiers],
+      markdown: "hardware/hardware.md"
     ),
     new(
       slug: :"starting-hardware",
       title: "Starting your hardware project",
       description: "A quick crash course on how to start a hardware project from scratch, great for beginners!",
-      category: :outpost,
+      category: :hardware,
       icon: "compass_fill",
       reading_minutes: 5,
-      related: %i[outpost shipping-hardware outpost-tiers],
-      markdown: "outpost/starting-hardware.md"
+      related: %i[hardware shipping-hardware tiers],
+      markdown: "hardware/starting-hardware.md"
     ),
     new(
       slug: :"shipping-hardware",
       title: "Shipping your hardware project",
-      description: "Get your project ready to ship — required files, repository structure, and the step-by-step.",
-      category: :outpost,
+      description: "Learn how to get your hardware project ready to submit, step-by-step!",
+      category: :hardware,
       icon: "ship",
       reading_minutes: 5,
-      related: %i[starting-hardware outpost outpost-tiers],
-      markdown: "outpost/shipping-hardware.md",
-      hidden: true
-    ),
-    new(
-      slug: :"outpost-tiers",
-      title: "Outpost Project Tiers!",
-      description: "What the different Outpost project tiers look like, with budgets, points, and examples for each.",
-      category: :outpost,
-      icon: "code",
-      reading_minutes: 4,
-      related: %i[outpost starting-hardware],
-      markdown: "outpost/tiers.md"
-    ),
-    new(
-      slug: :"outpost-faq",
-      title: "Outpost FAQ",
-      description: "Your one stop shop for all things Outpost; channels, logistics, and more!",
-      category: :outpost,
-      icon: "info",
-      reading_minutes: 4,
-      related: %i[outpost starting-hardware shipping-hardware],
-      markdown: "outpost/faq.md"
-    ),
-    new(
-      slug: :"super-hardware-builder",
-      title: "Becoming a Super Hardware Builder",
-      description: "How to earn Super Hardware Builder status, which gets you perks (including Outpost qualification!)",
-      category: :outpost,
-      icon: "rocket",
-      reading_minutes: 4,
-      related: %i[outpost starting-hardware],
-      markdown: "outpost/super-hardware-builder.md"
+      related: %i[hardware starting-hardware tiers],
+      markdown: "hardware/shipping-hardware.md"
     ),
     new(
       slug: :tiers,
       title: "Hardware funding tiers",
-      description: "How Outpost funds hardware builds: the B/A/S/X tiers, what each covers, and how unspent budget turns into Stardust toward the Outpost Ticket.",
-      category: :outpost,
+      description: "What the different funding tiers are for hardware projects, including funding amounts!",
+      category: :hardware,
       icon: "info",
       reading_minutes: 3,
-      related: %i[outpost outpost-tiers how_to_ship],
-      hidden: true
+      related: %i[hardware starting-hardware shipping-hardware],
+      markdown: "hardware/tiers.md"
     ),
     new(
       slug: :software,
@@ -198,6 +157,16 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
       reading_minutes: 2,
       related: %i[github_repository hackatime good_git_commits devlogs what_is_shipping how_to_ship],
       markdown: "software.md"
+    ),
+    new(
+      slug: :virality_bonus,
+      title: "Virality Bonus",
+      description: "If your project goes viral outside Hack Club, you can earn bonus stardust and an enhanced payout multiplier.",
+      category: :shipping,
+      icon: "rocket",
+      reading_minutes: 4,
+      related: %i[what_is_shipping how_to_ship great_readme],
+      markdown: "virality_bonus.md"
     )
   ].freeze
 
@@ -231,9 +200,9 @@ Guide = Data.define(:slug, :title, :description, :category, :icon, :reading_minu
 
   def related_guides = related.map { |s| Guide.find_by_slug(s) }.compact.reject(&:hidden)
 
-  # Outpost partials live alongside the other hardware content under
-  # topics/outpost/; everything else sits directly in topics/.
-  def partial_path = "guides/topics/#{"outpost/" if category == :outpost}#{slug}"
+  # Hardware partials live under topics/hardware/; everything else sits
+  # directly in topics/.
+  def partial_path = "guides/topics/#{"hardware/" if category == :hardware}#{slug}"
 
   # A guide renders from a markdown file when `markdown:` points at one;
   # otherwise it falls back to its `_<slug>.html.erb` partial (see show.html.erb).

@@ -1,10 +1,10 @@
-<% content_for :title, @view == 'fulfillment' ? 'Pending Fulfillment' : 'Shop Orders' %>
+<% content_for :title, @view == 'fulfillment' ? 'Pending Fulfillment' : 'Fraud Review' %>
 <% content_for :stylesheets do %>
   <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
 <% end %>
 <div class="shop-orders">
   <div class="shop-orders__header">
-    <h1 class="shop-orders__title"><%= @view == 'fulfillment' ? 'Pending Fulfillment' : 'Shop Orders' %></h1>
+    <h1 class="shop-orders__title"><%= @view == 'fulfillment' ? 'Pending Fulfillment' : 'Fraud Review' %></h1>
     <% if current_user.fulfillment_person? && !current_user.admin? && current_user.has_regions? %>
       <span class="shop-orders__region">📍 <%= current_user.regions_display %></span>
     <% end %>
@@ -12,15 +12,20 @@
 
   <div class="shop-orders__view-tabs">
     <% if current_user.admin? || current_user.fraud_dept? %>
-      <%= render ActionButtonComponent.new(text: "Shop Orders", href: admin_shop_orders_path(view: 'shop_orders'), size: :small, variant: @view == 'shop_orders' ? :primary : :secondary) %>
+      <%= render ActionButtonComponent.new(text: "Fraud Review", href: admin_shop_orders_path(view: 'shop_orders'), size: :small, variant: @view == 'shop_orders' ? :primary : :secondary) %>
     <% end %>
     <% if current_user.admin? || current_user.fulfillment_person? %>
       <%= render ActionButtonComponent.new(text: "Pending Fulfillment", href: admin_shop_orders_path(view: 'fulfillment'), size: :small, variant: @view == 'fulfillment' ? :primary : :secondary) %>
     <% end %>
+    <% if @view == 'fulfillment' && policy(ShopOrder).update? %>
+      <%= button_to "📬 Batch send letter mail to Theseus", admin_shop_letter_mail_batch_path, method: :post, class: "btn-secondary", form: { onsubmit: "return confirm('Bundle all pending letter mail into envelopes and send to Theseus? Sticky Streak stickers are not included.')" } %>
+    <% end %>
   </div>
 
   <div class="shop-orders__panel">
-    <%= render partial: "stats", locals: { counts: @c, average_fulfillment_time: @f } %>
+    <div class="shop-orders__panel-stats">
+      <%= render partial: "stats", locals: { counts: @c, average_fulfillment_time: @f } %>
+    </div>
     <% if policy(:admin).view_leaderboard? %>
       <% time_range = params[:time_range] || '7_days' %>
       <% limit = params[:limit] || '10' %>
@@ -32,13 +37,17 @@
     <% end %>
   </div>
 
-  <div class="shop-orders__group-toggle">
-    <% if params[:goob] == "true" %>
-      <%= link_to "Ungroup", admin_shop_orders_path(preserved_filter_params.except(:goob)) %>
-    <% else %>
-      <%= link_to "Group by User", admin_shop_orders_path(preserved_filter_params.merge(goob: true)) %>
+  <div class="shop-orders__list-toggles">
+    <%= link_to grouped_by_user? ? "Ungroup" : "Group by User", admin_shop_orders_path(grouping_toggle_params) %>
+    <% if @fulfillment_users.present? %>
+      <%= link_to "👤 Assigned to me", admin_shop_orders_path(assigned_to_me_toggle_params),
+                  class: ("is-active" if assigned_to_me?) %>
     <% end %>
   </div>
+
+  <% if @view == 'fulfillment' %>
+    <%= render partial: "item_type_toggles", locals: { awaiting_counts: @awaiting_counts_by_type } %>
+  <% end %>
 
   <%= render partial: "filters" %>
 
@@ -46,8 +55,9 @@
     <%= render partial: "grouped_table", locals: { grouped_orders: @grouped_orders } %>
   <% elsif @shop_orders %>
     <%= render partial: "table", locals: { orders: @shop_orders } %>
-    <% if @pagy %>
-      <%== @pagy.series_nav %>
-    <% end %>
+  <% end %>
+
+  <% if @pagy %>
+    <%== @pagy.series_nav %>
   <% end %>
 </div>

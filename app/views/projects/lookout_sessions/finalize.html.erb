@@ -1,0 +1,85 @@
+<% content_for :title, "Finish your timelapse" %>
+<% hackatime_project_names = Array(@hackatime_project_names) %>
+<% linked_names = Array(@linked_hackatime_names) %>
+<% default_new_name = @default_hackatime_name.presence || @project.hackatime_recorder_name %>
+
+<main class="lookout-finalize">
+  <header class="lookout-finalize__header">
+    <h1 class="lookout-finalize__title">Finish your timelapse</h1>
+    <%= link_to "Back to #{@project.title}", project_path(@project), class: "lookout-finalize__back" %>
+  </header>
+
+  <% if @already_pushed %>
+    <p class="lookout-finalize__notice lookout-finalize__notice--done">
+      This recording's time is already in Hackatime, so you're all set. You can
+      send it again below if you want, it won't be counted twice.
+    </p>
+  <% else %>
+    <p class="lookout-finalize__notice">
+      This timelapse was recorded on the old Lookout recorder and we couldn't find
+      its time in Hackatime. Send it below before this page closes on
+      <%= @finalize_deadline.strftime("%B %-d") %>.
+    </p>
+  <% end %>
+
+  <% if @recording&.dig(:video_url).present? %>
+    <section class="lookout-finalize__preview">
+      <%= tag.video class: "lookout-finalize__video", src: @recording[:video_url],
+                    poster: @recording[:thumbnail_url].presence, controls: true, playsinline: true %>
+    </section>
+  <% end %>
+
+  <%= form_with url: forward_heartbeats_project_lookout_session_path(@project, @lookout_session),
+                method: :post, data: { turbo: false }, class: "lookout-finalize__form" do %>
+    <h2 class="lookout-finalize__question">Where should this time go?</h2>
+
+    <label class="lookout-finalize__dest">
+      <input type="radio" name="dest" value="existing" class="lookout-finalize__radio"
+             <%= "checked" if @prefer_existing %>
+             <%= "disabled" if hackatime_project_names.empty? %>>
+      <span class="lookout-finalize__dest-body">
+        <span class="lookout-finalize__dest-name">Add to an existing Hackatime project</span>
+        <% if hackatime_project_names.any? %>
+          <select name="existing_project_name" class="lookout-finalize__select">
+            <% if linked_names.any? %>
+              <optgroup label="Linked to this project">
+                <% linked_names.each do |name| %>
+                  <option value="<%= name %>" <%= "selected" if name == @default_existing_hackatime_name %>><%= name %></option>
+                <% end %>
+              </optgroup>
+              <% other_names = hackatime_project_names - linked_names %>
+              <% if other_names.any? %>
+                <optgroup label="Your other Hackatime projects">
+                  <% other_names.each do |name| %>
+                    <option value="<%= name %>"><%= name %></option>
+                  <% end %>
+                </optgroup>
+              <% end %>
+            <% else %>
+              <% hackatime_project_names.each do |name| %>
+                <option value="<%= name %>" <%= "selected" if name == @default_existing_hackatime_name %>><%= name %></option>
+              <% end %>
+            <% end %>
+          </select>
+        <% else %>
+          <span class="lookout-finalize__dest-sub">You don't have any Hackatime projects yet.</span>
+        <% end %>
+      </span>
+    </label>
+
+    <label class="lookout-finalize__dest">
+      <input type="radio" name="dest" value="new" class="lookout-finalize__radio"
+             <%= "checked" unless @prefer_existing %>>
+      <span class="lookout-finalize__dest-body">
+        <span class="lookout-finalize__dest-name">Create a new Hackatime project</span>
+        <input type="text" name="new_project_name" class="lookout-finalize__input"
+               value="<%= default_new_name %>" placeholder="Project name" maxlength="120" autocomplete="off">
+      </span>
+    </label>
+
+    <div class="lookout-finalize__actions">
+      <%= render ActionButtonComponent.new(text: "Send my time to Hackatime", variant: :primary) %>
+    </div>
+    <p class="lookout-finalize__hint">Your time counts toward this project once you post a devlog.</p>
+  <% end %>
+</main>

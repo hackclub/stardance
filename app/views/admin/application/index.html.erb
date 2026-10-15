@@ -1,0 +1,89 @@
+<% content_for :title, "Admin" %>
+
+<div class="admin-dashboard">
+  <h1><%= greeting_message current_user %></h1>
+
+  <section>
+    <h2>Tasks</h2>
+    <div class="admin-dashboard__grid">
+      <%= admin_page_button "Ship Certifications", admin_certification_ships_path,
+        enabled: policy(Certification::Ship).index?,
+        count: "ship_certifications" %>
+      <%= admin_page_button "YSWS Reviews", admin_certification_ysws_reviews_path,
+        enabled: policy(Certification::Ysws).index?,
+        count: "ysws_reviews" %>
+      <%= admin_page_button "Fraud Checks", admin_fraud_path,
+        enabled: policy(:fraud_dashboard).show?,
+        count: "fraud_checks" %>
+      <%= admin_page_button "Fraud by Person", admin_fraud_subjects_path,
+        enabled: policy(:fraud_subject).index?,
+        count: "fraud_subjects" %>
+      <%# Filtered to awaiting fulfillment so the queue matches the count badge. %>
+      <%= admin_page_button "Shop Fulfillment", admin_shop_orders_path(view: "fulfillment", status: "awaiting_periodical_fulfillment"),
+        enabled: policy(ShopOrder).index?,
+        count: "shop_fulfillment" %>
+      <%= admin_page_button "Mission Reviews", admin_mission_reviews_path,
+        enabled: Pundit.policy!(pundit_user, Mission::Submission).index?,
+        count: "mission_reviews" %>
+    </div>
+  </section>
+
+  <section>
+    <h2>Dashboards</h2>
+    <div class="admin-dashboard__grid">
+      <%= admin_page_button "Super Mega Dashboard", admin_mega_dashboard_path,
+        enabled: policy(:mega_dashboard).show?, featured: true %>
+      <%= admin_page_button "the jim takeover", admin_jim_takeover_path,
+        enabled: policy(:admin).index? %>
+      <%= admin_page_button "Support", admin_support_path, enabled: policy(:support_dashboard).show? %>
+      <%= admin_page_button "Fraud", admin_fraud_path, enabled: policy(:fraud_dashboard).show? %>
+      <%= admin_page_button "Shop", admin_shop_path, enabled: policy(ShopItem).index? %>
+      <%= admin_page_button "Raffles", admin_raffles_path, enabled: policy(:admin).access_raffles? %>
+      <%= admin_page_button "Rating Hangtime", admin_rating_dashboard_path, enabled: policy(:rating_dashboard).show? %>
+      <%= admin_page_button "Hour Funnel", admin_hour_funnel_path, enabled: policy(:hour_funnel).show? %>
+      <%= admin_page_button "Growth Model", public_growth_path, enabled: true %>
+      <%= admin_page_button "Jeremy Funnel", stats_ship_funnel_path, enabled: Pundit.policy!(pundit_user, :ship_funnel).refresh? %>
+    </div>
+  </section>
+
+  <section>
+    <h2>Models</h2>
+    <div class="admin-dashboard__grid">
+      <%= admin_page_button "Users", admin_users_path, enabled: policy(User).index? %>
+      <%= admin_page_button "Projects", admin_projects_path, enabled: policy(Project).index? %>
+      <%= admin_page_button "Missions", admin_missions_path, enabled: policy(Mission).index? %>
+      <%= admin_page_button "Certificates", admin_certificates_path, enabled: policy(Certificate).index? %>
+      <%= admin_page_button "Sticky Streak Rewards", admin_shop_sticky_streak_rewards_path, enabled: policy(StickyStreakReward).show? %>
+      <%= admin_page_button "Workshops", admin_workshops_path, enabled: policy(:admin).access_workshops? %>
+      <%= admin_page_button "Funnel", admin_funnel_path, enabled: policy(:admin).access_funnel? %>
+      <%= admin_page_button "Super Stars", admin_super_stars_path,
+        enabled: policy(:super_star_dashboard).show?,
+        count: "super_stars" %>
+      <%= admin_page_button "Audit Logs", admin_audit_logs_path, enabled: policy(PaperTrail::Version).index? %>
+      <%= admin_page_button "Ledger Entries", admin_ledger_entries_path, enabled: policy(LedgerEntry).index? %>
+      <%= admin_page_button "Payout Reviews", admin_payout_reviews_path, enabled: policy(:payout_review).index? %>
+      <%= admin_page_button "Fulfillment Payouts", admin_fulfillment_payouts_path, enabled: policy(FulfillmentPayoutRun).index? %>
+      <%= admin_page_button "Fraud Payouts", admin_fraud_payouts_path, enabled: policy(FraudPayoutRun).index? %>
+      <%= admin_page_button "Vote Flags", admin_vote_flags_path, enabled: policy(Vote::Event).index? %>
+      <%= admin_page_button "Messages", admin_messages_path, enabled: policy(Message).index? %>
+      <%= admin_page_button "Email Templates", admin_email_templates_path, enabled: policy(:admin).access_email_templates? %>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tools</h2>
+    <div class="admin-dashboard__grid">
+      <%= admin_page_button "Blazer", admin_blazer_path, enabled: policy(:admin).access_blazer? %>
+      <%= admin_page_button "Flipper", admin_flipper_path, enabled: policy(:admin).access_flipper? %>
+      <%= admin_page_button "Jobs", admin_mission_control_jobs_path, enabled: policy(:admin).access_jobs? %>
+      <%= admin_page_button "Import Devlogs", new_admin_devlog_import_path, enabled: policy(:admin).import_devlogs? %>
+      <% if policy(:admin).sync_funding_requests_to_airtable? %>
+        <%= button_to "Sync Funding Requests to Airtable",
+              sync_all_to_airtable_admin_certification_funding_requests_path,
+              method: :post,
+              class: "btn-secondary admin-dashboard__button",
+              data: { turbo_confirm: "This will enqueue all approved funding requests for Airtable sync. Continue?" } %>
+      <% end %>
+    </div>
+  </section>
+</div>

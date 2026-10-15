@@ -2,7 +2,7 @@ class Mission::SubmissionPolicy < ApplicationPolicy
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none if user.blank?
-      return scope.all if user.admin? || user.has_role?(:helper) || user.has_role?(:mission_reviewer)
+      return scope.all if user.admin? || user.has_role?(:mission_reviewer)
 
       scope.where(mission_id: user.mission_memberships.select(:mission_id))
     end
@@ -10,8 +10,7 @@ class Mission::SubmissionPolicy < ApplicationPolicy
 
   def index?
     return false unless user.present?
-    user.admin? || user.has_role?(:helper) ||
-      user.has_role?(:mission_reviewer) ||
+    user.admin? || user.has_role?(:mission_reviewer) ||
       user.mission_memberships.exists?
   end
 
@@ -40,7 +39,7 @@ class Mission::SubmissionPolicy < ApplicationPolicy
 
   def redeem?
     return false unless user.present?
-    submitter? && record.approved? && record.shop_order_id.nil?
+    submitter? && record.approved? && record.prizes_to_claim?
   end
 
   private

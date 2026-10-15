@@ -1,5 +1,6 @@
 class Projects::MissionsController < ApplicationController
   before_action :set_project
+  before_action :set_paper_trail_whodunnit
 
   def create
     authorize @project, :update?
@@ -10,7 +11,7 @@ class Projects::MissionsController < ApplicationController
       redirect_to project_path(@project), alert: "Complete #{unmet} first to unlock this mission." and return
     end
 
-    @project.attach_mission!(mission)
+    @project.attach_mission!(mission, force: admin_override?)
 
     redirect_to project_path(@project), notice: "Attached to the #{mission.name} mission."
   rescue ActiveRecord::RecordInvalid => e
@@ -27,11 +28,11 @@ class Projects::MissionsController < ApplicationController
     return redirect_to(project_path(@project), alert: "No mission attached.") unless attachment
 
     mission = attachment.mission
-    if @project.shipped_to_mission?(mission)
+    if @project.shipped_to_mission?(mission) && !(admin_override? && @project.hardware_review_pending?)
       return redirect_to(project_path(@project), alert: "This project already shipped to #{mission.name}, so that mission is locked in.")
     end
 
-    restored = @project.detach_mission!
+    restored = @project.detach_mission!(force: admin_override?)
 
     notice = if restored
       "Detached from the #{mission.name} mission — back on #{restored.name}."
@@ -39,9 +40,17 @@ class Projects::MissionsController < ApplicationController
       "Detached from the #{mission.name} mission."
     end
     redirect_to project_path(@project), notice: notice
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to project_path(@project), alert: e.record.errors.full_messages.to_sentence
   end
 
   private
+
+  def user_for_paper_trail = impersonating? ? real_user&.id : current_user&.id
+
+  def admin_override?
+    current_user&.admin? && !impersonating?
+  end
 
   def set_project
     @project = Project.find(params[:project_id])

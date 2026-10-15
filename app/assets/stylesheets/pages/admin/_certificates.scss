@@ -1,0 +1,75 @@
+.certificate-reviews {
+  display: grid;
+  gap: var(--space-l);
+  max-width: 900px;
+  margin: 0 auto;
+
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-m);
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__subtitle {
+    color: var(--color-space-text-muted);
+    margin: var(--space-xxs) 0 0;
+  }
+
+  &__section {
+    display: grid;
+    gap: var(--space-m);
+  }
+
+  &__section-title {
+    margin: 0;
+    font-size: var(--font-size-l);
+  }
+
+  &__list {
+    display: grid;
+    gap: var(--space-s);
+  }
+
+  &__card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    padding: var(--space-m);
+    border: 2px solid var(--color-space-border);
+    border-radius: var(--profile-radius);
+    background: var(--color-set-1-bg);
+
+    &--reviewed {
+      opacity: 0.8;
+    }
+  }
+
+  &__requested {
+    margin: 0;
+    font-size: var(--font-size-l);
+    font-weight: 700;
+  }
+
+  &__meta {
+    margin: var(--space-xxs) 0 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-s);
+  }
+
+  &__empty {
+    margin: 0;
+    color: var(--color-space-text-muted);
+  }
+}

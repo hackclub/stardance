@@ -39,6 +39,6 @@ class Admin::Certification::Ships::ClaimsController < Admin::Certification::Appl
   end
 
   def hardware_review_path
-    admin_certification_hardware_review_path(@ship.project_id)
+    hardware_review_path_for(@ship.project)
   end
 end

@@ -1,0 +1,158 @@
+<% content_for :title, "Stardust Ledger" %>
+<%
+  preserved_filters = {
+    start_date: @start_date,
+    end_date: @end_date,
+    categories: @selected_categories,
+    entry_direction: @direction_filter,
+    user_query: @user_query,
+    search: @search_query
+  }
+  sort_link = lambda do |label, column|
+    next_direction = @sort == column && @direction == "asc" ? "desc" : "asc"
+    indicator = @sort == column ? (@direction == "asc" ? "↑" : "↓") : nil
+    link_to "#{label} #{indicator}".strip,
+      admin_ledger_entries_path(**preserved_filters, sort: column, direction: next_direction),
+      class: "admin-ledger__sort"
+  end
+%>
+
+<div class="admin-ledger"
+     data-controller="admin-ledger-chart"
+     data-admin-ledger-chart-flow-value="<%= json_escape(@flow_chart_data.to_json) %>"
+     data-admin-ledger-chart-breakdown-value="<%= json_escape(@breakdown_chart_data.to_json) %>">
+  <header class="admin-ledger__header">
+    <div>
+      <p class="admin-ledger__eyebrow">Finance overview</p>
+      <h1>Stardust Ledger</h1>
+      <p class="admin-ledger__muted">Every Stardust credit and debit, in one place.</p>
+    </div>
+    <%= link_to "← Back to users", admin_users_path, class: "action-btn action-btn--secondary" %>
+  </header>
+
+  <section class="admin-ledger__filters" aria-labelledby="ledger-filters-title">
+    <h2 id="ledger-filters-title">Filters</h2>
+    <%= form_with url: admin_ledger_entries_path, method: :get, local: true do |form| %>
+      <div class="admin-ledger__filter-grid">
+        <div class="admin-ledger__field">
+          <%= form.label :start_date, "From" %>
+          <%= form.date_field :start_date, value: @start_date %>
+        </div>
+        <div class="admin-ledger__field">
+          <%= form.label :end_date, "To" %>
+          <%= form.date_field :end_date, value: @end_date %>
+        </div>
+        <div class="admin-ledger__field">
+          <%= form.label :entry_direction, "Direction" %>
+          <%= form.select :entry_direction,
+            options_for_select([["Credits and debits", ""], ["Credits only", "credit"], ["Debits only", "debit"]], @direction_filter) %>
+        </div>
+        <div class="admin-ledger__field">
+          <%= form.label :user_query, "User" %>
+          <%= form.search_field :user_query, value: @user_query, placeholder: "Name, email, or ID" %>
+        </div>
+        <div class="admin-ledger__field">
+          <%= form.label :search, "Entry search" %>
+          <%= form.search_field :search, value: @search_query, placeholder: "Reason, creator, or source ID" %>
+        </div>
+
+        <fieldset class="admin-ledger__categories">
+          <legend>Source types</legend>
+          <% LedgerEntry::CATEGORIES.each do |key, details| %>
+            <label class="admin-ledger__category">
+              <%= check_box_tag "categories[]", key, @selected_categories.include?(key), id: "category_#{key}" %>
+              <%= details[:label] %>
+            </label>
+          <% end %>
+        </fieldset>
+      </div>
+      <div class="admin-ledger__filter-actions">
+        <%= form.submit "Apply filters", class: "action-btn action-btn--primary" %>
+        <%= link_to "Reset", admin_ledger_entries_path, class: "action-btn action-btn--secondary" %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="admin-ledger__summaries" aria-label="Ledger totals">
+    <div class="admin-ledger__summary">
+      <span class="admin-ledger__summary-label">Stardust issued</span>
+      <strong class="admin-ledger__summary-value admin-ledger__summary-value--issued">+<%= number_with_delimiter(@stardust_issued) %> ✦</strong>
+    </div>
+    <div class="admin-ledger__summary">
+      <span class="admin-ledger__summary-label">Stardust spent</span>
+      <strong class="admin-ledger__summary-value admin-ledger__summary-value--spent">−<%= number_with_delimiter(@stardust_spent) %> ✦</strong>
+    </div>
+    <div class="admin-ledger__summary">
+      <span class="admin-ledger__summary-label">Net movement</span>
+      <strong class="admin-ledger__summary-value"><%= @net_movement.positive? ? "+" : "" %><%= number_with_delimiter(@net_movement) %> ✦</strong>
+    </div>
+    <div class="admin-ledger__summary">
+      <span class="admin-ledger__summary-label">Entries</span>
+      <strong class="admin-ledger__summary-value"><%= number_with_delimiter(@entry_count) %></strong>
+    </div>
+  </section>
+
+  <section class="admin-ledger__charts">
+    <article class="admin-ledger__chart-card">
+      <h2>Stardust flow</h2>
+      <p class="admin-ledger__muted">Credits, debits, and net movement by day.</p>
+      <div class="admin-ledger__canvas"><canvas data-admin-ledger-chart-target="flow"></canvas></div>
+    </article>
+    <article class="admin-ledger__chart-card">
+      <h2>Movement by source</h2>
+      <p class="admin-ledger__muted">Gross Stardust volume for each entry type.</p>
+      <div class="admin-ledger__canvas"><canvas data-admin-ledger-chart-target="breakdown"></canvas></div>
+    </article>
+  </section>
+
+  <section class="admin-ledger__table-card">
+    <h2>Entries</h2>
+    <% if @ledger_entries.any? %>
+      <div class="admin-ledger__table-wrap">
+        <table class="space-table">
+          <thead>
+            <tr>
+              <th><%= sort_link.call("Timestamp", "created_at") %></th>
+              <th><%= sort_link.call("User", "user") %></th>
+              <th><%= sort_link.call("Amount", "amount") %></th>
+              <th><%= sort_link.call("Source", "source") %></th>
+              <th>Reason</th>
+              <th>Created by</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @ledger_entries.each do |entry| %>
+              <tr>
+                <td>
+                  <time datetime="<%= entry.created_at.iso8601 %>"><%= entry.created_at.strftime("%b %d, %Y %H:%M") %></time>
+                </td>
+                <td>
+                  <%= link_to admin_user_path(entry.user), class: "admin-ledger__user" do %>
+                    <%= image_tag entry.user.avatar, alt: "", class: "admin-ledger__avatar", loading: "lazy" %>
+                    <span><%= entry.user.display_name %> <span class="admin-ledger__muted">#<%= entry.user_id %></span></span>
+                  <% end %>
+                </td>
+                <td class="admin-ledger__amount admin-ledger__amount--<%= entry.amount.negative? ? "debit" : "credit" %>">
+                  <%= entry.amount.positive? ? "+" : "" %><%= number_with_delimiter(entry.amount) %> ✦
+                </td>
+                <td>
+                  <div class="admin-ledger__source">
+                    <span><%= entry.category_label %></span>
+                    <code><%= entry.ledgerable_type %> #<%= entry.ledgerable_id %></code>
+                  </div>
+                </td>
+                <td><%= entry.reason.presence || "—" %></td>
+                <td><%= entry.created_by.presence || "System" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if @pagy.pages > 1 %>
+        <nav class="admin-ledger__pagination" aria-label="Ledger pages"><%== @pagy.series_nav %></nav>
+      <% end %>
+    <% else %>
+      <p class="admin-ledger__muted">No ledger entries match these filters.</p>
+    <% end %>
+  </section>
+</div>

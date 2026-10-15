@@ -33,6 +33,6 @@ class Admin::Certification::FundingRequests::ClaimsController < Admin::Certifica
   end
 
   def hardware_review_path
-    admin_certification_hardware_review_path(@funding_request.project_id)
+    hardware_review_path_for(@funding_request.project)
   end
 end

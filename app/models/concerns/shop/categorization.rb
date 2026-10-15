@@ -9,7 +9,7 @@ module Shop::Categorization
   module_function
 
   def all
-    [ ShopCategory.all_virtual, *ShopCategory.ordered ]
+    [ ShopCategory.all_virtual, *ShopCategory.ordered.preload(:shop_item_categories) ]
   end
 
   def find(slug)

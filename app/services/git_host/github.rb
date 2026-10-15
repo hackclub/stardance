@@ -76,6 +76,28 @@ module GitHost
       normalize_commit(raw) if raw.is_a?(Hash)
     end
 
+    # Returns nil when the listing can't be fetched (unparseable URL, request
+    # failure, malformed response) so callers can tell an outage from an empty
+    # repo. Repos too large for the tree API (truncated response) fall back to
+    # listing via a local clone.
+    def fetch_filenames
+      return nil unless owner && repo
+
+      full_url = "#{api_base}/repos/#{owner}/#{repo}/git/trees/HEAD?recursive=1"
+      tree = http_get(full_url, headers: auth_headers)
+      return nil unless tree.is_a?(Hash) && tree["tree"].is_a?(Array)
+      return GitCli.new(repo_url).fetch_filenames if tree["truncated"]
+
+      tree["tree"].filter_map { |node| node["path"] if node["type"] == "blob" }
+    end
+
+    def fetch_languages
+      return nil unless owner && repo
+
+      full_url = "#{api_base}/repos/#{owner}/#{repo}/languages"
+      http_get(full_url, headers: auth_headers)
+    end
+
     protected
 
     def parse_url!

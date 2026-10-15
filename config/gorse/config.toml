@@ -57,7 +57,7 @@ cache_expire = "10s"
 [recommend]
 # Cache size for recommended/popular/latest item lists.
 cache_size = 100
-cache_expire = "72h"
+cache_expire = "30m"
 # Online recs only consider the latest N feedbacks per user, for efficiency.
 context_size = 100
 active_user_ttl = 0
@@ -82,15 +82,17 @@ read_feedback_types = ["read", "open", "dwell", "watch"]
 negative_feedback_types = ["hide", "not_interested", "skip"]
 
 positive_feedback_ttl = 0
+# Keep this global TTL disabled because Gorse stores both posts and projects as
+# items. The Rails recommendation scope enforces a post-only 6-hour ceiling.
 item_ttl = 0
 
-# Non-personalized recommender for cold-start users and as a ranker candidate.
-# Scores items by OUR engagement (likes + reposts) in the last week, rather than
-# the stock "star" example.
+# Freshness-weighted recommender for cold-start users and as a ranker candidate.
+# Reposts and comments show stronger intent than likes, while the age denominator
+# steadily lowers older posts. The hard 6-hour filter matches the Rails safeguard.
 [[recommend.non-personalized]]
-name = "popular_weekly"
-score = "count(feedback, .FeedbackType == 'like') + count(feedback, .FeedbackType == 'repost')"
-filter = "(now() - item.Timestamp).Hours() < 168"
+name = "trending_recent"
+score = "(count(feedback, .FeedbackType == 'like') + 2 * count(feedback, .FeedbackType == 'comment') + 3 * count(feedback, .FeedbackType == 'repost')) / ((now() - item.Timestamp).Hours() + 2) ^ 1.2"
+filter = "(now() - item.Timestamp).Hours() < 6"
 
 [recommend.collaborative]
 # Matrix factorization — the personalization model. "none" (the stock default)
@@ -115,8 +117,8 @@ read_replacement_decay = 0.6
 # Factorization-machine reranker over the candidate recommenders below. Set to
 # "none" to skip learned reranking and just merge candidates by their scores.
 type = "fm"
-cache_expire = "120h"
-recommenders = ["collaborative", "non-personalized/popular_weekly", "latest"]
+cache_expire = "6h"
+recommenders = ["collaborative", "non-personalized/trending_recent", "latest"]
 fit_period = "60m"
 fit_epoch = 100
 optimize_period = "360m"
@@ -127,7 +129,7 @@ patience = 10
 
 [recommend.fallback]
 # Used when a user's cached recommendation list drains out.
-recommenders = ["non-personalized/popular_weekly", "latest"]
+recommenders = ["non-personalized/trending_recent", "latest"]
 
 [blob]
 # Local storage for trained model artifacts. Use s3://, gs:// or az:// in prod.

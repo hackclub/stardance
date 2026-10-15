@@ -5,5 +5,5 @@
   <%= image_tag roll.user.avatar, alt: "", class: "rng-board__avatar", loading: "lazy" %>
   <%= link_to roll.user.display_name, profile_path(roll.user.display_name), class: "rng-board__name" %>
   <% if is_current_user %><span class="rng-board__you-tag">you</span><% end %>
-  <span class="rng-board__value"><%= formatted_roll_value(roll.value) %></span>
+  <span class="rng-board__value"><%= formatted_roll_value(roll.total) %></span>
 </li>

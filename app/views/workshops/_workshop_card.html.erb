@@ -1,0 +1,27 @@
+<%# Locals: workshop (Workshop), badge (optional pill label for the meta row) %>
+<%= link_to workshop_path(workshop), class: "workshop-card" do %>
+  <div class="workshop-card__icon" aria-hidden="true">
+    <%= inline_svg_tag "icons/star_outline.svg", class: "workshop-card__icon-svg" %>
+  </div>
+
+  <div class="workshop-card__body">
+    <h3 class="workshop-card__title"><%= workshop.title %></h3>
+    <% if workshop.description.present? %>
+      <p class="workshop-card__description">
+        <%= truncate(workshop.description, length: 160) %>
+      </p>
+    <% end %>
+
+    <ul class="workshop-card__meta" aria-label="Workshop meta">
+      <li class="workshop-card__meta-item workshop-card__meta-item--time">
+        <time datetime="<%= workshop.starts_at.iso8601 %>"
+              data-controller="event-time"
+              data-event-time-start-value="<%= workshop.starts_at.iso8601 %>"
+              data-event-time-end-value="<%= workshop.ends_at.iso8601 %>"><%= workshop.starts_at.strftime("%b %-d, %-l:%M%P UTC") %></time>
+      </li>
+      <% if local_assigns[:badge].present? %>
+        <li class="workshop-card__meta-item workshop-card__meta-item--badge"><%= local_assigns[:badge] %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

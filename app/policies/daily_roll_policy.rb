@@ -11,6 +11,12 @@ class DailyRollPolicy < ApplicationPolicy
     true
   end
 
+  # Spending the earned reroll requires an account; the controller re-checks
+  # the unlock condition (coding time today) server-side.
+  def reroll?
+    signed_in_any?
+  end
+
   # History is per-account, so it's signed-in only.
   def history?
     signed_in_any?

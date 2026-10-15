@@ -1,0 +1,37 @@
+<dialog class="buku-x3-reveal <%= 'buku-x3-reveal--bean' unless buku? %>"
+         aria-modal="true"
+         aria-labelledby="buku-x3-reveal-title"
+         aria-describedby="buku-x3-reveal-description"
+         data-controller="buku-x3-reveal"
+         data-turbo-temporary
+         data-action="cancel->buku-x3-reveal#cancel turbo:before-cache@document->buku-x3-reveal#beforeCache"
+         data-buku-x3-reveal-animation-url-value="<%= animation_url %>"
+         data-buku-x3-reveal-dismiss-thing-value="<%= dismiss_thing %>">
+  <div class="buku-x3-reveal__veil" aria-hidden="true"></div>
+
+  <div class="buku-x3-reveal__stage">
+    <%= image_tag "events/bukux3/shh.webp",
+                  class: "buku-x3-reveal__art",
+                  data: { buku_x3_reveal_target: "art" },
+                  alt: "a stardancer holding a finger up to ask for silence" %>
+
+    <div class="buku-x3-reveal__role">
+      <%= image_tag icon, class: "buku-x3-reveal__badge", alt: "", width: 240, height: 264 %>
+      <h2 class="buku-x3-reveal__title" id="buku-x3-reveal-title">
+        <span>you are a</span>
+        <em><%= role_name %></em>
+      </h2>
+      <p class="buku-x3-reveal__description" id="buku-x3-reveal-description">
+        <%= description %>
+      </p>
+    </div>
+  </div>
+
+  <button type="button"
+          class="buku-x3-reveal__skip"
+          aria-label="skip role reveal"
+          data-buku-x3-reveal-target="skip"
+          data-action="buku-x3-reveal#finish">
+    skip
+  </button>
+</dialog>

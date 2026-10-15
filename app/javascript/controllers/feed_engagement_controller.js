@@ -8,6 +8,28 @@ const READ_CUMULATIVE_MS = 8000;
 const DWELL_BUCKETS = [8000, 15000, 30000, 60000];
 const VIDEO_PROGRESS_BUCKETS = [25, 50, 75, 100];
 
+const visibilityScheduler = {
+  controllers: new Set(),
+  interval: null,
+
+  add(controller) {
+    this.controllers.add(controller);
+    if (this.interval === null) {
+      this.interval = window.setInterval(() => {
+        this.controllers.forEach((item) => item.recordVisibility());
+      }, 1000);
+    }
+  },
+
+  delete(controller) {
+    this.controllers.delete(controller);
+    if (this.controllers.size === 0 && this.interval !== null) {
+      window.clearInterval(this.interval);
+      this.interval = null;
+    }
+  },
+};
+
 export default class extends Controller {
   static values = {
     itemType: String,
@@ -34,7 +56,7 @@ export default class extends Controller {
     });
     this.observer.observe(this.element);
 
-    this.tick = window.setInterval(() => this.recordVisibility(), 1000);
+    visibilityScheduler.add(this);
     this.element.addEventListener("click", this.onOpen);
     this.element.querySelectorAll("video").forEach((video) => {
       video.addEventListener("timeupdate", this.onVideoProgress);
@@ -44,7 +66,7 @@ export default class extends Controller {
   disconnect() {
     this.recordVisibility();
     this.observer?.disconnect();
-    window.clearInterval(this.tick);
+    visibilityScheduler.delete(this);
     this.element.removeEventListener("click", this.onOpen);
     this.element.querySelectorAll("video").forEach((video) => {
       video.removeEventListener("timeupdate", this.onVideoProgress);
@@ -69,6 +91,15 @@ export default class extends Controller {
   };
 
   onOpen = (event) => {
+    // Carousel arrows/dots browse media without opening the post; they must
+    // not mark it read or send recommendation feedback.
+    if (
+      event.target.closest(
+        ".feed-post-card__media-arrow, .feed-post-card__media-dot",
+      )
+    ) {
+      return;
+    }
     if (event.target.closest("a, button, summary")) {
       this.sendOnce("open");
     }

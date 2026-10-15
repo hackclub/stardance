@@ -1,0 +1,47 @@
+<%= form_with url: certificate_path, method: :get, class: "certificate-page__form",
+      data: { controller: "certificate-code" } do |form| %>
+  <div class="certificate-page__code-boxes">
+    <% 6.times do |index| %>
+      <input type="text"
+             class="certificate-page__code-box"
+             autocomplete="off"
+             placeholder="<%= index.even? ? "A" : "0" %>"
+             inputmode="<%= index.even? ? "text" : "numeric" %>"
+             value="<%= @code&.chars&.at(index) %>"
+             aria-label="Code character <%= index + 1 %>"
+             data-certificate-code-target="box"
+             data-action="input->certificate-code#input keydown->certificate-code#keydown paste->certificate-code#paste focus->certificate-code#select">
+    <% end %>
+  </div>
+  <%= form.hidden_field :code, value: @code, data: { certificate_code_target: "code" } %>
+  <%= render ActionButtonComponent.new(text: "Verify", size: :small, variant: :primary) %>
+<% end %>
+
+<% if @code.present? %>
+  <% if @certificate %>
+    <div class="certificate-page__result certificate-page__result--valid">
+      <p class="certificate-page__result-status">This certificate is valid</p>
+      <h3 class="certificate-page__holder"><%= @certificate.name %></h3>
+      <p class="certificate-page__result-details">
+        <%= pluralize(@certificate.hours_at_issue.floor, "approved hour") %>
+        <span aria-hidden="true">·</span>
+        issued <%= @certificate.created_at.strftime("%B %-d, %Y") %>
+      </p>
+      <% if @projects.any? %>
+        <h4 class="certificate-page__projects-heading">Shipped projects</h4>
+        <div class="certificate-page__projects">
+          <% @projects.each do |project| %>
+            <%= render Projects::ShelfCardComponent.new(project: project) %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="certificate-page__result certificate-page__result--invalid">
+      <p class="certificate-page__result-status">No certificate found for “<%= @code %>”</p>
+      <p class="certificate-page__result-details">
+        Double-check the code on the certificate. It alternates letters and numbers, like C5A8G9.
+      </p>
+    </div>
+  <% end %>
+<% end %>

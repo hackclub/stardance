@@ -243,6 +243,37 @@
   padding: 0;
 }
 
+.vote-scorecard__review-prompt {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--space-xs);
+  align-items: start;
+  padding: var(--space-s);
+  border: 2px solid var(--color-brand-highlight-soft);
+  border-radius: var(--profile-radius);
+  background: var(--color-brand-highlight-faint);
+}
+
+.vote-scorecard__review-prompt-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--color-brand-highlight);
+}
+
+.vote-scorecard__review-prompt-title {
+  margin: 0 0 var(--space-xxs);
+  color: var(--color-brand-highlight);
+  font-size: var(--font-size-m);
+  font-weight: 700;
+}
+
+.vote-scorecard__review-prompt-body {
+  margin: 0;
+  color: var(--color-space-text);
+  font-size: var(--font-size-s);
+  line-height: 1.4;
+}
+
 // Decorative divider line on either side of the title with a sparkle at the
 // inner end. Mirrors the Figma "✨ Scorecard ✨" hero treatment.
 .vote-scorecard__sparkle {

@@ -6,6 +6,7 @@
 #  access_token_ciphertext  :text
 #  base_url                 :string
 #  client_secret_ciphertext :text
+#  expires_at               :datetime
 #  redirect_uri             :string
 #  refresh_token_ciphertext :text
 #  slug                     :string

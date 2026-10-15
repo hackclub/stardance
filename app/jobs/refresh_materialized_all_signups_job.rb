@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class RefreshMaterializedAllSignupsJob < ApplicationJob
-  queue_as :default
+  queue_as :literally_whenever
 
   # The refresh runs every 2 minutes (config/recurring.yml). If a refresh ever
   # takes longer than that, this keeps the next tick from piling a second

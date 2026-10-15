@@ -1,7 +1,7 @@
 class SendSlackDmJob < ApplicationJob
   queue_as :latency_5m
 
-  def perform(recipient_id, message = nil, blocks_path: nil, locals: {}, thread_ts: nil, sent_by_id: nil)
+  def perform(recipient_id, message = nil, blocks_path: nil, locals: {}, thread_ts: nil, sent_by_id: nil, unfurl_links: nil, unfurl_media: nil)
     if Rails.env.development?
       record_message(recipient_id, message, blocks_path, sent_by_id)
       return
@@ -14,6 +14,8 @@ class SendSlackDmJob < ApplicationJob
 
     params = { channel: channel_id, as_user: true }
     params[:thread_ts] = thread_ts if thread_ts.present?
+    params[:unfurl_links] = unfurl_links unless unfurl_links.nil?
+    params[:unfurl_media] = unfurl_media unless unfurl_media.nil?
 
     if blocks_path.present?
       renderer = ApplicationController.renderer.new

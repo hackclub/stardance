@@ -1,4 +1,7 @@
-<% recert_review = project.ship_reviews.order(created_at: :desc).first %>
+<% recert_review = project.latest_ship_review %>
+<% gated = action_items_enabled? && is_member && recert_review&.returned? && recert_review.gates_resubmission? %>
+<% link_blocker = local_assigns[:link_blocker] %>
+<% visible_blocker = local_assigns[:visible_blocker] %>
 <dialog id="recert-modal-<%= project.id %>"
         class="recert-modal"
         data-controller="modal"
@@ -12,43 +15,69 @@
     </button>
 
     <h3 id="recert-modal-<%= project.id %>-title" class="recert-modal__title">Changes requested</h3>
-    <% if is_member %>
-      <p class="recert-modal__subtitle">Your reviewer left feedback below. Address it and then request re-certification.</p>
-    <% else %>
+    <% if !is_member %>
       <p class="recert-modal__subtitle">Reviewer feedback and walkthrough left for this project.</p>
+    <% elsif !gated && !link_blocker && !visible_blocker %>
+      <p class="recert-modal__subtitle">Your reviewer left feedback below. Address it and then request re-certification.</p>
+    <% end %>
+    <% if visible_blocker %>
+      <p class="recert-modal__subtitle"><%= visible_blocker %></p>
+    <% elsif link_blocker %>
+      <p class="recert-modal__subtitle">This project's links need fixing before re-certification can be requested. <%= link_blocker %>.</p>
     <% end %>
 
-    <% if recert_review&.verdict_video&.attached? %>
+    <% verdict_video_src = certification_verdict_video_src(recert_review) %>
+    <% if verdict_video_src %>
       <div class="recert-modal__video-wrap">
         <video class="recert-modal__video"
                controls
                preload="metadata"
-               src="<%= rails_blob_path(recert_review.verdict_video, disposition: :inline) %>">
+               src="<%= verdict_video_src %>">
         </video>
       </div>
     <% end %>
 
-    <% if recert_review&.feedback.present? %>
+    <% if recert_review&.feedback.present? && !gated %>
       <div class="recert-modal__feedback">
         <h4 class="recert-modal__feedback-label">Reviewer feedback</h4>
         <p class="recert-modal__feedback-body"><%= recert_review.feedback %></p>
       </div>
     <% end %>
 
-    <div class="recert-modal__actions">
-      <button type="button"
-              class="recert-modal__btn recert-modal__btn--secondary"
-              onclick="document.getElementById(<%= "recert-modal-#{project.id}".to_json %>).close()">
-        Close
-      </button>
-      <% if is_member || current_user&.can_review? %>
-        <% confirm_msg = is_member ? "Have you addressed the feedback? This will re-enter the review queue." : "This will request re-certification on behalf of the user. Continue?" %>
-        <%= button_to "Request re-certification",
-              project_recertification_path(project),
-              method: :post,
-              class: "recert-modal__btn recert-modal__btn--primary",
-              form: { data: { turbo_confirm: confirm_msg } } %>
+    <% confirm_msg = if !is_member
+         "This will request re-certification on behalf of the user. Continue?"
+       elsif !gated
+         "Have you addressed the feedback? This will re-enter the review queue."
+       end %>
+    <%= form_with url: project_recertification_path(project),
+                  method: :post,
+                  class: "recert-modal__form",
+                  data: { turbo_confirm: confirm_msg,
+                          controller: ("action-items" if gated),
+                          action: ("submit->action-items#guard" if gated) }.compact do %>
+      <% if gated %>
+        <%= render "projects/action_items", review: recert_review %>
       <% end %>
-    </div>
+
+      <div class="recert-modal__actions">
+        <button type="button"
+                class="recert-modal__btn recert-modal__btn--secondary"
+                onclick="document.getElementById(<%= "recert-modal-#{project.id}".to_json %>).close()">
+          Close
+        </button>
+        <% if link_blocker || visible_blocker %>
+          <%# A plain button, not a disabled submit: the action-items controller
+              re-enables its submit target as soon as the checklist is ticked. %>
+          <button type="button"
+                  class="recert-modal__btn recert-modal__btn--primary"
+                  aria-disabled="true">
+            Request re-certification
+          </button>
+        <% else %>
+          <%= submit_tag "Request re-certification", class: "recert-modal__btn recert-modal__btn--primary",
+                data: { action_items_target: ("submit" if gated) } %>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 </dialog>

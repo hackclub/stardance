@@ -9,8 +9,7 @@ slack:
   bot_token: "xoxb-"
 
 constants:
-  billy_url: https://billy.3kh0.net
-  joe_url: https://joe.fraud.hackclub.com
+  telescreen_url: https://telescreen.hackclub.com
 
 idv:
   client_id: client_id

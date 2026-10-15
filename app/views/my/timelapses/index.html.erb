@@ -1,0 +1,63 @@
+<% content_for :title, "Your timelapses" %>
+<% pending = @sessions.reject { |s| @pushed_tokens.include?(s.token) } %>
+
+<main class="timelapses">
+  <header class="timelapses__header">
+    <h1 class="timelapses__title">Your timelapses</h1>
+    <p class="timelapses__lede">
+      Hardware recording moved to Lapse. These are your older Lookout recordings.
+      We checked Hackatime for each one, anything not already counted can be sent below.
+    </p>
+  </header>
+
+  <% if @window_open %>
+    <p class="timelapses__notice">
+      <% if @sessions.any? && pending.empty? %>
+        Everything here is already in Hackatime, you're all set.
+      <% else %>
+        Sending is safe even if you're not sure, Hackatime ignores duplicates.
+      <% end %>
+      This page closes on <%= @deadline.strftime("%B %-d") %>.
+      <%= link_to "Re-check", my_timelapses_path(recheck: 1), class: "timelapses__recheck" %>
+    </p>
+  <% else %>
+    <p class="timelapses__notice timelapses__notice--closed">
+      The recovery window closed on <%= @deadline.strftime("%B %-d") %>. Record new
+      time on Lapse instead.
+    </p>
+  <% end %>
+
+  <% if @sessions.empty? %>
+    <p class="timelapses__empty">No Lookout recordings to recover. Your hardware time is tracked in Lapse now.</p>
+  <% else %>
+    <ul class="timelapses__list">
+      <% @sessions.each do |session| %>
+        <% pushed = @pushed_tokens.include?(session.token) %>
+        <li class="timelapses__item">
+          <div class="timelapses__item-main">
+            <span class="timelapses__project"><%= session.project.title %></span>
+            <span class="timelapses__meta">
+              <%= (session.started_at || session.created_at).strftime("%b %-d") %>
+              &middot; <%= format_hours_minutes(session.duration_seconds) %>
+            </span>
+          </div>
+
+          <% if pushed %>
+            <span class="timelapses__status timelapses__status--done">In Hackatime</span>
+          <% elsif @window_open %>
+            <div class="timelapses__actions">
+              <%= button_to "Send to #{session.project.hackatime_recorder_name}",
+                            forward_heartbeats_project_lookout_session_path(session.project, session),
+                            params: { dest: "new", new_project_name: session.project.hackatime_recorder_name },
+                            data: { turbo: false }, class: "timelapses__send" %>
+              <%= link_to "Review", finalize_project_lookout_session_path(session.project, session),
+                          class: "timelapses__review" %>
+            </div>
+          <% else %>
+            <span class="timelapses__status timelapses__status--closed">Not sent</span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</main>

@@ -87,10 +87,10 @@ export default class extends Controller {
     const card = cards[this._activeIndex];
     if (!card) return;
 
-    const link = card.querySelector(".feed-post-card__overlay-link");
-    if (link) {
-      link.click();
-    }
+    // Click the card itself so card-link handles it — opening the post panel
+    // where one is wired, falling back to navigation elsewhere — instead of
+    // activating the overlay anchor, which always full-navigates.
+    card.click();
   }
 
   _toggleHelp() {

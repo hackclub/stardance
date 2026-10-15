@@ -1,5 +1,12 @@
-<article id="<%= dom_id(post) %>" class="<%= card_classes %>" <%= tag.attributes(data: card_data) %>>
-  <% if card_link_url.present? %>
+<% card_content = capture do %>
+<% on_card_link_target = card_link_url.present? && request.path == card_link_url %>
+<% if on_card_link_target %>
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>">
+<% else %>
+<article id="<%= dom_id(post) %>" class="<%= card_classes %>"
+  <%= tag.attributes(data: card_data) %>>
+<% end %>
+  <% if clickable && card_link_url.present? && !on_card_link_target %>
     <%= link_to card_link_url,
           class: "feed-post-card__overlay-link",
           aria: { label: "Open comments for this post" } do %>
@@ -11,31 +18,47 @@
     <div class="feed-post-card__reposted-by">
       <%= inline_svg_tag "icons/repost.svg", class: "feed-post-card__reposted-by-icon" %>
       <span>Reposted by</span>
-      <%= link_to "@#{post.user.display_name.presence || "stardancer"}",
-            profile_path(post.user.display_name),
-            class: "feed-post-card__reposted-by-link" %><%= render StreakBadgeComponent.new(user: post.user) %>
+      <%= render "shared/username_link", user: post.user, link_class: "feed-post-card__reposted-by-link",
+            text: "@#{post.user.display_name.presence || "stardancer"}" %>
     </div>
   <% end %>
 
-  <header class="feed-post-card__header">
-    <% if author.present? %>
-      <%= link_to profile_path(author.display_name), class: "feed-post-card__avatar-link", aria: { label: "@#{author_name}" } do %>
-        <%= image_tag author.avatar, alt: "", class: "feed-post-card__avatar" %>
+  <% if fire_event? %>
+    <div class="feed-post-card__super-star markdown-content">
+      <span class="feed-post-card__super-star-title">
+        Super Star
+      </span>
+    </div>
+  <% end %>
+
+  <header class="feed-post-card__header<%= ' feed-post-card__super-star-header' if fire_event? %>">
+    <% unless fire_event? %>
+      <% if author.present? %>
+        <%= link_to profile_path(author.display_name), class: "feed-post-card__avatar-link", aria: { label: "@#{author_name}" } do %>
+          <%= image_tag author.avatar,
+                        alt: "",
+                        class: "feed-post-card__avatar",
+                        loading: (lazy_media ? "lazy" : nil),
+                        decoding: (lazy_media ? "async" : nil) %>
+        <% end %>
+      <% else %>
+        <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">S</span>
       <% end %>
-    <% else %>
-      <span class="feed-post-card__avatar feed-post-card__avatar--placeholder" aria-hidden="true">S</span>
     <% end %>
 
     <div class="feed-post-card__meta">
       <p class="feed-post-card__byline">
         <% if author.present? %>
-          <%= link_to "@#{author_name}", profile_path(author.display_name), class: "feed-post-card__author" %>
-          <%= render StreakBadgeComponent.new(user: author) %>
+          <%= render "shared/username_link", user: author, link_class: "feed-post-card__author", text: "@#{author_name}" %>
         <% else %>
           <span class="feed-post-card__author">@stardancer</span>
         <% end %>
 
-        <% if project.present? %>
+        <% if fire_event? %>
+          <span class="feed-post-card__context">has marked</span>
+          <%= link_to project.title, project_path(project), class: "feed-post-card__project" %>
+          <span class="feed-post-card__context">as a Super Star!</span>
+        <% elsif project.present? %>
           <span class="feed-post-card__context">on</span>
           <%= link_to project.title, project_path(project), class: "feed-post-card__project" %>
         <% end %>
@@ -61,13 +84,54 @@
     </div>
   </header>
 
-  <% if body.present? && !quote_repost? %>
-    <div class="feed-post-card__body markdown-content">
-      <%= helpers.md(body, allow_images: false) %>
-    </div>
+  <% if deleted_devlog? %>
+    <p class="feed-post-card__deleted-notice">This devlog was deleted<% if display_postable.deleted_at.present? %> on <%= l(display_postable.deleted_at.to_date, format: :long) %><% end %>.</p>
   <% end %>
 
-  <%= render "shared/post_media", attachments: attachments %>
+  <% if devlog? && hackatime_breakdown_url.present? %>
+    <%= helpers.admin_tool do %>
+      <details class="feed-post-card__hackatime">
+        <summary class="feed-post-card__hackatime-summary">Hackatime breakdown</summary>
+        <%= helpers.turbo_frame_tag dom_id(postable, :hackatime_breakdown),
+              src: hackatime_breakdown_url,
+              loading: :lazy,
+              class: "feed-post-card__hackatime-frame" do %>
+          <p class="feed-post-card__hackatime-loading">Loading&hellip;</p>
+        <% end %>
+      </details>
+    <% end %>
+  <% end %>
+
+  <% if fire_event? %>
+    <div class="feed-post-card__super-star-body markdown-content">
+      <!-- Hardcoded body since the old ship events had the header inside the body -->
+      <%= helpers.md("As a prize for your great work, look out for a bonus prize in the mail :)", allow_images: false) %>
+    </div>
+  <% elsif body.present? && !quote_repost? %>
+    <% if clamp_body? %>
+      <div class="feed-post-card__body-clamp"
+           data-controller="read-more"
+           data-read-more-clamped-class="feed-post-card__body--clamped">
+        <div class="feed-post-card__body feed-post-card__body--clamped markdown-content" data-read-more-target="body">
+          <%= helpers.md(body, allow_images: false) %>
+        </div>
+        <button type="button"
+                class="feed-post-card__read-more"
+                data-read-more-target="toggle"
+                data-action="read-more#toggle"
+                hidden>Read more</button>
+      </div>
+    <% else %>
+      <div class="feed-post-card__body markdown-content">
+        <%= helpers.md(body, allow_images: false) %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%= render "shared/post_media",
+        attachments: attachments,
+        variant: media_variant,
+        lazy: lazy_media %>
 
   <% if quote_repost? && original_post.present? %>
     <div class="feed-post-card__repost-preview">
@@ -75,14 +139,16 @@
             post: original_post,
             current_user: current_user,
             track_engagement: track_engagement,
-            show_views: show_views %>
+            show_views: show_views,
+            media_variant: media_variant,
+            lazy_media: lazy_media %>
     </div>
   <% end %>
 
-  <% if show_footer? %>
+  <% if show_footer? && !fire_event? %>
   <footer class="feed-post-card__actions">
     <% if show_comments && interaction_post&.postable_type == "Post::Devlog" %>
-      <div class="feed-post-card__comment-action" data-controller="comment-modal">
+      <div class="feed-post-card__comment-action">
         <% comment_action_inner = capture do %>
           <%= inline_svg_tag "icons/comment.svg", class: "feed-post-card__action-icon" %>
           <span id="<%= comments_count_id %>"><%= interaction_postable.comments_count %></span>
@@ -91,97 +157,13 @@
           <%= link_to comments_url,
                 class: "feed-post-card__action",
                 aria: { label: "#{interaction_postable.comments_count} comments" },
-                data: { action: "comment-modal#open" } do %><%= comment_action_inner %><% end %>
+                data: { action: "card-link#navigateComments" } do %><%= comment_action_inner %><% end %>
         <% else %>
           <button type="button"
                   class="feed-post-card__action"
                   aria-label="<%= interaction_postable.comments_count %> comments"
-                  data-action="comment-modal#open"><%= comment_action_inner %></button>
+                  data-action="card-link#navigateComments"><%= comment_action_inner %></button>
         <% end %>
-
-        <dialog class="comment-modal"
-                data-comment-modal-target="dialog"
-                data-action="click->comment-modal#backdropClick turbo:submit-end->comment-modal#formSubmitted"
-                aria-label="Comments">
-          <div class="comment-modal__content">
-            <header class="comment-modal__header">
-              <button type="button" class="comment-modal__close" data-action="comment-modal#close" aria-label="Close">&times;</button>
-            </header>
-
-            <div class="comment-modal__body" data-comment-modal-target="body">
-              <article class="comment-modal__op">
-                <span class="comment-modal__op-eyebrow">Original post</span>
-                <header class="comment-modal__op-head">
-                  <% if author.present? %>
-                    <%= image_tag author.avatar, alt: "", class: "comment-modal__op-avatar" %>
-                  <% end %>
-                  <div class="comment-modal__op-meta">
-                    <span class="comment-modal__op-author">@<%= author_name %></span>
-                    <time class="comment-modal__op-time" datetime="<%= display_post.created_at.iso8601 %>">· <%= time_ago_in_words(display_post.created_at) %> ago</time>
-                  </div>
-                </header>
-                <% if body.present? %>
-                  <div class="comment-modal__op-body markdown-content"><%= helpers.md(body, allow_images: false) %></div>
-                <% end %>
-                <% if attachments.any? %>
-                  <div class="comment-modal__op-media">
-                    <%= render "shared/post_media", attachments: attachments %>
-                  </div>
-                <% end %>
-              </article>
-
-              <p class="comment-modal__replies-label">Replies</p>
-
-              <turbo-frame id="<%= dom_id(post, :comments) %>"
-                           src="<%= helpers.devlog_comments_path(interaction_postable) %>"
-                           loading="lazy"
-                           class="comment-modal__replies"
-                           data-comment-modal-target="repliesFrame"
-                           data-action="turbo:frame-load->comment-modal#repliesLoaded">
-                <p class="comment-modal__replies-loading">Loading replies&hellip;</p>
-              </turbo-frame>
-            </div>
-
-            <% if current_user %>
-              <%# Turbo Drive is off app-wide (application.js); opt this form in so the %>
-              <%# turbo_stream response applies and the modal refreshes in place. %>
-              <%= form_with url: helpers.devlog_comments_path(interaction_postable),
-                            scope: :comment,
-                            class: "comment-modal__composer",
-                            data: { turbo: true } do |f| %>
-                <p class="comment-modal__replying-to">Replying to <span class="comment-modal__replying-to-name">@<%= author_name %></span></p>
-                <div class="comment-modal__thread-reply">
-                  <div class="comment-modal__thread-left">
-                    <%= image_tag current_user.avatar, alt: "", class: "comment-modal__reply-avatar" %>
-                  </div>
-                  <div class="comment-modal__thread-right">
-                    <%= f.text_area :body,
-                          class: "comment-modal__textarea",
-                          placeholder: "Post your reply (type @ to mention someone)",
-                          rows: 2,
-                          maxlength: Comment::BODY_MAX_LENGTH,
-                          data: { comment_modal_target: "textarea",
-                                  controller: "submit-on-meta-enter mention-autocomplete",
-                                  action: "keydown->submit-on-meta-enter#submit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
-                  </div>
-                </div>
-                <div class="comment-modal__footer">
-                  <%= render ActionButtonComponent.new(
-                        text: "Reply",
-                        size: :small,
-                        type: :submit,
-                        variant: :primary,
-                        disable_with: "Posting..."
-                      ) %>
-                </div>
-              <% end %>
-            <% else %>
-              <p class="comment-modal__sign-in">
-                <%= link_to "Sign in", root_path %> to join the conversation.
-              </p>
-            <% end %>
-          </div>
-        </dialog>
       </div>
     <% end %>
 
@@ -307,3 +289,12 @@
   </footer>
   <% end %>
 </article>
+<% end %>
+
+<% if deleted_devlog? %>
+  <%= helpers.admin_tool(roles: [ :fraud_dept ]) do %>
+    <%= card_content %>
+  <% end %>
+<% else %>
+  <%= card_content %>
+<% end %>

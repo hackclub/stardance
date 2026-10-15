@@ -8,7 +8,17 @@
   <% end %>
 <% end %>
 
-<%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form" do |f| %>
+<%# Skip form, rendered outside the verdict form for the same nesting reason as
+    unclaim; the button in the actions row submits it via the `form` attribute.
+    A persisted skip keeps this request out of the reviewer's next-up for the
+    cooldown window instead of bouncing them straight back to it. %>
+<%= form_with url: hardware_skip_path(stage: "design"), method: :post, id: "skip-form-#{funding_request.id}" do %>
+  <%= hidden_field_tag :token, "funding:#{funding_request.id}" %>
+<% end %>
+
+<%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form", multipart: true,
+      data: { controller: "review-feedback-images", action: "paste->review-feedback-images#paste",
+              review_feedback_images_max_value: Certification::FundingRequest::MAX_FEEDBACK_IMAGES } do |f| %>
 <% if local_assigns[:redirect_to_hardware] %>
   <%# Sends the verdict back to the combined hardware review page. %>
   <%= hidden_field_tag :redirect_to_hardware, funding_request.project_id %>
@@ -31,42 +41,85 @@
     </div>
   <% end %>
 
+  <%# Read-only context the builder left for the reviewer at submission. %>
+  <% if funding_request.submitter_note.present? %>
+    <div class="review-form__submitter-note">
+      <p class="review-form__submitter-note-label">Note from <%= funding_request.owner.display_name %></p>
+      <p class="review-form__submitter-note-body"><%= funding_request.submitter_note %></p>
+    </div>
+  <% end %>
+
   <fieldset class="review-form__fieldset">
     <legend>Verdict</legend>
     <label class="review-form__option">
-      <%= f.radio_button :status, "approved", required: true %>
-      <span>Approve</span>
+      <%= f.radio_button :verdict, "approved", required: true %>
+      <span><%= funding_request.kit_mission? ? "Approve and send the kit" : "Approve and issue a grant" %></span>
+    </label>
+    <%# Same verdict either way: approve the design, move to the build stage,
+        hand out nothing. On a kit mission it waives the kit. %>
+    <label class="review-form__option">
+      <%= f.radio_button :verdict, "approved_without_grant", required: true %>
+      <span><%= funding_request.kit_mission? ? "Approve without sending a kit" : "Approve without a grant" %></span>
     </label>
     <label class="review-form__option">
-      <%= f.radio_button :status, "returned", required: true %>
+      <%= f.radio_button :verdict, "returned", required: true %>
       <span>Return for changes</span>
     </label>
   </fieldset>
 
-  <div class="review-form__field">
-    <%= f.label :approved_amount_dollars, "Approved amount ($) — up to the #{funding_request.tier_label} max of $#{funding_request.tier_max_dollars}" %>
-    <%= f.number_field :approved_amount_dollars,
-          value: (funding_request.approved_amount_dollars || funding_request.requested_amount_dollars),
-          min: 0, max: funding_request.tier_max_dollars, step: 1 %>
+  <% if funding_request.kit_mission? %>
     <p class="review-form__hint">
-      Requested $<%= funding_request.requested_amount_dollars %>. Approving earns the owner the <%= funding_request.tier_label %> discount:
-      <%= funding_request.tier_discount_percent %>% (✦<%= funding_request.tier_discount_stardust %>) off the Outpost Ticket.
+      Approving ships the <%= funding_request.design_kit_shop_item&.name || "design kit" %> and moves the project to the build stage. No grant is issued.
     </p>
-  </div>
+  <% else %>
+    <p class="review-form__hint">
+      Approving without a grant still moves the project to the build stage and pays out for build hours as usual. The amount below is ignored.
+    </p>
+    <div class="review-form__field">
+      <%= f.label :approved_amount_dollars, "Approved amount ($) — up to the #{funding_request.tier_label} max of $#{funding_request.tier_max_dollars}" %>
+      <%= f.number_field :approved_amount_dollars,
+            value: (funding_request.approved_amount_dollars || funding_request.requested_amount_dollars),
+            min: 0, max: funding_request.tier_max_dollars, step: 1 %>
+      <p class="review-form__hint">
+        Requested $<%= funding_request.requested_amount_dollars %>. Approving issues an HCB card grant for the approved amount.
+      </p>
+    </div>
+  <% end %>
 
   <div class="review-form__field">
     <%= f.label :feedback, "Feedback for the user (visible to the project owner)" %>
     <%= f.text_area :feedback, rows: 6, maxlength: 10_000 %>
   </div>
 
+  <div class="review-form__field review-form__images">
+    <%= f.label :feedback_images, "Attach images (optional)" %>
+    <p class="review-form__hint">
+      Add annotated photos — wiring shots, schematics — to go with your feedback. You can also paste images into the feedback field. Up to <%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %> images, shown to the builder.
+    </p>
+
+    <% if funding_request.feedback_images.any?(&:persisted?) %>
+      <p class="review-form__images-heading">Already attached</p>
+      <%= render "admin/certification/funding_requests/feedback_images", funding_request: funding_request %>
+    <% end %>
+
+    <label class="review-form__image-drop"
+           data-review-feedback-images-target="dropZone"
+           data-action="dragover->review-feedback-images#dragover dragleave->review-feedback-images#dragleave drop->review-feedback-images#drop">
+      <%= f.file_field :feedback_images,
+            multiple: true,
+            accept: Certification::FundingRequest::FEEDBACK_IMAGE_CONTENT_TYPES.join(","),
+            class: "review-form__image-input",
+            data: { review_feedback_images_target: "input", action: "change->review-feedback-images#select" } %>
+      <span class="review-form__image-drop-text">Drag images here, or click to choose</span>
+    </label>
+
+    <ul class="review-form__image-grid" data-review-feedback-images-target="grid" hidden></ul>
+  </div>
+
   <div class="review-form__actions">
     <%= f.submit "Submit verdict", class: "action-btn action-btn--large action-btn--primary" %>
-    <%= link_to "Skip and get next", next_admin_certification_hardware_reviews_path(skip: "funding:#{funding_request.id}"),
-          class: "action-btn action-btn--small action-btn--secondary" %>
-    <button type="submit" form="unclaim-form-<%= funding_request.id %>"
-            class="action-btn action-btn--small action-btn--destructive">
-      Unclaim review
-    </button>
-    <%= link_to "Back to queue", admin_certification_hardware_reviews_path, class: "review-form__back" %>
+    <button type="submit" form="skip-form-<%= funding_request.id %>"
+            class="action-btn action-btn--small action-btn--secondary">Skip and get next</button>
+    <%= link_to "Back to queue", hardware_queue_path("design"), class: "review-form__back" %>
   </div>
 <% end %>

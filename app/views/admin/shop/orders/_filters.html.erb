@@ -13,20 +13,23 @@
             { prompt: "All items" } %>
       </div>
 
-      <% unless current_user.fulfillment_person? %>
       <div class="shop-orders__field">
         <%= f.label :region, "Region" %>
-        <%= f.select :region, options_for_select([
-            ['All regions', ''],
-            ['United States', 'US'],
-            ['EU + UK', 'EU'],
-            ['India', 'IN'],
-            ['Canada', 'CA'],
-            ['Australia & NZ', 'AU'],
-            ['Rest of World', 'XX']
-          ], params[:region]) %>
+        <%= f.select :region, options_for_select(
+            [['All regions', '']] + Shop::Regionalizable::REGIONS.map { |code, config| [config[:name], code] },
+            params[:region]) %>
       </div>
 
+      <div class="shop-orders__field">
+        <%= f.label :country, "Country" %>
+        <%= f.select :country, options_for_select(
+            [['All countries', '']] + ISO3166::Country.all
+              .sort_by { |c| c.common_name.presence || c.iso_short_name }
+              .map { |c| [c.common_name.presence || c.iso_short_name, c.alpha2] },
+            params[:country]) %>
+      </div>
+
+      <% unless current_user.fulfillment_person? %>
       <div class="shop-orders__field">
         <% status_options = [
             ['All statuses', ''],
@@ -56,13 +59,14 @@
       <div class="shop-orders__field">
         <%= f.label :sort, "Sort by" %>
         <%= f.select :sort, options_for_select([
-            ['Created (newest)', 'created_at_desc'],
             ['Created (oldest)', 'created_at_asc'],
+            ['Created (newest)', 'created_at_desc'],
             ['ID (desc)', 'id_desc'],
             ['ID (asc)', 'id_asc'],
             ['Tickets (high)', 'shells_desc'],
-            ['Tickets (low)', 'shells_asc']
-          ], params[:sort] || 'created_at_desc') %>
+            ['Tickets (low)', 'shells_asc'],
+            ['Batch size (most)', 'batch_size_desc']
+          ], params[:sort] || 'created_at_asc') %>
       </div>
 
       <div class="shop-orders__field">
@@ -125,5 +129,17 @@
 
     <%= f.hidden_field :goob, value: params[:goob] if params[:goob] %>
     <%= f.hidden_field :view, value: params[:view] if params[:view] %>
+
+    <%# Fulfillment folks don't get the status select above, so carry the status %>
+    <%# through rather than widening their queue back out on submit. %>
+    <%= f.hidden_field :status, value: params[:status] if current_user.fulfillment_person? && params[:status].present? %>
+
+    <%# Carry the folded-away item types through, so applying a filter doesn't %>
+    <%# quietly reset the toggles above. A blank entry means "nothing hidden". %>
+    <% if @view == "fulfillment" %>
+      <% (hidden_item_types.presence || [ "" ]).each do |type| %>
+        <%= hidden_field_tag "hidden_types[]", type, id: nil %>
+      <% end %>
+    <% end %>
   <% end %>
 </div>

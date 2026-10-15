@@ -1,0 +1,70 @@
+<%= turbo_frame_tag "mega-dash-votes", target: "_top" do %>
+  <section class="mega-dash__section mega-dash__panel" aria-labelledby="mega-dash-votes-title"
+           data-controller="mega-dash-chart"
+           data-mega-dash-chart-data-value="<%= @votes[:chart_data].to_json %>"
+           data-mega-dash-chart-latency-unit-value="h"
+           data-mega-dash-chart-backlog-label-value="Votes owed">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-votes-title">Vote queue</h2>
+      <span class="mega-dash__note">
+        Last <%= @period %> days · ship-side waits live on <%= link_to "Rating Hangtime", admin_rating_dashboard_path %>
+      </span>
+    </div>
+
+    <div class="mega-dash__tiles">
+      <%= render "admin/mega_dashboard/tile",
+            label: "Votes outstanding",
+            value: number_with_delimiter(@votes[:tiles][:votes_needed_to_clear]),
+            note: "to clear every ship in voting" %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Avg cast per day", value: @votes[:tiles][:cast_per_day],
+            note: "#{@votes[:tiles][:active_voters]} active voters" %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Net per day",
+            value: mega_dash_signed(@votes[:tiles][:net_per_day]),
+            note: "change in votes owed" %>
+      <%= render "admin/mega_dashboard/tile",
+            label: "Median time in rating",
+            value: mega_dash_duration(@votes[:tiles][:median_rating_hours]),
+            note: "ship enters voting to threshold" %>
+    </div>
+
+    <div class="mega-dash__meta">
+      <span>Median to cast one vote <%= @votes[:tiles][:median_time_to_vote_minutes] ? "#{@votes[:tiles][:median_time_to_vote_minutes]}m" : "—" %></span>
+      <span>P95 to cast one vote <%= @votes[:tiles][:p95_time_to_vote_minutes] ? "#{@votes[:tiles][:p95_time_to_vote_minutes]}m" : "—" %></span>
+      <% @votes[:category_averages].each do |category, average| %>
+        <span><%= category.to_s.titleize %> <%= average || "—" %></span>
+      <% end %>
+    </div>
+
+    <div class="mega-dash__charts">
+      <figure class="mega-dash__chart">
+        <figcaption>Assignments issued vs votes cast</figcaption>
+        <canvas data-mega-dash-chart-target="volume"></canvas>
+      </figure>
+      <figure class="mega-dash__chart">
+        <figcaption>Time from voting open to 12 votes</figcaption>
+        <canvas data-mega-dash-chart-target="latency"></canvas>
+      </figure>
+      <figure class="mega-dash__chart">
+        <figcaption>Vote deficit</figcaption>
+        <canvas data-mega-dash-chart-target="backlog"></canvas>
+      </figure>
+    </div>
+
+    <% if @votes[:quality].any? %>
+      <div class="mega-dash__attention">
+        <h3>Vote quality</h3>
+        <div class="mega-dash__meta">
+          <span>Repo opened <%= @votes[:quality][:repo_opened_rate] %>%</span>
+          <span>Demo opened <%= @votes[:quality][:demo_opened_rate] %>%</span>
+          <span>Reason given <%= @votes[:quality][:reason_rate] %>%</span>
+          <span>Discarded <%= @votes[:quality][:discarded_rate] %>%</span>
+          <span>Skipped <%= @votes[:quality][:skip_rate] || "—" %>%</span>
+          <span>Expired <%= @votes[:quality][:expiry_rate] || "—" %>%</span>
+          <span>Never opened <%= number_with_delimiter(@votes[:quality][:never_viewed]) %></span>
+        </div>
+      </div>
+    <% end %>
+  </section>
+<% end %>

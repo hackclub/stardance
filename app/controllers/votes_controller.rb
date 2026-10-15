@@ -1,5 +1,6 @@
 class VotesController < ApplicationController
   include VoteTrackable
+  include TimelinePostPreloading
 
   def new
     authorize Vote
@@ -8,18 +9,13 @@ class VotesController < ApplicationController
 
     if current_user && @vote_policy.open?
       if !current_user.shipped_projects.exists?
-        @vote_blocked_reason = "You rate others' projects, they rate yours, and everyone earns stardust. Median payout is about 10 stardust/hr. Ship a project to unlock 15 ratings."
+        @vote_blocked_reason = "You rate others' projects, they rate yours, and everyone earns stardust. Median payout is about 10 stardust/hr. Ship a project to unlock #{Post::ShipEvent::VOTE_COST_PER_SHIP} ratings."
         @vote_blocked_title = "Ship first to rate"
         return
       end
 
-      if current_user.vote_balance >= 0 && !@vote_policy.has_voting_path_ship?
-        @vote_blocked_reason = "Rating is only available for projects going through the voting payout path."
-        return
-      end
-
-      if current_user.vote_balance >= 0
-        @vote_blocked_reason = "You've finished rating for this ship! Once your payout is processed, you can ship again to unlock more ratings."
+      if current_user.vote_balance >= Vote::MAX_BANKED_VOTES
+        @vote_blocked_reason = "You've banked #{Vote::MAX_BANKED_VOTES} votes toward future ships. Ship again to use your credit and unlock more ratings."
         return
       end
 
@@ -27,9 +23,9 @@ class VotesController < ApplicationController
       track_assignment_view if @assignment
     end
 
-    @ratings_total = Post::ShipEvent::VOTE_COST_PER_SHIP
-    remaining = current_user ? [ -current_user.vote_balance, 0 ].max : 0
-    @ratings_given = @ratings_total - remaining
+    balance = current_user&.vote_balance.to_i
+    @ratings_needed = [ -balance, 0 ].max
+    @banked_votes = [ balance, 0 ].max
   end
 
   def create
@@ -57,6 +53,7 @@ class VotesController < ApplicationController
       @project = @ship_event.project
       @vote_policy = policy(Vote)
       load_timeline_posts
+      @liked_devlog_ids = liked_devlog_ids_for(@timeline_posts)
       render :new, status: :unprocessable_entity
     end
   end
@@ -112,6 +109,7 @@ class VotesController < ApplicationController
 
         @vote = Vote.new(ship_event: @ship_event, project: @project)
         load_timeline_posts
+        @liked_devlog_ids = liked_devlog_ids_for(@timeline_posts)
       end
     end
 
@@ -121,11 +119,12 @@ class VotesController < ApplicationController
       return unless assigned_ship_post
 
       @timeline_posts = @project.posts
-        .includes(postable: { attachments_attachments: :blob })
+        .preload(:postable)
         .where("posts.created_at <= ?", assigned_ship_post.created_at)
         .order(created_at: :desc)
         .select { |post| post.postable.present? }
-        .reject { |post| post.postable_type == "Post::ShipEvent" && post.postable.certification_status == "rejected" }
+        .reject { |post| post.postable_type == "Post::ShipEvent" && post.postable.certification_status.in?(Post::ShipEvent::HIDDEN_STATUSES) }
+      preload_timeline_postables(@timeline_posts, project_context: true)
     end
 
     def vote_params

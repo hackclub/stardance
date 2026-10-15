@@ -70,7 +70,12 @@ class SessionsController < ApplicationController
     end
 
     unless user
-      return redirect_to(root_path, alert: "No users found for dev login. Create a user first.")
+      alert = if params[:id].present?
+        "No user with id #{params[:id]} for dev login."
+      else
+        "No users found for dev login. Create a user first."
+      end
+      return redirect_to(root_path, alert:)
     end
 
     ensure_dev_hca_identity(user) unless params[:id].present?

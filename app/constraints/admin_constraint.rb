@@ -9,12 +9,9 @@ class AdminConstraint
 
     return false unless user
 
-    policy = AdminPolicy.new(user, :admin)
-    policy.access_admin_endpoints? ||
-      policy.access_fulfillment_view? ||
-      policy.access_ship_review? ||
-      policy.access_ysws_review? ||
-      policy.access_raffles?
+    # Any granted role gets past the constraint — each page's controller
+    # authorization is the real per-page gate.
+    AdminPolicy.new(user, :admin).index?
   end
 
   def self.admin_user_for(request)

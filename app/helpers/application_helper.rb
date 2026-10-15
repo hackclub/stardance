@@ -1,6 +1,13 @@
 module ApplicationHelper
   def in_beta? = request.host.include?("beta")
 
+  # See Raffle::ENDED. Shared by the main app and the raffle engine's views.
+  def raffle_ended? = Raffle.ended?
+
+  def platform_ads_enabled?(user = current_user)
+    user&.preference&.platform_ads_enabled? != false && Flipper.enabled?(:platform_ads, user)
+  end
+
   # Memoized per request: the feed renders dozens of post cards and Flipper
   # memoization is disabled app-wide, so a per-card check would hit
   # flipper_gates once per card.
@@ -43,10 +50,27 @@ module ApplicationHelper
       data: { controller: "count-up", count_up_target_value: n })
   end
 
-  def admin_tool(&block)
-    if current_user&.admin?
-      content_tag(:div, class: "admin tools-do", &block)
-    end
+  # compact: true renders an inline <span> with no dashed box, for markers
+  # that sit inside a line of text (e.g. a username byline) rather than
+  # wrapping a standalone block of debug content.
+  #
+  # roles: lets specific call sites (e.g. the "view in admin" hammer link)
+  # opt additional roles into an otherwise admin-only marker, without
+  # loosening every other admin_tool usage (comment delete, super star
+  # controls, profile/project edit) to those roles too.
+  #
+  # Uses real_user rather than current_user while impersonating, so the
+  # admin retains their own debug tooling instead of losing it to whatever
+  # role the impersonated account happens to have.
+  def admin_tool(compact: false, extra_class: nil, roles: [], &block)
+    acting_user = impersonating? ? real_user : current_user
+    allowed = acting_user&.admin? || roles.any? { |role| acting_user&.has_role?(role) }
+    return unless allowed && !Flipper.enabled?(:no_shigimi_eyes, acting_user)
+
+    classes = [ "admin", "tools-do" ]
+    classes << "tools-do--inline" if compact
+    classes << extra_class if extra_class.present?
+    content_tag(compact ? :span : :div, class: classes.join(" "), &block)
   end
 
   def sign(num)
@@ -82,6 +106,13 @@ module ApplicationHelper
     hours, rem = seconds.to_i.divmod(3600)
     mins, secs = rem.divmod(60)
     hours.positive? ? format("%d:%02d:%02d", hours, mins, secs) : format("%d:%02d", mins, secs)
+  end
+
+  # ie: 9h 0m. Hour/minute wall format shared by the devlog time preview,
+  # the un-devlogged time banner, and the devlog-cap notification.
+  def format_hours_minutes(seconds)
+    seconds = seconds.to_i
+    "#{seconds / 3600}h #{(seconds % 3600) / 60}m"
   end
 
   def format_seconds(seconds, include_days: false)
@@ -129,7 +160,28 @@ module ApplicationHelper
     nil
   end
 
+  def certification_verdict_video_src(cert)
+    return if cert.nil?
+    return cert.verdict_video.url(disposition: :inline) if cert.verdict_video.attached?
+
+    active_storage_redirect_url(safe_external_url(cert.proof_video_url))
+  end
+
+  def active_storage_redirect_url(url)
+    return if url.blank?
+
+    uri = URI.parse(url)
+    return url unless uri.path.start_with?("/rails/active_storage/blobs/proxy/")
+
+    uri.path = uri.path.sub("/rails/active_storage/blobs/proxy/", "/rails/active_storage/blobs/redirect/")
+    uri.to_s
+  rescue URI::InvalidURIError
+    url
+  end
+
   def achievement_icon(icon_name, earned: true, **options)
+    return image_tag(icon_name, **options) if icon_name.respond_to?(:attached?)
+
     asset_path = find_achievement_asset(icon_name)
 
     if earned
@@ -165,7 +217,6 @@ module ApplicationHelper
     end
   end
 
-
   def cache_stats
     hits = Thread.current[:cache_hits] || 0
     misses = Thread.current[:cache_misses] || 0
@@ -185,6 +236,10 @@ module ApplicationHelper
   rescue RedisClient::ReadTimeoutError, Redis::TimeoutError, Redis::CannotConnectError => e
     Rails.logger.warn("ActiveUserTracker: #{e.class} - #{e.message}")
     "unavailable"
+  end
+
+  def local_event_simulator?
+    Rails.env.development? && request.host.in?(%w[localhost 127.0.0.1 ::1 [::1]])
   end
 
   private

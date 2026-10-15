@@ -1,0 +1,83 @@
+// Stardust clawback on an integrity check. It sits on two pages with different
+// surfaces (the review detail and the fraud subject queue), so it carries its
+// own panel rather than borrowing either one's.
+.stardust-deduction {
+  background: var(--color-overlay-light-soft);
+  border: 1px solid var(--color-overlay-light);
+  border-radius: 8px;
+  margin-top: var(--space-m);
+  padding: var(--space-s);
+
+  .stardust-deduction__rate {
+    align-items: center;
+    color: var(--color-brand-cream);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--font-size-s);
+    gap: var(--space-xxs);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .stardust-deduction__rate-note {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+
+  .stardust-deduction__fields {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .stardust-deduction__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxxs);
+  }
+
+  .stardust-deduction__field--wide {
+    flex: 1 1 14rem;
+  }
+
+  .stardust-deduction__label {
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+  }
+}
+
+// The admin baseline styles bare inputs and submit buttons, and a single
+// nested class does not outrank it.
+.admin-content .stardust-deduction {
+  .stardust-deduction__input {
+    background: var(--color-set-2-bg);
+    border: 2px solid var(--color-set-2-bg);
+    border-radius: var(--space-xs);
+    color: var(--color-space-text);
+    font-size: var(--font-size-s);
+    padding: var(--space-xxs) var(--space-xs);
+    width: 100%;
+
+    &:focus {
+      border-color: var(--color-brand-blue);
+      outline: none;
+    }
+  }
+
+  .stardust-deduction__input--hours {
+    width: 6rem;
+  }
+
+  .stardust-deduction__submit {
+    background: var(--color-brand-yellow);
+    border: none;
+    border-radius: 8px;
+    color: var(--color-space-bg);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--font-size-s);
+    font-weight: 500;
+    padding: var(--space-xxs) var(--space-m);
+  }
+}
