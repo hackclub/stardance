@@ -175,8 +175,8 @@ module Certification
         # Can't confirm the grant is safe to pull back, so refuse rather than
         # rewind the review while leaving live money on the card.
         effects << block(:hcb_grant, "Couldn't reach HCB to check the grant. Try again in a moment, or cancel it by hand first.")
-      elsif ShopCardGrant.canceled_grant?(data)
-        effects << manual(:hcb_grant, "The HCB grant is already cancelled - nothing to reverse there.")
+      elsif ShopCardGrant.closed_grant?(data)
+        effects << manual(:hcb_grant, "The HCB grant is already cancelled or expired - nothing to reverse there.")
       elsif grant_spent?(data)
         effects << block(:hcb_grant, "The HCB grant has already been spent (#{spent_summary(data)}). Reconcile or refund it in HCB before undoing.")
       else
@@ -199,9 +199,9 @@ module Certification
       nil
     end
 
-    # Spent/cancelled classification reuses ShopCardGrant's field handling, the
-    # same reader the shop-fulfillment path (Shop::HCBGrantFulfillable#topupable?)
-    # uses, so both judge a grant off identical payload fields.
+    # Spent/closed classification reuses ShopCardGrant's field handling, the same
+    # reader the shop-fulfillment path (Shop::HCBGrantFulfillable) uses, so both
+    # judge a grant off identical payload fields.
     def grant_spent?(data) = ShopCardGrant.spent_grant?(data, expected_cents: review.final_amount_cents)
 
     def spent_summary(data)

@@ -411,7 +411,31 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a.project-show__pill--review", 0
   end
 
+  test "an earlier ship keeps its rating reasons after the project ships again" do
+    Flipper.enable(:ship_event_payouts)
+    first_ship = create_ship_with_locked_ratings(locked_at: 3.weeks.ago, payout: 120)
+    second_ship = create_ship_with_locked_ratings(locked_at: 1.hour.ago)
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    assert_select "dialog#payout-review-modal-#{first_ship.id}"
+    assert_select "dialog#payout-review-modal-#{second_ship.id}"
+    assert_select "button", text: "View rating reasons →", count: 1
+    assert_select "button", text: "Review payout →", count: 1
+  ensure
+    Flipper.disable(:ship_event_payouts)
+  end
+
   private
+
+  def create_ship_with_locked_ratings(locked_at:, payout: nil)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true, certification_status: "approved", hours_at_ship: 1)
+    Post.create!(project: @project, user: @owner, postable: ship_event)
+    ship_event.update_columns(payout_basis_locked_at: locked_at, payout: payout)
+    ship_event
+  end
 
   def certifier
     @certifier ||= begin

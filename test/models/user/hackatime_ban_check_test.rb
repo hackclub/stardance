@@ -26,12 +26,12 @@ class User::HackatimeBanCheckTest < ActiveSupport::TestCase
     assert_not @user.reload.banned?
   end
 
-  test "an undeterminable ban status is reported to Sentry and treated as not banned" do
+  test "an undeterminable ban status is reported and treated as not banned" do
     reports = []
 
     HackatimeService.stub(:fetch_stats, nil) do
       HackatimeService.stub(:fetch_trust_level, nil) do
-        Sentry.stub(:capture_message, ->(message, **) { reports << message }) { @user.try_sync_hackatime_data!(force: true) }
+        OperationalAlert.stub(:report, ->(message, **) { reports << message }) { @user.try_sync_hackatime_data!(force: true) }
       end
     end
 

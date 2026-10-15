@@ -35,7 +35,7 @@ module Admin
       success("Order ##{order.id} approved and fulfilled")
     rescue StandardError => e
       Rails.logger.error "Fulfillment failed for order #{order.id}: #{e.message}"
-      Sentry.capture_exception(e, extra: { shop_order_id: order.id })
+      Rails.error.report(e, context: { shop_order_id: order.id })
       failure("Fulfillment failed (#{e.message}). The order was not approved and nothing was charged. " \
               "If this is an HCB grant, an administrator may need to re-authenticate the HCB integration before retrying.")
     end

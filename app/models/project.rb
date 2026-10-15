@@ -17,6 +17,7 @@
 #  project_type         :string
 #  readme_url           :text
 #  repo_url             :text
+#  ship_block_reason    :text
 #  ship_status          :string           default("draft")
 #  shipped_at           :datetime
 #  synced_at            :datetime
@@ -47,6 +48,7 @@ require "net/http"
 
 class Project < ApplicationRecord
   include Project::HackatimeDevlogResync
+  include Project::ShipBlock
   include AASM
   include SoftDeletable
   include SemanticSearchIndexable
@@ -614,8 +616,11 @@ class Project < ApplicationRecord
   # Deduplicated because every member of a hardware project gets their own
   # User::HackatimeProject row under the same name, and callers treat this as a
   # set: it's joined into the Airtable sync and the devlog key snapshot, and
-  # rendered as-is on the integrity dashboard.
+  # rendered as-is on the integrity dashboard. Uses the preloaded rows when the
+  # caller already loaded them (the home composer renders one chip per project).
   def hackatime_keys
+    return hackatime_projects.map(&:name).uniq if hackatime_projects.loaded?
+
     hackatime_projects.distinct.pluck(:name)
   end
 
@@ -681,7 +686,7 @@ class Project < ApplicationRecord
 
     event :resubmit_for_review do
       transitions from: :needs_changes, to: :submitted,
-                  guard: -> { links_complete? && !hardware_review_blocked? }
+                  guard: -> { !ship_blocked? && links_complete? && !hardware_review_blocked? }
     end
 
     # A ship that was withdrawn rather than judged (see
@@ -720,6 +725,12 @@ class Project < ApplicationRecord
     votes_needed = [ -owner_vote_balance, 0 ].max
     mission_review = blocking_mission_submission
     [
+      {
+        key: :not_ship_blocked,
+        label: "Your project must not be blocked from shipping",
+        tooltip: Project::ShipBlock::BLOCKED_MESSAGE,
+        passed: !ship_blocked?
+      },
       {
         key: :hardware_review_decision,
         label: "Your project must be eligible for another review",
@@ -1061,6 +1072,8 @@ class Project < ApplicationRecord
     curseforge.com
     makerworld.com
     streamlit.app
+    figma.com
+    nexusmods.com
   ].freeze
 
   # Public so ProjectUrlProbeService and the controller can probe URLs.

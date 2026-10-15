@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_135606) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -208,6 +208,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
   end
 
   create_table "certification_funding_requests", force: :cascade do |t|
+    t.datetime "airtable_synced_at"
     t.integer "approved_amount_cents"
     t.datetime "claim_expires_at"
     t.datetime "claimed_at"
@@ -522,6 +523,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.integer "total_amount"
     t.integer "total_orders"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "growth_daily_snapshots", force: :cascade do |t|
+    t.integer "at_risk_mau", default: 0, null: false
+    t.integer "at_risk_wau", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "current_users", default: 0, null: false
+    t.integer "dormant_users", default: 0, null: false
+    t.string "metric", null: false
+    t.integer "new_users", default: 0, null: false
+    t.integer "reactivated_users", default: 0, null: false
+    t.integer "resurrected_users", default: 0, null: false
+    t.date "snapshot_on", null: false
+    t.jsonb "transitions", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["metric", "snapshot_on"], name: "index_growth_daily_snapshots_on_metric_and_snapshot_on", unique: true
   end
 
   create_table "hcb_credentials", force: :cascade do |t|
@@ -945,6 +962,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.index ["user_id"], name: "index_posts_on_user_id"
   end
 
+  create_table "privacy_token_uses", primary_key: "jti", id: :string, force: :cascade do |t|
+    t.datetime "used_at", null: false
+    t.index ["used_at"], name: "index_privacy_token_uses_on_used_at"
+  end
+
   create_table "project_follows", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "project_id", null: false
@@ -1057,6 +1079,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.string "project_type"
     t.text "readme_url"
     t.text "repo_url"
+    t.text "ship_block_reason"
     t.string "ship_status", default: "draft"
     t.datetime "shipped_at"
     t.datetime "synced_at"
@@ -1543,17 +1566,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.datetime "created_at", null: false
     t.integer "day_number", null: false
     t.bigint "shop_item_id", null: false
+    t.string "track", default: "standard", null: false
     t.datetime "updated_at", null: false
-    t.index ["day_number"], name: "index_sticky_streak_rewards_on_day_number", unique: true
     t.index ["shop_item_id"], name: "index_sticky_streak_rewards_on_shop_item_id"
+    t.index ["track", "day_number"], name: "index_sticky_streak_rewards_on_track_and_day_number", unique: true
   end
 
   create_table "sticky_streaks", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "kind", default: "first", null: false
     t.date "started_on", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.index ["user_id"], name: "index_sticky_streaks_on_user_id", unique: true
+    t.index ["user_id", "kind"], name: "index_sticky_streaks_on_user_id_and_kind", unique: true
   end
 
   create_table "streak_activities", force: :cascade do |t|
@@ -1594,6 +1619,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.bigint "user_id", null: false
     t.index ["user_id", "achievement_slug"], name: "index_user_achievements_on_user_id_and_achievement_slug", unique: true
     t.index ["user_id"], name: "index_user_achievements_on_user_id"
+  end
+
+  create_table "user_activity_days", force: :cascade do |t|
+    t.date "active_on", null: false
+    t.datetime "created_at", null: false
+    t.string "sources", default: [], null: false, array: true
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["active_on"], name: "index_user_activity_days_on_active_on"
+    t.index ["user_id", "active_on"], name: "index_user_activity_days_on_user_id_and_active_on", unique: true
   end
 
   create_table "user_data_exports", force: :cascade do |t|
@@ -1648,10 +1683,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.index ["user_id"], name: "index_user_notification_preferences_on_user_id"
   end
 
-  create_table "user_preferences", force: :cascade do |t|
+  create_table "user_preference", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "leaderboard_optin", default: false, null: false
+    t.boolean "search_engine_indexing_off", default: false, null: false
+    t.boolean "send_notifications_for_followed_projects", default: true, null: false
+    t.boolean "send_notifications_for_followed_users", default: true, null: false
+    t.boolean "send_notifications_for_new_comments", default: true, null: false
+    t.boolean "send_notifications_for_new_followers", default: true, null: false
+    t.boolean "send_votes_to_slack", default: false, null: false
+    t.boolean "stardust_balance_notifications", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["leaderboard_optin"], name: "index_user_preference_on_leaderboard_optin"
+    t.index ["user_id"], name: "index_user_preference_on_user_id", unique: true
+  end
+
+  create_table "user_preferences", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "disintegration_effects_enabled", default: true, null: false
+    t.boolean "leaderboard_optin", default: false, null: false
     t.boolean "particle_effects_enabled", default: true, null: false
+    t.boolean "platform_ads_enabled", default: true, null: false
     t.boolean "search_engine_indexing_off", default: false, null: false
     t.boolean "send_notifications_for_followed_projects", default: true, null: false
     t.boolean "send_notifications_for_followed_users", default: true, null: false
@@ -1662,6 +1715,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
     t.boolean "streak_slack_status_enabled", default: true, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.jsonb "ysws_shortcuts", default: {}, null: false
     t.index ["leaderboard_optin"], name: "index_user_preferences_on_leaderboard_optin"
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
   end
@@ -2027,11 +2081,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_060219) do
   add_foreign_key "streak_activities", "users"
   add_foreign_key "streak_activities", "users", column: "manual_credit_by_id", on_delete: :nullify
   add_foreign_key "user_achievements", "users"
+  add_foreign_key "user_activity_days", "users", on_delete: :cascade
   add_foreign_key "user_data_exports", "users"
   add_foreign_key "user_hackatime_projects", "projects"
   add_foreign_key "user_hackatime_projects", "users"
   add_foreign_key "user_identities", "users"
   add_foreign_key "user_notification_preferences", "users", on_delete: :cascade
+  add_foreign_key "user_preference", "users"
   add_foreign_key "user_preferences", "users"
   add_foreign_key "user_vote_verdicts", "users"
   add_foreign_key "vote_assignments", "post_ship_events", column: "ship_event_id"

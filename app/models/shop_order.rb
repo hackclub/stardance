@@ -102,6 +102,7 @@ class ShopOrder < ApplicationRecord
   validate :check_regional_availability, on: :create
   validate :check_free_stickers_requirement, on: :create
   validate :check_devlog_for_free_stickers, on: :create
+  validate :check_single_shop_intro_item, on: :create
   validate :check_stock, on: :create
   validate :check_ship_requirement, on: :create
   validate :check_achievement_requirement, on: :create
@@ -648,6 +649,19 @@ class ShopOrder < ApplicationRecord
     return if user.shop_orders.joins(:shop_item).where(shop_items: { type: "ShopItem::TutorialNothing" }).worth_counting.exists?
 
     errors.add(:base, "You must complete the shop tutorial first before ordering other items!")
+  end
+
+  # The shop intro offers free stickers *or* the free "nothing" item, and a
+  # user only ever gets one of them.
+  def check_single_shop_intro_item
+    return unless shop_item.is_a?(ShopItem::FreeStickers) || shop_item.is_a?(ShopItem::TutorialNothing)
+
+    intro_orders = user.shop_orders.joins(:shop_item)
+                       .where(shop_items: { type: %w[ShopItem::FreeStickers ShopItem::TutorialNothing] })
+                       .worth_counting
+    return unless intro_orders.exists?
+
+    errors.add(:base, "You've already claimed your free shop intro item.")
   end
 
   def check_devlog_for_free_stickers

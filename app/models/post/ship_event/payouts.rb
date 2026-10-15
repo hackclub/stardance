@@ -338,6 +338,11 @@ module Post::ShipEvent::Payouts
     end
   end
 
+  # Static-prize missions and hardware builds pay out without community ratings.
+  def goes_to_voting?
+    voting_payout_path? && !hardware_payout?
+  end
+
   private
     # Hardware ships don't charge vote debt, so their builders have no way to
     # work a deficit off. Only the voting path holds a payout for it.

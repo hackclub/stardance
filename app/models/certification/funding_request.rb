@@ -3,6 +3,7 @@
 # Table name: certification_funding_requests
 #
 #  id                        :bigint           not null, primary key
+#  airtable_synced_at        :datetime
 #  approved_amount_cents     :integer
 #  claim_expires_at          :datetime
 #  claimed_at                :datetime
@@ -294,6 +295,16 @@ module Certification
 
     # True when approving this request pays out an HCB card grant, as opposed to
     # shipping a kit or approving the build with no funding at all.
+    def redeemable_prizes
+      redeemed_shop_item_ids = Mission::PrizeRedemption
+        .where(source_type: self.class.polymorphic_name,
+               source_id: project.certification_funding_requests.select(:id))
+        .joins(:mission_prize)
+        .pluck("mission_prizes.shop_item_id")
+
+      super.where.not(shop_item_id: redeemed_shop_item_ids)
+    end
+
     def issues_grant?
       approved? && !awards_design_kit? && final_amount_cents.to_i.positive?
     end
@@ -401,6 +412,7 @@ module Certification
     after_save_commit :post_verdict_to_hardware_review_channel!, if: -> { saved_change_to_status? && decided? }
     after_save_commit :post_approval_to_hardware_feed!, if: -> { saved_change_to_status? && approved? }
     after_save_commit :issue_hcb_grant!, if: -> { issues_grant? && hcb_grant_hashid.blank? && latest_for_project? }
+    after_save_commit :sync_to_airtable!, if: -> { saved_change_to_status? && approved? }
     after_create_commit :post_submission_to_hardware_review_channel!
 
     def queue_mismatch_flagged_label = "design funding"
@@ -547,6 +559,10 @@ module Certification
     # Routed through the notification pipeline rather than a direct Slack DM, so
     # the verdict also lands in the in-app inbox and by email, and so a builder
     # with no Slack account still hears about it.
+    def sync_to_airtable!
+      Certification::FundingRequestAirtableSyncJob.perform_later(id)
+    end
+
     def notify_owner!
       return notify_permanent_rejection! if permanently_rejected?
 

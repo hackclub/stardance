@@ -25,7 +25,7 @@ class BukuX3IntroComponentTest < ViewComponent::TestCase
     lines = JSON.parse(scene["data-visual-novel-lines-value"])
     assert_equal [ 1, 6 ], JSON.parse(scene["data-visual-novel-shake-lines-value"])
     assert_equal [ 1, 6 ], lines.each_index.select { |index| lines[index] == "!!!" }
-    assert_equal "...or tear it apart so we'll keep stardancing forever...!", lines[7]
+    assert_equal "...or tear it apart to trap the beans here forever...!", lines[7]
     assert_equal "will you be a bean or a buku buku?", lines.last
     assert_selector ".visual-novel[data-visual-novel-dismiss-thing-value='bukux3_intro']"
     assert_selector ".visual-novel[data-visual-novel-next-scene-url-value='#{buku_x3_reveal_path}']"

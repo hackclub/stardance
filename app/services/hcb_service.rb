@@ -172,10 +172,10 @@ module HCBService
         begin
           hcb_credentials.update!(attrs)
         rescue => e
-          Sentry.capture_message(
+          OperationalAlert.report(
             "HCB token refresh succeeded but failed to persist new tokens - credentials are now bricked",
-            level: :fatal,
-            extra: { error: e.message }
+            severity: :error,
+            context: { error: e.message }
           )
           raise HCBError, "refreshed HCB tokens but failed to save them: #{e.message}"
         end

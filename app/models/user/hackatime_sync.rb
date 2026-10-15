@@ -90,11 +90,10 @@ module User::HackatimeSync
   end
 
   def report_unknown_hackatime_ban_status
-    Sentry.capture_message(
+    OperationalAlert.report(
       "Could not determine Hackatime ban status",
-      level: :error,
-      fingerprint: [ "hackatime-ban-status-unknown" ],
-      extra: { user_id: id, hackatime_uid: hackatime_identity&.uid }
+      severity: :error,
+      context: { user_id: id, hackatime_uid: hackatime_identity&.uid }
     )
   end
 end

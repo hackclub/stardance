@@ -15,6 +15,10 @@ class MyPolicy < ApplicationPolicy
     signed_in_any?
   end
 
+  def show_ratings?
+    signed_in_any?
+  end
+
   def show_notifications?
     signed_in_any?
   end

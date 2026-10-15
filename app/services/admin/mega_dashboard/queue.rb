@@ -97,27 +97,17 @@ module Admin
           path: ->(h) { h.admin_mission_reviews_path }
         },
         {
-          key: "fraud_orders",
-          label: "Shop orders (fraud)",
-          # Sticky Streak stickers skip this queue entirely: they auto-approve
-          # by item type, so counting them reported thousands of instant
-          # decisions no reviewer ever made.
-          scope: -> { ::ShopOrder.without_streak_stickers },
-          pending: -> { ::ShopOrder.without_streak_stickers.where(aasm_state: ::ShopOrder::REVIEW_QUEUE_STATES) },
-          entered_at: "shop_orders.created_at",
-          decided_at: ::ShopOrder::DECIDED_AT_SQL,
-          sla_hours: ::ShopOrder::LONG_WAIT_DAYS * 24,
-          path: ->(h) { h.admin_fraud_path }
-        },
-        {
-          key: "integrity_reviews",
-          label: "Integrity reviews",
-          scope: -> { ::Certification::Integrity.all },
-          pending: -> { ::Certification::Integrity.pending },
-          entered_at: "certification_integrities.created_at",
-          decided_at: "certification_integrities.reviewed_at",
-          sla_hours: 48,
-          path: ->(h) { h.admin_certification_integrity_reviews_path }
+          key: "fraud_queue",
+          label: "Fraud queue",
+          # Counts people on the queue page, each waiting since their oldest unfinished item.
+          scope: nil,
+          pending: nil,
+          entered_at: nil,
+          decided_at: nil,
+          sla_hours: 72,
+          open_at: -> { ::Admin::Fraud::SubjectQueue.subjects.map(&:oldest_at) },
+          pairs: ->(since) { ::Admin::Fraud::SubjectQueue.history(since) },
+          path: ->(h) { h.admin_fraud_subjects_path }
         },
         {
           key: "shop_fulfillment",
@@ -198,20 +188,6 @@ module Admin
           decided_at: "CASE WHEN certificates.status = 'pending' THEN NULL ELSE certificates.updated_at END",
           sla_hours: 72,
           path: ->(h) { h.admin_certificates_path }
-        },
-        {
-          key: "fraud_reports",
-          label: "Fraud reports",
-          # Every internally-raised reason, not just the literal "fraud" one.
-          # Reviewers flag through report_fraud on the ship and YSWS queues,
-          # which writes "Shipwrights project flag" / "YSWS project flag", so
-          # filtering on "fraud" alone misses every reviewer-raised report.
-          scope: -> { ::Project::Report.where(reason: ::Project::Report::REASONS - ::Project::Report::USER_REASONS) },
-          pending: -> { ::Project::Report.where(reason: ::Project::Report::REASONS - ::Project::Report::USER_REASONS).pending },
-          entered_at: "project_reports.created_at",
-          decided_at: "CASE WHEN project_reports.status = 0 THEN NULL ELSE project_reports.updated_at END",
-          sla_hours: 72,
-          path: ->(h) { h.admin_fraud_path }
         }
       ].freeze
 

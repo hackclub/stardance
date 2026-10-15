@@ -1,0 +1,182 @@
+// wrong tool's ad in the home feed (Feed::WrongToolPromoComponent): a small
+// spreadsheet in wrong tool's Sheets look, dimmed for night. The rocket and
+// stars are cells the wrong-tool-sheet controller fills in.
+
+$wrong-tool-columns: 14; // Feed::WrongToolPromoComponent::COLUMNS
+$wrong-tool-green: #34a853; // wrong tool's logo tile
+$wrong-tool-green-deep: #137333;
+$wrong-tool-selection: #8ab4f8; // Sheets' selected-cell blue, dark theme
+$wrong-tool-grid: hsla(0, 0%, 100%, 0.08);
+$wrong-tool-chrome: hsla(0, 0%, 100%, 0.04);
+
+.wrong-tool-promo {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--border-radius);
+  background: rgba(5, 4, 24, 0.35);
+  color: var(--color-space-text);
+  overflow: hidden;
+  font-family: Roboto, Arial, sans-serif;
+
+  &[hidden] {
+    display: none;
+  }
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-s);
+  }
+
+  &__logo {
+    width: 22px;
+    height: 22px;
+  }
+
+  &__file {
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__hide {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-inline-start: auto;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--color-space-text-muted);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: $wrong-tool-chrome;
+      color: var(--color-space-text);
+    }
+  }
+
+  &__hide-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  &__formula {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 4px var(--space-s);
+    border-block: 1px solid $wrong-tool-grid;
+    font-size: var(--font-size-xs);
+  }
+
+  &__name-box {
+    min-width: 2.5em;
+    color: var(--color-space-text-muted);
+  }
+
+  &__fx {
+    font-style: italic;
+    color: var(--color-space-text-muted);
+  }
+
+  &__formula-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-family: inherit;
+  }
+
+  &__sheet {
+    display: grid;
+    grid-template-columns: 24px repeat($wrong-tool-columns, 1fr);
+    gap: 1px;
+    background: $wrong-tool-grid;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+
+  &__corner,
+  &__header {
+    background: var(--color-set-1-bg);
+  }
+
+  &__header {
+    display: grid;
+    place-items: center;
+    height: 18px;
+    font-size: 10px;
+    color: var(--color-set-1-fg-secondary);
+
+    &--row {
+      height: auto;
+    }
+  }
+
+  &__cell {
+    height: 22px;
+    background: var(--color-set-1-bg);
+    transition: background-color 0.12s;
+
+    &--star {
+      background: hsla(0, 0%, 100%, 0.35);
+    }
+
+    &--rocket {
+      background: $wrong-tool-green;
+    }
+
+    &--nose {
+      background: $wrong-tool-green;
+      outline: 2px solid $wrong-tool-selection;
+      outline-offset: -1px;
+    }
+
+    &--flame {
+      background: var(--color-brand-peach);
+    }
+
+    &--hit {
+      background: var(--color-brand-salmon);
+    }
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    padding: var(--space-m);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--font-size-l);
+    font-weight: 600;
+  }
+
+  &__body {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--color-space-text-muted);
+  }
+
+  &__cta {
+    margin-block-start: 4px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: $wrong-tool-green-deep;
+    color: #fff;
+    font-size: var(--font-size-s);
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: $wrong-tool-green;
+    }
+  }
+}

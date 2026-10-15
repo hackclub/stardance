@@ -44,7 +44,13 @@ test("role reveal toggles on tap and Escape dismisses it", () => {
 test("team counters follow live totals and retain them between updates", () => {
   const controller = {
     hasMeterTarget: true,
-    meterTarget: { setAttribute() {}, style: { setProperty() {} } },
+    hasBukuHoursTarget: true,
+    hasBeanHoursTarget: true,
+    meterTarget: {
+      dataset: {},
+      setAttribute() {},
+      style: { setProperty() {} },
+    },
     amountTarget: {},
     bukuHoursTarget: {},
     beanHoursTarget: {},
@@ -61,4 +67,46 @@ test("team counters follow live totals and retain them between updates", () => {
   update({ percent: 35, hours: { buku: 500, bean: 0 } });
   assert.equal(controller.bukuHoursTarget.textContent, "500");
   assert.equal(controller.beanHoursTarget.textContent, "0");
+});
+
+test("bare leaderboard meter updates winner without team counters or role controls", () => {
+  const attributes = new Map();
+  const styles = new Map();
+  const controller = {
+    hasMeterTarget: true,
+    hasBukuHoursTarget: false,
+    hasBeanHoursTarget: false,
+    meterTarget: {
+      dataset: {},
+      setAttribute(name, value) {
+        attributes.set(name, value);
+      },
+      style: {
+        setProperty(name, value) {
+          styles.set(name, value);
+        },
+      },
+    },
+    amountTarget: {},
+    liveHoursValue: {},
+  };
+  for (const [percent, leader] of [
+    [0, "bean"],
+    [25, "bean"],
+    [50, "tie"],
+    [75, "buku"],
+    [100, "buku"],
+  ]) {
+    BukuX3StatusController.prototype.update.call(controller, {
+      detail: { percent },
+    });
+    assert.equal(controller.meterTarget.dataset.leader, leader);
+    assert.equal(attributes.get("aria-valuenow"), percent);
+    assert.equal(styles.get("--tug-position"), `${100 - percent}%`);
+    assert.equal(controller.amountTarget.textContent, `${percent}% damaged`);
+  }
+  BukuX3StatusController.prototype.update.call(controller, {
+    detail: { percent: NaN },
+  });
+  assert.equal(controller.meterTarget.dataset.leader, "buku");
 });

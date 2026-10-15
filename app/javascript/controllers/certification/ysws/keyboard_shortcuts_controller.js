@@ -1,160 +1,167 @@
 import { Controller } from "@hotwired/stimulus";
+import { bindings, chordFromEvent, label, modified } from "./shortcut_bindings";
+import ShortcutSettings from "./shortcut_settings";
 
 // Flag-gated (:ysws_review_shortcuts) keyboard layer for the YSWS review page.
-// Mirrors the hardware cockpit's keybinding technique — a single document
-// keydown maintains a "current devlog" cursor and dispatches shortcuts to the
-// existing per-devlog controls. It only clicks buttons that already exist
-// (approve/reject/adjust) and opens the lapse lightbox owned by the recording-
-// gallery slice by clicking its first tile; no JS coupling with that controller.
-//
-// When active it also decorates the controls it drives with on-screen <kbd>
-// hint badges and pins a compact legend for the navigation keys, so the
-// shortcuts are discoverable without opening the ? help overlay.
-//
-//   j / k        next / previous devlog (clamped)
-//   a / r        approve / reject the current devlog
-//   5 / 2        set approved minutes to 50% / 25%
-//   + / shift++  add 15 / 30 min        - / shift+-  cut 15 / 30 min
-//   t            open the current devlog's lapse recordings in the lightbox
-//   ctrl+space   focus the current devlog's internal-notes box
-//   ctrl+enter   complete the review (press twice to confirm)
-//   ?            toggle the keyboard-shortcut help overlay (Escape closes)
-
-// Per-control hint badges: [selector within a devlog, key label]. The notes
-// label (⌃Space) and the page-level Complete button (⌃⏎) are placed separately
-// in decorateHints.
-const HINTS = [
-  [".btn-approve", "A"],
-  [".btn-reject", "R"],
-  ['.adjust-btn[data-adjust-action="50%"]', "5"],
-  ['.adjust-btn[data-adjust-action="25%"]', "2"],
-  ['.adjust-btn[data-adjust-action="-15"]', "−"],
-  ['.adjust-btn[data-adjust-action="-30"]', "⇧−"],
-];
-
-// Rows for the ? help overlay.
-const SHORTCUTS = [
-  ["J / K", "Prev / next devlog"],
-  ["A / R", "Approve / reject"],
-  ["5 / 2", "Set 50% / 25%"],
-  ["+ / ⇧+", "Add 15 / 30 min"],
-  ["− / ⇧−", "Cut 15 / 30 min"],
-  ["T", "Open lapse recordings"],
-  ["⌃ Space", "Focus internal notes"],
-  ["⌃ ⏎ ×2", "Complete review (twice)"],
-  ["?", "Show this help"],
-];
+// The server supplies the shared catalog and this user's account preferences.
+// Actions use existing controls so authorization, saves and audit paths agree.
 
 export default class extends Controller {
+  static values = {
+    catalog: Object,
+    settings: Object,
+    reserved: Array,
+    url: String,
+  };
+
   connect() {
     this.currentIndex = 0;
+    this.isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+    this.editor = new ShortcutSettings(this);
     this.onKeydown = this.onKeydown.bind(this);
     document.addEventListener("keydown", this.onKeydown);
-    this.decorateHints();
-    this.buildLegend();
-    this.observeScroll();
+    this.lastFocusedControl = null;
+    this.onFocusIn = (event) => {
+      if (event.target === this.lastFocusedControl) return;
+      const card = event.target.closest(".devlog-item");
+      const index = this.devlogEls().indexOf(card);
+      if (index !== -1) {
+        this.lastFocusedControl = event.target;
+        this.markCurrent(index);
+      }
+    };
+    this.onPointerDown = (event) => {
+      if (event.button !== 0) return;
+      const index = this.devlogEls().indexOf(
+        event.target.closest(".devlog-item"),
+      );
+      if (index !== -1) this.markCurrent(index);
+    };
+    this.element.addEventListener("focusin", this.onFocusIn);
+    this.element.addEventListener("pointerdown", this.onPointerDown);
+    this.onPointerMove = this.onPointerMove.bind(this);
+    this.pointerPosition = null;
+    document.addEventListener("pointermove", this.onPointerMove);
+    this.refreshHints();
     this.markCurrent(0);
   }
 
   disconnect() {
     document.removeEventListener("keydown", this.onKeydown);
-    this.observer?.disconnect();
-    this.endNavScroll();
+    this.element.removeEventListener("focusin", this.onFocusIn);
+    this.element.removeEventListener("pointerdown", this.onPointerDown);
+    document.removeEventListener("pointermove", this.onPointerMove);
     this.disarmComplete();
     this.undecorateHints();
     this.legend?.remove();
-    this.dialog?.remove();
+    this.editor.destroy();
   }
 
   onKeydown(event) {
-    // The lapse lightbox (opened with `t`) is modal and owns the keyboard while
-    // open — its own controller handles JKL/Escape. Stand down entirely so our
-    // j/k/a/r don't drive the review or double-scrub behind it. We don't consume
-    // the event, so it flows on to the lapse player's document listener.
-    if (document.querySelector(".lapse-player__lightbox")) return;
-
-    // The help overlay is modal: Escape closes it and nothing else fires.
-    if (this.dialog?.open) {
-      if (event.key === "Escape")
-        return this.consume(event, () => this.dialog.close());
+    if (
+      event.defaultPrevented ||
+      event.isComposing ||
+      event.keyCode === 229 ||
+      ["Dead", "Process", "Unidentified"].includes(event.key) ||
+      event.getModifierState("AltGraph")
+    )
+      return;
+    if (this.editor.open) {
+      if (event.repeat) return;
+      return this.editor.keydown(event);
+    }
+    if (
+      document.querySelector(
+        ".lapse-player__lightbox, dialog[open], .fraud-report-modal.is-open, .return-ship-cert-modal.is-open, .media-viewer-modal.is-open",
+      )
+    ) {
+      this.disarmComplete();
       return;
     }
 
-    // ctrl/⌘ + space focuses the current devlog's internal-notes box. It's a
-    // chord (never inserts text), so it works even while typing elsewhere and is
-    // handled before the plain-key guards below.
-    if (
-      (event.ctrlKey || event.metaKey) &&
-      !event.altKey &&
-      event.code === "Space"
-    ) {
-      return this.consume(event, () => this.openNotes());
-    }
-
-    // ctrl/⌘ + Enter completes the review — a deliberate chord (works even while
-    // typing) that arms on the first press and confirms on the second, so a
-    // stray keystroke can never finalize the whole review.
-    if (
-      (event.ctrlKey || event.metaKey) &&
-      !event.altKey &&
-      event.key === "Enter"
-    ) {
-      return this.consume(event, () => this.completeReview());
-    }
-
-    // Escape drops focus out of a field (e.g. the internal-notes box opened with
-    // ctrl+space, or the minutes input) so the reviewer can jump back to the
-    // single-key shortcuts. Handled before the typing guard so it fires while a
-    // field is focused.
     if (event.key === "Escape") {
       const el = document.activeElement;
-      if (
-        el &&
-        el !== document.body &&
-        this.element.contains(el) &&
-        typeof el.blur === "function"
-      ) {
-        return this.consume(event, () => el.blur());
+      if (el && this.element.contains(el) && typeof el.blur === "function") {
+        event.preventDefault();
+        el.blur();
       }
+      this.disarmComplete();
       return;
     }
 
-    // Ctrl/Meta/Alt combos are left to the browser (Escape aside — unused here
-    // but kept explicit); single-key shortcuts must never fight text entry.
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
-    if (this.isTyping(event.target)) return;
-
-    switch (event.key) {
-      case "j":
-        return this.consume(event, () => this.stepDevlog(1));
-      case "k":
-        return this.consume(event, () => this.stepDevlog(-1));
-      case "a":
-        return this.consume(event, () => this.clickCurrent(".btn-approve"));
-      case "r":
-        return this.consume(event, () => this.clickCurrent(".btn-reject"));
-      case "5":
-        return this.consume(event, () => this.adjustTime("50%"));
-      case "2":
-        return this.consume(event, () => this.adjustTime("25%"));
-      case "=":
-        return this.consume(event, () => this.adjustMinutes(15));
-      case "+":
-        return this.consume(event, () => this.adjustMinutes(30));
-      case "-":
-        return this.consume(event, () => this.adjustTime("-15"));
-      case "_":
-        return this.consume(event, () => this.adjustTime("-30"));
-      case "t":
-        return this.consume(event, () => this.openLapses());
-      case "?":
-        return this.consume(event, () => this.toggleHelp());
+    const notes = this.focusedNotes();
+    const key = chordFromEvent(event);
+    const effective = bindings(
+      this.catalogValue,
+      this.settingsValue,
+      this.isMac,
+      Boolean(notes),
+    );
+    const action = Object.keys(effective).find((id) =>
+      effective[id].includes(key),
+    );
+    if (!action) return;
+    // Preserve the existing deliberate focus/complete chords in other fields;
+    // new verdict, time and navigation chords are restricted to internal notes.
+    if (
+      this.isTyping(event.target) &&
+      !notes &&
+      (!["notes", "complete"].includes(action) || !modified(key))
+    )
+      return;
+    // Suppress native repeat actions too (e.g. Control+K deleting Mac text).
+    if (event.repeat) {
+      event.preventDefault();
+      return;
+    }
+    // A focused note always wins over the pointer-selected card.
+    if (notes)
+      this.markCurrent(this.devlogEls().indexOf(notes.closest(".devlog-item")));
+    if (action !== "complete") this.disarmComplete();
+    const selector = this.catalogValue[action].selector;
+    if (selector) {
+      const button = this.currentDevlog()?.querySelector(selector);
+      if (!button || button.disabled) return;
+      event.preventDefault();
+      button.click();
+      return;
+    }
+    event.preventDefault();
+    switch (action) {
+      case "next":
+        this.stepDevlog(1, Boolean(notes));
+        break;
+      case "previous":
+        this.stepDevlog(-1, Boolean(notes));
+        break;
+      case "add15":
+        this.adjustMinutes(15);
+        break;
+      case "add30":
+        this.adjustMinutes(30);
+        break;
+      case "recordings":
+        this.openLapses();
+        break;
+      case "notes":
+        this.openNotes();
+        break;
+      case "complete":
+        this.completeReview();
+        break;
+      case "help":
+        this.editor.show();
+        break;
     }
   }
 
-  consume(event, fn) {
-    event.preventDefault();
-    fn();
+  focusedNotes() {
+    const el = document.activeElement;
+    return el?.matches(".notes-textarea:not(:disabled)") &&
+      this.element.contains(el) &&
+      el.closest(".devlog-item:not(.devlog-item--frozen)")
+      ? el
+      : null;
   }
 
   isTyping(el) {
@@ -180,8 +187,9 @@ export default class extends Controller {
     return this.devlogEls()[this.currentIndex] || null;
   }
 
-  stepDevlog(delta) {
+  stepDevlog(delta, focusNotes = false) {
     this.setDevlog(this.currentIndex + delta);
+    if (focusNotes) this.openNotes();
   }
 
   // Track which devlog is current (clamped). Kept as an internal cursor for the
@@ -192,106 +200,33 @@ export default class extends Controller {
     this.currentIndex = Math.max(0, Math.min(index, els.length - 1));
   }
 
-  // j/k: move the cursor and smoothly scroll the card into view. The smooth
-  // animation re-fires the observer, so we suspend its re-selection until the
-  // scroll actually ends (see beginNavScroll) — otherwise it drags the cursor
-  // back to the still-visible previous card mid-animation.
+  // Keyboard navigation remains selected until the pointer actually moves.
   setDevlog(index) {
     this.markCurrent(index);
-    this.beginNavScroll();
     this.devlogEls()[this.currentIndex]?.scrollIntoView({
       block: "start",
       behavior: "smooth",
     });
   }
 
-  // Suspend observer re-selection until the programmatic smooth scroll finishes.
-  // scrollend is authoritative; the timeout is a fallback for browsers that don't
-  // emit it, or when the target is already in place (no scroll → no scrollend).
-  beginNavScroll() {
-    this.navScrolling = true;
-    clearTimeout(this.navScrollTimeout);
-    if (this.onScrollEnd)
-      window.removeEventListener("scrollend", this.onScrollEnd);
-    this.onScrollEnd = () => this.endNavScroll();
-    window.addEventListener("scrollend", this.onScrollEnd, { once: true });
-    // scrollend never fires when the target is already in place (no scroll), which
-    // would freeze cursor-follow for the whole fallback. Probe once: if the page
-    // hasn't moved shortly after, there's nothing to wait for — lift immediately;
-    // otherwise keep a bounded fallback for browsers that don't emit scrollend.
-    const startY = window.scrollY;
-    this.navScrollTimeout = setTimeout(() => {
-      if (window.scrollY === startY) this.endNavScroll();
-      else this.navScrollTimeout = setTimeout(() => this.endNavScroll(), 900);
-    }, 150);
-  }
-
-  endNavScroll() {
-    this.navScrolling = false;
-    clearTimeout(this.navScrollTimeout);
-    if (this.onScrollEnd) {
-      window.removeEventListener("scrollend", this.onScrollEnd);
-      this.onScrollEnd = null;
-    }
-  }
-
-  // The "current" devlog follows whichever Review Decision panel is on screen the
-  // most — that's the card the reviewer is actually working on. We track each
-  // non-frozen panel's visible area and pick the largest.
-  observeScroll() {
-    const panels = this.reviewPanels();
-    if (!panels.length || typeof IntersectionObserver === "undefined") return;
-    this.panelArea = new Map(); // panel element -> visible pixel area
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const rect = entry.intersectionRect;
-          this.panelArea.set(
-            entry.target,
-            entry.isIntersecting ? rect.width * rect.height : 0,
-          );
-        }
-        // Don't re-select while a keyboard nav's smooth scroll is still running —
-        // that scroll is what fires this callback, and reacting to it fights j/k.
-        if (this.navScrolling) return;
-        let best = null;
-        let bestArea = 0;
-        for (const [panel, area] of this.panelArea) {
-          if (area > bestArea) {
-            bestArea = area;
-            best = panel;
-          }
-        }
-        if (best && bestArea > 0) {
-          const i = this.devlogEls().indexOf(best.closest(".devlog-item"));
-          if (i !== -1 && i !== this.currentIndex) this.markCurrent(i);
-        }
-      },
-      { root: null, threshold: Array.from({ length: 21 }, (_, i) => i / 20) },
-    );
-    panels.forEach((panel) => this.observer.observe(panel));
-  }
-
-  // The Review Decision panel for each non-frozen devlog, in devlogEls() order.
-  reviewPanels() {
-    return this.devlogEls()
-      .map((item) => item.querySelector(".devlog-review-panel"))
-      .filter(Boolean);
-  }
-
-  // ── Actions on the current devlog ───────────────────────────────────────
-  // Click a control on the current devlog if present and enabled. The devlog
-  // controller autosaves; single-press is fine since these are reversible.
-  clickCurrent(selector) {
-    const devlog = this.currentDevlog();
-    if (!devlog) return;
-    const btn = devlog.querySelector(selector);
-    if (btn && !btn.disabled) btn.click();
-  }
-
-  // Click one of the current devlog's quick-adjust buttons (50% / 25% / -15 / -30).
-  adjustTime(delta) {
-    this.clickCurrent(`.adjust-btn[data-adjust-action="${delta}"]`);
+  onPointerMove(event) {
+    if (event.pointerType !== "mouse") return;
+    const previous = this.pointerPosition;
+    this.pointerPosition = { x: event.clientX, y: event.clientY };
+    if (previous?.x === event.clientX && previous?.y === event.clientY) return;
+    if (
+      event.buttons ||
+      this.isTyping(document.activeElement) ||
+      this.editor.open ||
+      document.querySelector(
+        ".lapse-player__lightbox, dialog[open], .fraud-report-modal.is-open, .return-ship-cert-modal.is-open, .media-viewer-modal.is-open",
+      )
+    )
+      return;
+    const card = event.target.closest(".devlog-item");
+    const index = this.devlogEls().indexOf(card);
+    // Margins, floating controls and frozen cards leave the last target alone.
+    if (index !== -1) this.markCurrent(index);
   }
 
   // Increase the current devlog's approved minutes: there's no +button, so bump
@@ -340,36 +275,8 @@ export default class extends Controller {
         ".devlog-recordings-section .recording-gallery__item",
       ) ||
       this.element.querySelector(".recordings-card .recording-gallery__item");
-    if (tile) tile.click();
-  }
-
-  // ── Help overlay ────────────────────────────────────────────────────────
-  toggleHelp() {
-    if (!this.dialog) this.buildDialog();
-    if (this.dialog.open) this.dialog.close();
-    else this.dialog.showModal();
-  }
-
-  buildDialog() {
-    const dialog = document.createElement("dialog");
-    dialog.className = "kbd-help";
-    dialog.addEventListener("click", (e) => {
-      if (e.target === dialog) dialog.close();
-    });
-
-    const rows = SHORTCUTS.map(
-      ([key, desc]) =>
-        `<div class="kbd-help__row"><kbd class="kbd-help__key">${key}</kbd><span class="kbd-help__desc">${desc}</span></div>`,
-    ).join("");
-
-    dialog.innerHTML =
-      `<div class="kbd-help__content">` +
-      `<h2 class="kbd-help__title">Keyboard shortcuts</h2>` +
-      rows +
-      `</div>`;
-
-    document.body.appendChild(dialog);
-    this.dialog = dialog;
+    if (!tile) return;
+    tile.click();
   }
 
   // ctrl+space: bring the current devlog's notes box into view and focus it.
@@ -381,25 +288,34 @@ export default class extends Controller {
     notes.focus();
   }
 
-  // ── On-screen hint badges + legend ──────────────────────────────────────
-  // Tag each control a key drives with a small <kbd> badge, and pin a legend
-  // for the keys that aren't attached to a single button (j/k nav, t, ?).
-  decorateHints() {
+  refreshHints() {
+    this.undecorateHints();
+    this.legend?.remove();
+    this.disarmComplete();
+    const keys = bindings(this.catalogValue, this.settingsValue);
+    const hint = (id) => {
+      const preferred =
+        this.isMac && id !== "notes"
+          ? keys[id].find((key) => key.startsWith("meta+"))
+          : null;
+      const key = preferred || keys[id][0];
+      return key ? label(key) : "";
+    };
     this.devlogEls().forEach((devlog) => {
-      if (devlog.classList.contains("devlog-item--frozen")) return;
-      HINTS.forEach(([selector, label]) => {
-        const el = devlog.querySelector(selector);
-        if (el) this.addHint(el, label);
+      Object.entries(this.catalogValue).forEach(([id, action]) => {
+        const el = action.selector && devlog.querySelector(action.selector);
+        if (el && hint(id)) this.addHint(el, hint(id));
       });
       const notes = devlog.querySelector(".notes-textarea");
       const notesLabel = notes
         ?.closest(".panel-section")
         ?.querySelector(".panel-label");
-      if (notesLabel) this.addHint(notesLabel, "⌃Space");
+      if (notesLabel && hint("notes")) this.addHint(notesLabel, hint("notes"));
     });
-    // Page-level Complete button (double-tap ctrl+enter), placed once outside the loop.
     const complete = this.element.querySelector(".btn-complete");
-    if (complete) this.addHint(complete, "⌃⏎");
+    if (complete && hint("complete"))
+      this.addHint(complete, `${hint("complete")} ×2`);
+    this.buildLegend();
   }
 
   addHint(el, label) {
@@ -407,6 +323,7 @@ export default class extends Controller {
     const kbd = document.createElement("kbd");
     kbd.className = "kbd-hint";
     kbd.textContent = label;
+    kbd.setAttribute("data-turbo-temporary", "");
     el.appendChild(kbd);
   }
 
@@ -415,20 +332,18 @@ export default class extends Controller {
   }
 
   buildLegend() {
-    const legend = document.createElement("div");
+    const legend = document.createElement("button");
+    legend.type = "button";
     legend.className = "ysws-kbd-legend";
-    legend.innerHTML =
-      `<span class="ysws-kbd-legend__title">Shortcuts</span>` +
-      [
-        ["J / K", "devlogs"],
-        ["T", "lapses"],
-        ["?", "more"],
-      ]
-        .map(
-          ([key, desc]) =>
-            `<span class="ysws-kbd-legend__item"><kbd class="kbd-hint">${key}</kbd>${desc}</span>`,
-        )
-        .join("");
+    legend.textContent = "Shortcuts";
+    legend.setAttribute("data-turbo-temporary", "");
+    legend.setAttribute("aria-haspopup", "dialog");
+    const keys = bindings(this.catalogValue, this.settingsValue).help;
+    if (keys.length) this.addHint(legend, keys.map(label).join(" / "));
+    legend.addEventListener("click", () => {
+      this.disarmComplete();
+      this.editor.show();
+    });
     document.body.appendChild(legend);
     this.legend = legend;
   }

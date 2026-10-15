@@ -1,3 +1,7 @@
+<% if @pagy.page == 1 %>
+  <%= render Feed::WrongToolPromoComponent.new %>
+<% end %>
+
 <% @feed_posts.each_with_index do |post, index| %>
   <% source = @feed_post_sources&.fetch(post, "quality_latest") || "quality_latest" %>
   <% if post.postable_type == "Post::ShipEvent" %>

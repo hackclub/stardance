@@ -17,6 +17,7 @@
 #  project_type         :string
 #  readme_url           :text
 #  repo_url             :text
+#  ship_block_reason    :text
 #  ship_status          :string           default("draft")
 #  shipped_at           :datetime
 #  synced_at            :datetime
@@ -46,6 +47,19 @@
 require "test_helper"
 
 class ProjectTest < ActiveSupport::TestCase
+  test "hackatime_keys reads preloaded rows without querying and matches the unloaded result" do
+    project = Project.create!(title: "Keys")
+    User::HackatimeProject.create!(user: users(:one), project: project, name: "shared")
+    User::HackatimeProject.create!(user: users(:two), project: project, name: "shared")
+    User::HackatimeProject.create!(user: users(:one), project: project, name: "other")
+
+    preloaded = Project.includes(:hackatime_projects).find(project.id)
+
+    keys = assert_no_queries { preloaded.hackatime_keys }
+    assert_equal project.reload.hackatime_keys.sort, keys.sort
+    assert_equal %w[other shared], keys.sort
+  end
+
   test "a valid hardware_stage marks the project as hardware" do
     project = Project.create!(title: "Soldering rig", hardware_stage: "build")
 

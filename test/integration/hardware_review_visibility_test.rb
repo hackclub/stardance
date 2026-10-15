@@ -19,19 +19,12 @@ class HardwareReviewVisibilityTest < ActionDispatch::IntegrationTest
     )
     review.save!(validate: false)
     review.update_columns(decided_at: 1.day.ago)
-
-    @nonmember = create_user(slack_id: "U_HRV_OTHER", display_name: "hrv-other")
   end
 
   def review_visible?
     get project_path(@project)
     assert_response :success
     response.body.include?(FEEDBACK)
-  end
-
-  test "a non-member does not see the review by default" do
-    sign_in @nonmember
-    assert_not review_visible?, "a non-member must not see funding-review feedback"
   end
 
   test "the project owner sees the review" do

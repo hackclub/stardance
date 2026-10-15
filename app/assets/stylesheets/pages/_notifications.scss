@@ -185,6 +185,12 @@
     -webkit-box-orient: vertical;
   }
 
+  // Preview shown in full rather than clamped to one line (e.g. rating feedback).
+  &__preview--full {
+    display: block;
+    white-space: pre-line;
+  }
+
   // Preview that jumps somewhere (a comment, a quote-repost): clickable text.
   &__preview--link {
     text-decoration: none;

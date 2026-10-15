@@ -17,6 +17,15 @@ module Admin
       ORDER_WEIGHT = 2.0
       INTEGRITY_WEIGHT = 1.0
 
+      # A check actually enters the queue at its ship's first GOI verdict, so count time from then
+      INTEGRITY_QUEUED_AT_SQL = <<~SQL.squish.freeze
+        GREATEST(
+          certification_integrities.created_at,
+          (SELECT MIN(certification_ysws_reviews.reviewed_at) FROM certification_ysws_reviews
+           WHERE certification_ysws_reviews.post_ship_event_id = certification_integrities.ship_event_id)
+        )
+      SQL
+
       Subject = Data.define(:user_id, :priority, :flag_count, :order_count, :integrity_count, :oldest_at) do
         def item_count = flag_count + order_count + integrity_count
       end
@@ -44,6 +53,74 @@ module Admin
                       .order(Arel.sql("priority DESC"))
 
         reviewer ? scope.where.not(id: held_by_others(reviewer)) : scope
+      end
+
+      # One [arrived, left] stay per person on the page, left nil while they are still there.
+      def self.history(since)
+        item_spans(since).group_by(&:first)
+                         .flat_map { |_, spans| merge_spans(spans.map { |_, arrived, left| [ arrived, left ] }) }
+                         .select { |_, left| left.nil? || left >= since }
+      end
+
+      # All of each active person's items, so a stay that began before `since` is not cut short.
+      def self.item_spans(since)
+        sources = span_sources
+        active = sources.flat_map do |scope, user_id, _, left|
+          scope.where(left.eq(nil).or(left.gteq(since))).distinct.pluck(user_id)
+        end.uniq
+
+        sources.flat_map do |scope, user_id, arrived, left|
+          scope.where(user_id.in(active)).pluck(user_id, arrived, left)
+        end
+      end
+
+      def self.span_sources
+        banned_at = "CASE WHEN users.banned THEN COALESCE(users.banned_at, users.updated_at) END"
+        queue_states = ::ShopOrder::FRAUD_REVIEW_STATES.map { |state| ::ActiveRecord::Base.connection.quote(state) }.join(", ")
+        auto_approved = ::PaperTrail::Version.where(item_type: "ShopOrder", event: "auto_approved").select(Arel.sql("versions.item_id::bigint"))
+
+        [
+          [
+            ::Project::Report.where(reason: ::Project::Report::FRAUD_REVIEW_REASONS)
+              .joins("INNER JOIN projects ON projects.id = project_reports.project_id")
+              .joins("INNER JOIN project_memberships ON project_memberships.project_id = project_reports.project_id")
+              .joins("INNER JOIN users ON users.id = project_memberships.user_id"),
+            "project_memberships.user_id",
+            "project_reports.created_at",
+            "CASE WHEN project_reports.status = 0 AND projects.deleted_at IS NULL THEN NULL " \
+              "ELSE LEAST(CASE WHEN project_reports.status <> 0 THEN project_reports.updated_at END, projects.deleted_at) END"
+          ],
+          [
+            ::ShopOrder.without_streak_stickers.where.not(id: auto_approved).joins(:user),
+            "shop_orders.user_id",
+            "shop_orders.created_at",
+            # Verification and refunds record no timestamp, so the last update stands in.
+            "CASE WHEN shop_orders.aasm_state IN (#{queue_states}) THEN NULL " \
+              "ELSE COALESCE(LEAST(shop_orders.rejected_at, shop_orders.awaiting_periodical_fulfillment_at, shop_orders.fulfilled_at), shop_orders.updated_at) END"
+          ],
+          [
+            ::Certification::Integrity.where.not(status: :auto_passed).past_goi
+              .joins("INNER JOIN posts ON posts.postable_id = certification_integrities.ship_event_id AND posts.postable_type = 'Post::ShipEvent'")
+              .joins("INNER JOIN users ON users.id = posts.user_id"),
+            "posts.user_id",
+            INTEGRITY_QUEUED_AT_SQL,
+            "CASE WHEN certification_integrities.status = #{::Certification::Integrity.statuses[:pending]} THEN NULL " \
+              "ELSE COALESCE(certification_integrities.reviewed_at, certification_integrities.updated_at) END"
+          ]
+        ].map do |scope, user_id, arrived, left|
+          [ scope, Arel.sql(user_id), Arel.sql(arrived), Arel::Nodes::NamedFunction.new("LEAST", [ Arel.sql(left), Arel.sql(banned_at) ]) ]
+        end
+      end
+
+      def self.merge_spans(spans)
+        spans.sort_by(&:first).each_with_object([]) do |(arrived, left), stays|
+          last = stays.last
+          if last && (last[1].nil? || arrived <= last[1])
+            last[1] = left && [ last[1], left ].max
+          else
+            stays << [ arrived, left ]
+          end
+        end
       end
 
       # A reviewer's own claim is deliberately left in: they should be able to
@@ -74,6 +151,7 @@ module Admin
       def self.flags
         ::Project::Report.pending
           .where(reason: ::Project::Report::FRAUD_REVIEW_REASONS)
+          .joins(:project)
           .joins("INNER JOIN project_memberships ON project_memberships.project_id = project_reports.project_id")
           .select("project_memberships.user_id AS user_id, project_reports.created_at AS created_at")
       end
@@ -88,7 +166,7 @@ module Admin
       def self.integrity_checks
         ::Certification::Integrity.pending.past_goi
           .joins("INNER JOIN posts ON posts.postable_id = certification_integrities.ship_event_id AND posts.postable_type = 'Post::ShipEvent'")
-          .select("posts.user_id AS user_id, certification_integrities.created_at AS created_at")
+          .select("posts.user_id AS user_id, #{INTEGRITY_QUEUED_AT_SQL} AS created_at")
       end
 
       # The same three sources, narrowed to one person. The subject page and the
@@ -159,7 +237,7 @@ module Admin
         "SELECT user_id, created_at, #{::ActiveRecord::Base.connection.quote(kind)} AS kind, #{weight} AS weight FROM (#{scope.to_sql}) AS #{kind}_items"
       end
 
-      private_class_method :waiting_orders, :items_sql, :branch_sql
+      private_class_method :waiting_orders, :items_sql, :branch_sql, :item_spans, :span_sources, :merge_spans
     end
   end
 end

@@ -5,6 +5,7 @@ require "test_helper"
 # Table name: sticky_streaks
 #
 #  id         :bigint           not null, primary key
+#  kind       :string           default("first"), not null
 #  started_on :date             not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
@@ -12,7 +13,7 @@ require "test_helper"
 #
 # Indexes
 #
-#  index_sticky_streaks_on_user_id  (user_id) UNIQUE
+#  index_sticky_streaks_on_user_id_and_kind  (user_id,kind) UNIQUE
 #
 # Foreign Keys
 #
@@ -153,10 +154,119 @@ class StickyStreakTest < ActiveSupport::TestCase
     assert_raises(StickyStreak::NotClaimable) { @streak.record_claim!(shop_order: free_order, day: 1) }
   end
 
-  test "a user only ever gets one run" do
-    duplicate = StickyStreak.new(user: @user, started_on: @today)
+  test "a user only ever gets one run of each kind" do
+    duplicate = StickyStreak.new(user: @user, kind: :first, started_on: @today)
+    restart = StickyStreak.new(user: @user, kind: :retry, started_on: @today)
 
     assert_not duplicate.valid?
+    assert restart.valid?
+  end
+
+  test "restarting supersedes the broken run, keeping only the stickers taken home" do
+    complete_days(1, 2)
+    log_seconds(3, 0)
+    StickyStreakReward.create!(day_number: 1, shop_item: @item)
+    StickyStreakReward.create!(day_number: 2, shop_item: build_item("Nebula Sticker"))
+    @streak.record_claim!(shop_order: free_order, day: 1)
+
+    restart!
+
+    broken = StickyStreak.find(@streak.id)
+    assert_predicate broken, :superseded?
+    assert_not broken.claimable_day?(2), "the unclaimed day is forfeited by restarting"
+    assert broken.decorates?(broken.date_for(1)), "the claimed sticker stays on the calendar"
+    assert_not broken.decorates?(broken.date_for(2)), "the forfeited day goes back to a star"
+  end
+
+  test "a restart pays out every day except the ones already taken home" do
+    complete_days(1, 2)
+    log_seconds(3, 0)
+    (1..3).each { |day| StickyStreakReward.create!(day_number: day, shop_item: @item) }
+    @streak.record_claim!(shop_order: free_order, day: 1)
+
+    restart = restart!
+
+    assert_not_includes restart.reward_days, 1
+    assert_includes restart.reward_days, 2, "a day earned but never claimed comes round again"
+    assert_includes restart.reward_days, 3
+  end
+
+  test "a restart does not decorate or pay the days it inherited" do
+    complete_days(1)
+    log_seconds(2, 0)
+    StickyStreakReward.create!(day_number: 1, shop_item: @item)
+    StickyStreakReward.create!(day_number: 2, shop_item: build_item("Quasar Sticker"))
+    @streak.record_claim!(shop_order: free_order, day: 1)
+
+    restart = restart!
+    StreakActivity.create!(user: @user, activity_date: restart.date_for(1),
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+
+    assert_not restart.claimable_day?(1), "day 1's sticker is already on its way to them"
+    assert_not restart.decorates?(restart.date_for(1))
+    assert restart.decorates?(restart.date_for(2))
+  end
+
+  test "a second streak only pays out on its own three days, from its own track" do
+    second = StickyStreak.create!(user: @user, kind: :second, started_on: @today - 8)
+    encore = build_item("Encore Sticker")
+    StickyStreakReward.create!(day_number: 7, shop_item: encore, track: :second)
+    StickyStreakReward.create!(day_number: 1, shop_item: @item)
+    (1..8).each do |day|
+      StreakActivity.create!(user: @user, activity_date: second.date_for(day),
+                             coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+    end
+
+    assert_equal StickyStreak::SECOND_REWARD_DAYS.to_set, second.reward_days
+    assert_not second.claimable_day?(1), "the standard track does not reach a second streak"
+    assert second.claimable_day?(7)
+    assert_not second.decorates?(second.date_for(1))
+    assert second.decorates?(second.date_for(7))
+    assert_equal encore, second.rewards_by_day[7].shop_item
+  end
+
+  test "a reward day has to belong to its track" do
+    assert_not StickyStreakReward.new(day_number: 8, shop_item: @item, track: :second).valid?
+    assert StickyStreakReward.new(day_number: 8, shop_item: @item, track: :standard).valid?
+  end
+
+  test "a restarted first run drops out of the funnel so its owner counts once" do
+    complete_days(1)
+    log_seconds(2, 0)
+    restart = restart!
+    StreakActivity.create!(user: @user, activity_date: restart.date_for(1),
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+
+    counted = StickyStreak.where(kind: %w[first retry]).not_superseded
+
+    assert_equal [ restart ], counted.to_a
+    stats = StickyStreak.day_stats(counted).index_by(&:day)
+    assert_equal [ 0, 1, 0 ], counts(stats[1]), "only the restart is on the board"
+    assert_equal [ 0, 0, 1 ], counts(stats[2])
+  end
+
+  test "a second streak does not supersede the run that earned it" do
+    StickyStreak.create!(user: @user, kind: :second, started_on: @today)
+
+    counted = StickyStreak.where(kind: %w[first retry]).not_superseded
+
+    assert_equal [ @streak ], counted.to_a
+  end
+
+  test "day_stats can be narrowed to one kind of run" do
+    # Day 4 of the first run and day 1 of the second streak are the same date,
+    # so one activity row settles both.
+    complete_days(1, 2, 3, 4)
+    StickyStreak.create!(user: @user, kind: :second, started_on: @today - 1)
+
+    firsts = StickyStreak.day_stats(StickyStreak.kind_first).index_by(&:day)
+    seconds = StickyStreak.day_stats(StickyStreak.kind_second).index_by(&:day)
+
+    assert_equal [ 1, 0, 0 ], counts(firsts[4])
+    assert_equal [ 0, 1, 0 ], counts(firsts[5])
+    assert_equal [ 1, 0, 0 ], counts(seconds[1])
+    assert_equal [ 0, 1, 0 ], counts(seconds[2])
+    assert_equal [ 0, 0, 1 ], counts(seconds[4]), "each kind traces its own curve"
   end
 
   test "day_stats splits each day into banked, live and still ahead" do
@@ -193,6 +303,11 @@ class StickyStreakTest < ActiveSupport::TestCase
   private
 
   def counts(stat) = [ stat.successful, stat.in_progress, stat.potential ]
+
+  # The one restart the broken run earns, opened today like the real thing.
+  def restart!
+    StickyStreak.create!(user: @user, kind: :retry, started_on: @today)
+  end
 
   def complete_days(*days)
     days.each { |day| log_seconds(day, StreakActivity::DAILY_GOAL_SECONDS) }

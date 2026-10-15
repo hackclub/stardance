@@ -64,6 +64,12 @@ class ProjectPolicy < ApplicationPolicy
         member?
     end
 
+    # Read-only, and pundit_user is the admin while impersonating, so this lets
+    # an admin see the time the impersonated member's composer would log.
+    def preview_devlog_time?
+        member? || user&.admin?
+    end
+
     def add_test_time?
         member?
     end

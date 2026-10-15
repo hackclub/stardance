@@ -9,6 +9,12 @@
       Reviewers can certify submissions for this mission. Adding or removing
       an owner is admin-only — admins do that in the section below.
     </p>
+    <%# Set by MembershipsController; the page-level flash can't reach this frame. %>
+    <% if flash[:reviewers_alert].present? %>
+      <p class="admin-mission-edit__message admin-mission-edit__message--alert" role="alert"><%= flash[:reviewers_alert] %></p>
+    <% elsif flash[:reviewers_notice].present? %>
+      <p class="admin-mission-edit__message" role="status"><%= flash[:reviewers_notice] %></p>
+    <% end %>
     <ul class="admin-mission-edit__memberships">
       <% memberships.each do |m| %>
         <li class="admin-mission-edit__membership">
@@ -27,7 +33,7 @@
           method: :post, class: "admin-mission-edit__form" do %>
       <%= hidden_field_tag "mission_membership[role]", "reviewer" %>
       <h3>Add reviewer</h3>
-      <label>User ID or Slack ID <%= text_field_tag "mission_membership[user_id]", nil, required: true, autocomplete: "off" %></label>
+      <label>Email, username, user ID or Slack ID <%= text_field_tag "mission_membership[user_id]", nil, required: true, autocomplete: "off", placeholder: "@username or email" %></label>
       <%= submit_tag "Add reviewer", class: "action-btn action-btn--large action-btn--primary" %>
     <% end %>
   </section>

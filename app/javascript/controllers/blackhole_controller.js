@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 import { Delaunay } from "d3";
 
 const CARD_SURFACES =
-  ".feed-post-card, .feed-composer, .rocket-progress, .rail-widget, .raffle-widget, .sidebar__logo-img, .sidebar__user-card";
+  ".feed-post-card, .feed-composer, .rail-widget, .sidebar__logo-img, .sidebar__user-card";
 const MEDIA_CONTENT = "img, video, iframe, svg";
 const SIDEBAR_SURFACES = [
   "#primary-nav",
@@ -16,6 +16,7 @@ const PROTECTED_CONTENT =
   "a:not(.feed-post-card__overlay-link), button, input, textarea, select, summary, img, video, iframe, svg, [role='progressbar'], [role='meter'], [contenteditable]";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SIMULATOR_KEY = "stardance-event-simulator-v1";
+const MESH_OVERSCAN = 128;
 const clamp = (n, min = 0, max = 1) => Math.min(max, Math.max(min, n));
 const random = (x, y, seed = 0) => {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
@@ -43,6 +44,7 @@ export default class extends Controller {
     progressUrl: String,
     awaitingReveal: Boolean,
     particlesEnabled: { type: Boolean, default: true },
+    disintegrationEnabled: { type: Boolean, default: true },
     simulatorEnabled: Boolean,
   };
 
@@ -89,7 +91,12 @@ export default class extends Controller {
       this.dirty = true;
       this.wake();
     };
-    this.onScroll = this.invalidate;
+    this.onScroll = (event) => {
+      // Mirroring an inner scroller must not trigger another mask rebuild.
+      if (this.element.contains(event.target)) return;
+      this.syncDamagedText();
+      this.invalidate();
+    };
     this.onPointerMove = (event) => {
       if (!this.requested || event.pointerType === "touch") return;
       this.pointer = { x: event.clientX, y: event.clientY };
@@ -229,7 +236,9 @@ export default class extends Controller {
     // Scale the visuals without changing the score sent to the tug-of-war.
     const strength =
       (this.simulation?.strength ?? this.visualIntensityValue ?? 100) / 100;
-    this.requested = clamp(damage * strength);
+    // Opting out removes every visual, but the tug-of-war still gets progress.
+    this.requested =
+      this.disintegrationEnabledValue === false ? 0 : clamp(damage * strength);
     if (this.progressUrlValue || this.simulatorEnabledValue) {
       this.dispatch("progress", {
         detail: {
@@ -334,6 +343,19 @@ export default class extends Controller {
 
   tick(time) {
     this.frame = null;
+    // Slow mask generation also puts dust on a 30fps budget. Keep scheduling
+    // repairs even when a frame is skipped or particles are disabled.
+    // Scroll/layout invalidations must follow the page on the very next frame.
+    if (
+      !this.dirty &&
+      !this.reducedMotion.matches &&
+      this.maskInterval > 60 &&
+      this.lastTime &&
+      time - this.lastTime < 32
+    ) {
+      this.wake();
+      return;
+    }
     const dt = Math.min((time - (this.lastTime || time)) / 1000, 0.05);
     this.lastTime = time;
     const previous = this.level;
@@ -342,17 +364,18 @@ export default class extends Controller {
       : this.level + (this.requested - this.level) * (1 - Math.exp(-dt * 5));
     if (Math.abs(this.level - this.requested) < 0.001)
       this.level = this.requested;
+    if (this.level !== previous) this.maskDirty = true;
     if (
-      this.dirty ||
-      ((this.repairActive || this.repairDirty) &&
-        time - (this.lastMask || 0) > 45) ||
-      (this.level !== previous &&
-        (this.level === this.requested || time - (this.lastMask || 0) > 45))
+      (this.dirty || this.repairActive || this.repairDirty || this.maskDirty) &&
+      (this.dirty ||
+        this.reducedMotion.matches ||
+        time - (this.lastMask || 0) >= (this.maskInterval || 45))
     ) {
       this.cutSurfaces(this.level > previous);
       this.lastMask = time;
       this.dirty = false;
       this.repairDirty = false;
+      this.maskDirty = false;
     }
     this.emitAmbientDust(dt);
     this.draw(dt);
@@ -362,6 +385,8 @@ export default class extends Controller {
         this.simulation?.particles !== false) ||
         this.repairActive ||
         this.repairDirty ||
+        this.dirty ||
+        this.maskDirty ||
         this.level !== this.requested ||
         this.particles.length) &&
       !this.reducedMotion.matches
@@ -376,6 +401,8 @@ export default class extends Controller {
         surface.clip.remove();
         surface.textClip?.remove();
         surface.textCopy?.remove();
+        this.fragmentMeshes?.delete(surface.geometry?.seed);
+        this.fragmentFields?.delete(surface.geometry?.seed);
         this.surfaces.delete(element);
       }
     }
@@ -417,6 +444,7 @@ export default class extends Controller {
         priority: element.style.getPropertyPriority("clip-path"),
         seed: this.surfaceSeed(element),
         card: cards.includes(element),
+        proportional: element.matches(".sidebar__logo-img"),
       });
       element.style.setProperty("clip-path", `url(#${clip.id})`);
       this.surfaceResize.observe(element);
@@ -432,7 +460,8 @@ export default class extends Controller {
   }
 
   cutSurfaces(emit) {
-    this.collectSurfaces();
+    const started = performance.now();
+    if (this.dirty || !this.surfaces.size) this.collectSurfaces();
     this.repairTime = performance.now();
     this.repairActive = false;
     this.textTarget.hidden = this.level <= 0.82;
@@ -456,22 +485,11 @@ export default class extends Controller {
         top: Math.max(0, rect.top),
         bottom: Math.min(this.height, rect.bottom),
       });
-      let layer = element;
-      while (layer.parentElement && getComputedStyle(layer).zIndex === "auto")
-        layer = layer.parentElement;
-      const seed =
-        (Number.parseInt(getComputedStyle(layer).zIndex, 10) || 0) +
-        surface.seed;
-      surface.layerIndex = getComputedStyle(layer).zIndex;
-      // Parent layers leave each card to its own mask, avoiding double erosion
-      // while the cursor repair pocket restores nearby fragments.
-      const nestedCards = surface.card
-        ? []
-        : [...element.querySelectorAll(CARD_SURFACES)];
-      const excludedRects = nestedCards.map((card) =>
-        this.localRect(card.getBoundingClientRect(), rect, 12),
+      const { seed, protectedRects, excludedRects } = this.surfaceGeometry(
+        element,
+        surface,
+        rect,
       );
-      const protectedRects = this.protectedRects(element, rect, nestedCards);
 
       const path = this.fragmentPath(
         rect,
@@ -480,11 +498,78 @@ export default class extends Controller {
         protectedRects,
         excludedRects,
         surface.card,
+        surface.proportional,
       );
-      surface.path.setAttribute("d", path);
+      if (surface.lastPath !== path) {
+        surface.path.setAttribute("d", path);
+        surface.lastPath = path;
+      }
       if (this.level > 0.82) this.drawDamagedText(element, rect, path, surface);
     }
     if (emit && !this.reducedMotion.matches) this.emitDust(8);
+    this.recordMaskCost(performance.now() - started);
+  }
+
+  recordMaskCost(milliseconds) {
+    this.maskCost =
+      this.maskCost == null
+        ? milliseconds
+        : this.maskCost * 0.8 + milliseconds * 0.2;
+    // Budget approximately a quarter of main-thread time for masks, with a
+    // ceiling so cursor repair remains responsive even on slower hardware.
+    this.maskInterval = clamp(this.maskCost * 4, 45, 160);
+  }
+
+  surfaceGeometry(element, surface, rect) {
+    const cached = surface.geometry;
+    if (
+      !this.dirty &&
+      cached &&
+      cached.revision === this.textRevision &&
+      ["left", "top", "width", "height"].every(
+        (key) => cached.rect[key] === rect[key],
+      )
+    )
+      return cached;
+
+    let layer = element;
+    while (layer.parentElement && getComputedStyle(layer).zIndex === "auto")
+      layer = layer.parentElement;
+    surface.layerIndex = getComputedStyle(layer).zIndex;
+    const nestedCards = surface.card
+      ? []
+      : [...element.querySelectorAll(CARD_SURFACES)];
+    // Parent layers leave each card to its own mask, avoiding double erosion.
+    return (surface.geometry = {
+      rect,
+      revision: this.textRevision,
+      viewportText: this.textFollowsViewport(element),
+      seed: (Number.parseInt(surface.layerIndex, 10) || 0) + surface.seed,
+      excludedRects: this.reuseRects(
+        cached?.excludedRects,
+        nestedCards.map((card) =>
+          this.localRect(card.getBoundingClientRect(), rect, 12),
+        ),
+      ),
+      protectedRects: this.reuseRects(
+        cached?.protectedRects,
+        this.protectedRects(element, rect, nestedCards),
+      ),
+    });
+  }
+
+  reuseRects(previous, current) {
+    // Scrolling changes viewport coordinates, not necessarily local geometry.
+    // Keep field-cache identity when the freshly measured content is unchanged;
+    // sticky children, inner scrolling, and reflow still invalidate immediately.
+    return previous?.length === current.length &&
+      current.every((area, index) =>
+        ["left", "right", "top", "bottom", "kind"].every(
+          (key) => area[key] === previous[index][key],
+        ),
+      )
+      ? previous
+      : current;
   }
 
   localRect(rect, surfaceRect, padding = 5) {
@@ -602,18 +687,11 @@ export default class extends Controller {
     }
     const copy = surface.textCopy;
     copy.hidden = false;
-    copy.style.left = `${rect.left}px`;
-    copy.style.top = `${rect.top}px`;
+    this.positionDamagedText(element, surface, rect);
     copy.style.width = `${rect.width}px`;
     copy.style.height = `${rect.height}px`;
     copy.style.zIndex = surface.layerIndex;
     copy.style.clipPath = `url(#${surface.textClip.id})`;
-    copy.scrollTop = element.scrollTop;
-    copy.scrollLeft = element.scrollLeft;
-    for (const [original, clone] of surface.scrollCopies) {
-      clone.scrollTop = original.scrollTop;
-      clone.scrollLeft = original.scrollLeft;
-    }
     // The complementary path paints off-white glyphs only inside actual holes.
     surface.textPath.setAttribute(
       "d",
@@ -623,20 +701,91 @@ export default class extends Controller {
     );
   }
 
+  textFollowsViewport(element) {
+    for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+      if (["fixed", "sticky"].includes(getComputedStyle(ancestor).position))
+        return true;
+    }
+    return false;
+  }
+
+  positionDamagedText(
+    element,
+    surface,
+    rect,
+    origin = this.textTarget.getBoundingClientRect(),
+  ) {
+    const copy = surface.textCopy;
+    const fixed = surface.geometry.viewportText;
+    copy.classList.toggle("blackhole__text-copy--fixed", fixed);
+    // Ordinary copies share document scrolling with the original. Only fixed
+    // and sticky UI uses viewport coordinates (including descendants of it).
+    copy.style.left = `${rect.left - (fixed ? 0 : origin.left)}px`;
+    copy.style.top = `${rect.top - (fixed ? 0 : origin.top)}px`;
+    copy.scrollTop = element.scrollTop;
+    copy.scrollLeft = element.scrollLeft;
+    for (const [original, clone] of surface.scrollCopies) {
+      clone.scrollTop = original.scrollTop;
+      clone.scrollLeft = original.scrollLeft;
+    }
+  }
+
+  syncDamagedText() {
+    if (this.textTarget.hidden) return;
+    const origin = this.textTarget.getBoundingClientRect();
+    // Sticky transitions and nested scrollers need a cheap position update,
+    // not a full Voronoi rebuild, before the next mask-animation frame.
+    for (const [element, surface] of this.surfaces) {
+      if (!surface.textCopy || surface.textCopy.hidden || !element.isConnected)
+        continue;
+      this.positionDamagedText(
+        element,
+        surface,
+        element.getBoundingClientRect(),
+        origin,
+      );
+    }
+  }
+
   fragmentCells(rect, size, seed) {
-    // Deterministic sites with a wide guard band keep the same Voronoi cells
-    // when scrolling. Cache the mesh while only intensity is changing.
-    const left = Math.floor(Math.max(-rect.left, -size) / size) - 1;
-    const right =
+    // Keep a bounded overscan strip so small scrolls do not retriangulate the
+    // same card every nine pixels. Sites remain anchored to local coordinates.
+    let left = Math.floor(Math.max(-rect.left, -size) / size) - 1;
+    let right =
       Math.ceil(Math.min(this.width - rect.left, rect.width + size) / size) + 1;
-    const top = Math.floor(Math.max(-rect.top, -size) / size) - 1;
-    const bottom =
+    let top = Math.floor(Math.max(-rect.top, -size) / size) - 1;
+    let bottom =
       Math.ceil(Math.min(this.height - rect.top, rect.height + size) / size) +
       1;
-    const key = `${left}:${right}:${top}:${bottom}:${size}`;
     this.fragmentMeshes ||= new Map();
     const cached = this.fragmentMeshes.get(seed);
-    if (cached?.key === key) return cached.cells;
+    if (
+      cached &&
+      cached.size === size &&
+      cached.width === rect.width &&
+      cached.height === rect.height &&
+      cached.left <= left &&
+      cached.right >= right &&
+      cached.top <= top &&
+      cached.bottom >= bottom
+    )
+      return cached.cells;
+    const overscanLeft =
+      rect.left < 0 ? Math.max(0, -rect.left - MESH_OVERSCAN) : -rect.left;
+    left = Math.floor(Math.max(overscanLeft, -size) / size) - 1;
+    right =
+      Math.ceil(
+        Math.min(this.width - rect.left + MESH_OVERSCAN, rect.width + size) /
+          size,
+      ) + 1;
+    const overscanTop =
+      rect.top < 0 ? Math.max(0, -rect.top - MESH_OVERSCAN) : -rect.top;
+    top = Math.floor(Math.max(overscanTop, -size) / size) - 1;
+    bottom =
+      Math.ceil(
+        Math.min(this.height - rect.top + MESH_OVERSCAN, rect.height + size) /
+          size,
+      ) + 1;
     const sites = [];
     for (let y = top - 4; y <= bottom + 4; y++) {
       for (let x = left - 4; x <= right + 4; x++) {
@@ -676,21 +825,46 @@ export default class extends Controller {
         },
       });
     });
-    this.fragmentMeshes.set(seed, { key, cells });
+    this.fragmentMeshes.set(seed, {
+      left,
+      right,
+      top,
+      bottom,
+      size,
+      width: rect.width,
+      height: rect.height,
+      cells,
+    });
     return cells;
   }
 
-  fragmentPath(
+  fragmentField(
     rect,
     size,
     seed,
     protectedRects = [],
     excludedRects = [],
     card = true,
+    proportional = false,
   ) {
-    const holes = [];
-    for (const cell of this.fragmentCells(rect, size, seed)) {
-      const { cx, cy, vertices, bounds } = cell;
+    const cells = this.fragmentCells(rect, size, seed);
+    this.fragmentFields ||= new Map();
+    const cached = this.fragmentFields.get(seed);
+    if (
+      cached &&
+      cached.cells === cells &&
+      cached.width === rect.width &&
+      cached.height === rect.height &&
+      cached.size === size &&
+      cached.card === card &&
+      cached.proportional === proportional &&
+      cached.protectedRects === protectedRects &&
+      cached.excludedRects === excludedRects
+    )
+      return cached.field;
+    const field = [];
+    for (const cell of cells) {
+      const { cx, cy, bounds } = cell;
       const x = cx / size;
       const y = cy / size;
       // Clustered erosion with the original irregular fragment boundaries.
@@ -710,6 +884,12 @@ export default class extends Controller {
         bounds.top < safe.bottom &&
         bounds.bottom > safe.top;
       if (excludedRects.some(overlaps)) continue;
+      // The logo dissolves throughout the whole event, independently of the
+      // delayed image/text stages. Stable uniform thresholds track damage.
+      if (proportional) {
+        field.push({ cell, start: random(x, y, seed + 12) * 0.93 });
+        continue;
+      }
       const protectedContent = protectedRects.some(overlaps);
       const imageContent = protectedRects.some(
         (area) => area.kind === "image" && overlaps(area),
@@ -747,14 +927,57 @@ export default class extends Controller {
           : protectedContent
             ? textThreshold
             : Math.min(edgeThreshold, backgroundThreshold);
+      field.push({ cell, start });
+    }
+    this.fragmentFields.set(seed, {
+      cells,
+      width: rect.width,
+      height: rect.height,
+      size,
+      card,
+      proportional,
+      protectedRects,
+      excludedRects,
+      field,
+    });
+    return field;
+  }
+
+  fragmentPath(
+    rect,
+    size,
+    seed,
+    protectedRects = [],
+    excludedRects = [],
+    card = true,
+    proportional = false,
+  ) {
+    const holes = [];
+    for (const entry of this.fragmentField(
+      rect,
+      size,
+      seed,
+      protectedRects,
+      excludedRects,
+      card,
+      proportional,
+    )) {
+      const { cell, start } = entry;
+      const { cx, cy, vertices } = cell;
       let erosion = clamp((this.level - start) / 0.07);
+      // Polygon area scales quadratically; keep proportional damage linear.
+      if (proportional) erosion = Math.sqrt(erosion);
       erosion *= 1 - this.repairStrength(cell, rect);
       if (!erosion) continue;
-      const polygon = vertices.map(
-        ([px, py]) =>
-          `${(cx + (px - cx) * erosion).toFixed(1)},${(cy + (py - cy) * erosion).toFixed(1)}`,
-      );
-      holes.push(`M${polygon.join("L")}Z`);
+      if (entry.erosion !== erosion) {
+        const polygon = vertices.map(
+          ([px, py]) =>
+            `${(cx + (px - cx) * erosion).toFixed(1)},${(cy + (py - cy) * erosion).toFixed(1)}`,
+        );
+        entry.path = `M${polygon.join("L")}Z`;
+        entry.erosion = erosion;
+      }
+      holes.push(entry.path);
       const viewportX = cx + rect.left;
       const viewportY = cy + rect.top;
       if (
@@ -896,6 +1119,7 @@ export default class extends Controller {
     this.pointer = null;
     this.repairActive = false;
     this.repairDirty = false;
+    this.maskDirty = false;
     for (const [element, surface] of this.surfaces) {
       if (surface.original)
         element.style.setProperty(
@@ -911,6 +1135,7 @@ export default class extends Controller {
     this.surfaceResize?.disconnect();
     this.surfaces.clear();
     this.fragmentMeshes?.clear();
+    this.fragmentFields?.clear();
     this.canvasContext.clearRect(0, 0, this.width, this.height);
     this.textTarget.replaceChildren();
   }

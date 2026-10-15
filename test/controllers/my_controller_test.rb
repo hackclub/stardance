@@ -50,4 +50,20 @@ class MyResourcesTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
     assert user.preference.reload.particle_effects_enabled
   end
+
+  test "disintegration preference can be disabled independently of particles" do
+    user = users(:one)
+    sign_in user
+
+    patch my_settings_path, params: { disintegration_effects_enabled: "0", particle_effects_enabled: "1" }
+    assert_redirected_to root_path
+    assert_not user.preference.reload.disintegration_effects_enabled
+    assert user.preference.particle_effects_enabled
+
+    patch my_settings_path, params: { hcb_email: "grants@example.test" }
+    assert_not user.preference.reload.disintegration_effects_enabled, "unrelated updates preserve the preference"
+
+    patch my_settings_path, params: { disintegration_effects_enabled: "1" }
+    assert user.preference.reload.disintegration_effects_enabled
+  end
 end

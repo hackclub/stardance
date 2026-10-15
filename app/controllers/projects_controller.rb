@@ -127,10 +127,11 @@ class ProjectsController < ApplicationController
         post.postable.certification_status.in?(Post::ShipEvent::HIDDEN_STATUSES)
     end
 
+    @reposted_post_ids = reposted_post_ids_for(@posts)
+
     @queue_mismatch_review = visible_queue_mismatch
 
-    # Shipwright verdicts are rendered straight from the review records —
-    # they're private to project members, so they never become Post rows.
+    # Review visibility is checked separately from public Post rows.
     @timeline_entries = Project.sort_timeline_entries(
       @posts + visible_ship_decisions + visible_funding_requests
     )
@@ -156,12 +157,7 @@ class ProjectsController < ApplicationController
       []
     end
 
-    if current_user
-      devlog_ids = @posts.select { |p| p.postable_type == "Post::Devlog" }.map(&:postable_id)
-      @liked_devlog_ids = Like.where(user: current_user, likeable_type: "Post::Devlog", likeable_id: devlog_ids).pluck(:likeable_id).to_set
-    else
-      @liked_devlog_ids = Set.new
-    end
+    @liked_devlog_ids = liked_devlog_ids_for(@posts)
 
     track_event "Viewed project", project_id: @project.id
     if current_user.present? && !@is_member
@@ -177,48 +173,67 @@ class ProjectsController < ApplicationController
       .find { |sub| sub&.rejected? }
 
     @votes_for_payout = nil
-    if current_user.present?
-      can_review_payout = @is_member || current_user.admin?
+    # Every ship whose ratings were locked keeps its own review, so an earlier
+    # ship's rating reasons stay reachable after the project ships again.
+    @payout_reviews = {}
+    if current_user.present? &&
+        Post::ShipEvent.payout_feature_enabled?(current_user) &&
+        (@is_member || current_user.admin?)
+      @votes_for_payout = payout_review_for(latest_ship_event) if payout_reviewable?(latest_ship_event)
+      @payout_reviews[latest_ship_event.id] = @votes_for_payout if @votes_for_payout
 
-      if Post::ShipEvent.payout_feature_enabled?(current_user) &&
-          can_review_payout &&
-          latest_ship_event.present? &&
-          latest_ship_event.certification_status == "approved" &&
-          !latest_ship_event.mission_submission&.rejected?
-
-        is_static = latest_ship_event.mission_submission&.payout_path == "static_prize"
-
-        required = Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
-        current = latest_ship_event.votes.payout_countable.count
-        remaining = [ required - current, 0 ].max
-
-        ratings_remaining = [ -latest_ship_event.payout_recipient.vote_balance, 0 ].max
-
-        @votes_for_payout = {
-          ship_event: latest_ship_event,
-          current: current,
-          required: required,
-          remaining: remaining,
-          ratings_remaining: ratings_remaining,
-          static_prize: is_static,
-          # Suppresses the payout checklist entirely; see PayoutVotesWidget.
-          hardware: @project.hardware?,
-          paid_out: latest_ship_event.payout.present?,
-          estimated_payout: latest_ship_event.estimated_payout,
-          review_open: latest_ship_event.payout_review_open?,
-          review_deadline: latest_ship_event.payout_review_deadline,
-          reason_votes: latest_ship_event.payout_basis_locked_at? ? latest_ship_event.payout_counted_votes : [],
-          admin_view: current_user.admin? && !@is_member
-        }
-      end
+      @project.ship_events
+        .where(certification_status: "approved")
+        .where.not(payout_basis_locked_at: nil)
+        .where.not(id: latest_ship_event&.id)
+        .each do |ship_event|
+          @payout_reviews[ship_event.id] = payout_review_for(ship_event) if payout_reviewable?(ship_event)
+        end
     end
   end
   private :prepare_project_show_context
 
-  # Ordinary ship verdicts remain reviewer-only. Permanent rejections have
-  # their own submitter/staff visibility rules.
+  def payout_reviewable?(ship_event)
+    ship_event.present? &&
+      ship_event.certification_status == "approved" &&
+      !ship_event.mission_submission&.rejected?
+  end
+  private :payout_reviewable?
+
+  def payout_review_for(ship_event)
+    required = Post::ShipEvent::VOTES_REQUIRED_FOR_PAYOUT
+    current = ship_event.votes.payout_countable.count
+
+    {
+      ship_event: ship_event,
+      current: current,
+      required: required,
+      remaining: [ required - current, 0 ].max,
+      ratings_remaining: [ -ship_event.payout_recipient.vote_balance, 0 ].max,
+      static_prize: ship_event.mission_submission&.payout_path == "static_prize",
+      # Suppresses the payout checklist entirely; see PayoutVotesWidget.
+      hardware: @project.hardware?,
+      paid_out: ship_event.payout.present?,
+      estimated_payout: ship_event.estimated_payout,
+      review_open: ship_event.payout_review_open?,
+      review_deadline: ship_event.payout_review_deadline,
+      reason_votes: ship_event.payout_basis_locked_at? ? ship_event.payout_counted_votes : [],
+      admin_view: current_user.admin? && !@is_member
+    }
+  end
+  private :payout_review_for
+
+  # Ordinary hardware verdicts are public. Software feedback stays with the
+  # project team, reviewers, admins and helpers.
+  def ship_review_history_visible?
+    return true if @project.hardware?
+    current_user.present? && (current_user.can_review? || current_user.helper?)
+  end
+  private :ship_review_history_visible?
+
+  # Permanent rejections never inherit ordinary review visibility.
   def visible_ship_decisions
-    history_visible = current_user&.can_review?
+    history_visible = ship_review_history_visible?
     @project.ship_reviews
             .decided
             .includes(:reviewer, post_ship_event: :post)
@@ -231,26 +246,23 @@ class ProjectsController < ApplicationController
   # Project#timeline_funding_requests), so a returned review keeps its place as
   # newer devlogs are posted rather than only the latest request showing.
   def visible_funding_requests
-    history_visible = current_user && (@is_member || current_user.admin? || current_user.can_review?)
     @project.timeline_funding_requests.includes(:reviewer, :user).select do |review|
-      review.permanently_rejected? ? permanent_rejection_visible?(review) : history_visible
+      !review.permanently_rejected? || permanent_rejection_visible?(review)
     end
   end
   private :visible_funding_requests
 
-  # Permanent decisions stay private even when other hardware reviews are public.
-  # A collaborator is not necessarily the person who submitted the review.
+  # Permanent decisions are only for project owners, helpers and review staff.
   def permanent_rejection_visible?(review)
     return false unless current_user
-    return true if current_user.can_review?
+    return true if @is_owner || current_user.can_review? || current_user.helper?
 
-    submitter = review.is_a?(Certification::FundingRequest) ? review.user : (review.verdict_ship_event&.post&.user || review.owner)
-    current_user == submitter || policy([ :admin, review ]).show?
+    policy([ :admin, review ]).show?
   end
   private :permanent_rejection_visible?
 
-  # The "your submission is in the wrong queue" question, if one is open. Same
-  # audience as the funding requests above: members and admins only.
+  # The "your submission is in the wrong queue" question, if one is open.
+  # Members and admins only.
   def visible_queue_mismatch
     return nil unless current_user
     return nil unless @is_member || current_user.admin?

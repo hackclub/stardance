@@ -56,6 +56,66 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     assert_empty subjects
   end
 
+  test "a flag on a deleted project drops out, as it does on the subject page" do
+    user = user_with_flag(age: 20.days.ago)
+    user.projects.sole.update_column(:deleted_at, Time.current)
+
+    assert_empty subjects
+    assert_empty Admin::Fraud::SubjectQueue.flags_for(user)
+  end
+
+  test "an integrity check waits from the GOI review that let it through, not from when it was opened" do
+    user = create_user(slack_id: "u-goi-late", display_name: "goilate")
+    check = pending_integrity_for(user, age: 28.days.ago, goi: :none)
+    goi_review_for(check.ship_event, user: user, project: check.ship_event.post.project, state: :completed, at: 2.hours.ago)
+    ordered = user_with_order(age: 1.day.ago)
+
+    assert_equal [ ordered.id, user.id ], ranked_ids
+    assert_in_delta 2.hours.ago, subjects.find { |row| row.user_id == user.id }.oldest_at, 1.minute
+  end
+
+  test "the dashboard counts each person once, waiting since their oldest item" do
+    user = user_with_flag(age: 3.days.ago)
+    user.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
+    order_for(user, age: 2.days.ago)
+    user_with_order(age: 1.day.ago)
+
+    waits = Admin::MegaDashboard::Queue.find("fraud_queue").open_entered_ats
+
+    assert_equal 2, waits.size
+    assert_in_delta 3.days.ago, waits.min, 1.minute
+  end
+
+  test "the dashboard history is one stay per person, from their first item to their last" do
+    user = create_user(slack_id: "u-stay", display_name: "stay")
+    user.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
+    order_for(user, age: 4.days.ago).update_columns(aasm_state: "rejected", rejected_at: 2.days.ago)
+    pending_integrity_for(user, age: 3.days.ago).update!(status: :manually_passed, reviewer: @reporter, reviewed_at: 1.day.ago)
+    pending_integrity_for(user, age: 6.days.ago, status: :auto_passed)
+
+    pairs = Admin::Fraud::SubjectQueue.history(7.days.ago)
+
+    assert_equal 1, pairs.size
+    assert_in_delta 4.days.ago, pairs.sole.first, 1.minute
+    assert_in_delta 1.day.ago, pairs.sole.last, 1.minute
+  end
+
+  test "the dashboard history leaves out orders that were auto-approved" do
+    buyer = user_with_order(age: 2.days.ago)
+    order = buyer.shop_orders.sole
+    order.update_columns(aasm_state: "awaiting_periodical_fulfillment", awaiting_periodical_fulfillment_at: 2.days.ago)
+    PaperTrail::Version.create!(item_type: "ShopOrder", item_id: order.id, event: "auto_approved", whodunnit: "Shop::AutoApprovable")
+
+    assert_empty Admin::Fraud::SubjectQueue.history(7.days.ago)
+  end
+
+  test "a ban ends a person's stay on the page" do
+    user = user_with_flag(age: 5.days.ago)
+    user.update!(banned: true, banned_at: 2.days.ago)
+
+    assert_in_delta 2.days.ago, Admin::Fraud::SubjectQueue.history(7.days.ago).sole.last, 1.minute
+  end
+
   test "a flag on a team project surfaces every member" do
     owner = create_user(slack_id: "u-owner", display_name: "owner")
     teammate = create_user(slack_id: "u-mate", display_name: "mate")
@@ -210,19 +270,19 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     Project::Membership.create!(project: project, user: user, role: :owner)
     ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
     Post.create!(project: project, user: user, postable: ship_event)
-    goi_review_for(ship_event, user: user, project: project, state: goi)
+    goi_review_for(ship_event, user: user, project: project, state: goi, at: age)
     check = Certification::Integrity.create!(ship_event: ship_event, status: status)
     check.update_column(:created_at, age)
     check
   end
 
-  def goi_review_for(ship_event, user:, project:, state:)
+  def goi_review_for(ship_event, user:, project:, state:, at: Time.current)
     return if state == :none
 
     Certification::Ysws.create!(
       user: user, project: project, post_ship_event: ship_event, original_minutes: 60,
-      reviewed_at: (Time.current if state == :completed),
-      returned_at: (Time.current if state == :returned)
+      reviewed_at: (at if state == :completed),
+      returned_at: (at if state == :returned)
     )
   end
 

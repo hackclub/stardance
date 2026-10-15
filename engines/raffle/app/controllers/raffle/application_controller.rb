@@ -5,6 +5,12 @@ module Raffle
     protect_from_forgery with: :exception
     layout "raffle/application"
 
+    # Production's asset_host points at the main stardance host, which makes
+    # fonts and module scripts cross-origin here and the browser blocks them
+    # (no CORS headers). The raffle host serves the same /assets, so load
+    # them same-origin instead.
+    self.asset_host = nil
+
     helper_method :current_user, :current_participant, :signed_in?, :enrolled?
 
     skip_forgery_protection only: :not_found

@@ -5,6 +5,16 @@
       data-certification--ysws--queue-search-url-value="<%= admin_certification_ysws_reviews_path %>">
   <header class="ysws-queue__header">
     <h1>YSWS Review Queue</h1>
+
+    <% if @reviews.any? && @search.blank? && ysws_review_flow_enabled? %>
+      <%= button_to "Start reviewing →",
+                    next_admin_certification_ysws_reviews_path,
+                    method: :post,
+                    params: { flow: 1, step: 1 },
+                    class: "ysws-queue__flow-btn",
+                    form_class: "ysws-queue__flow-form",
+                    form: { data: { turbo: false } } %>
+    <% end %>
   </header>
 
   <%= turbo_frame_tag "ysws_dashboard", src: admin_certification_ysws_dashboard_path, loading: "lazy" do %>

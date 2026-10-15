@@ -35,14 +35,24 @@ Rails.application.config.after_initialize do
         ship_event_payouts
         disable_internal_sw_dash_reviews
         no_shigimi_eyes
+        ysws_review_flow
         virality_bonus
         ysws_review_shortcuts
         bukux2
         mihimode
         blackhole
         bukux3
+        ddr
+        wrong_tool_promo
+        forge-promo
+        terra-promo
       ].each { |flag| Flipper.add(flag) }
       Flipper.add(:bukux2_preview_complete) if Rails.env.development?
+
+      unless Flipper.exist?(:platform_ads)
+        Flipper.add(:platform_ads)
+        Flipper.enable(:platform_ads)
+      end
     end
   rescue StandardError => e
     Rails.logger.warn "Could not initialize flipper: #{e.message}"

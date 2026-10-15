@@ -34,7 +34,9 @@
 
   &__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-s);
+    align-items: center;
     margin-top: var(--space-m);
   }
 }

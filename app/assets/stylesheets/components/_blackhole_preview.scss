@@ -79,7 +79,14 @@
   }
 
   &__text {
-    display: contents;
+    // An untransformed document-space origin: scrolling text copies move with
+    // the browser's scroll layer instead of chasing it through animation frames.
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
   }
 
   &__text[hidden] {
@@ -87,7 +94,7 @@
   }
 
   &__text-copy {
-    position: fixed !important;
+    position: absolute !important;
     right: auto !important;
     bottom: auto !important;
     margin: 0 !important;
@@ -95,6 +102,10 @@
     transform: none !important;
     max-width: none !important;
     max-height: none !important;
+
+    &--fixed {
+      position: fixed !important;
+    }
   }
 
   &__text-copy[hidden] {

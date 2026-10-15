@@ -137,7 +137,7 @@ class ApplicationController < ActionController::Base
   end
 
   def client_ip_address
-    request.headers["CF-Connecting-IP"].presence || request.remote_ip
+    RackAttackClient.ip(request)
   end
 
   def prepare_boot_splash
@@ -248,8 +248,8 @@ class ApplicationController < ActionController::Base
 
   def handle_error(exception)
     @body_class = "error-page-body"
-    event_id = Sentry.last_event_id || Sentry.capture_exception(exception)&.event_id
-    @trace_id = event_id || request.request_id
+    Rails.error.report(exception, handled: false)
+    @trace_id = request.request_id
     @exception = exception if current_user&.admin?
 
     raise exception if Rails.env.development? && !params[:show_error_page]
@@ -278,6 +278,7 @@ class ApplicationController < ActionController::Base
 
   def track_active_user
     ActiveUserTracker.track(user_id: current_user&.id, session_id: session.id.to_s)
+    UserActivityDay.track_visit(current_user.id) if current_user && !impersonating?
   end
 
   def apply_dev_override_ref
@@ -303,7 +304,7 @@ class ApplicationController < ActionController::Base
       redirect_to "/auth/hack_club?origin=#{ERB::Util.url_encode(request.fullpath)}" and return
     end
 
-    identity_payload = HCAService.identity(identity.access_token)
+    identity_payload = identity.hca_identity
     if identity_payload.blank?
       flash.now[:alert] = "Couldn't reach the verification server. Try again in a moment."
       return

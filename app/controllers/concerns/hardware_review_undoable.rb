@@ -30,7 +30,7 @@ module HardwareReviewUndoable
     raise
   rescue StandardError => e
     Rails.logger.error "[HardwareReview#undo] user=#{current_user&.id} review=#{params[:id]} #{e.class}: #{e.message}"
-    Sentry.capture_exception(e, tags: { category: "certification.hardware" }, extra: { review_id: params[:id], user_id: current_user&.id })
+    Rails.error.report(e, context: { category: "certification.hardware", review_id: params[:id], user_id: current_user&.id })
     redirect_back fallback_location: admin_root_path, alert: "Failed to undo the review: #{e.message}"
   end
 

@@ -30,20 +30,22 @@ class Shop::BaseController < ApplicationController
     @recently_added_items = shop_page_data[:recently_added]
     @user_balance = current_user&.cached_balance || 0
 
-    preload_shop_item_images(@shop_items + Array(@recently_added_items))
+    preload_shop_item_card_data(@shop_items + Array(@recently_added_items))
   end
 
   def prepare_visible_shop_items(items = @shop_items)
     @visible_shop_items = Array(items).select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
   end
 
-  def preload_shop_item_images(items)
+  # Every item card checks ShopItem#mission_locked_for?, so load the unlock
+  # rows here instead of letting each card query for its own.
+  def preload_shop_item_card_data(items)
     items = items.compact.uniq
     return if items.empty?
 
     ActiveRecord::Associations::Preloader.new(
       records: items,
-      associations: { image_attachment: :blob }
+      associations: [ { image_attachment: :blob }, :mission_shop_unlocks ]
     ).call
   end
 
@@ -116,11 +118,22 @@ class Shop::BaseController < ApplicationController
     day = params[:sticky_streak_day].to_i
     return nil if day.zero?
 
-    sticky_streak = current_user.sticky_streak
+    sticky_streak = claiming_sticky_streak
     # Each day is claimable once, and only for the sticker it was set to.
     return nil unless sticky_streak&.claimable_day?(day)
     return nil unless sticky_streak.rewards_by_day[day]&.shop_item_id == shop_item.id
 
     StickyStreak::DayClaim.new(sticky_streak: sticky_streak, day: day)
+  end
+
+  # A finished run keeps unclaimed stickers claimable while the next one is
+  # under way, so the claim link names its run. Links rendered before restarts
+  # shipped carry no id, which still means the newest run.
+  def claiming_sticky_streak
+    runs = current_user.current_sticky_streaks
+    id = params[:sticky_streak_id].presence
+    return runs.first unless id
+
+    runs.find { |run| run.id == id.to_i }
   end
 end

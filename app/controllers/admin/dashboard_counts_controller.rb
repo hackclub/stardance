@@ -26,7 +26,7 @@ module Admin
         ::Certification::Ysws.pending.count
       },
       "mission_reviews" => -> {
-        ::Mission::Submission.where(status: "pending", deleted_at: nil).count
+        ::Mission::Submission.software_reviewable.pending.count
       },
       "super_stars" => -> {
         ::Project.fire_nomination_pending.count

@@ -122,6 +122,22 @@ class Mission::PrizeRedemptionTest < ActiveSupport::TestCase
     assert_equal first_order.id, submission.reload.shop_order_id
   end
 
+  test "a project cannot claim the same design kit through a later funding request" do
+    kit = prize_item("Kit")
+    @mission.prizes.create!(shop_item: kit, position: 0, category: :after_design)
+
+    first_request = @project.certification_funding_requests.create!(user: @owner, status: :pending)
+    first_request.update!(status: :approved)
+    Mission::PrizeRedemption.record!(shop_order: free_order(kit, first_request), gate: first_request)
+
+    @project.update_column(:hardware_stage, "design")
+    second_request = @project.certification_funding_requests.create!(user: @owner, status: :pending)
+    second_request.update!(status: :approved)
+
+    assert_nil second_request.redeemable_prize_for(kit)
+    assert_empty second_request.unredeemed_prizes
+  end
+
   test "record! ignores an item that is not a prize on the gate's mission" do
     kit = prize_item("Kit")
     @mission.prizes.create!(shop_item: kit, position: 0, category: :after_design)

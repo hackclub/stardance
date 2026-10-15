@@ -13,15 +13,17 @@
   <div class="onboarding-age-gate__hero">
     <h1 class="onboarding-screen__title">Uh oh! You're too old :(</h1>
 
-    <p class="onboarding-age-gate__raffle-kicker">But if you know a teen who'd love this,</p>
+    <% unless raffle_ended? %>
+      <p class="onboarding-age-gate__raffle-kicker">But if you know a teen who'd love this,</p>
 
-    <div class="onboarding-age-gate__raffle">
-      <p class="onboarding-age-gate__raffle-headline">Send them our way and stand a chance at winning a GPU every week!</p>
-      <p class="onboarding-age-gate__raffle-sub">Refer teens to Stardance through the GPU raffle and earn entries towards an AMD Radeon RX 9060 XT every single week, the whole summer!</p>
-      <div class="onboarding-age-gate__raffle-action">
-        <%= link_to "Join the GPU raffle →", raffle_base_url, class: "onboarding-age-gate__raffle-cta" %>
+      <div class="onboarding-age-gate__raffle">
+        <p class="onboarding-age-gate__raffle-headline">Send them our way and stand a chance at winning a GPU every week!</p>
+        <p class="onboarding-age-gate__raffle-sub">Refer teens to Stardance through the GPU raffle and earn entries towards an AMD Radeon RX 9060 XT every single week, the whole summer!</p>
+        <div class="onboarding-age-gate__raffle-action">
+          <%= link_to "Join the GPU raffle →", raffle_base_url, class: "onboarding-age-gate__raffle-cta" %>
+        </div>
       </div>
-    </div>
+    <% end %>
   </div>
 
   <div class="onboarding-age-gate__body">

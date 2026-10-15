@@ -11,6 +11,9 @@
 ARG RUBY_VERSION=3.4.3
 ARG LIBHEIF_VERSION=1.23.2
 ARG LIBHEIF_SHA256=8bd5d41d19dc84536d118b04774709f244df6104ef66d623dad5fa4650143405
+ARG NODE_VERSION=22
+
+FROM docker.io/library/node:$NODE_VERSION-slim AS node
 
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS libheif-build
 ARG LIBHEIF_VERSION
@@ -53,8 +56,11 @@ RUN apt-get update -qq && \
     libopenblas0 \
     liblapack3 \
     ffmpeg \
-    nodejs && \
+    libstdc++6 && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Node runs at build time for assets and at runtime for MJML emails
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
 
 COPY --from=libheif-build /usr/local/lib/libheif* /usr/local/lib/
 RUN ldconfig
@@ -80,12 +86,10 @@ RUN apt-get update -qq && \
     liblapack-dev && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Node.js and enable Corepack for Yarn Berry
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y nodejs npm && \
-    npm install -g corepack && \
-    corepack enable && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+# Enable Corepack, which ships with Node, for Yarn Berry
+COPY --from=node /usr/local/lib/node_modules/corepack /usr/local/lib/node_modules/corepack
+RUN ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
+    corepack enable
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
@@ -134,4 +138,8 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 # Start server via Thruster by default, this can be overwritten at runtime
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD [ "$PROCESS_TYPE" = "worker" ] || curl -fsS -o /dev/null "http://localhost:${HTTP_PORT:-80}/up" || exit 1
+
 CMD ["./bin/thrust", "./bin/rails", "server"]

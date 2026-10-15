@@ -19,6 +19,7 @@ module Notifications
       Notifications::Projects::SuperStar
       Notifications::Projects::DevlogCapApproaching
       Notifications::AchievementEarned
+      Notifications::RngWinner
       Notifications::StardustBalanceChanged
       Notifications::Payouts::ShipEventIssued
       Notifications::Payouts::VoteDeficitBlocked

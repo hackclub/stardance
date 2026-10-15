@@ -408,7 +408,7 @@ module Certification
       Notifications::Hardware::PermanentlyRejected.notify(recipient: owner, actor: reviewer, record: self)
     rescue StandardError => e
       Rails.logger.error("#{self.class} ##{id} permanent rejection notification failed: #{e.message}")
-      Sentry.capture_exception(e)
+      Rails.error.report(e)
     end
 
     # The most recent PaperTrail version that flipped this record into `misfiled`.

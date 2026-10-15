@@ -60,6 +60,17 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "dashboard renders the saved disintegration preference while still tracking progress" do
+    @user.update!(things_dismissed: %w[bukux3_intro bukux3_role_reveal])
+    [ false, true ].each do |enabled|
+      @user.preference.update!(disintegration_effects_enabled: enabled)
+      get home_path
+      assert_response :success
+      assert_select ".blackhole[data-blackhole-disintegration-enabled-value='#{enabled}'][data-blackhole-progress-url-value='#{buku_x3_progress_path(format: :json)}']", count: 1
+      assert_select "input#disintegration_effects_enabled[checked]", count: enabled ? 1 : 0
+    end
+  end
+
   test "first load contains only the explanation, never a prefetched role" do
     BukuX3::Assignment.stub(:buku?, ->(_) { flunk "role must wait until after intro" }) do
       get home_path
@@ -67,7 +78,8 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".visual-novel[data-visual-novel-dismiss-thing-value='bukux3_intro']", count: 1
     assert_select "dialog.buku-x3-reveal", count: 0
-    assert_select ".buku-x3-status", count: 0
+    assert_select ".buku-x3-status [role='meter']", count: 1
+    assert_select ".buku-x3-status__identity, .buku-x3-status__toggle", count: 0
   end
 
   test "reveal endpoint requires the intro to be completed" do
@@ -118,7 +130,8 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
       get home_path(buku_preview: "bean")
     end
     assert_response :success
-    assert_select ".buku-x3-status", count: 0
+    assert_select ".buku-x3-status [role='meter']", count: 1
+    assert_select ".buku-x3-status__identity, .buku-x3-status__toggle", count: 0
     assert_select "turbo-frame#buku_x3_home_status", count: 1
   end
 end
