@@ -201,28 +201,20 @@ module Sessions
         fail_result(:identity_save_failed, "Unable to link your Hack Club account. Please contact support.")
       end
 
-      def age_from_birthday(birthday)
-        today = Date.current
-        age = today.year - birthday.year
-        age -= 1 if today < birthday + age.years
-        age
-      end
-
       def hca_age_attestation(user, fields)
         return :teen if fields[:ysws_eligible]
         return :teen if user.persisted? && user.manual_ysws_override == true
         return nil if fields[:birthday].nil?
 
-        age = age_from_birthday(fields[:birthday])
-        return :teen if age >= 13 && age <= 18
+        return :teen if teen_age?(age_on_date(fields[:birthday], Date.current))
 
-        if user.persisted? && user.age_attestation_teen_13_18?
-          signup_age = age_on_date(fields[:birthday], user.created_at.to_date)
-          return :teen if signup_age >= 13 && signup_age <= 18
-        end
+        # keep access for people who signed up at 13-18 and have since aged out
+        return :teen if user.persisted? && teen_age?(age_on_date(fields[:birthday], user.created_at.to_date))
 
         :ineligible
       end
+
+      def teen_age?(age) = age.between?(13, 18)
 
       def age_on_date(birthday, date)
         age = date.year - birthday.year
