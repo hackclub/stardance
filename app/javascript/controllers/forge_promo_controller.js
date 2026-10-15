@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
-import BurntEdge from "../forge_promo/burnt_edge";
-import FireWave from "../forge_promo/fire_wave";
-import Sparks from "../forge_promo/sparks";
+import BurntEdge from "../forge_promo/burnt_edge.js";
+import FireWave from "../forge_promo/fire_wave.js";
+import Sparks from "../forge_promo/sparks.js";
 
 const MAX_DPR = 2;
 const COLORS = ["core", "flame", "ember", "soot"];
@@ -10,6 +10,9 @@ const SPARK_RATE = 0.08;
 const STOKED_HEAT = 2;
 const BLAZE_HEAT = 4;
 const STILL_FRAMES = 90;
+// The burnt edge creeps well under a pixel per frame, so re-cutting the card and re-scorching its
+// rim at this pace looks the same as every frame while costing the page far less.
+const OUTLINE_MS = 50;
 const RISE_MS = 1300;
 // Once the whole screen is ablaze it roars a moment, then dies down to charred black, and only
 // then leaves.
@@ -22,6 +25,7 @@ const WALL_HEIGHT = 0.7;
 
 export default class extends Controller {
   static targets = ["card", "embers"];
+  static values = { url: String };
 
   connect() {
     this.reduceMotion = window.matchMedia(
@@ -29,6 +33,7 @@ export default class extends Controller {
     ).matches;
     this.colors = this.readColors();
     this.sparks = new Sparks(this.embersTarget, this.colors);
+    this.charLayer = document.createElement("canvas");
     this.edge = new BurntEdge();
     this.time = 0;
     this.heat = 1;
@@ -85,6 +90,8 @@ export default class extends Controller {
       Math.round(canvas.width * dpr),
       Math.round(canvas.height * dpr),
     );
+    this.charLayer.width = this.embersTarget.width;
+    this.charLayer.height = this.embersTarget.height;
     this.card = {
       x: card.left - canvas.left,
       y: card.top - canvas.top,
@@ -117,7 +124,7 @@ export default class extends Controller {
       this.kindle(1 / 60);
       this.sparks.step(1 / 60);
     }
-    this.sparks.draw((ctx) => this.char(ctx));
+    this.sparks.draw((ctx) => this.drawChar(ctx));
   }
 
   tick(now) {
@@ -127,13 +134,17 @@ export default class extends Controller {
       this.lastTick == null ? 0 : Math.min(0.1, (now - this.lastTick) / 1000);
     this.lastTick = now;
     this.heat += (this.targetHeat - this.heat) * (1 - Math.exp(-dt * 4));
-    this.burn(dt);
+    this.time += dt * this.heat;
+    if (now - (this.lastBurn ?? -Infinity) >= OUTLINE_MS) {
+      this.lastBurn = now;
+      this.burn(0);
+    }
     this.kindle(dt);
     this.sparks.step(dt);
-    this.sparks.draw((ctx) => this.char(ctx));
+    this.sparks.draw((ctx) => this.drawChar(ctx));
   }
 
-  // Creep the burnt outline along and cut the card to it.
+  // Creep the burnt outline along, cut the card to it, and scorch its rim.
   burn(dt) {
     this.time += dt * this.heat;
     this.outline = this.edge.trace(this.card.width, this.card.height, {
@@ -144,6 +155,13 @@ export default class extends Controller {
       .map(({ x, y }, i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`)
       .join("");
     this.cardTarget.style.clipPath = `path("${path}Z")`;
+    const ctx = this.charLayer.getContext("2d");
+    ctx.clearRect(0, 0, this.charLayer.width, this.charLayer.height);
+    this.char(ctx);
+  }
+
+  drawChar(ctx) {
+    ctx.drawImage(this.charLayer, 0, 0);
   }
 
   // Trace the burnt outline on the canvas, in canvas pixels.
@@ -253,8 +271,18 @@ export default class extends Controller {
     event.preventDefault();
     this.blazing = true;
     this.targetHeat = BLAZE_HEAT;
+    // Count now, even if the visitor leaves during the blaze. The final
+    // navigation bypasses this endpoint so the click is only recorded once.
+    fetch(this.cardTarget.href, {
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      keepalive: true,
+    }).catch(() => {
+      // Don't retry: the server may have counted a request whose response failed.
+    });
     await this.sweep(wave);
-    window.location.assign(this.cardTarget.href);
+    window.location.assign(this.urlValue);
   }
 
   buildWave() {
