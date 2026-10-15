@@ -109,4 +109,32 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     devlog.save!
     devlog
   end
+
+  test "genesis herald waits for the slack doodle, then shows until dismissed" do
+    Flipper.enable(:platform_ads)
+    @user.update!(things_dismissed: [])
+    sign_in @user
+
+    get home_path
+    assert_select ".genesis-angel", count: 0
+
+    @user.update!(things_dismissed: %w[slack_doodle])
+    get home_path
+    assert_select ".genesis-angel"
+
+    @user.update!(things_dismissed: %w[slack_doodle genesis_angel])
+    get home_path
+    assert_select ".genesis-angel", count: 0
+  end
+
+  test "genesis herald respects the ads opt-out" do
+    Flipper.enable(:platform_ads)
+    @user.update!(things_dismissed: %w[slack_doodle])
+    (@user.preference || @user.create_preference!).update!(platform_ads_enabled: false)
+    sign_in @user
+
+    get home_path
+
+    assert_select ".genesis-angel", count: 0
+  end
 end

@@ -12,6 +12,13 @@ $genesis-angel-eyes:
   z-index: 90;
   width: 220px;
 
+  // same spot as the slack doodle, clear of the bottom nav on small screens
+  @media (max-width: 960px) {
+    width: 160px;
+    right: 1rem;
+    bottom: 60px;
+  }
+
   &__art {
     position: relative;
     // one shared 3D space for the angel and the ring, so the eyes sort

@@ -1,4 +1,4 @@
-<% if current_user&.has_dismissed?("slack_doodle") && !current_user.has_dismissed?("genesis_angel") %>
+<% if current_user&.has_dismissed?("slack_doodle") && !current_user.has_dismissed?("genesis_angel") && platform_ads_enabled? %>
   <div class="genesis-angel" data-controller="genesis-angel"
    data-genesis-angel-lines-value="<%= [
     "HARKEN ye, for I come bearing the good word of Torvalds.",
