@@ -29,10 +29,9 @@ module ExternalDashboard
     attr_reader :window, :now
 
     def alert_on_unhealthy_fetch(result)
-      Sentry.capture_message(
+      OperationalAlert.report(
         "ExternalDashboard::OutboundAuditService fetch did not complete",
-        level: :warning,
-        extra: { fetch_status: result.status, fetch_error: result.error, fetched: result.ships.size }
+        context: { fetch_status: result.status, fetch_error: result.error, fetched: result.ships.size }
       )
     end
 

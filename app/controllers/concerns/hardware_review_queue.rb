@@ -169,12 +169,14 @@ module HardwareReviewQueue
     by_status = scope.group(:status).count
     approved = by_status["approved"].to_i
     returned = by_status["returned"].to_i
-    total = approved + returned
+    permanently_rejected = by_status["permanently_rejected"].to_i
+    total = approved + returned + permanently_rejected
 
     {
       total: total,
       approved: approved,
       returned: returned,
+      permanently_rejected: permanently_rejected,
       approval_rate: total.zero? ? nil : (approved * 100.0 / total).round
     }
   end
@@ -217,8 +219,15 @@ module HardwareReviewQueue
     @funding_request = @project.certification_funding_requests.max_by(&:created_at)
     @ship = @project.ship_reviews.max_by(&:created_at)
     @owner = review_owner
+    @rejection_nominations = if @project.memberships.exists?(user_id: current_user.id)
+      []
+    else
+      @project.permanent_rejection_nominations.includes(:reviewer, :decided_by).order(created_at: :desc)
+    end
     @active_review =
-      if @funding_request&.pending?
+      if @project.hardware_review_blocked?
+        nil
+      elsif @funding_request&.pending?
         @funding_request
       elsif @ship&.pending?
         @ship
@@ -291,11 +300,11 @@ module HardwareReviewQueue
   end
 
   def hardware_funding_list_scope
-    ::Certification::FundingRequest.for_reviewer(current_user).joins(:project).where(project: reviewable_projects)
+    ::Certification::FundingRequest.for_reviewer(current_user).without_rejection_hold.joins(:project).where(project: reviewable_projects)
   end
 
   def hardware_ship_list_scope
-    ::Certification::Ship.for_reviewer(current_user).joins(:project).where(project: reviewable_projects)
+    ::Certification::Ship.for_reviewer(current_user).without_rejection_hold.joins(:project).where(project: reviewable_projects)
   end
 
   def review_item(type, record, project, owner, submitted_at)

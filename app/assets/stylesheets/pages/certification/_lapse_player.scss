@@ -1,11 +1,11 @@
 // Reusable JKL timelapse viewer for the shared recording gallery (hardware
 // funding review + YSWS review). The lightbox is appended to document.body so
-// it overlays admin chrome; z-index stays high. Scrim uses set-1 (#08061E) per
-// branding — never pure black — and lilac is the accent (branding's default
-// primary).
+// it overlays admin chrome; z-index stays high. The player chrome is our trimmed
+// Video.js minimal skin (app/javascript/lapse_player_skin.js); the JKL speed ladder is
+// slotted into its control bar. Off-white is the accent: neutral, and legible
+// over any frame.
 
 .lapse-player {
-  // ── Modal lightbox ───────────────────────────────────────────────────────
   &__lightbox {
     position: fixed;
     inset: 0;
@@ -20,7 +20,7 @@
     backdrop-filter: blur(4px);
   }
 
-  &__lightbox-close {
+  &__close {
     position: absolute;
     top: var(--space-m);
     right: var(--space-l);
@@ -35,153 +35,28 @@
     cursor: pointer;
   }
 
-  &__lightbox-stage {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-width: min(90vw, 1400px);
-    max-height: 80vh;
+  &__stage {
+    width: min(90vw, 1400px, calc(80vh * 16 / 9));
   }
 
-  &__lightbox-media {
-    max-width: 100%;
-    max-height: 80vh;
-    object-fit: contain;
-    border-radius: var(--profile-radius);
-  }
-
-  // Shown over the stage while the clip fully buffers into memory (so 8× and
-  // reverse never lag). Removed once the blob is ready and playback starts.
-  &__buffering {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--profile-radius);
-    background: hsl(245 55% 8% / 0.55);
-    color: var(--color-brand-lilac);
-    font-size: var(--font-size-s);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    pointer-events: none;
-  }
-
-  &__lightbox-caption {
+  &__caption {
     margin: 0;
     font-size: var(--font-size-s);
     color: var(--color-space-text-muted);
   }
 
-  // ── Custom video player chrome (Vimeo/Plyr-style; overlays the video) ─────
-  // Always visible; the scrim keeps it legible over any frame.
-  &__player {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-    padding: var(--space-xl) var(--space-m) var(--space-s);
-    border-radius: 0 0 var(--profile-radius) var(--profile-radius);
-    background: linear-gradient(
-      to top,
-      hsl(245 55% 8% / 0.96) 25%,
-      hsl(245 55% 8% / 0)
-    );
-    color: var(--color-space-text);
-    font-size: var(--font-size-xs);
+  // The minimal Video.js skin, themed through its public custom properties.
+  &__skin {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    --media-accent-color: var(--color-brand-off-white);
+    --media-border-radius: var(--profile-radius);
+    --media-font-family: var(--font-family-text);
+    --media-object-fit: contain;
   }
 
-  &__player-scrub {
-    position: relative;
-    height: 0.35rem;
-    border-radius: 999px;
-    background: var(--color-overlay-light);
-    cursor: pointer;
-    transition: height 0.12s ease;
-
-    &:hover {
-      height: 0.55rem;
-    }
-  }
-
-  &__player-buffered {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 0;
-    border-radius: 999px;
-    background: var(--color-overlay-light);
-  }
-
-  &__player-progress {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 0;
-    border-radius: 999px;
-    background: var(--color-brand-lilac);
-  }
-
-  &__player-handle {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    width: 0.85rem;
-    height: 0.85rem;
-    border-radius: 50%;
-    background: var(--color-brand-lilac);
-    box-shadow: 0 0 0 3px hsl(245 55% 8% / 0.6);
-    transform: translate(50%, -50%) scale(0);
-    transition: transform 0.12s ease;
-  }
-
-  &__player-scrub:hover &__player-handle {
-    transform: translate(50%, -50%) scale(1);
-  }
-
-  &__player-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-m);
-  }
-
-  &__player-cluster {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xxs);
-  }
-
-  &__player-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.9rem;
-    height: 1.9rem;
-    padding: 0 var(--space-xs);
-    border: 0;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--color-space-text);
-    font-size: var(--font-size-m);
-    line-height: 1;
-    cursor: pointer;
-    transition: background 0.12s ease;
-
-    &:hover {
-      background: var(--color-overlay-light);
-    }
-  }
-
-  &__player-time {
-    margin-left: var(--space-xs);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-space-text-muted);
-  }
-
-  &__player-speed {
+  &__speed {
     display: flex;
     align-items: center;
     gap: 1px;
@@ -190,7 +65,7 @@
     background: var(--color-overlay-light-soft);
   }
 
-  &__player-speed-label {
+  &__speed-label {
     padding: 0 var(--space-xs);
     color: var(--color-space-text-muted);
     font-size: 0.65rem;
@@ -198,7 +73,7 @@
     letter-spacing: 0.08em;
   }
 
-  &__player-pill {
+  &__pill {
     padding: 3px 7px;
     border: 0;
     border-radius: 999px;
@@ -215,8 +90,11 @@
       color: var(--color-space-text);
     }
 
-    &.is-active {
-      background: var(--color-brand-lilac);
+    // Doubled with :hover so the plain :hover color above can't wash out the
+    // dark text on the active pill.
+    &--active,
+    &--active:hover {
+      background: var(--color-brand-off-white);
       color: var(--color-set-1-bg);
       font-weight: 700;
     }
@@ -245,19 +123,19 @@
   }
 
   // Clickable tile: the anchor wraps the media frame. Focus-visible ring uses
-  // the lilac accent to match the player.
+  // the off-white accent to match the player.
   &__item[href] {
     text-decoration: none;
     color: inherit;
     cursor: pointer;
 
     &:focus-visible {
-      outline: 2px solid var(--color-brand-lilac);
+      outline: 2px solid var(--color-brand-off-white);
       outline-offset: 2px;
     }
 
     &:hover .recording-gallery__play {
-      background: var(--color-brand-lilac);
+      background: var(--color-brand-off-white);
       color: var(--color-set-1-bg);
     }
   }

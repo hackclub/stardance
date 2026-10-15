@@ -12,10 +12,9 @@ class CleanupGuestUsersJob < ApplicationJob
 
     found = scope.count
     if found > MAX_PER_RUN
-      Sentry.capture_message(
+      OperationalAlert.report(
         "CleanupGuestUsersJob exceeded MAX_PER_RUN; aborting",
-        level: :warning,
-        extra: { found: found, max: MAX_PER_RUN, cutoff: cutoff }
+        context: { found: found, max: MAX_PER_RUN, cutoff: cutoff }
       )
       return
     end

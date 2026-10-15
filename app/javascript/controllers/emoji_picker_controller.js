@@ -94,6 +94,7 @@ export default class extends Controller {
 
   async connect() {
     if (this.hasEditorTarget && this.hasTextareaTarget) {
+      this.#enablePlainTextEditing();
       await loadCustomEmotes();
       this.#renderEditor(
         this.textareaTarget.value,
@@ -110,12 +111,16 @@ export default class extends Controller {
   async editorInput() {
     await loadCustomEmotes();
     const cursor = this.#editorOffset();
-    const resolved = this.#resolveShortcodes(
-      this.#rawText(this.editorTarget),
-      cursor,
-    );
+    // A lone <br> left behind in an emptied editor isn't content; dropping it
+    // lets the placeholder show again.
+    const raw = this.#rawText(this.editorTarget);
+    const resolved = this.#resolveShortcodes(raw.replace(/^\n+$/, ""), cursor);
     this.#setTextareaValue(resolved.value);
-    this.#renderEditor(resolved.value, resolved.cursor);
+    // Rebuilding the editor wipes the browser's undo history, so only do it
+    // when the text changed above or the DOM holds something to replace.
+    if (resolved.value !== raw || this.#needsRender()) {
+      this.#renderEditor(resolved.value, resolved.cursor);
+    }
     this.#refreshSuggestions(resolved.cursor);
   }
 
@@ -126,7 +131,14 @@ export default class extends Controller {
       return;
     }
 
-    if (!this.#suggestionsVisible()) return;
+    if (!this.#suggestionsVisible()) {
+      // Plain Enter has never added a line (Shift+Enter does); keep it that
+      // way now that plaintext-only editing would otherwise insert one.
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+      }
+      return;
+    }
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
@@ -330,11 +342,52 @@ export default class extends Controller {
     return nodes;
   }
 
+  // plaintext-only makes the browser type line breaks as "\n" and paste
+  // clipboard text without markup, so newlines reach the textarea. Browsers
+  // that don't support it throw and keep contenteditable="true".
+  #enablePlainTextEditing() {
+    try {
+      this.editorTarget.contentEditable = "plaintext-only";
+    } catch {
+      // Unsupported: line breaks still arrive as <br> (see #rawText).
+    }
+  }
+
+  // True when the editor holds nodes #editorNodes wouldn't have produced,
+  // such as browser-inserted markup or a typed custom emote shortcode.
+  #needsRender() {
+    return [...this.editorTarget.childNodes].some((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return [...node.textContent.matchAll(COMPLETE_SHORTCODE_MATCH)].some(
+          ([, code]) => customById.has(code.toLowerCase()),
+        );
+      }
+      if (node.nodeName === "BR") return false;
+      return !(node.nodeName === "IMG" && node.dataset.shortcode);
+    });
+  }
+
   #rawText(node) {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+    if (node.nodeName === "BR") return "\n";
     if (node.nodeName === "IMG") {
       return node.dataset.shortcode ? `:${node.dataset.shortcode}:` : "";
     }
+    // Chrome wraps each pasted or inserted line after the first in a block,
+    // with an empty line as <div><br></div>, so a block starts a new line.
+    if (
+      node !== this.editorTarget &&
+      (node.nodeName === "DIV" || node.nodeName === "P")
+    ) {
+      const emptyLine =
+        node.childNodes.length === 1 && node.firstChild.nodeName === "BR";
+      const text = emptyLine ? "" : this.#childrenRawText(node);
+      return node.previousSibling ? `\n${text}` : text;
+    }
+    return this.#childrenRawText(node);
+  }
+
+  #childrenRawText(node) {
     return [...node.childNodes].map((child) => this.#rawText(child)).join("");
   }
 

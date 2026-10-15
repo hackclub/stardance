@@ -34,6 +34,10 @@ class Gorse::Client
     end
   end
 
+  def delete_user!(user_id) = delete!("api/user/#{CGI.escape(user_id)}")
+
+  def delete_item!(item_id) = delete!("api/item/#{CGI.escape(item_id)}")
+
   def recommend(user_id, category:, count:)
     response = get("api/recommend/#{CGI.escape(user_id)}", category: category, n: count)
     item_ids(response)
@@ -61,6 +65,12 @@ class Gorse::Client
 
     def put(path, body)
       request(:put, path, body)
+    end
+
+    def delete!(path)
+      connection.delete(path).body
+    rescue Faraday::ResourceNotFound
+      nil
     end
 
     def request(method, path, payload)

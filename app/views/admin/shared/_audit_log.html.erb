@@ -72,11 +72,11 @@
                         <% if sensitive_fields.include?(k.to_s) %>
                           <span class="audit-log__redacted">redacted</span>
                         <% elsif v.is_a?(Array) && v.length == 2 %>
-                          <span class="audit-log__old"><%= truncate(v[0].to_s, length: 25) %></span>
+                          <span class="audit-log__old" title="<%= v[0] %>"><%= truncate(v[0].to_s, length: 80) %></span>
                           <span class="audit-log__arrow">→</span>
-                          <span class="audit-log__new"><%= truncate(v[1].to_s, length: 25) %></span>
+                          <span class="audit-log__new" title="<%= v[1] %>"><%= truncate(v[1].to_s, length: 80) %></span>
                         <% else %>
-                          <span class="audit-log__val"><%= truncate(v.to_s, length: 40) %></span>
+                          <span class="audit-log__val" title="<%= v %>"><%= truncate(v.to_s, length: 120) %></span>
                         <% end %>
                       </div>
                     <% end %>
@@ -103,7 +103,7 @@
       </div>
     <% elsif versions.count > limit %>
       <div class="audit-log__footer">
-        <%= link_to "View all #{versions.count} changes →", admin_audit_logs_path(item_type: item_type, item_id: record.id), class: "audit-log__view-all" %>
+        <%= link_to "View all #{versions.count} changes →", admin_audit_logs_path(item_type: item_type, item_id: record.id, show_system: "1"), class: "audit-log__view-all" %>
       </div>
     <% end %>
   <% else %>

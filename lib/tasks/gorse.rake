@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 
 namespace :gorse do
+  desc "Backfill hardware feed categories for existing posts"
+  task backfill_hardware_feed: :environment do
+    unless Gorse.enabled? && Flipper.enabled?(:gorse_personalized_feed)
+      puts "Gorse personalized feed is disabled."
+      next
+    end
+
+    Gorse::PostPayload.hardware_scope(Post.all).find_each(&:sync_to_gorse_now)
+  end
+
   desc "Backfill Gorse users, posts, projects, and feedback"
   task backfill: :environment do
     unless Gorse.enabled?

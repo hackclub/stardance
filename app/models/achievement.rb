@@ -12,6 +12,13 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
 
   ALL = [
     new(
+      slug: :certificate_earned,
+      name: "Certified Stardancer",
+      description: "Earned your Stardance certificate.",
+      icon: "trophy",
+      earned_check: ->(user) { user.certificate&.approved? }
+    ),
+    new(
       slug: :super_star,
       name: "Super Star",
       description: "Cooked so hard you ended up making a fire project that made our staff very happy!",
@@ -52,6 +59,24 @@ Achievement = Data.define(:slug, :name, :description, :icon, :earned_check, :pro
       icon: "trophy",
       earned_check: ->(user) { DailyRoll.topped_a_day(user) },
       visibility: :hidden
+    ),
+    new(
+      slug: :viral_good,
+      name: "Good Viral Project",
+      description: "Shared your project with the world and it got noticed! Unlocks exclusive shop items.",
+      icon: "rocket",
+      stardust_reward: 50,
+      earned_check: ->(user) { user.earned_achievement?(:viral_good) },
+      visibility: :visible
+    ),
+    new(
+      slug: :viral_great,
+      name: "Great Viral Project",
+      description: "Your project blew up outside Hack Club. The world noticed what you built.",
+      icon: "fire",
+      stardust_reward: 50,
+      earned_check: ->(user) { user.earned_achievement?(:viral_great) },
+      visibility: :visible
     )
   ].freeze
 

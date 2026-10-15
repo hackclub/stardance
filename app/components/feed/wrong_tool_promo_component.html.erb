@@ -1,0 +1,38 @@
+<section class="wrong-tool-promo"
+         aria-label="wrong tool, a Hack Club YSWS"
+         data-controller="wrong-tool-sheet"
+         data-wrong-tool-sheet-columns-value="<%= COLUMNS.size %>">
+  <header class="wrong-tool-promo__bar">
+    <%= image_tag "wrong-tool-logo.svg", alt: "", class: "wrong-tool-promo__logo" %>
+    <span class="wrong-tool-promo__file">untitled_space_game</span>
+    <button type="button" class="wrong-tool-promo__hide" aria-label="Hide this" data-action="wrong-tool-sheet#hide">
+      <%= helpers.inline_svg_tag "icons/close.svg", class: "wrong-tool-promo__hide-icon", aria_hidden: true %>
+    </button>
+  </header>
+
+  <div class="wrong-tool-promo__formula" aria-hidden="true">
+    <span class="wrong-tool-promo__name-box" data-wrong-tool-sheet-target="nameBox">D4</span>
+    <span class="wrong-tool-promo__fx">fx</span>
+    <code class="wrong-tool-promo__formula-text">=MAKE(game, "anything but a game engine")</code>
+  </div>
+
+  <div class="wrong-tool-promo__sheet" aria-hidden="true"
+       data-action="pointermove->wrong-tool-sheet#steer pointerleave->wrong-tool-sheet#release">
+    <span class="wrong-tool-promo__corner"></span>
+    <% COLUMNS.each do |column| %>
+      <span class="wrong-tool-promo__header"><%= column %></span>
+    <% end %>
+    <% ROWS.times do |row| %>
+      <span class="wrong-tool-promo__header wrong-tool-promo__header--row"><%= row + 1 %></span>
+      <% COLUMNS.size.times do %>
+        <span class="wrong-tool-promo__cell" data-wrong-tool-sheet-target="cell"></span>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="wrong-tool-promo__copy">
+    <p class="wrong-tool-promo__title">make a game in something that isn't a game engine.</p>
+    <p class="wrong-tool-promo__body">Google Sheets, Figma, email, or whatever else you like. Log 10 hours and get a retro handheld. Runs until Oct 20.</p>
+    <%= link_to "Start building →", helpers.wrong_tool_promo_path, class: "wrong-tool-promo__cta", target: "_blank", rel: "noopener" %>
+  </div>
+</section>

@@ -73,6 +73,9 @@ class Projects::ShipsController < ApplicationController
     redirect_back fallback_location: project_path(@project), alert: e.record.errors.full_messages.to_sentence
   rescue ActiveRecord::RecordNotUnique
     redirect_to project_path(@project), alert: "A review is already pending for this project."
+  rescue AASM::InvalidTransition
+    redirect_to project_path(@project),
+                alert: @project.ship_blocked? ? Project::ShipBlock::BLOCKED_MESSAGE : "Your project can't be shipped right now."
   end
 
   private
@@ -81,6 +84,9 @@ class Projects::ShipsController < ApplicationController
     end
 
     def require_shippable
+      if @project.ship_blocked? && policy(@project).ship?
+        redirect_to project_path(@project), alert: Project::ShipBlock::BLOCKED_MESSAGE and return
+      end
       return if @project.shippable?
       redirect_to project_path(@project),
                   alert: @project.mission_review_blocker_message || "Finish the remaining requirements before shipping."

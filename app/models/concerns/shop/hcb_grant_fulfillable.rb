@@ -42,8 +42,8 @@ module Shop::HCBGrantFulfillable
                       "A grant may already exist on HCB; reconcile it by hand before retrying."
     end
 
-    # A grant the recipient cancelled, or one HCB can no longer describe, can't
-    # be topped up, so this order gets a fresh one.
+    # A grant the recipient cancelled, one HCB expired, or one we can't read the
+    # status of can't be topped up, so this order gets a fresh one.
     grant_rec = ShopCardGrant.new(user: shop_order.user, shop_item: self) if grant_rec.persisted? && !topupable?(grant_rec)
 
     memo, disbursement = if grant_rec.new_record?
@@ -110,8 +110,17 @@ module Shop::HCBGrantFulfillable
       response.dig("disbursements", 0, "transaction_id") ]
   end
 
+  # Whether this order can add to the grant the buyer already holds rather than
+  # opening another one.
+  #
+  # An unreadable status is treated as not topupable, which issues a separate
+  # grant instead. That is deliberately not a money bug - the order disburses
+  # its own amount exactly once either way - but it does leave the buyer with
+  # their balance split across several cards, which is how a months-long HCB
+  # authorization failure went unnoticed. Kept as-is until HCB stops refusing
+  # the status read; see Shop::AutoApproveJob for the failure path this avoids.
   def topupable?(grant_rec)
-    !grant_rec.canceled?
+    !grant_rec.closed?
   rescue StandardError => e
     Rails.logger.error "Error checking grant status: #{e.message}"
     false

@@ -5,6 +5,9 @@ require "test_helper"
 # queue forever, since nothing else ever revisits them.
 class User::ModerationTest < ActiveSupport::TestCase
   include UserFactory
+  include ActiveJob::TestHelper
+
+  SYNC_JOB = Certification::YswsAirtableSyncJob
 
   PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=".freeze
 
@@ -33,7 +36,76 @@ class User::ModerationTest < ActiveSupport::TestCase
     assert_equal "fulfilled", fulfilled.reload.aasm_state
   end
 
+  test "banning resyncs a finished review the unified base has not taken" do
+    review = completed_review
+
+    assert_enqueued_with(job: SYNC_JOB, args: [ review.id ]) do
+      @user.ban!(reason: "test")
+    end
+  end
+
+  test "unbanning resyncs so the rejection comes back off the row" do
+    review = completed_review
+    @user.ban!(reason: "test")
+
+    assert_enqueued_with(job: SYNC_JOB, args: [ review.id ]) do
+      @user.unban!
+    end
+  end
+
+  test "banning leaves a review the unified base already took alone" do
+    review = completed_review
+    review.update_column(:in_unified_db, "recStubUnified01")
+
+    assert_no_enqueued_jobs(only: SYNC_JOB) do
+      @user.ban!(reason: "test")
+    end
+  end
+
+  test "banning leaves a review still in the queue to the rejector" do
+    pending_review
+
+    assert_no_enqueued_jobs(only: SYNC_JOB) do
+      @user.ban!(reason: "test")
+    end
+  end
+
   private
+
+  def completed_review
+    project, ship_event = project_with_ship
+
+    Certification::Ysws.create!(
+      user: @user,
+      project: project,
+      post_ship_event: ship_event,
+      original_minutes: 120,
+      reviewer: @user,
+      reviewed_at: Time.current,
+      airtable_synced_at: Time.current
+    )
+  end
+
+  def pending_review
+    project, ship_event = project_with_ship
+
+    Certification::Ysws.create!(
+      user: @user,
+      project: project,
+      post_ship_event: ship_event,
+      original_minutes: 120
+    )
+  end
+
+  def project_with_ship
+    project = Project.create!(title: "Ship #{SecureRandom.hex(4)}")
+    Project::Membership.create!(project: project, user: @user, role: :owner)
+
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+    Post.create!(project: project, user: @user, postable: ship_event)
+
+    [ project, ship_event ]
+  end
 
   def place_order(state)
     order = @user.shop_orders.create!(shop_item: @item, quantity: 1, frozen_address: { "country" => "US" })

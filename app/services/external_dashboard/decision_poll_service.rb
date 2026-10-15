@@ -35,10 +35,9 @@ module ExternalDashboard
     def alert_on_unhealthy_run(result, counts)
       unless result.status == :ok
         AlertThrottle.once("external_dashboard:decision_poll:fetch_unhealthy:#{result.status}", ttl: UNHEALTHY_ALERT_TTL) do
-          Sentry.capture_message(
+          OperationalAlert.report(
             "ExternalDashboard::DecisionPollService fetch did not complete",
-            level: :warning,
-            extra: { fetch_status: result.status, fetch_error: result.error, fetched: result.ships.size }
+            context: { fetch_status: result.status, fetch_error: result.error, fetched: result.ships.size }
           )
         end
         return
@@ -51,10 +50,9 @@ module ExternalDashboard
       return if unresolved_count < decided_count * 0.5
 
       AlertThrottle.once("external_dashboard:decision_poll:high_error_rate", ttl: UNHEALTHY_ALERT_TTL) do
-        Sentry.capture_message(
+        OperationalAlert.report(
           "ExternalDashboard::DecisionPollService is failing to apply most decided ships in its window",
-          level: :warning,
-          extra: { fetched: result.ships.size, decided: decided_count, unresolved: unresolved_count, breakdown: counts }
+          context: { fetched: result.ships.size, decided: decided_count, unresolved: unresolved_count, breakdown: counts }
         )
       end
     end

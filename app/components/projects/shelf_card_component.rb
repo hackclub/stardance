@@ -15,6 +15,11 @@ module Projects
       project.display_description.presence || project.description
     end
 
+    def plain_description
+      # strip_tags leaves entities (&amp;); decode so the view escapes them once.
+      CGI.unescapeHTML(helpers.strip_tags(helpers.md(description, allow_images: false))).squish
+    end
+
     def engagement_data
       {
         controller: "feed-engagement",

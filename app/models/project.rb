@@ -17,6 +17,7 @@
 #  project_type         :string
 #  readme_url           :text
 #  repo_url             :text
+#  ship_block_reason    :text
 #  ship_status          :string           default("draft")
 #  shipped_at           :datetime
 #  synced_at            :datetime
@@ -47,6 +48,7 @@ require "net/http"
 
 class Project < ApplicationRecord
   include Project::HackatimeDevlogResync
+  include Project::ShipBlock
   include AASM
   include SoftDeletable
   include SemanticSearchIndexable
@@ -157,6 +159,7 @@ class Project < ApplicationRecord
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
   has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
   has_many :review_notes, class_name: "Certification::ReviewNote", dependent: :destroy
+  has_many :permanent_rejection_nominations, class_name: "Certification::PermanentRejectionNomination", dependent: :restrict_with_exception
   has_many :integrity_checks, through: :ship_events, source: :integrity_check
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
@@ -168,6 +171,7 @@ class Project < ApplicationRecord
   has_many :missions,                 through:    :mission_attachments
   has_many :mission_section_completions, class_name: "Mission::SectionCompletion",  dependent: :destroy
   has_many :mission_submissions,         class_name: "Mission::Submission",         through: :ship_events
+  has_many :mentions, class_name: "ProjectMention", dependent: :destroy
 
   def current_mission_attachment
     if mission_attachments.loaded?
@@ -215,22 +219,22 @@ class Project < ApplicationRecord
   # when the swap is allowed: draft projects switch freely, shipped projects
   # only move to a follow-up or back to a mission they shipped to. Otherwise
   # the attachment validations raise RecordInvalid.
-  def attach_mission!(mission)
+  def attach_mission!(mission, force: false)
     with_lock do
       current = current_mission_attachment
-      current.detach! if current && may_swap_mission_to?(mission)
+      current.detach!(force: force) if current && may_swap_mission_to?(mission)
       mission_attachments.create!(mission: mission, attached_at: Time.current)
     end
   end
 
   # Detaches the current mission and returns the fallback it re-attached,
   # if any — a shipped project never goes mission-less.
-  def detach_mission!
+  def detach_mission!(force: false)
     with_lock do
       attachment = current_mission_attachment
       next nil unless attachment
 
-      attachment.detach!
+      attachment.detach!(force: force)
       fallback = fallback_mission_after_detaching(attachment.mission)
       mission_attachments.create!(mission: fallback, attached_at: Time.current) if fallback
       fallback
@@ -517,6 +521,18 @@ class Project < ApplicationRecord
     certification_funding_requests.pending.exists?
   end
 
+  def hardware_review_pending?
+    hardware? && (has_pending_funding_request? || awaiting_ship_review?)
+  end
+
+  def permanently_rejected?
+    permanent_rejection_nominations.approved.exists?
+  end
+
+  def hardware_review_blocked?
+    permanent_rejection_nominations.blocking.exists?
+  end
+
   # True once any funding request has been submitted (pending, approved, or returned).
   def has_any_funding_request?
     return @_has_any_funding_request if defined?(@_has_any_funding_request)
@@ -563,7 +579,7 @@ class Project < ApplicationRecord
   # withdrawn ones carry no verdict, so both stay off the feed.
   def timeline_funding_requests
     certification_funding_requests
-      .where(status: [ :pending, :approved, :returned ])
+      .where(status: [ :pending, :approved, :returned, :permanently_rejected ])
       .order(created_at: :desc)
   end
 
@@ -600,8 +616,11 @@ class Project < ApplicationRecord
   # Deduplicated because every member of a hardware project gets their own
   # User::HackatimeProject row under the same name, and callers treat this as a
   # set: it's joined into the Airtable sync and the devlog key snapshot, and
-  # rendered as-is on the integrity dashboard.
+  # rendered as-is on the integrity dashboard. Uses the preloaded rows when the
+  # caller already loaded them (the home composer renders one chip per project).
   def hackatime_keys
+    return hackatime_projects.map(&:name).uniq if hackatime_projects.loaded?
+
     hackatime_projects.distinct.pluck(:name)
   end
 
@@ -666,7 +685,8 @@ class Project < ApplicationRecord
     end
 
     event :resubmit_for_review do
-      transitions from: :needs_changes, to: :submitted, guard: :links_complete?
+      transitions from: :needs_changes, to: :submitted,
+                  guard: -> { !ship_blocked? && links_complete? && !hardware_review_blocked? }
     end
 
     # A ship that was withdrawn rather than judged (see
@@ -705,6 +725,19 @@ class Project < ApplicationRecord
     votes_needed = [ -owner_vote_balance, 0 ].max
     mission_review = blocking_mission_submission
     [
+      {
+        key: :not_ship_blocked,
+        label: "Your project must not be blocked from shipping",
+        tooltip: Project::ShipBlock::BLOCKED_MESSAGE,
+        passed: !ship_blocked?
+      },
+      {
+        key: :hardware_review_decision,
+        label: "Your project must be eligible for another review",
+        fail_label: permanently_rejected? ? "This project was permanently rejected" : "Your project is still under review",
+        tooltip: permanently_rejected? ? "This decision is final. This project cannot be submitted for funding or certification again. See the review explanation on this page." : "We'll let you know when a decision has been made.",
+        passed: !hardware_review_blocked?
+      },
       {
         key: :demo_url,
         label: "Add a demo link so anyone can try your project",
@@ -917,6 +950,19 @@ class Project < ApplicationRecord
     first_unmet_requirement(LINK_REQUIREMENT_KEYS)&.dig(:label)
   end
 
+  RECERTIFICATION_COOLDOWN_CAP_HOURS = 24
+
+  def recertification_available_at
+    requested_at = recertification_request_times
+    return nil if requested_at.empty?
+
+    hours = [ (requested_at.size**2) - 1, RECERTIFICATION_COOLDOWN_CAP_HOURS ].min
+    return nil if hours.zero?
+
+    available_at = requested_at.max + hours.hours
+    available_at if available_at.future?
+  end
+
   # The editable info fields (see FIELD_REQUIREMENT_MAP) that still have an
   # unmet requirement for the current stage — used to highlight what's left to
   # fill in on the form. Stage-aware like #stage_info_complete?, so a demo link
@@ -1026,6 +1072,8 @@ class Project < ApplicationRecord
     curseforge.com
     makerworld.com
     streamlit.app
+    figma.com
+    nexusmods.com
   ].freeze
 
   # Public so ProjectUrlProbeService and the controller can probe URLs.
@@ -1065,6 +1113,19 @@ class Project < ApplicationRecord
     shipping_requirements
       .select { |r| keys.include?(r[:key]) }
       .find { |r| !r[:passed] }
+  end
+
+  def recertification_request_times
+    attributed, unattributed = ship_reviews
+      .select(:id, :post_ship_event_id, :created_at, :returned_by_id, :status)
+      .order(:created_at, :id).to_a
+      .partition(&:post_ship_event_id)
+
+    openers_dropped = attributed.group_by(&:post_ship_event_id).flat_map { |_event_id, certs| certs.drop(1) }
+
+    (openers_dropped + unattributed)
+      .reject { |cert| cert.returned_by_id || cert.misfiled? || cert.withdrawn? }
+      .map(&:created_at)
   end
 
   def do_url_probe(url)

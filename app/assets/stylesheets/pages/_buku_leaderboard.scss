@@ -1,0 +1,131 @@
+@use "../config/mixins" as *;
+
+// Its own box under the event status box, matching that box's frame.
+.buku-leaderboard {
+  margin-bottom: var(--space-l);
+  padding: var(--space-m);
+  border: 2px solid var(--color-set-1-fg-secondary);
+  border-radius: 8px;
+  background: var(--color-set-1-bg);
+  color: var(--color-brand-off-white);
+  font-size: var(--font-size-s);
+
+  &__teams {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-m);
+  }
+  &__team {
+    min-width: 0;
+  }
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-xxxs);
+    align-content: start;
+  }
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-width: 0;
+    min-height: var(--space-l);
+    padding-inline: var(--space-xs);
+    border-radius: 8px;
+  }
+  &__row--buku {
+    --winner-color: var(--color-brand-lilac);
+  }
+  &__row--bean {
+    --winner-color: var(--color-brand-yellow);
+  }
+  // The winner stands out in italic team color instead of a box.
+  &__row--first {
+    color: var(--winner-color);
+    font-style: italic;
+  }
+  &__rank {
+    flex: 0 0 2ch;
+    font-variant-numeric: tabular-nums;
+  }
+  &__prize-label {
+    @include visually-hidden;
+  }
+  &__name {
+    // The buku-leaderboard-name controller toggles the fade classes from the
+    // scroll position, so a cut-off name fades into the row instead of
+    // clipping. Scrollable (without a scrollbar) so touch screens can swipe.
+    --fade-start: 0px;
+    --fade-end: 0px;
+
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+    color: inherit;
+    text-decoration: none;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--fade-start),
+      #000 calc(100% - var(--fade-end)),
+      transparent
+    );
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  &__name--fade-start {
+    --fade-start: 1.5em;
+  }
+  &__name--fade-end {
+    --fade-end: 1.5em;
+  }
+  &__name:hover {
+    text-decoration: underline;
+  }
+  &__name:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  &__you {
+    font-size: var(--font-size-xs);
+  }
+  &__hours {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  &__empty {
+    color: var(--color-set-3-fg-secondary);
+  }
+  // Sits across from the viewer's own row, in the other team's column.
+  &__chase {
+    display: flex;
+    align-items: center;
+    min-height: var(--space-l);
+    margin: 0;
+    padding-inline: var(--space-xs);
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
+  }
+  &__teams--own {
+    margin-top: var(--space-xxxs);
+  }
+
+  @media (max-width: 480px) {
+    &__teams {
+      gap: var(--space-xs);
+    }
+    &__row {
+      gap: var(--space-xxxs);
+      padding-inline: var(--space-xxxs);
+    }
+    &__you {
+      display: none;
+    }
+  }
+}

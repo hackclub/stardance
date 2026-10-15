@@ -56,15 +56,15 @@ class HCBServiceRefreshRetryTest < ActiveSupport::TestCase
     calls
   end
 
-  test "a failed save alerts Sentry and leaves the old tokens in place" do
+  test "a failed save raises an alert and leaves the old tokens in place" do
     attempts = 0
     always_fail = lambda do |_instance, *_args, **_kwargs|
       attempts += 1
       raise ActiveRecord::StatementInvalid, "simulated DB outage"
     end
 
-    sentry_calls = 0
-    Sentry.stub(:capture_message, ->(*) { sentry_calls += 1 }) do
+    alerts = 0
+    OperationalAlert.stub(:report, ->(*, **) { alerts += 1 }) do
       replace_method(HCBCredential, :update!, always_fail) do
         stub_token_endpoint("access_token" => "new-access-token") do
           error = assert_raises(HCBError) { HCBService.refresh_token! }
@@ -74,7 +74,7 @@ class HCBServiceRefreshRetryTest < ActiveSupport::TestCase
     end
 
     assert_equal 1, attempts, "the save runs inside with_lock's transaction, so a failure can't be retried in place"
-    assert_equal 1, sentry_calls, "losing rotated tokens bricks the credential and must page someone"
+    assert_equal 1, alerts, "losing rotated tokens bricks the credential and must page someone"
     assert_equal "old-access-token", @creds.reload.access_token, "credentials must not be left half-updated"
   end
 

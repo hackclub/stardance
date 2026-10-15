@@ -1,16 +1,19 @@
-<%# Explain-then-start control in the widget body, for users who have not begun
-    their one and only Sticky Streak run. The second 21 is literal: the plushie
-    is the day 21 reward, so extending the run must not move it. %>
+<%# Explain-then-start control in the widget body. Which run is on offer is
+    decided server side by User#startable_sticky_streak_kind; the view only
+    picks the words. %>
+<% copy = sticky_streak_start_copy(kind) %>
 <details class="sticky-start">
   <summary class="action-btn action-btn--secondary action-btn--small sticky-start__summary">
-    Sticky Streak
+    <%= copy.summary %>
   </summary>
-  <p class="sticky-start__body">
-    A <%= StickyStreak::LENGTH %> day challenge! Keep up your daily streak and get a free sticker
-    each day. After 21 days you'll get a free starling plushie, but if you miss a day you're out
-    of the challenge!
-  </p>
-  <%= button_to "Start my sticky streak", sticky_streak_path,
+  <p class="sticky-start__body"><%= copy.body %></p>
+  <% if forfeiting.positive? %>
+    <p class="sticky-start__warning">
+      You still have <%= pluralize(forfeiting, "sticker") %> to claim from your last run.
+      Claim <%= forfeiting == 1 ? "it" : "them" %> first: restarting gives up anything left unclaimed.
+    </p>
+  <% end %>
+  <%= button_to copy.cta, sticky_streak_path,
         class: "action-btn action-btn--primary action-btn--small sticky-start__btn",
         data: { turbo: false } %>
 </details>

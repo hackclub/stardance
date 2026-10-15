@@ -19,6 +19,7 @@ module Notifications
       Notifications::Projects::SuperStar
       Notifications::Projects::DevlogCapApproaching
       Notifications::AchievementEarned
+      Notifications::RngWinner
       Notifications::StardustBalanceChanged
       Notifications::Payouts::ShipEventIssued
       Notifications::Payouts::VoteDeficitBlocked
@@ -26,6 +27,7 @@ module Notifications
       Notifications::ShopOrders::StatusChanged
       Notifications::Hardware::FundingRequestReviewed
       Notifications::Hardware::BuildReviewed
+      Notifications::Hardware::PermanentlyRejected
       Notifications::Hardware::ReviewQueueMismatch
       Notifications::Hardware::ReviewUndone
       Notifications::Workshops::StartingSoon

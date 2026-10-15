@@ -24,7 +24,7 @@
       </div>
       <div class="aorder__card-body">
         <div class="aorder__row">
-          <span class="aorder__row-label">Orders reviewed</span>
+          <span class="aorder__row-label">Items reviewed</span>
           <span class="aorder__row-value"><strong><%= @run.total_orders %></strong></span>
         </div>
         <div class="aorder__row">
@@ -65,7 +65,7 @@
             <%= button_to "Reject", reject_admin_fraud_payout_path(@run),
                 method: :post,
                 class: "aorder__btn aorder__btn--reject",
-                data: { confirm: "Reject this payout run and release orders for the next run?" } %>
+                data: { confirm: "Reject this payout run and release its payouts for the next run?" } %>
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@
         <thead>
           <tr style="border-bottom: 1px solid var(--color-space-border); background: rgba(255,255,255,0.02);">
             <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Reviewer</th>
-            <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Orders Reviewed</th>
+            <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Items Reviewed</th>
             <th style="padding: var(--space-s) var(--space-m); text-align:left; color: var(--color-space-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Tickets Earned</th>
           </tr>
         </thead>

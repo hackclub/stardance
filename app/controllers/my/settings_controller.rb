@@ -9,6 +9,9 @@ class My::SettingsController < ApplicationController
       leaderboard_optin: params[:leaderboard_optin] == "1",
       search_engine_indexing_off: params[:search_engine_indexing_off] == "1"
     }
+    %i[particle_effects_enabled disintegration_effects_enabled platform_ads_enabled].each do |key|
+      pref_attrs[key] = params[key] == "1" if params.key?(key)
+    end
 
     if current_user.preference.has_attribute?(:streak_slack_status_enabled)
       new_val = params[:streak_slack_status_enabled] == "1"

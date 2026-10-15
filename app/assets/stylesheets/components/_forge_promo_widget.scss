@@ -1,0 +1,120 @@
+// Forge's ad, in Forge's own embers and type (forge.hackclub.com). The flames
+// read their palette from here, so the card and its fire never disagree. The
+// overlay is appended to <body>, outside the card, so it takes the palette too.
+.forge-promo,
+.forge-promo__overlay {
+  --forge-promo-core: var(--color-brand-yellow);
+  --forge-promo-flame: #f99c00;
+  --forge-promo-ember: #ca5924;
+  --forge-promo-glow: #ffb595;
+  --forge-promo-soot: #0e0e0e;
+  --forge-promo-ash: #e5e2e1;
+}
+
+// The card sits inset in its slot, leaving the fire room to rise around it.
+.forge-promo {
+  position: relative;
+  container-type: inline-size;
+  padding: var(--space-l) var(--space-m) var(--space-m);
+
+  // The burnt outline clips the card's own outline away, so the focus ring goes on the widget.
+  &:has(.forge-promo__card:focus-visible) {
+    outline: 2px solid var(--forge-promo-glow);
+    outline-offset: -2px;
+    border-radius: var(--border-radius);
+  }
+
+  // Lifts the burnt card off the page; the shadow follows its ragged edge.
+  &__frame {
+    filter: drop-shadow(0 12px 14px var(--forge-promo-soot));
+  }
+
+  &__card {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    background: var(--forge-promo-soot);
+    color: var(--forge-promo-ash);
+    text-decoration: none;
+
+    &:focus-visible {
+      outline: none;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        ellipse at 50% 45%,
+        transparent 50%,
+        color-mix(in srgb, var(--forge-promo-soot) 70%, transparent) 100%
+      );
+      pointer-events: none;
+    }
+  }
+
+  &__art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: scale 600ms ease-out;
+  }
+
+  &__card:hover &__art {
+    scale: 1.04;
+  }
+
+  // Up top, clear of the fire burning along the bottom.
+  &__caption {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    padding: var(--space-m) var(--space-m) var(--space-xl);
+    background: linear-gradient(
+      color-mix(in srgb, var(--forge-promo-soot) 80%, transparent),
+      transparent
+    );
+    text-align: center;
+  }
+
+  &__title {
+    color: var(--forge-promo-glow);
+    font-family: "IM Fell English", Georgia, "Times New Roman", serif;
+    font-size: 16cqi;
+    line-height: 1;
+    text-shadow: 0 0 14px var(--forge-promo-ember);
+  }
+
+  &__tagline {
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-s);
+  }
+
+  &__embers {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+  }
+
+  &__wave {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}

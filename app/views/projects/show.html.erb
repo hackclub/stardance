@@ -26,12 +26,17 @@
   # "Complete project info" button (which adds ?complete=1).
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
   can_delete_project = policy(@project).destroy? && (!@project.shipped? || policy(@project).force_destroy?)
+  ship_block_message = Project::ShipBlock::BLOCKED_MESSAGE if @project.ship_blocked?
   # Shared by the ship CTA, the returned decision card and the recert modal, and
   # computed once because link_blocker_message probes the live URLs every call.
   # Members only: a reviewer opening a returned project shouldn't pay for HTTP
-  # requests to someone else's demo. They still hit the controller and the
-  # resubmit_for_review guard when they actually act.
-  recert_link_blocker = @project.link_blocker_message if is_member && @project.needs_changes?
+  # requests to someone else's demo, and a reviewer filing on a builder's behalf
+  # bypasses the cooldown anyway (ProjectPolicy#bypass_recertification_cooldown?).
+  # They still hit the controller and the resubmit_for_review guard when they act.
+  recert_gated = is_member && @project.needs_changes? && ship_block_message.nil?
+  recert_cooldown_at = @project.recertification_available_at if recert_gated
+  recert_visible_blocker = ship_block_message || (recertification_cooldown_message(recert_cooldown_at) if recert_cooldown_at)
+  recert_link_blocker = @project.link_blocker_message if recert_gated && recert_visible_blocker.nil?
 %>
 
 <div class="app-layout" data-controller="profile-modal">
@@ -466,7 +471,7 @@
             </div>
 
             <% if @project.description.present? %>
-              <p class="project-show__description"><%= @project.description %></p>
+              <div class="project-show__description markdown-content"><%= md(@project.description, allow_images: false) %></div>
             <% end %>
 
             <div class="project-show__read-footer">
@@ -479,6 +484,11 @@
               <% end %>
               <div class="project-show__panel-actions">
                 <%= render "projects/fire_controls", project: @project %>
+
+                <% if !@project.draft? && is_member && Flipper.enabled?(:virality_bonus, current_user) %>
+                  <%= link_to "Submit viral mention", new_project_mention_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "_top" } %>
+                  <%= render "shared/help_tooltip", text: "Got traction on Reddit, HN, GitHub, or another platform? Submit a link and earn bonus stardust.", position: "top" %>
+                <% end %>
 
                 <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
                   <%= link_to safe_repo_url,
@@ -540,6 +550,21 @@
     <% end %>
 
     <% if is_member %>
+      <% if @project.ship_blocked? %>
+        <section class="project-show__notice project-show__notice--blocked" aria-label="Blocked from shipping">
+          <p class="project-show__notice-title">This project is blocked from shipping</p>
+          <p class="project-show__notice-body">It can't be shipped, reshipped or re-certified until it's unblocked. Devlogs and everything else still work as normal.</p>
+          <div class="project-show__notice-reason">
+            <%= simple_format(h(@project.ship_block_reason), class: "project-show__notice-body") %>
+          </div>
+          <p class="project-show__notice-body">
+            If you think this is a mistake, send a message in
+            <%= link_to "#ask-the-shipwrights", Project::ShipBlock::APPEAL_CHANNEL_URL,
+                        class: "project-show__notice-link", target: "_blank", rel: "noopener noreferrer" %>
+            to appeal it.
+          </p>
+        </section>
+      <% end %>
       <% if @hackatime_linked || @test_time_granted %>
         <%
           no_hackatime_project = @project.hackatime_keys.blank? && !@test_time_granted
@@ -625,7 +650,9 @@
             <% end %>
           <% end %>
           <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
-            <% if @project.has_pending_funding_request? %>
+            <% if @project.permanently_rejected? %>
+              <%= render ActionButtonComponent.new(text: "Project permanently rejected", variant: :secondary, type: :button, disabled: :hard) %>
+            <% elsif @project.has_pending_funding_request? %>
               <%= render ActionButtonComponent.new(
                     text: "Funding request under review",
                     variant: :secondary,
@@ -692,7 +719,20 @@
               the ship button stays hidden behind the funding button until the
               grant flips them to the build stage. %>
           <% unless @project.design_stage? %>
-          <% if @project.awaiting_ship_review? %>
+          <% if ship_block_message %>
+            <%= render ActionButtonComponent.new(
+                  text: "Ship your project!",
+                  variant: :secondary,
+                  type: :button,
+                  icon: "icons/rocket.png",
+                  disabled: :soft,
+                  data: {
+                    controller: "tooltip",
+                    tooltip_message_value: ship_block_message,
+                    tooltip_position_value: "top"
+                  }
+                ) %>
+          <% elsif @project.awaiting_ship_review? %>
             <%= render ActionButtonComponent.new(
                   text: "Ship your project!",
                   variant: :secondary,
@@ -708,7 +748,7 @@
           <% elsif @project.needs_changes? %>
             <%# Changes requested: the ship CTA resubmits this same ship for
                 re-certification instead of opening a fresh ship. %>
-            <% if recert_link_blocker %>
+            <% if (recert_blocker = recert_visible_blocker || recert_link_blocker) %>
               <%= render ActionButtonComponent.new(
                     text: "Ship your project!",
                     variant: :secondary,
@@ -717,7 +757,7 @@
                     disabled: :soft,
                     data: {
                       controller: "tooltip",
-                      tooltip_message_value: recert_link_blocker,
+                      tooltip_message_value: recert_blocker,
                       tooltip_position_value: "top"
                     }
                   ) %>
@@ -966,7 +1006,8 @@
           <% if entry.is_a?(Certification::Ship) %>
             <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
             <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project,
-                       recert_modal_id: recert_id, link_blocker: recert_link_blocker %>
+                       recert_modal_id: recert_id, link_blocker: recert_link_blocker,
+                       visible_blocker: recert_visible_blocker %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
             <%# The resubmit button reuses the funding modal, which only renders
                 while the project is still in the design stage. It belongs on the
@@ -992,24 +1033,26 @@
                        ship_number: ship_count - ship_index + 1,
                        recert_modal_id: recert_id,
                        is_member: is_member,
-                       payout_review: entry.postable == @votes_for_payout&.dig(:ship_event) ? @votes_for_payout : nil,
+                       payout_review: @payout_reviews[entry.postable_id],
                        mission_resubmit_modal_id: mission_modal_id %>
           <% else %>
-            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true) %>
+            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
           <% end %>
         <% end %>
       </section>
     <% end %>
 
-    <% if @votes_for_payout&.dig(:review_deadline) %>
-      <%= render "projects/payout_review_modal", payout_review: @votes_for_payout %>
+    <% @payout_reviews.each_value do |payout_review| %>
+      <% if payout_review[:review_deadline] %>
+        <%= render "projects/payout_review_modal", payout_review: payout_review %>
+      <% end %>
     <% end %>
 
   </div>
 
   <% if (is_member || current_user&.can_review?) && @project.needs_changes? %>
     <%= render "projects/recert_modal", project: @project, is_member: is_member,
-               link_blocker: recert_link_blocker %>
+               link_blocker: recert_link_blocker, visible_blocker: recert_visible_blocker %>
   <% end %>
 
   <% if (is_member || current_user&.admin?) && @rejected_mission_sub %>
@@ -1219,6 +1262,7 @@
             </button>
             <%= form.submit "Ship!", class: "ship-modal__btn ship-modal__btn--primary", data: { disable_with: "Shipping…", composer_target: "submit" } %>
           </div>
+          <%= render BukuX3StatusComponent.new(user: current_user, compact: true) %>
         </div>
       <% end %>
     </dialog>
@@ -1227,7 +1271,7 @@
 
   <%# Funding request popup — design-stage hardware only. Mirrors the ship
       post modal but collects a complexity tier + requested amount. %>
-  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? && !@project.permanently_rejected? %>
     <dialog id="funding-request-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post funding-modal"
             data-controller="modal"
@@ -1310,17 +1354,9 @@
             </label>
 
             <div class="funding-modal__bom">
-              <p class="funding-modal__bom-hint">
-                Don't have one? Check
-                <%= link_to "the hardware codex",
-                      "https://codex.hackclub.com/shipping/101/#3-make-a-bill-of-materials",
-                      class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
-                out for info!
-              </p>
-
-                <label class="funding-modal__bom-check">
+              <label class="funding-modal__bom-check">
                 <input type="checkbox" onchange="fundingValidate(this.form)">
-                <span>I have a <code>BOM.csv</code> in the root of my repository</span>
+                <span>I have read the <a href="/resources/shipping-hardware" target="_blank" rel="noopener">submission requirements</a> and made sure my project follows them! <strong class="funding-modal__bom-check-text">I understand that not following these requirements will get my project returned.</strong></span>
               </label>
             </div>
           </div>
@@ -1405,7 +1441,7 @@
             <li class="mission-browse-modal__card">
               <div class="mission-browse-modal__card-icon">
                 <% if mission.icon.attached? %>
-                  <%= image_tag mission.icon, alt: "", class: "mission-browse-modal__card-icon-img" %>
+                  <%= image_tag mission.icon_thumb, alt: "", class: "mission-browse-modal__card-icon-img" %>
                 <% else %>
                   <span class="mission-browse-modal__card-icon-fallback" aria-hidden="true">&#10022;</span>
                 <% end %>

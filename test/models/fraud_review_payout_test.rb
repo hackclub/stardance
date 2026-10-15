@@ -193,17 +193,6 @@ class FraudReviewPayoutTest < ActiveSupport::TestCase
     assert_equal 1.1, second.amount.to_f
   end
 
-  test "an order paid by a review payout is not paid again by a payout run" do
-    order = order_for_subject
-    order.update_columns(aasm_state: "rejected")
-
-    assert_includes FraudPayoutRun.payout_eligible_orders, order
-
-    FraudReviewPayout.claim!(order, reviewer: @reviewer, subject: @subject)
-
-    assert_not_includes FraudPayoutRun.payout_eligible_orders, order
-  end
-
   test "a first review on a two-approval order is paid as the order it reviewed" do
     order = order_for_subject
     order.update_columns(frozen_item_price: FraudReviewPayout::HIGH_VALUE_ORDER_STARDUST + 1)

@@ -4,7 +4,9 @@
       items:      array of { source:, video_url:, poster_url:, processing:,
                   name:, duration: (seconds), recorded_at: (Time or nil),
                   telescreen_url: (optional Telescreen deep-link) } %>
-<div class="ship-review__panel recording-gallery" data-controller="certification--lapse-player">
+<div class="ship-review__panel recording-gallery"
+     data-controller="certification--lapse-player"
+     data-certification--lapse-player-skin-url-value="<%= asset_path("lapse_player_skin.js") %>">
   <h2 class="ship-review__panel-title"><%= title %></h2>
 
   <% if items.blank? %>

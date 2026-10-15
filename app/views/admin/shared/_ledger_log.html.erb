@@ -47,7 +47,7 @@
                 <%= entry.amount.positive? ? "+#{entry.amount}" : entry.amount %> <%= stardust_icon %>
               </span>
             </td>
-            <td><%= truncate(entry.reason.to_s, length: 60) %></td>
+            <td><%= entry.reason %></td>
             <td>
               <code><%= entry.ledgerable_type.underscore.humanize %> #<%= entry.ledgerable_id %></code>
             </td>

@@ -3,6 +3,7 @@
 # Table name: certification_funding_requests
 #
 #  id                        :bigint           not null, primary key
+#  airtable_synced_at        :datetime
 #  approved_amount_cents     :integer
 #  claim_expires_at          :datetime
 #  claimed_at                :datetime

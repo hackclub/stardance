@@ -6,17 +6,11 @@ module Certification
 
     queue_as :literally_whenever
 
-    # rescue_from(StandardError) must be declared FIRST — ActiveJob checks handlers in reverse registration order (last = highest priority), so retry_on declarations below will take precedence over this catch-all for Faraday errors.
-    rescue_from(StandardError) do |error|
-      Sentry.capture_exception(error, level: :fatal, message: "YswsAirtableSyncJob failed for ysws_review ##{arguments.first}: #{error.message}", extra: { ysws_review_id: arguments.first })
-      raise error
-    end
-
     retry_on Faraday::Error, wait: :exponentially_longer, attempts: 3 do |job, error|
-      Sentry.capture_exception(error, level: :fatal, message: "YswsAirtableSyncJob failed for ysws_review ##{job.arguments.first}: #{error.message}", extra: { ysws_review_id: job.arguments.first })
+      Rails.error.report(error, severity: :error, context: { ysws_review_id: job.arguments.first })
     end
     retry_on Faraday::TimeoutError, wait: 30.seconds, attempts: 2 do |job, error|
-      Sentry.capture_exception(error, level: :fatal, message: "YswsAirtableSyncJob failed for ysws_review ##{job.arguments.first}: #{error.message}", extra: { ysws_review_id: job.arguments.first })
+      Rails.error.report(error, severity: :error, context: { ysws_review_id: job.arguments.first })
     end
     discard_on ActiveRecord::RecordNotFound
 
@@ -42,7 +36,10 @@ module Certification
       Rails.logger.info "[YswsAirtableSyncJob] Starting sync for review ##{review.id}"
 
       # Check if this review has already been submitted to unified DB
-      check_stardance_review_submitted_unified(review)
+      return if check_stardance_review_submitted_unified(review)
+
+      # the hackatime ban check only runs on a stats fetch, and the users sync can take hours to reach this user
+      review.user.try_sync_hackatime_data!(force: true)
 
       # Check if user is banned
       rejection_info = check_user_status(review)
@@ -78,7 +75,7 @@ module Certification
     # uniquely on the ship event, so a review maps 1-1 to an integrity check.
     # Every synced review must have one — a missing record is a data error.
     # Raises StandardError (not RecordNotFound, which this job discards) so
-    # the rescue_from handler reports it to Sentry.
+    # the job fails and the error gets reported.
     def integrity_decided?(review)
       Certification::Integrity.where(ship_event_id: review.post_ship_event_id).where.not(status: :pending).exists?
     end
@@ -94,11 +91,17 @@ module Certification
 
       # If record exists and has "Automation - YSWS Record ID" populated, it's already in unified DB
       if existing_record && existing_record["Automation - YSWS Record ID"].present?
-        raise StandardError, "This review is already in the unified db"
+        # cache the live answer so later triggers skip this review
+        review.update_column(:in_unified_db, existing_record["Automation - YSWS Record ID"])
+        Rails.logger.info "[YswsAirtableSyncJob] Skipping review ##{review.id}: already in unified db"
+        return true
       end
+
+      false
     rescue Faraday::Error, Norairrecord::RecordNotFoundError => e
       # If Airtable fetch fails, log and allow sync to continue
       Rails.logger.warn "[YswsAirtableSyncJob] Could not check unified DB status: #{e.message}"
+      false
     end
 
     def check_user_status(review)
@@ -318,7 +321,11 @@ module Certification
         "fraud_data" => integrity_check&.fraud_detection_data&.to_json,
 
         # Double-dip flag
-        "flagged_double_dipped" => ::Certification::UnifiedYswsService.double_dipped?(project.repo_url)
+        "flagged_double_dipped" => ::Certification::UnifiedYswsService.double_dipped?(project.repo_url),
+
+        # Hackatime
+        "hackatime_uid" => user.hackatime_identity&.uid,
+        "hackatime_keys" => project.hackatime_keys.join(",").presence
       }
     end
 
@@ -554,7 +561,7 @@ module Certification
     end
 
     # Screams when the Screenshot field comes out empty so the cause is visible
-    # in logs/Sentry instead of failing silently. An empty field with source
+    # in logs/AppSignal instead of failing silently. An empty field with source
     # images present is a real misconfiguration (host/scheme); empty with no
     # source images is expected (some reviews genuinely have no media).
     def log_screenshot_result(review, attachments, screenshot_url, banner_url, posts_to_check, project)
@@ -569,7 +576,7 @@ module Certification
       if had_source_image
         message = "[YswsAirtableSyncJob] review ##{review.id}: source images exist but produced NO Screenshot URLs — #{detail}"
         Rails.logger.error(message)
-        Sentry.capture_message(message, level: :warning, extra: { ysws_review_id: review.id })
+        OperationalAlert.report(message, context: { ysws_review_id: review.id })
       else
         Rails.logger.warn("[YswsAirtableSyncJob] review ##{review.id}: no Screenshot — no source images found. #{detail}")
       end

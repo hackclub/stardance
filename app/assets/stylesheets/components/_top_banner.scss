@@ -18,6 +18,53 @@
   border-bottom: 2px solid #92400e;
 }
 
+// Pinned above everything, including the fixed sidebar. top_banner_controller
+// publishes its height so the page and sidebar start below it.
+.top-banner--announcement {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding-inline: 2.5rem;
+  text-align: center;
+  background: var(--color-brand-yellow);
+  color: var(--color-set-1-bg);
+  text-shadow: none;
+
+  .top-banner__text {
+    margin: 0;
+  }
+}
+
+.top-banner__dismiss {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+}
+
 .top-banner--impersonation {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   border-bottom: 3px solid #991b1b;

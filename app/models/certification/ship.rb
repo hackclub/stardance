@@ -84,7 +84,8 @@ module Certification
       approved: 1,
       returned: 2,
       misfiled: 3,
-      withdrawn: 4
+      withdrawn: 4,
+      permanently_rejected: 5
     }, default: :pending
 
     EXTERNAL_DECISION_MAP = { "APPROVED" => :approved, "REJECTED" => :returned }.freeze
@@ -234,7 +235,7 @@ module Certification
       # filter with for_reviewer's own project_id condition and drop the fraud
       # hold-back. A pending fraud report keeps the project out of the queue
       # until the fraud team clears it.
-      super.merge(for_reviewer(user)).where.not(project_id: fraud_flagged_project_ids)
+      super.merge(for_reviewer(user)).without_rejection_hold.where.not(project_id: fraud_flagged_project_ids)
     end
 
     # Claim-next for the software queue. The hardware queue has its own
@@ -582,6 +583,9 @@ module Certification
             project.start_review! if project.may_start_review?
             project.return_for_changes! if project.may_return_for_changes?
           end
+        when :permanently_rejected
+          ship_event&.update!(certification_status: "rejected", feedback_reason: feedback)
+          project.update!(ship_status: :rejected)
         end
       end
     end
@@ -602,10 +606,10 @@ module Certification
 
     def create_ysws_review_for_ship(ship_event)
       unless owner
-        Sentry.capture_message(
+        OperationalAlert.report(
           "Ship certification approved but no owner found to create YSWS review",
-          level: :error,
-          extra: {
+          severity: :error,
+          context: {
             ship_cert_id: id,
             project_id: project.id,
             ship_event_id: ship_event.id
@@ -626,6 +630,7 @@ module Certification
     # Software keeps the direct DM: its approval copy sends the project off to
     # voting, which hardware never enters.
     def notify_owner!
+      return notify_permanent_rejection! if permanently_rejected?
       return notify_owner_of_build! if project&.hardware?
 
       notify_owner_by_slack!
@@ -661,14 +666,20 @@ module Certification
 
       case status.to_sym
       when :approved
-        msg = "Your project '#{project.title}' was approved. It's out for voting now."
+        # Static-prize missions and hardware builds skip voting, so don't
+        # promise ratings that will never come.
+        ship_event = verdict_ship_event
+        goes_to_voting = ship_event.nil? || ship_event.goes_to_voting?
+
+        msg = "Your project '#{project.title}' was approved."
+        msg += " It's out for voting now." if goes_to_voting
         msg += "\n\nFeedback: #{feedback}" if feedback.present?
 
         SendSlackDmJob.perform_later(
           owner.slack_id,
           msg,
           blocks_path: "notifications/projects/approved",
-          locals: locals,
+          locals: locals.merge(goes_to_voting: goes_to_voting),
           sent_by_id: reviewer_id
         )
       when :returned

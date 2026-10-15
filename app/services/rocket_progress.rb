@@ -64,7 +64,7 @@ module RocketProgress
     def snapshot(user: nil)
       minutes = approved_minutes_by_user
       Snapshot.new(
-        hours: (minutes.values.sum / 60.0).round(2),
+        hours: [ (minutes.values.sum / 60.0).round(2), preview_complete? ? GOAL_HOURS : 0 ].max,
         goal_hours: GOAL_HOURS,
         user_hours: (minutes.fetch(user&.id, 0) / 60.0).round(2)
       )
@@ -73,6 +73,24 @@ module RocketProgress
     # Hours banked so far, rounded the way the sync job rounds each submission.
     def hours
       snapshot.hours
+    end
+
+    # Local next-stage testing only: no fabricated ships or approved minutes.
+    # Even if the flag is accidentally enabled in production, it has no effect.
+    def preview_complete?
+      Rails.env.development? && Flipper.enabled?(:bukux2_preview_complete)
+    end
+
+    # Shared accounting rules for rocket repair and the following buku event.
+    # Callers add their own ship-date window before reading these totals.
+    def approved_reviews
+      Certification::Ysws
+        .joins(:user, :post_ship_event)
+        .where(users: { banned: false })
+        .left_joins(:devlog_reviews, :integrity_check)
+        .group(:id)
+        .having("COALESCE(SUM(certification_devlog_reviews.approved_minutes), 0) >= ?",
+                Certification::Ysws::MIN_APPROVED_MINUTES)
     end
 
     private
@@ -90,14 +108,8 @@ module RocketProgress
       end
 
       def minutes_by_review
-        Certification::Ysws
-          .joins(:user, :post_ship_event)
+        approved_reviews
           .where(post_ship_events: { created_at: window })
-          .where(users: { banned: false })
-          .left_joins(:devlog_reviews, :integrity_check)
-          .group(:id)
-          .having("COALESCE(SUM(certification_devlog_reviews.approved_minutes), 0) >= ?",
-                  Certification::Ysws::MIN_APPROVED_MINUTES)
           .pluck(:user_id, Arel.sql(NET_MINUTES_SQL))
       end
   end

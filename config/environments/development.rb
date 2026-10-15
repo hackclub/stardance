@@ -77,6 +77,7 @@ Rails.application.configure do
   config.hosts << ".loca.lt"
   config.hosts << ".ngrok-free.app"
   config.hosts << ".app.github.dev"
+  config.hosts << "dna-suddenly-cherry-eau.trycloudflare.com"
 
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true

@@ -9,7 +9,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   # views don't each repeat (and risk drifting from) the permit list.
   PRESERVED_FILTER_KEYS = [
     :user_search, :shop_item_id, :status, :date_from, :date_to, :sort, :view,
-    :goob, :region, :item_type, :min_tickets, :max_tickets, :has_tracking,
+    :goob, :region, :country, :item_type, :min_tickets, :max_tickets, :has_tracking,
     :order_type, { assignee_ids: [], hidden_types: [] }
   ].freeze
 
@@ -169,6 +169,13 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       orders = orders.where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
     end
 
+    if @view == "fulfillment" && params[:shop_item_id].blank?
+      @batch_counts = ShopOrder.where(aasm_state: "awaiting_periodical_fulfillment")
+                               .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+                               .group(:shop_item_id)
+                               .count
+    end
+
     if @view == "fulfillment"
       @awaiting_counts_by_type = apply_shared_filters(ShopOrder.joins(:shop_item))
                                    .where(aasm_state: "awaiting_periodical_fulfillment",
@@ -210,9 +217,24 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     when "created_at_desc" then [ :created_at, :desc ]
     when "shells_asc" then [ :frozen_item_price, :asc ]
     when "shells_desc" then [ :frozen_item_price, :desc ]
+    when "batch_size_desc" then [ :batch_size, :desc ]
     else [ :created_at, :asc ]
     end
-    orders = orders.order(sort_column => sort_direction)
+
+    if sort_column == :batch_size
+      batch_counts_sql = ShopOrder
+        .where(aasm_state: "awaiting_periodical_fulfillment")
+        .where.not(shop_item_id: ShopItem.where(type: hidden_item_types))
+        .select("shop_item_id AS bc_item_id, COUNT(*) AS batch_count")
+        .group(:shop_item_id)
+        .to_sql
+      orders = orders
+        .joins("LEFT JOIN (#{batch_counts_sql}) bc ON bc.bc_item_id = shop_orders.shop_item_id")
+        .order(Arel.sql("bc.batch_count DESC NULLS LAST, shop_orders.created_at ASC"))
+      sort_column, sort_direction = :created_at, :asc
+    else
+      orders = orders.order(sort_column => sort_direction)
+    end
 
     # Grouping. Paginate the *users* rather than the orders so every page holds
     # whole groups — grouping is the fulfillment default, so loading the entire
@@ -791,15 +813,34 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       end
     end
 
+    if params[:country].present?
+      country_code = params[:country].upcase
+      if region_visible_to_current_user?(Shop::Regionalizable.country_to_region(country_code))
+        scope = scope.where(country: country_code)
+      end
+    end
+
     if current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
       scope = scope.where(region: current_user.regions)
                    .or(scope.where(region: nil))
                    .or(scope.where(assigned_to_user_id: current_user.id))
+      scope = scope.where(region: params[:region].upcase) if params[:region].present? && current_user.has_region?(params[:region])
     elsif params[:region].present?
       scope = scope.where(region: params[:region].upcase)
     end
 
     scope
+  end
+
+  # A region-restricted fulfillment person (has_regions? but not admin/fraud)
+  # can only ever see their assigned regions — a region/country filter param
+  # is honored for them only when it falls inside that set, so the filter UI
+  # can't be used to widen visibility past what apply_shared_filters already
+  # scopes them to.
+  def region_visible_to_current_user?(region_code)
+    return true unless current_user.fulfillment_person? && !current_user.admin? && !current_user.fraud_dept? && current_user.has_regions?
+
+    current_user.has_region?(region_code)
   end
 
   def shop_orders_return_path
@@ -853,7 +894,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_to admin_shop_order_path(@order), alert: "User has no Hack Club identity token" and return
     end
 
-    payload = HCAService.identity(identity.access_token)
+    payload = identity.hca_identity
     if payload.blank?
       redirect_to admin_shop_order_path(@order), alert: "Could not fetch verification status from HCA" and return
     end
