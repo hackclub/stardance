@@ -33,6 +33,15 @@ class Admin::Missions::SubmissionsControllerTest < ActionDispatch::IntegrationTe
     assert_equal 1, Mission::Submission.reviewed_today(@reviewer, mission: @mission)
   end
 
+  test "searching the queue by project title lists matching submissions" do
+    sign_in @reviewer
+
+    get admin_mission_submissions_path(@mission.slug, status: "pending", search: "Queue Test")
+
+    assert_response :success
+    assert_match "Queue Test Project", response.body
+  end
+
   test "the review page's reviewed-today count spans every mission" do
     other_mission = create_mission
     other = ship_to_mission!(@project, @builder, other_mission, status: "approved")

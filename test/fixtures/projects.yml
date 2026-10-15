@@ -19,6 +19,7 @@
 #  project_type         :string
 #  readme_url           :text
 #  repo_url             :text
+#  ship_block_reason    :text
 #  ship_status          :string           default("draft")
 #  shipped_at           :datetime
 #  synced_at            :datetime

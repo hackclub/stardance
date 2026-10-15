@@ -1,6 +1,6 @@
 class HomeController < ApplicationController
   include OnboardingResumable
-  discover_rail_widgets :sticker_promo, :streak, :terra_portal, :forge_promo, :crescent_promo, :feedback_promo, :upcoming_events, :raffle, :daily_roll
+  discover_rail_widgets :sticker_promo, :streak, :terra_portal, :forge_promo, :mipmap_promo, :feedback_promo, :upcoming_events, :referral, :daily_roll
 
   before_action :resume_or_expire_onboarding!, only: :index, if: -> { current_user.present? }
 
@@ -22,7 +22,7 @@ class HomeController < ApplicationController
 
   def load_composer
     @devlog = Post::Devlog.new
-    @composer_projects = current_user.projects.order(updated_at: :desc)
+    @composer_projects = current_user.projects.includes(:hackatime_projects).order(updated_at: :desc)
     @selected_project = selected_composer_project
   end
 

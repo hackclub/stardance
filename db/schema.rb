@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_051318) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_135606) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -963,6 +963,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_051318) do
     t.index ["user_id"], name: "index_posts_on_user_id"
   end
 
+  create_table "privacy_token_uses", primary_key: "jti", id: :string, force: :cascade do |t|
+    t.datetime "used_at", null: false
+    t.index ["used_at"], name: "index_privacy_token_uses_on_used_at"
+  end
+
   create_table "project_follows", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "project_id", null: false
@@ -1075,6 +1080,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_051318) do
     t.string "project_type"
     t.text "readme_url"
     t.text "repo_url"
+    t.text "ship_block_reason"
     t.string "ship_status", default: "draft"
     t.datetime "shipped_at"
     t.datetime "synced_at"
@@ -1699,6 +1705,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_051318) do
     t.boolean "disintegration_effects_enabled", default: true, null: false
     t.boolean "leaderboard_optin", default: false, null: false
     t.boolean "particle_effects_enabled", default: true, null: false
+    t.boolean "platform_ads_enabled", default: true, null: false
     t.boolean "search_engine_indexing_off", default: false, null: false
     t.boolean "send_notifications_for_followed_projects", default: true, null: false
     t.boolean "send_notifications_for_followed_users", default: true, null: false
@@ -2044,7 +2051,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_051318) do
   add_foreign_key "shop_item_sources", "shop_items"
   add_foreign_key "shop_item_sources", "shop_sources"
   add_foreign_key "shop_items", "users"
-  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify, validate: false
+  add_foreign_key "shop_items", "users", column: "created_by_user_id", on_delete: :nullify
   add_foreign_key "shop_items", "users", column: "default_assigned_user_id", on_delete: :nullify
   add_foreign_key "shop_order_modifier_selections", "shop_item_modifiers"
   add_foreign_key "shop_order_modifier_selections", "shop_orders"

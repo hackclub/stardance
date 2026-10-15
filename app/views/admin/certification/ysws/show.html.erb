@@ -1,12 +1,13 @@
 <% content_for :title, "YSWS Review ##{@review.id}" %>
 
 <%
+  in_review_flow = @flow_mode && @review.pending?
   # Base Stimulus controllers for the review page; the keyboard-shortcut layer
   # is appended only when its flag is on so no keydown listener is bound off.
   ysws_controllers = "certification--ysws--review-sidebar certification--ysws--fraud-report certification--ysws--media-viewer certification--ysws--complete-review certification--ysws--return-to-ship-cert"
   ysws_controllers += " certification--ysws--keyboard-shortcuts" if @ysws_review_shortcuts
 %>
-<main class="certification-ysws" role="main" data-controller="<%= ysws_controllers %>" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--complete-review-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>"
+<main class="certification-ysws<%= " certification-ysws--in-flow" if @flow_mode %>" role="main" data-controller="<%= ysws_controllers %>" data-certification--ysws--fraud-report-review-id-value="<%= @review.id %>" data-certification--ysws--return-to-ship-cert-review-id-value="<%= @review.id %>"
       <% if @ysws_review_shortcuts %>
         data-certification--ysws--keyboard-shortcuts-catalog-value="<%= Certification::YswsShortcuts::CATALOG.to_json %>"
         data-certification--ysws--keyboard-shortcuts-settings-value="<%= (current_user.preference&.ysws_shortcuts || {}).to_json %>"
@@ -14,6 +15,7 @@
         data-certification--ysws--keyboard-shortcuts-url-value="<%= admin_certification_ysws_shortcuts_path %>"
       <% end %>>
   <%= render "admin/certification/ysws/shortcut_settings" if @ysws_review_shortcuts %>
+  <%= render "flow_bar", review: @review %>
   <%= render Admin::Certification::MACAnalysisBannerComponent.new(analysis: @mac_analysis, repo_url: @review.project&.repo_url, total_minutes: @review.original_minutes) %>
 
   <!-- Header Section -->
@@ -69,13 +71,13 @@
           <% undo_warning = "It goes back to the pending queue and its Airtable submission record is deleted. " \
                             "If it already reached the Unified YSWS base, that record will NOT be removed — remove it by hand." %>
           <%= button_to "undo review",
-                        admin_certification_undo_ysws_review_path(@review),
+                        undo_admin_certification_ysws_review_path(@review),
                         method: :post,
                         class: "btn-action btn-undo",
                         form: { class: "review-detail-header__undo-form",
                                 data: { turbo_confirm: "Undo this review? #{undo_warning} The devlog verdicts are kept." } } %>
           <%= button_to "undo review + devlogs",
-                        admin_certification_undo_ysws_review_path(@review, reset_devlogs: 1),
+                        undo_admin_certification_ysws_review_path(@review, reset_devlogs: 1),
                         method: :post,
                         class: "btn-action btn-undo",
                         form: { class: "review-detail-header__undo-form",
@@ -85,7 +87,7 @@
 
         <% if @review.reviewed_at %>
           <%= button_to "Resync to Airtable",
-                        admin_certification_resync_ysws_review_path(@review),
+                        resync_admin_certification_ysws_review_path(@review),
                         method: :post,
                         class: "btn-action btn-resync",
                         title: @review.airtable_synced_at ? "Last synced: #{@review.airtable_synced_at.strftime('%Y-%m-%d %H:%M UTC')}" : "Never synced" %>
@@ -98,7 +100,7 @@
 
           <% if @review.pending? && @review.claimed_by?(current_user) %>
             <%= button_to "Unclaim review",
-                          admin_certification_ysws_claim_path(@review),
+                          claim_admin_certification_ysws_review_path(@review),
                           method: :delete,
                           class: "btn-secondary slim",
                           form: { class: "review-detail-header__unclaim-form" } %>
@@ -232,7 +234,7 @@
     <div class="review-detail-right"
          data-certification--ysws--review-sidebar-target="sidebar"
          data-controller="certification--ysws--double-dip"
-         data-certification--ysws--double-dip-url-value="<%= admin_certification_ysws_double_dip_path(@review) %>"
+         data-certification--ysws--double-dip-url-value="<%= double_dip_admin_certification_ysws_review_path(@review) %>"
          data-certification--ysws--double-dip-outline-class="review-detail-right--double-dipped">
       <!-- Details Card -->
       <section class="review-card details-card">
@@ -415,14 +417,22 @@
                 data-action="click->certification--ysws--return-to-ship-cert#open">
           Return to Ship Certs
         </button>
-        <button class="action-btn btn-complete"
-                data-certification--ysws--complete-review-target="button"
-                data-action="click->certification--ysws--complete-review#complete">
-          Complete Review
-        </button>
+        <%= button_to in_review_flow ? "Complete & next" : "Complete Review",
+                      complete_admin_certification_ysws_review_path(@review),
+                      method: :post,
+                      params: (flow_params if in_review_flow),
+                      class: "action-btn btn-complete",
+                      form_class: "action-buttons-grid__form",
+                      form: { data: { turbo: false, action: "submit->certification--ysws--complete-review#complete" } },
+                      data: { certification__ysws__complete_review_target: "button" } %>
       </div>
     </section>
   <% end %>
+
+  <%# Reviewer-visible audit trail for this review — Certification::Ysws is
+      has_paper_trail, so every verdict, claim, and resync already leaves a
+      version behind. Same partial the reports page uses. %>
+  <%= render "admin/shared/audit_log", record: @review, item_type: "Certification::Ysws" %>
 
   <!-- Return to Ship Cert Modal -->
   <div class="return-ship-cert-modal" data-certification--ysws--return-to-ship-cert-target="modal">

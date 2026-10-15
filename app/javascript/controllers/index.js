@@ -181,9 +181,6 @@ application.register("countdown-clock", CountdownClockController);
 import CountdownController from "./countdown_controller";
 application.register("countdown", CountdownController);
 
-import CrescentSkyController from "./crescent_sky_controller";
-application.register("crescent-sky", CrescentSkyController);
-
 import CurveDrawController from "./curve_draw_controller";
 application.register("curve-draw", CurveDrawController);
 
@@ -286,6 +283,9 @@ application.register("image-dropzone", ImageDropzoneController);
 import JsonHighlightController from "./json_highlight_controller";
 application.register("json-highlight", JsonHighlightController);
 
+import LikeController from "./like_controller";
+application.register("like", LikeController);
+
 import MarkdownPreviewController from "./markdown_preview_controller";
 application.register("markdown-preview", MarkdownPreviewController);
 
@@ -297,6 +297,9 @@ application.register("mega-dash-chart", MegaDashChartController);
 
 import MentionAutocompleteController from "./mention_autocomplete_controller";
 application.register("mention-autocomplete", MentionAutocompleteController);
+
+import MipmapPromoController from "./mipmap_promo_controller";
+application.register("mipmap-promo", MipmapPromoController);
 
 import MissionGuideLanguageController from "./mission_guide_language_controller";
 application.register("mission-guide-language", MissionGuideLanguageController);

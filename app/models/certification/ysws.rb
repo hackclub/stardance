@@ -155,12 +155,29 @@ module Certification
     # same review at once can't both win the claim. Returns the claimed
     # record, or nil if another reviewer's claim is still active.
     def self.atomic_claim!(record_id, user)
-      now = Time.current
-      updated = pending.where(id: record_id)
-        .where("claimed_by_id IS NULL OR claimed_at IS NULL OR claimed_at < :expired OR claimed_by_id = :user_id",
-               expired: CLAIM_TTL.ago, user_id: user.id)
-        .update_all(claimed_by_id: user.id, claimed_at: now, updated_at: now)
-      updated.zero? ? nil : find(record_id)
+      transaction do
+        # Keep the previous values stable for the audit event while retaining
+        # the conditional UPDATE that prevents competing claims.
+        review = lock.find(record_id)
+        previous_attributes = review.attributes
+        previous_claim = review.attributes.slice("claimed_by_id", "claimed_at")
+        now = Time.current
+        updated = pending.where(id: record_id)
+          .where("claimed_by_id IS NULL OR claimed_at IS NULL OR claimed_at < :expired OR claimed_by_id = :user_id",
+                 expired: now - CLAIM_TTL, user_id: user.id)
+          .update_all(claimed_by_id: user.id, claimed_at: now, updated_at: now)
+        next nil if updated.zero?
+
+        review.reload
+        review.versions.create!(
+          event: "claim",
+          whodunnit: user.id.to_s,
+          object: previous_attributes,
+          object_changes: previous_claim.to_h { |attribute, value| [ attribute, [ value, review[attribute] ] ] }
+        )
+        Rails.logger.info "[YSWS#claim] user=#{user.id} review=#{review.id} Claimed review"
+        review
+      end
     end
 
     # Count of still-pending child devlog reviews. Available only on records
@@ -731,6 +748,36 @@ module Certification
       return false unless pending? && claim_active?
 
       update!(claimed_by: nil, claimed_at: nil)
+    end
+
+    def completion_blocker
+      return "This review is no longer pending." unless pending?
+
+      check_and_update_unified_db_status!
+      return "This review is already in the unified DB" if in_unified_db.present?
+
+      reviews = devlog_reviews.to_a
+      return "Review all devlogs before completing." if reviews.any?(&:pending?)
+
+      approved = reviews.select(&:approved?)
+      if approved.any? && approved.none? { |review| review.justification.present? }
+        return "Add a justification to at least one approved devlog."
+      end
+
+      if reviews.any? { |review| review.rejected? && review.justification.blank? }
+        return "Add a justification to every rejected devlog."
+      end
+
+      nil
+    end
+
+    def complete_by!(user)
+      update!(
+        reviewer: user,
+        reviewed_at: Time.current,
+        claimed_by: nil,
+        claimed_at: nil
+      )
     end
 
     def approved_minutes_total

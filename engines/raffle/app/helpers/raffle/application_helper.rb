@@ -1,6 +1,7 @@
 module Raffle
   module ApplicationHelper
     include ::ApplicationHelper
+
     def referral_display_name(user)
       return "A new participant" unless user
 

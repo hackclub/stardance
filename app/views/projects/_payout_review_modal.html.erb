@@ -1,12 +1,13 @@
-<dialog id="payout-review-modal"
+<% modal_id = "payout-review-modal-#{payout_review[:ship_event].id}" %>
+<dialog id="<%= modal_id %>"
        class="payout-review-modal"
-       aria-labelledby="payout-review-title"
+       aria-labelledby="<%= modal_id %>-title"
        data-controller="modal">
   <div class="payout-review-modal__panel">
     <header class="payout-review-modal__header">
       <div>
         <p class="payout-review-modal__eyebrow">Payout review</p>
-        <h2 id="payout-review-title" class="payout-review-modal__title">
+        <h2 id="<%= modal_id %>-title" class="payout-review-modal__title">
           <%= payout_review[:estimated_payout].to_i %> stardust
         </h2>
         <p class="payout-review-modal__deadline">
@@ -23,7 +24,7 @@
       </div>
       <button type="button"
               class="payout-review-modal__close"
-              onclick="document.getElementById('payout-review-modal').close()"
+              onclick="document.getElementById(<%= modal_id.to_json %>).close()"
               aria-label="Close payout review">×</button>
     </header>
 

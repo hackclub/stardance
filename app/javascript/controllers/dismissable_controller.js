@@ -2,7 +2,8 @@ import { Controller } from "@hotwired/stimulus";
 
 // A dismissable notice. Persists the dismissal in a cookie (cookie value) or,
 // for a per-account notice, via /my/dismissals (thing value). Set the open
-// value on a <dialog> to have it show itself as soon as it connects.
+// value on a <dialog> to have it show itself as soon as it connects, and wire
+// its `cancel` event (Esc) to #dismiss so closing it that way also sticks.
 export default class extends Controller {
   static values = { cookie: String, thing: String, open: Boolean };
 

@@ -275,7 +275,7 @@
                 </div>
 
                 <% if project.description.present? %>
-                  <p class="profile-project-card__description"><%= project.description %></p>
+                  <p class="profile-project-card__description"><%= CGI.unescapeHTML(strip_tags(md(project.description, allow_images: false))).squish %></p>
                 <% end %>
 
                 <% mission = project.current_mission %>
@@ -284,7 +284,7 @@
                   <% if mission %>
                     <span class="profile-project-card__mission-badge" title="Active mission: <%= mission.name %>">
                       <% if mission.icon.attached? %>
-                        <%= image_tag mission.icon, class: "profile-project-card__mission-badge-icon", alt: "" %>
+                        <%= image_tag mission.icon_thumb, class: "profile-project-card__mission-badge-icon", alt: "" %>
                       <% end %>
                       <span class="profile-project-card__mission-badge-name"><%= mission.name %></span>
                     </span>

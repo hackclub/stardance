@@ -64,7 +64,11 @@ module Admin
         scope = scope.where(mission_id: @mission.id) if @mission
 
         scope = apply_filters(scope)
-        @submissions = scope.order(Arel.sql("COALESCE(pending_at, created_at) ASC")).limit(100)
+        # Qualified because the search filter joins projects and posts, which
+        # have their own created_at.
+        @submissions = scope.order(
+          Arel.sql("COALESCE(mission_submissions.pending_at, mission_submissions.created_at) ASC")
+        ).limit(100)
       end
 
       def show

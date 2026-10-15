@@ -83,7 +83,7 @@
             </li>
           <% end %>
         </ol>
-        <%= link_to "Detailed audit log →", admin_audit_logs_path(item_type: @nomination.class.name, item_id: @nomination.id), class: "permanent-rejections__link" %>
+        <%= link_to "Detailed audit log →", admin_audit_logs_path(item_type: @nomination.class.name, item_id: @nomination.id, show_system: "1"), class: "permanent-rejections__link" %>
       </div>
     </details>
 

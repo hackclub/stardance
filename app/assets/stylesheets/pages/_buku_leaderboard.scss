@@ -1,14 +1,15 @@
 @use "../config/mixins" as *;
 
+// Its own box under the event status box, matching that box's frame.
 .buku-leaderboard {
-  margin-top: calc(-1 * var(--space-s));
+  margin-bottom: var(--space-l);
+  padding: var(--space-m);
+  border: 2px solid var(--color-set-1-fg-secondary);
+  border-radius: 8px;
+  background: var(--color-set-1-bg);
   color: var(--color-brand-off-white);
   font-size: var(--font-size-s);
 
-  // The mascot labels above already name each team.
-  &__team &__heading {
-    @include visually-hidden;
-  }
   &__teams {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -16,25 +17,6 @@
   }
   &__team {
     min-width: 0;
-  }
-  &__heading {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-xs);
-    margin: 0 0 var(--space-xs);
-    font-size: var(--font-size-m);
-    text-transform: none;
-    span {
-      font-size: var(--font-size-s);
-      font-weight: 400;
-      color: var(--color-set-3-fg-secondary);
-    }
-  }
-  &__team--buku &__heading {
-    color: var(--color-brand-lilac);
-  }
-  &__team--bean &__heading {
-    color: var(--color-brand-yellow);
   }
   &__list {
     list-style: none;
@@ -49,15 +31,9 @@
     align-items: center;
     gap: var(--space-xs);
     min-width: 0;
-    min-height: var(--space-xl);
-    padding: var(--space-xxxs) var(--space-xs);
-    border-radius: 8px;
-  }
-  // Only the winner keeps the full-size box.
-  &__row:not(&__row--first) {
     min-height: var(--space-l);
-    padding-block: 0;
-    font-size: var(--font-size-s);
+    padding-inline: var(--space-xs);
+    border-radius: 8px;
   }
   &__row--buku {
     --winner-color: var(--color-brand-lilac);
@@ -65,22 +41,10 @@
   &__row--bean {
     --winner-color: var(--color-brand-yellow);
   }
-  &__row--prize {
-    // Ranks 2–5: a solid, lighter tint of the winner color so dark text stays
-    // readable across the whole row.
-    background: color-mix(
-      in srgb,
-      var(--winner-color) 60%,
-      var(--color-brand-off-white)
-    );
-    color: var(--color-set-1-bg);
-  }
+  // The winner stands out in italic team color instead of a box.
   &__row--first {
-    background: var(--winner-color);
-    color: var(--color-set-1-bg);
-    .buku-leaderboard__hours {
-      color: inherit;
-    }
+    color: var(--winner-color);
+    font-style: italic;
   }
   &__rank {
     flex: 0 0 2ch;
@@ -138,61 +102,15 @@
   &__empty {
     color: var(--color-set-3-fg-secondary);
   }
-  &__details {
-    margin-top: var(--space-xxxs);
-    // Glide the extra ranks open and closed where ::details-content is supported.
-    interpolate-size: allow-keywords;
-    &::details-content {
-      block-size: 0;
-      overflow: hidden;
-      opacity: 0;
-      transition:
-        block-size 0.35s ease,
-        opacity 0.35s ease,
-        content-visibility 0.35s allow-discrete;
-    }
-    &[open]::details-content {
-      block-size: auto;
-      opacity: 1;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      &::details-content {
-        transition: none;
-      }
-    }
-  }
-  &__toggle {
-    position: relative;
-    display: grid;
-    justify-items: center;
-    gap: var(--space-xxxs);
-    padding: var(--space-xs) 0;
-    list-style: none;
-    cursor: pointer;
-    color: var(--color-brand-cream);
-    &::-webkit-details-marker {
-      display: none;
-    }
-    &:hover {
-      color: var(--color-brand-lilac);
-    }
-    &:focus-visible {
-      outline: 2px solid var(--color-brand-lilac);
-      outline-offset: 2px;
-      border-radius: 8px;
-    }
-  }
-  &__collapse {
-    display: none;
-  }
-  &__details[open] &__expand {
-    display: none;
-  }
-  &__details[open] &__collapse {
-    display: inline;
-  }
-  &__teams--rest {
-    margin-top: var(--space-xs);
+  // Sits across from the viewer's own row, in the other team's column.
+  &__chase {
+    display: flex;
+    align-items: center;
+    min-height: var(--space-l);
+    margin: 0;
+    padding-inline: var(--space-xs);
+    color: var(--color-set-3-fg-secondary);
+    font-size: var(--font-size-xs);
   }
   &__teams--own {
     margin-top: var(--space-xxxs);
@@ -208,12 +126,6 @@
     }
     &__you {
       display: none;
-    }
-    &__heading {
-      font-size: var(--font-size-s);
-    }
-    &__heading span {
-      font-size: var(--font-size-xs);
     }
   }
 }

@@ -13,6 +13,20 @@ class BukuX3LeaderboardTest < ActiveSupport::TestCase
     end
   end
 
+  test "own chase targets the rank above, or the last listed spot when unranked" do
+    entries = [ 600, 300 ].map { |minutes| BukuX3::Leaderboard::Entry.new(user: @two, minutes:) }
+    teams = { buku: entries, bean: [] }
+    ranked = BukuX3::Leaderboard::Own.new(team: :buku, entry: entries.last, rank: 2)
+    assert_equal [ 1, 300 ], ranked.chase(teams)
+    unranked = BukuX3::Leaderboard::Own.new(team: :buku, entry: BukuX3::Leaderboard::Entry.new(user: @one, minutes: 0), rank: nil)
+    assert_equal [ 2, 300 ], unranked.chase(teams)
+    tied = BukuX3::Leaderboard::Own.new(team: :buku, entry: BukuX3::Leaderboard::Entry.new(user: @one, minutes: 600), rank: 2)
+    assert_equal [ 1, 1 ], tied.chase(teams)
+    assert_nil BukuX3::Leaderboard::Own.new(team: :bean, entry: unranked.entry, rank: nil).chase(teams)
+    opted_out = BukuX3::Leaderboard::Own.new(team: :buku, entry: BukuX3::Leaderboard::Entry.new(user: @one, minutes: 900), rank: nil)
+    assert_nil opted_out.chase(teams)
+  end
+
   test "sums exact ledger minutes per user and uses recorded teams" do
     contribute(@one, true, 91)
     contribute(@one, true, 30)

@@ -41,7 +41,6 @@ Rails.application.config.after_initialize do
         hardware_flow
         hardware_action_items
         hardware_review_undo
-        public_hardware_reviews
         ship_event_payouts
         payout_recommendations
         disable_internal_sw_dash_reviews
@@ -52,15 +51,24 @@ Rails.application.config.after_initialize do
         mac_analysis
         sticky_streaks
         public_api_2026-08-28
+        ysws_review_flow
         virality_bonus
         ysws_review_shortcuts
         bukux2
         mihimode
         blackhole
         bukux3
+        ddr
         wrong_tool_promo
+        forge-promo
+        terra-promo
       ].each { |flag| Flipper.add(flag) }
       Flipper.add(:bukux2_preview_complete) if Rails.env.development?
+
+      unless Flipper.exist?(:platform_ads)
+        Flipper.add(:platform_ads)
+        Flipper.enable(:platform_ads)
+      end
     end
   rescue StandardError => e
     Rails.logger.warn "Could not initialize flipper: #{e.message}"

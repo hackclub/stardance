@@ -30,20 +30,22 @@ class Shop::BaseController < ApplicationController
     @recently_added_items = shop_page_data[:recently_added]
     @user_balance = current_user&.cached_balance || 0
 
-    preload_shop_item_images(@shop_items + Array(@recently_added_items))
+    preload_shop_item_card_data(@shop_items + Array(@recently_added_items))
   end
 
   def prepare_visible_shop_items(items = @shop_items)
     @visible_shop_items = Array(items).select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
   end
 
-  def preload_shop_item_images(items)
+  # Every item card checks ShopItem#mission_locked_for?, so load the unlock
+  # rows here instead of letting each card query for its own.
+  def preload_shop_item_card_data(items)
     items = items.compact.uniq
     return if items.empty?
 
     ActiveRecord::Associations::Preloader.new(
       records: items,
-      associations: { image_attachment: :blob }
+      associations: [ { image_attachment: :blob }, :mission_shop_unlocks ]
     ).call
   end
 

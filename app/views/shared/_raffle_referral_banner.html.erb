@@ -1,4 +1,4 @@
-<% if (raffle_referrer = session[:show_raffle_referral_banner]) %>
+<% if !raffle_ended? && (raffle_referrer = session[:show_raffle_referral_banner]) %>
   <% referrer_is_adult = session[:raffle_referrer_is_adult] %>
   <div class="raffle-referral-banner" id="raffle-referral-banner">
     <div class="raffle-referral-banner__body">

@@ -1,6 +1,10 @@
 header ":sparkles: Your project was approved!"
 
-section "Your project *<#{project_url}|#{project_title}>* has been approved and is now out for voting.", markdown: true
+if local_assigns.fetch(:goes_to_voting, true)
+  section "Your project *<#{project_url}|#{project_title}>* has been approved and is now out for voting.", markdown: true
+else
+  section "Your project *<#{project_url}|#{project_title}>* has been approved.", markdown: true
+end
 
 if feedback.present?
   section "*Feedback:* #{feedback}", markdown: true

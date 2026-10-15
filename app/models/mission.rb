@@ -39,7 +39,11 @@ class Mission < ApplicationRecord
 
   has_paper_trail
 
-  has_one_attached :icon
+  # Icons are uploaded at any size (some are 4K) but mostly render at 64px or
+  # less, so small spots use the :thumb variant via #icon_thumb.
+  has_one_attached :icon do |attachable|
+    attachable.variant :thumb, resize_to_limit: [ 128, 128 ], saver: { strip: true }
+  end
   has_one_attached :banner
 
   has_many :steps, class_name: "Mission::Step", dependent: :destroy
@@ -155,6 +159,14 @@ class Mission < ApplicationRecord
   def achievement_slug
     return nil if achievement_name.blank?
     "mission_#{slug}_completed"
+  end
+
+  # SVGs can't be resized and resizing a GIF drops its animation, so those
+  # are served as uploaded.
+  def icon_thumb
+    return icon unless icon.variable? && icon.content_type != "image/gif"
+
+    icon.variant(:thumb)
   end
 
   def default_guide

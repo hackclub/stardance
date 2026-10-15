@@ -54,7 +54,7 @@ class Projects::DevlogsController < ApplicationController
   end
 
   def preview_time
-    authorize @project, :create_devlog?
+    authorize @project, :preview_devlog_time?
     load_preview_time
     respond_to do |format|
       format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds, hardware: @project.hardware?, token_stale: @token_stale } }
@@ -89,6 +89,14 @@ class Projects::DevlogsController < ApplicationController
 
     if remaining_count + new_attachments.count > Post::Devlog::MAX_ATTACHMENTS
       flash.now[:alert] = "Your devlog can't have more than #{Post::Devlog::MAX_ATTACHMENTS} attachments."
+      return render :edit, status: :unprocessable_entity
+    end
+
+    # Reject bad uploads before purging anything they were meant to replace,
+    # otherwise a too-large file leaves the devlog with no attachments.
+    attachment_errors = new_attachment_errors(new_attachments)
+    if attachment_errors.any?
+      flash.now[:alert] = attachment_errors.to_sentence
       return render :edit, status: :unprocessable_entity
     end
 
@@ -238,6 +246,16 @@ class Projects::DevlogsController < ApplicationController
 
   def update_devlog_params
     params.require(:post_devlog).permit(:body, attachments: [])
+  end
+
+  # Runs the model's attachment validations (size, type, processable) on an
+  # unsaved devlog so nothing is uploaded or attached.
+  def new_attachment_errors(files)
+    return [] if files.empty?
+
+    probe = Post::Devlog.new(attachments: files)
+    probe.validate
+    probe.errors.full_messages_for(:attachments)
   end
 
   def load_preview_time

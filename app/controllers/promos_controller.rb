@@ -2,14 +2,16 @@
 # click server-side, so ad blockers and missing JavaScript can't drop it,
 # then hands the visitor on to the promoted program.
 class PromosController < ApplicationController
-  def crescent
-    track_event DiscoverRail::CrescentPromoWidget::CLICK_EVENT
-    redirect_to DiscoverRail::CrescentPromoWidget::URL, allow_other_host: true, status: :see_other
-  end
-
   def forge
     track_event DiscoverRail::ForgePromoWidget::CLICK_EVENT
     redirect_to DiscoverRail::ForgePromoWidget::URL, allow_other_host: true, status: :see_other
+  end
+
+  def mipmap
+    track_event DiscoverRail::MipmapPromoWidget::CLICK_EVENT
+    return head :no_content if request.format.json?
+
+    redirect_to DiscoverRail::MipmapPromoWidget::URL, allow_other_host: true, status: :see_other
   end
 
   def wrong_tool

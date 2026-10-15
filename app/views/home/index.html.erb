@@ -11,9 +11,9 @@
       <%= render BukuX3StatusComponent.new(user: current_user, preview: preview_role.present?, preview_role: preview_role) do |status| %>
         <% if @buku_teams %>
           <% status.with_tug_note do %>top five on each team get a <em>limited-edition</em> buku / bean t-shirt<% end %>
-          <%= render "buku_leaderboard", teams: @buku_teams, own: @buku_own %>
         <% end %>
       <% end %>
+      <%= render "buku_leaderboard", teams: @buku_teams, own: @buku_own if @buku_teams %>
     <% end %>
     <% if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>
       <%= render ActionButtonComponent.new(

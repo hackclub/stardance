@@ -21,7 +21,7 @@
                     data-action="click->onboarding-transition#press">
               <span class="project-setup-missions__card-media" aria-hidden="true">
                 <% if mission.icon.attached? %>
-                  <%= image_tag mission.icon, alt: "", class: "project-setup-missions__card-icon" %>
+                  <%= image_tag mission.icon_thumb, alt: "", class: "project-setup-missions__card-icon" %>
                 <% else %>
                   <span class="project-setup-missions__card-placeholder">✦</span>
                 <% end %>

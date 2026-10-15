@@ -40,6 +40,13 @@ class Post::Devlog < ApplicationRecord
   scope :design_phase, -> { where(phase: "design") }
   scope :build_phase, -> { where(phase: "build") }
 
+  # Devlogs whose Post the viewer may see (see Post.visible_to). The flat
+  # /devlogs/:devlog_id like and comment routes look devlogs up through this,
+  # so a devlog by an author without ID verification can't be reached by id.
+  scope :visible_to, ->(viewer) {
+    where(id: Post.visible_to(viewer).where(postable_type: "Post::Devlog").select(:postable_id))
+  }
+
   BODY_MAX_LENGTH = 4_000
   MAX_ATTACHMENTS = 4
   ATTACHMENT_MAX_SIZE = 50.megabytes
@@ -93,7 +100,9 @@ class Post::Devlog < ApplicationRecord
             content_type: { in: ACCEPTED_CONTENT_TYPES, spoofing_protection: true },
             size: { less_than: ATTACHMENT_MAX_SIZE, message: "is too large (max 50 MB)" },
             processable_file: true
-  validate :at_least_one_attachment
+  # Skipped when soft-deleting so a devlog that lost its attachments can
+  # still be deleted.
+  validate :at_least_one_attachment, unless: :will_save_change_to_deleted_at?
   validate :at_most_max_attachments
   validates :duration_seconds,
             numericality: {

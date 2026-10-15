@@ -471,10 +471,21 @@ Rails.application.routes.draw do
         resources :devlogs, only: [ :index ]
       end
       resources :devlogs, only: [ :index, :show ]
+
+      # Admin-only endpoints for automating stardust payouts.
+      resources :users, only: [] do
+        collection do
+          get :lookup
+        end
+        resources :balance_adjustments, only: [ :create ]
+      end
     end
     namespace :slack do
       post "events", to: "events#create"
     end
+
+    post "privacy/delete", to: "privacy#delete"
+    post "privacy/export", to: "privacy#export"
   end
 
   get "api/v1/docs", to: "api/v1/docs#index", as: :api_v1_docs
@@ -612,6 +623,7 @@ Rails.application.routes.draw do
     end
     resources :dismissals, only: [ :create ]
     resources :reports, only: [ :index ]
+    resources :ratings, only: [ :index ], controller: "votes"
     post "verification/refresh", to: "verifications#refresh", as: :verification_refresh
     post "dev/pretend_idv", to: "dev_tools#pretend_idv", as: :pretend_idv_dev
     resources :notifications, only: [ :index ] do
@@ -658,8 +670,8 @@ Rails.application.routes.draw do
     post :guest_email_no,            to: "wizard#guest_email_no"
   end
 
-  get "promos/crescent", to: "promos#crescent", as: :crescent_promo
   get "promos/forge", to: "promos#forge", as: :forge_promo
+  get "promos/mipmap", to: "promos#mipmap", as: :mipmap_promo
   get "promos/wrong_tool", to: "promos#wrong_tool", as: :wrong_tool_promo
 
   namespace :admin, constraints: AdminConstraint do
@@ -730,6 +742,9 @@ Rails.application.routes.draw do
         post :convert_to_software
         get  :export_devlogs
         get  :votes
+      end
+      scope module: :projects do
+        resource :ship_block, only: [ :create, :destroy ]
       end
     end
     resources :certificates, only: [ :index ] do
@@ -987,17 +1002,22 @@ Rails.application.routes.draw do
       get "devlogs/:devlog_id/commits", to: "devlog_commits#index", as: "devlog_commits"
 
       resource :ysws_shortcuts, only: [ :update ], controller: "ysws_shortcuts"
-      get "review", to: "ysws#index", as: "ysws_reviews"
       get "review/dashboard", to: "ysws/dashboard#show", as: "ysws_dashboard"
-      get "review/:id", to: "ysws#show", as: "ysws_review"
-      get "review/:id/commits", to: "ysws#commits", as: "ysws_commits"
-      get "review/:id/double_dip", to: "ysws#double_dip", as: "ysws_double_dip"
-      post "review/:id/report_fraud", to: "ysws#report_fraud", as: "ysws_report_fraud"
-      delete "review/:id/claim", to: "ysws#unclaim", as: "ysws_claim"
-      post "review/:id/complete", to: "ysws#complete", as: "complete_ysws_review"
-      post "review/:id/undo", to: "ysws#undo", as: "undo_ysws_review"
-      post "review/:id/return_to_ship_cert", to: "ysws#return_to_ship_cert", as: "return_to_ship_cert_ysws_review"
-      post "review/:id/resync", to: "ysws#resync", as: "resync_ysws_review"
+      resources :ysws_reviews, path: "review", controller: "ysws", only: [ :index, :show ] do
+        post :next, on: :collection
+
+        member do
+          get :commits
+          get :double_dip
+          post :report_fraud
+          delete :claim, action: :unclaim
+          post :complete
+          post :undo
+          post :skip
+          post :return_to_ship_cert
+          post :resync
+        end
+      end
 
       # Admin payout management
       resources :payouts, only: [ :index, :show ] do
