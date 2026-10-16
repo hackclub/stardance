@@ -230,14 +230,14 @@ class Projects::DevlogsController < ApplicationController
     end
   end
 
+  # Posting doesn't need the sync's result: load_preview_time asks Hackatime
+  # for the window itself and enforce_ban has already run, so keep the stats
+  # fetch off the request.
   def sync_hackatime_projects
     return if test_time_granted?
 
-    owner = @project.memberships.owner.first&.user
-    return unless owner
-
-    owner.try_sync_hackatime_data!
-    @project.reload
+    owner_id = @project.memberships.owner.first&.user_id
+    User::SyncHackatimeDataJob.perform_later(owner_id) if owner_id
   end
 
   def devlog_params
