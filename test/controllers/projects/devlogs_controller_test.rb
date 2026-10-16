@@ -135,6 +135,25 @@ class Projects::DevlogsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Built the thing.", devlog.body
   end
 
+  test "posting a devlog snapshots hackatime names as an array so commas survive" do
+    User::HackatimeProject.create!(user: @owner, project: @project, name: "my,project")
+    sign_in @owner
+    keys_seen = []
+    fake_total = ->(_uid, keys, **) { keys_seen << keys; 20.minutes.to_i }
+
+    HackatimeService.stub(:fetch_total_seconds_for_projects, fake_total) do
+      post project_devlogs_path(@project), params: {
+        post_devlog: { body: "Worked on the comma project.", attachments: [ png_upload ] }
+      }
+    end
+
+    assert_redirected_to project_path(@project)
+    devlog = @project.devlogs.last
+    assert_equal [ [ "my,project" ] ], keys_seen.uniq
+    assert_equal [ "my,project" ], devlog.hackatime_project_names_snapshot
+    assert_equal 20.minutes.to_i, devlog.duration_seconds
+  end
+
   private
 
   def create_devlog
