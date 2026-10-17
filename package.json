@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
-    "@fullstory/browser": "^2.1.0",
+    "@fullstory/browser": "^2.1.2",
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.23",
     "@rails/actioncable": "^8.1.400",

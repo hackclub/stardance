@@ -226,12 +226,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullstory/browser@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "@fullstory/browser@npm:2.1.0"
+"@fullstory/browser@npm:^2.1.2":
+  version: 2.1.2
+  resolution: "@fullstory/browser@npm:2.1.2"
   dependencies:
     "@fullstory/snippet": "npm:2.1.0"
-  checksum: 10c0/93aa81b26ac5198edc72debe37789e376b2da4775c4973f083a267f5f7bc82a9389c414078010df4c957cc19f4f776b49b70f4596530c1e8505676b769bd054b
+  checksum: 10c0/9911a60b49410f416fd4febe5185a17c380cd25c37f5b0939dad06162b07ff28863d43f07ddb9f54cac00d436ed1f0b07aca45e5c9b28d2ac8ad2b7507cea709
   languageName: node
   linkType: hard
 
@@ -503,7 +503,7 @@ __metadata:
   resolution: "app@workspace:."
   dependencies:
     "@emoji-mart/data": "npm:^1.2.1"
-    "@fullstory/browser": "npm:^2.1.0"
+    "@fullstory/browser": "npm:^2.1.2"
     "@hotwired/stimulus": "npm:^3.2.2"
     "@hotwired/turbo-rails": "npm:^8.0.23"
     "@rails/actioncable": "npm:^8.1.400"
