@@ -6,33 +6,46 @@ const SHORTCODE_MATCH = /(^|\s):([a-z0-9_+-]{1,40})$/i;
 const COMPLETE_SHORTCODE_MATCH = /:([a-z0-9_+-]{1,40}):/gi;
 const ID_PATTERN = /^[a-z0-9_+-]+$/i;
 
-const DEFAULT_ALIASES_BY_EMOJI = Object.entries(emojiData.aliases || {}).reduce(
-  (aliases, [alias, id]) => {
-    aliases[id] ||= [];
-    aliases[id].push(alias);
-    return aliases;
-  },
-  {},
-);
+// Built on first use rather than at import: this module ships in the shared
+// bundle, so every page would otherwise pay for indexing ~1,900 emoji.
+let defaultEmotes = null;
+let defaultByShortcode = null;
 
-const DEFAULT_EMOTES = Object.values(emojiData.emojis).flatMap((emote) => {
-  const native = emote.skins?.[0]?.native;
-  if (!native || !ID_PATTERN.test(emote.id)) return [];
+function buildDefaultEmotes() {
+  const aliasesByEmoji = Object.entries(emojiData.aliases || {}).reduce(
+    (aliases, [alias, id]) => {
+      aliases[id] ||= [];
+      aliases[id].push(alias);
+      return aliases;
+    },
+    {},
+  );
 
-  const aliases = DEFAULT_ALIASES_BY_EMOJI[emote.id] || [];
-  return normalizeEmote({
-    id: emote.id,
-    native,
-    shortcodes: [emote.id, ...aliases],
-    searchText: searchText(emote.id, emote.name, emote.keywords, aliases),
+  return Object.values(emojiData.emojis).flatMap((emote) => {
+    const native = emote.skins?.[0]?.native;
+    if (!native || !ID_PATTERN.test(emote.id)) return [];
+
+    const aliases = aliasesByEmoji[emote.id] || [];
+    return normalizeEmote({
+      id: emote.id,
+      native,
+      shortcodes: [emote.id, ...aliases],
+      searchText: searchText(emote.id, emote.name, emote.keywords, aliases),
+    });
   });
-});
+}
 
-const DEFAULT_BY_SHORTCODE = new Map(
-  DEFAULT_EMOTES.flatMap((emote) =>
-    emote.shortcodes.map((shortcode) => [shortcode, emote]),
-  ),
-);
+function getDefaultEmotes() {
+  return (defaultEmotes ||= buildDefaultEmotes());
+}
+
+function getDefaultByShortcode() {
+  return (defaultByShortcode ||= new Map(
+    getDefaultEmotes().flatMap((emote) =>
+      emote.shortcodes.map((shortcode) => [shortcode, emote]),
+    ),
+  ));
+}
 
 let customEmotes = [];
 let customById = new Map();
@@ -165,7 +178,7 @@ export default class extends Controller {
     if (!range) return this.#hideSuggestions();
 
     const query = range.query.toLowerCase();
-    const matches = [...customEmotes, ...DEFAULT_EMOTES]
+    const matches = [...customEmotes, ...getDefaultEmotes()]
       .filter((emote) => emote.searchText.includes(query))
       .sort((a, b) => this.#score(a, query) - this.#score(b, query))
       .slice(0, MAX_SUGGESTIONS);
@@ -283,7 +296,7 @@ export default class extends Controller {
     const resolved = value.replace(
       COMPLETE_SHORTCODE_MATCH,
       (match, code, offset, source) => {
-        const defaultEmote = DEFAULT_BY_SHORTCODE.get(code.toLowerCase());
+        const defaultEmote = getDefaultByShortcode().get(code.toLowerCase());
         const customEmote = customById.get(code.toLowerCase());
         if (!defaultEmote && !customEmote) return match;
 

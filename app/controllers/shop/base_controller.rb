@@ -6,10 +6,12 @@ class Shop::BaseController < ApplicationController
       return current_user.shop_region if current_user.shop_region.present?
       return current_user.regions.first if current_user.has_regions?
 
-      primary_address = (@user_addresses ||= current_user.addresses).find { |a| a["primary"] } || @user_addresses.first
-      country = primary_address&.dig("country")
-      region_from_address = Shop::Regionalizable.country_to_region(country)
-      return region_from_address if region_from_address != "XX" || country.present?
+      # Addresses come from a live HCA /me call, so cache the region they map
+      # to rather than paying for that request on every shop page view.
+      region_from_address = Rails.cache.fetch([ "shop/address_region", current_user.id ], expires_in: 10.minutes) do
+        address_region
+      end
+      return region_from_address if region_from_address.present?
     else
       return session[:shop_region] if session[:shop_region].present? && Shop::Regionalizable::REGION_CODES.include?(session[:shop_region])
     end
@@ -21,6 +23,15 @@ class Shop::BaseController < ApplicationController
     return tz_region if tz_region.present? && tz_region != "XX"
 
     "US"
+  end
+
+  # The region for the user's primary address, or nil when they have no
+  # address with a country to go on.
+  def address_region
+    primary_address = (@user_addresses ||= current_user.addresses).find { |a| a["primary"] } || @user_addresses.first
+    country = primary_address&.dig("country")
+    region = Shop::Regionalizable.country_to_region(country)
+    region if region != "XX" || country.present?
   end
 
   def load_shop_items

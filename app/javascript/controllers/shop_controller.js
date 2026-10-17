@@ -2,7 +2,10 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["sortBtn", "items", "empty"];
-  static values = { userRegion: { type: String, default: "US" } };
+  static values = {
+    userRegion: { type: String, default: "US" },
+    category: String,
+  };
 
   connect() {
     this.sortAscending = true;
@@ -184,6 +187,7 @@ export default class extends Controller {
     )?.content;
     const formData = new FormData();
     formData.append("region", region);
+    if (this.categoryValue) formData.append("category", this.categoryValue);
 
     fetch("/shop/region", {
       method: "PATCH",
@@ -193,13 +197,23 @@ export default class extends Controller {
       },
       body: formData,
     })
-      .then((response) => response.text())
-      .then((html) => {
-        Turbo.renderStreamMessage(html);
-        // Wait for Turbo to finish updating the DOM
-        requestAnimationFrame(() => {
-          this.applyFiltersAndSort();
+      .then((response) => {
+        if (!response.ok)
+          throw new Error(`Region update failed: ${response.status}`);
+        // The hub has no item grid to swap; its prices and picks are rendered
+        // for the old region, so redraw the page for the new one.
+        if (!document.getElementById("shop_items")) {
+          window.location.reload();
+          return;
+        }
+        return response.text().then((html) => {
+          Turbo.renderStreamMessage(html);
+          // Wait for Turbo to finish updating the DOM
+          requestAnimationFrame(() => {
+            this.applyFiltersAndSort();
+          });
         });
-      });
+      })
+      .catch((error) => console.error(error));
   }
 }

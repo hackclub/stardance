@@ -4,6 +4,8 @@
 class PromosController < ApplicationController
   def forge
     track_event DiscoverRail::ForgePromoWidget::CLICK_EVENT
+    return head :no_content if request.format.json?
+
     redirect_to DiscoverRail::ForgePromoWidget::URL, allow_other_host: true, status: :see_other
   end
 
