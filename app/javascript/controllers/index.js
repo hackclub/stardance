@@ -190,6 +190,9 @@ application.register("customs-warning", CustomsWarningController);
 import DailyRollController from "./daily_roll_controller";
 application.register("daily-roll", DailyRollController);
 
+import DayOneOfPromoController from "./day_one_of_promo_controller";
+application.register("day-one-of-promo", DayOneOfPromoController);
+
 import DecisionTreeController from "./decision_tree_controller";
 application.register("decision-tree", DecisionTreeController);
 

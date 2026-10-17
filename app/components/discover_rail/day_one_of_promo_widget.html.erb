@@ -1,0 +1,27 @@
+<section class="day-one-of-promo"
+         aria-label="Day One Of, a Hack Club YSWS"
+         data-controller="day-one-of-promo"
+         data-day-one-of-promo-ideas-value="<%= IDEAS.to_json %>">
+  <div class="day-one-of-promo__card">
+    <%= image_tag "dayoneof/logo.webp", alt: "", class: "day-one-of-promo__logo" %>
+    <%= image_tag "dayoneof/wordmark.webp", alt: "", class: "day-one-of-promo__wordmark" %>
+    <span class="day-one-of-promo__reels">
+      <span class="day-one-of-promo__reel day-one-of-promo__reel--back">
+        <%= image_tag "dayoneof/reel-sleepover.webp", alt: "", class: "day-one-of-promo__thumb" %>
+      </span>
+      <span class="day-one-of-promo__reel day-one-of-promo__reel--front">
+        <%= image_tag "dayoneof/reel-open-sauce.webp", alt: "", class: "day-one-of-promo__thumb" %>
+      </span>
+    </span>
+    <p class="day-one-of-promo__pitch">Post a short video every day for a month and earn prizes.</p>
+    <button type="button"
+            class="day-one-of-promo__idea"
+            aria-label="Show another reel idea"
+            data-action="day-one-of-promo#shuffle">
+      <span class="day-one-of-promo__prompt" aria-hidden="true">&gt;</span>
+      <span class="day-one-of-promo__idea-text" aria-live="polite" data-day-one-of-promo-target="idea"><%= IDEAS.first %></span>
+      <%= helpers.inline_svg_tag "icons/refresh.svg", class: "day-one-of-promo__shuffle-icon", aria_hidden: true %>
+    </button>
+    <%= link_to "Start day one", URL, class: "day-one-of-promo__button" %>
+  </div>
+</section>
