@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.9"
   },
   "packageManager": "yarn@4.16.0"
 }
