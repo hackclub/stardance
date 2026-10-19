@@ -14,7 +14,7 @@
     "@hotwired/turbo-rails": "^8.0.23",
     "@rails/actioncable": "^8.1.400",
     "@rails/activestorage": "^8.1.400",
-    "@videojs/html": "10.0.0-rc.2",
+    "@videojs/html": "10.0.1",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.1",
     "chartkick": "^5.0.1",
