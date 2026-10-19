@@ -1,9 +1,9 @@
 import "@videojs/html/video/player";
-import "@videojs/html/video/minimal-skin";
-import { MinimalVideoSkinElement } from "@videojs/html/video";
+import "@videojs/html/video/neutral-skin";
+import { NeutralVideoSkinElement } from "@videojs/html/video";
 
-// Video.js's minimal video skin, trimmed for timelapse review. Adapted from the
-// packaged template (@videojs/html internal/skins/minimal-video/template.js):
+// Video.js's neutral video skin, trimmed for timelapse review. Adapted from the
+// packaged template (@videojs/html internal/skins/neutral-video/template.js):
 // volume, captions, settings, cast, AirPlay and picture-in-picture are gone,
 // and a `speed` slot in the control bar takes the lapse player's JKL ladder.
 // The skin's own styles are inherited unchanged.
@@ -15,10 +15,10 @@ import { MinimalVideoSkinElement } from "@videojs/html/video";
 // arrows) for its JKL transport.
 const template = document.createElement("template");
 template.innerHTML = `
-<media-container class="media-skin media-container video-skin" data-theme="minimal" data-preset="video">
+<media-container class="media-skin media-container video-skin" data-theme="neutral" data-preset="video">
   <slot></slot>
   <media-buffering-indicator class="media-buffering-indicator">
-    <media-icon family="minimal" name="spinner" class="media-buffering-indicator-spinner-icon"></media-icon>
+    <media-icon family="neutral" name="spinner" class="media-buffering-indicator-spinner-icon"></media-icon>
   </media-buffering-indicator>
   <media-error-dialog class="media-dialog-root">
     <media-dialog-backdrop class="media-dialog-backdrop"></media-dialog-backdrop>
@@ -38,9 +38,9 @@ template.innerHTML = `
       <media-tooltip-group>
         <media-controls-group class="video-controls-start">
           <media-play-button class="media-button media-play-button" id="play-trigger">
-            <media-icon family="minimal" name="restart" class="media-button-icon media-play-button-restart-icon"></media-icon>
-            <media-icon family="minimal" name="play" class="media-button-icon media-play-button-play-icon"></media-icon>
-            <media-icon family="minimal" name="pause" class="media-button-icon media-play-button-pause-icon"></media-icon>
+            <media-icon family="neutral" name="restart" class="media-button-icon media-play-button-restart-icon"></media-icon>
+            <media-icon family="neutral" name="play" class="media-button-icon media-play-button-play-icon"></media-icon>
+            <media-icon family="neutral" name="pause" class="media-button-icon media-play-button-pause-icon"></media-icon>
           </media-play-button>
           <media-tooltip trigger="play-trigger" side="top" class="media-popup media-popup-safe-area media-popup-transition media-popup-surface media-tooltip">
             <media-tooltip-label></media-tooltip-label>
@@ -58,8 +58,8 @@ template.innerHTML = `
               <template>
                 <div class="media-time-slider-chapter">
                   <media-slider-track class="media-slider-track media-time-slider-chapter-track">
-                    <media-slider-buffer class="media-slider-buffer"></media-slider-buffer>
-                    <media-slider-fill class="media-slider-fill"></media-slider-fill>
+                    <media-slider-buffer class="media-slider-buffer media-time-slider-chapter-layer"></media-slider-buffer>
+                    <media-slider-fill class="media-slider-fill media-time-slider-chapter-layer"></media-slider-fill>
                   </media-slider-track>
                 </div>
               </template>
@@ -75,8 +75,8 @@ template.innerHTML = `
         <media-controls-group class="video-controls-end">
           <slot name="speed"></slot>
           <media-fullscreen-button class="media-button media-fullscreen-button" id="fullscreen-trigger">
-            <media-icon family="minimal" name="fullscreen-enter" class="media-button-icon media-fullscreen-button-enter-icon"></media-icon>
-            <media-icon family="minimal" name="fullscreen-exit" class="media-button-icon media-fullscreen-button-exit-icon"></media-icon>
+            <media-icon family="neutral" name="fullscreen-enter" class="media-button-icon media-fullscreen-button-enter-icon"></media-icon>
+            <media-icon family="neutral" name="fullscreen-exit" class="media-button-icon media-fullscreen-button-exit-icon"></media-icon>
           </media-fullscreen-button>
           <media-tooltip trigger="fullscreen-trigger" side="top" class="media-popup media-popup-safe-area media-popup-transition media-popup-surface media-tooltip">
             <media-tooltip-label></media-tooltip-label>
@@ -101,23 +101,23 @@ template.innerHTML = `
   <div class="video-status-indicators">
     <media-status-indicator actions="toggleFullscreen" class="media-indicator media-status-indicator">
       <div class="media-indicator-content media-status-indicator-content">
-        <media-icon family="minimal" name="fullscreen-enter" class="media-status-indicator-fullscreen-enter-icon"></media-icon>
-        <media-icon family="minimal" name="fullscreen-exit" class="media-status-indicator-fullscreen-exit-icon"></media-icon>
+        <media-icon family="neutral" name="fullscreen-enter" class="media-status-indicator-fullscreen-enter-icon"></media-icon>
+        <media-icon family="neutral" name="fullscreen-exit" class="media-status-indicator-fullscreen-exit-icon"></media-icon>
         <media-status-indicator-value class="media-status-indicator-value"></media-status-indicator-value>
       </div>
     </media-status-indicator>
     <media-seek-indicator class="media-seek-indicator">
-      <media-icon family="minimal" name="chevron" class="media-seek-indicator-icon"></media-icon>
+      <media-icon family="neutral" name="chevron" class="media-seek-indicator-icon"></media-icon>
       <media-seek-indicator-value class="media-seek-indicator-value"></media-seek-indicator-value>
     </media-seek-indicator>
     <media-status-indicator actions="togglePaused" class="media-playback-status-indicator">
-      <media-icon family="minimal" name="play" class="media-playback-status-indicator-play-icon"></media-icon>
-      <media-icon family="minimal" name="pause" class="media-playback-status-indicator-pause-icon"></media-icon>
+      <media-icon family="neutral" name="play" class="media-playback-status-indicator-play-icon"></media-icon>
+      <media-icon family="neutral" name="pause" class="media-playback-status-indicator-pause-icon"></media-icon>
     </media-status-indicator>
   </div>
 </media-container>`;
 
-class LapsePlayerSkinElement extends MinimalVideoSkinElement {
+class LapsePlayerSkinElement extends NeutralVideoSkinElement {
   static tagName = "lapse-player-skin";
   static template = template;
 

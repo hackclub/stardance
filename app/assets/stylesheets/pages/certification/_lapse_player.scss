@@ -1,7 +1,7 @@
 // Reusable JKL timelapse viewer for the shared recording gallery (hardware
 // funding review + YSWS review). The lightbox is appended to document.body so
 // it overlays admin chrome; z-index stays high. The player chrome is our trimmed
-// Video.js minimal skin (app/javascript/lapse_player_skin.js); the JKL speed ladder is
+// Video.js neutral skin (app/javascript/lapse_player_skin.js); the JKL speed ladder is
 // slotted into its control bar. Off-white is the accent: neutral, and legible
 // over any frame.
 
@@ -45,7 +45,7 @@
     color: var(--color-space-text-muted);
   }
 
-  // The minimal Video.js skin, themed through its public custom properties.
+  // The neutral Video.js skin, themed through its public custom properties.
   &__skin {
     display: block;
     width: 100%;
