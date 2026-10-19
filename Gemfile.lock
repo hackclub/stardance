@@ -479,7 +479,7 @@ GEM
       webfinger (~> 2.0)
     optimist (3.2.1)
     ostruct (0.6.3)
-    pagy (43.6.2)
+    pagy (43.7.0)
       json
       uri
       yaml
@@ -862,7 +862,7 @@ DEPENDENCIES
   omniauth-oauth2
   omniauth-rails_csrf_protection
   omniauth_openid_connect
-  pagy (~> 43.6)
+  pagy (~> 43.7)
   paper_trail
   pg (~> 1.7)
   phlex-rails

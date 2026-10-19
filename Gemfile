@@ -133,7 +133,7 @@ gem "faker", "~> 3.6"
 gem "jsbundling-rails", "~> 1.3"
 
 # for pagination
-gem "pagy", "~> 43.6"
+gem "pagy", "~> 43.7"
 gem "norairrecord"
 gem "anthropic", "~> 1.67"
 
