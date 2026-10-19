@@ -116,7 +116,7 @@ module Admin
         spans.sort_by(&:first).each_with_object([]) do |(arrived, left), stays|
           last = stays.last
           if last && (last[1].nil? || arrived <= last[1])
-            last[1] = left && [ last[1], left ].max
+            last[1] = last[1] && left && [ last[1], left ].max
           else
             stays << [ arrived, left ]
           end

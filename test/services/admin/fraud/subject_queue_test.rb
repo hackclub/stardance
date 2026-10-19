@@ -100,6 +100,18 @@ class Admin::Fraud::SubjectQueueTest < ActiveSupport::TestCase
     assert_in_delta 1.day.ago, pairs.sole.last, 1.minute
   end
 
+  test "a person stays on the page while their oldest item is still open" do
+    user = create_user(slack_id: "u-open", display_name: "open")
+    user.update!(has_gotten_free_stickers: true) # clears the shop-tutorial gate
+    order_for(user, age: 4.days.ago)
+    pending_integrity_for(user, age: 3.days.ago).update!(status: :manually_passed, reviewer: @reporter, reviewed_at: 1.day.ago)
+
+    pairs = Admin::Fraud::SubjectQueue.history(7.days.ago)
+
+    assert_in_delta 4.days.ago, pairs.sole.first, 1.minute
+    assert_nil pairs.sole.last
+  end
+
   test "the dashboard history leaves out orders that were auto-approved" do
     buyer = user_with_order(age: 2.days.ago)
     order = buyer.shop_orders.sole
