@@ -135,7 +135,7 @@ gem "jsbundling-rails", "~> 1.3"
 # for pagination
 gem "pagy", "~> 43.7"
 gem "norairrecord"
-gem "anthropic", "~> 1.67"
+gem "anthropic", "~> 1.78"
 
 gem "awesome_print"
 gem "activeinsights"
