@@ -23,7 +23,7 @@
 #  index_vote_events_on_ahoy_visit_id               (ahoy_visit_id)
 #  index_vote_events_on_event_type_and_occurred_at  (event_type,occurred_at)
 #  index_vote_events_on_project_id                  (project_id)
-#  index_vote_events_on_properties                  (properties) USING gin
+#  index_vote_events_on_properties                  (properties jsonb_path_ops) USING gin
 #  index_vote_events_on_ship_event_id               (ship_event_id)
 #  index_vote_events_on_user_id                     (user_id)
 #  index_vote_events_on_vote_assignment_id          (vote_assignment_id)
