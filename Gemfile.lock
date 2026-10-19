@@ -235,7 +235,7 @@ GEM
       tzinfo
     faker (3.8.0)
       i18n (>= 1.8.11, < 2)
-    faraday (2.14.3)
+    faraday (2.14.4)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
@@ -398,7 +398,8 @@ GEM
     multipart-post (2.4.1)
     neighbor (1.2.0)
       activerecord (>= 7.2)
-    net-http (0.9.1)
+    net-http (0.10.0)
+      net-protocol (>= 0.3.0)
       uri (>= 0.11.1)
     net-http-persistent (4.0.8)
       connection_pool (>= 2.2.4, < 4)
