@@ -1,3 +1,3 @@
 <%= turbo_stream.replace "shop-wishlist-widget" do %>
-  <%= render DiscoverRail::ShopWishlistWidget.new(user: current_user, context: { user_balance: current_user.cached_balance || 0 }) %>
+  <%= render DiscoverRail::ShopWishlistWidget.new(user: current_user, context: { user_balance: current_user.cached_balance || 0, user_region: @user_region }) %>
 <% end %>

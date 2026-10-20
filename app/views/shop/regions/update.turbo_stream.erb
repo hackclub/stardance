@@ -1,13 +1,5 @@
 <%= turbo_stream.replace "shop_items" do %>
   <%= turbo_frame_tag "shop_items" do %>
-    <div class="shop-category__items">
-      <% @visible_shop_items.each do |item| %>
-        <%= render "shop/items/item_card",
-              item: item,
-              region: @user_region,
-              balance: @user_balance,
-              wishlisted_item_ids: @wishlisted_item_ids %>
-      <% end %>
-    </div>
+    <%= render "shop/items/category_items" %>
   <% end %>
 <% end %>

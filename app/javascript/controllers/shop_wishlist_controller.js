@@ -22,14 +22,19 @@ export default class extends Controller {
         "X-CSRF-Token": csrfToken,
         Accept: "text/vnd.turbo-stream.html",
       },
-    }).then(async (r) => {
-      if (r.ok) {
-        const html = await r.text();
-        Turbo.renderStreamMessage(html);
-      } else {
+    })
+      .then(async (r) => {
+        if (r.ok) {
+          const html = await r.text();
+          Turbo.renderStreamMessage(html);
+        } else {
+          this.wishlistedValue = wasWishlisted;
+        }
+      })
+      .catch(() => {
+        // Offline or the request never landed: put the star back as it was.
         this.wishlistedValue = wasWishlisted;
-      }
-    });
+      });
   }
 
   wishlistedValueChanged() {

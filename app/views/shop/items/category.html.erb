@@ -2,7 +2,8 @@
 
 <div class="shop-category"
      data-controller="shop"
-     data-shop-user-region-value="<%= @user_region %>">
+     data-shop-user-region-value="<%= @user_region %>"
+     data-shop-category-value="<%= @slug %>">
 
   <header class="shop-category__title-row">
     <span class="shop-category__title-divider shop-category__title-divider--left" aria-hidden="true"></span>
@@ -71,21 +72,7 @@
     </div>
 
     <%= turbo_frame_tag "shop_items" do %>
-      <div class="shop-category__items">
-        <% @visible_shop_items.each do |item| %>
-          <%= render "shop/items/item_card",
-                item: item,
-                region: @user_region,
-                balance: @user_balance,
-                wishlisted_item_ids: @wishlisted_item_ids %>
-        <% end %>
-        <% if @shop_items.empty? && @slug != "experiences" %>
-          <p class="shop-category__empty">Nothing here yet. Check back soon.</p>
-        <% end %>
-        <div class="shop__empty" style="display: none;" data-shop-target="empty">
-          <p>No items match your filters.</p>
-        </div>
-      </div>
+      <%= render "shop/items/category_items" %>
     <% end %>
 
     <p class="shop-category__back">
