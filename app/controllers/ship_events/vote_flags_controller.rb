@@ -15,12 +15,14 @@ class ShipEvents::VoteFlagsController < ApplicationController
     end
 
     # All or nothing: if any selected rating can no longer be flagged, none are.
+    votes = flags.map { |flag| ship_event.votes.find(flag[:vote_id]) }
     flagged = Vote.transaction do
-      flags.all? do |flag|
-        vote = ship_event.votes.find(flag[:vote_id])
-        authorize vote, :flag?
-        vote.flag_for_review_by(current_user, details: flag[:details])
-      end || raise(ActiveRecord::Rollback)
+      if votes.all? { |vote| policy(vote).flag? }
+        flags.zip(votes) { |flag, vote| vote.record_flag_for_review(current_user, details: flag[:details]) }
+        true
+      else
+        raise ActiveRecord::Rollback
+      end
     end
 
     if flagged
