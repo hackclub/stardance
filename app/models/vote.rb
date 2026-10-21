@@ -128,17 +128,19 @@ class Vote < ApplicationRecord
   end
 
   def flag_for_review_by(user, details:)
-    if flaggable_by?(user)
-      events.create!(
-        event_type: "vote_flagged",
-        user: user,
-        project: project,
-        ship_event: ship_event,
-        properties: { status: "pending", details: details }
-      )
-    else
-      false
-    end
+    flaggable_by?(user) && record_flag_for_review(user, details: details)
+  end
+
+  # Callers must check flaggable_by? first. A batch checks every rating before
+  # recording any, because the first flag closes the review window for the rest.
+  def record_flag_for_review(user, details:)
+    events.create!(
+      event_type: "vote_flagged",
+      user: user,
+      project: project,
+      ship_event: ship_event,
+      properties: { status: "pending", details: details }
+    )
   end
 
   def accept_flag(reviewer:)
