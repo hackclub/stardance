@@ -40,6 +40,44 @@ class Admin::Certification::YswsQueueTest < ActionDispatch::IntegrationTest
     assert_select "#filter-with-integrity", count: 0
   end
 
+  test "hardware reviews stay out of the queue and its type filter" do
+    software = pending_review(integrity: nil)
+    hardware = pending_review(integrity: nil, hardware_stage: "build")
+
+    sign_in @admin
+    get admin_certification_ysws_reviews_path
+
+    assert_response :success
+    assert_select "a[href=?]", admin_certification_ysws_review_path(software)
+    assert_select "a[href=?]", admin_certification_ysws_review_path(hardware), count: 0
+    assert_select "option[value=?]", "Hardware", count: 0
+  end
+
+  test "review flow never hands out a hardware review" do
+    hardware = pending_review(integrity: nil, hardware_stage: "build")
+    Flipper.enable(:ysws_review_flow, @admin)
+
+    sign_in @admin
+    post next_admin_certification_ysws_reviews_path, params: { flow: 1, step: 1 }
+
+    assert_redirected_to admin_certification_ysws_reviews_path
+    assert_equal "Nothing in the queue to review right now.", flash[:notice]
+    assert_nil hardware.reload.claimed_by_id
+  ensure
+    Flipper.disable(:ysws_review_flow, @admin)
+  end
+
+  test "the sidebar badge counts only the GOI queue" do
+    pending_review(integrity: nil)
+    pending_review(integrity: nil, hardware_stage: "build")
+
+    sign_in @admin
+    get admin_dashboard_count_path("ysws_reviews")
+
+    assert_response :success
+    assert_select ".admin-dashboard__count-pill", text: "1"
+  end
+
   test "review flow includes reviews still waiting on integrity" do
     review = pending_review(integrity: :pending)
     Flipper.enable(:ysws_review_flow, @admin)
@@ -142,9 +180,11 @@ class Admin::Certification::YswsQueueTest < ActionDispatch::IntegrationTest
 
   private
 
-  def pending_review(integrity:)
+  # A hardware stage can't change once a project has shipped, so it is set first.
+  def pending_review(integrity:, hardware_stage: nil)
     project = Project.create!(title: "GOI queue #{SecureRandom.hex(4)}")
     Project::Membership.create!(project: project, user: @shipper, role: :owner)
+    project.update!(hardware_stage: hardware_stage) if hardware_stage
     ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
     Post.create!(project: project, user: @shipper, postable: ship_event)
     Certification::Integrity.create!(ship_event: ship_event, status: integrity) if integrity

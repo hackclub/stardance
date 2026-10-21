@@ -81,6 +81,18 @@ module Admin
         assert_equal 2, Queue.find("mission_reviews_hardware").open_entered_ats.size
       end
 
+      test "hardware YSWS reviews stay out of the GOI queue's depth and oldest wait" do
+        software = ysws_review(software_project)
+        software.update!(created_at: 2.days.ago)
+        hardware = ysws_review(hardware_project("build"))
+        hardware.update!(created_at: 30.days.ago)
+        queue = Queue.find("ysws_reviews")
+
+        assert_equal [ software ], queue.pending.call.to_a
+        assert_equal 1, queue.timestamp_pairs(90.days.ago).size
+        assert_in_delta 48, QueueStats.new(queue).metrics[:oldest_wait_hours], 0.1
+      end
+
       test "a rerouted review counts like an unsubmitted one, not a decision" do
         project = hardware_project("build")
         cert = ship(project)
@@ -126,6 +138,12 @@ module Admin
 
       def ship(project)
         ::Certification::Ship.create!(project: project, status: :pending)
+      end
+
+      def ysws_review(project)
+        ship_event = ::Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true)
+        ::Post.create!(project: project, user: @owner, postable: ship_event)
+        ::Certification::Ysws.create!(user: @owner, project: project, post_ship_event: ship_event, original_minutes: 60)
       end
 
       def add_devlog(project)

@@ -23,7 +23,7 @@ module Admin
         policy_scope(::Certification::Ship).where(status: "pending").count
       },
       "ysws_reviews" => -> {
-        ::Certification::Ysws.pending.count
+        ::Certification::Ysws.software_only.pending.count
       },
       "mission_reviews" => -> {
         ::Mission::Submission.software_reviewable.pending.count

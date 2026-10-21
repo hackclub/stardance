@@ -50,8 +50,10 @@ module Admin
         {
           key: "ysws_reviews",
           label: "YSWS reviews (GOI)",
-          scope: -> { ::Certification::Ysws.all },
-          pending: -> { ::Certification::Ysws.pending },
+          # Hardware ships still create YSWS reviews nobody works here, so they
+          # would sit at the front of the queue's oldest-waiting age forever.
+          scope: -> { ::Certification::Ysws.software_only },
+          pending: -> { ::Certification::Ysws.software_only.pending },
           entered_at: "certification_ysws_reviews.created_at",
           decided_at: "COALESCE(certification_ysws_reviews.reviewed_at, certification_ysws_reviews.returned_at)",
           sla_hours: 72,

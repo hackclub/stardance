@@ -79,6 +79,17 @@ module Certification
     # ---- Review-queue scopes ---------------------------------------------
 
     scope :pending, -> { where(reviewed_at: nil, returned_at: nil) }
+
+    # The GOI queue. Hardware ships still create YSWS reviews, but nobody
+    # reviews them here, so left in they sat pending forever and set the
+    # queue's depth and oldest-waiting age. The legacy "Hardware" project type
+    # predates hardware_stage, so both flags are checked; IS DISTINCT FROM
+    # keeps untyped projects, which a plain != would drop.
+    scope :software_only, -> {
+      joins(:project)
+        .where(projects: { hardware_stage: nil })
+        .where("projects.project_type IS DISTINCT FROM 'Hardware'")
+    }
     scope :without_mac_analysis, -> { left_joins(:mac_analysis).where(certification_mac_analyses: { id: nil }) }
 
     # Finished reviews whose Airtable row the unified base has not taken yet, so
@@ -108,14 +119,7 @@ module Certification
     }
 
     scope :by_project_type, ->(type) {
-      case type
-      when "Hardware"
-        joins(:project).where.not(projects: { hardware_stage: nil })
-      when "unclassified"
-        joins(:project).where(projects: { project_type: nil, hardware_stage: nil })
-      else
-        joins(:project).where(projects: { project_type: type, hardware_stage: nil })
-      end
+      joins(:project).where(projects: { project_type: type == "unclassified" ? nil : type })
     }
 
     # Project reviews completed from `time` onwards, with a reviewer attached — the

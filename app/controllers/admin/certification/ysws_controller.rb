@@ -41,12 +41,9 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
     # Every pending review, whatever its integrity state: the GOI goes first, and
     # integrity waits on it (Certification::Integrity.past_goi).
-    queue = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
+    queue = ::Certification::Ysws.software_only.pending.unclaimed_or_claimed_by(current_user)
 
-    software_counts = queue.joins(:project).where(projects: { hardware_stage: nil }).group("projects.project_type").count
-    hardware_count = queue.joins(:project).where.not(projects: { hardware_stage: nil }).count
-    software_counts.delete("Hardware")
-    @type_counts = software_counts.merge("Hardware" => hardware_count).reject { |_k, v| v.zero? }
+    @type_counts = queue.group("projects.project_type").count
 
     scope =
       if @search.present?
@@ -356,7 +353,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     sort = filters["sort"].presence_in(%w[length todo age ai])
     dir = filters["dir"] == "asc" ? "asc" : "desc"
 
-    scope = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
+    scope = ::Certification::Ysws.software_only.pending.unclaimed_or_claimed_by(current_user)
     scope = scope.by_project_type(project_type) if project_type
     scope = scope.where.not(id: skipped_ids) if skipped_ids.any?
     scope = scope.with_todo_devlog_count
