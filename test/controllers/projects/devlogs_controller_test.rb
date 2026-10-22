@@ -3,6 +3,8 @@ require "base64"
 require "tempfile"
 
 class Projects::DevlogsControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     @owner = User.create!(slack_id: "U_DEVLOG_OWNER", display_name: "devlog_owner", email: "devlog_owner@example.test")
     @project = Project.create!(title: "No Hackatime Yet", description: "Still needs setup")
@@ -151,6 +153,30 @@ class Projects::DevlogsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ "my,project" ] ], keys_seen.uniq
     assert_equal [ "my,project" ], devlog.hackatime_project_names_snapshot
     assert_equal 20.minutes.to_i, devlog.duration_seconds
+  end
+
+  test "posting a devlog queues the hackatime stats sync instead of waiting on it" do
+    HackatimeService.stub(:fetch_stats, nil) do
+      @owner.identities.create!(provider: "hackatime", uid: "ht-devlog-owner", access_token: "owner-token")
+    end
+    User::HackatimeProject.create!(user: @owner, project: @project, name: "devlog-sync")
+    sign_in @owner
+    stats_fetches = 0
+    count_fetch = ->(*, **) { stats_fetches += 1; { projects: {}, banned: false } }
+
+    HackatimeService.stub(:fetch_stats, count_fetch) do
+      HackatimeService.stub(:fetch_total_seconds_for_projects, 20.minutes.to_i) do
+        assert_enqueued_with(job: User::SyncHackatimeDataJob, args: [ @owner.id ]) do
+          post project_devlogs_path(@project), params: {
+            post_devlog: { body: "Worked on the sync.", attachments: [ png_upload ] }
+          }
+        end
+      end
+    end
+
+    assert_redirected_to project_path(@project)
+    assert_equal 0, stats_fetches
+    assert_equal 20.minutes.to_i, @project.devlogs.last.duration_seconds
   end
 
   private
