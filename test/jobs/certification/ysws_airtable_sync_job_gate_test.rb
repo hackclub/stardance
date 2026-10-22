@@ -34,6 +34,16 @@ class Certification::YswsAirtableSyncJobGateTest < ActiveSupport::TestCase
     assert_not_nil review.reload.airtable_synced_at
   end
 
+  # Ship cert ids and ship event ids are separate sequences, so falling back
+  # from one to the other let unrelated ships overwrite each other's row.
+  test "the row is upserted on the ship, whether or not the review has a ship cert" do
+    review = completed_review
+    Certification::Integrity.create!(ship_event: review.post_ship_event, status: :manually_passed, reviewer: @user)
+
+    assert_nil review.ship_cert_id
+    assert_equal [ "ship_event_id" ], run_sync(review).map(&:last)
+  end
+
   test "a hardware review syncs without an integrity check, since hardware skips integrity" do
     review = completed_review
     review.project.update_column(:hardware_stage, Project::HARDWARE_STAGES.first)
