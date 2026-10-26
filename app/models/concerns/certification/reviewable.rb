@@ -152,7 +152,6 @@ module Certification
 
     def post_approval_to_hardware_feed!
       return unless approved?
-      return if project&.current_mission&.hardware?
 
       locals = notification_locals.slice(:project_title, :project_url, :reviewer_name, :feedback)
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
