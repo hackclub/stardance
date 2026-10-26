@@ -48,6 +48,7 @@ Rails.application.config.after_initialize do
         terra-promo
         dayoneof-promo
         mipmap-promo
+        savepoint-promo
         justin-melena
       ].each { |flag| Flipper.add(flag) }
       Flipper.add(:bukux2_preview_complete) if Rails.env.development?

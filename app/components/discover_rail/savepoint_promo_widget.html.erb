@@ -1,0 +1,24 @@
+<section class="savepoint-promo" data-controller="savepoint-promo">
+  <%= link_to helpers.savepoint_promo_path,
+        class: "savepoint-promo__card",
+        aria: { label: "Save Point: finish your game, get a keyboard, controller, mouse or Steam card" },
+        data: { action: "pointerenter->savepoint-promo#speedUp pointerleave->savepoint-promo#slowDown" } do %>
+    <p class="savepoint-promo__headline" aria-hidden="true">
+      <span>Finish your game.</span>
+      <span>Get a</span>
+      <span class="savepoint-promo__roll">
+        <span class="savepoint-promo__track" data-savepoint-promo-target="track">
+          <% (PRIZES + PRIZES.first(1)).each do |prize| %>
+            <span><%= prize[:word] %></span>
+          <% end %>
+        </span>
+      </span>
+    </p>
+    <span class="savepoint-promo__stickers" aria-hidden="true">
+      <% PRIZES.each_with_index do |prize, index| %>
+        <%= image_tag prize[:image], alt: "", class: class_names("savepoint-promo__sticker", "savepoint-promo__sticker--active": index.zero?), data: { savepoint_promo_target: "sticker" } %>
+      <% end %>
+    </span>
+    <%= image_tag "savepoint/logo.png", alt: "", width: 560, height: 230, class: "savepoint-promo__logo", aria_hidden: true %>
+  <% end %>
+</section>

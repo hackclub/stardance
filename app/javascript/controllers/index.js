@@ -307,6 +307,9 @@ application.register("mention-autocomplete", MentionAutocompleteController);
 import MipmapPromoController from "./mipmap_promo_controller";
 application.register("mipmap-promo", MipmapPromoController);
 
+import SavepointPromoController from "./savepoint_promo_controller";
+application.register("savepoint-promo", SavepointPromoController);
+
 import MissionGuideLanguageController from "./mission_guide_language_controller";
 application.register("mission-guide-language", MissionGuideLanguageController);
 

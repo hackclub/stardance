@@ -1,0 +1,157 @@
+// Save Point's ad, in Save Point's own sky, type and stickers (savepoint.hackclub.com).
+.savepoint-promo {
+  --savepoint-promo-sky: #0c1442;
+  --savepoint-promo-check: #111b55;
+  --savepoint-promo-line: #2e3c8a;
+  --savepoint-promo-lip: #0a1038;
+  --savepoint-promo-gloss: #ffffff40;
+  --savepoint-promo-royal-lip: #16236f;
+  --savepoint-promo-gold: #ffc21f;
+  --savepoint-promo-gold-hi: #ffe27a;
+  --savepoint-promo-white: #ffffff;
+  --savepoint-promo-word-height: 32px;
+
+  padding: var(--space-s) var(--space-m);
+
+  &__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 12px 14px;
+    overflow: hidden;
+    isolation: isolate;
+    background-color: var(--savepoint-promo-sky);
+    background-image: conic-gradient(
+      from 45deg,
+      var(--savepoint-promo-check) 25%,
+      transparent 0 50%,
+      var(--savepoint-promo-check) 0 75%,
+      transparent 0
+    );
+    background-size: 26px 26px;
+    border: 3px solid var(--savepoint-promo-line);
+    border-radius: 26px;
+    box-shadow:
+      0 5px 0 var(--savepoint-promo-lip),
+      inset 0 2px 0 var(--savepoint-promo-gloss);
+    text-decoration: none;
+    transition:
+      transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1),
+      box-shadow 0.18s;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        0 8px 0 var(--savepoint-promo-lip),
+        inset 0 2px 0 var(--savepoint-promo-gloss);
+    }
+
+    &:active {
+      transform: translateY(3px);
+      box-shadow:
+        0 2px 0 var(--savepoint-promo-lip),
+        inset 0 2px 0 var(--savepoint-promo-gloss);
+    }
+
+    &:focus-visible {
+      outline: 3px solid var(--savepoint-promo-gold);
+      outline-offset: 3px;
+    }
+  }
+
+  &__headline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    color: var(--savepoint-promo-white);
+    font-family: "Rubik", "Arial Rounded MT Bold", system-ui, sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.06;
+    paint-order: stroke fill;
+    text-align: center;
+    -webkit-text-stroke: 6px var(--savepoint-promo-royal-lip);
+  }
+
+  &__roll {
+    height: var(--savepoint-promo-word-height);
+    overflow: hidden;
+    color: var(--savepoint-promo-gold-hi);
+    font-size: 28px;
+  }
+
+  &__track {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+
+    > span {
+      height: var(--savepoint-promo-word-height);
+      line-height: var(--savepoint-promo-word-height);
+      white-space: nowrap;
+    }
+  }
+
+  &__stickers {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 132px;
+  }
+
+  &__sticker {
+    position: absolute;
+    inset: 0;
+    max-width: 96%;
+    max-height: 100%;
+    margin: auto;
+    object-fit: contain;
+    opacity: 0;
+    transform: rotate(-16deg) scale(0.6);
+    filter: drop-shadow(0 4px 0 #050a2e99) drop-shadow(0 10px 12px #00000059);
+    transition:
+      transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1),
+      filter 0.35s,
+      opacity 0.2s;
+
+    &--active {
+      opacity: 1;
+      transform: rotate(-4deg);
+    }
+  }
+
+  &__card:hover &__sticker--active {
+    transform: rotate(3deg) translateY(-5px) scale(1.04);
+    filter: drop-shadow(0 8px 0 #050a2e80) drop-shadow(0 18px 16px #00000066);
+  }
+
+  &__logo {
+    display: block;
+    width: 62%;
+    height: auto;
+    margin-top: 2px;
+  }
+
+  // The controller stops rolling too, so the keyboard stays showing.
+  @media (prefers-reduced-motion: reduce) {
+    &__card,
+    &__card:hover,
+    &__card:active {
+      transform: none;
+      transition: none;
+    }
+
+    &__track,
+    &__sticker {
+      transition: none;
+    }
+
+    &__sticker--active,
+    &__card:hover &__sticker--active {
+      transform: none;
+    }
+  }
+}

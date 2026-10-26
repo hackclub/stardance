@@ -65,6 +65,15 @@
   src: url("Sansation-latin-bold.woff2") format("woff2");
 }
 
+// Save Point's display face, for its promo card. One variable file covers both weights.
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 800 900;
+  font-display: swap;
+  src: url("Rubik-latin.woff2") format("woff2");
+}
+
 @font-face {
   font-family: "Shantell Sans";
   font-style: normal;

@@ -14,6 +14,11 @@ class PromosController < ApplicationController
     redirect_to DiscoverRail::MipmapPromoWidget::URL, allow_other_host: true, status: :see_other
   end
 
+  def savepoint
+    track_event DiscoverRail::SavepointPromoWidget::CLICK_EVENT
+    redirect_to DiscoverRail::SavepointPromoWidget::URL, allow_other_host: true, status: :see_other
+  end
+
   def day_one_of
     track_event DiscoverRail::DayOneOfPromoWidget::CLICK_EVENT
     redirect_to DiscoverRail::DayOneOfPromoWidget::URL, allow_other_host: true, status: :see_other
