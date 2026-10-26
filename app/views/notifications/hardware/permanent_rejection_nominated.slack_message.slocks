@@ -1,6 +1,6 @@
 header "Hardware permanent rejection nomination"
 
-section "#{reviewer_name} nominated #{project_title} (#{review_stage.downcase} review) for permanent rejection.", markdown: false
+section "#{reviewer_name} nominated <#{project_url}|#{project_title}> (#{review_stage.downcase} review) for permanent rejection.", markdown: true
 section "Justification:"
 reason.scan(/.{1,2900}/m).each { |part| section part, markdown: false }
 if automatically_approved
