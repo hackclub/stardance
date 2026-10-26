@@ -1098,6 +1098,8 @@ class Project < ApplicationRecord
     crates.io
     curseforge.com
     makerworld.com
+    thingiverse.com
+    printables.com
     streamlit.app
     figma.com
     nexusmods.com
