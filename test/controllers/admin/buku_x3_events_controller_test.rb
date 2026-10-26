@@ -224,4 +224,12 @@ class Admin::BukuX3EventsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#mipmap-clicks-heading", text: "mipmap ad clicks"
     assert_includes response.body, "click tracking is off here"
   end
+
+  test "the takeover says when fallen ad clicks are not being stored" do
+    sign_in @admin
+    get admin_jim_takeover_path
+    assert_response :success
+    assert_select "#fallen-clicks-heading", text: "fallen ad clicks"
+    assert_includes response.body, "click tracking is off here"
+  end
 end

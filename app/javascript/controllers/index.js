@@ -217,6 +217,12 @@ application.register("emoji-picker", EmojiPickerController);
 import EventTimeController from "./event_time_controller";
 application.register("event-time", EventTimeController);
 
+import FallenDustController from "./fallen_dust_controller";
+application.register("fallen-dust", FallenDustController);
+
+import FallenLaunchController from "./fallen_launch_controller";
+application.register("fallen-launch", FallenLaunchController);
+
 import FallingStarController from "./falling_star_controller";
 application.register("falling-star", FallingStarController);
 

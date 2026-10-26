@@ -103,6 +103,25 @@
     <% end %>
   </section>
 
+  <section aria-labelledby="fallen-clicks-heading">
+    <h2 id="fallen-clicks-heading">fallen ad clicks</h2>
+    <% if @fallen_clicks %>
+      <p class="admin-dashboard__metric-note">the discover rail's fallen ad · all time · updates on refresh</p>
+      <dl class="admin-dashboard__grid">
+        <div class="admin-dashboard__metric">
+          <dt>clicks</dt>
+          <dd><%= number_with_delimiter(@fallen_clicks[:total]) %></dd>
+        </div>
+        <div class="admin-dashboard__metric">
+          <dt>people who clicked</dt>
+          <dd><%= number_with_delimiter(@fallen_clicks[:people]) %></dd>
+        </div>
+      </dl>
+    <% else %>
+      <p class="admin-dashboard__metric-note">click tracking is off here: AHOY_DB_URL isn't set, so no events are stored</p>
+    <% end %>
+  </section>
+
   <section aria-labelledby="buku-shippers-heading"
            data-controller="buku-activity-chart"
            data-buku-activity-chart-data-value="<%= @buku_daily_shippers.to_json %>">

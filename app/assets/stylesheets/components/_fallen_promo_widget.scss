@@ -1,0 +1,297 @@
+// Fallen's ad, in Fallen's own night sky, gold and type (fallen.hackclub.com),
+// laid out like its landing page: logo and date, Lulu and Sami, tagline. The
+// whole card is the link; clicking it plays the full screen send-off below.
+
+// Fallen's colours and night sky, shared by the card and its send-off.
+@mixin fallen-promo-palette {
+  --fallen-promo-parchment: #f7dda6;
+  --fallen-promo-pale-blue: #d6dcfb;
+  --fallen-promo-gold: #eeb256;
+  --fallen-promo-honey: #e8b76a;
+  --fallen-promo-sky-top: #2537a3;
+  --fallen-promo-sky: #1a2686;
+  --fallen-promo-sky-bottom: #10185a;
+  --fallen-promo-night: #05061a;
+  --fallen-promo-nebula: rgb(160 120 240 / 40%);
+  --fallen-promo-serif: "Lora", serif;
+  // A violet nebula top right over the night sky, lit from the top.
+  --fallen-promo-night-sky:
+    radial-gradient(
+      ellipse 70% 40% at 88% 16%,
+      var(--fallen-promo-nebula),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse at 50% 0%,
+      var(--fallen-promo-sky-top),
+      var(--fallen-promo-sky) 55%,
+      var(--fallen-promo-sky-bottom)
+    );
+}
+
+.fallen-promo {
+  @include fallen-promo-palette;
+
+  --fallen-promo-mist: rgb(110 190 235 / 26%);
+  --fallen-promo-glow: rgb(120 150 255 / 16%);
+  --fallen-promo-shade: rgb(5 6 26 / 80%);
+
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--fallen-promo-gold);
+  border-radius: 12px;
+  // A teal mist bottom left over the night sky; ::before adds the rest.
+  background:
+    radial-gradient(
+      ellipse 60% 35% at 8% 82%,
+      var(--fallen-promo-mist),
+      transparent 70%
+    ),
+    var(--fallen-promo-night-sky);
+  color: var(--fallen-promo-pale-blue);
+  text-align: center;
+  isolation: isolate;
+  container-type: inline-size;
+
+  // Front to back: a vignette darkening the edges, then a glow behind Lulu and
+  // Sami that fades smoothly from the middle (no steps, so no arcs through the
+  // logo). On a pseudo-element rather than the card itself so cqi sizes it to
+  // the card: the card is the container, and an element's own cqi units would
+  // resolve against the viewport instead.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(
+        ellipse 90% 75% at 50% 45%,
+        transparent 45%,
+        var(--fallen-promo-shade)
+      ),
+      radial-gradient(
+        circle at 50% 56%,
+        var(--fallen-promo-glow),
+        transparent 60cqi
+      );
+    pointer-events: none;
+  }
+
+  // Fallen's frame (fallen.hackclub.com): a thin gold line inside the border
+  // with its corners scooped inwards. Browsers without corner-shape round the
+  // corners instead. It glows while the card is hovered.
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border: 1px solid var(--fallen-promo-gold);
+    border-radius: 10px;
+    corner-shape: scoop;
+    opacity: 0.6;
+    pointer-events: none;
+    transition:
+      opacity 0.4s ease,
+      box-shadow 0.4s ease;
+  }
+
+  &:hover::after {
+    opacity: 1;
+    box-shadow: 0 0 6px rgb(238 178 86 / 70%);
+  }
+
+  // Fallen's drifting dust (fallen_dust_controller.js), under everything else.
+  &__dust {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-xl) var(--space-m);
+    border-radius: inherit;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      color: inherit;
+    }
+
+    &:focus-visible {
+      outline: 3px solid var(--fallen-promo-parchment);
+      outline-offset: -3px;
+    }
+  }
+
+  &__logo {
+    width: 84%;
+    height: auto;
+    filter: drop-shadow(0 6px 16px rgb(0 0 0 / 50%));
+  }
+
+  // Fallen's date line, small under the logo as on fallen.hackclub.com.
+  &__date {
+    margin: calc(-1 * var(--space-xxs)) 0 0;
+    color: var(--fallen-promo-pale-blue);
+    font-family: var(--fallen-promo-serif);
+    font-size: var(--font-size-s);
+    line-height: 1.4;
+  }
+
+  // Lulu and Sami side by side, Lulu in front, tipped in towards each other.
+  &__nest {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    margin: var(--space-s) 0 var(--space-m);
+    transform-origin: bottom center;
+    transition: scale 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  // Only Lulu and Sami lean in towards the viewer while the card is hovered or
+  // focused; the logo and copy hold still so they stay easy to read.
+  &:hover &__nest,
+  &__card:focus-visible &__nest {
+    scale: 1.08;
+  }
+
+  &__character {
+    --lean: 0deg;
+    --spread: 0px;
+
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    // Lulu's image is taller than Sami's, so they match by height.
+    width: auto;
+    height: 144px;
+    rotate: var(--lean);
+    transform-origin: bottom center;
+    translate: calc(var(--spread) - 50%) 0;
+
+    &--left {
+      --lean: 4deg;
+      --spread: -40px;
+
+      z-index: 1;
+    }
+
+    &--right {
+      --lean: -4deg;
+      --spread: 44px;
+    }
+  }
+
+  &__tagline {
+    margin: 0;
+    color: var(--fallen-promo-honey);
+    font-family: var(--fallen-promo-serif);
+    // Sized to the card, so each line holds on one line.
+    font-size: 7cqi;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+}
+
+// The send-off (fallen_launch_controller.js, appended to <body>), in Fallen's
+// own motifs: a gold wash and then Fallen's night sky burst out from the click
+// in the shape of Fallen's four-point star, the logo and date rise in the
+// middle like fallen.hackclub.com, then it all fades to dark before Fallen
+// opens in its place. Every layer only animates opacity and transforms, so the
+// whole thing runs on the compositor.
+.fallen-takeover {
+  @include fallen-promo-palette;
+
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+
+  // A star big enough to cover the screen from anywhere, centred on the click
+  // and grown from nothing.
+  &__wash {
+    position: absolute;
+    top: calc(var(--y) - 250vmax);
+    left: calc(var(--x) - 250vmax);
+    width: 500vmax;
+    height: 500vmax;
+    mask: url("fallen/star.svg") center / contain no-repeat;
+    scale: 0;
+    animation: fallen-takeover-in 0.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+
+    &--gold {
+      background: var(--fallen-promo-gold);
+    }
+
+    &--night {
+      background: var(--fallen-promo-sky);
+      animation-delay: 0.15s;
+    }
+  }
+
+  // Fallen's night sky, held still at full size and faded in over the night
+  // star once it covers the screen.
+  &__sky {
+    position: absolute;
+    inset: 0;
+    background: var(--fallen-promo-night-sky);
+    opacity: 0;
+    animation: fallen-takeover-in 0.4s ease 0.75s forwards;
+  }
+
+  &__hero {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-s);
+    opacity: 0;
+    scale: 0.85;
+    translate: 0 16px;
+    animation: fallen-takeover-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.55s
+      forwards;
+  }
+
+  &__logo {
+    width: min(70vw, 520px);
+    height: auto;
+    filter: drop-shadow(0 0 24px rgb(238 178 86 / 55%));
+  }
+
+  &__date {
+    margin: 0;
+    color: var(--fallen-promo-pale-blue);
+    font-family: var(--fallen-promo-serif);
+    font-size: clamp(1rem, 2.4vw, 1.5rem);
+  }
+
+  &__dusk {
+    position: absolute;
+    inset: 0;
+    background: var(--fallen-promo-night);
+    opacity: 0;
+    animation: fallen-takeover-in 0.5s ease-in 1.4s forwards;
+  }
+}
+
+// Each layer starts hidden, shrunk or shifted, and settles into place.
+@keyframes fallen-takeover-in {
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fallen-promo__nest {
+    transition: none;
+  }
+}
