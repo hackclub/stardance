@@ -1185,11 +1185,7 @@ class Project < ApplicationRecord
     # a "previous ship awaiting payout" — it's the one currently being
     # (re-)certified, so it must not block re-certification.
     return true unless last_ship_event.certification_status == "approved"
-    # with_deleted so a fixed-prize ship whose mission was detached doesn't
-    # strand the project: Post::ShipEvent.voteable keeps that ship out of the
-    # rating pool either way, so no payout is ever coming for it.
-    sub = Mission::Submission.with_deleted.find_by(ship_event_id: last_ship_event.id)
-    return true if sub&.payout_path == "static_prize"
+    return true if last_ship_event.mission_submission&.payout_path == "static_prize"
     false
   end
 

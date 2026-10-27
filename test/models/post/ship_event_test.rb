@@ -46,6 +46,8 @@
 require "test_helper"
 
 class Post::ShipEventTest < ActiveSupport::TestCase
+  include VotingFactory
+
   setup do
     Flipper.enable(:ship_event_payouts)
     @owner = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "owner#{SecureRandom.hex(4)}")
@@ -152,6 +154,21 @@ class Post::ShipEventTest < ActiveSupport::TestCase
     end
 
     assert_nil ship.reload.payout
+  end
+
+  test "voteable leaves out a ship on the fixed-prize path" do
+    ship = create_voteable_ship_event
+    Mission::Submission.create!(ship_event: ship, mission: create_mission, payout_path: "static_prize")
+
+    assert_not_includes Post::ShipEvent.voteable, ship
+  end
+
+  test "voteable takes a ship back once its rejected fixed-prize submission is detached" do
+    ship = create_voteable_ship_event
+    submission = Mission::Submission.create!(ship_event: ship, mission: create_mission, payout_path: "static_prize")
+    submission.soft_delete!
+
+    assert_includes Post::ShipEvent.voteable, ship
   end
 
   test "issue_payout! holds payout while recipient has vote deficit" do
