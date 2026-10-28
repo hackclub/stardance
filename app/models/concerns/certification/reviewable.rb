@@ -177,10 +177,8 @@ module Certification
     end
 
     def post_verdict_to_hardware_review_channel!
-      return if project&.current_mission&.hardware?
-      return if permanently_rejected?
-
       locals = notification_locals.slice(:project_title, :project_url, :approved, :reviewer_name, :feedback)
+      locals[:permanently_rejected] = permanently_rejected?
       locals[:review_type] = is_a?(Certification::FundingRequest) ? "design" : "build"
       locals[:owner_slack_id] = owner&.slack_id
       locals[:reviewer_slack_id] = reviewer&.slack_id
