@@ -72,3 +72,12 @@
   font-display: swap;
   src: url("ShantellSans-latin-semibold.woff2") format("woff2");
 }
+
+// Torque's display face (Hack Club's Phantom Sans), for its promo card.
+@font-face {
+  font-family: "Phantom Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("PhantomSans-bold.woff2") format("woff2");
+}

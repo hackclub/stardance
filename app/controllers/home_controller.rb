@@ -1,6 +1,6 @@
 class HomeController < ApplicationController
   include OnboardingResumable
-  discover_rail_widgets :clearance_sale, :sticker_promo, :streak, :terra_portal, :forge_promo, :mipmap_promo, :day_one_of_promo, :feedback_promo, :upcoming_events, :referral, :daily_roll
+  discover_rail_widgets :clearance_sale, :sticker_promo, :streak, :terra_portal, :forge_promo, :mipmap_promo, :day_one_of_promo, :torque_promo, :feedback_promo, :upcoming_events, :referral, :daily_roll
 
   before_action :resume_or_expire_onboarding!, only: :index, if: -> { current_user.present? }
 

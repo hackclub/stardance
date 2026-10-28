@@ -7,6 +7,7 @@ class Admin::BukuX3EventsController < Admin::ApplicationController
     @crescent_clicks = crescent_promo_clicks
     @mipmap_clicks = mipmap_promo_clicks
     @day_one_of_clicks = day_one_of_promo_clicks
+    @torque_clicks = torque_promo_clicks
     if Flipper.enabled?(:"justin-melena", current_user)
       @poll_tally = PollVote.tally
       @poll_recent_votes = PollVote.where(created_at: 24.hours.ago..Time.current).count
@@ -67,6 +68,13 @@ class Admin::BukuX3EventsController < Admin::ApplicationController
     return if ENV["AHOY_DB_URL"].blank?
 
     clicks = Ahoy::Event.where(name: DiscoverRail::DayOneOfPromoWidget::CLICK_EVENT)
+    { total: clicks.count, people: clicks.distinct.count(:user_id) }
+  end
+
+  def torque_promo_clicks
+    return if ENV["AHOY_DB_URL"].blank?
+
+    clicks = Ahoy::Event.where(name: DiscoverRail::TorquePromoWidget::CLICK_EVENT)
     { total: clicks.count, people: clicks.distinct.count(:user_id) }
   end
 end

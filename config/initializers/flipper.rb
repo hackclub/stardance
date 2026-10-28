@@ -48,6 +48,7 @@ Rails.application.config.after_initialize do
         forge-promo
         terra-promo
         dayoneof-promo
+        torque-promo
         mipmap-promo
         justin-melena
       ].each { |flag| Flipper.add(flag) }
