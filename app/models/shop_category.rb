@@ -17,11 +17,13 @@
 #
 class ShopCategory < ApplicationRecord
   ALL_SLUG = "all"
+  SALE_SLUG = "sale"
 
   has_many :shop_item_categories, dependent: :destroy
   has_many :shop_items, through: :shop_item_categories
 
   validates :slug, :title, :hub_title, presence: true
+  validates :slug, exclusion: { in: [ ALL_SLUG, SALE_SLUG ], message: "is reserved" }
   validates :slug, uniqueness: true, format: { with: /\A[a-z0-9_]+\z/, message: "must be lowercase letters, numbers, or underscores" }
 
   scope :ordered, -> { order(:position, :id) }
@@ -33,8 +35,14 @@ class ShopCategory < ApplicationRecord
     new(slug: ALL_SLUG, title: "All", hub_title: "All", position: -1).tap(&:readonly!)
   end
 
+  # "sale" is virtual too: whatever is on sale right now, across categories.
+  def self.sale_virtual
+    new(slug: SALE_SLUG, title: "Clearance", hub_title: "Clearance", position: -1).tap(&:readonly!)
+  end
+
   def self.find_by_slug(slug)
     return all_virtual if slug.to_s == ALL_SLUG
+    return sale_virtual if slug.to_s == SALE_SLUG
 
     find_by(slug: slug)
   end
@@ -43,8 +51,13 @@ class ShopCategory < ApplicationRecord
     slug == ALL_SLUG && new_record?
   end
 
+  def virtual_sale?
+    slug == SALE_SLUG && new_record?
+  end
+
   def filter(items)
     return items if virtual_all?
+    return items.select(&:on_sale?) if virtual_sale?
 
     ids = shop_item_categories.map(&:shop_item_id).to_set
     items.select { |it| ids.include?(it.id) }

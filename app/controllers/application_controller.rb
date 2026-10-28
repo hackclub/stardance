@@ -54,6 +54,20 @@ class ApplicationController < ActionController::Base
   end
   helper_method :discover_rail_widgets
 
+  # The clearance sale this visitor can shop right now, or nil. Hidden until the
+  # clearance_sale flag is on; drives the rail card, nav tag and pop-up.
+  def clearance_sale
+    return @clearance_sale if defined?(@clearance_sale)
+
+    @clearance_sale =
+      if Flipper.enabled?(:shop_open, current_user) && Flipper.enabled?(:clearance_sale, current_user)
+        region = current_user ? ShopItem.recommended_region_for(current_user) : "US"
+        items = ShopItem.cached_shop_page_data[:buyable_standalone].select { |item| item.enabled_in_region?(region) }
+        Shop::ClearanceSale.new(items).then { |sale| sale if sale.live? }
+      end
+  end
+  helper_method :clearance_sale
+
   def discover_rail_context
     proc = self.class.discover_rail_context_proc
     proc ? instance_exec(&proc) : {}

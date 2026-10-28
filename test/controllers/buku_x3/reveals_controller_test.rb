@@ -19,6 +19,8 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
       get home_path
       assert_select ".event-simulator", count: 1
       assert_select "[data-blackhole-simulator-enabled-value='true']", count: 1
+      assert_select "[data-action='stardance-finale#preview']", count: 1
+      assert_select "[data-action='stardance-finale#resetPreview']", count: 1
       host! "stardance.example"
       get home_path
       assert_select ".event-simulator", count: 0
@@ -101,7 +103,7 @@ class BukuX3::RevealsControllerTest < ActionDispatch::IntegrationTest
     get buku_x3_reveal_path
     assert_select "dialog.buku-x3-reveal", count: 0
     BukuX3::Assignment.stub(:buku?, false) { get home_path }
-    assert_select ".buku-x3-status__role", text: "you're a bean"
+    assert_select ".buku-x3-status__role", text: "you're a bean!"
     assert_select ".rocket-progress", count: 0
   end
 

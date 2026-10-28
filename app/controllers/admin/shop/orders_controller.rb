@@ -569,9 +569,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     end
 
     old_state = @order.aasm_state
-    @order.tracking_number = params[:tracking_number].to_s.strip if params[:tracking_number].present?
-
-    if @order.mark_fulfilled(params[:external_ref].presence, params[:fulfillment_cost].presence, current_user.display_name) && @order.save
+    if @order.mark_fulfilled(params[:external_ref].presence, params[:fulfillment_cost].presence, current_user.display_name, params[:tracking_number]) && @order.save
       ::PaperTrail::Version.create!(
         item_type: "ShopOrder",
         item_id: @order.id,

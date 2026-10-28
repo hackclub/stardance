@@ -1,0 +1,41 @@
+<%#
+  Full-width, horizontally scrolling row of item cards on the shop hub.
+  Locals:
+    items    - ShopItems to show (row is skipped when empty)
+    title    - section heading
+    modifier - BEM modifier for the section ("new", "popular", "sale")
+    see_all  - optional "See all" path (defaults to every item)
+%>
+<% if items.any? %>
+  <%= tag.section class: "shop-hub__items shop-hub__items--#{modifier}", aria: { label: "#{title} items" } do %>
+    <div class="shop-hub__items-header">
+      <h2 class="shop-hub__section-title shop-hub__section-title--<%= modifier %>"><%= title %></h2>
+      <%= link_to "See all →", local_assigns.fetch(:see_all) { shop_category_path(ShopCategory::ALL_SLUG) }, class: "shop-hub__see-all", data: { turbo: true } %>
+    </div>
+    <div class="shop-hub__items-scroll" data-controller="horizontal-scroll">
+      <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--left"
+              data-horizontal-scroll-target="left"
+              data-action="click->horizontal-scroll#scrollLeft"
+              aria-label="Scroll left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="15 18 9 12 15 6" /> </svg>
+      </button>
+      <ul class="shop-hub__items-grid" data-horizontal-scroll-target="track">
+        <% items.each do |item| %>
+          <li class="shop-hub__items-card">
+            <%= render "shop/items/item_card",
+                  item: item,
+                  region: @user_region,
+                  balance: @user_balance,
+                  wishlisted_item_ids: @wishlisted_item_ids %>
+          </li>
+        <% end %>
+      </ul>
+      <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--right"
+              data-horizontal-scroll-target="right"
+              data-action="click->horizontal-scroll#scrollRight"
+              aria-label="Scroll right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="9 18 15 12 9 6" /> </svg>
+      </button>
+    </div>
+  <% end %>
+<% end %>

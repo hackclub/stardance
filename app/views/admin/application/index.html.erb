@@ -45,6 +45,7 @@
       <%= admin_page_button "Raffles", admin_raffles_path, enabled: policy(:admin).access_raffles? %>
       <%= admin_page_button "Rating Hangtime", admin_rating_dashboard_path, enabled: policy(:rating_dashboard).show? %>
       <%= admin_page_button "Hour Funnel", admin_hour_funnel_path, enabled: policy(:hour_funnel).show? %>
+      <%= admin_page_button "Finality", admin_finality_path, enabled: policy(:finality).show? %>
       <%= admin_page_button "Growth Model", public_growth_path, enabled: true %>
       <%= admin_page_button "Jeremy Funnel", stats_ship_funnel_path, enabled: Pundit.policy!(pundit_user, :ship_funnel).refresh? %>
     </div>

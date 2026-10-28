@@ -25,6 +25,9 @@ application.register("buku-activity-chart", BukuActivityChartController);
 import BukuLeaderboardNameController from "./buku_leaderboard_name_controller";
 application.register("buku-leaderboard-name", BukuLeaderboardNameController);
 
+import BukuLeaderboardPanelController from "./buku_leaderboard_panel_controller";
+application.register("buku-leaderboard-panel", BukuLeaderboardPanelController);
+
 import BulkSelectController from "./bulk_select_controller";
 application.register("bulk-select", BulkSelectController);
 
@@ -175,11 +178,11 @@ application.register("copy", CopyController);
 import CountUpController from "./count_up_controller";
 application.register("count-up", CountUpController);
 
-import CountdownClockController from "./countdown_clock_controller";
-application.register("countdown-clock", CountdownClockController);
-
 import CountdownController from "./countdown_controller";
 application.register("countdown", CountdownController);
+
+import ConfettiController from "./confetti_controller";
+application.register("confetti", ConfettiController);
 
 import CurveDrawController from "./curve_draw_controller";
 application.register("curve-draw", CurveDrawController);
@@ -207,9 +210,6 @@ application.register("discover-rail-panel", DiscoverRailPanelController);
 
 import DismissableController from "./dismissable_controller";
 application.register("dismissable", DismissableController);
-
-import TopBannerController from "./top_banner_controller";
-application.register("top-banner", TopBannerController);
 
 import EmojiPickerController from "./emoji_picker_controller";
 application.register("emoji-picker", EmojiPickerController);
@@ -531,3 +531,6 @@ application.register("buku-x3-status", BukuX3StatusController);
 
 import WrongToolSheetController from "./wrong_tool_sheet_controller";
 application.register("wrong-tool-sheet", WrongToolSheetController);
+
+import StardanceFinaleController from "./stardance_finale_controller";
+application.register("stardance-finale", StardanceFinaleController);

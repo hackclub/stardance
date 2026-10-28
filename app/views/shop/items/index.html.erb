@@ -1,4 +1,5 @@
 <% content_for :title, "Shop" %>
+<% content_for :head, render("shop/items/view_transition") %>
 <% content_for :og_title, "Stardance Shop" %>
 <% content_for :og_description, "Spend your Stardust on stickers, hardware, and other prizes. Earn Stardust by building projects and voting!" %>
 <% content_for :og_image, og_image_url('shop', format: :png) %>
@@ -80,6 +81,14 @@
     </section>
   <% end %>
 
+  <% if @shop_open %>
+    <% if @clearance_sale_enabled %>
+      <%= render ShopClearanceBannerComponent.new(items: @available_shop_items, class: "shop-hub__clearance") %>
+    <% end %>
+    <%= render "shop/items/items_row", items: @sale_items, title: "Clearance", modifier: "sale",
+                  see_all: shop_category_path(ShopCategory::SALE_SLUG) %>
+  <% end %>
+
   <div class="shop-hub__layout">
     <header class="shop-hub__topbar">
       <%= form_with url: shop_path, method: :get, local: true, class: "shop-hub__search" do |f| %>
@@ -136,73 +145,8 @@
         <%= render DiscoverRailComponent.new %>
       </div>
 
-      <% if @new_items&.any? %>
-        <section class="shop-hub__items shop-hub__items--new" aria-label="New items">
-          <div class="shop-hub__items-header">
-            <h2 class="shop-hub__section-title">New</h2>
-            <%= link_to "See all →", shop_category_path("all"), class: "shop-hub__see-all", data: { turbo: true } %>
-          </div>
-          <div class="shop-hub__items-scroll" data-controller="horizontal-scroll">
-            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--left"
-                    data-horizontal-scroll-target="left"
-                    data-action="click->horizontal-scroll#scrollLeft"
-                    aria-label="Scroll left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="15 18 9 12 15 6" /> </svg>
-            </button>
-            <ul class="shop-hub__items-grid" data-horizontal-scroll-target="track">
-              <% @new_items.each do |item| %>
-                <li class="shop-hub__items-card">
-                  <%= render "shop/items/item_card",
-                        item: item,
-                        region: @user_region,
-                        balance: @user_balance,
-                        wishlisted_item_ids: @wishlisted_item_ids %>
-                </li>
-              <% end %>
-            </ul>
-            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--right"
-                    data-horizontal-scroll-target="right"
-                    data-action="click->horizontal-scroll#scrollRight"
-                    aria-label="Scroll right">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="9 18 15 12 9 6" /> </svg>
-            </button>
-          </div>
-        </section>
-      <% end %>
-
-      <% if @popular_items&.any? %>
-        <section class="shop-hub__items shop-hub__items--popular" aria-label="Popular items">
-          <div class="shop-hub__items-header">
-            <h2 class="shop-hub__section-title">Popular</h2>
-            <%= link_to "See all →", shop_category_path("all"), class: "shop-hub__see-all", data: { turbo: true } %>
-          </div>
-          <div class="shop-hub__items-scroll" data-controller="horizontal-scroll">
-            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--left"
-                    data-horizontal-scroll-target="left"
-                    data-action="click->horizontal-scroll#scrollLeft"
-                    aria-label="Scroll left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="15 18 9 12 15 6" /> </svg>
-            </button>
-            <ul class="shop-hub__items-grid" data-horizontal-scroll-target="track">
-              <% @popular_items.each do |item| %>
-                <li class="shop-hub__items-card">
-                  <%= render "shop/items/item_card",
-                        item: item,
-                        region: @user_region,
-                        balance: @user_balance,
-                        wishlisted_item_ids: @wishlisted_item_ids %>
-                </li>
-              <% end %>
-            </ul>
-            <button type="button" class="shop-hub__scroll-arrow shop-hub__scroll-arrow--right"
-                    data-horizontal-scroll-target="right"
-                    data-action="click->horizontal-scroll#scrollRight"
-                    aria-label="Scroll right">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"> <polyline points="9 18 15 12 9 6" /> </svg>
-            </button>
-          </div>
-        </section>
-      <% end %>
+      <%= render "shop/items/items_row", items: @new_items, title: "New", modifier: "new" %>
+      <%= render "shop/items/items_row", items: @popular_items, title: "Popular", modifier: "popular" %>
     <% else %>
       <h2 class="shop-hub__closed">The shop is not opened yet!</h2>
     <% end %>

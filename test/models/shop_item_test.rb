@@ -47,7 +47,12 @@
 #  requires_achievement              :string           default([]), is an Array
 #  requires_ship                     :boolean          default(FALSE)
 #  requires_verification_call        :boolean          default(FALSE), not null
+#  sale_ends_at                      :datetime
+#  sale_min_percentage               :integer          default(0), not null
+#  sale_name                         :string
 #  sale_percentage                   :integer
+#  sale_starts_at                    :datetime
+#  sale_step_percentage              :integer          default(0), not null
 #  show_image_in_shop                :boolean          default(FALSE)
 #  show_in_carousel                  :boolean
 #  site_action                       :integer

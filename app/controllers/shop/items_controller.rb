@@ -65,6 +65,7 @@ class Shop::ItemsController < Shop::BaseController
     @slug = params[:slug].to_s
     @category = Shop::Categorization.find(@slug)
     raise ActiveRecord::RecordNotFound unless @category
+    raise ActiveRecord::RecordNotFound if @category.virtual_sale? && !clearance_sale_enabled?
 
     @category_title = @category.title
     @category_hub_title = @category.hub_title
@@ -79,6 +80,7 @@ class Shop::ItemsController < Shop::BaseController
 
   def prepare_shop_chrome
     @shop_open = Flipper.enabled?(:shop_open, current_user)
+    @clearance_sale_enabled = clearance_sale_enabled?
 @user_region = user_region
     @body_class = "shop-page"
     @region_options = Shop::Regionalizable::REGIONS.map do |code, config|
@@ -97,12 +99,20 @@ class Shop::ItemsController < Shop::BaseController
     @wishlisted_item_ids = current_user&.shop_wishlists&.pluck(:shop_item_id) || []
   end
 
+  # The clearance promotion (banner, hub row, sale page) stays hidden until the
+  # flag is on; sale prices themselves apply either way.
+  def clearance_sale_enabled?
+    Flipper.enabled?(:clearance_sale, current_user)
+  end
+
   def load_hub_sections
+    @sale_items = []
     @new_items = []
     @popular_items = []
-    return if @shop_items.blank?
+    pool = @available_shop_items
+    return if pool.blank?
 
-    pool = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
+    @sale_items    = pool.select(&:on_sale?).sort_by { |item| -item.current_sale_percentage } if @clearance_sale_enabled
 
     @new_items     = pool.sort_by(&:created_at).reverse.first(8)
     @popular_items = pool.shuffle.first(8)

@@ -118,6 +118,7 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
       blocks_path: "notifications/hardware/permanent_rejection_nominated",
       locals: {
         project_title: project.title,
+        project_url: routes.project_url(project, **url_opts),
         nomination_url: routes.admin_certification_permanent_rejection_nomination_url(self, **url_opts),
         reviewer_name: reviewer.display_name,
         review_stage: review_stage,

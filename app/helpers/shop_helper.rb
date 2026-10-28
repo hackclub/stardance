@@ -70,8 +70,8 @@ module ShopHelper
 
   # Renders a tracking code as a link to where it can be tracked, or as plain
   # text when it has nowhere to link (see TrackingLink.for's `universal`).
-  def tracking_link_tag(code, universal: true)
-    link = TrackingLink.for(code, universal: universal)
+  def tracking_link_tag(code_or_link, universal: true)
+    link = code_or_link.is_a?(TrackingLink) ? code_or_link : TrackingLink.for(code_or_link, universal: universal)
     return if link.nil?
     return link.label if link.url.nil?
 

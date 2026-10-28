@@ -1,8 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 import { Delaunay } from "d3";
 
-const CARD_SURFACES =
-  ".feed-post-card, .feed-composer, .rail-widget, .sidebar__logo-img, .sidebar__user-card";
+const FINALE_ONLY_SURFACES = ".finality-promo";
+const CARD_SURFACES = `.feed-post-card, .feed-composer, .rail-widget, .sidebar__logo-img, .sidebar__user-card, ${FINALE_ONLY_SURFACES}`;
 const MEDIA_CONTENT = "img, video, iframe, svg";
 const SIDEBAR_SURFACES = [
   "#primary-nav",
@@ -17,7 +17,13 @@ const PROTECTED_CONTENT =
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SIMULATOR_KEY = "stardance-event-simulator-v1";
 const MESH_OVERSCAN = 128;
+const FINALE_DURATION = 20_000;
 const clamp = (n, min = 0, max = 1) => Math.min(max, Math.max(min, n));
+// The finale temporarily overrides preferences without changing saved settings.
+const particlesEnabled = (controller) =>
+  !!controller.finale ||
+  (controller.particlesEnabledValue &&
+    controller.simulation?.particles !== false);
 const random = (x, y, seed = 0) => {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
   return value - Math.floor(value);
@@ -58,6 +64,7 @@ export default class extends Controller {
 
   connect() {
     this.simulation = null;
+    this.finale = null;
     if (this.simulatorEnabledValue && this.hasSimulatorFormTarget) {
       try {
         const saved = JSON.parse(sessionStorage.getItem(SIMULATOR_KEY));
@@ -166,6 +173,9 @@ export default class extends Controller {
       this.pollTimer = window.setInterval(() => this.refreshProgress(), 60000);
       this.refreshProgress();
     }
+    // Independent of the visible clock, which can be hidden in user settings.
+    this.finaleTimer = window.setInterval(() => this.updateFinale(), 100);
+    this.updateFinale();
   }
 
   disconnect() {
@@ -186,6 +196,7 @@ export default class extends Controller {
 
   stopPolling() {
     window.clearInterval(this.pollTimer);
+    window.clearInterval(this.finaleTimer);
     this.progressRequest?.abort();
     this.progressRequest = null;
   }
@@ -203,6 +214,7 @@ export default class extends Controller {
       });
       if (request.signal.aborted || !this.element.isConnected) return;
       if (response.status === 401 || response.status === 403) {
+        this.finale = null;
         this.setIntensity(0);
         this.stopPolling();
         return;
@@ -236,9 +248,16 @@ export default class extends Controller {
     // Scale the visuals without changing the score sent to the tug-of-war.
     const strength =
       (this.simulation?.strength ?? this.visualIntensityValue ?? 100) / 100;
-    // Opting out removes every visual, but the tug-of-war still gets progress.
+    // Outside the finale, opting out removes visuals but keeps score updates.
     this.requested =
       this.disintegrationEnabledValue === false ? 0 : clamp(damage * strength);
+    // A later score poll must never repair the finale's destruction.
+    if (this.finale && strength > 0) {
+      this.requested = Math.max(
+        this.requested,
+        this.finale.from + (1 - this.finale.from) * this.finale.progress,
+      );
+    }
     if (this.progressUrlValue || this.simulatorEnabledValue) {
       this.dispatch("progress", {
         detail: {
@@ -268,6 +287,47 @@ export default class extends Controller {
       (this.awaitingRevealValue && !this.simulation) ||
       !!document.querySelector(EXCLUDED_SCENES)
     );
+  }
+
+  startFinale() {
+    this.resetFinale();
+    // Everyone gets the finale, even if they never opened the team reveal.
+    this.awaitingRevealValue = false;
+    if (this.visualIntensityValue === 0) {
+      this.dispatch("finale-complete");
+      return;
+    }
+    this.finale = {
+      from: this.requested,
+      progress: -1,
+      startedAt: performance.now(),
+    };
+    this.updateFinale();
+  }
+
+  updateFinale(now = performance.now()) {
+    if (!this.finale) return;
+    const elapsed = clamp((now - this.finale.startedAt) / FINALE_DURATION);
+    const progress = this.reducedMotion.matches
+      ? 1
+      : elapsed * elapsed * (3 - 2 * elapsed);
+    if (progress === this.finale.progress) return;
+    this.finale.progress = progress;
+    this.requested = this.finale.from + (1 - this.finale.from) * progress;
+    this.pointer = null;
+    this.element.style.setProperty(
+      "--blackhole-text-opacity",
+      String(1 - progress),
+    );
+    if (progress === 1) this.level = 1;
+    this.dirty = true;
+    this.wake();
+  }
+
+  resetFinale() {
+    this.finale = null;
+    this.reset();
+    this.setIntensity(this.latestIntensity, { immediate: true });
   }
 
   readSimulation() {
@@ -379,10 +439,20 @@ export default class extends Controller {
     }
     this.emitAmbientDust(dt);
     this.draw(dt);
+    // Hand over only after the final masks are painted and the dust settles.
+    if (
+      this.finale?.progress === 1 &&
+      !this.dirty &&
+      !this.particles.length &&
+      !this.finale.notified
+    ) {
+      this.finale.notified = true;
+      this.dispatch("finale-complete");
+    }
     if (
       ((this.level > 0 &&
-        this.particlesEnabledValue &&
-        this.simulation?.particles !== false) ||
+        this.finale?.progress !== 1 &&
+        particlesEnabled(this)) ||
         this.repairActive ||
         this.repairDirty ||
         this.dirty ||
@@ -421,6 +491,8 @@ export default class extends Controller {
       if (
         element === this.element ||
         element.closest(EXCLUDED_SCENES) ||
+        // Excluded from parent masks always; its own mask starts at the finale.
+        (!this.finale && element.matches(FINALE_ONLY_SURFACES)) ||
         this.surfaces.has(element) ||
         element.matches(
           "script, style, link, svg, template, noscript, .app-loading",
@@ -442,6 +514,7 @@ export default class extends Controller {
         path,
         original: element.style.getPropertyValue("clip-path"),
         priority: element.style.getPropertyPriority("clip-path"),
+        originalInert: element.inert,
         seed: this.surfaceSeed(element),
         card: cards.includes(element),
         proportional: element.matches(".sidebar__logo-img"),
@@ -464,13 +537,22 @@ export default class extends Controller {
     if (this.dirty || !this.surfaces.size) this.collectSurfaces();
     this.repairTime = performance.now();
     this.repairActive = false;
-    this.textTarget.hidden = this.level <= 0.82;
+    this.textTarget.hidden = this.level <= 0.82 || this.finale?.progress === 1;
     for (const surface of this.surfaces.values()) {
       if (surface.textCopy) surface.textCopy.hidden = true;
     }
     this.fringe = [];
     this.dustBounds = [];
     for (const [element, surface] of this.surfaces) {
+      // Empty every mask, including offscreen content. No invisible controls
+      // remain focusable or clickable; reset/preview restores their state.
+      if (this.finale?.progress === 1) {
+        surface.path.setAttribute("d", "M0,0Z");
+        surface.lastPath = "M0,0Z";
+        surface.finaleHidden = true;
+        element.inert = true;
+        continue;
+      }
       const rect = element.getBoundingClientRect();
       if (
         rect.bottom < 0 ||
@@ -998,7 +1080,7 @@ export default class extends Controller {
   }
 
   repairStrength(cell, rect) {
-    if (this.simulation?.cursorRepair === false) return 0;
+    if (this.finale || this.simulation?.cursorRepair === false) return 0;
     const distance = this.pointer
       ? Math.hypot(
           cell.cx + rect.left - this.pointer.x,
@@ -1025,8 +1107,8 @@ export default class extends Controller {
 
   emitAmbientDust(dt) {
     if (
-      !this.particlesEnabledValue ||
-      this.simulation?.particles === false ||
+      !particlesEnabled(this) ||
+      this.finale?.progress === 1 ||
       !this.level ||
       this.reducedMotion.matches
     )
@@ -1040,12 +1122,7 @@ export default class extends Controller {
   }
 
   emitDust(count) {
-    if (
-      !this.particlesEnabledValue ||
-      this.simulation?.particles === false ||
-      this.reducedMotion.matches
-    )
-      return;
+    if (!particlesEnabled(this) || this.reducedMotion.matches) return;
     if (!this.fringe?.length && !this.dustBounds?.length) return;
     for (let i = 0; i < count && this.particles.length < 180; i++) {
       let source = this.fringe[Math.floor(Math.random() * this.fringe.length)];
@@ -1077,12 +1154,7 @@ export default class extends Controller {
   draw(dt) {
     const ctx = this.canvasContext;
     ctx.clearRect(0, 0, this.width, this.height);
-    if (
-      !this.particlesEnabledValue ||
-      this.simulation?.particles === false ||
-      !this.level ||
-      this.reducedMotion.matches
-    )
+    if (!particlesEnabled(this) || !this.level || this.reducedMotion.matches)
       return;
     this.particles = this.particles.filter((p) => p.age < p.life);
     for (const p of this.particles) {
@@ -1120,7 +1192,9 @@ export default class extends Controller {
     this.repairActive = false;
     this.repairDirty = false;
     this.maskDirty = false;
+    this.element.style.removeProperty("--blackhole-text-opacity");
     for (const [element, surface] of this.surfaces) {
+      if (surface.finaleHidden) element.inert = surface.originalInert;
       if (surface.original)
         element.style.setProperty(
           "clip-path",

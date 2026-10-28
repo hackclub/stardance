@@ -181,6 +181,7 @@ module Post::ShipEvent::Payouts
 
       save!
       create_payout_ledger_entry!
+      Finality.award_bonus!(self)
       issued = true
     end
 

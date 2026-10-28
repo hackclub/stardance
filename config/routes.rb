@@ -428,6 +428,8 @@ Rails.application.routes.draw do
     mount Raffle::Engine, at: "/", as: :raffle_engine
   end
 
+  get "server_time", to: "server_time#show"
+
   delete "dismiss_raffle_banner", to: "sessions#dismiss_raffle_banner", as: :dismiss_raffle_banner
 
   # Sitemap
@@ -579,6 +581,7 @@ Rails.application.routes.draw do
 
   # Home
   get "home", to: "home#index"
+  get "raffle", to: "finality/raffles#show", as: :finality_raffle
   resources :feed_events, only: [ :create ]
   resources :mihi_activations, only: [ :create ]
   namespace :buku_x3 do
@@ -693,6 +696,12 @@ Rails.application.routes.draw do
     resource :rating_dashboard, only: [ :show ], controller: "rating_dashboard"
     resource :hour_funnel, only: [ :show ], controller: "hour_funnel" do
       post :refresh
+    end
+    resource :finality, only: [ :show ], controller: "finality" do
+      post :award
+      post :freeze_pool
+      post :roll
+      post :reroll
     end
     # Sections load lazily so one slow data source can't hold up the page.
     get    "mega_dashboard",                   to: "mega_dashboard#show",        as: :mega_dashboard

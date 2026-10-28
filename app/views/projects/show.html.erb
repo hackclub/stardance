@@ -792,7 +792,9 @@
           <% else %>
             <%
               ship_disabled_message =
-                if (mission_review_message = @project.mission_review_blocker_message)
+                if Project.shipping_closed?
+                  Project::SHIPPING_CLOSED_MESSAGE
+                elsif (mission_review_message = @project.mission_review_blocker_message)
                   mission_review_message
                 elsif @project.received_grant? && !@project.has_build_devlog_since_last_ship?
                   "Post at least one build devlog before you can ship!"

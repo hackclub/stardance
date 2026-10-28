@@ -155,11 +155,13 @@ class Admin::Shop::OrdersControllerTrackingTest < ActionDispatch::IntegrationTes
     ], texts
   end
 
-  test "the fulfilled DM links tracking, falling back to external_ref" do
-    assert_includes fulfilled_dm_texts, "*Tracking:* ORD-12345"
+  test "the fulfilled DM never presents an order reference as tracking" do
+    assert_includes fulfilled_dm_texts, "*Order reference:* ORD-12345"
+    assert_not(fulfilled_dm_texts.any? { |text| text.start_with?("*Tracking:*") })
 
     @order.update_columns(tracking_number: USPS)
     assert_includes fulfilled_dm_texts, "*Tracking:* <#{USPS_URL}|#{USPS}>"
+    assert_includes fulfilled_dm_texts, "*Order reference:* ORD-12345"
   end
 
   private
@@ -170,7 +172,9 @@ class Admin::Shop::OrdersControllerTrackingTest < ActionDispatch::IntegrationTes
       formats: [ :slack_message ],
       locals: { order: @order.reload }
     )
-    JSON.parse(rendered)["blocks"].filter_map { |block| block.dig("text", "text") }
+    JSON.parse(rendered)["blocks"].flat_map do |block|
+      [ block.dig("text", "text"), *Array(block["fields"]).map { |field| field["text"] } ].compact
+    end
   end
 
   def tracking_notifications

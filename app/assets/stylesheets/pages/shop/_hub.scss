@@ -350,6 +350,18 @@
     overflow: visible;
   }
 
+  // Clearance banner + sale row sit above the hub grid, so an empty sale
+  // leaves no gap behind.
+  &__clearance,
+  &__items--sale {
+    margin-bottom: 2rem;
+  }
+
+  &__section-title--sale {
+    color: var(--color-brand-yellow);
+    text-transform: uppercase;
+  }
+
   &__items--new {
     grid-area: new;
   }

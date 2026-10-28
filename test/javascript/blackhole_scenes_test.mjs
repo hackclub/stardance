@@ -2,51 +2,63 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import BlackholeController from "../../app/javascript/controllers/blackhole_controller.js";
 
-test("a rail widget receives its own card mask without masking its canvas separately", () => {
-  const originalDocument = globalThis.document;
-  const style = new Map();
-  const ad = {
-    id: "",
-    isConnected: true,
-    parentElement: { closest: () => null },
-    closest: () => null,
-    matches: (selector) => selector.split(", ").includes(".rail-widget"),
-    getBoundingClientRect: () => ({ width: 310, height: 480 }),
-    style: {
-      getPropertyValue: (name) => style.get(name) || "",
-      getPropertyPriority: () => "",
-      setProperty: (name, value) => style.set(name, value),
-    },
-  };
-  const canvas = {
-    matches: (selector) => selector.split(", ").includes("canvas"),
-  };
-  let masks = 0;
-  let observed = 0;
-  try {
-    globalThis.document = {
-      body: { children: [] },
-      querySelectorAll: (selector) =>
-        [ad, canvas].filter((element) => element.matches(selector)),
-      createElementNS: () => ({ setAttribute() {}, append() {} }),
+test("rail widgets and finale-only promos get their own card mask without masking their canvas separately", () => {
+  for (const surfaceClass of [".rail-widget", ".finality-promo"]) {
+    const originalDocument = globalThis.document;
+    const style = new Map();
+    const ad = {
+      id: "",
+      isConnected: true,
+      parentElement: { closest: () => null },
+      closest: () => null,
+      matches: (selector) => selector.split(", ").includes(surfaceClass),
+      getBoundingClientRect: () => ({ width: 310, height: 480 }),
+      style: {
+        getPropertyValue: (name) => style.get(name) || "",
+        getPropertyPriority: () => "",
+        setProperty: (name, value) => style.set(name, value),
+      },
     };
-    const controller = {
-      surfaces: new Map(),
-      surfaceSeed: BlackholeController.prototype.surfaceSeed,
-      element: { contains: () => false },
-      masksTarget: { firstElementChild: { append: () => masks++ } },
-      surfaceResize: { observe: () => observed++ },
+    const canvas = {
+      matches: (selector) => selector.split(", ").includes("canvas"),
     };
-    BlackholeController.prototype.collectSurfaces.call(controller);
-    BlackholeController.prototype.collectSurfaces.call(controller);
-    assert.equal(controller.surfaces.size, 1);
-    assert.equal(controller.surfaces.get(ad).card, true);
-    assert.match(style.get("clip-path"), /^url\(#blackhole-cut-/);
-    assert.equal(masks, 1, "repeated passes reuse the ad's mask");
-    assert.equal(observed, 1);
-  } finally {
-    if (originalDocument === undefined) delete globalThis.document;
-    else globalThis.document = originalDocument;
+    let masks = 0;
+    let observed = 0;
+    try {
+      globalThis.document = {
+        body: { children: [] },
+        querySelectorAll: (selector) =>
+          [ad, canvas].filter((element) => element.matches(selector)),
+        createElementNS: () => ({ setAttribute() {}, append() {} }),
+      };
+      const controller = {
+        surfaces: new Map(),
+        surfaceSeed: BlackholeController.prototype.surfaceSeed,
+        element: { contains: () => false },
+        masksTarget: { firstElementChild: { append: () => masks++ } },
+        surfaceResize: { observe: () => observed++ },
+      };
+      if (surfaceClass === ".finality-promo") {
+        BlackholeController.prototype.collectSurfaces.call(controller);
+        assert.equal(
+          controller.surfaces.size,
+          0,
+          "normal event damage must leave the promo intact",
+        );
+        assert.equal(style.has("clip-path"), false);
+        controller.finale = { progress: 0 };
+      }
+      BlackholeController.prototype.collectSurfaces.call(controller);
+      BlackholeController.prototype.collectSurfaces.call(controller);
+      assert.equal(controller.surfaces.size, 1);
+      assert.equal(controller.surfaces.get(ad).card, true);
+      assert.match(style.get("clip-path"), /^url\(#blackhole-cut-/);
+      assert.equal(masks, 1, "repeated passes reuse the card's mask");
+      assert.equal(observed, 1);
+    } finally {
+      if (originalDocument === undefined) delete globalThis.document;
+      else globalThis.document = originalDocument;
+    }
   }
 });
 

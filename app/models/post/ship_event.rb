@@ -113,7 +113,7 @@ class Post::ShipEvent < ApplicationRecord
       .joins(:project)
       .where.not(projects: { demo_url: [ nil, "" ] })
       .where.not(projects: { repo_url: [ nil, "" ] })
-      .where.not(id: Mission::Submission.with_deleted.where(payout_path: "static_prize").select(:ship_event_id))
+      .where.not(id: Mission::Submission.where(payout_path: "static_prize").select(:ship_event_id))
   }
 
   def voting_links_present?

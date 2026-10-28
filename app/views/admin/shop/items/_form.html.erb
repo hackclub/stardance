@@ -137,7 +137,38 @@
             <div class="shop-item-form__field">
               <%= f.label :sale_percentage, "Sale (%)", class: "shop-item-form__label" %>
               <%= f.number_field :sale_percentage, min: 0, max: 100, class: "form-control", placeholder: "0" %>
-              <span class="shop-item-form__hint">Discount off base price</span>
+              <span class="shop-item-form__hint">Discount off base price. With a sale window this is the starting discount.</span>
+            </div>
+          </div>
+
+          <div class="shop-item-form__row">
+            <div class="shop-item-form__field">
+              <%= f.label :sale_name, "Sale Name", class: "shop-item-form__label" %>
+              <%= f.text_field :sale_name, class: "form-control", placeholder: "Hardware Day" %>
+              <span class="shop-item-form__hint">Shown on the clearance sign and shop banner</span>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :sale_starts_at, "Sale Starts (UTC)", class: "shop-item-form__label" %>
+              <%= f.datetime_local_field :sale_starts_at, class: "form-control" %>
+              <span class="shop-item-form__hint">Blank = sale runs now</span>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :sale_ends_at, "Sale Ends (UTC)", class: "shop-item-form__label" %>
+              <%= f.datetime_local_field :sale_ends_at, class: "form-control" %>
+              <span class="shop-item-form__hint">Blank = no end</span>
+            </div>
+          </div>
+
+          <div class="shop-item-form__row">
+            <div class="shop-item-form__field">
+              <%= f.label :sale_step_percentage, "Drop Per Purchase (%)", class: "shop-item-form__label" %>
+              <%= f.number_field :sale_step_percentage, min: 0, max: 100, class: "form-control" %>
+              <span class="shop-item-form__hint">Discount points lost per unit sold during the sale (needs a start time)</span>
+            </div>
+            <div class="shop-item-form__field">
+              <%= f.label :sale_min_percentage, "Minimum Sale (%)", class: "shop-item-form__label" %>
+              <%= f.number_field :sale_min_percentage, min: 0, max: 100, class: "form-control" %>
+              <span class="shop-item-form__hint">The discount never drops below this</span>
             </div>
           </div>
 

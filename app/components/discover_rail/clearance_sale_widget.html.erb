@@ -1,0 +1,23 @@
+<%= link_to helpers.shop_category_path(ShopCategory::SALE_SLUG), class: "rail-widget clearance-sale-widget", aria: { label: "#{sale.title}: up to #{sale.top_percentage}% off in the shop" } do %>
+  <span class="clearance-sale-widget__eyebrow">Clearance sale</span>
+  <span class="clearance-sale-widget__fan" aria-hidden="true">
+    <% sale.showcase(3).each do |item| %>
+      <%= image_tag item.image.variant(:carousel_sm), alt: "", class: "clearance-sale-widget__item" %>
+    <% end %>
+  </span>
+  <span class="clearance-sale-widget__deal">
+    <span class="clearance-sale-widget__up-to">up to</span>
+    <span class="clearance-sale-widget__percent"><%= sale.top_percentage %>% off</span>
+  </span>
+  <span class="clearance-sale-widget__title"><%= sale.title %></span>
+  <% if sale.countdown_to %>
+    <span class="clearance-sale-widget__timer">
+      ends in
+      <span data-controller="countdown"
+            data-countdown-reset-at-value="<%= sale.countdown_to.iso8601 %>"
+            data-countdown-seconds-value="true"
+            data-countdown-expired-text-value="no time"></span>
+    </span>
+  <% end %>
+  <span class="clearance-sale-widget__cta">Shop the sale →</span>
+<% end %>

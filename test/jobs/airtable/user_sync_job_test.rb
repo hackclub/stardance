@@ -39,7 +39,7 @@ class Airtable::UserSyncJobTest < ActiveSupport::TestCase
 
     fields = Airtable::UserSyncJob.new.field_mapping(@user)
 
-    assert_equal "3", fields["Loops - stardanceWeeklyStickerEmail"]
+    assert_equal StickerPromo::WEEKS.last.number.to_s, fields["Loops - stardanceWeeklyStickerEmail"]
   end
 
   test "field_mapping sends a blank free sticker weeks value when the user earned none" do

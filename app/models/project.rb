@@ -747,11 +747,25 @@ class Project < ApplicationRecord
 
   LINK_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.fetch_values(:demo_url, :repo_url, :readme_url).flatten.freeze
 
+  SHIPPING_CLOSED_MESSAGE = "Stardance has ended, so new ships are closed.".freeze
+
+  def self.shipping_closed?(at = Time.current)
+    close_at = Rails.application.config.stardance_ships_close_at
+    close_at.present? && at >= close_at
+  end
+
   def shipping_requirements
     owner_vote_balance = memberships.owner.first&.user&.vote_balance.to_i
     votes_needed = [ -owner_vote_balance, 0 ].max
     mission_review = blocking_mission_submission
     [
+      {
+        key: :shipping_open,
+        label: "Ship before Stardance ends",
+        fail_label: SHIPPING_CLOSED_MESSAGE,
+        tooltip: "Ships close at the end of Saturday, October 31st (11:59 PM ET).",
+        passed: !Project.shipping_closed?
+      },
       {
         key: :not_ship_blocked,
         label: "Your project must not be blocked from shipping",
@@ -1098,6 +1112,8 @@ class Project < ApplicationRecord
     crates.io
     curseforge.com
     makerworld.com
+    thingiverse.com
+    printables.com
     streamlit.app
     figma.com
     nexusmods.com
@@ -1183,11 +1199,7 @@ class Project < ApplicationRecord
     # a "previous ship awaiting payout" — it's the one currently being
     # (re-)certified, so it must not block re-certification.
     return true unless last_ship_event.certification_status == "approved"
-    # with_deleted so a fixed-prize ship whose mission was detached doesn't
-    # strand the project: Post::ShipEvent.voteable keeps that ship out of the
-    # rating pool either way, so no payout is ever coming for it.
-    sub = Mission::Submission.with_deleted.find_by(ship_event_id: last_ship_event.id)
-    return true if sub&.payout_path == "static_prize"
+    return true if last_ship_event.mission_submission&.payout_path == "static_prize"
     false
   end
 

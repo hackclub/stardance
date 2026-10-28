@@ -1,6 +1,9 @@
 <% content_for :title, "My Orders" %>
 
 <div class="my-orders">
+  <% if flash[:celebrate] %>
+    <div data-controller="confetti" hidden></div>
+  <% end %>
   <div class="my-orders__header">
     <h1 class="my-orders__title">My Orders</h1>
     <%= render ActionButtonComponent.new(text: "Back to the Shop", href: shop_path, size: :small, variant: :secondary) %>
@@ -66,18 +69,19 @@
                   </span>
                   <% if order.aasm_state == "fulfilled" %>
                     <% if not order.digital? %>
-                      <span class="my-orders__status-hint">We have ordered/shipped the item to you! This does not mean it has already reached you.<% if order.external_ref.present? %> You can track the package here: <%= tracking_link_tag(order.external_ref, universal: false) %><% end %></span>
+                      <span class="my-orders__status-hint">We have ordered/shipped the item to you! This does not mean it has already reached you.<% if (tracking = order.tracking_link) %> You can track the package here: <%= tracking_link_tag(tracking) %><% end %><% if order.order_reference %> Order reference: <%= order.order_reference %><% end %></span>
                     <% elsif order.grant? && order.shop_card_grant.present? %>
                       <div class="my-orders__grant-actions">
                         <%= render ActionButtonComponent.new(text: "Open Grant", href: order.shop_card_grant.hcb_url, size: :large, variant: :primary, target: "_blank") %>
                       </div>
                     <% else %>
-                      <span class="my-orders__status-hint">We have ordered the item for you! <% if order.external_ref.present? %><%= order.external_ref %><% else %>You should check your emails :)<% end %></span>
+                      <span class="my-orders__status-hint">We have ordered the item for you! <% if order.order_reference %>Order reference: <%= order.order_reference %><% else %>You should check your emails :)<% end %></span>
                     <% end %>
                   <% elsif order.aasm_state == "rejected" && order.rejection_reason.present? %>
                     <span class="my-orders__status-hint my-orders__status-hint--danger"><%= order.rejection_reason %></span>
                   <% end %>
-                  <% if order.tracking_number.present? %>
+                  <%# Fulfilled physical orders already show tracking in the hint above. %>
+                  <% if order.tracking_number.present? && !(order.aasm_state == "fulfilled" && !order.digital?) %>
                     <span class="my-orders__status-hint my-orders__status-hint--tracking">Tracking: <%= tracking_link_tag(order.tracking_number) %></span>
                   <% end %>
                 </div>

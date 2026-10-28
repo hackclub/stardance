@@ -46,4 +46,17 @@ class My::SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=checkbox][name=platform_ads_enabled]"
     assert_select "input[type=checkbox][name=platform_ads_enabled][checked]", count: 0
   end
+
+  test "settings can turn the home countdown off and back on" do
+    assert @user.preference.countdown_enabled?
+
+    patch my_settings_path, params: { countdown_enabled: "0" }
+    assert_not @user.preference.reload.countdown_enabled?
+
+    patch my_settings_path, params: { platform_ads_enabled: "1" }
+    assert_not @user.preference.reload.countdown_enabled?, "omitting the field keeps the opt-out"
+
+    patch my_settings_path, params: { countdown_enabled: "1" }
+    assert @user.preference.reload.countdown_enabled?
+  end
 end

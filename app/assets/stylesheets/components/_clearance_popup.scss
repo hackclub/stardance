@@ -1,0 +1,130 @@
+// One-time clearance sale pop-up (shared/_clearance_sale_popup).
+
+.clearance-popup {
+  background: transparent;
+  border: 0;
+  // Centred in the viewport (the base styles reset dialog margins).
+  inset: 0;
+  margin: auto;
+  position: fixed;
+  color: var(--color-space-text);
+  max-width: min(440px, calc(100vw - 2rem));
+  overflow: visible;
+  padding: 0;
+
+  &::backdrop {
+    background: rgba(8, 6, 30, 0.75);
+  }
+
+  &__panel {
+    align-items: center;
+    background: var(--color-set-2-bg);
+    border: 3px solid var(--color-brand-yellow);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 2.25rem 1.5rem 1.5rem;
+    position: relative;
+    text-align: center;
+  }
+
+  // Buku and Bean peek over the top corners.
+  &__mascot {
+    height: 72px;
+    position: absolute;
+    top: -40px;
+    width: auto;
+
+    &--buku {
+      left: -12px;
+      transform: rotate(-8deg);
+    }
+
+    &--bean {
+      right: -12px;
+      transform: rotate(8deg);
+    }
+  }
+
+  &__eyebrow {
+    color: var(--color-red-450);
+    font-size: var(--font-size-s);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    font-size: var(--font-h3);
+    font-weight: 900;
+    line-height: 1.05;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__deal {
+    color: var(--color-brand-yellow);
+    font-size: var(--font-size-m);
+    font-weight: 800;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__percent {
+    font-size: 3rem;
+    font-weight: 900;
+    text-transform: none;
+  }
+
+  &__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin: 0.5rem 0;
+  }
+
+  &__item {
+    background: var(--color-space-bg);
+    border-radius: 10px;
+    box-sizing: border-box;
+    height: 72px;
+    object-fit: contain;
+    padding: 0.4rem;
+    width: 72px;
+  }
+
+  &__note {
+    font-size: var(--font-size-m);
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  &__actions {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+
+  &__later {
+    background: none;
+    border: 0;
+    color: var(--color-space-text);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-s);
+    opacity: 0.7;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+    }
+  }
+}

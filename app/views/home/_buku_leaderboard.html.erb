@@ -1,32 +1,38 @@
 <section class="buku-leaderboard" aria-label="bukus vs beans ship leaderboard">
-  <div class="buku-leaderboard__teams">
-    <% teams.each do |team, entries| %>
-      <section class="buku-leaderboard__team buku-leaderboard__team--<%= team %>" aria-label="<%= team == :buku ? 'bukus' : 'beans' %> top five">
-        <ol class="buku-leaderboard__list">
-          <% entries.first(BukuX3::Leaderboard::PRIZE_PLACES).each_with_index do |entry, index| %>
-            <%= render "buku_leaderboard_row", entry: entry, rank: index + 1, team: team %>
-          <% end %>
-        </ol>
-        <% if entries.empty? %><p class="buku-leaderboard__empty">no public shippers yet</p><% end %>
-      </section>
-    <% end %>
-  </div>
-  <%# Ranks 1–5 are already listed above, so only show the viewer's row below them. %>
-  <% if own && !(own.rank && own.rank <= BukuX3::Leaderboard::PRIZE_PLACES) %>
-    <div class="buku-leaderboard__teams buku-leaderboard__teams--own">
-      <% chase_rank, chase_minutes = own.chase(teams) %>
-      <% teams.each_key do |team| %>
-        <% if team == own.team %>
-          <ol class="buku-leaderboard__list" aria-label="your rank">
-            <%= render "buku_leaderboard_row", entry: own.entry, rank: own.rank, team: team %>
-          </ol>
-        <% elsif chase_rank %>
-          <% chase_hours = number_with_precision(chase_minutes / 60.0, precision: 2, delimiter: ",", strip_insignificant_zeros: true) %>
-          <p class="buku-leaderboard__chase"><%= chase_hours %> <%= chase_hours == "1" ? "hr" : "hrs" %> until rank <%= chase_rank %></p>
-        <% else %>
-          <div></div>
+  <%# The drawer animates the height; the panel inside slides in from the right. Its tab hangs off the box's bottom edge. %>
+  <div class="buku-leaderboard__drawer">
+    <div class="buku-leaderboard__panel" id="buku-leaderboard-panel">
+      <p class="buku-leaderboard__note">top five on each team get a <em>limited-edition</em> t-shirt</p>
+      <div class="buku-leaderboard__teams">
+        <% teams.each do |team, entries| %>
+          <section class="buku-leaderboard__team buku-leaderboard__team--<%= team %>" aria-label="<%= team == :buku ? 'bukus' : 'beans' %> top five">
+            <ol class="buku-leaderboard__list">
+              <% entries.first(BukuX3::Leaderboard::PRIZE_PLACES).each_with_index do |entry, index| %>
+                <%= render "buku_leaderboard_row", entry: entry, rank: index + 1, team: team %>
+              <% end %>
+            </ol>
+            <% if entries.empty? %><p class="buku-leaderboard__empty">no public shippers yet</p><% end %>
+          </section>
         <% end %>
+      </div>
+      <%# Ranks 1–5 are already listed above, so only show the viewer's row below them. %>
+      <% if own && !(own.rank && own.rank <= BukuX3::Leaderboard::PRIZE_PLACES) %>
+        <div class="buku-leaderboard__teams buku-leaderboard__teams--own">
+          <% chase_rank, chase_minutes = own.chase(teams) %>
+          <% teams.each_key do |team| %>
+            <% if team == own.team %>
+              <ol class="buku-leaderboard__list" aria-label="your rank">
+                <%= render "buku_leaderboard_row", entry: own.entry, rank: own.rank, team: team %>
+              </ol>
+            <% elsif chase_rank %>
+              <% chase_hours = number_with_precision(chase_minutes / 60.0, precision: 2, delimiter: ",", strip_insignificant_zeros: true) %>
+              <p class="buku-leaderboard__chase"><%= chase_hours %> <%= chase_hours == "1" ? "hr" : "hrs" %> until rank <%= chase_rank %></p>
+            <% else %>
+              <div></div>
+            <% end %>
+          <% end %>
+        </div>
       <% end %>
     </div>
-  <% end %>
+  </div>
 </section>

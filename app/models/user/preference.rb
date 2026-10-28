@@ -3,6 +3,7 @@
 # Table name: user_preferences
 #
 #  id                                       :bigint           not null, primary key
+#  countdown_enabled                        :boolean          default(TRUE), not null
 #  disintegration_effects_enabled           :boolean          default(TRUE), not null
 #  leaderboard_optin                        :boolean          default(FALSE), not null
 #  particle_effects_enabled                 :boolean          default(TRUE), not null

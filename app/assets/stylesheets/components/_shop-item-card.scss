@@ -1,3 +1,5 @@
+@use "../config/mixins" as *;
+
 // Item card on shop category subpages. Hero image on top, body with title +
 // description + price/hours row + Order now CTA. The "67 given out" ribbon and
 // the star bookmark sit on top of the image area.
@@ -16,6 +18,21 @@
   // Fill the grid/flex cell so every card in a row is the same height.
   height: 100%;
   position: relative;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+
+  // Real pointers only: on touch screens :hover sticks after a tap.
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover {
+      filter: drop-shadow(0 10px 18px rgba(8, 6, 30, 0.55));
+      transform: translateY(-4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 
   &__image-wrap {
     border: 2px solid var(--card-border);
@@ -28,9 +45,11 @@
   }
 
   &__image {
+    box-sizing: border-box;
     display: block;
     height: 100%;
     object-fit: contain;
+    padding: 0.75rem;
     width: 100%;
   }
 
@@ -138,26 +157,25 @@
     font-size: 1rem;
     font-weight: 700;
     justify-content: space-between;
-    margin-top: 0.25rem;
+    // Pin price, sale note and CTA to the bottom so they line up across a
+    // row of equal-height cards, whatever the description length.
+    margin-top: auto;
+    padding-top: 0.25rem;
   }
 
   &__hours {
     color: var(--color-space-text);
   }
 
-  &__price {
-    align-items: center;
-    color: var(--color-space-text);
-    display: inline-flex;
-    font-size: 1.35rem;
-    font-weight: 700;
-    gap: 0.4rem;
+  // Pre-sale price, struck through beside the sale price in the buy button.
+  &__sr-only {
+    @include visually-hidden;
   }
 
-  &__original-price {
-    font-size: 0.95rem;
-    opacity: 0.65;
-    text-decoration: line-through;
+  &__was-price {
+    font-size: 0.85em;
+    margin-right: 0.35rem;
+    opacity: 0.5;
   }
 
   &__sale-badge {
@@ -171,9 +189,20 @@
     letter-spacing: 0.04em;
     padding: 0.2rem 0.55rem;
     position: absolute;
-    top: 48px;
+    top: 12px;
     text-transform: uppercase;
     z-index: 2;
+
+    // Drops below the "given out" / "New" ribbon when the card has one.
+    &--below-ribbon {
+      top: 48px;
+    }
+  }
+
+  &__sale-next {
+    color: var(--color-brand-yellow);
+    font-size: 0.85rem;
+    margin: 0;
   }
 
   &__stock-badge {
@@ -209,6 +238,13 @@
     padding: 0.2rem 0.5rem;
     position: absolute;
     right: 12px;
+
+    &--sale {
+      background: var(--color-brand-yellow);
+      color: var(--color-space-bg);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
   }
 
   &__enabled-until {
@@ -236,8 +272,6 @@
   }
 
   &__order-cta {
-    // Pin to the bottom so CTAs line up across a row of equal-height cards.
-    margin-top: auto;
     // Shorter than the default large button.
     padding-block: 8px;
     width: 100%;
@@ -272,6 +306,10 @@
       bottom: 6px;
       right: 6px;
     }
+  }
+
+  &--on-sale {
+    --card-border: var(--color-brand-yellow);
   }
 
   &--out-of-stock {

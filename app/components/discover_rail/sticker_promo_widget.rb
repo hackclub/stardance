@@ -12,6 +12,10 @@ module DiscoverRail
       StickerPromo.deadline_iso
     end
 
+    def shop_item_id
+      StickerPromo.shop_item_id
+    end
+
     def eligible?
       user.projects.where("shipped_at >= ?", StickerPromo.window_start).exists?
     end

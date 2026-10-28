@@ -36,9 +36,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     assert_selector "[role='meter'][aria-valuenow='25.0'][aria-valuemax='100'][style='--tug-position: 75.0%']"
     assert_selector ".buku-x3-status__team--buku img[src*='bukux3/buku-pulling'][width='2752'][height='2064']"
     assert_selector ".buku-x3-status__team--bean img[src*='bukux3/bean-pulling'][width='2752'][height='2064']"
-    assert_selector ".buku-x3-status__label", exact_text: "25% damaged"
-    assert_selector ".buku-x3-status__team--buku > span", exact_text: "bukus"
-    assert_selector ".buku-x3-status__team--bean > span", exact_text: "beans"
+    assert_selector ".buku-x3-status__scores .buku-x3-status__label", exact_text: "25% damaged"
     assert_no_selector ".buku-x3-status__private, .buku-x3-status__directions, .buku-x3-status__balance"
   end
 
@@ -55,18 +53,60 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     render_inline BukuX3StatusComponent.new(user: @user, compact: true)
     assert_selector ".buku-x3-status--compact"
     assert_no_selector "[role='meter']"
-    assert_no_selector ".buku-x3-status__hours"
+    assert_no_selector ".buku-x3-status__scores"
     assert_no_selector ".buku-x3-status__toggle"
+    assert_no_selector ".buku-x3-status__countdown"
   end
 
-  test "each team has its own formatted shipped hours below its name" do
+  test "each team's formatted shipped hours sit under its end of the rope" do
     BukuX3::Event.stub(:current, @event) do
       @event.stub(:team_hours, { buku: 1234.5, bean: 67 }) do
         render_inline BukuX3StatusComponent.new(user: @user)
       end
     end
-    assert_selector ".buku-x3-status__team--buku .buku-x3-status__hours", exact_text: "1,234.5 hrs shipped"
-    assert_selector ".buku-x3-status__team--bean .buku-x3-status__hours", exact_text: "67 hrs shipped"
+    assert_selector ".buku-x3-status__scores > .buku-x3-status__score--buku:first-child", exact_text: "bukus 1,234.5 hrs"
+    assert_selector ".buku-x3-status__scores > .buku-x3-status__score--bean:last-child", exact_text: "67 hrs beans"
+  end
+
+  test "countdown to the end of stardance sits above the rope until it ends" do
+    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+      render_inline BukuX3StatusComponent.new(user: @user)
+    end
+    assert_selector ".buku-x3-status__countdown + .buku-x3-status__damage"
+    assert_selector ".buku-x3-status__countdown-caption + .buku-x3-status__clock[data-controller='countdown'][data-countdown-clock-value='true'][aria-hidden='true']"
+    assert_selector ".buku-x3-status__countdown-caption", text: "stardance ends in"
+    # No leaderboard passed in, so no tab.
+    assert_no_selector ".buku-x3-status__leaderboard-tab"
+
+    @user.dismiss_thing!("stardance_finale")
+    Rails.application.config.stub(:stardance_ends_at, 1.minute.ago) do
+      render_inline BukuX3StatusComponent.new(user: @user)
+    end
+    assert_no_selector ".buku-x3-status__countdown"
+  end
+
+  test "leaderboard opens from an attached tab, with or without the clock" do
+    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+      render_inline(BukuX3StatusComponent.new(user: @user)) { "leaderboard" }
+      assert_selector ".buku-x3-status[data-controller='buku-x3-status buku-leaderboard-panel']"
+      assert_selector ".buku-x3-status > button.buku-x3-status__leaderboard-tab[aria-expanded='false'][aria-controls='buku-leaderboard-panel']", exact_text: "leaderboard"
+
+      @user.preference.update!(countdown_enabled: false)
+      render_inline(BukuX3StatusComponent.new(user: @user)) { "leaderboard" }
+      assert_no_selector ".buku-x3-status__clock"
+      assert_selector ".buku-x3-status > .buku-x3-status__leaderboard-tab"
+    end
+  end
+
+  test "countdown respects the viewer's setting and shows for guests" do
+    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+      @user.preference.update!(countdown_enabled: false)
+      render_inline BukuX3StatusComponent.new(user: @user)
+      assert_no_selector ".buku-x3-status__countdown"
+
+      render_inline BukuX3StatusComponent.new(user: nil)
+      assert_selector ".buku-x3-status__countdown"
+    end
   end
 
   test "role is never computed before intro and reveal completion" do
@@ -106,7 +146,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     end
     assert_public_progress_only
     assert_selector "[role='meter'][aria-valuenow='25']"
-    assert_selector ".buku-x3-status__hours", text: "0 hrs shipped", count: 2
+    assert_selector ".buku-x3-status__score strong", exact_text: "0", count: 2
   end
 
   test "compact private reminder stays hidden for guests and incomplete accounts" do

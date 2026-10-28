@@ -71,13 +71,16 @@
         data-mihi-mode-activation-url-value="<%= mihi_activations_path %>"
         data-mihi-mode-image-url-value="<%= asset_path('mihi/portrait.jpg') %>">
     <% buku_enabled = current_user.present? && Flipper.enabled?(:bukux3, current_user) %>
-    <% if !controller_path.start_with?("admin/") && (buku_enabled || local_event_simulator?) %>
+    <% if !controller_path.start_with?("admin/") && (current_user.present? || local_event_simulator?) %>
       <% buku_event = BukuX3::Event.current %>
       <%= render "shared/blackhole", intensity: buku_enabled ? (buku_event&.percent || BukuX3::Event::STARTING_PERCENT) : 0,
                  visual_intensity: buku_event&.visual_intensity || 100, progress_url: buku_enabled ? buku_x3_progress_path(format: :json) : nil,
                  particles_enabled: current_user&.preference&.particle_effects_enabled? != false,
                  disintegration_enabled: current_user&.preference&.disintegration_effects_enabled? != false,
                  simulator: local_event_simulator?,
+                 ends_at: current_user.present? ? Rails.application.config.stardance_ends_at : nil,
+                 finale_seen: current_user&.has_dismissed?("stardance_finale") || false, viewer_id: current_user&.id,
+                 video_url: Rails.application.config.stardance_finale_video_url,
                  awaiting_reveal: buku_enabled && !(current_user.onboarded? && current_user.has_dismissed?(VisualNovelComponent::BUKU_X3_DISMISS_THING) && current_user.has_dismissed?(BukuX3RevealComponent::DISMISS_THING)) %>
     <% end %>
     <% if @show_boot_splash %>
@@ -89,14 +92,6 @@
       </div>
     <% end %>
     <div class="top-banners">
-      <% unless cookies[:deadline_extension_dismissed] || controller_path == "landing" %>
-        <div class="top-banner top-banner--announcement" role="region" aria-label="announcement"
-             data-controller="dismissable top-banner" data-dismissable-cookie-value="deadline_extension_dismissed">
-          <p class="top-banner__text">stardance has been extended another month! the new deadline is october 31 :)</p>
-          <button type="button" class="top-banner__dismiss" aria-label="Dismiss announcement"
-                  data-action="click->dismissable#dismiss">&times;</button>
-        </div>
-      <% end %>
       <% if in_beta? %>
         <div class="top-banner top-banner--beta">
           <strong>Beta</strong> &mdash; This is a testing environment. Your data may be reset at any time.
@@ -125,6 +120,9 @@
       <% end %>
     <% end %>
     <div id="flash-region"><%= render "shared/flash" %></div>
+    <% if current_user && !@_admin_layout && request.path != shop_category_path(ShopCategory::SALE_SLUG) && (sale = clearance_sale) %>
+      <%= render "shared/clearance_sale_popup", sale: sale %>
+    <% end %>
     <%= render Onboarding::GuestBannerComponent.new unless @hide_sidebar %>
 <% if @_admin_layout %>
 <div class="admin-content"><%= yield %></div>

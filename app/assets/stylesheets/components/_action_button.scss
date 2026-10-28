@@ -113,6 +113,8 @@
     flex-shrink: 0;
     width: 1.1em;
     height: 1.1em;
+    // Image icons (e.g. the stardust bottle) keep their shape in the square.
+    object-fit: contain;
     fill: currentColor;
     color: inherit;
     transition: transform 200ms ease;

@@ -84,6 +84,9 @@ class Projects::ShipsController < ApplicationController
     end
 
     def require_shippable
+      if Project.shipping_closed?
+        redirect_to project_path(@project), alert: Project::SHIPPING_CLOSED_MESSAGE and return
+      end
       if @project.ship_blocked? && policy(@project).ship?
         redirect_to project_path(@project), alert: Project::ShipBlock::BLOCKED_MESSAGE and return
       end

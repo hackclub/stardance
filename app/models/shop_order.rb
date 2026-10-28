@@ -136,6 +136,7 @@ class ShopOrder < ApplicationRecord
   validate :fraud_related_project_exists, if: -> { fraud_related_project_id.present? }
 
   after_create :create_negative_payout
+  after_create { shop_item&.forget_sale_units_sold }
   after_create :assign_default_user
   after_create :notify_amber_if_verification_call_required
   after_create :hold_if_usps_suspended
@@ -286,10 +287,11 @@ class ShopOrder < ApplicationRecord
 
     event :mark_fulfilled do
       transitions to: :fulfilled
-      before do |external_ref = nil, fulfillment_cost = nil, fulfilled_by = nil|
+      before do |external_ref = nil, fulfillment_cost = nil, fulfilled_by = nil, tracking_number = nil|
         self.external_ref = external_ref
         self.fulfillment_cost = fulfillment_cost if fulfillment_cost
         self.fulfilled_by = fulfilled_by if fulfilled_by
+        self.tracking_number = tracking_number.to_s.strip if tracking_number.present?
       end
       after do
         mark_stickers_received if shop_item.is_a?(ShopItem::FreeStickers)
@@ -331,8 +333,19 @@ class ShopOrder < ApplicationRecord
     shop_item.is_a?(ShopItem::HCBGrant) || shop_item.is_a?(ShopItem::HCBPreauthGrant)
   end
 
+  # Where to follow the parcel: the carrier tracking number, or a Hack Club
+  # mail id in external_ref. Any other external_ref is the supplier's order
+  # number and is never presented as tracking (see #order_reference).
   def tracking_link
-    TrackingLink.for(tracking_number)
+    TrackingLink.for(tracking_number) || (TrackingLink.for(external_ref) if hack_club_mail_ref?)
+  end
+
+  def order_reference
+    external_ref.presence unless hack_club_mail_ref?
+  end
+
+  def hack_club_mail_ref?
+    external_ref.to_s.start_with?(*TrackingLink::HACK_CLUB_MAIL_PREFIXES)
   end
 
   # Sets (or clears, when blank) the carrier tracking and audit logs the

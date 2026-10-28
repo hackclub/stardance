@@ -9,10 +9,10 @@ section "Order Details:",
     mrkdwn_text("*Quantity:* #{order.quantity}"),
     mrkdwn_text("*Total:* :stardust: #{order.total_cost}"),
     mrkdwn_text("*Fulfilled by:* #{order.fulfilled_by}"),
-  ]
+    (mrkdwn_text("*Order reference:* #{order.order_reference}") if order.order_reference),
+  ].compact
 
-tracking = order.tracking_link || TrackingLink.for(order.external_ref, universal: false)
-section "*Tracking:* #{tracking.to_slack_mrkdwn}", markdown: true if tracking
+section "*Tracking:* #{order.tracking_link.to_slack_mrkdwn}", markdown: true if order.tracking_link
 
 divider
 

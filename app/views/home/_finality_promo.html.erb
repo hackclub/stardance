@@ -1,0 +1,11 @@
+<%= link_to finality_raffle_path, class: "finality-promo" do %>
+  <div class="finality-promo__copy">
+    <h2>we're getting rid<br>of everything!!</h2>
+    <p>ship your project for a chance to win an <strong>Xbox Series S</strong>, a <strong>LEGO Artemis set</strong>, and more!</p>
+    <span class="finality-promo__link">see what you could win <span aria-hidden="true">↗</span></span>
+  </div>
+  <div class="finality-promo__art" aria-hidden="true">
+    <%= image_tag "finality/xbox.webp", alt: "", class: "finality-promo__xbox", width: 130, height: 130 %>
+    <%= image_tag "finality/artemis.webp", alt: "", class: "finality-promo__lego", width: 150, height: 150 %>
+  </div>
+<% end %>

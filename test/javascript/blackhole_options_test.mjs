@@ -2,6 +2,151 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import BlackholeController from "../../app/javascript/controllers/blackhole_controller.js";
 
+function finaleController(overrides = {}) {
+  return {
+    finale: { from: 0.25, progress: -1, startedAt: 1000 },
+    requested: 0.25,
+    level: 0.25,
+    reducedMotion: { matches: false },
+    scenesBlocked: () => false,
+    element: { style: { setProperty() {} } },
+    wake() {},
+    ...overrides,
+  };
+}
+
+test("finale ramps over twenty seconds from the viewer's starting damage", () => {
+  const controller = finaleController();
+  const update = (offset) =>
+    BlackholeController.prototype.updateFinale.call(controller, 1000 + offset);
+  update(0);
+  assert.equal(controller.requested, 0.25);
+  update(10_000);
+  assert.equal(controller.requested, 0.625);
+  update(20_000);
+  assert.equal(controller.requested, 1);
+  assert.equal(controller.level, 1);
+});
+
+test("disintegration waits for the cutscene to start", () => {
+  const controller = finaleController({ finale: null });
+  BlackholeController.prototype.updateFinale.call(controller, Date.now());
+  assert.equal(controller.requested, 0.25);
+});
+
+test("the finale overrides every preference combination, then resets to the saved settings", () => {
+  for (const effects of [false, true]) {
+    for (const particles of [false, true]) {
+      const controller = finaleController({
+        startFinale: BlackholeController.prototype.startFinale,
+        updateFinale: BlackholeController.prototype.updateFinale,
+        resetFinale: BlackholeController.prototype.resetFinale,
+        setIntensity: BlackholeController.prototype.setIntensity,
+        finale: null,
+        disintegrationEnabledValue: effects,
+        particlesEnabledValue: particles,
+        visualIntensityValue: 100,
+        latestIntensity: 25,
+        progressUrlValue: "/progress",
+        reset() {
+          this.level = this.requested = 0;
+        },
+        cutSurfaces() {},
+        dispatch(name, { detail }) {
+          assert.equal(name, "progress", "must not skip to the video");
+          this.reported = detail.percent;
+        },
+      });
+      controller.startFinale();
+      const start = controller.finale.startedAt;
+      assert.equal(controller.finale.from, effects ? 0.25 : 0);
+      controller.updateFinale(start + 10_000);
+      const halfway = effects ? 0.625 : 0.5;
+      assert.equal(controller.requested, halfway);
+      controller.setIntensity(10);
+      assert.equal(
+        controller.requested,
+        halfway,
+        "polls cannot undo the finale",
+      );
+      assert.equal(controller.reported, 10, "team score stays real");
+      controller.updateFinale(start + 20_000);
+      assert.equal(controller.level, 1);
+
+      controller.resetFinale();
+      assert.equal(controller.finale, null);
+      assert.equal(controller.level, effects ? 0.1 : 0);
+      assert.equal(controller.disintegrationEnabledValue, effects);
+      assert.equal(controller.particlesEnabledValue, particles);
+    }
+  }
+});
+
+test("the admin intensity kill switch still skips destruction and reaches the video", () => {
+  const controller = finaleController({
+    visualIntensityValue: 0,
+    resetFinale() {},
+    dispatch(name) {
+      this.event = name;
+    },
+  });
+  BlackholeController.prototype.startFinale.call(controller);
+  assert.equal(controller.event, "finale-complete");
+});
+
+test("reduced motion reaches the final mask without animating", () => {
+  const controller = finaleController({ reducedMotion: { matches: true } });
+  BlackholeController.prototype.updateFinale.call(controller, 1000);
+  assert.equal(controller.level, 1);
+});
+
+test("live polls keep finale damage without changing the reported team score", () => {
+  const controller = finaleController({
+    finale: { from: 0.25, progress: 0.5 },
+    progressUrlValue: "/progress",
+    dispatch(name, { detail }) {
+      this.progress = detail;
+    },
+  });
+  BlackholeController.prototype.setIntensity.call(controller, 10);
+  assert.equal(controller.requested, 0.625);
+  assert.equal(controller.progress.percent, 10);
+  assert.equal(
+    BlackholeController.prototype.repairStrength.call(controller, {}, {}),
+    0,
+  );
+});
+
+test("completed finale hides offscreen surfaces and text copies and makes controls inert", () => {
+  const element = {
+    getBoundingClientRect() {
+      assert.fail("completion must cover offscreen surfaces too");
+    },
+    inert: false,
+  };
+  let mask;
+  const surface = {
+    path: {
+      setAttribute(name, value) {
+        mask = value;
+      },
+    },
+    textCopy: { hidden: false },
+  };
+  const controller = {
+    finale: { progress: 1 },
+    level: 1,
+    surfaces: new Map([[element, surface]]),
+    textTarget: { hidden: false },
+    recordMaskCost() {},
+  };
+  BlackholeController.prototype.cutSurfaces.call(controller, false);
+  assert.equal(mask, "M0,0Z");
+  assert.equal(element.inert, true);
+  assert.equal(surface.textCopy.hidden, true);
+  assert.equal(controller.textTarget.hidden, true);
+});
+
 test("navigation restores damage immediately, but live changes still animate", () => {
   const controller = {
     scenesBlocked: () => false,
@@ -110,6 +255,85 @@ test("particle opt-out disables both ambient dust and destruction bursts", () =>
   controller.emitDust(100);
   assert.equal(controller.particles.length, 0);
   assert.equal(controller.dustBudget, undefined);
+});
+
+test("finale dust overrides particle opt-outs, paints and settles before handing off", () => {
+  let painted = 0;
+  const controller = {
+    finale: { progress: 0.5 },
+    particlesEnabledValue: false,
+    simulation: { particles: false },
+    reducedMotion: { matches: false },
+    level: 0.5,
+    requested: 0.5,
+    particles: [],
+    fringe: [{ x: 10, y: 20 }],
+    emitDust: BlackholeController.prototype.emitDust,
+    emitAmbientDust: BlackholeController.prototype.emitAmbientDust,
+    draw: BlackholeController.prototype.draw,
+    canvasContext: {
+      clearRect() {},
+      save() {},
+      translate() {},
+      rotate() {},
+      fillRect() {
+        painted++;
+      },
+      restore() {},
+    },
+    dispatch(name) {
+      this.event = name;
+    },
+    wake() {
+      this.woke = true;
+    },
+  };
+  controller.emitAmbientDust(1);
+  controller.emitDust(8);
+  assert.equal(controller.particles.length, 30);
+  controller.draw(0.05);
+  assert.equal(painted, 30);
+
+  controller.finale.progress = 1;
+  controller.level = controller.requested = 1;
+  controller.emitAmbientDust(1);
+  assert.equal(
+    controller.particles.length,
+    30,
+    "completed destruction stops new ambient dust",
+  );
+  for (let frame = 0; frame < 60; frame++) controller.draw(0.05);
+  assert.equal(controller.particles.length, 0);
+  BlackholeController.prototype.tick.call(controller, 1000);
+  assert.equal(controller.event, "finale-complete");
+  assert.equal(controller.woke, undefined);
+
+  controller.finale = null;
+  controller.emitAmbientDust(1);
+  controller.emitDust(8);
+  assert.equal(
+    controller.particles.length,
+    0,
+    "normal rendering honors the opt-out again",
+  );
+  assert.equal(controller.particlesEnabledValue, false);
+  assert.equal(controller.simulation.particles, false);
+});
+
+test("the finale keeps scheduling dust frames with particles turned off in settings", () => {
+  const controller = finaleController({
+    finale: { progress: 0.5 },
+    particlesEnabledValue: false,
+    simulation: { particles: false },
+    particles: [],
+    emitAmbientDust() {},
+    draw() {},
+    wake() {
+      this.woke = true;
+    },
+  });
+  BlackholeController.prototype.tick.call(controller, 1000);
+  assert.equal(controller.woke, true);
 });
 
 test("restoring a simulator preview cannot overwrite the saved particle opt-out", () => {

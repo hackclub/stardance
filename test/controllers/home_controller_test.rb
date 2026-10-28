@@ -23,6 +23,28 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#home_feed[src=?]", home_feed_path
   end
 
+  teardown { Flipper.disable(Finality::RAFFLE_FEATURE_FLAG) }
+
+  test "raffle promo is hidden when its flag is disabled" do
+    Flipper.disable(Finality::RAFFLE_FEATURE_FLAG)
+    get home_path
+
+    assert_response :success
+    assert_select ".finality-promo", count: 0
+  end
+
+  test "enabled raffle promo sits below the fight and links to the dedicated page" do
+    Flipper.enable(Finality::RAFFLE_FEATURE_FLAG)
+    travel_to Finality.window.begin do
+      get home_path
+    end
+
+    assert_response :success
+    assert_select "turbo-frame#buku_x3_home_status + a.finality-promo[href=?]", finality_raffle_path
+    assert_select ".finality-promo img", count: 2
+    assert_select ".finality-raffle-page", count: 0
+  end
+
   test "composer chips read hackatime keys from preloaded rows instead of one query per project" do
     linked = 3.times.map do |i|
       project = Project.create!(title: "Linked project #{i}")

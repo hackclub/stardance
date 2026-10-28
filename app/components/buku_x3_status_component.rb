@@ -3,9 +3,6 @@
 # Public team progress with an optional private role reminder. Call sites pass
 # the viewer, never a profile/project owner; do not cache across users.
 class BukuX3StatusComponent < ViewComponent::Base
-  # Short line shown under the rope, e.g. the leaderboard prize.
-  renders_one :tug_note
-
   def initialize(user:, compact: false, preview: false, preview_role: "buku")
     @user = user
     @compact = compact
@@ -25,6 +22,16 @@ class BukuX3StatusComponent < ViewComponent::Base
       @user.has_dismissed?(BukuX3RevealComponent::DISMISS_THING)
   end
 
+  # Keep the existing clock for unseen late-arrival finales, respecting settings.
+  def countdown?
+    (Time.current < ends_at || (@user.present? && !@user.has_dismissed?("stardance_finale"))) && @user&.preference&.countdown_enabled? != false
+  end
+
+  # The home page passes the leaderboard as content; its tab hangs off the bottom edge.
+  # (home always passes a block, which is empty when the viewer can't see the leaderboard).
+  def leaderboard? = !compact? && content.present?
+
+  def ends_at = Rails.application.config.stardance_ends_at
   def compact? = @compact
   def preview? = @preview && Rails.env.development?
   def buku?

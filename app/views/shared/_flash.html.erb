@@ -26,7 +26,7 @@
 <% if flash.to_hash.except("achievements").any? %>
   <div class="flash-container">
     <% flash.to_hash.except("achievements").each do |type, message| %>
-      <% next if %w[user_ref_token].include?(type.to_s) %>
+      <% next if %w[user_ref_token celebrate].include?(type.to_s) %>
       <% icon, variant = case type.to_s
         when "notice", ":success" then ["icons/checked.svg", "success"]
         when "alert", "error", "danger" then ["icons/delete.svg", "error"]

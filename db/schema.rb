@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_27_203202) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -424,6 +424,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_120000) do
     t.index ["project_id", "created_at"], name: "index_extension_usages_on_project_id_and_created_at"
     t.index ["project_id"], name: "index_extension_usages_on_project_id"
     t.index ["user_id"], name: "index_extension_usages_on_user_id"
+  end
+
+  create_table "finality_raffle_draws", force: :cascade do |t|
+    t.string "key", null: false
+    t.datetime "frozen_at"
+    t.bigint "frozen_by_id"
+    t.integer "entry_count", default: 0, null: false
+    t.integer "participant_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["frozen_by_id"], name: "index_finality_raffle_draws_on_frozen_by_id"
+    t.index ["key"], name: "index_finality_raffle_draws_on_key", unique: true
+  end
+
+  create_table "finality_raffle_entries", force: :cascade do |t|
+    t.bigint "draw_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "ship_event_id", null: false
+    t.datetime "shipped_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["draw_id", "ship_event_id"], name: "index_finality_raffle_entries_on_draw_id_and_ship_event_id", unique: true
+    t.index ["draw_id"], name: "index_finality_raffle_entries_on_draw_id"
+    t.index ["user_id"], name: "index_finality_raffle_entries_on_user_id"
+  end
+
+  create_table "finality_raffle_selections", force: :cascade do |t|
+    t.bigint "draw_id", null: false
+    t.bigint "user_id", null: false
+    t.string "prize_key", null: false
+    t.integer "slot", null: false
+    t.integer "entry_count", null: false
+    t.integer "pool_entry_count", null: false
+    t.bigint "selected_by_id", null: false
+    t.datetime "voided_at"
+    t.bigint "voided_by_id"
+    t.text "void_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["draw_id", "prize_key", "slot"], name: "finality_raffle_one_active_selection_per_slot", unique: true, where: "(voided_at IS NULL)"
+    t.index ["draw_id", "user_id"], name: "finality_raffle_one_prize_per_person", unique: true, where: "(voided_at IS NULL)"
+    t.index ["draw_id"], name: "index_finality_raffle_selections_on_draw_id"
+    t.index ["selected_by_id"], name: "index_finality_raffle_selections_on_selected_by_id"
+    t.index ["user_id"], name: "index_finality_raffle_selections_on_user_id"
+    t.index ["voided_by_id"], name: "index_finality_raffle_selections_on_voided_by_id"
+    t.check_constraint "slot > 0 AND entry_count > 0 AND pool_entry_count >= entry_count", name: "finality_raffle_positive_counts"
+    t.check_constraint "voided_at IS NULL AND voided_by_id IS NULL AND void_reason IS NULL OR voided_at IS NOT NULL AND voided_by_id IS NOT NULL AND void_reason IS NOT NULL AND length(TRIM(BOTH FROM void_reason)) > 0", name: "finality_raffle_void_requires_reason"
   end
 
   create_table "flipper_features", force: :cascade do |t|
@@ -1375,7 +1422,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_120000) do
     t.string "requires_achievement", default: [], array: true
     t.boolean "requires_ship", default: false
     t.boolean "requires_verification_call", default: false, null: false
+    t.datetime "sale_ends_at"
+    t.integer "sale_min_percentage", default: 0, null: false
+    t.string "sale_name"
     t.integer "sale_percentage"
+    t.datetime "sale_starts_at"
+    t.integer "sale_step_percentage", default: 0, null: false
     t.boolean "show_image_in_shop", default: false
     t.boolean "show_in_carousel"
     t.integer "site_action"
@@ -1709,6 +1761,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_120000) do
   end
 
   create_table "user_preferences", force: :cascade do |t|
+    t.boolean "countdown_enabled", default: true, null: false
     t.datetime "created_at", null: false
     t.boolean "disintegration_effects_enabled", default: true, null: false
     t.boolean "leaderboard_optin", default: false, null: false
@@ -1968,6 +2021,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_120000) do
   add_foreign_key "devlog_versions", "users"
   add_foreign_key "extension_usages", "projects"
   add_foreign_key "extension_usages", "users"
+  add_foreign_key "finality_raffle_draws", "users", column: "frozen_by_id"
+  add_foreign_key "finality_raffle_entries", "finality_raffle_draws", column: "draw_id"
+  add_foreign_key "finality_raffle_entries", "users"
+  add_foreign_key "finality_raffle_selections", "finality_raffle_draws", column: "draw_id"
+  add_foreign_key "finality_raffle_selections", "users"
+  add_foreign_key "finality_raffle_selections", "users", column: "selected_by_id"
+  add_foreign_key "finality_raffle_selections", "users", column: "voided_by_id"
   add_foreign_key "follows", "users", column: "followed_id"
   add_foreign_key "follows", "users", column: "follower_id"
   add_foreign_key "fraud_payout_lines", "fraud_payout_runs"

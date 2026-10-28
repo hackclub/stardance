@@ -31,6 +31,10 @@ class Shop::BaseController < ApplicationController
     @user_balance = current_user&.cached_balance || 0
 
     preload_shop_item_card_data(@shop_items + Array(@recently_added_items))
+
+    # What this visitor can actually buy, so the clearance banner never
+    # advertises a sale that's out of reach in their region.
+    @available_shop_items = @shop_items.select { |item| item.image.attached? && item.enabled_in_region?(@user_region) }
   end
 
   def prepare_visible_shop_items(items = @shop_items)

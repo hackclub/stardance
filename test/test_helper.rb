@@ -50,6 +50,10 @@ end
 
 Dir[Rails.root.join("test/support/**/*.rb")].each { |f| require f }
 
+# Ships close at the real end of Stardance, so tests that ship would start
+# failing once that date passes. Keep them open; tests of the cutoff set it.
+Rails.application.config.stardance_ships_close_at = nil
+
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers

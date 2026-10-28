@@ -47,7 +47,12 @@
 #  requires_achievement              :string           default([]), is an Array
 #  requires_ship                     :boolean          default(FALSE)
 #  requires_verification_call        :boolean          default(FALSE), not null
+#  sale_ends_at                      :datetime
+#  sale_min_percentage               :integer          default(0), not null
+#  sale_name                         :string
 #  sale_percentage                   :integer
+#  sale_starts_at                    :datetime
+#  sale_step_percentage              :integer          default(0), not null
 #  show_image_in_shop                :boolean          default(FALSE)
 #  show_in_carousel                  :boolean
 #  site_action                       :integer
@@ -184,6 +189,8 @@ class ShopItem < ApplicationRecord
       item.instance_variable_set(:@preloaded_reserved_quantity, shop_page_data[:reserved_counts][item.id] || 0)
       item.instance_variable_set(:@preloaded_purchase_count, shop_page_data[:purchase_counts][item.id] || 0)
     end
+    # Sale prices move with every purchase, so their counts stay out of the cache.
+    preload_sale_units_sold(shop_page_data[:buyable_standalone])
 
     shop_page_data
   end
@@ -306,11 +313,14 @@ class ShopItem < ApplicationRecord
   belongs_to :default_assigned_user_in, class_name: "User", optional: true
   belongs_to :default_assigned_user_xx, class_name: "User", optional: true
 
+  # The region's fulfiller, falling back to the general one. Skips accounts
+  # that no longer exist: the regional columns have no foreign key, so a
+  # deleted user would otherwise make order creation fail.
   def default_assignee_for_region(region)
-    return default_assigned_user_id unless region.present?
-
-    regional_assignee = send("default_assigned_user_id_#{region.downcase}") rescue nil
-    regional_assignee.presence || default_assigned_user_id
+    regional_assignee = (send("default_assigned_user_id_#{region.downcase}") rescue nil) if region.present?
+    candidates = [ regional_assignee, default_assigned_user_id ].compact
+    existing = User.where(id: candidates).pluck(:id)
+    candidates.find { |id| existing.include?(id) }
   end
 
   has_one_attached :image do |attachable|
@@ -342,6 +352,9 @@ class ShopItem < ApplicationRecord
   validates :required_ships_start_date, :required_ships_end_date, presence: true, if: :requires_ship?
   validate :is_range_valid, if: :requires_ship?
   validate :validate_achievement_slugs
+  validates :sale_percentage, numericality: { only_integer: true, in: 0..100 }, allow_nil: true
+  validates :sale_step_percentage, :sale_min_percentage, numericality: { only_integer: true, in: 0..100 }
+  validate :sale_window_valid
 
   has_many :shop_orders, dependent: :restrict_with_error
 
@@ -380,7 +393,88 @@ class ShopItem < ApplicationRecord
     self.ticket_cost.zero?
   end
   def on_sale?
-    sale_percentage.present? && sale_percentage > 0
+    current_sale_percentage.positive?
+  end
+
+  # Clearance sales. sale_percentage is the starting discount. With a window
+  # set it only applies between sale_starts_at and sale_ends_at, and every unit
+  # sold inside the window knocks sale_step_percentage points off it, never
+  # below sale_min_percentage. With no window it is a flat, always-on discount.
+  def sale_active?
+    return false unless sale_percentage.to_i.positive?
+    return false if clearance_sale? && !self.class.clearance_sales_open?
+
+    now = Time.current
+    (sale_starts_at.nil? || sale_starts_at <= now) && (sale_ends_at.nil? || now < sale_ends_at)
+  end
+
+  def sale_upcoming?
+    sale_percentage.to_i.positive? && sale_starts_at.present? && sale_starts_at > Time.current &&
+      self.class.clearance_sales_open?
+  end
+
+  # A named or scheduled sale is part of the end-of-Stardance clearance. A bare
+  # sale_percentage stays an ordinary always-on discount.
+  def clearance_sale?
+    sale_name.present? || sale_starts_at.present? || sale_ends_at.present?
+  end
+
+  # Clearance sales can be set up ahead of time but only take effect, in prices
+  # and promotion, once the clearance_sale flag is fully on for everyone.
+  def self.clearance_sales_open?
+    Flipper.enabled?(:clearance_sale)
+  end
+
+  def sale_decays?
+    sale_step_percentage.positive? && sale_starts_at.present?
+  end
+
+  def current_sale_percentage
+    return 0 unless sale_active?
+    return sale_percentage unless sale_decays?
+
+    [ sale_percentage - (sale_step_percentage * sale_units_sold), sale_min_percentage ].max
+  end
+
+  # The discount once the next unit sells, or nil when it won't change.
+  def next_sale_percentage
+    return nil unless sale_active? && sale_decays?
+
+    next_percentage = [ current_sale_percentage - sale_step_percentage, sale_min_percentage ].max
+    next_percentage unless next_percentage == current_sale_percentage
+  end
+
+  # Counted once per instance (or preloaded). Reloading the item (checkout's
+  # row lock does) or placing an order for it forgets the count.
+  def sale_units_sold
+    return 0 unless sale_decays?
+    return @sale_units_sold if instance_variable_defined?(:@sale_units_sold)
+
+    @sale_units_sold = shop_orders.worth_counting.where(created_at: sale_starts_at...sale_ends_at).sum(:quantity)
+  end
+
+  def forget_sale_units_sold
+    remove_instance_variable(:@sale_units_sold) if instance_variable_defined?(:@sale_units_sold)
+  end
+
+  def reload(*)
+    forget_sale_units_sold
+    super
+  end
+
+  # One grouped query for every decaying sale in `items`, so a shop page of
+  # sale cards doesn't run a count per card.
+  def self.preload_sale_units_sold(items)
+    decaying = items.select(&:sale_decays?)
+    return if decaying.empty?
+
+    counts = ShopOrder.worth_counting.joins(:shop_item)
+      .where(shop_item_id: decaying.map(&:id))
+      .where("shop_orders.created_at >= shop_items.sale_starts_at")
+      .where("shop_items.sale_ends_at IS NULL OR shop_orders.created_at < shop_items.sale_ends_at")
+      .group(:shop_item_id).sum(:quantity)
+
+    decaying.each { |item| item.instance_variable_set(:@sale_units_sold, counts[item.id] || 0) }
   end
 
   # Per-user effective price. Subclasses may override to vary price by user;
@@ -538,6 +632,18 @@ class ShopItem < ApplicationRecord
 
     if required_ships_end_date < required_ships_start_date
       errors.add(:required_ships_end_date, "must be after start date")
+    end
+  end
+
+  def sale_window_valid
+    if sale_starts_at.present? && sale_ends_at.present? && sale_ends_at <= sale_starts_at
+      errors.add(:sale_ends_at, "must be after the sale start")
+    end
+    if sale_step_percentage.positive? && sale_starts_at.blank?
+      errors.add(:sale_starts_at, "is needed for the discount to drop per purchase")
+    end
+    if sale_min_percentage > sale_percentage.to_i
+      errors.add(:sale_min_percentage, "can't be more than the starting sale percentage")
     end
   end
 

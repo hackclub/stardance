@@ -6,6 +6,10 @@
   max-width: 1400px;
   padding: 1.25rem 2rem 4rem;
 
+  &__clearance {
+    margin-bottom: 2rem;
+  }
+
   &__title-row {
     align-items: center;
     display: flex;
@@ -21,6 +25,10 @@
     font-weight: 700;
     margin: 0;
     text-align: center;
+
+    @media (max-width: 600px) {
+      font-size: 2.25rem;
+    }
   }
 
   &__title-divider {
@@ -40,6 +48,11 @@
     flex: 1 1 240px;
     height: 14px;
     max-width: 320px;
+
+    // Too squeezed beside the title on a phone to read as a line.
+    @media (max-width: 600px) {
+      display: none;
+    }
 
     &--right {
       background:

@@ -1,4 +1,5 @@
 <% content_for :title, "Order #{@shop_item.name}" %>
+<% content_for :head, render("shop/items/view_transition") %>
 <%= render "shared/inspector", record: @shop_item %>
 <div class="shop-order">
     <div class="shop-order__back">
@@ -31,9 +32,31 @@
                 <%= image_tag @shop_item.image, loading: "lazy", decoding: "async" if @shop_item.image.attached? %>
             </div>
             <h2><%= @shop_item.name %></h2>
-            <% if @shop_item.on_sale? %>
-                <div class="shop-order__sale-badge">
-                    <%= @shop_item.sale_percentage %>% OFF SALE
+            <% if @shop_item.on_sale? && !@shop_item.sale_ends_at && !@shop_item.sale_decays? %>
+                <span class="shop-order__sale-badge shop-order__sale-badge--solo"><%= @shop_item.current_sale_percentage %>% off</span>
+            <% elsif @shop_item.on_sale? %>
+                <div class="shop-order__sale">
+                    <span class="shop-order__sale-badge"><%= @shop_item.current_sale_percentage %>% off</span>
+                    <div class="shop-order__sale-copy">
+                        <% if @shop_item.sale_ends_at %>
+                            <p class="shop-order__sale-timer">
+                                Sale ends in
+                                <span data-controller="countdown"
+                                      data-countdown-reset-at-value="<%= @shop_item.sale_ends_at.iso8601 %>"
+                                      data-countdown-seconds-value="true"
+                                      data-countdown-expired-text-value="no time"></span>
+                            </p>
+                        <% end %>
+                        <% if @shop_item.sale_decays? %>
+                            <p class="shop-order__sale-note">
+                                <% if (next_percentage = @shop_item.next_sale_percentage) %>
+                                    Discounts shrink with each order. You get <strong><%= @shop_item.current_sale_percentage %>% off</strong>; whoever's next only gets <strong><%= next_percentage %>%</strong>. Be quick!
+                                <% else %>
+                                    Rock bottom. This is as cheap as it gets.
+                                <% end %>
+                            </p>
+                        <% end %>
+                    </div>
                 </div>
             <% end %>
             <% if @shop_item.limited? && @shop_item.remaining_stock.present? %>
@@ -96,6 +119,9 @@
         <div class="shop-order__details" data-controller="order-form" data-order-form-has-addresses-value="<%= @user_addresses.any? %>" data-order-form-base-ticket-cost-value="<%= @sale_price || @shop_item.ticket_cost || 0 %>" data-order-form-user-balance-value="<%= @user_balance %>" data-order-form-free-value="<%= @redeemable.present? %>" data-order-form-addresses-value="<%= @user_addresses.to_json %>" data-order-form-blocked-countries-value="<%= @shop_item.blocked_countries.to_json %>" data-order-form-stardust-icon-url-value="<%= image_path('icons/stardust.png') %>" data-action="address-select:change@document->order-form#addressChanged">
             <h2>Complete your order:</h2>
             <%= form_with url: shop_orders_path(shop_item_id: @shop_item.id), method: :post, local: true, id: "order-form" do |form| %>
+                <% if @shop_item.on_sale? %>
+                    <%= form.hidden_field :expected_sale_percentage, value: @shop_item.current_sale_percentage %>
+                <% end %>
                 <% if @redeemable %>
                     <%= form.hidden_field :quantity, value: 1 %>
                     <% if @redeemable.is_a?(Mission::Submission) %>

@@ -1,0 +1,105 @@
+<section class="finality-draw" aria-labelledby="finality-draw-title">
+  <header class="finality-draw__header">
+    <div>
+      <span class="finality-draw__eyebrow">admin only · private results</span>
+      <h2 id="finality-draw-title">Raffle contact list</h2>
+      <p>Review each account before contacting them. Drawing and rerolling never sends messages or awards prizes.</p>
+    </div>
+    <%= link_to "Public raffle: #{Finality.raffle_enabled? ? 'enabled' : 'disabled'}", "/admin/flipper/features/finality_raffle", class: "finality-draw__link" %>
+  </header>
+
+  <div class="finality-draw__stats">
+    <div><strong><%= @draw&.frozen_at? ? @draw.participant_count : @participant_count %></strong><span>eligible people<%= " at freeze" if @draw&.frozen_at? %></span></div>
+    <div><strong><%= @draw&.frozen_at? ? @draw.entry_count : @raffle_entry_ids.size %></strong><span>approved entries<%= " at freeze" if @draw&.frozen_at? %></span></div>
+    <div><strong><%= @active_selections.size %> / <%= Finality::RAFFLE_PRIZES.sum { |prize| prize[:quantity] } %></strong><span>prize spots filled</span></div>
+    <p>Every approved ship is another entry.<br>One prize per person across all prizes.</p>
+  </div>
+
+  <% if @draw&.frozen_at? %>
+    <p class="finality-draw__status">Pool frozen <%= @draw.frozen_at.in_time_zone(Finality::TIME_ZONE).strftime("%b %-d, %Y at %-l:%M %p %Z") %> by <%= link_to @draw.frozen_by.display_name, admin_user_path(@draw.frozen_by) %>. <%= @available_count %> people remain available. Later bans, rejected ships, and removed posts are excluded from future selections.</p>
+  <% else %>
+    <div class="finality-draw__prepare">
+      <p>Freeze approved entries once submissions close and reviews are resolved. This saves the pool used for every draw and reroll.</p>
+      <% if Time.current < Finality.window.end %>
+        <p>Draws open after <%= Finality.window.end.strftime("%B %-d, %Y at %-l:%M %p %Z") %>.</p>
+      <% end %>
+      <% if @pending_count.positive? %><p><%= pluralize(@pending_count, "ship") %> still awaiting review.</p><% end %>
+      <%= button_to "Freeze approved entries", freeze_pool_admin_finality_path,
+                    class: "action-btn action-btn--small action-btn--primary",
+                    disabled: Time.current < Finality.window.end || @pending_count.positive? || @raffle_entry_ids.empty?,
+                    form: { data: { turbo_confirm: "Freeze the approved raffle pool? Later entries cannot be added. No winners will be selected or contacted yet." } } %>
+    </div>
+  <% end %>
+
+  <nav class="finality-draw__prizes" aria-label="Raffle prizes">
+    <% Finality::RAFFLE_PRIZES.each do |prize| %>
+      <%= link_to admin_finality_path(prize: prize[:key]), class: "finality-draw__prize-link", aria: { current: ("page" if @prize[:key] == prize[:key]) } do %>
+        <%= prize[:name] %><%= " VIP" if prize[:key] == "vip" %>
+        <span><%= @active_selections.count { |selection| selection.prize_key == prize[:key] } %> / <%= prize[:quantity] %></span>
+      <% end %>
+    <% end %>
+  </nav>
+
+  <div class="finality-draw__workspace">
+    <div class="finality-draw__prize">
+      <%= image_tag @prize[:image], alt: "", class: "finality-draw__image", width: 220, height: 180 %>
+      <% remaining = @prize[:quantity] - @prize_selections.size %>
+      <%= button_to remaining.positive? ? "Roll #{pluralize(remaining, 'remaining spot')}" : "All spots filled", roll_admin_finality_path,
+                    params: { prize_key: @prize[:key] }, class: "action-btn action-btn--small action-btn--primary",
+                    disabled: !@draw&.frozen_at? || remaining.zero? || @available_count.zero? %>
+      <p class="finality-draw__status">Saved automatically. Refreshing keeps these results. No automatic notifications or fulfillment.</p>
+    </div>
+    <div class="finality-draw__results">
+      <div class="finality-draw__result-heading"><h3>Selected people</h3><span>review before contacting</span></div>
+      <ol class="finality-draw__winners">
+        <% (1..@prize[:quantity]).each do |slot| %>
+          <% selection = @prize_selections[slot] %>
+          <li class="finality-draw__winner">
+            <span class="finality-draw__rank"><%= slot %></span>
+            <% if selection %>
+              <div class="finality-draw__contact">
+                <%= link_to selection.user.display_name, admin_user_path(selection.user) %>
+                <% if selection.user.email.present? %><%= mail_to selection.user.email, class: "finality-draw__email" %><% end %>
+                <% if selection.user.banned? %><strong class="finality-draw__warning">Currently banned — review before contacting</strong><% end %>
+              </div>
+              <span><%= pluralize(selection.entry_count, "entry") %></span>
+              <details class="finality-draw__reroll">
+                <summary>Reroll</summary>
+                <%= form_with url: reroll_admin_finality_path do |form| %>
+                  <%= form.hidden_field :selection_id, value: selection.id %>
+                  <%= form.hidden_field :prize_key, value: @prize[:key] %>
+                  <%= form.label :reason, "Reason for replacing #{selection.user.display_name}", for: "reroll-reason-#{selection.id}" %>
+                  <%= form.text_area :reason, id: "reroll-reason-#{selection.id}", required: true, maxlength: 1000, rows: 2 %>
+                  <p>The previous person will be excluded from all later selections. Their account is not changed.</p>
+                  <%= render ActionButtonComponent.new(text: "Save replacement", size: :small, disabled: @available_count.zero?) %>
+                <% end %>
+              </details>
+            <% else %>
+              <span class="finality-draw__waiting">Not drawn yet</span>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+    </div>
+  </div>
+
+  <details class="finality-draw__history">
+    <summary>Draw &amp; reroll history <span><%= pluralize(@selections.size, "selection") %></span></summary>
+    <% if @selections.empty? %>
+      <p>No selections yet.</p>
+    <% else %>
+      <ol>
+        <% @selections.each do |selection| %>
+          <li>
+            <strong><%= selection.label %></strong> — <%= link_to selection.user.display_name, admin_user_path(selection.user) %>
+            <span>selected by <%= selection.selected_by.display_name %> on <%= selection.created_at.in_time_zone(Finality::TIME_ZONE).strftime("%b %-d, %-l:%M:%S %p %Z") %>
+              (<%= selection.entry_count %> of <%= selection.pool_entry_count %> available entries)</span>
+            <% if selection.voided_at? %>
+              <p>Rerolled by <%= selection.voided_by.display_name %> on <%= selection.voided_at.in_time_zone(Finality::TIME_ZONE).strftime("%b %-d, %-l:%M:%S %p %Z") %>: <%= selection.void_reason %></p>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+    <% end %>
+  </details>
+</section>

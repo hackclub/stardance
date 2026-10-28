@@ -16,6 +16,7 @@
 @use "components/action_button";
 @use "components/mihi_mode_toggle";
 @use "components/blackhole_preview";
+@use "components/stardance_finale";
 @use "components/buku_x3_status";
 @use "components/special_action_button";
 @use "components/input";
@@ -29,6 +30,9 @@
 @use "components/ui-heading";
 @use "components/dropdown";
 @use "components/shop-item-card";
+@use "components/clearance_banner";
+@use "components/clearance_popup";
+@use "components/clearance_sale_widget";
 @use "components/admin-banner";
 @use "components/mac_banner";
 @use "components/space_table";
@@ -49,6 +53,7 @@
 @use "components/review_history";
 @use "components/feedback_images";
 @use "components/feed";
+@use "components/finality_raffle";
 @use "components/mentions";
 @use "components/star_border";
 @use "components/star_image_input";

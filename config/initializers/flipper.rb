@@ -33,6 +33,7 @@ Rails.application.config.after_initialize do
         hardware_action_items
         hardware_review_undo
         ship_event_payouts
+        finality_bonus
         disable_internal_sw_dash_reviews
         no_shigimi_eyes
         ysws_review_flow

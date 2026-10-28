@@ -50,10 +50,20 @@
             <span class="shop-item-show__stat-value"><%= @shop_item.usd_cost ? number_to_currency(@shop_item.usd_cost) : "—" %></span>
             <span class="shop-item-show__stat-label">USD Cost</span>
           </div>
-          <% if @shop_item.sale_percentage.present? && @shop_item.sale_percentage > 0 %>
+          <% if @shop_item.sale_percentage.to_i.positive? %>
             <div class="shop-item-show__stat">
-              <span class="shop-item-show__stat-value"><%= @shop_item.sale_percentage %>%</span>
-              <span class="shop-item-show__stat-label">Sale</span>
+              <span class="shop-item-show__stat-value"><%= @shop_item.current_sale_percentage %>%</span>
+              <span class="shop-item-show__stat-label">
+                <% if @shop_item.sale_active? %>
+                  Sale now<%= " (from #{@shop_item.sale_percentage}%, #{@shop_item.sale_units_sold} sold)" if @shop_item.sale_decays? %>
+                <% elsif @shop_item.clearance_sale? && !ShopItem.clearance_sales_open? %>
+                  Clearance sale of <%= @shop_item.sale_percentage %>% set up, waiting for the clearance_sale flag
+                <% elsif @shop_item.sale_upcoming? %>
+                  Sale of <%= @shop_item.sale_percentage %>% starts <%= @shop_item.sale_starts_at.strftime("%b %-d %H:%M UTC") %>
+                <% else %>
+                  Sale ended
+                <% end %>
+              </span>
             </div>
           <% end %>
           <% if @shop_item.hacker_score.present? && @shop_item.hacker_score > 0 %>

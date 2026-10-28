@@ -168,3 +168,24 @@ The Phantom measurements above concern its **disintegration mask**, not shader
 GPU execution. Its existing tests verify per-frame rendering, cached layout,
 reused uniform arrays, adaptive resolution, and offscreen/hidden suspension.
 No real GPU timing or throttled-browser FPS measurement was available here.
+
+
+## Finale configuration
+
+After `stardance_ends_at`, every signed-in viewer outside admin pages gets the existing clock’s final
+three seconds in red, the site disintegration, then the finale video. Late arrivals start the
+same sequence on their first visit. The existing account dismissal
+`stardance_finale` records completion when the video ends or Continue is selected.
+Interrupted scenes retry next visit; reduced-motion and visual opt-out settings
+are respected.
+
+Set `STARDANCE_FINALE_VIDEO_URL` to a direct browser-playable video file URL
+(such as an MP4) and restart the app. If unset, the finale ends on a blank screen and records completion automatically.
+Browsers blocking autoplay get a Play finale button. The local event simulator's
+**preview finale · 3–2–1** button replays without marking the account as seen.
+
+The countdown synchronizes with `/server_time` every 30 seconds and on tab
+resume/focus. Between samples it uses `performance.now()`, never the device’s
+wall clock. The live finale requires a fresh server response confirming the
+deadline has passed; offline clients wait for confirmation. Local simulator
+replays intentionally bypass that deadline check.

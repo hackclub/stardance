@@ -1,0 +1,77 @@
+<% content_for :title, "The raffle" %>
+
+<div class="app-layout app-layout--wide">
+  <main class="finality-raffle-page" aria-labelledby="raffle-title">
+    <nav class="finality-raffle-page__nav" aria-label="Raffle navigation">
+      <%= link_to "← back to stardancing", home_path %>
+    </nav>
+
+    <header class="finality-raffle-page__intro">
+      <h1 id="raffle-title">we're getting rid<br>of <span>everything!!</span></h1>
+      <p>the shop has stuff. we want you to have the stuff.<br> <strong>so we're giving away 65 prizes to those who ship their projects!</strong></p>
+      <p>an Xbox? a LEGO rocket? a trip to see actual rockets??<br> ship your project and you could take one home.</p>
+    </header>
+
+    <section class="finality-raffle-page__entry" aria-label="Your raffle entries">
+      <div>
+        <% if current_user %>
+          <p class="finality-raffle-page__entry-title">you've got <strong><%= pluralize(@entries[:confirmed], "entry") %></strong><%= " (so far)" unless @closed %></p>
+          <p>
+            <% if @entries[:pending].positive? %>
+              <%= @entries[:pending] %> more awaiting approval
+            <% elsif @closed %>
+              entries are closed! ships already submitted can still qualify after review
+            <% elsif @upcoming %>
+              ships start counting on <%= @opens_at.strftime("%B %-d") %>
+            <% else %>
+              every approved ship = greater chance of winning
+            <% end %>
+          </p>
+        <% elsif @closed %>
+          <p class="finality-raffle-page__entry-title">that's a wrap!</p>
+          <p>ships sent before the deadline can still qualify after review</p>
+        <% else %>
+          <p class="finality-raffle-page__entry-title">your first ship gets you in!</p>
+          <p>sign in, ship something, and you're entered once it's approved</p>
+        <% end %>
+      </div>
+      <% if @closed %>
+        <strong class="finality-raffle-page__closed">entries closed</strong>
+      <% else %>
+        <%= render ActionButtonComponent.new(text: current_user ? "ship your project →" : "sign in to ship →", href: current_user ? @ship_path : root_path, size: :small) %>
+      <% end %>
+    </section>
+
+    <section class="finality-raffle-page__loot" aria-labelledby="raffle-loot-title">
+      <div class="finality-raffle-page__section-heading">
+        <h2 id="raffle-loot-title">the stuff</h2>
+      </div>
+      <ul class="finality-raffle-page__prizes">
+        <% Finality::RAFFLE_PRIZES.each do |prize| %>
+          <li class="finality-raffle-page__prize">
+            <div class="finality-raffle-page__art">
+              <%= image_tag prize[:image], alt: "", width: 200, height: 200 %>
+            </div>
+            <span class="finality-raffle-page__quantity"><%= prize[:quantity] %> up for grabs</span>
+            <h3><%= prize[:name] %></h3>
+            <p><%= prize[:detail] %></p>
+          </li>
+        <% end %>
+      </ul>
+      <p class="finality-raffle-page__footnote">*free flights with the VIP tickets are limited to the continental US. everyone can enter the raffle!</p>
+    </section>
+
+    <section class="finality-raffle-page__rules" aria-labelledby="raffle-rules-title">
+      <h2 id="raffle-rules-title">how do i get in?</h2>
+      <p>ship between <strong><%= @opens_at.strftime("%B %-d") %></strong> and <strong><%= (@closes_at - 1.second).strftime("%B %-d, %l:%M %P").strip %> ET</strong>. once your ship is approved, you're in. that's it. no entry form, no spending stardust.</p>
+      <details>
+        <summary>can i enter more than once? <span aria-hidden="true">+</span></summary>
+        <p>yes!! every approved ship adds another entry, so shipping more gives you more chances. we're drawing one prize per person.</p>
+      </details>
+      <details>
+        <summary>what if my ship hasn't been reviewed yet? <span aria-hidden="true">+</span></summary>
+        <p>you're good as long as you submitted during the raffle. it can still earn an entry if it's approved after the deadline. rejected or misfiled ships don't count.</p>
+      </details>
+    </section>
+  </main>
+</div>

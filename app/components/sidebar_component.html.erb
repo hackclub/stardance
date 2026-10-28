@@ -33,7 +33,9 @@
 
           <% label_block = capture do %>
             <span class="sidebar__nav-label"><%= item[:label] %></span>
-            <% if item[:notify] %>
+            <% if item[:tag] %>
+              <span class="sidebar__nav-tag"><%= item[:tag] %></span>
+            <% elsif item[:notify] %>
               <span class="sidebar__nav-notify-dot" aria-hidden="true"></span>
             <% end %>
           <% end %>
@@ -141,6 +143,15 @@
           <span>Streamer mode</span>
         </label>
         <small class="settings-form__hint">Blur sensitive info like addresses and API keys</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :countdown_enabled, "0", id: nil %>
+          <%= check_box_tag :countdown_enabled, "1", preference.countdown_enabled?, id: "countdown_enabled" %>
+          <span>Show countdown</span>
+        </label>
+        <small class="settings-form__hint">The clock on the home page counting down to the end of Stardance</small>
       </div>
 
       <div class="settings-form__field">

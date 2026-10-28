@@ -99,7 +99,7 @@ class LedgerEntry < ApplicationRecord
   def notify_balance_change
     source = case ledgerable_type
     when "ShopOrder" then "shop purchase"
-    when "Post::ShipEvent" then "ship event payout"
+    when "Post::ShipEvent" then created_by == Finality::BONUS_CREATED_BY ? "finality bonus" : "ship event payout"
     when "User" then "user grant"
     when "User::Achievement" then "achievement: #{ledgerable.achievement.name}"
     when "FulfillmentPayoutLine" then "fulfillment payout"

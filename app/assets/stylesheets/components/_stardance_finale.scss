@@ -1,0 +1,75 @@
+.stardance-finale {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: var(--space-l);
+  border: 0;
+  background: transparent;
+  color: var(--color-brand-off-white);
+
+  &[open] {
+    display: grid;
+    place-items: center;
+  }
+
+  &::backdrop {
+    background: transparent;
+  }
+
+  &__panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-m);
+    padding: var(--space-l);
+    background: var(--color-space-bg);
+    overflow: auto;
+  }
+
+  &__video {
+    width: 100%;
+    max-height: 80dvh;
+    object-fit: contain;
+  }
+
+  &__status {
+    margin: 0;
+    text-align: center;
+  }
+
+  &__button {
+    padding: var(--space-s) var(--space-l);
+    border: 1px solid var(--color-brand-cream);
+    border-radius: 999px;
+    background: var(--color-set-2-bg);
+    color: var(--color-brand-cream);
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+  }
+
+  &__button--reset {
+    position: absolute;
+    top: var(--space-m);
+    right: var(--space-m);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+.blackhole:has(.stardance-finale[open]) .event-simulator {
+  visibility: hidden;
+}
