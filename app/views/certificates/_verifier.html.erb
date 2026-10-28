@@ -28,7 +28,7 @@
         issued <%= @certificate.created_at.strftime("%B %-d, %Y") %>
       </p>
       <% if @projects.any? %>
-        <h4 class="certificate-page__projects-heading">Shipped projects</h4>
+        <h4 class="certificate-page__projects-heading">Approved projects on Stardance</h4>
         <div class="certificate-page__projects">
           <% @projects.each do |project| %>
             <%= render Projects::ShelfCardComponent.new(project: project) %>

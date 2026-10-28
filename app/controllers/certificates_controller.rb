@@ -72,8 +72,8 @@ class CertificatesController < ApplicationController
   end
 
   def approved_projects_for(user)
-    Project.where(id: Post.approved_ship_events_by(user).select(:project_id))
-           .includes(banner_attachment: :blob, mission_attachments: { mission: { banner_attachment: :blob } })
-           .order(created_at: :desc)
+    user.approved_certificate_projects
+        .includes(banner_attachment: :blob, mission_attachments: { mission: { banner_attachment: :blob } })
+        .order(created_at: :desc)
   end
 end

@@ -73,12 +73,12 @@ class Certificate < ApplicationRecord
     name.to_s.strip.casecmp?(user.full_name.to_s.strip)
   end
 
-  # Distinct live projects behind the holder's approved ships, printed on
-  # the certificate art.
+  # Distinct live projects behind the holder's approved ships or hardware
+  # designs, printed on the certificate art.
   def approved_projects_count
     return 0 unless user
 
-    Post.approved_ship_events_by(user).distinct.count(:project_id)
+    user.approved_certificate_projects.count
   end
 
   private

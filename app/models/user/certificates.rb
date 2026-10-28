@@ -13,6 +13,11 @@ module User::Certificates
     approved_hours >= Certificate::REQUIRED_APPROVED_HOURS
   end
 
+  def approved_certificate_projects
+    Project.where(id: Post.approved_ship_events_by(self).select(:project_id))
+           .or(Project.where(id: approved_hardware_funding_requests.select(:project_id)))
+  end
+
   private
 
   def approved_ship_hours
@@ -23,8 +28,7 @@ module User::Certificates
   # Post::ShipEvent#devlogs_in_ship_window) was reviewed through the funding
   # request instead, so it counts once the request is approved.
   def approved_funding_hours
-    funded_projects = Certification::FundingRequest.approved
-      .where(user_id: id, project_id: Project.hardware.select(:id))
+    funded_projects = approved_hardware_funding_requests
       .group(:project_id)
       .select("project_id, MIN(created_at) AS funded_at")
 
@@ -33,5 +37,9 @@ module User::Certificates
         .where(post_devlogs: { deleted_at: nil })
         .where("post_devlogs.phase = 'design' OR posts.created_at < funded_projects.funded_at")
         .sum("post_devlogs.duration_seconds").to_f / 3600
+  end
+
+  def approved_hardware_funding_requests
+    Certification::FundingRequest.approved.where(user_id: id, project_id: Project.hardware.select(:id))
   end
 end
