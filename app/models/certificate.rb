@@ -73,12 +73,12 @@ class Certificate < ApplicationRecord
     name.to_s.strip.casecmp?(user.full_name.to_s.strip)
   end
 
-  # Distinct live projects behind the holder's approved ships or hardware
-  # designs, printed on the certificate art.
+  # Approved platform projects plus admin-credited external projects,
+  # printed on the certificate art.
   def approved_projects_count
     return 0 unless user
 
-    user.approved_certificate_projects.count
+    user.certificate_projects_count
   end
 
   private

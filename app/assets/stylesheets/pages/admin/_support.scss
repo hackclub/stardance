@@ -281,3 +281,18 @@
     justify-content: center;
   }
 }
+
+.certificate-credit-modal {
+  max-height: 90vh;
+  overflow-y: auto;
+
+  &__form {
+    display: grid;
+    gap: var(--space-m);
+  }
+
+  &__field {
+    display: grid;
+    gap: var(--space-xs);
+  }
+}

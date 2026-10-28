@@ -25,6 +25,8 @@
       <p class="certificate-page__result-details">
         <%= pluralize(@certificate.hours_at_issue.floor, "approved hour") %>
         <span aria-hidden="true">·</span>
+        <%= pluralize(@certificate.approved_projects_count, "project") %>
+        <span aria-hidden="true">·</span>
         issued <%= @certificate.created_at.strftime("%B %-d, %Y") %>
       </p>
       <% if @projects.any? %>

@@ -144,7 +144,41 @@
 
   <div class="mission-panel">
     <h2 class="admin-user-show__section-title">Actions</h2>
+      <% if policy(@user).manage_certificate_eligibility? %>
+        <dialog id="certificate-credit-modal" class="modal certificate-credit-modal" data-controller="modal" aria-labelledby="certificate-credit-title" aria-describedby="certificate-credit-help">
+          <h3 id="certificate-credit-title" class="modal__title">Add certificate credit</h3>
+          <p id="certificate-credit-help" class="modal__description">
+            Add work completed outside Stardance to <%= @user.display_name %>'s certificate.
+            This also allows them to claim one. Devlogs, payouts, and name review stay unchanged. Changes are audit logged.
+          </p>
+          <p>
+            Current certificate totals: <strong><%= pluralize(@user.certificate_projects_count, "project") %></strong>
+            and <strong><%= number_with_precision(@user.certificate_hours, precision: 2, strip_insignificant_zeros: true) %> hours</strong>.
+            Includes <%= @user.certificate_credit_projects %> projects and
+            <%= number_with_precision(@user.certificate_credit_hours, precision: 2, strip_insignificant_zeros: true) %> hours of admin credit.
+          </p>
+          <%= form_with url: admin_user_certificate_credits_path(@user), scope: :certificate_credit, class: "certificate-credit-modal__form" do |form| %>
+            <div class="certificate-credit-modal__field">
+              <%= form.label :projects, "Projects to add" %>
+              <%= form.number_field :projects, value: 0, min: 0, step: 1, required: true %>
+            </div>
+            <div class="certificate-credit-modal__field">
+              <%= form.label :hours, "Hours to add" %>
+              <%= form.number_field :hours, value: 0, min: 0, step: 0.01, required: true %>
+            </div>
+            <div class="modal__actions">
+              <%= render ActionButtonComponent.new(text: "Cancel", size: :small, variant: :secondary, type: :button,
+                    data: { action: "modal#close" }) %>
+              <%= render ActionButtonComponent.new(text: "Add credit", size: :small, disable_with: "Adding…") %>
+            </div>
+          <% end %>
+        </dialog>
+      <% end %>
     <div class="admin-user-show__actions">
+      <% if policy(@user).manage_certificate_eligibility? %>
+        <%= render ActionButtonComponent.new(text: "Add certificate credit", size: :small, variant: :secondary,
+              type: :button, onclick: "document.getElementById('certificate-credit-modal').showModal()") %>
+      <% end %>
       <% if policy(Message).create? %>
        <%= render ActionButtonComponent.new(text: "Send Message", href: admin_messages_path(slack_id: @user.slack_id), size: :small, variant: :secondary) %>
       <% end %>

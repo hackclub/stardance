@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_211544) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_28_185733) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1620,6 +1620,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_211544) do
     t.datetime "banned_at"
     t.text "banned_reason"
     t.text "bio"
+    t.decimal "certificate_credit_hours", precision: 12, scale: 2, default: "0.0", null: false
+    t.integer "certificate_credit_projects", default: 0, null: false
+    t.boolean "certificate_eligibility_override", default: false, null: false
     t.datetime "created_at", null: false
     t.integer "current_streak", default: 0, null: false
     t.string "display_name"

@@ -27,7 +27,7 @@ module DiscoverRail
     end
 
     def hours
-      @hours ||= user.approved_hours
+      @hours ||= user.certificate_hours
     end
 
     def required
@@ -35,7 +35,7 @@ module DiscoverRail
     end
 
     def eligible?
-      hours >= required
+      user.certificate_eligible?
     end
 
     private

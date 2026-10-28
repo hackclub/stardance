@@ -3,6 +3,9 @@ module User::Certificates
 
   included do
     has_one :certificate, dependent: :destroy
+
+    validates :certificate_credit_hours, numericality: { greater_than_or_equal_to: 0, less_than: 10_000_000_000 }
+    validates :certificate_credit_projects, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than: 2_147_483_648 }
   end
 
   def approved_hours
@@ -10,7 +13,15 @@ module User::Certificates
   end
 
   def certificate_eligible?
-    approved_hours >= Certificate::REQUIRED_APPROVED_HOURS
+    certificate_eligibility_override? || certificate_hours >= Certificate::REQUIRED_APPROVED_HOURS
+  end
+
+  def certificate_hours
+    approved_hours + certificate_credit_hours
+  end
+
+  def certificate_projects_count
+    approved_certificate_projects.count + certificate_credit_projects
   end
 
   def approved_certificate_projects

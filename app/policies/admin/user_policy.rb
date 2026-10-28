@@ -35,6 +35,10 @@ class Admin::UserPolicy < ApplicationPolicy
     user&.admin?
   end
 
+  def manage_certificate_eligibility?
+    user&.admin?
+  end
+
   def sync_hackatime?
     user&.admin? || user&.fraud_dept?
   end
