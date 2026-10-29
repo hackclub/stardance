@@ -1,0 +1,36 @@
+<%# Admin-only: users granted this mission's shop unlocks without an approved
+    submission. Locals: mission, grants %>
+<%= turbo_frame_tag "admin-mission-edit-shop-unlock-grants" do %>
+  <section class="admin-mission-edit__section">
+    <h2 class="admin-mission-edit__section-title">Shop unlock grants</h2>
+    <p class="admin-mission-edit__hint">
+      Lets a user buy this mission's shop unlocks without an approved submission.
+      It doesn't complete the mission or count towards prerequisites.
+    </p>
+    <%# Set by ShopUnlockGrantsController; the page-level flash can't reach this frame. %>
+    <% if flash[:shop_unlock_grants_alert].present? %>
+      <p class="admin-mission-edit__message admin-mission-edit__message--alert" role="alert"><%= flash[:shop_unlock_grants_alert] %></p>
+    <% elsif flash[:shop_unlock_grants_notice].present? %>
+      <p class="admin-mission-edit__message" role="status"><%= flash[:shop_unlock_grants_notice] %></p>
+    <% end %>
+    <ul class="admin-mission-edit__memberships">
+      <% grants.each do |grant| %>
+        <li class="admin-mission-edit__membership">
+          <%= grant.user.display_name %> — granted by <%= grant.granted_by.display_name %><% if grant.reason.present? %>: <em><%= grant.reason %></em><% end %>
+          <%= button_to "Remove",
+                        admin_mission_shop_unlock_grant_path(mission.slug, grant),
+                        method: :delete,
+                        data: { turbo_confirm: "Remove #{grant.user.display_name}'s shop unlock grant?" },
+                        class: "action-btn action-btn--small action-btn--destructive" %>
+        </li>
+      <% end %>
+    </ul>
+    <%= form_with url: admin_mission_shop_unlock_grants_path(mission.slug),
+          method: :post, class: "admin-mission-edit__form" do %>
+      <h3>Grant shop unlocks</h3>
+      <label>Email, username, user ID or Slack ID <%= text_field_tag "mission_shop_unlock_grant[user_id]", nil, required: true, autocomplete: "off", placeholder: "@username or email" %></label>
+      <label>Reason <%= text_field_tag "mission_shop_unlock_grant[reason]", nil, autocomplete: "off", placeholder: "Shipped before attaching the mission" %></label>
+      <%= submit_tag "Grant", class: "action-btn action-btn--large action-btn--primary" %>
+    <% end %>
+  </section>
+<% end %>

@@ -50,6 +50,7 @@ class Mission < ApplicationRecord
   has_many :prizes, class_name: "Mission::Prize", dependent: :destroy
   has_many :memberships, class_name: "Mission::Membership", dependent: :destroy
   has_many :shop_unlocks, class_name: "Mission::ShopUnlock", dependent: :destroy
+  has_many :shop_unlock_grants, class_name: "Mission::ShopUnlockGrant", dependent: :destroy
   has_many :submissions, class_name: "Mission::Submission", dependent: :destroy
   has_many :prize_redemptions, class_name: "Mission::PrizeRedemption", dependent: :destroy
   has_many :attachments, class_name: "Project::MissionAttachment", dependent: :destroy

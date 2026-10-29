@@ -133,6 +133,11 @@
     <%= render "admin/missions/shop_unlocks_frame",
           mission: @mission, unlocks: @unlocks %>
 
+    <% if @unlock_grants %>
+      <%= render "admin/missions/shop_unlock_grants_frame",
+            mission: @mission, grants: @unlock_grants %>
+    <% end %>
+
     <section class="admin-mission-edit__section">
       <h2 class="admin-mission-edit__section-title">Prerequisites</h2>
       <p class="admin-mission-edit__hint">

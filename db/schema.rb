@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_185733) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_29_191139) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -776,6 +776,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_185733) do
     t.index ["project_id"], name: "index_mission_section_completions_on_project_id"
   end
 
+  create_table "mission_shop_unlock_grants", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "granted_by_id", null: false
+    t.bigint "mission_id", null: false
+    t.string "reason"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["granted_by_id"], name: "index_mission_shop_unlock_grants_on_granted_by_id"
+    t.index ["mission_id", "user_id"], name: "index_mission_shop_unlock_grants_on_mission_id_and_user_id", unique: true
+    t.index ["mission_id"], name: "index_mission_shop_unlock_grants_on_mission_id"
+    t.index ["user_id"], name: "index_mission_shop_unlock_grants_on_user_id"
+  end
+  
   create_table "mission_shop_unlocks", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "mission_id", null: false
@@ -2065,6 +2078,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_185733) do
   add_foreign_key "mission_section_completions", "mission_steps", on_delete: :cascade
   add_foreign_key "mission_section_completions", "missions"
   add_foreign_key "mission_section_completions", "projects"
+  add_foreign_key "mission_shop_unlock_grants", "missions"
+  add_foreign_key "mission_shop_unlock_grants", "users"
+  add_foreign_key "mission_shop_unlock_grants", "users", column: "granted_by_id"
   add_foreign_key "mission_shop_unlocks", "missions"
   add_foreign_key "mission_shop_unlocks", "shop_items"
   add_foreign_key "mission_step_bodies", "mission_steps"

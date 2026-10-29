@@ -615,14 +615,14 @@ class ShopItem < ApplicationRecord
   end
 
   # True iff this item is gated by mission_shop_unlocks AND the user has not
-  # completed any of the unlocking missions yet. Items with no shop_unlocks
+  # completed (or been granted) any of the unlocking missions. Items with no shop_unlocks
   # are never mission-locked; mission_prize_only items are unlocked by
   # showing up via the redemption flow, not this gate. `empty?` reads preloaded
   # unlocks (the shop grid preloads them) and falls back to a query otherwise.
   def mission_locked_for?(user)
     return false if mission_shop_unlocks.empty?
     return true unless user
-    (unlocking_missions.pluck(:id) & user.completed_mission_ids.to_a).empty?
+    (unlocking_missions.pluck(:id) & user.shop_unlocked_mission_ids).empty?
   end
 
   private

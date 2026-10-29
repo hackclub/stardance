@@ -110,7 +110,8 @@ module Admin
 
       # Admin-only sections (slug / owner CRUD / danger zone) on the merged edit page.
       if policy(@mission).manage_owners?
-        @owners = @mission.memberships
+        @unlock_grants = @mission.shop_unlock_grants.includes(:user, :granted_by).order(:created_at)
+        @owners =@mission.memberships
                           .where(role: Mission::Membership.roles[:owner])
                           .includes(:user)
                           .order(:created_at)
@@ -125,13 +126,23 @@ module Admin
         "Mission::Step" => @mission.steps.with_deleted.pluck(:id),
         "Mission::Prize" => @mission.prizes.with_deleted.pluck(:id),
         "Mission::Membership" => @mission.memberships.pluck(:id),
-        "Mission::ShopUnlock" => @mission.shop_unlocks.pluck(:id)
+        "Mission::ShopUnlock" => @mission.shop_unlocks.pluck(:id),
+        "Mission::ShopUnlockGrant" => shop_unlock_grant_ids
       }.filter_map do |item_type, ids|
         next if ids.empty?
         ::PaperTrail::Version.where(item_type: item_type, item_id: ids.map(&:to_s))
       end
 
       scopes.reduce(::PaperTrail::Version.none) { |query, scope| query.or(scope) }
+    end
+
+    # Revoked grants are hard-deleted, so their ids come from the destroy
+    # versions; that keeps who granted and revoked access in the audit log.
+    def shop_unlock_grant_ids
+      revoked = ::PaperTrail::Version.where(item_type: "Mission::ShopUnlockGrant", event: "destroy")
+                                     .where_object(mission_id: @mission.id)
+                                     .pluck(:item_id)
+      @mission.shop_unlock_grants.pluck(:id) | revoked.map(&:to_i)
     end
 
     def handle_prerequisite_changes

@@ -920,6 +920,7 @@ Rails.application.routes.draw do
       resource  :step_ordering,  only: [ :create ],                  controller: "missions/step_orderings"
       resources :prizes,         only: [ :create, :update, :destroy ], controller: "missions/prizes"
       resources :shop_unlocks,   only: [ :create, :destroy ],          controller: "missions/shop_unlocks"
+      resources :shop_unlock_grants, only: [ :create, :destroy ],      controller: "missions/shop_unlock_grants"
       resources :submissions,    only: [ :index, :show, :update ],     controller: "missions/submissions" do
         collection do
           get :next

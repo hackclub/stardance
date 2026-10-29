@@ -124,6 +124,7 @@ class User < ApplicationRecord
   has_many :notification_preferences, class_name: "User::NotificationPreference", dependent: :destroy
 
   has_many :mission_memberships, class_name: "Mission::Membership", dependent: :destroy
+  has_many :mission_shop_unlock_grants, class_name: "Mission::ShopUnlockGrant", dependent: :destroy
   has_many :owned_missions,      -> { merge(Mission::Membership.owner_role) },
            through: :mission_memberships, source: :mission
   has_many :reviewable_missions, -> { merge(Mission::Membership.reviewer_role) },
@@ -388,6 +389,12 @@ class User < ApplicationRecord
                                                   .where(posts: { user_id: id })
                                                   .distinct
                                                   .pluck(:mission_id)
+  end
+
+  # Missions whose shop unlocks this user has: completed ones plus any an
+  # admin granted directly (Mission::ShopUnlockGrant).
+  def shop_unlocked_mission_ids
+    @shop_unlocked_mission_ids ||= completed_mission_ids | mission_shop_unlock_grants.pluck(:mission_id)
   end
 
   private
