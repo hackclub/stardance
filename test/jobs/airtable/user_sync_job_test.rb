@@ -61,6 +61,7 @@ class Airtable::UserSyncJobTest < ActiveSupport::TestCase
     fields = Airtable::UserSyncJob.new.field_mapping(@user)
 
     assert_equal "Rocket Garden", fields["Loops - stardanceUnshippedProject"]
+    assert_equal rocket.id, fields["Loops - stardanceUnshippedProjectId"]
     assert_equal 11.0, fields["Loops - stardanceUnshippedHours"]
     assert_equal 110, fields["Loops - stardanceUnshippedStardust"]
     assert_equal 1, fields["Loops - stardanceUnshippedOtherProjects"]
@@ -90,6 +91,7 @@ class Airtable::UserSyncJobTest < ActiveSupport::TestCase
 
     assert fields.key?("Loops - stardanceUnshippedProject")
     assert_nil fields["Loops - stardanceUnshippedProject"]
+    assert_nil fields["Loops - stardanceUnshippedProjectId"]
     assert_nil fields["Loops - stardanceUnshippedHours"]
     assert_nil fields["Loops - stardanceUnshippedStardust"]
     assert_nil fields["Loops - stardanceUnshippedOtherProjects"]

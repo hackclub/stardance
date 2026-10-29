@@ -59,16 +59,18 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
 
   private
 
-  # The user's biggest unshipped project, a rough stardust estimate for
-  # shipping it now, and how many other projects also have unshipped time, for
-  # the "you've got unshipped work" email. The estimate is
-  # unshipped hours at the user's own past payout rate (the typical ship's rate
-  # if they've never been paid), plus today's Finality bonus while it's on.
+  # The user's biggest unshipped project (title, and ID for linking to it), a
+  # rough stardust estimate for shipping it now, and how many other projects
+  # also have unshipped time, for the "you've got unshipped work" email. The
+  # estimate is unshipped hours at the user's own past payout rate (the typical
+  # ship's rate if they've never been paid), plus today's Finality bonus while
+  # it's on.
   # Always sent, blank when there's nothing to ship, so the Loops properties
   # clear rather than going stale.
   def unshipped_loops_fields(user)
     fields = {
       "Loops - stardanceUnshippedProject" => nil,
+      "Loops - stardanceUnshippedProjectId" => nil,
       "Loops - stardanceUnshippedHours" => nil,
       "Loops - stardanceUnshippedStardust" => nil,
       "Loops - stardanceUnshippedOtherProjects" => nil
@@ -83,6 +85,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
     rate = past_stardust_per_hour(user) || typical_stardust_per_hour
     fields.merge(
       "Loops - stardanceUnshippedProject" => project.title,
+      "Loops - stardanceUnshippedProjectId" => project.id,
       "Loops - stardanceUnshippedHours" => hours.round(1),
       "Loops - stardanceUnshippedStardust" => (hours * rate * (1 + Finality.current_rate.to_f)).round,
       "Loops - stardanceUnshippedOtherProjects" => unshipped.size - 1
