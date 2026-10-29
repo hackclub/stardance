@@ -1,0 +1,94 @@
+// Daily "ship it before Stardance ends" pop-up on home (home/_ship_prompt).
+// Same shell as the clearance sale pop-up.
+
+.ship-prompt {
+  background: transparent;
+  border: 0;
+  // Centred in the viewport (the base styles reset dialog margins).
+  inset: 0;
+  margin: auto;
+  position: fixed;
+  color: var(--color-space-text);
+  max-width: min(440px, calc(100vw - 2rem));
+  overflow: visible;
+  padding: 0;
+
+  &::backdrop {
+    background: rgba(8, 6, 30, 0.75);
+  }
+
+  &__panel {
+    align-items: center;
+    background: var(--color-set-2-bg);
+    border: 3px solid var(--color-brand-yellow);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.75rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+
+  &__eyebrow {
+    color: var(--color-red-450);
+    font-size: var(--font-size-s);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    font-size: var(--font-h3);
+    font-weight: 900;
+    line-height: 1.05;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__hours {
+    color: var(--color-brand-yellow);
+    font-size: var(--font-size-m);
+    font-weight: 800;
+    margin: 0;
+    text-transform: uppercase;
+
+    strong {
+      font-size: 3rem;
+      font-weight: 900;
+      text-transform: none;
+    }
+  }
+
+  &__note {
+    font-size: var(--font-size-m);
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  &__actions {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+
+  &__later {
+    background: none;
+    border: 0;
+    color: var(--color-space-text);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-s);
+    opacity: 0.7;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+    }
+  }
+}

@@ -349,6 +349,9 @@ application.register("onboarding-interests", OnboardingInterestsController);
 import OnboardingTransitionController from "./onboarding_transition_controller";
 application.register("onboarding-transition", OnboardingTransitionController);
 
+import OpenDialogController from "./open_dialog_controller";
+application.register("open-dialog", OpenDialogController);
+
 import OrderFormController from "./order_form_controller";
 application.register("order-form", OrderFormController);
 

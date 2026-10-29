@@ -10,7 +10,10 @@ class HomeController < ApplicationController
     @welcoming = params[:welcome] == "1" && current_user.present? && !current_user.has_dismissed?("home_intro")
     @body_class += " home-welcoming" if @welcoming
 
-    load_composer if current_user.present?
+    if current_user.present?
+      load_composer
+      @ship_prompt = ship_prompt
+    end
     if policy(BukuX3::Event).leaderboard?
       leaderboard = BukuX3::Leaderboard.new(BukuX3::Event.current)
       @buku_teams = leaderboard.teams
@@ -19,6 +22,20 @@ class HomeController < ApplicationController
   end
 
   private
+
+  # The builder's biggest unshipped project, for the "ship it before Stardance
+  # ends" pop-up (home/_ship_prompt). Shown until ships close, at most once a
+  # day: dismissing it sets a cookie keyed by the New York date.
+  def ship_prompt
+    cookie = "ship_prompt_#{Time.current.in_time_zone("America/New_York").to_date}"
+    return if Project.shipping_closed? || current_user.banned? || cookies[cookie]
+
+    unshipped = current_user.unshipped_projects
+    return if unshipped.empty?
+
+    project, hours = unshipped.first
+    { project:, hours:, other_projects: unshipped.size - 1, cookie: }
+  end
 
   def load_composer
     @devlog = Post::Devlog.new

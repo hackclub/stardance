@@ -120,7 +120,8 @@
       <% end %>
     <% end %>
     <div id="flash-region"><%= render "shared/flash" %></div>
-    <% if current_user && !@_admin_layout && request.path != shop_category_path(ShopCategory::SALE_SLUG) && (sale = clearance_sale) %>
+    <%# The home ship prompt (@ship_prompt) goes first; the other pop-ups wait for the next page. %>
+    <% if current_user && !@_admin_layout && !@ship_prompt && request.path != shop_category_path(ShopCategory::SALE_SLUG) && (sale = clearance_sale) %>
       <%= render "shared/clearance_sale_popup", sale: sale %>
     <% end %>
     <%= render Onboarding::GuestBannerComponent.new unless @hide_sidebar %>
@@ -130,9 +131,11 @@
 <%= yield %>
 <% end %>
     <%= render "shared/slack_doodle" %>
-    <%= render "shared/sticker_promo" %>
-    <%= render "shared/jimberjake_poll" unless @_admin_layout %>
-    <%= render "shared/sticky_streak_promo" %>
+    <% unless @ship_prompt %>
+      <%= render "shared/sticker_promo" %>
+      <%= render "shared/jimberjake_poll" unless @_admin_layout %>
+      <%= render "shared/sticky_streak_promo" %>
+    <% end %>
     <%= render "shared/post_panel" %>
     <%= render "shared/idv_verify_modal" %>
     <%= render VisualNovelComponent.new(user: current_user) %>

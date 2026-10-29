@@ -37,6 +37,10 @@
   recert_cooldown_at = @project.recertification_available_at if recert_gated
   recert_visible_blocker = ship_block_message || (recertification_cooldown_message(recert_cooldown_at) if recert_cooldown_at)
   recert_link_blocker = @project.link_blocker_message if recert_gated && recert_visible_blocker.nil?
+  # The dialog the ship CTA opens when shipping is actually possible, set by the
+  # ship buttons below. ?ship=1 (from the "you've got unshipped work" email)
+  # opens it on page load.
+  ship_modal_id = nil
 %>
 
 <div class="app-layout" data-controller="profile-modal">
@@ -763,32 +767,24 @@
                     }
                   ) %>
             <% else %>
+              <% ship_modal_id = "recert-modal-#{@project.id}" %>
               <%= render ActionButtonComponent.new(
                     text: "Ship your project!",
                     variant: :primary,
                     type: :button,
                     icon: "icons/rocket.png",
-                    onclick: "document.getElementById('recert-modal-' + #{@project.id.to_json}).showModal()"
+                    onclick: "document.getElementById(#{ship_modal_id.to_json}).showModal()"
                   ) %>
             <% end %>
           <% elsif @project.shippable? %>
-            <% if unposted_seconds >= 15 * 60 %>
-              <%= render ActionButtonComponent.new(
-                    text: "Ship your project!",
-                    variant: :primary,
-                    type: :button,
-                    icon: "icons/rocket.png",
-                    onclick: "document.getElementById('ship-warning-modal-' + #{@project.id.to_json}).showModal()"
-                  ) %>
-            <% else %>
-              <%= render ActionButtonComponent.new(
-                    text: "Ship your project!",
-                    variant: :primary,
-                    type: :button,
-                    icon: "icons/rocket.png",
-                    onclick: "document.getElementById('ship-video-modal-' + #{@project.id.to_json}).showModal()"
-                  ) %>
-            <% end %>
+            <% ship_modal_id = unposted_seconds >= 15 * 60 ? "ship-warning-modal-#{@project.id}" : "ship-video-modal-#{@project.id}" %>
+            <%= render ActionButtonComponent.new(
+                  text: "Ship your project!",
+                  variant: :primary,
+                  type: :button,
+                  icon: "icons/rocket.png",
+                  onclick: "document.getElementById(#{ship_modal_id.to_json}).showModal()"
+                ) %>
           <% else %>
             <%
               ship_disabled_message =
@@ -1056,6 +1052,10 @@
   <% if (is_member || current_user&.can_review?) && @project.needs_changes? %>
     <%= render "projects/recert_modal", project: @project, is_member: is_member,
                link_blocker: recert_link_blocker, visible_blocker: recert_visible_blocker %>
+  <% end %>
+
+  <% if is_member && ship_modal_id && params[:ship].present? %>
+    <div hidden data-controller="open-dialog" data-open-dialog-id-value="<%= ship_modal_id %>" data-open-dialog-param-value="ship"></div>
   <% end %>
 
   <% if (is_member || current_user&.admin?) && @rejected_mission_sub %>

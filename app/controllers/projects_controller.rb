@@ -13,6 +13,13 @@ class ProjectsController < ApplicationController
   def show
     authorize @project
 
+    # The "ship your project" email links here with ?ship=1 to open the ship
+    # flow, which needs a signed-in member: sign in first, then come back.
+    if params[:ship].present? && current_user.nil?
+      store_return_to
+      return redirect_to root_path, alert: "Sign in to ship your project!"
+    end
+
     @body_class = "app-layout-page"
     if params[:welcome] == "1"
       welcomed_ids = Array(session[:project_welcomed_ids])

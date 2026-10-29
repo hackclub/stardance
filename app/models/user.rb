@@ -319,6 +319,12 @@ class User < ApplicationRecord
     StickerPromo.weeks_for(self)
   end
 
+  # [project, hours] for each project with devlogged time since its last ship,
+  # most unshipped first.
+  def unshipped_projects
+    projects.map { |p| [ p, p.unshipped_hours ] }.select { |_, hours| hours.positive? }.sort_by { |_, hours| -hours }
+  end
+
   REFERRAL_ACHIEVEMENTS = { referral_2: 2, referral_5: 5 }.freeze
 
   def sync_referral_achievements!

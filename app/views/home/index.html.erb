@@ -4,6 +4,8 @@
   <%= render "welcome_tour" %>
 <% end %>
 
+<%= render "ship_prompt", **@ship_prompt if @ship_prompt %>
+
 <div class="app-layout">
   <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
     <%= turbo_frame_tag "buku_x3_home_status", class: ("buku-x3-home-preview" if Rails.env.development?), data: { controller: "buku-x3-status", action: "buku-x3-reveal:complete@window->buku-x3-status#refresh" } do %>

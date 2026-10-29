@@ -103,7 +103,46 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     Flipper.disable(:bukux2)
   end
 
+  test "ship prompt pops up for a builder with unshipped time and links to the ship flow" do
+    project = owned_project_with_devlog("Rocket Garden")
+    sign_in @user
+
+    get home_path
+
+    assert_response :success
+    assert_select "dialog.ship-prompt" do
+      assert_select "#ship-prompt-title", text: "Ship Rocket Garden!"
+      assert_select "a[href=?][data-action=?]", project_path(project, ship: 1), "dismissable#dismiss"
+    end
+  end
+
+  test "ship prompt stays away once dismissed today" do
+    owned_project_with_devlog("Rocket Garden")
+    sign_in @user
+    cookies["ship_prompt_#{Time.current.in_time_zone("America/New_York").to_date}"] = "1"
+
+    get home_path
+
+    assert_select "dialog.ship-prompt", 0
+  end
+
+  test "ship prompt stops once shipping has closed" do
+    owned_project_with_devlog("Rocket Garden")
+    sign_in @user
+
+    Project.stub(:shipping_closed?, true) { get home_path }
+
+    assert_select "dialog.ship-prompt", 0
+  end
+
   private
+
+  def owned_project_with_devlog(title)
+    project = Project.create!(title: title)
+    Project::Membership.create!(project: project, user: @user, role: :owner)
+    Post.create!(project: project, user: @user, postable: create_devlog(body: "work log"))
+    project
+  end
 
   def create_devlog(body:)
     devlog = Post::Devlog.new(body: body, duration_seconds: 1.hour)

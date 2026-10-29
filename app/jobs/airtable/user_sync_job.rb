@@ -75,10 +75,10 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
     }
     return fields if user.banned? || Project.shipping_closed?
 
-    unshipped = user.projects.map { |p| [ p.unshipped_hours, p ] }.select { |hours, _| hours.positive? }
+    unshipped = user.unshipped_projects
     return fields if unshipped.empty?
 
-    hours, project = unshipped.max_by(&:first)
+    project, hours = unshipped.first
 
     rate = past_stardust_per_hour(user) || typical_stardust_per_hour
     fields.merge(
