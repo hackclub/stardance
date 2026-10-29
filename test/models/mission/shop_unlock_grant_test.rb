@@ -1,5 +1,30 @@
 require "test_helper"
 
+# == Schema Information
+#
+# Table name: mission_shop_unlock_grants
+#
+#  id            :bigint           not null, primary key
+#  reason        :string
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  granted_by_id :bigint           not null
+#  mission_id    :bigint           not null
+#  user_id       :bigint           not null
+#
+# Indexes
+#
+#  index_mission_shop_unlock_grants_on_granted_by_id           (granted_by_id)
+#  index_mission_shop_unlock_grants_on_mission_id              (mission_id)
+#  index_mission_shop_unlock_grants_on_mission_id_and_user_id  (mission_id,user_id) UNIQUE
+#  index_mission_shop_unlock_grants_on_user_id                 (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (granted_by_id => users.id)
+#  fk_rails_...  (mission_id => missions.id)
+#  fk_rails_...  (user_id => users.id)
+#
 class Mission::ShopUnlockGrantTest < ActiveSupport::TestCase
   PIXEL_PNG = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=")
 
