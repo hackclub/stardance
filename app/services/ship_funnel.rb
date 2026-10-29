@@ -152,8 +152,16 @@ class ShipFunnel
     links + select_all(unshipped_sql).map { |row| { kind: row["hardware"] ? "hardware" : "software", source: "Devlogged", target: row["bucket"], hours: row["hours"].to_f, ships: 0 } }
   end
 
+  # A devlog is in a ship's window when its project shipped at or after it, so
+  # comparing against each project's latest ship replaces a per-devlog lookup.
   def unshipped_sql
     <<~SQL
+      WITH last_ships AS (
+        SELECT project_id, max(created_at) AS shipped_at
+        FROM posts
+        WHERE postable_type = 'Post::ShipEvent'
+        GROUP BY project_id
+      )
       SELECT hardware, bucket, sum(hours) AS hours
       FROM (
         SELECT pr.hardware_stage IS NOT NULL AS hardware,
@@ -168,10 +176,8 @@ class ShipFunnel
         JOIN posts dp    ON dp.postable_type = 'Post::Devlog' AND dp.postable_id = pd.id
         JOIN projects pr ON pr.id = dp.project_id
         JOIN users u     ON u.id = dp.user_id
-        CROSS JOIN LATERAL (
-          SELECT EXISTS (SELECT 1 FROM posts sp WHERE sp.project_id = dp.project_id
-                           AND sp.postable_type = 'Post::ShipEvent' AND sp.created_at >= dp.created_at) AS in_window
-        ) w
+        LEFT JOIN last_ships ls ON ls.project_id = dp.project_id
+        CROSS JOIN LATERAL (SELECT coalesce(ls.shipped_at >= dp.created_at, false) AS in_window) w
       ) devlogs
       WHERE bucket IS NOT NULL
       GROUP BY 1, 2
