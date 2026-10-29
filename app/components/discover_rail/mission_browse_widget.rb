@@ -10,8 +10,7 @@ module DiscoverRail
 
     def render?
       project.present? &&
-        project.current_mission.nil? &&
-        !project.shipped? &&
+        project.mission_attachable? &&
         user.present? &&
         project.users.exists?(id: user.id)
     end

@@ -253,7 +253,24 @@ class Project < ApplicationRecord
   # switch freely; shipped projects only move to a follow-up or back to a
   # mission they shipped to. The attachment validation enforces this too.
   def may_swap_mission_to?(mission)
-    !shipped? || shipped_to_mission?(mission) || eligible_follow_up_mission?(mission)
+    !shipped? || shipped_to_mission?(mission) || eligible_follow_up_mission?(mission) ||
+      late_mission_attach_allowed?
+  end
+
+  # Whether the mission picker should offer this project a mission: it has
+  # none, and is still a draft or its owner has the late-attach escape hatch.
+  def mission_attachable?
+    current_mission_attachment.nil? && (!shipped? || late_mission_attach_allowed?)
+  end
+
+  # Escape hatch for a shipped project that never got a mission (e.g. it first
+  # shipped before the mission existed). Enabled per owner via the
+  # :late_mission_attach flag; turn it off once their mission ship lands, after
+  # which the mission is locked in like any other.
+  def late_mission_attach_allowed?
+    current_mission_attachment.nil? &&
+      !mission_submissions.not_rejected.exists? &&
+      Flipper.enabled?(:late_mission_attach, memberships.owner.first&.user)
   end
 
   # Follow-up missions for the switch UI, in one pass: :ready to attach now

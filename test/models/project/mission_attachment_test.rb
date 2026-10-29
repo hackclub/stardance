@@ -35,6 +35,10 @@ class Project::MissionAttachmentTest < ActiveSupport::TestCase
     @mission = create_mission
   end
 
+  teardown do
+    Flipper.disable(:late_mission_attach)
+  end
+
   test "attaches to a draft project" do
     attachment = @project.mission_attachments.create(mission: @mission)
 
@@ -95,6 +99,50 @@ class Project::MissionAttachmentTest < ActiveSupport::TestCase
     attachment = @project.mission_attachments.create(mission: @mission)
 
     assert attachment.persisted?
+  end
+
+  test "late-attach flag lets a shipped project with no mission attach one" do
+    @project.memberships.create!(user: @user, role: :owner)
+    @project.update!(shipped_at: Time.current)
+    Flipper.enable_actor(:late_mission_attach, @user)
+
+    attachment = @project.mission_attachments.create(mission: @mission)
+
+    assert attachment.persisted?
+  end
+
+  test "late-attach flag only applies to the flagged owner" do
+    @project.memberships.create!(user: @user, role: :owner)
+    @project.update!(shipped_at: Time.current)
+    other = User.create!(email: "other-#{SecureRandom.hex(4)}@example.test",
+                         display_name: "other-#{SecureRandom.hex(4)}",
+                         slack_id: "U#{SecureRandom.hex(8)}")
+    Flipper.enable_actor(:late_mission_attach, other)
+
+    attachment = @project.mission_attachments.create(mission: @mission)
+
+    assert_includes attachment.errors[:base], "Can't attach a mission to a project that has already shipped"
+  end
+
+  test "late-attach flag doesn't free a project that already shipped to a mission" do
+    @project.memberships.create!(user: @user, role: :owner)
+    @project.mission_attachments.create!(mission: @mission)
+    ship_to_mission!(@project, @user, @mission)
+    Flipper.enable_actor(:late_mission_attach, @user)
+
+    @project.current_mission_attachment.detach!
+    attachment = @project.mission_attachments.create(mission: create_mission)
+
+    assert_includes attachment.errors[:base], "Can't attach a mission to a project that has already shipped"
+  end
+
+  test "mission picker offers a mission to a flagged shipped project only" do
+    @project.memberships.create!(user: @user, role: :owner)
+    @project.update!(shipped_at: Time.current)
+    assert_not @project.mission_attachable?
+
+    Flipper.enable_actor(:late_mission_attach, @user)
+    assert @project.mission_attachable?
   end
 
   test "hardware mission rejects a software project" do

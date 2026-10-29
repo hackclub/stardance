@@ -140,7 +140,7 @@ class ProjectsController < ApplicationController
     @show_project_onboarding = @is_member && @timeline_entries.empty?
     @project_onboarding_mission = @project.current_mission
 
-    @available_missions = if @is_member && @project.current_mission.nil? && !@project.shipped?
+    @available_missions = if @is_member && @project.mission_attachable?
       taken_mission_ids = current_user.projects
                                       .where(deleted_at: nil)
                                       .joins(:mission_attachments)

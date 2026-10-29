@@ -1460,7 +1460,7 @@
     </script>
   <% end %>
 
-  <% if @is_member && @project.current_mission.nil? && !@project.shipped? %>
+  <% if @is_member && @project.mission_attachable? %>
     <%= render layout: "shared/modal", locals: { id: "mission-browse-modal", title: "Browse missions", class_name: "mission-browse-modal" } do %>
       <% if @available_missions.any? %>
         <ul class="mission-browse-modal__grid">
