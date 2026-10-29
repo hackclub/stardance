@@ -1,4 +1,5 @@
-// Daily "ship it before Stardance ends" pop-up on home (home/_ship_prompt).
+// Daily "ship it before Stardance ends" pop-up on home (home/_ship_prompt), and
+// the "before you can ship" list it can lead to (projects/_ship_todo_modal).
 // Same shell as the clearance sale pop-up.
 
 .ship-prompt {
@@ -64,6 +65,17 @@
     font-size: var(--font-size-m);
     margin: 0;
     opacity: 0.9;
+  }
+
+  &__todo {
+    font-size: var(--font-size-m);
+    margin: 0.25rem 0 0;
+    padding-left: 1.25rem;
+    text-align: left;
+
+    li + li {
+      margin-top: 0.35rem;
+    }
   }
 
   &__actions {

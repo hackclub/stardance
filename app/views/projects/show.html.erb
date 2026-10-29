@@ -1054,8 +1054,27 @@
                link_blocker: recert_link_blocker, visible_blocker: recert_visible_blocker %>
   <% end %>
 
-  <% if is_member && ship_modal_id && params[:ship].present? %>
-    <div hidden data-controller="open-dialog" data-open-dialog-id-value="<%= ship_modal_id %>" data-open-dialog-param-value="ship"></div>
+  <% if is_member && params[:ship].present? && !Project.shipping_closed? %>
+    <% if ship_modal_id %>
+      <div hidden data-controller="open-dialog" data-open-dialog-id-value="<%= ship_modal_id %>" data-open-dialog-param-value="ship"></div>
+    <% else %>
+      <%# Arrived from the home ship prompt but can't ship yet: say what's missing
+          rather than leaving them at a greyed-out button. %>
+      <%
+        ship_todo =
+          if @project.awaiting_ship_review?
+            [ "Your last ship is still in review. You can ship again once it's approved." ]
+          elsif @project.needs_changes?
+            [ recert_visible_blocker || recert_link_blocker ].compact
+          else
+            todo = []
+            todo << "Link Hackatime so your time is tracked" unless @hackatime_linked || @test_time_granted
+            todo << "Get your design funded first: design-stage projects ship once their grant comes through" if @project.design_stage?
+            todo + @project.shipping_requirements.reject { |r| r[:passed] }.map { |r| r[:fail_label] || r[:label] }
+          end
+      %>
+      <%= render "projects/ship_todo_modal", project: @project, todo: ship_todo if ship_todo.any? %>
+    <% end %>
   <% end %>
 
   <% if (is_member || current_user&.admin?) && @rejected_mission_sub %>

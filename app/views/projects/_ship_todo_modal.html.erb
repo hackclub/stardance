@@ -1,0 +1,21 @@
+<%# What's left before this project can ship, opened when someone follows the
+    home ship prompt (?ship=1) to a project that can't ship yet. %>
+<dialog class="ship-prompt"
+        data-controller="dismissable"
+        data-dismissable-open-value="true"
+        data-action="cancel->dismissable#dismiss"
+        aria-labelledby="ship-todo-title">
+  <div class="ship-prompt__panel">
+    <p class="ship-prompt__eyebrow">Stardance ends Saturday</p>
+    <h2 class="ship-prompt__title" id="ship-todo-title">Almost ready to ship!</h2>
+    <p class="ship-prompt__note">Before you can ship <strong><%= project.title %></strong>:</p>
+    <ul class="ship-prompt__todo">
+      <% todo.each do |item| %>
+        <li><%= item %></li>
+      <% end %>
+    </ul>
+    <div class="ship-prompt__actions">
+      <%= render ActionButtonComponent.new(text: "Got it", type: :button, size: :large, variant: :primary, data: { action: "dismissable#dismiss" }) %>
+    </div>
+  </div>
+</dialog>
