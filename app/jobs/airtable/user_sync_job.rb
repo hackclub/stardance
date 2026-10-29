@@ -9,10 +9,11 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
   # Backstop round-robin for the funnel-stuck nudges. Freshness for users who
   # actually advance is handled event-driven by FunnelResyncTrigger (their
   # synced_at is nulled, jumping them to the front); this limit just bounds how
-  # long anything those hooks miss can stay stale. 100/min cycles ~29k users in
-  # ~5h — well under the 2-day nudge window. Norairrecord's Faraday middleware
-  # paces requests to Airtable's 5 req/s per-base limit on its own.
-  def sync_limit = 100
+  # long anything those hooks miss can stay stale. 1000/min cycles ~29k users in
+  # ~30min, so Loops properties for emails are fresh soon after a deploy.
+  # Norairrecord's Faraday middleware paces requests to Airtable's 5 req/s
+  # per-base limit on its own.
+  def sync_limit = 1000
 
   def field_mapping(user)
     address = user.addresses.first
