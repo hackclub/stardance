@@ -14,6 +14,9 @@
 #  banned_at                        :datetime
 #  banned_reason                    :text
 #  bio                              :text
+#  certificate_credit_hours         :decimal(12, 2)   default(0.0), not null
+#  certificate_credit_projects      :integer          default(0), not null
+#  certificate_eligibility_override :boolean          default(FALSE), not null
 #  current_streak                   :integer          default(0), not null
 #  display_name                     :string
 #  email                            :string
