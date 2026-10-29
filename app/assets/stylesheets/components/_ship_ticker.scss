@@ -1,0 +1,157 @@
+// Site-wide ticker of recent ships (ShipTickerComponent). Pinned full width to
+// the bottom of the screen on desktop, with the sidebar lifted to sit above it;
+// on mobile the sidebar owns the bottom edge, so the ticker moves to the top.
+body:has(.ship-ticker) {
+  --ship-ticker-height: 36px;
+
+  padding-bottom: var(--ship-ticker-height);
+
+  @media (max-width: 960px) {
+    padding-bottom: 0;
+    padding-top: var(--ship-ticker-height);
+  }
+
+  @media (min-width: 961px) {
+    .sidebar {
+      bottom: var(--ship-ticker-height);
+      padding-bottom: var(--space-s);
+    }
+  }
+}
+
+.ship-ticker {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9; // under the sidebar, over page content
+  height: var(--ship-ticker-height);
+  display: flex;
+  align-items: center;
+  background: var(--color-set-1-bg);
+  border-top: 1px solid var(--color-space-border);
+  font-size: var(--font-size-s);
+  white-space: nowrap;
+
+  @media (max-width: 960px) {
+    top: 0;
+    bottom: auto;
+    border-top: 0;
+    border-bottom: 1px solid var(--color-space-border);
+  }
+
+  &__viewport {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 2rem,
+      black calc(100% - 2rem),
+      transparent
+    );
+  }
+
+  &__track {
+    display: flex;
+    width: max-content;
+    animation: ship-ticker-scroll 90s linear infinite;
+
+    .ship-ticker:hover &,
+    .ship-ticker:focus-within & {
+      animation-play-state: paused;
+    }
+  }
+
+  &__list {
+    display: flex;
+    list-style: none;
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    padding: 0 var(--space-l);
+    border-right: 1px solid var(--color-space-surface-faint);
+  }
+
+  &__name {
+    font-weight: 600;
+    max-width: 22ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-space-text);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  &__change {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25em;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+
+    &--up {
+      color: var(--color-brand-yellow);
+    }
+
+    &--down {
+      color: var(--color-brand-lilac);
+    }
+  }
+
+  &__arrow {
+    // Sized to Exo 2's cap height and sat on the baseline (an SVG's baseline
+    // is its bottom edge), so it lines up with the numbers beside it.
+    flex-shrink: 0;
+    width: 0.7em;
+    height: 0.7em;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+
+    .ship-ticker__change--down & {
+      transform: scaleY(-1);
+    }
+  }
+
+  &__icon {
+    height: 1em;
+    width: auto;
+    align-self: center;
+  }
+
+  &__detail {
+    color: var(--color-space-text-muted);
+  }
+}
+
+@keyframes ship-ticker-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ship-ticker__viewport {
+    overflow-x: auto;
+    mask-image: none;
+  }
+
+  .ship-ticker__track {
+    animation: none;
+  }
+
+  .ship-ticker__list[aria-hidden] {
+    display: none;
+  }
+}

@@ -1,0 +1,25 @@
+<aside id="ship-ticker" class="ship-ticker" aria-label="Recently shipped projects" data-turbo-permanent>
+  <div class="ship-ticker__viewport">
+    <div class="ship-ticker__track">
+      <% 2.times do |copy| %>
+        <ul class="ship-ticker__list" <%= "aria-hidden=true" if copy.positive? %>>
+          <% entries.each do |entry| %>
+            <li class="ship-ticker__item">
+              <% if entry.is_a?(ShipTicker::Ship) %>
+                <%= link_to entry.project_title, helpers.project_path(entry.project_id), class: "ship-ticker__name", tabindex: (copy.positive? ? -1 : nil) %>
+                <span class="ship-ticker__change ship-ticker__change--up"><%= arrow %><%= hours(entry) %></span>
+                <% if entry.author.present? %>
+                  <span class="ship-ticker__detail">by <%= entry.author %></span>
+                <% end %>
+              <% else %>
+                <%= link_to entry.item_name, helpers.shop_item_path(entry.shop_item_id), class: "ship-ticker__name", tabindex: (copy.positive? ? -1 : nil) %>
+                <span class="ship-ticker__change ship-ticker__change--down"><%= arrow %><%= stardust(entry) %></span>
+                <span class="ship-ticker__detail">bought</span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </div>
+  </div>
+</aside>

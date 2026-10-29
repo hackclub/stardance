@@ -115,6 +115,7 @@
     </div>
     <% unless @hide_sidebar || current_user&.banned? %>
       <%= render SidebarComponent.new(user: current_user, active_slug_override: @active_nav_slug) %>
+      <%= render ShipTickerComponent.new unless @_admin_layout %>
       <% if current_user.present? %>
         <%= render CommandPaletteComponent.new(current_user: current_user, current_path: request.path) %>
       <% end %>
