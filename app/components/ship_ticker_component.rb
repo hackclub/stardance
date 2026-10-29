@@ -4,16 +4,18 @@
 # rendered twice so the CSS loop can scroll by exactly half its width without a
 # visible seam; the copy is hidden from assistive tech.
 class ShipTickerComponent < ViewComponent::Base
-  def initialize(ticker: ShipTicker.current)
-    @ticker = ticker
+  FEATURE_FLAG = :ship_ticker
+
+  def initialize(user:)
+    @user = user
   end
 
   def render?
-    !@ticker.empty?
+    Flipper.enabled?(FEATURE_FLAG, @user) && !ticker.empty?
   end
 
   def entries
-    @ticker.entries
+    ticker.entries
   end
 
   def hours(entry)
@@ -27,5 +29,12 @@ class ShipTickerComponent < ViewComponent::Base
 
   def stardust(entry)
     safe_join([ helpers.number_with_delimiter(entry.stardust), helpers.stardust_icon(extra_class: "ship-ticker__icon") ], " ")
+  end
+
+  private
+
+  # Loaded lazily so the query never runs while the flag is off.
+  def ticker
+    @ticker ||= ShipTicker.current
   end
 end

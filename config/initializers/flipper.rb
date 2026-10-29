@@ -54,6 +54,7 @@ Rails.application.config.after_initialize do
         fallen-promo
         justin-melena
         late_mission_attach
+        ship_ticker
       ].each { |flag| Flipper.add(flag) }
       Flipper.add(:bukux2_preview_complete) if Rails.env.development?
 
