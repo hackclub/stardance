@@ -8,9 +8,14 @@
          data-ship-funnel-links-value="<%= @funnel[:links].to_json %>"
          data-ship-funnel-unshipped-links-value="<%= (@funnel[:unshipped_links] || []).to_json %>"
          <% if admin %> data-ship-funnel-live-url-value="<%= live_stats_ship_funnel_path(format: :json) %>"<% end %>>
-      <% if admin %>
-        <%= link_to "← back to admin", admin_root_path, class: "ship-funnel__back" %>
-      <% end %>
+      <nav class="ship-funnel__nav">
+        <% if admin %>
+          <%= link_to "← back to admin", admin_root_path, class: "ship-funnel__back" %>
+        <% end %>
+        <%= link_to @hide_sidebar ? "Show sidebar" : "Hide sidebar",
+                    stats_ship_funnel_path(sidebar: ("hidden" unless @hide_sidebar)),
+                    class: "ship-funnel__sidebar-toggle" %>
+      </nav>
 
       <header class="ship-funnel__header">
         <div>

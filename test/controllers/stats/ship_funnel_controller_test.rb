@@ -47,6 +47,18 @@ class Stats::ShipFunnelControllerTest < ActionDispatch::IntegrationTest
     assert_select ".ship-funnel__back"
   end
 
+  test "the sidebar can be hidden to give the chart the full width" do
+    sign_in admin
+    Rails.cache.write(ShipFunnel::CACHE_KEY, FUNNEL)
+
+    get stats_ship_funnel_path
+    assert_select "aside.sidebar"
+
+    get stats_ship_funnel_path(sidebar: "hidden")
+    assert_select "aside.sidebar", count: 0
+    assert_select "a.ship-funnel__sidebar-toggle", "Show sidebar"
+  end
+
   test "only an admin can recompute" do
     sign_in create_user(slack_id: "U_SHIP_FUNNEL_MEMBER", display_name: "ship_funnel_member")
 

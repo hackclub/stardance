@@ -13,9 +13,15 @@
   max-width: 1400px;
 
   &__back,
+  &__sidebar-toggle,
   &__meta,
   &__footer {
     color: var(--ship-funnel-muted);
+  }
+
+  &__nav {
+    display: flex;
+    gap: var(--space-m);
   }
 
   &__header {

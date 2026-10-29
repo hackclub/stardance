@@ -3,6 +3,7 @@ module Stats
     def show
       authorize :ship_funnel
 
+      @hide_sidebar = params[:sidebar] == "hidden"
       @funnel = policy(:ship_funnel).refresh? ? ShipFunnel.fetch : ShipFunnel.cached
       ShipFunnelRefreshJob.perform_later unless @funnel
     end
