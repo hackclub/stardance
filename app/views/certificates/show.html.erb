@@ -2,8 +2,8 @@
 <% if @certificate %>
   <% content_for :og_title, "#{@certificate.name}'s Stardance Certificate" %>
   <% content_for :og_description,
-       "#{pluralize(@certificate.hours_at_issue.floor, "approved hour")} of verified project work
-        during Stardance, Hack Club's Summer 2026 challenge.".squish %>
+       "#{pluralize(@certificate.hours_at_issue.floor, "approved hour")} building and shipping
+        projects on Stardance, Hack Club's Summer 2026 challenge.".squish %>
   <% content_for :og_image, certificate_og_image_url(code: @certificate.code, format: :png) %>
   <% content_for :twitter_card, "summary_large_image" %>
 <% else %>
@@ -22,7 +22,8 @@
         Stardance Certificate of Achievement
       </h1>
       <p class="certificate-page__hero-desc">
-        Issued by Hack Club to recognize teens' verified project work. Recognized by MIT School of Engineering,
+        Issued by Hack Club to teens with <%= Certificate::REQUIRED_APPROVED_HOURS %> hours
+        of verified project work. Recognized by MIT School of Engineering,
         GitHub, AMD, and Congressional App Challenge.
       </p>
       <div class="certificate-page__showcase certificate-page__showcase--large"
@@ -119,7 +120,7 @@
         </p>
         <% if current_user.certificate_eligible? %>
           <p class="certificate-page__mine-text">
-            You're eligible for a certificate! Enter the name you want printed on it:
+            You've earned a certificate! Enter the name you want printed on it:
           </p>
           <%= render "certificates/request_form", certificate: Certificate.new, button: "Request certificate" %>
           <p class="certificate-page__mine-hint">
@@ -135,7 +136,8 @@
       <h2 class="certificate-page__section-title">About this certificate</h2>
       <div class="certificate-page__about-body">
         <p>
-          Project work is reviewed and approved by Hack Club staff.
+          Every hour is logged through daily devlogs, reviewed and approved by
+          Hack Club staff, and tied to a shipped project that anyone can try.
           Each certificate has a unique 6-character verification code linking
           back to the recipient's work.
         </p>
@@ -147,7 +149,7 @@
       <h2 class="certificate-page__section-title">FAQ</h2>
       <%= render "certificates/faq", items: [
             [ "What hours count towards the certificate?",
-              "Project hours reviewed and approved by Hack Club staff, including shipped projects and approved hardware designs." ],
+              "All hours that have been devlogged and submitted as part of a ship that has been approved." ],
             [ "What will show up on the certificate?",
               "You'll get to choose your name, and there will be a code that lets anyone verify the
                certificate's authenticity. The code also shows off the projects you've submitted." ],
@@ -172,7 +174,8 @@
       </h1>
       <p class="certificate-page__hero-desc">
         Issued by <a href="https://hackclub.com" class="certificate-page__link">Hack Club</a>,
-        a 501(c)(3) nonprofit, to recognize teens' verified project work
+        a 501(c)(3) nonprofit, to teens who complete at least
+        <%= Certificate::REQUIRED_APPROVED_HOURS %> hours of verified project work
         during the Stardance Challenge.
       </p>
 
@@ -202,11 +205,13 @@
         <p>
           This certificate is issued by
           <a href="https://hackclub.com" class="certificate-page__link">Hack Club</a>,
-          a 501(c)(3) nonprofit (EIN 81-2908499), to recognize teens' verified project work
+          a 501(c)(3) nonprofit (EIN 81-2908499), to teens who complete at least
+          <%= Certificate::REQUIRED_APPROVED_HOURS %> hours of verified project work
           during the Stardance Challenge.
         </p>
         <p>
-          Project work is reviewed and approved by Hack Club staff.
+          Every hour is logged through daily devlogs, reviewed and approved by
+          Hack Club staff, and tied to a shipped project that anyone can try.
           Each certificate has a unique 6-character verification code linking
           back to the recipient's work.
         </p>
@@ -237,8 +242,9 @@
                prizes for each project submitted." ],
             [ "What is Hack Club?", hack_club_answer ],
             [ "What does this certificate mean?",
-              "This certificate recognizes the recipient's verified work on personal projects.
-               Each certificate has a unique code
+              "This certificate verifies that the recipient spent at least
+               #{Certificate::REQUIRED_APPROVED_HOURS} hours working on personal projects that
+               have been shipped so anyone can experience it. Each certificate has a unique code
                that links to the recipient's work." ],
             [ "How can I earn a certificate?",
               "Anyone ages 13–18 can earn a certificate by joining Stardance Challenge, logging
