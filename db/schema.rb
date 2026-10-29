@@ -788,7 +788,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_191139) do
     t.index ["mission_id"], name: "index_mission_shop_unlock_grants_on_mission_id"
     t.index ["user_id"], name: "index_mission_shop_unlock_grants_on_user_id"
   end
-  
+
   create_table "mission_shop_unlocks", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "mission_id", null: false
