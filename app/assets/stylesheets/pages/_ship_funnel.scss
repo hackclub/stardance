@@ -110,7 +110,8 @@
     }
   }
 
-  :is(.admin-content, body) & button#{&}__refresh {
+  :is(.admin-content, body) & button#{&}__refresh,
+  :is(.admin-content, body) & button#{&}__output {
     background: transparent;
     border: 1px solid var(--color-space-border);
     border-radius: 999px;
@@ -125,6 +126,16 @@
       box-shadow: none;
       color: var(--color-brand-off-white);
     }
+  }
+
+  &__output {
+    background: var(--color-space-bg-2);
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    color: var(--color-brand-off-white);
+    font-size: var(--font-size-s);
+    max-width: 220px;
+    padding: 5px 14px;
   }
 
   &__computed {

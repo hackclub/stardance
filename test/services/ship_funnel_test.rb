@@ -35,6 +35,15 @@ class ShipFunnelTest < ActiveSupport::TestCase
     assert_equal 1, funnel[:loops][:goi_twice]
   end
 
+  test "the live links stop at the first review and include unshipped hours" do
+    ship(hours: 4, status: "approved")
+
+    live = ShipFunnel.new.live_links
+
+    assert_equal [ [ "Shipped", "Reship, skipped review", 4.0, 1 ] ], live[:links].map { |l| l.values_at(:source, :target, :hours, :ships) }
+    assert_includes live[:unshipped_links].map { |l| l.values_at(:source, :target) }, [ "Devlogged", "Shipped" ]
+  end
+
   private
 
   def funnel

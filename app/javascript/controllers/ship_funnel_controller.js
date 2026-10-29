@@ -3,15 +3,27 @@ import { groups, select, sum } from "d3";
 import { sankey, sankeyLeft, sankeyLinkHorizontal } from "d3-sankey";
 
 export default class extends Controller {
-  static targets = ["chart", "typeButton", "unitButton", "unshippedToggle"];
+  static targets = [
+    "chart",
+    "typeButton",
+    "unitButton",
+    "unshippedToggle",
+    "liveToggle",
+    "output",
+    "outputButton",
+    "computed",
+  ];
   static values = {
     links: Array,
     unshippedLinks: Array,
+    liveUrl: String,
     unshipped: { type: Boolean, default: false },
     type: { type: String, default: "both" },
     unit: { type: String, default: "hours" },
   };
 
+  static POLL_MS = 15000;
+  static OUTPUT_KEY = "ship-funnel-output";
   static MIN_COLUMN = 175;
   static HEIGHT = 900;
   static LABEL_ROOM = 190;
@@ -124,6 +136,144 @@ export default class extends Controller {
 
   disconnect() {
     window.removeEventListener("resize", this.resize);
+    clearInterval(this.poller);
+  }
+
+  // Runs from the checkbox click, so it can unlock audio and ask for notification permission.
+  toggleLive(event) {
+    clearInterval(this.poller);
+    if (!event.target.checked) return;
+
+    this.startAudio();
+    if (Notification.permission === "default") Notification.requestPermission();
+    this.unshippedToggleTarget.checked = true;
+    this.unshippedValue = true;
+    if (!navigator.mediaDevices.selectAudioOutput) this.loadOutputs();
+    this.outputButtonTarget.hidden = !navigator.mediaDevices.selectAudioOutput;
+    this.poll();
+    this.poller = setInterval(() => this.poll(), this.constructor.POLL_MS);
+  }
+
+  // The chime plays through an <audio> element because only media elements can
+  // switch output device in both Chrome and Firefox.
+  startAudio() {
+    if (!this.audio) {
+      this.audio = new AudioContext();
+      this.output = this.audio.createMediaStreamDestination();
+      this.speaker = new Audio();
+      this.speaker.srcObject = this.output.stream;
+    }
+    this.audio.resume();
+    this.speaker.play();
+  }
+
+  // Firefox and Zen: the browser's own speaker picker.
+  async pickOutput() {
+    const device = await navigator.mediaDevices
+      .selectAudioOutput()
+      .catch(() => null);
+    if (!device) return;
+
+    await this.speaker.setSinkId(device.deviceId);
+    this.outputButtonTarget.textContent = `🔊 ${device.label}`;
+  }
+
+  // Chrome: no picker, and output names stay hidden until the page has had microphone access.
+  async loadOutputs() {
+    const outputs = async () =>
+      (await navigator.mediaDevices.enumerateDevices()).filter(
+        (device) => device.kind === "audiooutput",
+      );
+    let devices = await outputs();
+    if (devices.some((device) => !device.label)) {
+      const stream = await navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .catch(() => null);
+      stream?.getTracks().forEach((track) => track.stop());
+      devices = await outputs();
+    }
+    if (!devices.length) return;
+
+    this.outputTarget.replaceChildren(
+      ...devices.map(
+        (device) => new Option(device.label || "Default", device.deviceId),
+      ),
+    );
+    try {
+      const saved = window.localStorage.getItem(this.constructor.OUTPUT_KEY);
+      if (devices.some((device) => device.deviceId === saved))
+        this.outputTarget.value = saved;
+    } catch {
+      // storage blocked: stay on the default output
+    }
+    this.outputTarget.hidden = false;
+    this.setOutput();
+  }
+
+  setOutput() {
+    this.speaker.setSinkId(this.outputTarget.value);
+    try {
+      window.localStorage.setItem(
+        this.constructor.OUTPUT_KEY,
+        this.outputTarget.value,
+      );
+    } catch {
+      // storage blocked: the choice lasts for this visit
+    }
+  }
+
+  async poll() {
+    const url = new URL(this.liveUrlValue, window.location.origin);
+    if (this.lastShipId !== undefined)
+      url.searchParams.set("after", this.lastShipId);
+    const response = await fetch(url, {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return;
+
+    const live = await response.json();
+    this.linksValue = [
+      ...this.linksValue.filter((link) => link.source !== "Shipped"),
+      ...live.links,
+    ];
+    this.unshippedLinksValue = live.unshipped_links;
+    this.lastShipId = live.last_ship_id;
+    live.ships.forEach((ship) => this.announce(ship));
+    this.computedTarget.textContent = `live · ${new Date().toLocaleTimeString()}`;
+    this.render();
+  }
+
+  announce(ship) {
+    const hours = Math.round(ship.hours * 10) / 10;
+    this.chime();
+    // speechSynthesis can't pick a device, so this always uses the system output
+    speechSynthesis.speak(
+      new SpeechSynthesisUtterance(
+        `${ship.user} shipped ${ship.project}, ${hours} hours`,
+      ),
+    );
+    if (Notification.permission !== "granted") return;
+
+    new Notification(`🚀 ${ship.user} shipped ${ship.project}`, {
+      body: `${hours} h`,
+      tag: `ship-${ship.id}`,
+    });
+  }
+
+  chime() {
+    const start = this.audio.currentTime;
+    [660, 880, 1320].forEach((frequency, index) => {
+      const at = start + index * 0.12;
+      const oscillator = this.audio.createOscillator();
+      const gain = this.audio.createGain();
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.3, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.6);
+      oscillator.connect(gain).connect(this.output);
+      oscillator.start(at);
+      oscillator.stop(at + 0.6);
+    });
   }
 
   toggleUnshipped(event) {

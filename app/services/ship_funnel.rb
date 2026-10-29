@@ -6,6 +6,8 @@ class ShipFunnel
   AIRTABLE_FIELDS = [ "review_id", "Automation - YSWS Record ID", "Automation - Error", "rejected_at" ].freeze
   CACHE_KEY = "ship_funnel".freeze
   CACHE_TTL = 2.hours
+  LIVE_CACHE_KEY = "ship_funnel_live".freeze
+  LIVE_CACHE_TTL = 10.seconds
 
   # The public page only ever reads the cache; the refresh job fills it hourly.
   def self.cached = Rails.cache.read(CACHE_KEY)
@@ -16,8 +18,11 @@ class ShipFunnel
 
   def self.compute = new.to_h.merge(generated_at: Time.current)
 
+  # Devlogged → Shipped → first review is cheap enough to poll, so the live view recomputes just that.
+  def self.live = Rails.cache.fetch(LIVE_CACHE_KEY, expires_in: LIVE_CACHE_TTL) { new.live_links }
+
   def to_h
-    @links = Hash.new { |links, key| links[key] = Link.new(*key, 0.0, 0) }
+    @links = new_links
     @airtable = airtable_states
     ship_rows.each { |row| add_ship(row) }
 
@@ -29,26 +34,39 @@ class ShipFunnel
     }
   end
 
+  def live_links
+    @links = new_links
+    select_all(shipped_rows_sql).each { |row| add_shipped(row) }
+    { links: @links.values.map(&:to_h), unshipped_links: unshipped_links }
+  end
+
   private
 
+  def new_links = Hash.new { |links, key| links[key] = Link.new(*key, 0.0, 0) }
+
+  # Returns the first review the ship flows into, or nil when it went to fraud.
+  def add_shipped(row)
+    kind = row["hardware"] ? "hardware" : "software"
+    hours = row["hours_at_ship"].to_f
+    if row["fraud"]
+      add(kind, "Shipped", "Fraud", hours, 1)
+      return
+    end
+
+    review = kind == "hardware" ? "Build review" : "Shipwrights review"
+    first = row["certification_status"] != "approved" || row["was_reviewed"] ? review : "Reship, skipped review"
+    add(kind, "Shipped", first, hours, 1)
+    first
+  end
+
   def add_ship(row)
+    first = add_shipped(row) or return
     kind = row["hardware"] ? "hardware" : "software"
     hours = row["hours_at_ship"].to_f
     flow = ->(source, target, flow_hours, ships: 1) { add(kind, source, target, flow_hours, ships) }
+    waiting = kind == "hardware" ? "Waiting on build review" : "Waiting on Shipwrights"
 
-    return flow.call("Shipped", "Fraud", hours) if row["fraud"]
-
-    review, reship, waiting =
-      if kind == "hardware"
-        [ "Build review", "Reship, skipped review", "Waiting on build review" ]
-      else
-        [ "Shipwrights review", "Reship, skipped review", "Waiting on Shipwrights" ]
-      end
-    status = row["certification_status"]
-    first = status != "approved" || row["was_reviewed"] ? review : reship
-    flow.call("Shipped", first, hours)
-
-    case status
+    case row["certification_status"]
     when "pending" then return flow.call(first, waiting, hours)
     when "returned" then return flow.call(first, row["returned_bucket"], hours)
     when "misfiled" then return flow.call(first, "Misfiled, back to design", hours)
@@ -131,8 +149,7 @@ class ShipFunnel
     links = shipped.map do |kind, from_shipped|
       { kind: kind, source: "Devlogged", target: "Shipped", hours: from_shipped.sum(&:hours), ships: from_shipped.sum(&:ships) }
     end
-    rows = ::ActiveRecord::Base.connection.select_all(unshipped_sql).to_a
-    links + rows.map { |row| { kind: row["hardware"] ? "hardware" : "software", source: "Devlogged", target: row["bucket"], hours: row["hours"].to_f, ships: 0 } }
+    links + select_all(unshipped_sql).map { |row| { kind: row["hardware"] ? "hardware" : "software", source: "Devlogged", target: row["bucket"], hours: row["hours"].to_f, ships: 0 } }
   end
 
   def unshipped_sql
@@ -161,17 +178,42 @@ class ShipFunnel
     SQL
   end
 
-  def ship_rows = ::ActiveRecord::Base.connection.select_all(ship_rows_sql).to_a
+  def select_all(sql) = ::ActiveRecord::Base.connection.select_all(sql).to_a
+
+  def ship_rows = select_all(ship_rows_sql)
+
+  def shipped_rows_sql
+    <<~SQL
+      SELECT #{shipped_columns_sql}
+      #{ships_from_sql}
+    SQL
+  end
+
+  def shipped_columns_sql
+    <<~SQL
+      pr.hardware_stage IS NOT NULL AS hardware,
+      se.hours_at_ship,
+      coalesce(u.banned OR pr.deleted_at IS NOT NULL OR i.status = #{integrity(:banned)}, false) AS fraud,
+      se.certification_status,
+      EXISTS (SELECT 1 FROM certification_ship_reviews c WHERE c.post_ship_event_id = se.id) AS was_reviewed
+    SQL
+  end
+
+  def ships_from_sql
+    <<~SQL
+      FROM post_ship_events se
+      JOIN posts p     ON p.postable_type = 'Post::ShipEvent' AND p.postable_id = se.id
+      JOIN projects pr ON pr.id = p.project_id
+      JOIN users u     ON u.id = p.user_id
+      LEFT JOIN certification_integrities i ON i.ship_event_id = se.id
+    SQL
+  end
 
   def ship_rows_sql
     returned = ::Certification::Ship.statuses[:returned]
     <<~SQL
       SELECT y.id AS review_id,
-             pr.hardware_stage IS NOT NULL AS hardware,
-             se.hours_at_ship,
-             coalesce(u.banned OR pr.deleted_at IS NOT NULL OR i.status = #{integrity(:banned)}, false) AS fraud,
-             se.certification_status,
-             EXISTS (SELECT 1 FROM certification_ship_reviews c WHERE c.post_ship_event_id = se.id) AS was_reviewed,
+             #{shipped_columns_sql},
              CASE WHEN EXISTS (SELECT 1 FROM posts l WHERE l.project_id = p.project_id AND l.postable_type = 'Post::ShipEvent'
                                  AND l.created_at > p.created_at) THEN 'Cut off by a later ship'
                   WHEN (SELECT max(coalesce(decided_at, created_at)) FROM certification_ship_reviews c
@@ -197,11 +239,7 @@ class ShipFunnel
              i.status = #{integrity(:deducted)} AND pr.hardware_stage IS NULL AS deducted,
              i.deduction_minutes,
              y.airtable_synced_at IS NOT NULL AS synced
-      FROM post_ship_events se
-      JOIN posts p     ON p.postable_type = 'Post::ShipEvent' AND p.postable_id = se.id
-      JOIN projects pr ON pr.id = p.project_id
-      JOIN users u     ON u.id = p.user_id
-      LEFT JOIN certification_integrities i ON i.ship_event_id = se.id
+      #{ships_from_sql}
       LEFT JOIN certification_ysws_reviews y
         ON y.id = (SELECT max(id) FROM certification_ysws_reviews WHERE post_ship_event_id = se.id)
     SQL

@@ -6,7 +6,8 @@
     <div class="ship-funnel"
          data-controller="ship-funnel"
          data-ship-funnel-links-value="<%= @funnel[:links].to_json %>"
-         data-ship-funnel-unshipped-links-value="<%= (@funnel[:unshipped_links] || []).to_json %>">
+         data-ship-funnel-unshipped-links-value="<%= (@funnel[:unshipped_links] || []).to_json %>"
+         <% if admin %> data-ship-funnel-live-url-value="<%= live_stats_ship_funnel_path(format: :json) %>"<% end %>>
       <% if admin %>
         <%= link_to "← back to admin", admin_root_path, class: "ship-funnel__back" %>
       <% end %>
@@ -35,9 +36,17 @@
             Show unshipped hours
           </label>
           <% if admin %>
+            <label class="ship-funnel__checkbox">
+              <input type="checkbox" data-ship-funnel-target="liveToggle" data-action="ship-funnel#toggleLive">
+              Live
+            </label>
+            <select class="ship-funnel__output" aria-label="Sound output" hidden
+                    data-ship-funnel-target="output" data-action="ship-funnel#setOutput"></select>
+            <button type="button" class="ship-funnel__output" hidden
+                    data-ship-funnel-target="outputButton" data-action="ship-funnel#pickOutput">🔊 Choose speaker</button>
             <%= button_to "Update", refresh_stats_ship_funnel_path, class: "ship-funnel__refresh" %>
           <% end %>
-          <span class="ship-funnel__computed">updated <%= time_ago_in_words(@funnel[:generated_at]) %> ago</span>
+          <span class="ship-funnel__computed" data-ship-funnel-target="computed">updated <%= time_ago_in_words(@funnel[:generated_at]) %> ago</span>
         </div>
       </header>
 

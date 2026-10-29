@@ -564,6 +564,7 @@ Rails.application.routes.draw do
   delete "logout", to: "sessions#destroy"
   namespace :stats do
     resource :ship_funnel, only: [ :show ], controller: "ship_funnel" do
+      get :live
       post :refresh
     end
   end

@@ -56,7 +56,37 @@ class Stats::ShipFunnelControllerTest < ActionDispatch::IntegrationTest
     assert_nil ShipFunnel.cached
   end
 
+  test "the live feed reports only ships after the one the admin last saw" do
+    sign_in(builder = admin)
+    shipped = nil
+    ShipFunnel.stub(:live, { links: [], unshipped_links: [] }) do
+      get live_stats_ship_funnel_path(format: :json)
+      seen = response.parsed_body["last_ship_id"]
+      assert_empty response.parsed_body["ships"]
+
+      shipped = ship("Rocket", builder)
+      get live_stats_ship_funnel_path(format: :json, after: seen)
+    end
+
+    assert_equal [ shipped.id ], response.parsed_body["ships"].pluck("id")
+    assert_equal "Rocket", response.parsed_body["ships"].first["project"]
+    assert_equal shipped.id, response.parsed_body["last_ship_id"]
+  end
+
+  test "only an admin can watch live" do
+    sign_in create_user(slack_id: "U_SHIP_FUNNEL_MEMBER", display_name: "ship_funnel_member")
+
+    get live_stats_ship_funnel_path(format: :json)
+
+    assert_response :forbidden
+  end
+
   private
+
+  def ship(title, user)
+    project = Project.create!(title: title)
+    Post.create!(project: project, user: user, postable: Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true))
+  end
 
   def admin
     create_user(slack_id: "U_SHIP_FUNNEL_ADMIN", display_name: "ship_funnel_admin").tap { |user| user.grant_role!(:admin) }
