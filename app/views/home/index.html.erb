@@ -4,9 +4,17 @@
   <%= render "welcome_tour" %>
 <% end %>
 
+<%= render "ship_prompt", **@ship_prompt if @ship_prompt %>
+
 <div class="app-layout">
   <main class="app-layout__main feed-home" aria-label="Home feed" data-controller="feed-keyboard feed-tabs" data-feed-tabs-feed-url-value="<%= home_feed_path %>">
-    <%= render RocketProgressComponent.new(user: current_user) %>
+    <%= turbo_frame_tag "buku_x3_home_status", class: ("buku-x3-home-preview" if Rails.env.development?), data: { controller: "buku-x3-status", action: "buku-x3-reveal:complete@window->buku-x3-status#refresh" } do %>
+      <% preview_role = params[:buku_preview].presence_in(%w[buku bean]) if Rails.env.development? %>
+      <%= render BukuX3StatusComponent.new(user: current_user, preview: preview_role.present?, preview_role: preview_role) do %>
+        <%= render "buku_leaderboard", teams: @buku_teams, own: @buku_own if @buku_teams %>
+      <% end %>
+    <% end %>
+    <%= render "finality_promo" if policy([:finality, :raffle]).show? %>
     <% if current_user.present? && Flipper.enabled?(:mihimode, current_user) %>
       <%= render ActionButtonComponent.new(
             text: "free 10,000 stardust hack *LEGIT* 2026 (WORKING)",
@@ -29,17 +37,16 @@
           ) %>
     <% end %>
 
-    <% if Flipper.enabled?(:week_3_release, current_user) %>
-      <nav class="feed-tabs" aria-label="Feed filters">
-        <button class="feed-tabs__tab feed-tabs__tab--active" data-feed-tabs-target="tab" data-tab="for_you" data-action="feed-tabs#switch">For you</button>
-        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="new_builders" data-action="feed-tabs#switch">New builders</button>
-        <% if current_user.present? %>
-          <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="following" data-action="feed-tabs#switch">Following</button>
-        <% end %>
-        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="popular" data-action="feed-tabs#switch">Popular</button>
-        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="newest" data-action="feed-tabs#switch">Newest</button>
-      </nav>
-    <% end %>
+    <nav class="feed-tabs" aria-label="Feed filters">
+      <button class="feed-tabs__tab feed-tabs__tab--active" data-feed-tabs-target="tab" data-tab="for_you" data-action="feed-tabs#switch">For you</button>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="hardware" data-action="feed-tabs#switch">Hardware</button>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="new_builders" data-action="feed-tabs#switch">New builders</button>
+      <% if current_user.present? %>
+        <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="following" data-action="feed-tabs#switch">Following</button>
+      <% end %>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="popular" data-action="feed-tabs#switch">Popular</button>
+      <button class="feed-tabs__tab" data-feed-tabs-target="tab" data-tab="newest" data-action="feed-tabs#switch">Newest</button>
+    </nav>
 
     <%= turbo_frame_tag "home_feed", src: home_feed_path, target: "_top", class: "feed-home__frame" do %>
       <div class="feed-loading" role="status" aria-live="polite">

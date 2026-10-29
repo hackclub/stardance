@@ -22,6 +22,7 @@ module Notifications
       "Notifications::Missions::SubmissionRejected"             => "alert-triangle",
       "Notifications::Missions::SubmissionPendingForReviewer"   => "clipboard",
       "Notifications::ShopOrders::StatusChanged"                => "bag",
+      "Notifications::ShopOrders::TrackingUpdated"              => "bag",
       "Notifications::Hardware::FundingRequestReviewed"         => "check-circle"
     }.freeze
 

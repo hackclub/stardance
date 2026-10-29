@@ -43,7 +43,7 @@ module Seller
       end
 
       old = @order.aasm_state
-      if @order.mark_fulfilled(params[:external_ref].presence, params[:fulfillment_cost].presence, "#{current_user.display_name} (seller)") && @order.save
+      if @order.mark_fulfilled(params[:external_ref].presence, params[:fulfillment_cost].presence, "#{current_user.display_name} (seller)", params[:tracking_number]) && @order.save
         audit!("ShopOrder", @order.id, "update", aasm_state: [ old, @order.aasm_state ])
         redirect_to seller_order_path(@order), notice: "Order marked as fulfilled"
       else

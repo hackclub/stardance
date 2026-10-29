@@ -344,7 +344,12 @@ module SemanticSearch
       return nil unless redis_url.present?
 
       payload = redis.get(key)
-      JSON.parse(payload) if payload.present?
+      return nil if payload.blank?
+
+      # Results are symbol-keyed hashes (Document#to_result); JSON round-trips
+      # them to strings, which leaves item[:path] nil and turns every cached
+      # result link into a link back to /search/global.
+      JSON.parse(payload).transform_values { |results| results.map(&:symbolize_keys) }
     rescue Redis::BaseError, JSON::ParserError
       nil
     end

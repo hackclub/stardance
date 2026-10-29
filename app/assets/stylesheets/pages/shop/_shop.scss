@@ -1,3 +1,17 @@
+// Cross-fade between shop pages (see shop/items/_view_transition).
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
+}
+
 .shop {
   text-align: center;
   margin-top: 2rem;

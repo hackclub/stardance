@@ -1,0 +1,83 @@
+<% content_for :title, "Finality" %>
+
+<div class="finality">
+  <%= link_to "← back to admin", admin_root_path, class: "finality__back" %>
+
+  <header class="finality__header">
+    <div>
+      <h1>Finality</h1>
+      <p class="finality__subtitle">
+        Ship Oct 27–31 (New York time) for a stardust bonus on that ship's payout, bigger the earlier you ship.
+        Every approved ship earns another raffle entry. Pending reviews do not enter the draw yet.
+      </p>
+    </div>
+    <div class="finality__controls">
+      <%= button_to "Award missing bonuses (#{@unpaid_count})", award_admin_finality_path,
+            class: "finality__action",
+            disabled: !Finality.enabled? || @unpaid_count.zero?,
+            data: { turbo_confirm: "Credit the #{@unpaid_count} missing Finality bonuses to the ledger? Already-paid ships are skipped." } %>
+    </div>
+  </header>
+
+  <%= render "draw" %>
+
+  <p class="finality__note">
+    The bonus is paid with the ship's payout while the <code><%= Finality::FEATURE_FLAG %></code> flag is
+    <strong><%= Finality.enabled? ? "on" : "off" %></strong>. Ships paid while it was off show up as missing.
+  </p>
+
+  <div class="finality__tiles">
+    <% @days.each do |day| %>
+      <div class="finality__tile">
+        <span class="finality__tile-label"><%= day[:day].strftime("%a %b %-d") %></span>
+        <span class="finality__tile-value">+<%= (day[:rate] * 100).round %>%</span>
+        <span class="finality__tile-label"><%= pluralize(day[:ships], "ship") %> · <%= pluralize(day[:people], "person") %></span>
+      </div>
+    <% end %>
+    <div class="finality__tile">
+      <span class="finality__tile-label">Confirmed raffle entries</span>
+      <span class="finality__tile-value"><%= @raffle_entry_ids.size %></span>
+      <span class="finality__tile-label"><%= number_with_delimiter(@bonus_paid) %> stardust in bonuses paid</span>
+    </div>
+  </div>
+
+  <% if @ship_events.any? %>
+    <table class="finality__table">
+      <thead>
+        <tr>
+          <th>Shipped (ET)</th>
+          <th>Shipper</th>
+          <th>Project</th>
+          <th>Status</th>
+          <th>Bonus</th>
+          <th>Payout</th>
+          <th>Bonus paid</th>
+          <th>Raffle</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @ship_events.each do |ship_event| %>
+          <% shipper = ship_event.payout_recipient %>
+          <% bonus_entry = Finality.bonus_entry(ship_event) %>
+          <tr>
+            <td><%= link_to ship_event.post.created_at.in_time_zone(Finality::TIME_ZONE).strftime("%a %b %-d, %-l:%M %p"), admin_payout_review_path(ship_event) %></td>
+            <td>
+              <% if shipper %>
+                <%= link_to shipper.display_name, admin_user_path(shipper) %>
+                <% if shipper.banned? %><span class="badge badge-rejected">Banned</span><% end %>
+              <% end %>
+            </td>
+            <td><%= link_to ship_event.project.title, admin_project_path(ship_event.project) if ship_event.project %></td>
+            <td><span class="badge badge-<%= ship_event.certification_status %>"><%= ship_event.certification_status %></span></td>
+            <td><%= (Finality.rate_for(ship_event) * 100).round %>%</td>
+            <td><%= ship_event.payout ? number_with_delimiter(ship_event.payout.to_i) : "—" %></td>
+            <td><%= bonus_entry ? number_with_delimiter(bonus_entry.amount) : "—" %></td>
+            <td><%= @raffle_entry_ids.include?(ship_event.id) ? "Confirmed" : (Finality.raffle_ineligible?(ship_event) ? "Excluded" : "Awaiting approval") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="finality__note">Nothing has shipped in the window yet.</p>
+  <% end %>
+</div>

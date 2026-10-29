@@ -1,0 +1,42 @@
+<%# One-time pop-up announcing a clearance sale. Dismissal is remembered per
+    sale (cookie keyed by Shop::ClearanceSale#key), so each day's sale
+    announces itself once. Rendered from the layout while a sale is live. %>
+<% cookie = "clearance_popup_#{sale.key}" %>
+<% unless cookies[cookie] %>
+  <dialog class="clearance-popup"
+          data-controller="dismissable"
+          data-dismissable-cookie-value="<%= cookie %>"
+          data-dismissable-open-value="true"
+          data-action="cancel->dismissable#dismiss"
+          aria-labelledby="clearance-popup-title">
+    <div class="clearance-popup__panel">
+      <%= image_tag "shop/clearance/buku-pulling.webp", alt: "", class: "clearance-popup__mascot clearance-popup__mascot--buku" %>
+      <%= image_tag "shop/clearance/bean-pulling.webp", alt: "", class: "clearance-popup__mascot clearance-popup__mascot--bean" %>
+
+      <p class="clearance-popup__eyebrow">Clearance sale on now</p>
+      <h2 class="clearance-popup__title" id="clearance-popup-title"><%= sale.title %></h2>
+      <p class="clearance-popup__deal">up to <span class="clearance-popup__percent"><%= sale.top_percentage %>% off</span></p>
+
+      <div class="clearance-popup__items" aria-hidden="true">
+        <% sale.showcase(4).each do |item| %>
+          <%= image_tag item.image.variant(:carousel_sm), alt: "", class: "clearance-popup__item" %>
+        <% end %>
+      </div>
+
+      <p class="clearance-popup__note">
+        Stardance is ending and everything must go.
+        <% if sale.countdown_to %>
+          Ends in <strong data-controller="countdown"
+                          data-countdown-reset-at-value="<%= sale.countdown_to.iso8601 %>"
+                          data-countdown-seconds-value="true"
+                          data-countdown-expired-text-value="no time"></strong>.
+        <% end %>
+      </p>
+
+      <div class="clearance-popup__actions">
+        <%= render ActionButtonComponent.new(text: "Shop the sale", href: shop_category_path(ShopCategory::SALE_SLUG), leading_icon: "icons/cart.png", size: :large, variant: :primary, data: { action: "dismissable#dismiss" }) %>
+        <button type="button" class="clearance-popup__later" data-action="dismissable#dismiss">Maybe later</button>
+      </div>
+    </div>
+  </dialog>
+<% end %>

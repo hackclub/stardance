@@ -16,7 +16,9 @@
   <%= hidden_field_tag :token, "funding:#{funding_request.id}" %>
 <% end %>
 
-<%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form", multipart: true do |f| %>
+<%= form_with model: funding_request, url: admin_certification_funding_request_path(funding_request), method: :patch, class: "review-form", multipart: true,
+      data: { controller: "review-feedback-images", action: "paste->review-feedback-images#paste",
+              review_feedback_images_max_value: Certification::FundingRequest::MAX_FEEDBACK_IMAGES } do |f| %>
 <% if local_assigns[:redirect_to_hardware] %>
   <%# Sends the verdict back to the combined hardware review page. %>
   <%= hidden_field_tag :redirect_to_hardware, funding_request.project_id %>
@@ -89,12 +91,10 @@
     <%= f.text_area :feedback, rows: 6, maxlength: 10_000 %>
   </div>
 
-  <div class="review-form__field review-form__images"
-       data-controller="review-feedback-images"
-       data-review-feedback-images-max-value="<%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %>">
+  <div class="review-form__field review-form__images">
     <%= f.label :feedback_images, "Attach images (optional)" %>
     <p class="review-form__hint">
-      Add annotated photos — wiring shots, schematics — to go with your feedback. Up to <%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %> images, shown to the builder.
+      Add annotated photos — wiring shots, schematics — to go with your feedback. You can also paste images into the feedback field. Up to <%= Certification::FundingRequest::MAX_FEEDBACK_IMAGES %> images, shown to the builder.
     </p>
 
     <% if funding_request.feedback_images.any?(&:persisted?) %>

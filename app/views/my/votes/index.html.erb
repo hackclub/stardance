@@ -1,0 +1,35 @@
+<% content_for :title, "Past ratings" %>
+
+<div class="app-layout">
+  <main class="app-layout__main notifications-page">
+    <header class="notifications-page__header">
+      <h1 class="notifications-page__title">Past ratings</h1>
+    </header>
+
+    <ol class="notifications-page__list">
+      <% @votes.each do |vote| %>
+        <li class="notifications-item">
+          <div class="notifications-item__main">
+            <p class="notifications-item__title">
+              <%= link_to vote.project.title, project_path(vote.project), class: "notifications-item__actor" %>
+              <span class="notifications-item__time"><%= vote.created_at.strftime("%b %d, %Y") %></span>
+            </p>
+            <p class="notifications-item__preview">
+              <%= Vote::SCORE_COLUMNS_BY_CATEGORY.map { |category, column| "#{category.to_s.humanize} #{vote.public_send(column)}/#{Vote::MAX_SCORE}" }.join(" · ") %>
+            </p>
+            <p class="notifications-item__preview notifications-item__preview--full"><%= vote.reason %></p>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+
+    <div class="notifications-page__empty" <%= "hidden" if @votes.any? %>>
+      <p class="notifications-page__empty-title">Nothing here yet</p>
+      <p class="notifications-page__empty-hint">Projects you rate will show up here along with the scores and feedback you gave.</p>
+    </div>
+
+    <%== @pagy.series_nav if @pagy.pages > 1 %>
+  </main>
+
+  <%= render DiscoverRailComponent.new %>
+</div>

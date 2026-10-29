@@ -1,0 +1,80 @@
+require "test_helper"
+
+class HomeBukuLeaderboardTest < ActionDispatch::IntegrationTest
+  setup { Flipper.enable(:bukux3) }
+  teardown { Flipper.disable(:bukux3) }
+
+  test "home tucks the team lists inside the event status box behind a toggle without a separate page link" do
+    get home_path
+    assert_response :success
+    assert_select "turbo-frame#buku_x3_home_status > .buku-x3-status[data-controller~='buku-leaderboard-panel'] > .buku-leaderboard", count: 1
+    # Starts closed: the controller adds data-open to the box, and CSS hides the panel until then.
+    assert_select ".buku-x3-status[data-open]", count: 0
+    assert_select ".buku-leaderboard__drawer > .buku-leaderboard__panel#buku-leaderboard-panel .buku-leaderboard__team", count: 2
+    assert_select ".buku-leaderboard__panel > .buku-leaderboard__note:first-child", text: /top five.*limited-edition/
+    assert_select ".buku-x3-status > button.buku-x3-status__leaderboard-tab[aria-controls='buku-leaderboard-panel']", count: 1
+    assert_select ".buku-leaderboard-promo, a[href='/buku_x3/leaderboard']", count: 0
+  end
+
+  test "all five prize spots per side are listed" do
+    entries = 7.times.map { |index| BukuX3::Leaderboard::Entry.new(user: users(:one), minutes: 600 - index) }
+    board = Struct.new(:teams) { def own(*) = nil }.new({ buku: entries, bean: entries })
+    BukuX3::Leaderboard.stub(:new, board) do
+      get home_path
+      assert_response :success
+      %w[buku bean].each do |team|
+        assert_select ".buku-leaderboard__team--#{team} .buku-leaderboard__row", count: 5
+      end
+      assert_select ".buku-leaderboard__row--prize", count: 10
+      %w[buku bean].each do |team|
+        assert_select ".buku-leaderboard__row--#{team}.buku-leaderboard__row--first", count: 1
+        assert_select ".buku-leaderboard__row--#{team}.buku-leaderboard__row--prize:not(.buku-leaderboard__row--first)", count: 4
+      end
+      assert_select ".buku-leaderboard", text: /top 25 per team|to appear here|ranked by exact minutes/, count: 0
+      assert_select ".buku-leaderboard__teaser", count: 0
+      # Names sit inside the status turbo frame, so they must break out of it.
+      assert_select "a.buku-leaderboard__name", count: 10
+      assert_select "a.buku-leaderboard__name:not([data-turbo-frame='_top'])", count: 0
+      # Long names fade and scroll on hover via the name controller.
+      assert_select "a.buku-leaderboard__name[data-controller='buku-leaderboard-name']", count: 10
+    end
+  end
+
+  test "signed in user's own rank shows below the prize spots" do
+    others = 6.times.map { |index| BukuX3::Leaderboard::Entry.new(user: users(:two), minutes: 600 - index) }
+    entries = others + [ BukuX3::Leaderboard::Entry.new(user: users(:one), minutes: 10) ]
+    own = BukuX3::Leaderboard::Own.new(team: :buku, entry: entries.last, rank: 7)
+    board = Struct.new(:teams, :own_standing) { def own(*) = own_standing }.new({ buku: entries, bean: others }, own)
+    sign_in(users(:one))
+    BukuX3::Leaderboard.stub(:new, board) do
+      get home_path
+      assert_response :success
+      assert_select ".buku-leaderboard__team .buku-leaderboard__row", count: 10
+      assert_select ".buku-leaderboard__teams--own .buku-leaderboard__rank", text: "7", count: 1
+      assert_select ".buku-leaderboard__teams--own .buku-leaderboard__you", count: 1
+      # 595 minutes for rank 6 minus the viewer's 10.
+      assert_select ".buku-leaderboard__teams--own .buku-leaderboard__chase", text: "9.75 hrs until rank 6", count: 1
+    end
+  end
+
+  test "disabled or actor restricted flag hides lists from unauthorized viewers" do
+    Flipper.disable(:bukux3)
+    get home_path
+    assert_select ".buku-leaderboard", count: 0
+    Flipper.enable_actor(:bukux3, users(:one))
+    get home_path
+    assert_select ".buku-leaderboard", count: 0
+    sign_in(users(:one))
+    get home_path
+    assert_select ".buku-leaderboard", count: 1
+  end
+
+  test "event bar shows the winning gradient and neutral ties" do
+    event = BukuX3::Event.create!(key: BukuX3::Event::KEY, unlocked_at: 1.day.ago)
+    { 0 => "bean", 25 => "bean", 50 => "tie", 75 => "buku", 100 => "buku" }.each do |percent, leader|
+      event.update!(destruction_minutes: percent * BukuX3::Event::MINUTES_PER_PERCENT)
+      get home_path
+      assert_select ".buku-x3-status__rope[data-leader='#{leader}']"
+    end
+  end
+end

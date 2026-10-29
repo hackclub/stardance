@@ -59,10 +59,9 @@ module Sessions
       end
 
       def invalid_provider_result
-        Sentry.capture_message(
+        OperationalAlert.report(
           "Authentication failed: invalid provider or user already signed in",
-          level: :warning,
-          extra: { provider: auth.provider, user_signed_in: current_user.present? }
+          context: { provider: auth.provider, user_signed_in: current_user.present? }
         )
         fail_result(:invalid_provider, "Authentication failed or user already signed in")
       end
@@ -70,7 +69,7 @@ module Sessions
       def access_token = auth.credentials&.token.to_s
 
       def missing_identity_result
-        Sentry.capture_message("Authentication failed: unable to fetch identity data", level: :warning)
+        OperationalAlert.report("Authentication failed: unable to fetch identity data")
         fail_result(:missing_identity, "Authentication failed")
       end
 
@@ -129,10 +128,10 @@ module Sessions
         existing_identity = user.identities.find_by(provider: "hack_club")
         return identity unless existing_identity
 
-        Sentry.capture_message(
+        OperationalAlert.report(
           "User UID changed on HCA side",
-          level: :info,
-          extra: { user_id: user.id, old_uid: existing_identity.uid, new_uid: uid, slack_id: slack_id }
+          severity: :info,
+          context: { user_id: user.id, old_uid: existing_identity.uid, new_uid: uid, slack_id: slack_id }
         )
         existing_identity.uid = uid
         existing_identity
@@ -166,6 +165,7 @@ module Sessions
         when :teen then user.age_attestation = "teen_13_18"
         when :ineligible then user.age_attestation = "ineligible"
         end
+        user.aged_out_on ||= user.turned_19_on(fields[:birthday])
 
         if (is_new_user || user.ref.blank?) && referral_code.present? && referral_code.length <= 64
           user.ref = referral_code
@@ -181,7 +181,7 @@ module Sessions
         user.save!
         nil
       rescue ActiveRecord::RecordInvalid => e
-        Sentry.capture_exception(e, extra: {
+        Rails.error.report(e, context: {
           user_id: user.id, user_errors: user.errors.full_messages,
           slack_id: fields[:slack_id], uid: fields[:uid], is_new_user: is_new_user
         })
@@ -193,7 +193,7 @@ module Sessions
         identity.save!
         nil
       rescue ActiveRecord::RecordInvalid => e
-        Sentry.capture_exception(e, extra: {
+        Rails.error.report(e, context: {
           identity_id: identity.id, identity_errors: identity.errors.full_messages,
           user_id: user.id, provider: identity.provider, uid: identity.uid,
           existing_identity_for_user: user.identities.find_by(provider: "hack_club")
@@ -202,20 +202,16 @@ module Sessions
         fail_result(:identity_save_failed, "Unable to link your Hack Club account. Please contact support.")
       end
 
-      def age_from_birthday(birthday)
-        today = Date.current
-        age = today.year - birthday.year
-        age -= 1 if today < birthday + age.years
-        age
-      end
-
       def hca_age_attestation(user, fields)
         return :teen if fields[:ysws_eligible]
         return :teen if user.persisted? && user.manual_ysws_override == true
         return nil if fields[:birthday].nil?
+        return :teen if user.age_on(fields[:birthday], Date.current).between?(13, 18)
+        # Onboarded as a teen and has since turned 19: they keep their account,
+        # but time coded from then on doesn't count (User#time_logging_cutoff).
+        return :teen if user.turned_19_on(fields[:birthday])
 
-        age = age_from_birthday(fields[:birthday])
-        age >= 13 && age <= 18 ? :teen : :ineligible
+        :ineligible
       end
 
       def age_ineligible_result(user, is_new_user, guest_collision)

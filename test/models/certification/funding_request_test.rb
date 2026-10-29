@@ -3,6 +3,7 @@
 # Table name: certification_funding_requests
 #
 #  id                        :bigint           not null, primary key
+#  airtable_synced_at        :datetime
 #  approved_amount_cents     :integer
 #  claim_expires_at          :datetime
 #  claimed_at                :datetime
@@ -46,7 +47,6 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
   HCB_GRANT_RESPONSE = { "id" => "test_grant_123" }.freeze
 
   def setup
-    Flipper.enable(:hardware_flow)
     @owner = User.create!(
       email: "owner-#{SecureRandom.hex(6)}@example.com",
       display_name: "Owner#{SecureRandom.hex(3)}",

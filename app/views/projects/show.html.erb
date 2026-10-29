@@ -26,12 +26,21 @@
   # "Complete project info" button (which adds ?complete=1).
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
   can_delete_project = policy(@project).destroy? && (!@project.shipped? || policy(@project).force_destroy?)
+  ship_block_message = Project::ShipBlock::BLOCKED_MESSAGE if @project.ship_blocked?
   # Shared by the ship CTA, the returned decision card and the recert modal, and
   # computed once because link_blocker_message probes the live URLs every call.
   # Members only: a reviewer opening a returned project shouldn't pay for HTTP
-  # requests to someone else's demo. They still hit the controller and the
-  # resubmit_for_review guard when they actually act.
-  recert_link_blocker = @project.link_blocker_message if is_member && @project.needs_changes?
+  # requests to someone else's demo, and a reviewer filing on a builder's behalf
+  # bypasses the cooldown anyway (ProjectPolicy#bypass_recertification_cooldown?).
+  # They still hit the controller and the resubmit_for_review guard when they act.
+  recert_gated = is_member && @project.needs_changes? && ship_block_message.nil?
+  recert_cooldown_at = @project.recertification_available_at if recert_gated
+  recert_visible_blocker = ship_block_message || (recertification_cooldown_message(recert_cooldown_at) if recert_cooldown_at)
+  recert_link_blocker = @project.link_blocker_message if recert_gated && recert_visible_blocker.nil?
+  # The dialog the ship CTA opens when shipping is actually possible, set by the
+  # ship buttons below. ?ship=1 (from the "you've got unshipped work" email)
+  # opens it on page load.
+  ship_modal_id = nil
 %>
 
 <div class="app-layout" data-controller="profile-modal">
@@ -466,7 +475,7 @@
             </div>
 
             <% if @project.description.present? %>
-              <p class="project-show__description"><%= @project.description %></p>
+              <div class="project-show__description markdown-content"><%= md(@project.description, allow_images: false) %></div>
             <% end %>
 
             <div class="project-show__read-footer">
@@ -479,6 +488,11 @@
               <% end %>
               <div class="project-show__panel-actions">
                 <%= render "projects/fire_controls", project: @project %>
+
+                <% if !@project.draft? && is_member && Flipper.enabled?(:virality_bonus, current_user) %>
+                  <%= link_to "Submit viral mention", new_project_mention_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "_top" } %>
+                  <%= render "shared/help_tooltip", text: "Got traction on Reddit, HN, GitHub, or another platform? Submit a link and earn bonus stardust.", position: "top" %>
+                <% end %>
 
                 <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
                   <%= link_to safe_repo_url,
@@ -524,7 +538,7 @@
                               } %>
                 <% end %>
 
-                <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? && !is_member && current_user&.can_review? %>
+                <% if @project.hardware? && !is_member && current_user&.can_review? %>
                   <%= link_to "Review", admin_certification_hardware_review_path(@project),
                               class: "project-show__pill project-show__pill--outline project-show__pill--review",
                               data: { turbo_frame: "_top" } %>
@@ -540,12 +554,28 @@
     <% end %>
 
     <% if is_member %>
+      <% if @project.ship_blocked? %>
+        <section class="project-show__notice project-show__notice--blocked" aria-label="Blocked from shipping">
+          <p class="project-show__notice-title">This project is blocked from shipping</p>
+          <p class="project-show__notice-body">It can't be shipped, reshipped or re-certified until it's unblocked. Devlogs and everything else still work as normal.</p>
+          <div class="project-show__notice-reason">
+            <%= simple_format(h(@project.ship_block_reason), class: "project-show__notice-body") %>
+          </div>
+          <p class="project-show__notice-body">
+            If you think this is a mistake, send a message in
+            <%= link_to "#ask-the-shipwrights", Project::ShipBlock::APPEAL_CHANNEL_URL,
+                        class: "project-show__notice-link", target: "_blank", rel: "noopener noreferrer" %>
+            to appeal it.
+          </p>
+        </section>
+      <% end %>
       <% if @hackatime_linked || @test_time_granted %>
         <%
           no_hackatime_project = @project.hackatime_keys.blank? && !@test_time_granted
           unposted_seconds = @unposted_seconds.to_i
           enough_time = !no_hackatime_project && (unposted_seconds >= 15 * 60 || @test_time_granted)
           devlog_disabled_message = "Edit this project to add a Hackatime project" if no_hackatime_project
+          devlog_disabled_message ||= "Time coded after you turned 19 doesn't count, so there's no new time to devlog" if current_user&.aged_out? && !enough_time
           # Only call it the primary action when devlogging is actually
           # actionable right now — i.e. you have a Hackatime project AND at
           # least 15m of unposted time. Otherwise it stays secondary.
@@ -553,7 +583,7 @@
           devlog_modifier_class = devlog_primary ? "project-show__action--primary" : "project-show__action--secondary"
         %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
+          <% if @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: (@hackatime_linked ? nil : "Link your Hackatime account to start recording") %>
@@ -624,8 +654,10 @@
               <% end %>
             <% end %>
           <% end %>
-          <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
-            <% if @project.has_pending_funding_request? %>
+          <% if is_member && @project.design_stage? %>
+            <% if @project.permanently_rejected? %>
+              <%= render ActionButtonComponent.new(text: "Project permanently rejected", variant: :secondary, type: :button, disabled: :hard) %>
+            <% elsif @project.has_pending_funding_request? %>
               <%= render ActionButtonComponent.new(
                     text: "Funding request under review",
                     variant: :secondary,
@@ -692,7 +724,20 @@
               the ship button stays hidden behind the funding button until the
               grant flips them to the build stage. %>
           <% unless @project.design_stage? %>
-          <% if @project.awaiting_ship_review? %>
+          <% if ship_block_message %>
+            <%= render ActionButtonComponent.new(
+                  text: "Ship your project!",
+                  variant: :secondary,
+                  type: :button,
+                  icon: "icons/rocket.png",
+                  disabled: :soft,
+                  data: {
+                    controller: "tooltip",
+                    tooltip_message_value: ship_block_message,
+                    tooltip_position_value: "top"
+                  }
+                ) %>
+          <% elsif @project.awaiting_ship_review? %>
             <%= render ActionButtonComponent.new(
                   text: "Ship your project!",
                   variant: :secondary,
@@ -708,7 +753,7 @@
           <% elsif @project.needs_changes? %>
             <%# Changes requested: the ship CTA resubmits this same ship for
                 re-certification instead of opening a fresh ship. %>
-            <% if recert_link_blocker %>
+            <% if (recert_blocker = recert_visible_blocker || recert_link_blocker) %>
               <%= render ActionButtonComponent.new(
                     text: "Ship your project!",
                     variant: :secondary,
@@ -717,41 +762,35 @@
                     disabled: :soft,
                     data: {
                       controller: "tooltip",
-                      tooltip_message_value: recert_link_blocker,
+                      tooltip_message_value: recert_blocker,
                       tooltip_position_value: "top"
                     }
                   ) %>
             <% else %>
+              <% ship_modal_id = "recert-modal-#{@project.id}" %>
               <%= render ActionButtonComponent.new(
                     text: "Ship your project!",
                     variant: :primary,
                     type: :button,
                     icon: "icons/rocket.png",
-                    onclick: "document.getElementById('recert-modal-' + #{@project.id.to_json}).showModal()"
+                    onclick: "document.getElementById(#{ship_modal_id.to_json}).showModal()"
                   ) %>
             <% end %>
           <% elsif @project.shippable? %>
-            <% if unposted_seconds >= 15 * 60 %>
-              <%= render ActionButtonComponent.new(
-                    text: "Ship your project!",
-                    variant: :primary,
-                    type: :button,
-                    icon: "icons/rocket.png",
-                    onclick: "document.getElementById('ship-warning-modal-' + #{@project.id.to_json}).showModal()"
-                  ) %>
-            <% else %>
-              <%= render ActionButtonComponent.new(
-                    text: "Ship your project!",
-                    variant: :primary,
-                    type: :button,
-                    icon: "icons/rocket.png",
-                    onclick: "document.getElementById('ship-video-modal-' + #{@project.id.to_json}).showModal()"
-                  ) %>
-            <% end %>
+            <% ship_modal_id = unposted_seconds >= 15 * 60 ? "ship-warning-modal-#{@project.id}" : "ship-video-modal-#{@project.id}" %>
+            <%= render ActionButtonComponent.new(
+                  text: "Ship your project!",
+                  variant: :primary,
+                  type: :button,
+                  icon: "icons/rocket.png",
+                  onclick: "document.getElementById(#{ship_modal_id.to_json}).showModal()"
+                ) %>
           <% else %>
             <%
               ship_disabled_message =
-                if (mission_review_message = @project.mission_review_blocker_message)
+                if Project.shipping_closed?
+                  Project::SHIPPING_CLOSED_MESSAGE
+                elsif (mission_review_message = @project.mission_review_blocker_message)
                   mission_review_message
                 elsif @project.received_grant? && !@project.has_build_devlog_since_last_ship?
                   "Post at least one build devlog before you can ship!"
@@ -796,7 +835,7 @@
         <% end %>
       <% else %>
         <nav class="project-show__actions" aria-label="Project actions">
-          <% if Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
+          <% if @project.hardware? %>
             <%= render "projects/record_timelapse_button",
                        project: @project,
                        disabled_message: "Link your Hackatime account to start recording" %>
@@ -939,7 +978,7 @@
                       data: { turbo: false } do %>
             Open the guide!<%= inline_svg_tag "icons/right-arrow.svg", class: "action-btn__icon action-btn__icon--trailing", aria: { hidden: true } %>
           <% end %>
-        <% elsif Flipper.enabled?(:hardware_flow, current_user) && @project.hardware? %>
+        <% elsif @project.hardware? %>
           <%= link_to guide_path("hardware"),
                       class: "action-btn action-btn--large action-btn--primary project-show__onboarding-cta",
                       target: "_blank", rel: "noopener",
@@ -966,13 +1005,14 @@
           <% if entry.is_a?(Certification::Ship) %>
             <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
             <%= render "projects/ship_decision_card", decision: entry, is_member: is_member, project: @project,
-                       recert_modal_id: recert_id, link_blocker: recert_link_blocker %>
+                       recert_modal_id: recert_id, link_blocker: recert_link_blocker,
+                       visible_blocker: recert_visible_blocker %>
           <% elsif entry.is_a?(Certification::FundingRequest) %>
             <%# The resubmit button reuses the funding modal, which only renders
                 while the project is still in the design stage. It belongs on the
                 latest review only - older returned reviews are history the
                 builder has already moved past. %>
-            <% resubmit_available = Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+            <% resubmit_available = is_member && @project.design_stage? %>
             <% resubmit_id = (resubmit_available && entry == @project.latest_funding_request) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
@@ -992,24 +1032,49 @@
                        ship_number: ship_count - ship_index + 1,
                        recert_modal_id: recert_id,
                        is_member: is_member,
-                       payout_review: entry.postable == @votes_for_payout&.dig(:ship_event) ? @votes_for_payout : nil,
+                       payout_review: @payout_reviews[entry.postable_id],
                        mission_resubmit_modal_id: mission_modal_id %>
           <% else %>
-            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true) %>
+            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
           <% end %>
         <% end %>
       </section>
     <% end %>
 
-    <% if @votes_for_payout&.dig(:review_deadline) %>
-      <%= render "projects/payout_review_modal", payout_review: @votes_for_payout %>
+    <% @payout_reviews.each_value do |payout_review| %>
+      <% if payout_review[:review_deadline] %>
+        <%= render "projects/payout_review_modal", payout_review: payout_review %>
+      <% end %>
     <% end %>
 
   </div>
 
   <% if (is_member || current_user&.can_review?) && @project.needs_changes? %>
     <%= render "projects/recert_modal", project: @project, is_member: is_member,
-               link_blocker: recert_link_blocker %>
+               link_blocker: recert_link_blocker, visible_blocker: recert_visible_blocker %>
+  <% end %>
+
+  <% if is_member && params[:ship].present? && !Project.shipping_closed? %>
+    <% if ship_modal_id %>
+      <div hidden data-controller="open-dialog" data-open-dialog-id-value="<%= ship_modal_id %>" data-open-dialog-param-value="ship"></div>
+    <% else %>
+      <%# Arrived from the home ship prompt but can't ship yet: say what's missing
+          rather than leaving them at a greyed-out button. %>
+      <%
+        ship_todo =
+          if @project.awaiting_ship_review?
+            [ "Your last ship is still in review. You can ship again once it's approved." ]
+          elsif @project.needs_changes?
+            [ recert_visible_blocker || recert_link_blocker ].compact
+          else
+            todo = []
+            todo << "Link Hackatime so your time is tracked" unless @hackatime_linked || @test_time_granted
+            todo << "Get your design funded first: design-stage projects ship once their grant comes through" if @project.design_stage?
+            todo + @project.shipping_requirements.reject { |r| r[:passed] }.map { |r| r[:fail_label] || r[:label] }
+          end
+      %>
+      <%= render "projects/ship_todo_modal", project: @project, todo: ship_todo if ship_todo.any? %>
+    <% end %>
   <% end %>
 
   <% if (is_member || current_user&.admin?) && @rejected_mission_sub %>
@@ -1094,7 +1159,8 @@
         an editable textarea, and "Ship!" submits straight to ships#create. %>
     <dialog id="ship-post-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post"
-            data-controller="modal composer"
+            data-controller="modal composer markdown-preview"
+            data-markdown-preview-url-value="<%= markdown_preview_path %>"
             data-composer-max-files-value="<%= Post::ShipEvent::MAX_ATTACHMENTS %>"
             data-composer-simple-mode-value="true"
             data-composer-target="dropZone"
@@ -1145,17 +1211,39 @@
                   <span class="project-show__latest-ship-time">· just now</span>
                 </p>
 
-                <%= form.text_area :ship_update,
-                      class: "ship-modal__textarea",
-                      rows: 4,
-                      required: true,
-                      maxlength: Post::ShipEvent::BODY_MAX_LENGTH,
-                      placeholder: "What did you make? What was challenging? What are you proud of? What should people know so they can test your project?",
-                      aria: { label: "Ship update" },
-                      data: { composer_target: "textarea",
-                              controller: "mention-autocomplete",
-                              action: "paste->textarea-hint#paste input->composer#autogrow input->composer#refreshSubmit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
-                <p class="textarea-hint" data-textarea-hint-target="hint">Please write this yourself, humans read it!</p>
+                <%# Write / Preview — the ship body renders as markdown on the card,
+                    so let people see the formatted result before shipping. %>
+                <div class="ship-modal__md-bar">
+                  <div class="md-tabs" role="tablist">
+                    <button type="button" class="md-tabs__tab" role="tab" aria-selected="true"
+                            data-markdown-preview-target="writeTab"
+                            data-action="markdown-preview#showWrite">Write</button>
+                    <button type="button" class="md-tabs__tab" role="tab" aria-selected="false"
+                            data-markdown-preview-target="previewTab"
+                            data-action="markdown-preview#showPreview">Preview</button>
+                  </div>
+                  <button type="button" class="feed-composer__tool-btn" aria-label="Markdown formatting help"
+                          data-action="markdown-preview#openHelp">
+                    <%= inline_svg_tag "icons/question.svg", class: "feed-composer__tool-icon" %>
+                  </button>
+                </div>
+
+                <div data-markdown-preview-target="writePanel">
+                  <%= form.text_area :ship_update,
+                        class: "ship-modal__textarea",
+                        rows: 4,
+                        required: true,
+                        maxlength: Post::ShipEvent::BODY_MAX_LENGTH,
+                        placeholder: "What did you make? What was challenging? What are you proud of? What should people know so they can test your project?",
+                        aria: { label: "Ship update" },
+                        data: { composer_target: "textarea",
+                                markdown_preview_target: "input",
+                                controller: "mention-autocomplete",
+                                action: "invalid->markdown-preview#showWrite paste->textarea-hint#paste input->composer#autogrow input->composer#refreshSubmit keydown->mention-autocomplete#onKeydown input->mention-autocomplete#onInput blur->mention-autocomplete#onBlur" } %>
+                  <p class="textarea-hint" data-textarea-hint-target="hint">Please write this yourself, humans read it!</p>
+                </div>
+
+                <div class="ship-modal__md-preview md-preview markdown-content" data-markdown-preview-target="output" hidden></div>
 
                 <div class="feed-composer__attach-wrap feed-composer__attach-wrap--expanded" data-composer-target="attachWrap">
                   <label class="feed-composer__attach">
@@ -1219,15 +1307,17 @@
             </button>
             <%= form.submit "Ship!", class: "ship-modal__btn ship-modal__btn--primary", data: { disable_with: "Shipping…", composer_target: "submit" } %>
           </div>
+          <%= render BukuX3StatusComponent.new(user: current_user, compact: true) %>
         </div>
       <% end %>
+      <%= render "shared/markdown_help_dialog" %>
     </dialog>
 
   <% end %>
 
   <%# Funding request popup — design-stage hardware only. Mirrors the ship
       post modal but collects a complexity tier + requested amount. %>
-  <% if Flipper.enabled?(:hardware_flow, current_user) && is_member && @project.design_stage? %>
+  <% if is_member && @project.design_stage? && !@project.permanently_rejected? %>
     <dialog id="funding-request-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post funding-modal"
             data-controller="modal"
@@ -1310,17 +1400,9 @@
             </label>
 
             <div class="funding-modal__bom">
-              <p class="funding-modal__bom-hint">
-                Don't have one? Check
-                <%= link_to "the hardware codex",
-                      "https://codex.hackclub.com/shipping/101/#3-make-a-bill-of-materials",
-                      class: "funding-modal__guide-link", target: "_blank", rel: "noopener" %>
-                out for info!
-              </p>
-
-                <label class="funding-modal__bom-check">
+              <label class="funding-modal__bom-check">
                 <input type="checkbox" onchange="fundingValidate(this.form)">
-                <span>I have a <code>BOM.csv</code> in the root of my repository</span>
+                <span>I have read the <a href="/resources/shipping-hardware" target="_blank" rel="noopener">submission requirements</a> and made sure my project follows them! <strong class="funding-modal__bom-check-text">I understand that not following these requirements will get my project returned.</strong></span>
               </label>
             </div>
           </div>
@@ -1405,7 +1487,7 @@
             <li class="mission-browse-modal__card">
               <div class="mission-browse-modal__card-icon">
                 <% if mission.icon.attached? %>
-                  <%= image_tag mission.icon, alt: "", class: "mission-browse-modal__card-icon-img" %>
+                  <%= image_tag mission.icon_thumb, alt: "", class: "mission-browse-modal__card-icon-img" %>
                 <% else %>
                   <span class="mission-browse-modal__card-icon-fallback" aria-hidden="true">&#10022;</span>
                 <% end %>

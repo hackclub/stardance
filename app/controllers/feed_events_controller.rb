@@ -71,7 +71,7 @@ class FeedEventsController < ApplicationController
     rescue ActiveRecord::ActiveRecordError => e
       # This endpoint is fire-and-forget: a failed view write must not 500 the
       # beacon or drop the rest of the event batch.
-      Sentry.capture_exception(e, extra: { post_id: event[:post_id], user_id: current_user.id })
+      Rails.error.report(e, context: { post_id: event[:post_id], user_id: current_user.id })
     end
 
     def recordable_event?(event)

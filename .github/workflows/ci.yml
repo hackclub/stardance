@@ -21,15 +21,12 @@ jobs:
       matrix:
         include:
           - name: Brakeman
-            system_packages: "libblas-dev liblapack-dev"
             command: bin/brakeman --no-pager
 
           - name: RuboCop
-            system_packages: "libblas-dev liblapack-dev"
             command: bin/rubocop -f github
 
           - name: ERB Lint
-            system_packages: "libblas-dev liblapack-dev"
             command: bundle exec erb_lint --lint-all
 
           - name: Prettier JS/TS
@@ -43,7 +40,8 @@ jobs:
             command: yarn prettier --check "app/assets/stylesheets/**/*.{scss,css}"
 
           - name: Zeitwerk
-            system_packages: "libvips-dev libblas-dev liblapack-dev"
+            # Eager loading pulls in ruby-vips, which needs the runtime library only.
+            system_packages: "libvips42t64"
             rails_env: test
             command: bin/rails zeitwerk:check
 
@@ -61,7 +59,7 @@ jobs:
 
       - name: Set up Ruby
         if: ${{ !matrix.skip_ruby }}
-        uses: ruby/setup-ruby@v1.321.0
+        uses: ruby/setup-ruby@v1.328.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true
@@ -108,9 +106,9 @@ jobs:
         timeout-minutes: 10
         env:
           DEBIAN_FRONTEND: noninteractive
-        run: bash .github/scripts/apt-install.sh libvips-dev libblas-dev liblapack-dev
+        run: bash .github/scripts/apt-install.sh libvips42t64
 
-      - uses: ruby/setup-ruby@v1.321.0
+      - uses: ruby/setup-ruby@v1.328.0
         with:
           ruby-version: .ruby-version
           bundler-cache: true

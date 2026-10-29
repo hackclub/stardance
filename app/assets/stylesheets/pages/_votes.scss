@@ -189,9 +189,18 @@
   min-width: 0;
 }
 
+// Cap the sticky scorecard to the viewport so its lower criteria stay
+// reachable on short screens instead of waiting for the main column to end.
 .vote-page__aside {
   position: sticky;
   top: var(--space-m);
+  max-height: calc(100dvh - 2 * var(--space-m));
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 // `.project-show` sets `width: min(100%, 922px); align-self: center;` —
@@ -700,6 +709,8 @@
 
   .vote-page__aside {
     position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 

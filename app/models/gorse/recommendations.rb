@@ -10,24 +10,24 @@ class Gorse::Recommendations
     @client = client
   end
 
-  def posts(limit: DEFAULT_LIMIT)
-    if post_recommendations_enabled?
-      recommended_posts(limit)
+  def posts(limit: DEFAULT_LIMIT, category: "feed")
+    if Gorse.enabled?
+      recommended_posts(limit, category:)
     else
       []
     end
   end
 
-  def post_candidates(limit: DEFAULT_LIMIT)
-    if post_recommendations_enabled?
-      recommended_post_candidates(limit)
+  def post_candidates(limit: DEFAULT_LIMIT, category: "feed")
+    if Gorse.enabled?
+      recommended_post_candidates(limit, category:)
     else
       []
     end
   end
 
   def projects(limit: DEFAULT_LIMIT)
-    if enabled?(:gorse_project_recommendations)
+    if user.present? && Gorse.enabled?
       recommended_projects(limit)
     else
       []
@@ -37,32 +37,18 @@ class Gorse::Recommendations
   private
     attr_reader :user, :client
 
-    def enabled?(flag)
-      user.present? && Gorse.enabled? && Flipper.enabled?(flag, user)
+    def recommended_posts(limit, category:)
+      diversify_posts(recommended_post_candidates(limit, category:), limit:)
     end
 
-    def post_recommendations_enabled?
-      return false unless Gorse.enabled?
-
-      if user.present?
-        Flipper.enabled?(:gorse_personalized_feed, user)
-      else
-        Flipper.enabled?(:gorse_personalized_feed)
-      end
-    end
-
-    def recommended_posts(limit)
-      diversify_posts(recommended_post_candidates(limit), limit:)
-    end
-
-    def recommended_post_candidates(limit)
+    def recommended_post_candidates(limit, category:)
       ids =
         if user.present?
-          recommendation_ids(category: "feed", count: limit * 3)
+          recommendation_ids(category:, count: limit * 3)
         else
-          guest_recommendation_ids(category: "feed", count: limit * 3)
+          guest_recommendation_ids(category:, count: limit * 3)
         end
-      posts_from_ids(ids)
+      posts_from_ids(ids, category:)
     end
 
     def diversify_posts(posts, limit:)
@@ -83,9 +69,11 @@ class Gorse::Recommendations
       selected
     end
 
-    def posts_from_ids(ids)
+    def posts_from_ids(ids, category: "feed")
       post_ids = ids.filter_map { |id| Gorse::Ids.post_id(id) }
-      posts = Gorse::PostPayload.recommendable_feed_scope(user)
+      scope = Gorse::PostPayload.recommendable_feed_scope(user)
+      scope = Gorse::PostPayload.hardware_scope(scope) if category == "feed_hardware"
+      posts = scope
                                 .where(id: post_ids)
                                 .includes(:user, :project, :postable)
                                 .index_by(&:id)

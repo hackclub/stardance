@@ -5,7 +5,6 @@
 # reviews. PaperTrail whodunnit is set by Admin::ApplicationController, so every
 # note is attributable in the audit log.
 class Admin::Certification::ReviewNotesController < Admin::Certification::ApplicationController
-  before_action -> { head :not_found unless Flipper.enabled?(:hardware_flow, current_user) }
   before_action :set_project
 
   def create

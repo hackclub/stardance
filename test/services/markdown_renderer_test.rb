@@ -20,4 +20,14 @@ class MarkdownRendererTest < ActiveSupport::TestCase
       assert_not_includes html, "slack-emote"
     end
   end
+
+  test "renders task list items as disabled checkboxes" do
+    html = MarkdownRenderer.render("- [ ] todo\n- [x] done", allow_images: false)
+    doc = Nokogiri::HTML::DocumentFragment.parse(html)
+    boxes = doc.css("li > input[type=checkbox][disabled]")
+
+    assert_equal 2, boxes.size
+    assert_not boxes.first.key?("checked")
+    assert boxes.last.key?("checked")
+  end
 end

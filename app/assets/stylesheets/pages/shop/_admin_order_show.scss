@@ -335,6 +335,10 @@
     }
   }
 
+  &__row-empty {
+    color: var(--color-space-text-muted);
+  }
+
   // ── Address block ────────────────────────────────────────────────────
   &__address-block {
     font-family: var(--font-family-text);
@@ -660,6 +664,7 @@
     gap: var(--space-xs);
     align-items: center;
     flex-wrap: wrap;
+    margin: var(--space-s) 0 var(--space-xs);
   }
 
   &__input {
@@ -679,6 +684,21 @@
       outline: none;
       border-color: var(--color-space-accent);
     }
+
+    &--grow {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &--block {
+      display: block;
+      width: 100%;
+      margin-top: var(--space-xxxs);
+    }
+  }
+
+  &__dialog-label {
+    font-size: var(--font-size-s);
   }
 
   &__textarea {

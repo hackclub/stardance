@@ -569,8 +569,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
     end
 
     old_state = @order.aasm_state
-
-    if @order.mark_fulfilled(params[:external_ref].presence, params[:fulfillment_cost].presence, current_user.display_name) && @order.save
+    if @order.mark_fulfilled(params[:external_ref].presence, params[:fulfillment_cost].presence, current_user.display_name, params[:tracking_number]) && @order.save
       ::PaperTrail::Version.create!(
         item_type: "ShopOrder",
         item_id: @order.id,
@@ -607,6 +606,16 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_to admin_shop_order_path(@order), notice: "Internal notes updated"
     else
       redirect_to admin_shop_order_path(@order), alert: "Failed to update notes"
+    end
+  end
+
+  def update_tracking
+    authorize @order, :update_tracking?
+
+    if @order.update_tracking(params[:tracking_number], by: current_user)
+      redirect_to admin_shop_order_path(@order), notice: @order.tracking_number ? "Tracking updated" : "Tracking cleared"
+    else
+      redirect_to admin_shop_order_path(@order), alert: "Failed to update tracking: #{@order.errors.full_messages.join(', ')}"
     end
   end
 
@@ -894,7 +903,7 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
       redirect_to admin_shop_order_path(@order), alert: "User has no Hack Club identity token" and return
     end
 
-    payload = HCAService.identity(identity.access_token)
+    payload = identity.hca_identity
     if payload.blank?
       redirect_to admin_shop_order_path(@order), alert: "Could not fetch verification status from HCA" and return
     end

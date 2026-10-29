@@ -47,7 +47,7 @@
                 <% if (note = vote_discard_note(vote)) %>
                   <span class="admin-vote-status__note"><%= note %></span>
                 <% end %>
-                <%= link_to "Audit trail", admin_audit_logs_path(item_type: "Vote", item_id: vote.id),
+                <%= link_to "Audit trail", admin_audit_logs_path(item_type: "Vote", item_id: vote.id, show_system: "1"),
                     class: "admin-vote-status__audit" %>
               <% else %>
                 <span class="admin-vote-status__state">Counted</span>

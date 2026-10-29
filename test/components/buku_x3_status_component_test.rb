@@ -1,0 +1,183 @@
+require "test_helper"
+
+class BukuX3StatusComponentTest < ViewComponent::TestCase
+  setup do
+    @user = users(:one)
+    @user.update!(onboarded_at: Time.current, things_dismissed: %w[bukux3_intro bukux3_role_reveal])
+    @event = BukuX3::Event.create!(key: BukuX3::Event::KEY, unlocked_at: 1.minute.ago, destruction_minutes: 75_000)
+    Flipper.enable(:bukux3)
+  end
+
+  teardown { Flipper.disable(:bukux3) }
+
+  test "damage moves the marker left and repair moves it right" do
+    @event.update!(destruction_minutes: 75 * BukuX3::Event::MINUTES_PER_PERCENT)
+    render_inline BukuX3StatusComponent.new(user: @user)
+    assert_selector "[role='meter'][aria-valuenow='75.0'][style='--tug-position: 25.0%']"
+    @event.update!(destruction_minutes: 25 * BukuX3::Event::MINUTES_PER_PERCENT)
+    render_inline BukuX3StatusComponent.new(user: @user)
+    assert_selector "[role='meter'][aria-valuenow='25.0'][style='--tug-position: 75.0%']"
+  end
+
+  test "uncaptured event starts toward the beans" do
+    @event.update!(unlocked_at: nil)
+    render_inline BukuX3StatusComponent.new(user: @user)
+    assert_selector "[role='meter'][aria-valuenow='25'][style='--tug-position: 75%']"
+  end
+
+  test "buku has a role reveal layered over the meter" do
+    BukuX3::Assignment.stub(:buku?, true) do
+      render_inline BukuX3StatusComponent.new(user: @user)
+    end
+    assert_selector ".buku-x3-status__role", text: "you're a buku buku"
+    assert_selector "button.buku-x3-status__toggle[aria-label='show your event role'][aria-pressed='false']"
+    assert_selector "img[src*='events/bukux3/buku']"
+    assert_selector ".buku-x3-status__reminder", exact_text: "your objective is to destroy the ship - every hour you code contributes to the downfall of the beans and tears stardance apart"
+    assert_selector "[role='meter'][aria-valuenow='25.0'][aria-valuemax='100'][style='--tug-position: 75.0%']"
+    assert_selector ".buku-x3-status__team--buku img[src*='bukux3/buku-pulling'][width='2752'][height='2064']"
+    assert_selector ".buku-x3-status__team--bean img[src*='bukux3/bean-pulling'][width='2752'][height='2064']"
+    assert_selector ".buku-x3-status__scores .buku-x3-status__label", exact_text: "25% damaged"
+    assert_no_selector ".buku-x3-status__private, .buku-x3-status__directions, .buku-x3-status__balance"
+  end
+
+  test "bean sees their yellow badge and repair reminder" do
+    BukuX3::Assignment.stub(:buku?, false) do
+      render_inline BukuX3StatusComponent.new(user: @user)
+    end
+    assert_selector ".buku-x3-status__role", text: "you're a bean"
+    assert_selector "img[src*='events/bukux3/bean']"
+    assert_selector ".buku-x3-status__reminder", exact_text: "your hours will repair the spaceship"
+  end
+
+  test "ship reminder is compact and has no duplicate damage meter" do
+    render_inline BukuX3StatusComponent.new(user: @user, compact: true)
+    assert_selector ".buku-x3-status--compact"
+    assert_no_selector "[role='meter']"
+    assert_no_selector ".buku-x3-status__scores"
+    assert_no_selector ".buku-x3-status__toggle"
+    assert_no_selector ".buku-x3-status__countdown"
+  end
+
+  test "each team's formatted shipped hours sit under its end of the rope" do
+    BukuX3::Event.stub(:current, @event) do
+      @event.stub(:team_hours, { buku: 1234.5, bean: 67 }) do
+        render_inline BukuX3StatusComponent.new(user: @user)
+      end
+    end
+    assert_selector ".buku-x3-status__scores > .buku-x3-status__score--buku:first-child", exact_text: "bukus 1,234.5 hrs"
+    assert_selector ".buku-x3-status__scores > .buku-x3-status__score--bean:last-child", exact_text: "67 hrs beans"
+  end
+
+  test "countdown to the end of stardance sits above the rope until it ends" do
+    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+      render_inline BukuX3StatusComponent.new(user: @user)
+    end
+    assert_selector ".buku-x3-status__countdown + .buku-x3-status__damage"
+    assert_selector ".buku-x3-status__countdown-caption + .buku-x3-status__clock[data-controller='countdown'][data-countdown-clock-value='true'][aria-hidden='true']"
+    assert_selector ".buku-x3-status__countdown-caption", text: "stardance ends in"
+    # No leaderboard passed in, so no tab.
+    assert_no_selector ".buku-x3-status__leaderboard-tab"
+
+    @user.dismiss_thing!("stardance_finale")
+    Rails.application.config.stub(:stardance_ends_at, 1.minute.ago) do
+      render_inline BukuX3StatusComponent.new(user: @user)
+    end
+    assert_no_selector ".buku-x3-status__countdown"
+  end
+
+  test "leaderboard opens from an attached tab, with or without the clock" do
+    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+      render_inline(BukuX3StatusComponent.new(user: @user)) { "leaderboard" }
+      assert_selector ".buku-x3-status[data-controller='buku-x3-status buku-leaderboard-panel']"
+      assert_selector ".buku-x3-status > button.buku-x3-status__leaderboard-tab[aria-expanded='false'][aria-controls='buku-leaderboard-panel']", exact_text: "leaderboard"
+
+      @user.preference.update!(countdown_enabled: false)
+      render_inline(BukuX3StatusComponent.new(user: @user)) { "leaderboard" }
+      assert_no_selector ".buku-x3-status__clock"
+      assert_selector ".buku-x3-status > .buku-x3-status__leaderboard-tab"
+    end
+  end
+
+  test "countdown respects the viewer's setting and shows for guests" do
+    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+      @user.preference.update!(countdown_enabled: false)
+      render_inline BukuX3StatusComponent.new(user: @user)
+      assert_no_selector ".buku-x3-status__countdown"
+
+      render_inline BukuX3StatusComponent.new(user: nil)
+      assert_selector ".buku-x3-status__countdown"
+    end
+  end
+
+  test "role is never computed before intro and reveal completion" do
+    %w[bukux3_intro bukux3_role_reveal].each do |pending|
+      @user.update!(things_dismissed: %w[bukux3_intro bukux3_role_reveal] - [ pending ])
+      BukuX3::Assignment.stub(:buku?, ->(_) { flunk "premature role disclosure" }) do
+        render_inline BukuX3StatusComponent.new(user: @user)
+      end
+      assert_public_progress_only
+    end
+  end
+
+  test "badge needs only the flag and completed reveal, not the old milestone" do
+    @event.update!(unlocked_at: nil)
+    render_inline BukuX3StatusComponent.new(user: @user)
+    assert_selector ".buku-x3-status"
+    @event.update!(unlocked_at: 1.minute.ago)
+    Flipper.disable(:bukux3)
+    render_inline BukuX3StatusComponent.new(user: @user)
+    assert_public_progress_only
+  end
+
+  test "signed out and incomplete accounts cannot see a role" do
+    BukuX3::Assignment.stub(:buku?, ->(_) { flunk "must not compute an undisclosed role" }) do
+      render_inline BukuX3StatusComponent.new(user: nil)
+      assert_public_progress_only
+      @user.update!(onboarded_at: nil)
+      render_inline BukuX3StatusComponent.new(user: @user)
+      assert_public_progress_only
+    end
+  end
+
+  test "public progress works without the event flag or an event record" do
+    Flipper.disable(:bukux3)
+    BukuX3::Event.stub(:current, nil) do
+      render_inline BukuX3StatusComponent.new(user: nil)
+    end
+    assert_public_progress_only
+    assert_selector "[role='meter'][aria-valuenow='25']"
+    assert_selector ".buku-x3-status__score strong", exact_text: "0", count: 2
+  end
+
+  test "compact private reminder stays hidden for guests and incomplete accounts" do
+    render_inline BukuX3StatusComponent.new(user: nil, compact: true)
+    assert_no_selector ".buku-x3-status"
+    @user.update!(onboarded_at: nil)
+    render_inline BukuX3StatusComponent.new(user: @user, compact: true)
+    assert_no_selector ".buku-x3-status"
+  end
+
+  test "panel preview cannot bypass gates outside development" do
+    render_inline BukuX3StatusComponent.new(user: nil, preview: true, preview_role: "bean")
+    assert_public_progress_only
+  end
+
+  test "development preview uses an explicit role without assigning an account" do
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("development")) do
+      BukuX3::Assignment.stub(:buku?, ->(_) { flunk "preview must not assign a role" }) do
+        render_inline BukuX3StatusComponent.new(user: nil, preview: true, preview_role: "bean")
+      end
+    end
+    assert_selector ".buku-x3-status__role", text: "you're a bean"
+    assert_no_selector ".buku-x3-status__preview"
+    assert_selector "img[src*='events/bukux3/bean']"
+  end
+
+  private
+
+  def assert_public_progress_only
+    assert_selector ".buku-x3-status [role='meter']"
+    assert_no_selector ".buku-x3-status__identity, .buku-x3-status__toggle, .buku-x3-status--interactive"
+    assert_no_selector ".buku-x3-status--buku, .buku-x3-status--bean"
+  end
+end

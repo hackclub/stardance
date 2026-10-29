@@ -566,6 +566,46 @@
   white-space: nowrap;
 }
 
+.referral-widget__label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.referral-widget__url {
+  display: block;
+  width: 100%;
+  padding: var(--space-xxs) var(--space-xs);
+  background: var(--color-overlay-light-soft);
+  border: 1px solid var(--color-overlay-light);
+  border-radius: var(--profile-radius);
+  color: var(--color-space-text);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-xs);
+  text-align: left;
+  word-break: break-all;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-border-input);
+  }
+}
+
+.referral-widget__stats {
+  display: flex;
+  gap: var(--space-m);
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.referral-widget__count {
+  color: var(--color-space-text);
+  font-weight: 700;
+}
+
 // --- Daily star roll widget ---
 
 .daily-roll-widget__button {

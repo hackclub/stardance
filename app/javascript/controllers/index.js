@@ -19,6 +19,15 @@ application.register("admin-ledger-chart", AdminLedgerChartController);
 import BioEditorController from "./bio_editor_controller";
 application.register("bio-editor", BioEditorController);
 
+import BukuActivityChartController from "./buku_activity_chart_controller";
+application.register("buku-activity-chart", BukuActivityChartController);
+
+import BukuLeaderboardNameController from "./buku_leaderboard_name_controller";
+application.register("buku-leaderboard-name", BukuLeaderboardNameController);
+
+import BukuLeaderboardPanelController from "./buku_leaderboard_panel_controller";
+application.register("buku-leaderboard-panel", BukuLeaderboardPanelController);
+
 import BulkSelectController from "./bulk_select_controller";
 application.register("bulk-select", BulkSelectController);
 
@@ -169,11 +178,11 @@ application.register("copy", CopyController);
 import CountUpController from "./count_up_controller";
 application.register("count-up", CountUpController);
 
-import CountdownClockController from "./countdown_clock_controller";
-application.register("countdown-clock", CountdownClockController);
-
 import CountdownController from "./countdown_controller";
 application.register("countdown", CountdownController);
+
+import ConfettiController from "./confetti_controller";
+application.register("confetti", ConfettiController);
 
 import CurveDrawController from "./curve_draw_controller";
 application.register("curve-draw", CurveDrawController);
@@ -183,6 +192,9 @@ application.register("customs-warning", CustomsWarningController);
 
 import DailyRollController from "./daily_roll_controller";
 application.register("daily-roll", DailyRollController);
+
+import DayOneOfPromoController from "./day_one_of_promo_controller";
+application.register("day-one-of-promo", DayOneOfPromoController);
 
 import DecisionTreeController from "./decision_tree_controller";
 application.register("decision-tree", DecisionTreeController);
@@ -205,6 +217,12 @@ application.register("emoji-picker", EmojiPickerController);
 import EventTimeController from "./event_time_controller";
 application.register("event-time", EventTimeController);
 
+import FallenDustController from "./fallen_dust_controller";
+application.register("fallen-dust", FallenDustController);
+
+import FallenLaunchController from "./fallen_launch_controller";
+application.register("fallen-launch", FallenLaunchController);
+
 import FallingStarController from "./falling_star_controller";
 application.register("falling-star", FallingStarController);
 
@@ -225,6 +243,9 @@ application.register("file-upload", FileUploadController);
 
 import FlashController from "./flash_controller";
 application.register("flash", FlashController);
+
+import ForgePromoController from "./forge_promo_controller";
+application.register("forge-promo", ForgePromoController);
 
 import FraudPayoutCelebrationController from "./fraud_payout_celebration_controller";
 application.register(
@@ -247,6 +268,18 @@ application.register("hackatime-link", HackatimeLinkController);
 import HcbChartController from "./hcb_chart_controller";
 application.register("hcb-chart", HcbChartController);
 
+import GrowthChartController from "./growth_chart_controller";
+application.register("growth-chart", GrowthChartController);
+
+import FullscreenController from "./fullscreen_controller";
+application.register("fullscreen", FullscreenController);
+
+import HourFunnelController from "./hour_funnel_controller";
+application.register("hour-funnel", HourFunnelController);
+
+import ShipFunnelController from "./ship_funnel_controller";
+application.register("ship-funnel", ShipFunnelController);
+
 import HeroWarpController from "./hero_warp_controller";
 application.register("hero-warp", HeroWarpController);
 
@@ -259,6 +292,9 @@ application.register("image-dropzone", ImageDropzoneController);
 import JsonHighlightController from "./json_highlight_controller";
 application.register("json-highlight", JsonHighlightController);
 
+import LikeController from "./like_controller";
+application.register("like", LikeController);
+
 import MarkdownPreviewController from "./markdown_preview_controller";
 application.register("markdown-preview", MarkdownPreviewController);
 
@@ -270,6 +306,9 @@ application.register("mega-dash-chart", MegaDashChartController);
 
 import MentionAutocompleteController from "./mention_autocomplete_controller";
 application.register("mention-autocomplete", MentionAutocompleteController);
+
+import MipmapPromoController from "./mipmap_promo_controller";
+application.register("mipmap-promo", MipmapPromoController);
 
 import MissionGuideLanguageController from "./mission_guide_language_controller";
 application.register("mission-guide-language", MissionGuideLanguageController);
@@ -309,6 +348,9 @@ application.register("onboarding-interests", OnboardingInterestsController);
 
 import OnboardingTransitionController from "./onboarding_transition_controller";
 application.register("onboarding-transition", OnboardingTransitionController);
+
+import OpenDialogController from "./open_dialog_controller";
+application.register("open-dialog", OpenDialogController);
 
 import OrderFormController from "./order_form_controller";
 application.register("order-form", OrderFormController);
@@ -352,11 +394,11 @@ application.register("project-thumbs-scroll", ProjectThumbsScrollController);
 import ProjectTypeController from "./project_type_controller";
 application.register("project-type", ProjectTypeController);
 
+import QueueFilterController from "./queue_filter_controller";
+application.register("queue-filter", QueueFilterController);
+
 import RatingDashboardChartController from "./rating_dashboard_chart_controller";
 application.register("rating-dashboard-chart", RatingDashboardChartController);
-
-import ReceiptPrinterController from "./receipt_printer_controller";
-application.register("receipt-printer", ReceiptPrinterController);
 
 import ReadMoreController from "./read_more_controller";
 application.register("read-more", ReadMoreController);
@@ -387,9 +429,6 @@ application.register("scroll-restore", ScrollRestoreController);
 
 import SearchableSelectController from "./searchable_select_controller";
 application.register("searchable-select", SearchableSelectController);
-
-import SharePurchaseController from "./share_purchase_controller";
-application.register("share-purchase", SharePurchaseController);
 
 import ShopController from "./shop_controller";
 application.register("shop", ShopController);
@@ -436,6 +475,9 @@ application.register("streak-day-picker", StreakDayPickerController);
 import SubmitOnMetaEnterController from "./submit_on_meta_enter_controller";
 application.register("submit-on-meta-enter", SubmitOnMetaEnterController);
 
+import TerraPortalController from "./terra_portal_controller";
+application.register("terra-portal", TerraPortalController);
+
 import TextareaHintController from "./textarea_hint_controller";
 application.register("textarea-hint", TextareaHintController);
 
@@ -480,3 +522,18 @@ application.register("workshop-countdown", WorkshopCountdownController);
 
 import MihiModeController from "./mihi_mode_controller";
 application.register("mihi-mode", MihiModeController);
+
+import BlackholeController from "./blackhole_controller";
+application.register("blackhole", BlackholeController);
+
+import BukuX3RevealController from "./buku_x3_reveal_controller";
+application.register("buku-x3-reveal", BukuX3RevealController);
+
+import BukuX3StatusController from "./buku_x3_status_controller";
+application.register("buku-x3-status", BukuX3StatusController);
+
+import WrongToolSheetController from "./wrong_tool_sheet_controller";
+application.register("wrong-tool-sheet", WrongToolSheetController);
+
+import StardanceFinaleController from "./stardance_finale_controller";
+application.register("stardance-finale", StardanceFinaleController);

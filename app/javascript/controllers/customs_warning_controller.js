@@ -7,6 +7,7 @@ export default class extends Controller {
     usOriginMessage: String,
     ukOriginMessage: String,
     unknownOriginMessage: String,
+    thirdPartyMessage: String,
     customRegionMessage: String,
     sourceRegion: String,
   };
@@ -77,6 +78,10 @@ export default class extends Controller {
       case "unknown_origin":
         shouldShow = true;
         message = this.unknownOriginMessageValue;
+        break;
+      case "third_party":
+        shouldShow = country !== null;
+        message = this.thirdPartyMessageValue;
         break;
       case "custom_region":
         shouldShow =

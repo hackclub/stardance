@@ -1,0 +1,34 @@
+<%# Daily "ship it before Stardance ends" pop-up for builders with unshipped
+    devlog time (HomeController#ship_prompt). "Ship it" opens the project's
+    ship flow via ?ship=1. %>
+<% bonus = Finality.current_rate %>
+<dialog class="ship-prompt"
+        data-controller="dismissable"
+        data-dismissable-cookie-value="<%= cookie %>"
+        data-dismissable-open-value="true"
+        data-action="cancel->dismissable#dismiss"
+        aria-labelledby="ship-prompt-title">
+  <div class="ship-prompt__panel">
+    <p class="ship-prompt__eyebrow">Stardance ends Saturday</p>
+    <h2 class="ship-prompt__title" id="ship-prompt-title">Ship <%= project.title %>!</h2>
+    <p class="ship-prompt__hours">
+      <strong><%= number_with_precision(hours, precision: 1, strip_insignificant_zeros: true) %>h</strong> unshipped
+    </p>
+
+    <p class="ship-prompt__note">
+      Ships close <strong><%= Rails.application.config.stardance_ends_at.strftime("%A, %B %-d at %-l:%M%P ET") %></strong>.
+      Time you haven't shipped by then won't turn into stardust.
+      <% if other_projects.positive? %>
+        You've also got <%= pluralize(other_projects, "other project") %> with unshipped time.
+      <% end %>
+    </p>
+    <% if bonus %>
+      <p class="ship-prompt__note">Ship today for an extra <strong><%= (bonus * 100).round %>%</strong> finality bonus!</p>
+    <% end %>
+
+    <div class="ship-prompt__actions">
+      <%= render ActionButtonComponent.new(text: "Ship #{project.title}", href: project_path(project, ship: 1), icon: "icons/rocket.png", size: :large, variant: :primary, data: { action: "dismissable#dismiss" }) %>
+      <button type="button" class="ship-prompt__later" data-action="dismissable#dismiss">Maybe later</button>
+    </div>
+  </div>
+</dialog>

@@ -24,8 +24,6 @@ class DevlogCapWarningJobTest < ActiveSupport::TestCase
   end
 
   test "notifies even when week_2_release is disabled for the owner" do
-    Flipper.disable(:week_2_release)
-
     HackatimeService.stub(:fetch_total_seconds_for_projects, 9.hours.to_i) do
       assert_difference -> { Notifications::Projects::DevlogCapApproaching.count }, 1 do
         DevlogCapWarningJob.perform_now

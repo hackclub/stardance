@@ -2,7 +2,6 @@ require "test_helper"
 
 class Shop::SuggestionVotesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:shop_suggestions)
     @user = users(:one)
     LedgerEntry.create!(user: @user, ledgerable: @user, amount: 100, reason: "Test balance top-up")
     sign_in(@user)

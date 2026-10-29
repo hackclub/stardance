@@ -35,10 +35,11 @@ class DevlogCapWarningJob < ApplicationJob
     # Un-devlogged time can't exceed wall-clock time since the window opened,
     # so recently-devlogged projects can be skipped without an API call.
     window_start = project.devlog_window_start(Time.current)
-    return if Time.current - window_start < Post::ShipEvent::DEVLOG_CAP_WARNING_SECONDS
+    return if Time.current - project.earliest_devlog_window_start(Time.current) < Post::ShipEvent::DEVLOG_CAP_WARNING_SECONDS
     return if already_notified?(project, owner, window_start)
 
-    unposted = project.seconds_coded_in_devlog_window(identity.uid, access_token: identity.access_token).to_i
+    unposted = project.seconds_coded_in_devlog_window(identity.uid, access_token: identity.access_token,
+                                                      cutoff: owner.time_logging_cutoff).to_i
     sleep API_PAUSE_SECONDS
     return if unposted < Post::ShipEvent::DEVLOG_CAP_WARNING_SECONDS
 

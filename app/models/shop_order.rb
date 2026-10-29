@@ -102,6 +102,7 @@ class ShopOrder < ApplicationRecord
   validate :check_regional_availability, on: :create
   validate :check_free_stickers_requirement, on: :create
   validate :check_devlog_for_free_stickers, on: :create
+  validate :check_single_shop_intro_item, on: :create
   validate :check_stock, on: :create
   validate :check_ship_requirement, on: :create
   validate :check_achievement_requirement, on: :create
@@ -135,6 +136,7 @@ class ShopOrder < ApplicationRecord
   validate :fraud_related_project_exists, if: -> { fraud_related_project_id.present? }
 
   after_create :create_negative_payout
+  after_create { shop_item&.forget_sale_units_sold }
   after_create :assign_default_user
   after_create :notify_amber_if_verification_call_required
   after_create :hold_if_usps_suspended
@@ -146,9 +148,14 @@ class ShopOrder < ApplicationRecord
   before_validation :set_country_from_address, on: :create
   before_validation :freeze_item_price, on: :create
   after_commit :notify_user_of_status_change, if: :saved_change_to_aasm_state?
+  after_commit :notify_user_of_tracking_update, if: :tracking_number_newly_set?
   after_commit :schedule_hold_release, if: :placed_on_hold?
 
   HOLD_DURATION = 7.days
+
+  # The status DMs for these states already show the tracking number, so one
+  # saved alongside such a transition doesn't need a DM of its own.
+  STATES_SHOWING_TRACKING = %w[awaiting_periodical_fulfillment fulfilled].freeze
 
   scope :expired_holds, ->(now = Time.current) {
     cutoff = now - HOLD_DURATION
@@ -280,10 +287,11 @@ class ShopOrder < ApplicationRecord
 
     event :mark_fulfilled do
       transitions to: :fulfilled
-      before do |external_ref = nil, fulfillment_cost = nil, fulfilled_by = nil|
+      before do |external_ref = nil, fulfillment_cost = nil, fulfilled_by = nil, tracking_number = nil|
         self.external_ref = external_ref
         self.fulfillment_cost = fulfillment_cost if fulfillment_cost
         self.fulfilled_by = fulfilled_by if fulfilled_by
+        self.tracking_number = tracking_number.to_s.strip if tracking_number.present?
       end
       after do
         mark_stickers_received if shop_item.is_a?(ShopItem::FreeStickers)
@@ -323,6 +331,39 @@ class ShopOrder < ApplicationRecord
 
   def grant?
     shop_item.is_a?(ShopItem::HCBGrant) || shop_item.is_a?(ShopItem::HCBPreauthGrant)
+  end
+
+  # Where to follow the parcel: the carrier tracking number, or a Hack Club
+  # mail id in external_ref. Any other external_ref is the supplier's order
+  # number and is never presented as tracking (see #order_reference).
+  def tracking_link
+    TrackingLink.for(tracking_number) || (TrackingLink.for(external_ref) if hack_club_mail_ref?)
+  end
+
+  def order_reference
+    external_ref.presence unless hack_club_mail_ref?
+  end
+
+  def hack_club_mail_ref?
+    external_ref.to_s.start_with?(*TrackingLink::HACK_CLUB_MAIL_PREFIXES)
+  end
+
+  # Sets (or clears, when blank) the carrier tracking and audit logs the
+  # change as `tracking_updated` against `by`. The buyer's DM comes from the
+  # after_commit hook. Shared by the admin order page and the API.
+  def update_tracking(code, by:)
+    return false unless update(tracking_number: code.to_s.strip.presence)
+
+    if saved_change_to_tracking_number?
+      PaperTrail::Version.create!(
+        item_type: "ShopOrder",
+        item_id: id,
+        event: "tracking_updated",
+        whodunnit: by.id,
+        object_changes: { tracking_number: saved_change_to_tracking_number }
+      )
+    end
+    true
   end
 
   def topup_url
@@ -520,6 +561,20 @@ class ShopOrder < ApplicationRecord
 
   private
 
+  def tracking_number_newly_set?
+    return false unless saved_change_to_tracking_number? && tracking_number.present?
+
+    !(saved_change_to_aasm_state? && aasm_state.in?(STATES_SHOWING_TRACKING))
+  end
+
+  def notify_user_of_tracking_update
+    Notifications::ShopOrders::TrackingUpdated.notify(
+      recipient: user,
+      record: self,
+      params: { "tracking_number" => tracking_number }
+    )
+  end
+
   def placed_on_hold?
     saved_change_to_aasm_state? && on_hold?
   end
@@ -648,6 +703,19 @@ class ShopOrder < ApplicationRecord
     return if user.shop_orders.joins(:shop_item).where(shop_items: { type: "ShopItem::TutorialNothing" }).worth_counting.exists?
 
     errors.add(:base, "You must complete the shop tutorial first before ordering other items!")
+  end
+
+  # The shop intro offers free stickers *or* the free "nothing" item, and a
+  # user only ever gets one of them.
+  def check_single_shop_intro_item
+    return unless shop_item.is_a?(ShopItem::FreeStickers) || shop_item.is_a?(ShopItem::TutorialNothing)
+
+    intro_orders = user.shop_orders.joins(:shop_item)
+                       .where(shop_items: { type: %w[ShopItem::FreeStickers ShopItem::TutorialNothing] })
+                       .worth_counting
+    return unless intro_orders.exists?
+
+    errors.add(:base, "You've already claimed your free shop intro item.")
   end
 
   def check_devlog_for_free_stickers

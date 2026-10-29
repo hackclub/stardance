@@ -2,6 +2,7 @@
   <span class="project-show__badge project-show__badge--fire">⭐ Super Star Project</span>
   <% if current_user&.admin? %>
     <%= button_to "Remove Super Star", project_magic_path(project),
+                  form: { data: { turbo_frame: "_top" } },
                   method: :delete,
                   form_class: "project-show__pill-form",
                   class: "project-show__pill project-show__pill--outline" %>
@@ -10,6 +11,7 @@
   <span class="project-show__badge project-show__badge--nominated">⭐ Nominated by <%= project.nominated_fire_by&.display_name %></span>
   <% if current_user.admin? %>
     <%= button_to "Approve Super Star", project_magic_path(project),
+                  form: { data: { turbo_frame: "_top" } },
                   form_class: "project-show__pill-form",
                   class: "project-show__pill project-show__pill--save" %>
     <%= button_to "Reject", project_fire_nomination_path(project),
@@ -24,6 +26,7 @@
   <% end %>
 <% elsif current_user&.admin? %>
   <%= button_to "Mark as Super Star", project_magic_path(project),
+                form: { data: { turbo_frame: "_top" } },
                 form_class: "project-show__pill-form",
                 class: "project-show__pill project-show__pill--save" %>
 <% elsif current_user&.can_nominate_super_star? && !project.users.include?(current_user) %>

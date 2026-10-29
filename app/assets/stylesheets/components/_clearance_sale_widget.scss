@@ -1,0 +1,107 @@
+// Discover-rail card for the live clearance sale (DiscoverRail::ClearanceSaleWidget).
+
+.clearance-sale-widget {
+  align-items: center;
+  border: 2px solid var(--color-brand-yellow);
+  color: var(--color-space-text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: center;
+  text-decoration: none;
+
+  &__eyebrow {
+    color: var(--color-red-450);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  // Three sale items fanned out like cards in a hand.
+  &__fan {
+    display: flex;
+    justify-content: center;
+    margin: 0.25rem 0;
+  }
+
+  &__item {
+    filter: drop-shadow(0 4px 6px rgba(8, 6, 30, 0.5));
+    height: 64px;
+    margin: 0 -10px;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+    width: 64px;
+
+    &:nth-child(1) {
+      transform: rotate(-10deg) translateY(4px);
+    }
+
+    &:nth-child(2) {
+      z-index: 1;
+    }
+
+    &:nth-child(3) {
+      transform: rotate(10deg) translateY(4px);
+    }
+  }
+
+  &__deal {
+    align-items: baseline;
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  &__up-to {
+    color: var(--color-brand-yellow);
+    font-size: var(--font-size-s);
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  &__percent {
+    color: var(--color-brand-yellow);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xxxl);
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  &__title {
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  &__timer {
+    font-size: var(--font-size-s);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    opacity: 0.8;
+  }
+
+  &__cta {
+    background: var(--color-brand-yellow);
+    border-radius: 999px;
+    color: var(--color-space-bg);
+    font-size: var(--font-size-s);
+    font-weight: 800;
+    margin-top: 0.35rem;
+    padding: 0.35rem 1rem;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover &__item:nth-child(1) {
+      transform: rotate(-16deg) translate(-4px, 2px);
+    }
+
+    &:hover &__item:nth-child(3) {
+      transform: rotate(16deg) translate(4px, 2px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__item {
+      transition: none;
+    }
+  }
+}

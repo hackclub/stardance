@@ -41,6 +41,39 @@ class Certification::YswsAirtableSyncJobGateTest < ActiveSupport::TestCase
     assert_equal 1, run_sync(review).size
   end
 
+  test "a review the unified base already holds is skipped quietly and remembered" do
+    review = completed_review
+    Certification::Integrity.create!(ship_event: review.post_ship_event, status: :manually_passed, reviewer: @user)
+    table = FakeTable.new([])
+
+    Certification::YswsAirtable.stub(:record_for, { "Automation - YSWS Record ID" => "recUnified01" }) do
+      job = Certification::YswsAirtableSyncJob.new
+      job.stub(:table, table) { job.perform(review.id) }
+    end
+
+    assert_empty table.upserts
+    assert_equal "recUnified01", review.reload.in_unified_db
+  end
+
+  test "a hackatime ban found at sync time bans the user and rejects the row" do
+    review = completed_review
+    Certification::Integrity.create!(ship_event: review.post_ship_event, status: :manually_passed, reviewer: @user)
+    @user.identities.create!(provider: "hackatime", uid: "ht-sync-gate", access_token: "ht-secret")
+    rejection = nil
+
+    HackatimeService.stub(:fetch_stats, { banned: true, projects: {} }) do
+      job = Certification::YswsAirtableSyncJob.new
+      job.stub(:check_stardance_review_submitted_unified, false) do
+        job.stub(:build_airtable_fields, ->(_review, info) { rejection = info; { "review_id" => review.id.to_s } }) do
+          job.stub(:table, FakeTable.new([])) { job.perform(review.id) }
+        end
+      end
+    end
+
+    assert @user.reload.banned?
+    assert rejection[:rejected]
+  end
+
   private
 
   def run_sync(review)

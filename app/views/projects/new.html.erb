@@ -27,7 +27,7 @@
     <section class="project-creation__section" aria-labelledby="project-creation-missions-heading">
       <p class="project-creation__tagline">
         Earn exclusive prizes by completing a mission
-          — plus free stickers &amp; a shot at the <%= link_to "GPU raffle", raffle_base_url %>
+          — plus free stickers<% unless raffle_ended? %> &amp; a shot at the <%= link_to "GPU raffle", raffle_base_url %><% end %>
       </p>
 
       <div class="project-creation__heading-row">
@@ -43,7 +43,7 @@
                 <% if mission.banner.attached? %>
                   <%= image_tag mission.banner, alt: "", class: "project-creation__card-image" %>
                 <% elsif mission.icon.attached? %>
-                  <%= image_tag mission.icon, alt: "", class: "project-creation__card-icon-lg" %>
+                  <%= image_tag mission.icon_thumb, alt: "", class: "project-creation__card-icon-lg" %>
                 <% else %>
                   <div class="project-creation__card-placeholder"></div>
                 <% end %>
@@ -90,19 +90,16 @@
           <%= render "projects/name_prompt", id: "name-prompt-software" %>
         <% end %>
 
-        <% if Flipper.enabled?(:hardware_flow, current_user) %>
-          <button type="button"
-                  class="project-creation__blank-btn project-creation__blank-btn--hardware"
-                  data-action="project-builder#toggle"
-                  data-project-builder-target="hardwareBtn"
-                  aria-expanded="false"
-                  aria-controls="project-creation-stage-chooser">
-            New hardware project +
-          </button>
-        <% end %>
+        <button type="button"
+                class="project-creation__blank-btn project-creation__blank-btn--hardware"
+                data-action="project-builder#toggle"
+                data-project-builder-target="hardwareBtn"
+                aria-expanded="false"
+                aria-controls="project-creation-stage-chooser">
+          New hardware project +
+        </button>
       </div>
 
-      <% if Flipper.enabled?(:hardware_flow, current_user) %>
       <div id="project-creation-stage-chooser"
            class="project-creation__stage-chooser"
            data-project-builder-target="chooser"
@@ -131,7 +128,6 @@
           <% end %>
         </div>
       </div>
-      <% end %>
     </section>
 
   </div>

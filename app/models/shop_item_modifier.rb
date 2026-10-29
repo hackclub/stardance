@@ -52,7 +52,7 @@ class ShopItemModifier < ApplicationRecord
     shop_item&.hacker_score
   end
 
-  def sale_percentage
+  def current_sale_percentage
     nil
   end
 

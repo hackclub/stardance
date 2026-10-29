@@ -111,13 +111,10 @@ class VoteTest < ActiveSupport::TestCase
   test "manual discard reverses the voter credit when the flag is on" do
     _owner, vote = create_reviewable_vote
     reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
-    Flipper.enable(:discarded_vote_credit_reversal)
 
     assert_difference -> { vote.user.reload.vote_balance }, -1 do
       vote.discard_by!(reviewer: reviewer, reason: "Pasted the same feedback on ten ships")
     end
-  ensure
-    Flipper.disable(:discarded_vote_credit_reversal)
   end
 
   test "manual discard is a no op on an already discarded vote" do

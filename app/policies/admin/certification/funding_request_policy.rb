@@ -7,6 +7,7 @@ class Admin::Certification::FundingRequestPolicy < ApplicationPolicy
 
   def update?
     return false unless can_review_hardware? && not_own_project?
+    return false if record.project.hardware_review_blocked?
     record.claim_held_by?(user) || (record.reviewer_id == user.id && record.claim_expired?)
   end
 
@@ -20,6 +21,7 @@ class Admin::Certification::FundingRequestPolicy < ApplicationPolicy
   # may reverse any decided review. Never on your own project.
   def undo?
     return false unless user && not_own_project?
+    return false if record.project.hardware_review_blocked?
     user.admin? || own_review?
   end
 

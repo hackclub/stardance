@@ -17,7 +17,7 @@ class Shop::AutoApproveJob < ApplicationJob
            attempts: 5 do |job, error|
     order = job.arguments.first
     Rails.logger.error "[Shop::AutoApproveJob] giving up on order=#{order.id}: #{error.message}"
-    Sentry.capture_exception(error, extra: { shop_order_id: order.id, source: "auto_approve" })
+    Rails.error.report(error, context: { shop_order_id: order.id, source: "auto_approve" })
     order.record_auto_approval_failure(error)
   end
 

@@ -1,0 +1,7 @@
+header "Your project was unblocked"
+
+section "*<#{project_url}|#{project_title}>* is no longer blocked from shipping. You can ship and re-certify it again.", markdown: true
+
+actions [
+  button("View project", "view_project", url: project_url)
+]

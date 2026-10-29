@@ -21,9 +21,4 @@ You're blessed — payout includes a 20% bonus for great feedback.
 You're cursed — payout reduced by 50%. Write more detailed feedback during voting to lift the curse.
 <% end %>
 
-<% if @recommended_items.present? %>What you can grab with your stardust:
-<% @recommended_items.each do |item| -%>
-- <%= item.name %><%= " (★ on your wishlist)" if item.recommended_from_wishlist? %> (<%= number_with_precision(item.recommended_price, precision: 0) %> stardust): <%= shop_item_url(item) %>
-<% end -%>
-
-<% end %>View balance: <%= my_balance_url %>
+View balance: <%= my_balance_url %>

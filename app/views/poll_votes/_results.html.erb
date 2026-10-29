@@ -1,0 +1,16 @@
+<% total = tally.values.sum %>
+<div id="poll-results" class="poll-results">
+  <% PollVote::CHOICES.each do |choice, label| %>
+    <% percent = total.zero? ? 0 : (tally[choice] * 100.0 / total).round %>
+    <div class="poll-results__row">
+      <div class="poll-results__label">
+        <span><%= label %></span>
+        <span><%= percent %>% · <%= pluralize(tally[choice], "vote") %></span>
+      </div>
+      <progress class="poll-results__bar poll-results__bar--<%= choice %>" value="<%= percent %>" max="100"><%= percent %>%</progress>
+    </div>
+  <% end %>
+  <p class="poll-results__total"><span class="poll-results__live-dot"></span> live · <%= pluralize(total, "vote") %>
+    <em class="poll-results__tagline">who sang it better?</em>
+  </p>
+</div>

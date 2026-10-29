@@ -1,0 +1,464 @@
+@use "../config/mixins" as *;
+
+.buku-x3-status {
+  --buku-team-color: var(--color-set-1-fg-secondary);
+
+  position: relative;
+  display: grid;
+  align-items: center;
+  gap: var(--space-s);
+  margin-bottom: var(--space-l);
+  padding: var(--space-s) var(--space-m);
+  border: 2px solid var(--buku-team-color);
+  border-radius: 8px;
+  background: var(--color-set-1-bg);
+  box-shadow: 0 0 var(--space-m)
+    color-mix(in srgb, var(--buku-team-color) 40%, transparent);
+  color: var(--color-brand-off-white);
+
+  &--buku {
+    --buku-team-color: var(--color-brand-lilac);
+  }
+
+  &--bean {
+    --buku-team-color: var(--color-brand-yellow);
+  }
+
+  // The outline keeps the team color along the bottom and fades into the
+  // background going up, with the glow weighted to match.
+  &:not(&--compact) {
+    border-color: transparent;
+    background:
+      linear-gradient(var(--color-set-1-bg), var(--color-set-1-bg)) padding-box,
+      linear-gradient(to top, var(--buku-team-color), var(--color-set-1-bg))
+        border-box;
+    box-shadow: 0 var(--space-xs) var(--space-m) calc(-1 * var(--space-xxxs))
+      color-mix(in srgb, var(--buku-team-color) 40%, transparent);
+  }
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    min-width: 0;
+  }
+
+  &:not(&--compact) &__identity,
+  &__damage {
+    grid-area: 1 / 1;
+  }
+
+  // The clock row comes first, so the tug row and the role card that swaps
+  // in over it move down one.
+  &:has(> &__countdown) &__damage,
+  &:has(> &__countdown):not(&--compact) &__identity {
+    grid-row: 2;
+  }
+
+  // Tuck the rope up under the clock. Only the characters' heads rise into
+  // that space, and they sit beside the clock, not under it. Phones get the
+  // full-width clock, so the rope stays put there.
+  &:has(&__clock) &__tug {
+    margin-top: calc(var(--character-width) * -0.2);
+
+    @container (max-width: 480px) {
+      margin-top: 0;
+    }
+  }
+
+  &:has(> &__leaderboard-tab) {
+    margin-bottom: calc(var(--space-l) + var(--space-m));
+  }
+
+  // The tab stays attached to the bottom edge as the box expands.
+  &__leaderboard-tab {
+    position: absolute;
+    bottom: 0;
+    left: var(--space-m);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--space-xl);
+    padding: var(--space-xs) var(--space-m);
+    border: 2px solid
+      color-mix(in srgb, var(--buku-team-color) 70%, transparent);
+    border-top-color: var(--buku-team-color);
+    border-radius: 0 0 var(--profile-radius) var(--profile-radius);
+    background: var(--color-set-1-bg);
+    color: var(--color-brand-cream);
+    font-family: inherit;
+    font-size: 0.625rem;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transform: translateY(100%);
+    cursor: pointer;
+    transition:
+      background 180ms ease,
+      color 180ms ease;
+
+    &:hover {
+      color: var(--color-brand-off-white);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-off-white);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 400px) {
+      left: var(--space-xs);
+      padding-inline: var(--space-xs);
+      letter-spacing: 0.06em;
+    }
+  }
+
+  &[data-open] &__leaderboard-tab {
+    background: var(--buku-team-color);
+    color: var(--color-set-1-bg);
+  }
+
+  // "stardance ends in" over the clock.
+  &__countdown {
+    // Same width as &__damage, so the clock can be sized against the rope.
+    --character-width: clamp(64px, 14cqi, 96px);
+    // "00:00:00:00" with the fixed digit slots is about this many em wide.
+    --clock-width-em: 5.9;
+
+    container-type: inline-size;
+    text-align: center;
+  }
+
+  &__countdown-caption {
+    margin: 0 0 var(--space-xxxs);
+    line-height: 1;
+    color: var(--color-brand-cream);
+    font-size: 0.625rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  &__clock {
+    margin: 0;
+    color: var(--color-brand-cream);
+    font-family: "Playfair Display", serif;
+    // About three quarters of the rope's width; most of the box on phones,
+    // where the rope gets short.
+    font-size: calc(
+      (100cqi - 1.86 * var(--character-width)) * 0.75 / var(--clock-width-em)
+    );
+    font-style: italic;
+    font-variant-numeric: lining-nums;
+    font-weight: 700;
+    line-height: 0.9;
+    white-space: nowrap;
+    text-shadow: 0 0 var(--space-s)
+      color-mix(in srgb, var(--color-brand-cream) 45%, transparent);
+
+    @container (max-width: 480px) {
+      font-size: calc(100cqi * 0.8 / var(--clock-width-em));
+    }
+
+    // The digits differ in width, so pin each to a "0"-wide slot to stop
+    // the clock shifting every second.
+    span {
+      display: inline-block;
+      width: 1ch;
+      text-align: center;
+    }
+  }
+
+  &__clock--urgent {
+    color: var(--color-red-450);
+    text-shadow: 0 0 var(--space-s) var(--color-brand-salmon-soft);
+  }
+
+  &__countdown-text {
+    @include visually-hidden;
+  }
+
+  &:not(&--compact) &__identity {
+    justify-content: center;
+    width: 100%;
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  &__identity,
+  &__damage {
+    transition:
+      opacity 180ms ease,
+      visibility 180ms;
+  }
+
+  &__toggle {
+    // Hit area over the rope only (matching &__rope's geometry, with a little
+    // vertical slack). Stays visible while &__damage hides so hover holds.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.405 - var(--space-xs));
+    height: calc(var(--character-width) * 0.214 + 2 * var(--space-xs));
+    z-index: 2;
+    visibility: visible;
+    border: 0;
+    border-radius: 8px;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-brand-off-white);
+      outline-offset: var(--space-xxxs);
+    }
+  }
+
+  &--interactive[data-role-open],
+  &--interactive:has(.buku-x3-status__toggle:focus-visible) {
+    .buku-x3-status__identity {
+      visibility: visible;
+      opacity: 1;
+    }
+    .buku-x3-status__damage {
+      visibility: hidden;
+      opacity: 0;
+    }
+  }
+
+  @media (hover: hover) {
+    &--interactive:has(.buku-x3-status__toggle:hover) {
+      .buku-x3-status__identity {
+        visibility: visible;
+        opacity: 1;
+      }
+      .buku-x3-status__damage {
+        visibility: hidden;
+        opacity: 0;
+      }
+    }
+  }
+
+  &__icon {
+    width: 120px;
+    height: 132px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  // Swaps in over the slim tug row, so it has to fit the same height.
+  &:not(&--compact) &__icon {
+    width: 64px;
+    height: auto;
+    aspect-ratio: 10 / 11;
+  }
+
+  // Role and reminder share one centered line when there's room, and wrap
+  // to two centered lines when there isn't.
+  &:not(&--compact) &__identity-text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0 0.3em;
+    text-align: center;
+
+    // One sentence, so both halves share a size.
+    .buku-x3-status__role,
+    .buku-x3-status__reminder {
+      font-size: var(--font-size-m);
+    }
+  }
+
+  &__role,
+  &__reminder,
+  &__label {
+    margin: 0;
+  }
+
+  &__role {
+    font-size: var(--font-size-m);
+  }
+
+  &--buku &__role strong {
+    color: var(--color-brand-lilac);
+  }
+
+  &--bean &__role strong {
+    color: var(--color-brand-yellow);
+  }
+
+  &__reminder {
+    font-size: var(--font-size-s);
+  }
+
+  &__damage {
+    container-type: inline-size;
+    min-width: 0;
+  }
+
+  &__label {
+    color: var(--color-brand-off-white);
+  }
+
+  &__scores {
+    // Team totals hang under the rope's ends, between the two characters.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.619 + var(--space-xxxs));
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    margin: 0;
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &__score--buku {
+    color: var(--color-brand-lilac);
+  }
+
+  &__score--bean {
+    color: var(--color-brand-yellow);
+  }
+
+  // The characters already say which side is which on narrow screens.
+  @container (max-width: 420px) {
+    &__score-team {
+      display: none;
+    }
+  }
+
+  &__tug {
+    --character-width: clamp(64px, 14cqi, 96px);
+
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: var(--character-width) minmax(0, 1fr) var(
+        --character-width
+      );
+    margin-top: 0;
+  }
+
+  &__team {
+    position: relative;
+    z-index: 1;
+
+    &--bean {
+      grid-column: 3;
+    }
+  }
+
+  &__character-frame {
+    position: relative;
+    aspect-ratio: 1408 / 1258;
+    overflow: hidden;
+  }
+
+  &__character {
+    // Frame the shared transparent canvas without modifying the supplied art.
+    position: absolute;
+    left: -3.55%;
+    top: -8.74%;
+    display: block;
+    width: 129.55%;
+    max-width: none;
+    height: auto;
+  }
+
+  &__rope {
+    --buku-color: var(--color-brand-off-white);
+    --bean-color: var(--color-brand-off-white);
+    // Hand centers in the framed artwork: x=7%/93%, y=45% and 69%.
+    // Derive both edges from character width so the grips stay aligned on phones.
+    position: absolute;
+    left: calc(var(--character-width) * 0.93);
+    right: calc(var(--character-width) * 0.93);
+    top: calc(var(--character-width) * 0.405);
+    height: calc(var(--character-width) * 0.214);
+    box-sizing: border-box;
+    border: 2px solid var(--color-brand-cream);
+    border-radius: 8px;
+    background: linear-gradient(
+      to right,
+      var(--buku-color),
+      var(--color-brand-off-white) 50%,
+      var(--bean-color)
+    );
+    &[data-leader="buku"] {
+      --buku-color: var(--color-brand-lilac);
+    }
+    &[data-leader="bean"] {
+      --bean-color: var(--color-brand-yellow);
+    }
+  }
+
+  &__midpoint {
+    position: absolute;
+    top: calc(-1 * var(--space-xs));
+    bottom: calc(-1 * var(--space-xs));
+    left: 50%;
+    border-left: 2px dashed var(--color-brand-off-white);
+    opacity: 0.5;
+  }
+
+  &__marker {
+    // A tall four-point star, scaled with the characters so it always
+    // stands well clear of the rope.
+    position: absolute;
+    top: 50%;
+    left: var(--tug-position, 50%);
+    display: block;
+    height: calc(var(--character-width) * 0.46);
+    aspect-ratio: 24 / 44;
+    transform: translate(-50%, -50%);
+    transition: left 700ms ease;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    // Filled with the rope's outline color, edged and softly glowing in the
+    // background color so it stands out from the rope.
+    filter: drop-shadow(0 0 1px var(--color-set-1-bg))
+      drop-shadow(0 0 2px var(--color-set-1-bg));
+
+    path {
+      fill: var(--color-brand-cream);
+      stroke: var(--color-set-1-bg);
+      // Painted under the fill, so only the outer half (1.5) shows.
+      stroke-width: 3;
+      stroke-linejoin: round;
+      paint-order: stroke;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__identity,
+    &__damage,
+    &__marker {
+      transition: none;
+    }
+  }
+
+  &--compact {
+    margin-top: var(--space-m);
+    margin-bottom: 0;
+    padding: var(--space-s);
+    border-color: var(--color-set-2-fg-secondary);
+    background: var(--color-set-1-bg);
+    box-shadow: none;
+  }
+
+  &--compact &__icon {
+    width: 72px;
+    height: 80px;
+  }
+}

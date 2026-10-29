@@ -15,6 +15,7 @@ module DiscoverRail
     def wishlisted_items
       return [] unless user
       @wishlisted_items ||= user.shop_wishlists.includes(shop_item: { image_attachment: :blob }).map(&:shop_item)
+                                .tap { |items| ShopItem.preload_sale_units_sold(items) }
     end
 
     def render?

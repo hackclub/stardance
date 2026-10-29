@@ -4,7 +4,10 @@
        data-turbo-permanent
        aria-label="Main">
   <%= link_to root_path, class: "sidebar__logo", "aria-label": "Stardance home", data: { turbo: true } do %>
-    <%= image_tag "landing/header/stardance-logo.png", alt: "Hack Club Stardance Challenge", class: "sidebar__logo-img" %>
+    <% ddr = Flipper.enabled?(:ddr, user) %>
+    <%= image_tag(ddr ? "landing/header/ddr.png" : "landing/header/stardance-logo.png",
+          alt: ddr ? "Hack Club Dance Dance Revolution" : "Hack Club Stardance Challenge",
+          class: "sidebar__logo-img") %>
   <% end %>
 
   <nav class="sidebar__nav" aria-label="Primary navigation">
@@ -30,7 +33,9 @@
 
           <% label_block = capture do %>
             <span class="sidebar__nav-label"><%= item[:label] %></span>
-            <% if item[:notify] %>
+            <% if item[:tag] %>
+              <span class="sidebar__nav-tag"><%= item[:tag] %></span>
+            <% elsif item[:notify] %>
               <span class="sidebar__nav-notify-dot" aria-hidden="true"></span>
             <% end %>
           <% end %>
@@ -138,6 +143,42 @@
           <span>Streamer mode</span>
         </label>
         <small class="settings-form__hint">Blur sensitive info like addresses and API keys</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :countdown_enabled, "0", id: nil %>
+          <%= check_box_tag :countdown_enabled, "1", preference.countdown_enabled?, id: "countdown_enabled" %>
+          <span>Show countdown</span>
+        </label>
+        <small class="settings-form__hint">The clock on the home page counting down to the end of Stardance</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :platform_ads_enabled, "0", id: nil %>
+          <%= check_box_tag :platform_ads_enabled, "1", preference.platform_ads_enabled?, id: "platform_ads_enabled" %>
+          Show program ads
+        </label>
+        <small class="settings-form__hint">Show promotions for other Hack Club programs. Turn off to hide them across Stardance on your account.</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :disintegration_effects_enabled, "0", id: nil %>
+          <%= check_box_tag :disintegration_effects_enabled, "1", preference.disintegration_effects_enabled?, id: "disintegration_effects_enabled" %>
+          <span>Show disintegration effects</span>
+        </label>
+        <small class="settings-form__hint">Turn on all fragmenting and dissolving, including particles</small>
+      </div>
+
+      <div class="settings-form__field">
+        <label class="settings-form__checkbox">
+          <%= hidden_field_tag :particle_effects_enabled, "0", id: nil %>
+          <%= check_box_tag :particle_effects_enabled, "1", preference.particle_effects_enabled?, id: "particle_effects_enabled" %>
+          <span>Show disintegration particles</span>
+        </label>
+        <small class="settings-form__hint">Turn on drifting particles</small>
       </div>
 
       <% if user.slack_id.present? %>

@@ -1,13 +1,13 @@
 <% if current_user&.onboarded? && StickerPromo.active? && !current_user.has_dismissed?(StickerPromo.dismissal_key) %>
   <div data-controller="sticker-promo" data-sticker-promo-key-value="<%= StickerPromo.dismissal_key %>">
-    <dialog class="sticker-promo" data-sticker-promo-target="dialog">
+    <dialog class="sticker-promo" data-sticker-promo-target="dialog" data-action="cancel->sticker-promo#dismiss">
       <div class="sticker-promo__content">
         <button type="button" class="sticker-promo__close" data-action="click->sticker-promo#dismiss" aria-label="Close">&times;</button>
 
         <h2 class="sticker-promo__heading">Get a free sticker!</h2>
 
         <div class="sticker-promo__image-wrap">
-          <%= image_tag "sticker-promo-hero.png", alt: "Hack Club × Stardance Challenge sticker", class: "sticker-promo__image" %>
+          <%= image_tag "sticker-promo-hero.png", alt: "Hack Club Stardance game cartridge sticker", class: "sticker-promo__image" %>
         </div>
 
         <p class="sticker-promo__text">

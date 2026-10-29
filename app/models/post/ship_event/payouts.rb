@@ -181,6 +181,7 @@ module Post::ShipEvent::Payouts
 
       save!
       create_payout_ledger_entry!
+      Finality.award_bonus!(self)
       issued = true
     end
 
@@ -336,6 +337,11 @@ module Post::ShipEvent::Payouts
     elsif voting_completed_at.present?
       payout_basis_locked_at? ? clear_payout_review : update!(voting_completed_at: nil)
     end
+  end
+
+  # Static-prize missions and hardware builds pay out without community ratings.
+  def goes_to_voting?
+    voting_payout_path? && !hardware_payout?
   end
 
   private

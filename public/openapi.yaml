@@ -3,8 +3,8 @@ info:
   title: Stardance API
   version: "1"
   description: |
-    A read-only public API for Stardance projects and devlogs. You need an
-    API key to use this! Go to your [account settings](/?settings=1) to get
+    A read-only public API for Stardance projects and devlogs, plus a few
+    staff-only endpoints. You need an API key to use this! Go to your [account settings](/?settings=1) to get
     one.
 servers:
   - url: /api/v1
@@ -72,6 +72,17 @@ components:
         comments:
           type: array
           items: { $ref: "#/components/schemas/Comment" }
+    ShopOrder:
+      type: object
+      description: A shop order, without the buyer's address or other personal details.
+      properties:
+        id: { type: integer }
+        aasm_state: { type: string, example: fulfilled }
+        item_name: { type: string }
+        external_ref: { type: string, nullable: true, description: "Store order reference, e.g. \"Bambu AU AU787303367675330561\"" }
+        tracking_number: { type: string, nullable: true }
+        fulfilled_at: { type: string, format: date-time, nullable: true }
+        region: { type: string, nullable: true, example: AU }
     Pagination:
       type: object
       properties:
@@ -248,4 +259,151 @@ paths:
               schema: { $ref: "#/components/schemas/Devlog" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /users/lookup:
+    get:
+      summary: Look up a user by Slack ID
+      tags: [ Admin ]
+      description: "Admin only. Find the Stardance user ID and display name for a Slack ID."
+      operationId: lookupUser
+      parameters:
+        - name: slack_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The matching user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  slack_id: { type: string }
+                  display_name: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /users/{id}/balance_adjustments:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    post:
+      summary: Adjust a user's stardust balance
+      tags: [ Admin ]
+      description: "Admin only. Grant (positive) or deduct (negative) stardust, recorded in the ledger with the given reason."
+      operationId: createBalanceAdjustment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ amount, reason ]
+              properties:
+                amount: { type: integer, description: Non-zero stardust amount }
+                reason: { type: string }
+      responses:
+        "201":
+          description: The ledger entry that was created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  user_id: { type: integer }
+                  amount: { type: integer }
+                  reason: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { description: Invalid amount or missing reason }
+  /shop_orders:
+    get:
+      summary: Search shop orders
+      tags: [ Fulfillment ]
+      description: >-
+        Fulfillment staff and admins only. Finds orders whose external_ref or
+        tracking number contains `query` (case-insensitive), newest first.
+        Use it to find an order from a store order number such as
+        `AU787303367675330561` or `AULA-202614228`.
+
+
+        `curl -H "Authorization: Bearer $STARDANCE_API_KEY" "https://stardance.hackclub.com/api/v1/shop_orders?query=AU787303367675330561"`
+      operationId: searchShopOrders
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Matching orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shop_orders:
+                    type: array
+                    items: { $ref: "#/components/schemas/ShopOrder" }
+                  pagination: { $ref: "#/components/schemas/Pagination" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to fulfillment staff or an admin }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /shop_orders/{id}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      summary: Get a shop order
+      tags: [ Fulfillment ]
+      description: "Fulfillment staff and admins only."
+      operationId: getShopOrder
+      responses:
+        "200":
+          description: The order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopOrder" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to fulfillment staff or an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+    patch:
+      summary: Set an order's tracking
+      tags: [ Fulfillment ]
+      description: >-
+        Fulfillment staff and admins only. Sets or changes the carrier
+        tracking number (or tracking URL) on an order; an empty value clears
+        it. The buyer gets a Slack DM when tracking is added or changed, and
+        the change appears in the order's audit log under the API key's owner.
+
+
+        `curl -X PATCH -H "Authorization: Bearer $STARDANCE_API_KEY" -H "Content-Type: application/json" -d '{"tracking_number":"1Z999AA10123456784"}' https://stardance.hackclub.com/api/v1/shop_orders/123`
+      operationId: updateShopOrderTracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ tracking_number ]
+              properties:
+                tracking_number: { type: string, nullable: true }
+      responses:
+        "200":
+          description: The updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopOrder" }
+        "400": { description: tracking_number is missing }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: The API key does not belong to fulfillment staff or an admin }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { description: The order could not be saved }
         "429": { $ref: "#/components/responses/TooManyRequests" }

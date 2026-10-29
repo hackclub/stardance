@@ -31,6 +31,11 @@ class Admin::ShopOrderPolicy < ApplicationPolicy
     user&.admin? || user&.fraud_dept? || user&.fulfillment_person?
   end
 
+  # Matches who sees the fulfillment card the tracking form lives on.
+  def update_tracking?
+    user&.admin? || user&.fulfillment_person?
+  end
+
   def assign_user?
     user&.admin? || user&.fulfillment_person?
   end

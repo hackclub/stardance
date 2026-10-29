@@ -12,6 +12,7 @@ class VisualNovelComponentTest < ViewComponent::TestCase
     render_inline VisualNovelComponent.new(user: @user)
 
     assert_selector ".visual-novel[data-controller='visual-novel']"
+    assert_selector ".visual-novel[data-visual-novel-shake-lines-value='[]']"
     assert_selector ".visual-novel__speaker", text: VisualNovelComponent::SPEAKER
     assert_selector ".visual-novel__line", text: "hi, #{@user.display_name}!"
     assert_selector ".visual-novel__dot", count: VisualNovelComponent::LINES.size

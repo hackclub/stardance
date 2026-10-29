@@ -2,11 +2,11 @@
 source "https://rubygems.org", cooldown: 7
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.1.3"
+gem "rails", "~> 8.1.4"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
+gem "pg", "~> 1.7"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
@@ -100,6 +100,7 @@ gem "omniauth-rails_csrf_protection"
 gem "omniauth_openid_connect"
 gem "omniauth-oauth2"
 gem "omniauth-github", "~> 2.0"
+gem "jwt", "~> 3.3"
 
 gem "raffle", path: "engines/raffle"
 gem "slack-ruby-client"
@@ -122,20 +123,19 @@ gem "mission_control-jobs"
 gem "view_component"
 gem "phlex-rails"
 gem "aws-sdk-s3"
-gem "rubyzip", "~> 3.0"
+gem "rubyzip", "~> 3.7"
 gem "faraday"
+# json 3.0 breaks faraday response parsing (hcb grants) and db:schema:dump
+gem "json", "< 3"
 gem "faraday-retry"
 
 gem "faker", "~> 3.6"
 gem "jsbundling-rails", "~> 1.3"
-gem "stackprof"
-gem "sentry-ruby", "~> 6.7"
-gem "sentry-rails", "~> 6.7"
 
 # for pagination
-gem "pagy", "~> 43.6"
+gem "pagy", "~> 43.7"
 gem "norairrecord"
-gem "anthropic", "~> 1.62"
+gem "anthropic", "~> 1.67"
 
 gem "awesome_print"
 gem "activeinsights"

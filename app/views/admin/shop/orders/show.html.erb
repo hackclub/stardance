@@ -523,7 +523,7 @@
 
       <% if @order.external_ref.present? %>
         <div class="aorder__row">
-          <span class="aorder__row-label">Tracking / Ref</span>
+          <span class="aorder__row-label">External ref</span>
           <span class="aorder__row-value">
             <% if @order.shop_item.type.in?(ShopItem::LetterMail::TYPES + %w[ShopItem::FreeStickers]) %>
               <a href="https://mail.hackclub.com/back_office/letters/<%= @order.external_ref %>" target="_blank"><%= @order.external_ref %></a>
@@ -532,6 +532,23 @@
             <% end %>
           </span>
         </div>
+      <% end %>
+      <div class="aorder__row">
+        <span class="aorder__row-label">Tracking</span>
+        <span class="aorder__row-value">
+          <% if @order.tracking_number.present? %>
+            <%= tracking_link_tag(@order.tracking_number) %>
+          <% else %>
+            <em class="aorder__row-empty">None yet</em>
+          <% end %>
+        </span>
+      </div>
+      <% if policy(@order).update_tracking? %>
+        <%= form_with url: update_tracking_admin_shop_order_path(@order), method: :post, local: true, class: "aorder__tracking-form" do |f| %>
+          <%= f.text_field :tracking_number, value: @order.tracking_number, placeholder: "Tracking number or URL", autocomplete: "off", class: "aorder__input aorder__input--grow", aria: { label: "Tracking number" } %>
+          <%= f.submit @order.tracking_number.present? ? "Update tracking" : "Add tracking", class: "aorder__btn aorder__btn--secondary" %>
+        <% end %>
+        <p class="aorder__notes-hint">The customer gets a Slack DM whenever tracking is added or changed.</p>
       <% end %>
       <% if @order.fulfilled_by.present? %>
         <div class="aorder__row">
@@ -758,6 +775,7 @@
                 <div style="display:flex; flex-direction:column; gap: 0.75rem; margin-bottom: 1rem;">
                   <label style="font-size:0.875rem;">Spent (USD)<br><input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
                   <label style="font-size:0.875rem;">Order #<br><input type="text" name="external_ref" placeholder="e.g. ORD-12345" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
+                  <label class="aorder__dialog-label">Tracking (optional, can be added later)<input type="text" name="tracking_number" placeholder="Tracking number or URL" autocomplete="off" class="aorder__input aorder__input--block"></label>
                 </div>
                 <div style="display:flex; gap:0.5rem;">
                   <button type="button" class="aorder__btn aorder__btn--secondary" onclick="document.getElementById(<%= m.to_json %>).close()">Cancel</button>
@@ -795,6 +813,7 @@
                 <div style="display:flex; flex-direction:column; gap: 0.75rem; margin-bottom: 1rem;">
                   <label style="font-size:0.875rem;">Spent (USD)<br><input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
                   <label style="font-size:0.875rem;">Order #<br><input type="text" name="external_ref" placeholder="e.g. ORD-12345" autocomplete="off" class="aorder__input" style="margin-top:4px; width:100%;"></label>
+                  <label class="aorder__dialog-label">Tracking (optional, can be added later)<input type="text" name="tracking_number" placeholder="Tracking number or URL" autocomplete="off" class="aorder__input aorder__input--block"></label>
                 </div>
                 <div style="display:flex; gap:0.5rem;">
                   <button type="button" class="aorder__btn aorder__btn--secondary" onclick="document.getElementById(<%= m.to_json %>).close()">Cancel</button>

@@ -78,7 +78,7 @@ class Shop::OrdersControllerRegionPricingTest < ActionDispatch::IntegrationTest
     @user.ledger_entries.create!(amount: amount, reason: "test grant", ledgerable: @user, created_by: "test")
   end
 
-  def with_address(&block) = HCAService.stub(:identity, IDENTITY, &block)
+  def with_address(&block) = HCAService.stub(:identity!, IDENTITY, &block)
 
   def build_item(**attributes)
     item = ShopItem.new({ name: "Region Priced Widget", description: "test item",

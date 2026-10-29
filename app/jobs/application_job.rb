@@ -4,11 +4,6 @@ class ApplicationJob < ActiveJob::Base
   # Most jobs are safe to ignore if the underlying records are no longer available
   # discard_on ActiveJob::DeserializationError
 
-  rescue_from(StandardError) do |exception|
-    Sentry.capture_exception(exception, extra: { job_class: self.class.name, job_id: job_id, arguments: arguments })
-    raise exception
-  end
-
   # Helper method to add retry logic with maintainer notification on max retries
   # Use this in recurring jobs: notify_maintainers_on_exhaustion StandardError, maintainers_slack_ids: ["U123", "U456"], wait: :polynomially_longer, attempts: 3
   class << self

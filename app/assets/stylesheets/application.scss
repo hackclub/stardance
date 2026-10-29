@@ -15,6 +15,9 @@
 @use "components/action_items";
 @use "components/action_button";
 @use "components/mihi_mode_toggle";
+@use "components/blackhole_preview";
+@use "components/stardance_finale";
+@use "components/buku_x3_status";
 @use "components/special_action_button";
 @use "components/input";
 @use "components/input-group";
@@ -27,6 +30,10 @@
 @use "components/ui-heading";
 @use "components/dropdown";
 @use "components/shop-item-card";
+@use "components/clearance_banner";
+@use "components/clearance_popup";
+@use "components/ship_prompt";
+@use "components/clearance_sale_widget";
 @use "components/admin-banner";
 @use "components/mac_banner";
 @use "components/space_table";
@@ -47,6 +54,7 @@
 @use "components/review_history";
 @use "components/feedback_images";
 @use "components/feed";
+@use "components/finality_raffle";
 @use "components/mentions";
 @use "components/star_border";
 @use "components/star_image_input";
@@ -62,15 +70,25 @@
 @use "components/settings-form";
 @use "components/slack_doodle";
 @use "components/sticker_promo";
-@use "components/receipt_promo_widget";
+@use "components/poll_popup";
+@use "components/poll_results";
+@use "components/forge_promo_widget";
+@use "components/mipmap_promo_widget";
+@use "components/day_one_of_promo_widget";
+@use "components/fallen_promo_widget";
+@use "components/wrong_tool_promo";
+@use "components/terra_portal_widget";
 @use "components/sticker_promo_widget";
 @use "components/vega_sprite";
 @use "components/visual_novel";
-@use "components/rocket_progress";
+@use "components/buku_x3_reveal";
 
 // Pages
+@use "pages/buku_leaderboard";
 @use "pages/onboarding" as onboarding_pages;
 @use "pages/projects/new";
+@use "pages/ship_funnel";
+@use "pages/growth";
 @use "pages/project_setup";
 @use "pages/projects/show";
 @use "pages/projects/readme";
@@ -91,7 +109,6 @@
 @use "pages/shop/order";
 @use "pages/shop/my_orders";
 @use "pages/shop/suggestions";
-@use "pages/shop/sharable_purchase";
 @use "pages/shop/admin_order_show";
 @use "pages/user/show" as users_show;
 @use "pages/profile_placeholder";
@@ -109,13 +126,17 @@
 @use "pages/certification/ships/show" as certification_ships_show;
 @use "pages/certification/ships/monitor" as certification_ships_monitor;
 @use "pages/certification/hardware_review" as certification_hardware_review;
+@use "pages/certification/permanent_rejections" as
+  certification_permanent_rejections;
 @use "pages/certification/recording_gallery" as certification_recording_gallery;
 @use "pages/certification/lapse_player" as certification_lapse_player;
 @use "pages/certification/mystats" as certification_mystats;
 @use "pages/certification/payouts" as certification_payouts;
+@use "pages/queue" as queue_page;
 @use "pages/raffle";
 @use "pages/notifications" as notifications_page;
 @use "pages/notification_settings" as notification_settings_page;
 @use "pages/data_exports" as data_exports_page;
 @use "pages/rng";
+@use "pages/mention_form";
 @use "landing/landing_footer";

@@ -1,0 +1,255 @@
+.day-one-of-promo {
+  --day-one-of-promo-bg: #f0dfae;
+  --day-one-of-promo-paper: #fffbef;
+  --day-one-of-promo-ink: #2b2216;
+  --day-one-of-promo-shadow: #2b22163d;
+  --day-one-of-promo-accent: #c4301f;
+  --day-one-of-promo-accent-ink: #fff7e8;
+  --day-one-of-promo-pencil: url("dayoneof/pencil.svg") border-box;
+  --day-one-of-promo-grain: url("dayoneof/paper.webp") padding-box;
+  --day-one-of-promo-doodles: url("dayoneof/doodles.webp") 0 0 / 200px
+    padding-box;
+
+  padding: var(--space-s) var(--space-m);
+
+  &__card {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--space-s) var(--space-m);
+    padding: var(--space-m);
+    background:
+      var(--day-one-of-promo-grain),
+      var(--day-one-of-promo-doodles),
+      linear-gradient(var(--day-one-of-promo-bg), var(--day-one-of-promo-bg))
+        padding-box,
+      var(--day-one-of-promo-pencil);
+    border: 3px solid transparent;
+    border-radius: 22px 10px 18px 12px / 12px 20px 10px 24px;
+    box-shadow: 4px 5px 0 var(--day-one-of-promo-shadow);
+    color: var(--day-one-of-promo-ink);
+    transform: rotate(-1.5deg);
+
+    &:hover,
+    &:has(:focus-visible) {
+      box-shadow: 7px 8px 0 var(--day-one-of-promo-shadow);
+      transform: rotate(0deg) translateY(-3px);
+    }
+  }
+
+  &__logo {
+    position: absolute;
+    top: -18px;
+    left: -14px;
+    width: 52px;
+    height: 52px;
+    filter: drop-shadow(2px 3px 0 var(--day-one-of-promo-shadow));
+    transform: rotate(-10deg);
+  }
+
+  &__wordmark {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 150px;
+    height: auto;
+    transform: rotate(-2deg);
+  }
+
+  &__reels {
+    position: relative;
+    width: 84px;
+    height: 124px;
+  }
+
+  &__reel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 4px 4px 14px;
+    background:
+      var(--day-one-of-promo-grain),
+      linear-gradient(
+          var(--day-one-of-promo-paper),
+          var(--day-one-of-promo-paper)
+        )
+        padding-box,
+      var(--day-one-of-promo-pencil);
+    border: 2px solid transparent;
+    border-radius: 9px 5px 8px 6px / 6px 8px 5px 9px;
+    box-shadow: 2px 3px 0 var(--day-one-of-promo-shadow);
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -7px;
+      left: 50%;
+      width: 40px;
+      height: 12px;
+      background: url("dayoneof/asset-sheet.webp")
+        var(--day-one-of-promo-tape) / 300% 600% no-repeat;
+      opacity: 0.85;
+      transform: translateX(-50%) rotate(var(--day-one-of-promo-tilt));
+    }
+
+    &--back {
+      --day-one-of-promo-tape: 100% 40%;
+      --day-one-of-promo-tilt: 4deg;
+
+      transform: translate(26px, 4px) rotate(10deg);
+    }
+
+    &--front {
+      --day-one-of-promo-tape: 50% 40%;
+      --day-one-of-promo-tilt: -5deg;
+
+      transform: translate(-2px, 12px) rotate(-5deg);
+    }
+  }
+
+  &__card:hover &__reel--back,
+  &__card:has(:focus-visible) &__reel--back {
+    transform: translate(24px, 2px) rotate(13deg);
+  }
+
+  &__card:hover &__reel--front,
+  &__card:has(:focus-visible) &__reel--front {
+    transform: translate(-8px, 6px) rotate(-8deg);
+  }
+
+  &__thumb {
+    display: block;
+    width: 50px;
+    height: 88px;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+
+  &__pitch {
+    margin: 0;
+    font-family: "Shantell Sans", var(--font-family-text);
+    font-size: var(--font-size-s);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  &__button {
+    grid-column: 1 / -1;
+    padding: 8px 16px 12px;
+    background:
+      linear-gradient(
+          var(--day-one-of-promo-accent),
+          var(--day-one-of-promo-accent)
+        )
+        padding-box,
+      var(--day-one-of-promo-pencil);
+    border: 3px solid transparent;
+    border-radius: 12px 6px 10px 8px / 8px 10px 6px 12px;
+    box-shadow: inset 0 -4px 0 var(--day-one-of-promo-ink);
+    color: var(--day-one-of-promo-accent-ink);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-m);
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+    }
+
+    &:active {
+      padding: 10px 16px;
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      outline: 3px solid var(--day-one-of-promo-ink);
+      outline-offset: 2px;
+    }
+  }
+
+  &__card:hover &__button {
+    filter: brightness(1.08);
+  }
+
+  &__idea {
+    position: relative;
+    z-index: 1;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: calc(3lh + 16px);
+    padding: 6px 10px;
+    background:
+      var(--day-one-of-promo-grain),
+      linear-gradient(
+          var(--day-one-of-promo-paper),
+          var(--day-one-of-promo-paper)
+        )
+        padding-box,
+      var(--day-one-of-promo-pencil);
+    border: 2px solid transparent;
+    border-radius: 12px 6px 10px 8px / 8px 10px 6px 12px;
+    box-shadow: 2px 3px 0 var(--day-one-of-promo-shadow);
+    color: var(--day-one-of-promo-ink);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: left;
+    cursor: pointer;
+    transform: rotate(1deg);
+
+    &:focus-visible {
+      outline: 3px solid var(--day-one-of-promo-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  &__prompt {
+    color: var(--day-one-of-promo-accent);
+    font-weight: 700;
+  }
+
+  &__idea-text {
+    flex: 1;
+  }
+
+  &__shuffle-icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--day-one-of-promo-accent);
+  }
+
+  &__idea:hover &__shuffle-icon {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    &__card,
+    &__reel {
+      transition:
+        transform 220ms ease,
+        box-shadow 220ms ease;
+    }
+
+    &__shuffle-icon {
+      transition: transform 300ms ease;
+    }
+
+    &__idea-text--flip {
+      animation: day-one-of-promo-flip 260ms ease-out;
+    }
+  }
+}
+
+@keyframes day-one-of-promo-flip {
+  from {
+    opacity: 0;
+    transform: translateY(6px) rotate(-2deg);
+  }
+}

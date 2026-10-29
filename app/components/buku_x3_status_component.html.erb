@@ -1,0 +1,64 @@
+<section class="buku-x3-status <%= 'buku-x3-status--compact' if compact? %> <%= "buku-x3-status--#{buku? ? 'buku' : 'bean'}" if role_visible? %> <%= 'buku-x3-status--interactive' if role_visible? && !compact? %>"
+         aria-label="<%= compact? ? 'your private event role' : 'bukus versus beans' %>"
+         data-controller="buku-x3-status<%= ' buku-leaderboard-panel' if leaderboard? %>"
+         data-buku-x3-status-live-hours-value="<%= (compact? ? {} : team_hours).to_json %>"
+         data-action="blackhole:progress@window->buku-x3-status#update">
+  <% if role_visible? %>
+    <div class="buku-x3-status__identity">
+      <%= image_tag icon, class: "buku-x3-status__icon", alt: "", width: 120, height: 132 %>
+      <div class="buku-x3-status__identity-text">
+        <p class="buku-x3-status__role">you're a <strong><%= role_name %></strong>!</p>
+        <p class="buku-x3-status__reminder"><%= reminder %></p>
+      </div>
+    </div>
+  <% end %>
+  <% unless compact? %>
+    <% if countdown? %>
+      <%# Screen readers get "6d 8h 19min" instead of the bare DD:HH:MM:SS clock. %>
+      <div class="buku-x3-status__countdown">
+        <p class="buku-x3-status__countdown-caption">stardance ends in<span class="buku-x3-status__countdown-text"> <span data-controller="countdown" data-countdown-reset-at-value="<%= ends_at.iso8601(3) %>"></span></span></p>
+        <p class="buku-x3-status__clock" aria-hidden="true" data-controller="countdown"
+           data-countdown-reset-at-value="<%= ends_at.iso8601(3) %>" data-countdown-clock-value="true"></p>
+      </div>
+    <% end %>
+    <div class="buku-x3-status__damage">
+      <div class="buku-x3-status__tug">
+        <div class="buku-x3-status__team buku-x3-status__team--buku">
+          <div class="buku-x3-status__character-frame">
+            <%= image_tag "events/bukux3/buku-pulling.png", class: "buku-x3-status__character", alt: "", width: 2752, height: 2064 %>
+          </div>
+        </div>
+        <div class="buku-x3-status__rope" role="meter" aria-label="black hole damage"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= percent %>"
+             aria-valuetext="<%= display_percent %>% damaged; bukus pull left, beans pull right"
+             data-buku-x3-status-target="meter" data-leader="<%= leading_team %>" style="--tug-position: <%= marker_position %>%">
+          <span class="buku-x3-status__midpoint" aria-hidden="true"></span>
+          <span class="buku-x3-status__marker" aria-hidden="true">
+            <svg viewBox="0 0 24 44" focusable="false"><path d="M12 2 Q13.6 18.4 22 22 Q13.6 25.6 12 42 Q10.4 25.6 2 22 Q10.4 18.4 12 2 Z" /></svg>
+          </span>
+        </div>
+        <div class="buku-x3-status__team buku-x3-status__team--bean">
+          <div class="buku-x3-status__character-frame">
+            <%= image_tag "events/bukux3/bean-pulling.png", class: "buku-x3-status__character", alt: "", width: 2752, height: 2064 %>
+          </div>
+        </div>
+        <p class="buku-x3-status__scores">
+          <span class="buku-x3-status__score buku-x3-status__score--buku"><span class="buku-x3-status__score-team">bukus </span><strong data-buku-x3-status-target="bukuHours"><%= display_hours(:buku) %></strong><span class="buku-x3-status__score-team"> hrs</span></span>
+          <span class="buku-x3-status__label" data-buku-x3-status-target="amount"><%= display_percent %>% damaged</span>
+          <span class="buku-x3-status__score buku-x3-status__score--bean"><strong data-buku-x3-status-target="beanHours"><%= display_hours(:bean) %></strong><span class="buku-x3-status__score-team"> hrs beans</span></span>
+        </p>
+        <% if role_visible? %>
+          <%# Covers only the rope, so the rest of the box stays free for the leaderboard. %>
+          <button type="button" class="buku-x3-status__toggle" aria-label="show your event role" aria-pressed="false"
+                  data-buku-x3-status-target="toggle"
+                  data-action="click->buku-x3-status#toggleRole keydown.esc->buku-x3-status#dismissRole"></button>
+        <% end %>
+      </div>
+    </div>
+    <% if leaderboard? %>
+      <button type="button" class="buku-x3-status__leaderboard-tab" aria-expanded="false" aria-controls="buku-leaderboard-panel"
+              data-buku-leaderboard-panel-target="toggle" data-action="buku-leaderboard-panel#toggle">leaderboard</button>
+    <% end %>
+    <%= content %>
+  <% end %>
+</section>

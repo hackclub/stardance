@@ -1,0 +1,10 @@
+header "Your project was blocked from shipping"
+
+section "Your project *<#{project_url}|#{project_title}>* was blocked from shipping. It can't be shipped, reshipped or re-certified until it's unblocked.", markdown: true
+section "Reason for this decision:"
+reason.scan(/.{1,2900}/m).each { |part| section part, markdown: false }
+section "If you think this is a mistake, send a message in <##{appeal_channel_id}> to appeal it. Your project and devlogs stay available, and nothing else on your account is affected.", markdown: true
+
+actions [
+  button("View project", "view_project", url: project_url)
+]

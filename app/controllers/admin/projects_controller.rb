@@ -206,6 +206,31 @@ class Admin::ProjectsController < Admin::ApplicationController
     redirect_to admin_project_path(@project), notice: "Reset #{devlog_count} devlog(s) for this project."
   end
 
+  def resync_hackatime
+    @project = ::Project.unscoped.find(params[:id])
+    authorize @project
+
+    if @project.hackatime_keys.empty?
+      redirect_to admin_project_path(@project), alert: "This project has no Hackatime keys linked."
+      return
+    end
+
+    job = nil
+    @project.transaction do
+      @project.versions.create!(
+        event: "hackatime_resync_requested", whodunnit: current_user.id.to_s,
+        object_changes: { "hackatime_project_names" => [ nil, @project.hackatime_keys ] }.to_yaml
+      )
+      job = Project::ResyncDevlogsFromHackatimeJob.perform_later(@project, requested_by_id: current_user.id)
+    end
+
+    if job&.successfully_enqueued?
+      redirect_to admin_project_path(@project), notice: "Hackatime time resync queued. Refresh later and check the Audit Log for results."
+    else
+      redirect_to admin_project_path(@project), alert: "Could not queue the Hackatime time resync. Please try again."
+    end
+  end
+
   def convert_to_software
     @project = ::Project.unscoped.find(params[:id])
     authorize @project

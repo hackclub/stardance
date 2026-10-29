@@ -1,0 +1,15 @@
+<%# locals: (video_url: nil) %>
+<dialog class="stardance-finale" aria-label="Stardance finale" data-stardance-finale-target="dialog" data-action="cancel->stardance-finale#preventClose">
+  <div class="stardance-finale__panel" data-stardance-finale-target="panel" hidden>
+    <% if video_url.present? %>
+      <video class="stardance-finale__video" src="<%= video_url %>" controls playsinline preload="none" aria-label="Stardance finale video"
+             data-stardance-finale-target="video" data-action="ended->stardance-finale#finish error->stardance-finale#videoError"></video>
+      <button class="stardance-finale__button" type="button" data-stardance-finale-target="play" data-action="stardance-finale#playVideo" hidden>Play finale</button>
+      <p class="stardance-finale__status" role="status" data-stardance-finale-target="status"></p>
+      <button class="stardance-finale__button" type="button" data-stardance-finale-target="continue" data-action="stardance-finale#finish">Continue</button>
+    <% else %>
+      <div class="stardance-finale__placeholder"></div>
+    <% end %>
+  </div>
+  <button class="stardance-finale__button stardance-finale__button--reset" type="button" data-stardance-finale-target="previewReset" data-action="stardance-finale#resetPreview" hidden>Reset preview</button>
+</dialog>

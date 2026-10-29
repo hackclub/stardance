@@ -8,7 +8,6 @@ class Shop::StickyStreakRedemptionTest < ActionDispatch::IntegrationTest
   IDENTITY = { "addresses" => [ ADDRESS ], "phone_number" => "+15551234567" }.freeze
 
   setup do
-    Flipper.enable(:sticky_streaks)
     @user = create_user(slack_id: "U-shop-sticky", display_name: "shopsticky", verified: true)
     @user.update!(has_gotten_free_stickers: true)
     @item = build_item("Day One Sticker")
@@ -20,8 +19,6 @@ class Shop::StickyStreakRedemptionTest < ActionDispatch::IntegrationTest
 
     sign_in @user
   end
-
-  teardown { Flipper.disable(:sticky_streaks) }
 
   test "the item page prices the day's sticker at nothing and carries the gate" do
     with_address do
@@ -44,16 +41,6 @@ class Shop::StickyStreakRedemptionTest < ActionDispatch::IntegrationTest
     assert_equal 0, claim.shop_order.frozen_item_price
     assert_equal ADDRESS["id"], claim.shop_order.frozen_address["id"]
     assert_not @streak.reload.claimable_day?(1)
-  end
-
-  test "the gate closes while the challenge is switched off" do
-    Flipper.disable(:sticky_streaks)
-
-    with_address do
-      post shop_orders_path, params: { shop_item_id: @item.id, quantity: 1, sticky_streak_day: 1 }
-    end
-
-    assert_equal 0, StickyStreakClaim.count
   end
 
   test "a day that was not earned is not a valid gate" do
@@ -132,7 +119,7 @@ class Shop::StickyStreakRedemptionTest < ActionDispatch::IntegrationTest
 
   # User#addresses reads the HCA identity payload, so stubbing the service
   # covers whichever User instance the controller is holding.
-  def with_address(&block) = HCAService.stub(:identity, IDENTITY, &block)
+  def with_address(&block) = HCAService.stub(:identity!, IDENTITY, &block)
 
   def build_item(name, **attributes)
     item = ShopItem.new({ name: name, description: "sticker", ticket_cost: 25,

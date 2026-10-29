@@ -45,6 +45,7 @@ class SidebarComponent < ViewComponent::Base
         icon: { idle: "calendar", active: "calendar_active" } },
       { slug: "shop",          label: "shop",          path: "/shop",
         icon: { idle: "cart", active: "cart_active" },
+        tag: ("sale" if helpers.clearance_sale),
         notify: signed_in? && user.shop_tutorial_notify? },
       { slug: "resources",     label: "resources",     path: helpers.guides_path,
         icon: { idle: "book", active: "book_active" } }

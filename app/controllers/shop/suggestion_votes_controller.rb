@@ -1,5 +1,4 @@
 class Shop::SuggestionVotesController < Shop::BaseController
-  before_action -> { head :not_found unless Flipper.enabled?(:shop_suggestions, current_user) }
   before_action :require_login
   before_action :set_suggestion
 

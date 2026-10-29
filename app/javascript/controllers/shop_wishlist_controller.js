@@ -10,6 +10,7 @@ export default class extends Controller {
 
     const wasWishlisted = this.wishlistedValue;
     this.wishlistedValue = !wasWishlisted;
+    if (!wasWishlisted) this.pop(event.currentTarget);
 
     const method = wasWishlisted ? "DELETE" : "POST";
     const csrfToken = document.querySelector(
@@ -30,6 +31,21 @@ export default class extends Controller {
         this.wishlistedValue = wasWishlisted;
       }
     });
+  }
+
+  // A little bounce when an item is starred. Skipped for reduced motion.
+  pop(star) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    star.animate(
+      [
+        { transform: "scale(1) rotate(0deg)" },
+        { transform: "scale(1.45) rotate(-18deg)", offset: 0.35 },
+        { transform: "scale(0.9) rotate(8deg)", offset: 0.7 },
+        { transform: "scale(1) rotate(0deg)" },
+      ],
+      { duration: 450, easing: "ease-out" },
+    );
   }
 
   wishlistedValueChanged() {

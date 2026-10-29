@@ -34,15 +34,16 @@ class Project::Magic
       project.update!(marked_fire_at: Time.current, marked_fire_by: user)
     end
     enqueue_magic_jobs
-    if Flipper.enabled?(:week_2_release)
-      project.users.each { |member| member.award_achievement!(:super_star) }
-    end
+    project.users.each { |member| member.award_achievement!(:super_star) }
     true
   end
 
   def revoke(user)
     return false unless ensure_fire
     perform(user, "unmark_fire") do
+      # Drop the announcement too, or it lingers in the feed and a later
+      # re-grant posts a second one.
+      Post::FireEvent.where(id: project.posts.of_fire_events.select(:postable_id)).destroy_all
       project.update!(marked_fire_at: nil, marked_fire_by: nil)
     end
   end

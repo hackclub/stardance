@@ -5,6 +5,16 @@
       data-certification--ysws--queue-search-url-value="<%= admin_certification_ysws_reviews_path %>">
   <header class="ysws-queue__header">
     <h1>YSWS Review Queue</h1>
+
+    <% if @reviews.any? && @search.blank? && ysws_review_flow_enabled? %>
+      <%= button_to "Start reviewing →",
+                    next_admin_certification_ysws_reviews_path,
+                    method: :post,
+                    params: { flow: 1, step: 1 },
+                    class: "ysws-queue__flow-btn",
+                    form_class: "ysws-queue__flow-form",
+                    form: { data: { turbo: false } } %>
+    <% end %>
   </header>
 
   <%= turbo_frame_tag "ysws_dashboard", src: admin_certification_ysws_dashboard_path, loading: "lazy" do %>
@@ -46,41 +56,6 @@
         </button>
       </div>
     </div>
-
-    <%# Both paths to locked in: holding either the devlog or the project average
-        clears it, so the widget shows both figures and reads its state off both. %>
-    <% if @devlog_pace %>
-      <% locked_in = ::Certification::Ysws.locked_in?(devlog_pace: @devlog_pace, project_pace: @project_pace) %>
-      <%= tag.div class: [ "ysws-queue__goal", ("ysws-queue__goal--locked-in" if locked_in) ],
-                  role: "status", aria: { live: "polite" } do %>
-        <div class="ysws-queue__goal-paces">
-          <div class="ysws-queue__goal-primary">
-            <span class="ysws-queue__goal-count">
-              <%= number_with_precision @devlog_pace[:daily_average], precision: 1, strip_insignificant_zeros: true %>
-            </span>
-            <span class="ysws-queue__goal-label">devlogs / day this week</span>
-          </div>
-
-          <div class="ysws-queue__goal-primary">
-            <span class="ysws-queue__goal-count">
-              <%= number_with_precision @project_pace[:daily_average], precision: 1, strip_insignificant_zeros: true %>
-            </span>
-            <span class="ysws-queue__goal-label">projects / day this week</span>
-          </div>
-        </div>
-
-        <span class="ysws-queue__goal-note">
-          <% if @devlog_pace[:needed_today].zero? %>
-            Locked in — <%= ::Certification::Ysws::DEVLOG_REVIEW_GOAL_PER_DAY %> devlogs/day average met
-          <% elsif @project_pace[:needed_today].zero? %>
-            Locked in — <%= ::Certification::Ysws::PROJECT_REVIEW_GOAL_PER_DAY %> projects/day average met
-          <% else %>
-            <%= @devlog_pace[:needed_today] %> more devlogs
-            or <%= @project_pace[:needed_today] %> more projects today to lock in!
-          <% end %>
-        </span>
-      <% end %>
-    <% end %>
 
     <%# Reset filters, hidden from the UI for now. %>
     <%# if @project_type.present? || @sort.present? %>

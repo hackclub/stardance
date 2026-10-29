@@ -1,0 +1,48 @@
+<section class="<%= root_classes %>" aria-label="<%= sale_title %>">
+  <div class="clearance-banner__tape" aria-hidden="true">
+    <div class="clearance-banner__tape-track">
+      <% 2.times do %>
+        <% SHOUTS.each do |shout| %>
+          <span class="clearance-banner__tape-item">Clearance</span>
+          <span class="clearance-banner__tape-item"><%= shout %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="clearance-banner__body">
+    <% if tug_item %>
+      <div class="clearance-banner__tug" aria-hidden="true">
+        <%= image_tag "shop/clearance/buku-pulling.webp", alt: "", class: "clearance-banner__tugger clearance-banner__tugger--buku" %>
+        <%= image_tag tug_item.image.variant(:carousel_sm), alt: "", class: "clearance-banner__prize" %>
+        <%= image_tag "shop/clearance/bean-pulling.webp", alt: "", class: "clearance-banner__tugger clearance-banner__tugger--bean" %>
+      </div>
+    <% end %>
+
+    <div class="clearance-banner__copy">
+      <p class="clearance-banner__eyebrow">
+        <%= live? ? "Clearance sale on now" : "Next clearance sale" %> · up to <%= top_percentage %>% off
+      </p>
+      <h2 class="clearance-banner__title"><%= sale_title %></h2>
+      <p class="clearance-banner__subtitle">
+        <%= quip %>
+        <%= "Discounts shrink with each order, so don't hold back!" if decaying? %>
+      </p>
+    </div>
+
+    <div class="clearance-banner__timer">
+      <% if countdown_to %>
+        <span class="clearance-banner__timer-label"><%= live? ? "Ends in" : "Starts in" %></span>
+        <span class="clearance-banner__timer-clock"
+              data-controller="countdown"
+              data-countdown-reset-at-value="<%= countdown_to.iso8601 %>"
+              data-countdown-seconds-value="true"
+              data-countdown-expired-text-value="<%= live? ? "Over!" : "Now!" %>"></span>
+      <% end %>
+      <% if show_cta? %>
+        <%= link_to "Shop the sale", helpers.shop_category_path(ShopCategory::SALE_SLUG), class: "clearance-banner__cta" %>
+      <% end %>
+    </div>
+  </div>
+
+</section>

@@ -19,8 +19,12 @@
     </h1>
     <p class="onboarding-complete__subtitle">
       <em><%= @setup_project.title %></em> is ready and waiting for you.
-      <br>You're in the running for free stickers and the
-      <%= link_to "GPU raffle", raffle_base_url, style: "color: inherit; text-decoration: underline;" %>.
+      <% if raffle_ended? %>
+        <br>You're in the running for free stickers.
+      <% else %>
+        <br>You're in the running for free stickers and the
+        <%= link_to "GPU raffle", raffle_base_url, style: "color: inherit; text-decoration: underline;" %>.
+      <% end %>
     </p>
 
     <%= render SpecialActionButtonComponent.new(

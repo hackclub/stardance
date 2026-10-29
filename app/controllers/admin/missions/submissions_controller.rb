@@ -64,12 +64,16 @@ module Admin
         scope = scope.where(mission_id: @mission.id) if @mission
 
         scope = apply_filters(scope)
-        @submissions = scope.order(Arel.sql("COALESCE(pending_at, created_at) ASC")).limit(100)
+        # Qualified because the search filter joins projects and posts, which
+        # have their own created_at.
+        @submissions = scope.order(
+          Arel.sql("COALESCE(mission_submissions.pending_at, mission_submissions.created_at) ASC")
+        ).limit(100)
       end
 
       def show
         authorize @submission
-        @reviewed_today = Mission::Submission.reviewed_today(current_user, mission: @mission)
+        @reviewed_today = Mission::Submission.reviewed_today(current_user)
         @project_review_history = Mission::Submission.review_history_for(
           @submission.ship_event&.post&.project, excluding: @submission
         )
@@ -124,7 +128,7 @@ module Admin
 
         notify_builder(new_status)
 
-        reviewed = Mission::Submission.reviewed_today(current_user, mission: @mission)
+        reviewed = Mission::Submission.reviewed_today(current_user)
         verdict = detached ? "Rejected and detached the project" : new_status.titleize
         redirect_to next_admin_mission_submissions_path(mission_slug),
                     notice: "#{verdict}. That's #{reviewed} reviewed today."

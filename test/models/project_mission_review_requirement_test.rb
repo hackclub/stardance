@@ -73,15 +73,16 @@ class ProjectMissionReviewRequirementTest < ActiveSupport::TestCase
     refute mission_review_requirement[:passed]
   end
 
-  test "a detached fixed-prize ship does not block the next ship on its missing payout" do
-    submission = ship_to_mission!(@project, @owner, @mission, status: "rejected")
-    submission.update!(payout_path: "static_prize")
+  test "a detached fixed-prize ship waits on its voting payout like any other ship" do
+    submission = ship_to_mission!(@project, @owner, @mission)
     submission.ship_event.update!(certification_status: "approved")
+    submission.update_columns(status: "rejected", payout_path: "static_prize")
 
     @project.detach_mission!
 
-    assert @project.shipping_requirements.find { |r| r[:key] == :payout }[:passed],
-      "a detached fixed-prize ship never enters the rating pool, so it can't wait on a payout forever"
+    assert submission.reload.deleted?
+    refute @project.shipping_requirements.find { |r| r[:key] == :payout }[:passed],
+      "a detached fixed-prize ship goes to voting, so the next ship waits on that payout"
   end
 
   test "a fixed-prize submission cannot skip the review gate" do

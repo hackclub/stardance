@@ -1,5 +1,9 @@
 emoji = ":stardance_star:"
-verdict = approved ? "approved" : "returned"
+verdict = if defined?(permanently_rejected) && permanently_rejected
+  "permanently rejected"
+else
+  approved ? "approved" : "returned"
+end
 
 owner_mention = owner_slack_id.present? ? "<@#{owner_slack_id}>" : "author"
 reviewer_mention = reviewer_slack_id.present? ? "<@#{reviewer_slack_id}>" : reviewer_name

@@ -1,0 +1,9 @@
+<% content_for :title, "justin & melena" %>
+
+<div class="admin-poll-results">
+  <h1>justin &amp; melena</h1>
+  <p>hi what up. we have a question</p>
+
+  <%= turbo_stream_from PollVote::STREAM %>
+  <%= render "poll_votes/results", tally: @tally %>
+</div>

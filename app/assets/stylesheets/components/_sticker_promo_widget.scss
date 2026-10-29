@@ -3,14 +3,13 @@
   text-align: center;
 
   &__image-wrap {
-    width: 90%;
+    width: 60%;
   }
 
   &__image {
     width: 100%;
     height: auto;
     display: block;
-    transform: translate(6%, -6%);
   }
 
   &__countdown {
@@ -32,5 +31,15 @@
     font-size: var(--font-size-m);
     color: var(--color-brand-cream);
     margin: 0;
+  }
+
+  &__claim {
+    background: var(--color-brand-yellow);
+    border-radius: 999px;
+    color: var(--color-space-bg);
+    font-size: var(--font-size-s);
+    font-weight: 800;
+    padding: 0.35rem 1rem;
+    text-decoration: none;
   }
 }

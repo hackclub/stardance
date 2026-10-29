@@ -29,6 +29,10 @@ class Projects::DevlogsController < ApplicationController
     current_user.with_advisory_lock("devlog_create", timeout_seconds: 10) do
       load_preview_time
       return redirect_to project_path(@project), alert: "Could not calculate your coding time. Please try again." unless @preview_time.present?
+      if current_user.aged_out? && @preview_seconds < 15.minutes
+        return redirect_to project_path(@project),
+                           alert: "Time coded after you turned 19 doesn't count, so there's no new time to devlog. You can still ship this project and spend your stardust."
+      end
 
       @devlog = Post::Devlog.new(devlog_params)
       @devlog.uploading_attachments = devlog_params[:attachments].present?
@@ -36,7 +40,8 @@ class Projects::DevlogsController < ApplicationController
       # Remember which hardware stage this time was logged in (nil for software)
       # so the ship payout basis can count build-phase time only.
       @devlog.phase = @project.hardware_stage
-      @devlog.hackatime_projects_key_snapshot = test_time_granted? ? "test" : @project.hackatime_keys.join(",")
+      @devlog.hackatime_project_names_snapshot = test_time_granted? ? [] : @project.hackatime_keys
+      @devlog.hackatime_projects_key_snapshot = "test" if test_time_granted?
 
       if @devlog.save
         Post.create!(project: @project, user: current_user, postable: @devlog)
@@ -53,7 +58,7 @@ class Projects::DevlogsController < ApplicationController
   end
 
   def preview_time
-    authorize @project, :create_devlog?
+    authorize @project, :preview_devlog_time?
     load_preview_time
     respond_to do |format|
       format.html { render partial: "projects/devlogs/preview_time", locals: { preview_time: @preview_time, preview_seconds: @preview_seconds, hardware: @project.hardware?, token_stale: @token_stale } }
@@ -88,6 +93,14 @@ class Projects::DevlogsController < ApplicationController
 
     if remaining_count + new_attachments.count > Post::Devlog::MAX_ATTACHMENTS
       flash.now[:alert] = "Your devlog can't have more than #{Post::Devlog::MAX_ATTACHMENTS} attachments."
+      return render :edit, status: :unprocessable_entity
+    end
+
+    # Reject bad uploads before purging anything they were meant to replace,
+    # otherwise a too-large file leaves the devlog with no attachments.
+    attachment_errors = new_attachment_errors(new_attachments)
+    if attachment_errors.any?
+      flash.now[:alert] = attachment_errors.to_sentence
       return render :edit, status: :unprocessable_entity
     end
 
@@ -239,6 +252,16 @@ class Projects::DevlogsController < ApplicationController
     params.require(:post_devlog).permit(:body, attachments: [])
   end
 
+  # Runs the model's attachment validations (size, type, processable) on an
+  # unsaved devlog so nothing is uploaded or attached.
+  def new_attachment_errors(files)
+    return [] if files.empty?
+
+    probe = Post::Devlog.new(attachments: files)
+    probe.validate
+    probe.errors.full_messages_for(:attachments)
+  end
+
   def load_preview_time
     @preview_seconds = 0
     @token_stale = false
@@ -248,7 +271,8 @@ class Projects::DevlogsController < ApplicationController
     return apply_test_time_preview if test_time_granted? && hackatime_keys.blank?
     return @preview_time = nil unless hackatime_keys.present?
 
-    seconds = @project.seconds_coded_in_devlog_window(current_user.hackatime_identity&.uid, access_token: current_user.hackatime_identity&.access_token)
+    seconds = @project.seconds_coded_in_devlog_window(current_user.hackatime_identity&.uid, access_token: current_user.hackatime_identity&.access_token,
+                                                     cutoff: current_user.time_logging_cutoff)
     return apply_test_time_preview if test_time_granted? && seconds.nil?
 
     if seconds.nil?

@@ -27,7 +27,19 @@ class Admin::ProjectPolicy < ApplicationPolicy
     user&.admin?
   end
 
+  def resync_hackatime?
+    user&.admin?
+  end
+
   def convert_to_software?
     user&.admin?
+  end
+
+  def block_shipping?
+    unblock_shipping? && !record.hardware? && !record.deleted?
+  end
+
+  def unblock_shipping?
+    user&.admin? || user&.super_admin?
   end
 end

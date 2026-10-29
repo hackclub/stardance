@@ -18,7 +18,7 @@ module User::Wallet
 
   def balance = ledger_entries.sum(:amount)
 
-  def total_earned = ledger_entries.where("amount > 0").sum(:amount)
+  def total_earned = ledger_entries.earnings.sum(:amount)
 
   def cached_balance = Rails.cache.fetch(balance_cache_key) { balance }
 

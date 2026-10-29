@@ -1,9 +1,14 @@
 /* Import page-specific styles */
 @use "pages/admin/dashboard";
+@use "components/poll_results";
 @use "pages/admin/rating_dashboard";
 @use "pages/admin/mega_dashboard";
+@use "pages/admin/hour_funnel";
+@use "pages/admin/finality";
+@use "pages/admin/finality_draw";
 @use "pages/admin/missions_edit";
 @use "pages/admin/ysws_reviews";
+@use "pages/admin/ysws_shortcuts";
 @use "pages/admin/integrity_reviews";
 @use "pages/admin/email_templates";
 @use "pages/admin/fraud_dashboard";
@@ -590,6 +595,10 @@ button.btn-danger {
   &.is-hidden {
     display: none;
   }
+}
+
+.searchable-select-muted {
+  color: var(--color-space-text-muted);
 }
 
 .searchable-select-avatar {

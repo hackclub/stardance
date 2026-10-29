@@ -155,6 +155,9 @@ class Post < ApplicationRecord
       project&.recalculate_duration_seconds!
     end
 
+    # Post owns devlog/ship indexing: the search document needs the post row
+    # (project, author), and Postable's touch: true re-runs this whenever the
+    # devlog or ship event is saved, so the postable doesn't enqueue its own.
     def enqueue_postable_semantic_search_index
       return unless %w[Post::Devlog Post::ShipEvent].include?(postable_type)
       return unless postable_id

@@ -7,7 +7,7 @@
      data-certification--queue-server-now-value="<%= Time.current.iso8601 %>">
   <div class="app-layout__main app-layout__main--wide ship-review">
     <%= link_to "← back to queue", admin_certification_ships_path, class: "ship-review__back" %>
-    <% if @ship.project.hardware? && Flipper.enabled?(:hardware_flow, current_user) %>
+    <% if @ship.project.hardware? %>
       <%= link_to "Open hardware review →",
             admin_certification_hardware_review_path(@ship.project),
             class: "ship-review__back ship-review__back--alt" %>

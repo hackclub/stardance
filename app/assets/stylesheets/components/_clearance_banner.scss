@@ -1,0 +1,253 @@
+// Shop-wide clearance banner: a scrolling strip of shouts, Buku and Bean in a
+// tug-of-war over a sale item, the sale's name, and a ticking countdown. The
+// --upcoming modifier is the between-sales teaser for the next one.
+
+.clearance-banner {
+  background: var(--color-set-2-bg);
+  border: 2px solid var(--color-brand-yellow);
+  border-radius: 16px;
+  color: var(--color-space-text);
+  position: relative;
+
+  // Inset pill inside the border, with the shouts fading in and out at the
+  // ends rather than being chopped off mid-word.
+  &__tape {
+    background: var(--color-red-400);
+    // The track is far wider than the strip; without this it stretches every
+    // ancestor (and the page) to its full width on narrow screens.
+    contain: inline-size;
+    border-radius: 10px;
+    margin: 6px 6px 0;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 6%,
+      black 94%,
+      transparent
+    );
+    overflow: hidden;
+    padding: 0.4rem 0;
+  }
+
+  &__tape-track {
+    animation: clearance-banner-marquee 30s linear infinite;
+    display: flex;
+    gap: 1.25rem;
+    width: max-content;
+  }
+
+  &__tape-item {
+    color: var(--color-brand-off-white);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+
+    // Small star between each shout.
+    &::after {
+      color: var(--color-brand-yellow);
+      content: "✦";
+      margin-left: 1.25rem;
+    }
+  }
+
+  // Buku (left) and Bean (right) each grip one side of the prize. The prize
+  // sits under their hands, and the whole group sways like a tug-of-war.
+  &__tug {
+    animation: clearance-banner-tug 2.4s ease-in-out infinite alternate;
+    height: 104px;
+    position: relative;
+    width: 250px;
+
+    @media (max-width: 1200px) {
+      zoom: 0.8;
+    }
+  }
+
+  &__tugger {
+    height: 100px;
+    position: absolute;
+    top: 0;
+    width: auto;
+    z-index: 1;
+
+    &--buku {
+      left: 0;
+    }
+
+    &--bean {
+      right: 0;
+    }
+  }
+
+  &__prize {
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.35));
+    height: 76px;
+    left: 50%;
+    object-fit: contain;
+    position: absolute;
+    top: 14px;
+    translate: -50% 0;
+    width: 96px;
+  }
+
+  &__body {
+    align-items: center;
+    display: grid;
+    gap: 1.5rem 2rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 1.25rem 2rem;
+
+    // Mid widths: the countdown drops under the copy so the copy keeps room.
+    @media (max-width: 1200px) {
+      gap: 1rem 1.5rem;
+      grid-template-columns: auto minmax(0, 1fr);
+      padding: 1.25rem 1.5rem;
+    }
+
+    @media (max-width: 800px) {
+      grid-template-columns: minmax(0, 1fr);
+      padding: 1.25rem 1rem;
+    }
+  }
+
+  &__copy {
+    min-width: 0;
+  }
+
+  &__eyebrow {
+    color: var(--color-red-450);
+    font-size: var(--font-size-s);
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    margin: 0 0 0.25rem;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    font-family: var(--font-family-text);
+    font-size: var(--font-h3);
+    font-weight: 900;
+    line-height: 1.05;
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+  }
+
+  &__subtitle {
+    font-size: var(--font-size-m);
+    margin: 0;
+    opacity: 0.9;
+
+    em {
+      color: var(--color-brand-yellow);
+      font-family: "Playfair Display", serif;
+      font-style: italic;
+      font-weight: 700;
+    }
+  }
+
+  // Sits on the copy's baseline, whether or not the CTA is shown.
+  &__timer {
+    align-items: flex-end;
+    align-self: end;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    @media (max-width: 1200px) {
+      align-items: center;
+      align-self: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      grid-column: 2;
+    }
+
+    @media (max-width: 800px) {
+      align-items: flex-start;
+      flex-direction: column;
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__timer-label {
+    font-size: var(--font-size-s);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    // Letter-spacing trails the last letter too; pull it back so the label's
+    // right edge lines up with the clock's.
+    margin-right: -0.08em;
+    opacity: 0.75;
+    text-transform: uppercase;
+  }
+
+  &__timer-clock {
+    color: var(--color-brand-yellow);
+    font-family: var(--font-family-text);
+    font-size: var(--font-size-xxxl);
+    font-variant-numeric: tabular-nums;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  &__cta {
+    background: var(--color-brand-yellow);
+    border-radius: 999px;
+    color: var(--color-space-bg);
+    font-weight: 800;
+    padding: 0.45rem 1.1rem;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    &:hover,
+    &:focus-visible {
+      filter: brightness(1.08);
+    }
+  }
+
+  &--upcoming {
+    border-style: dashed;
+
+    .clearance-banner__tape-track {
+      animation-duration: 60s;
+    }
+  }
+
+  // Hovering or focusing the banner pauses its looping motion.
+  &:hover &__tape-track,
+  &:hover &__tug,
+  &:focus-within &__tape-track,
+  &:focus-within &__tug {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__tape-track,
+    &__tug {
+      animation: none;
+    }
+  }
+}
+
+// Runs left-to-right.
+@keyframes clearance-banner-marquee {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes clearance-banner-tug {
+  from {
+    transform: translateX(-6px) rotate(-1.5deg);
+  }
+
+  to {
+    transform: translateX(6px) rotate(1.5deg);
+  }
+}

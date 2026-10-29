@@ -39,6 +39,10 @@ class ProjectPolicy < ApplicationPolicy
         (member? || user&.can_review?) && record.needs_changes?
     end
 
+    def bypass_recertification_cooldown?
+        user&.can_review? && !member?
+    end
+
     def request_mission_resubmission?
         (member? || user&.admin?) && record.last_ship_event&.mission_submission&.rejected?
     end
@@ -58,6 +62,12 @@ class ProjectPolicy < ApplicationPolicy
     # well, we shoudn't be doing this. but i think i goofed up a lil and authorize @devlog won't work without passing @project and Post::Devlog does not have @project
     def create_devlog?
         member?
+    end
+
+    # Read-only, and pundit_user is the admin while impersonating, so this lets
+    # an admin see the time the impersonated member's composer would log.
+    def preview_devlog_time?
+        member? || user&.admin?
     end
 
     def add_test_time?

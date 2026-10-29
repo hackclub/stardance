@@ -14,7 +14,6 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
 
   setup do
     travel_to FROZEN_NOW
-    Flipper.enable(:sticky_streaks)
     @user = create_user(slack_id: "U-rail-sticky", display_name: "railsticky", verified: true)
     @user.update!(onboarded_at: Time.current, has_gotten_free_stickers: true)
     @user.identities.create!(provider: "hackatime", uid: "ht-rail", access_token: "fake")
@@ -23,13 +22,56 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     sign_in @user
   end
 
-  teardown { Flipper.disable(:sticky_streaks) }
-
   test "the start control shows before the challenge is started" do
     get streak_home_discover_rail_path
 
     assert_response :success
     assert_select ".sticky-start__summary", "Sticky Streak"
+  end
+
+  test "a broken run offers the restart, warning what it would forfeit" do
+    today = @user.streak_today_date
+    streak = StickyStreak.create!(user: @user, started_on: today - 3)
+    [ 1, 2 ].each do |day|
+      StreakActivity.create!(user: @user, activity_date: streak.date_for(day),
+                             coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+    end
+    StickyStreakReward.create!(day_number: 1, shop_item: sticker)
+
+    get streak_home_discover_rail_path
+
+    assert_response :success
+    assert_select ".sticky-start__summary", "Restart your streak"
+    assert_select ".sticky-start__warning", /1 sticker to claim from your last run/
+  end
+
+  test "a finished run offers a second streak and never a restart" do
+    today = @user.streak_today_date
+    streak = StickyStreak.create!(user: @user, started_on: today - StickyStreak::LENGTH)
+    (1..StickyStreak::LENGTH).each do |day|
+      StreakActivity.create!(user: @user, activity_date: streak.date_for(day),
+                             coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+    end
+
+    get streak_home_discover_rail_path
+
+    assert_response :success
+    assert_select ".sticky-start__summary", "Start a second streak"
+    assert_select ".sticky-start__warning", count: 0
+  end
+
+  test "a live run offers no start control at all" do
+    today = @user.streak_today_date
+    streak = StickyStreak.create!(user: @user, started_on: today - 1)
+    # Day 1 has to be coded: a settled day with no time on it has already
+    # broken the run, which would offer the restart instead.
+    StreakActivity.create!(user: @user, activity_date: streak.date_for(1),
+                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
+
+    get streak_home_discover_rail_path
+
+    assert_response :success
+    assert_select ".sticky-start__summary", count: 0
   end
 
   test "a started challenge swaps stars for stickers and offers the claim" do
@@ -45,7 +87,8 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "a[href=?] .sticky-claim__day",
-                  shop_item_path(StickyStreakReward.find_by(day_number: 1).shop_item, sticky_streak_day: 1),
+                  shop_item_path(StickyStreakReward.find_by(day_number: 1).shop_item,
+                                 sticky_streak_day: 1, sticky_streak_id: streak.id),
                   "Claim day 1"
     assert_select ".streak-widget__toggle-badge", text: /1 sticker to claim/
 
@@ -57,23 +100,6 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select ".streak-calendar__grid .streak-mark--today", 1
     assert_select ".streak-widget__week .streak-mark__star", minimum: 1
     assert_select ".streak-calendar__grid .streak-mark__sticker--claimable"
-  end
-
-  test "the calendar keeps its plain stars while the challenge is switched off" do
-    Flipper.disable(:sticky_streaks)
-    today = @user.streak_today_date
-    StickyStreak.create!(user: @user, started_on: today)
-    StreakActivity.create!(user: @user, activity_date: today,
-                           coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
-    StickyStreakReward.create!(day_number: 1, shop_item: sticker)
-
-    get streak_home_discover_rail_path
-
-    assert_response :success
-    assert_select ".streak-mark__sticker", count: 0
-    assert_select ".sticky-claim", count: 0
-    assert_select ".sticky-start__summary", count: 0
-    assert_select ".streak-widget__week .streak-mark__star", minimum: 1
   end
 
   test "a broken run goes back to plain stars from the miss onwards" do
@@ -100,7 +126,7 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
 
   test "clicking a sticker opens the shared zoom dialog" do
     today = @user.streak_today_date
-    StickyStreak.create!(user: @user, started_on: today)
+    streak = StickyStreak.create!(user: @user, started_on: today)
     StreakActivity.create!(user: @user, activity_date: today,
                            coded_seconds: StreakActivity::DAILY_GOAL_SECONDS)
     item = sticker
@@ -112,7 +138,8 @@ class Home::DiscoverRailStreakTest < ActionDispatch::IntegrationTest
     assert_select "dialog.sticker-zoom", 1
     assert_select ".streak-widget__week [data-action='sticker-zoom#open'][data-sticker-zoom-name-param=?]",
                   item.name
-    assert_select "[data-sticker-zoom-claim-href-param=?]", shop_item_path(item, sticky_streak_day: 1)
+    assert_select "[data-sticker-zoom-claim-href-param=?]",
+                  shop_item_path(item, sticky_streak_day: 1, sticky_streak_id: streak.id)
     assert_select "[data-sticker-zoom-description-param=?]", item.description
     assert_select "dialog.sticker-zoom [data-sticker-zoom-target='description']", 1
   end

@@ -10,6 +10,11 @@
 #     schedule: at 5am every day
 
 production:
+  buku_x3_refresh:
+    class: BukuX3::RefreshJob
+    schedule: every minute
+    description: "Record the rocket goal transition and reconcile the open-ended buku event"
+
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
@@ -18,6 +23,17 @@ production:
     command: "User::DataExport.purge_expired!"
     schedule: every hour at minute 42
     description: "Delete user data exports and attached ZIPs after seven days"
+
+  refresh_ship_funnel:
+    class: ShipFunnelRefreshJob
+    args: [ { force: true } ]
+    schedule: every hour at minute 20
+    description: "Rebuild the ship funnel's cached numbers for the public /stats/ship_funnel page"
+
+  refresh_growth_model:
+    class: GrowthRefreshJob
+    schedule: every day at 6am UTC
+    description: "Record each user's active days and snapshot the growth model for /admin/growth"
 
   refresh_materialized_all_signups:
     class: RefreshMaterializedAllSignupsJob
@@ -98,11 +114,11 @@ production:
     concurrency: 1
     description: "Notify project owners nearing the per-devlog payout cap on un-devlogged time"
 
-  activity_daily_summary:
-    class: ActivityDailySummaryJob
-    schedule: every day at 10am America/New_York
-    concurrency: 1
-    description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
+  # activity_daily_summary:
+  #   class: ActivityDailySummaryJob
+  #   schedule: every day at 10am America/New_York
+  #   concurrency: 1
+  #   description: "Send daily activity summary to Slack with signups, active users, interactions, and virality"
 
   fraud_daily_summary:
     class: FraudDailySummaryJob
@@ -133,12 +149,6 @@ production:
     schedule: every Friday at 12pm Europe/London
     concurrency: 1
     description: "Calculate weekly fulfillment payouts (3 tickets per fulfilled order)"
-
-  fraud_calculate_payouts:
-    class: Fraud::CalculatePayoutsJob
-    schedule: "0 23 L * * America/New_York"
-    concurrency: 1
-    description: "Calculate monthly fraud squad payouts on the last day of the month at 11pm EST (bracket-based, max 1000 tickets)"
 
   support_vibecheck_est:
     class: SupportVibecheckJob
@@ -210,6 +220,12 @@ production:
     schedule: every 15 minutes
     concurrency: 1
     description: "Mirror Jelly support conversations locally for the mega dashboard"
+
+  rng_winner_notification:
+    class: RngWinnerNotificationJob
+    schedule: every day at 9am America/New_York
+    concurrency: 1
+    description: "Send a one-time notification to any user holding the RNG Winner achievement who hasn't been notified yet"
 
   flush_extension_usage:
     class: FlushExtensionUsageJob

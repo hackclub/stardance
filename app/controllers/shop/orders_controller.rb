@@ -6,7 +6,6 @@ class Shop::OrdersController < Shop::BaseController
                           .where(parent_order_id: nil)
                           .includes(accessory_orders: { shop_item: { image_attachment: :blob } }, shop_item: { image_attachment: :blob })
                           .order(id: :desc)
-    @sharable_order = find_sharable_order
   end
 
   def create
@@ -90,16 +89,26 @@ class Shop::OrdersController < Shop::BaseController
                    []
     end
 
-    item_price = @shop_item.price_for_user(current_user, region)
-    item_total = item_price * quantity
     accessories_total = @accessories.sum { |a| a.price_for_region(region) } * quantity
     modifiers_total = @modifiers.sum { |m| m.price_for_region(region) }
-    total_cost = item_total + accessories_total + modifiers_total
+    total_cost = nil
+    snagged_percentage = nil
 
     begin
       ActiveRecord::Base.transaction do
         current_user.lock!
-        @shop_item.lock! if @shop_item.limited?
+        # A decaying sale's price depends on how many have already sold, so
+        # serialise its purchases and only price the item once the lock is held.
+        @shop_item.lock! if @shop_item.limited? || @shop_item.sale_decays?
+
+        if @redeemable.nil? && sale_dropped_since_viewed?
+          redirect_to shop_item_path(@shop_item), alert: sale_dropped_message
+          return
+        end
+
+        item_price = @shop_item.price_for_user(current_user, region)
+        snagged_percentage = @shop_item.current_sale_percentage if @redeemable.nil? && @shop_item.on_sale?
+        total_cost = (item_price * quantity) + accessories_total + modifiers_total
 
         if @redeemable.nil?
           user_balance = current_user.balance
@@ -148,6 +157,7 @@ class Shop::OrdersController < Shop::BaseController
       end
 
       track_event "order_placed", { order_id: @order.id, shop_item_id: @shop_item.id, total_cost: total_cost }
+      flash[:celebrate] = true
       current_user.mark_shop_tutorial_completed! if tutorial_item?(@shop_item)
 
       if @shop_item.is_a?(ShopItem::TutorialNothing)
@@ -171,7 +181,8 @@ class Shop::OrdersController < Shop::BaseController
         return
       end
 
-      redirect_to shop_orders_path, notice: "Order placed successfully!"
+      notice = snagged_percentage ? "Snagged it at #{snagged_percentage}% off! Bean is thrilled." : "Order placed successfully!"
+      redirect_to shop_orders_path, notice: notice
     rescue ActiveRecord::RecordInvalid => e
       redirect_to shop_item_path(@shop_item), alert: "Failed to place order: #{e.record.errors.full_messages.join(', ')}"
     end
@@ -200,6 +211,22 @@ class Shop::OrdersController < Shop::BaseController
 
   private
 
+  # The buyer saw a bigger discount than they'd now get: another order shrank
+  # it, or the sale ended while the page was open.
+  def sale_dropped_since_viewed?
+    return false if params[:expected_sale_percentage].blank?
+
+    @shop_item.current_sale_percentage < params[:expected_sale_percentage].to_i
+  end
+
+  def sale_dropped_message
+    if @shop_item.on_sale?
+      "Someone just grabbed one, so the sale is now #{@shop_item.current_sale_percentage}% off. Check the new price and order again."
+    else
+      "This sale just ended, so it's back to full price. Check the price and order again."
+    end
+  end
+
   # The free-price accessor differs by gate; it must be set before save so the
   # price freezes to 0.
   def assign_redemption_gate(order, gate)
@@ -219,23 +246,13 @@ class Shop::OrdersController < Shop::BaseController
     end
   end
 
-  def find_sharable_order
-    return nil unless Flipper.enabled?(:sharable_purchase, current_user)
-
-    latest = @orders.worth_counting.first
-    return nil unless latest && latest.created_at > 10.minutes.ago
-    return nil if latest.shop_item.is_a?(ShopItem::TutorialNothing)
-
-    latest
-  end
-
   def fulfill_free_stickers!
     @shop_item.fulfill!(@order)
     @order.mark_stickers_received
     true
   rescue => e
     Rails.logger.error "Free stickers fulfillment failed: #{e.message}"
-    Sentry.capture_exception(e, extra: { order_id: @order.id, user_id: current_user.id })
+    Rails.error.report(e, context: { order_id: @order.id, user_id: current_user.id })
     redirect_to shop_orders_path, alert: "Order placed but fulfillment failed. We'll process it shortly."
     false
   end

@@ -15,7 +15,15 @@ class AdminPolicy < ApplicationPolicy
     user.admin?
   end
 
+  def manage_buku_event?
+    user&.admin?
+  end
+
   def access_jobs?
+    user.admin?
+  end
+
+  def sync_funding_requests_to_airtable?
     user.admin?
   end
 

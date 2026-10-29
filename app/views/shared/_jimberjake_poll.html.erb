@@ -1,0 +1,33 @@
+<% if current_user&.onboarded? && Flipper.enabled?(:"justin-melena", current_user) && !current_user.has_dismissed?(PollVote::DISMISS_THING) %>
+  <div data-controller="sticker-promo" data-sticker-promo-key-value="<%= PollVote::DISMISS_THING %>">
+    <dialog class="poll-popup" data-sticker-promo-target="dialog" data-action="cancel->sticker-promo#dismiss">
+      <div class="poll-popup__content">
+        <button type="button" class="poll-popup__close" data-action="click->sticker-promo#dismiss" aria-label="Close">&times;</button>
+
+        <h2 class="poll-popup__heading">hi what up. we have a question</h2>
+
+        <%= turbo_stream_from PollVote::STREAM %>
+        <div id="poll-popup-body" class="poll-popup__body">
+          <% if PollVote.exists?(user: current_user) %>
+            <%= render "poll_votes/results", tally: PollVote.tally %>
+          <% else %>
+            <%= form_with url: poll_votes_path, class: "poll-popup__options", data: { turbo: true } do %>
+              <% PollVote::CHOICES.each_with_index do |(choice, label), index| %>
+                <% if index.positive? %><span class="poll-popup__or">or</span><% end %>
+                <%= button_tag label, name: :choice, value: choice, class: "poll-popup__option poll-popup__option--#{choice}" %>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+
+        <div class="poll-popup__video">
+          <iframe src="https://www.youtube-nocookie.com/embed/<%= PollVote::YOUTUBE_ID %>"
+                  title="YouTube video"
+                  allow="encrypted-media; picture-in-picture; fullscreen"
+                  allowfullscreen
+                  loading="lazy"></iframe>
+        </div>
+      </div>
+    </dialog>
+  </div>
+<% end %>

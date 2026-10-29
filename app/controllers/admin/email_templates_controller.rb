@@ -2,7 +2,6 @@ module Admin
   class EmailTemplatesController < Admin::ApplicationController
     before_action :authorize_email_templates
     before_action :set_template, only: [ :destroy ]
-    before_action :require_week_2_release
 
     def index
       @templates = EmailTemplate.order(:name)
@@ -40,10 +39,6 @@ module Admin
 
     def authorize_email_templates
       authorize :admin, :access_email_templates?
-    end
-
-    def require_week_2_release
-      render_not_found unless Flipper.enabled?(:week_2_release)
     end
   end
 end

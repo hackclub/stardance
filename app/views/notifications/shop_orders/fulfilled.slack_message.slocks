@@ -9,23 +9,10 @@ section "Order Details:",
     mrkdwn_text("*Quantity:* #{order.quantity}"),
     mrkdwn_text("*Total:* :stardust: #{order.total_cost}"),
     mrkdwn_text("*Fulfilled by:* #{order.fulfilled_by}"),
-  ]
+    (mrkdwn_text("*Order reference:* #{order.order_reference}") if order.order_reference),
+  ].compact
 
-if order.tracking_number.present?
-  if order.tracking_number.start_with?("pkg!", "ltr!")
-    section "*Tracking:* <https://mail.hackclub.com/#{order.tracking_number}|#{order.tracking_number}>", markdown: true
-  elsif order.tracking_number.start_with?("http")
-    section "*Tracking:* <#{order.tracking_number}|Click to track>", markdown: true
-  else
-    section "*Tracking:* #{order.tracking_number}", markdown: true
-  end
-elsif order.external_ref.present?
-  if order.external_ref.start_with?("pkg!", "ltr!")
-    section "*Tracking:* <https://mail.hackclub.com/#{order.external_ref}|#{order.external_ref}>", markdown: true
-  else
-    section "*Tracking:* #{order.external_ref}", markdown: true
-  end
-end
+section "*Tracking:* #{order.tracking_link.to_slack_mrkdwn}", markdown: true if order.tracking_link
 
 divider
 

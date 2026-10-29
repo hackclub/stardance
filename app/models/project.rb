@@ -17,6 +17,7 @@
 #  project_type         :string
 #  readme_url           :text
 #  repo_url             :text
+#  ship_block_reason    :text
 #  ship_status          :string           default("draft")
 #  shipped_at           :datetime
 #  synced_at            :datetime
@@ -32,11 +33,11 @@
 # Indexes
 #
 #  index_projects_on_deleted_at            (deleted_at)
-#  index_projects_on_demo_url_trgm         (demo_url) USING gin
+#  index_projects_on_demo_url_trgm         (demo_url gin_trgm_ops) USING gin
 #  index_projects_on_marked_fire_by_id     (marked_fire_by_id)
 #  index_projects_on_nominated_fire_by_id  (nominated_fire_by_id)
-#  index_projects_on_repo_url_trgm         (repo_url) USING gin
-#  index_projects_on_title_trgm            (title) USING gin
+#  index_projects_on_repo_url_trgm         (repo_url gin_trgm_ops) USING gin
+#  index_projects_on_title_trgm            (title gin_trgm_ops) USING gin
 #
 # Foreign Keys
 #
@@ -47,6 +48,7 @@ require "net/http"
 
 class Project < ApplicationRecord
   include Project::HackatimeDevlogResync
+  include Project::ShipBlock
   include AASM
   include SoftDeletable
   include SemanticSearchIndexable
@@ -157,6 +159,7 @@ class Project < ApplicationRecord
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
   has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
   has_many :review_notes, class_name: "Certification::ReviewNote", dependent: :destroy
+  has_many :permanent_rejection_nominations, class_name: "Certification::PermanentRejectionNomination", dependent: :restrict_with_exception
   has_many :integrity_checks, through: :ship_events, source: :integrity_check
   has_many :skips, class_name: "Project::Skip", dependent: :destroy
   has_many :project_follows, dependent: :destroy
@@ -168,6 +171,7 @@ class Project < ApplicationRecord
   has_many :missions,                 through:    :mission_attachments
   has_many :mission_section_completions, class_name: "Mission::SectionCompletion",  dependent: :destroy
   has_many :mission_submissions,         class_name: "Mission::Submission",         through: :ship_events
+  has_many :mentions, class_name: "ProjectMention", dependent: :destroy
 
   def current_mission_attachment
     if mission_attachments.loaded?
@@ -215,22 +219,22 @@ class Project < ApplicationRecord
   # when the swap is allowed: draft projects switch freely, shipped projects
   # only move to a follow-up or back to a mission they shipped to. Otherwise
   # the attachment validations raise RecordInvalid.
-  def attach_mission!(mission)
+  def attach_mission!(mission, force: false)
     with_lock do
       current = current_mission_attachment
-      current.detach! if current && may_swap_mission_to?(mission)
+      current.detach!(force: force) if current && may_swap_mission_to?(mission)
       mission_attachments.create!(mission: mission, attached_at: Time.current)
     end
   end
 
   # Detaches the current mission and returns the fallback it re-attached,
   # if any — a shipped project never goes mission-less.
-  def detach_mission!
+  def detach_mission!(force: false)
     with_lock do
       attachment = current_mission_attachment
       next nil unless attachment
 
-      attachment.detach!
+      attachment.detach!(force: force)
       fallback = fallback_mission_after_detaching(attachment.mission)
       mission_attachments.create!(mission: fallback, attached_at: Time.current) if fallback
       fallback
@@ -517,6 +521,18 @@ class Project < ApplicationRecord
     certification_funding_requests.pending.exists?
   end
 
+  def hardware_review_pending?
+    hardware? && (has_pending_funding_request? || awaiting_ship_review?)
+  end
+
+  def permanently_rejected?
+    permanent_rejection_nominations.approved.exists?
+  end
+
+  def hardware_review_blocked?
+    permanent_rejection_nominations.blocking.exists?
+  end
+
   # True once any funding request has been submitted (pending, approved, or returned).
   def has_any_funding_request?
     return @_has_any_funding_request if defined?(@_has_any_funding_request)
@@ -563,7 +579,7 @@ class Project < ApplicationRecord
   # withdrawn ones carry no verdict, so both stay off the feed.
   def timeline_funding_requests
     certification_funding_requests
-      .where(status: [ :pending, :approved, :returned ])
+      .where(status: [ :pending, :approved, :returned, :permanently_rejected ])
       .order(created_at: :desc)
   end
 
@@ -600,8 +616,11 @@ class Project < ApplicationRecord
   # Deduplicated because every member of a hardware project gets their own
   # User::HackatimeProject row under the same name, and callers treat this as a
   # set: it's joined into the Airtable sync and the devlog key snapshot, and
-  # rendered as-is on the integrity dashboard.
+  # rendered as-is on the integrity dashboard. Uses the preloaded rows when the
+  # caller already loaded them (the home composer renders one chip per project).
   def hackatime_keys
+    return hackatime_projects.map(&:name).uniq if hackatime_projects.loaded?
+
     hackatime_projects.distinct.pluck(:name)
   end
 
@@ -617,21 +636,48 @@ class Project < ApplicationRecord
     (total_seconds / 3600.0).round(1)
   end
 
-  def seconds_coded_in_devlog_window(hackatime_uid, at: Time.current, access_token: nil)
-    HackatimeService.fetch_total_seconds_for_projects(
-      hackatime_uid,
-      hackatime_keys,
-      start_date: devlog_window_start(at).iso8601,
-      end_date: at.iso8601,
-      access_token: access_token
-    )
+  # Keys whose windows open at the same moment share one Hackatime call; a key
+  # linked after the last devlog has its own, earlier window.
+  # `cutoff` (User#time_logging_cutoff) closes every window early, so time
+  # coded after it never counts.
+  def seconds_coded_in_devlog_window(hackatime_uid, at: Time.current, access_token: nil, cutoff: nil)
+    window_end = [ at, cutoff ].compact.min
+    hackatime_keys.group_by { |key| devlog_window_start(at, key: key) }.sum do |window_start, keys|
+      next 0 if window_start >= window_end
+
+      seconds = HackatimeService.fetch_total_seconds_for_projects(
+        hackatime_uid,
+        keys,
+        start_date: window_start.iso8601,
+        end_date: window_end.iso8601,
+        access_token: access_token
+      )
+      return nil if seconds.nil?
+
+      seconds
+    end
   end
 
   # Where the current devlog window opened: the previous devlog, or for the
-  # first devlog the earlier of project creation and season start.
-  def devlog_window_start(at)
-    previous_devlog = devlogs.where("post_devlogs.created_at < ?", at).order("post_devlogs.created_at desc").first
+  # first devlog the earlier of project creation and season start. With a key,
+  # only devlogs that already counted that key close its window, so a Hackatime
+  # project linked after earlier devlogs still gets its earlier time (#775).
+  # Devlogs without a key list (test time, journal import) close every key's
+  # window, as before.
+  def devlog_window_start(at, key: nil)
+    previous_devlogs = devlogs.where("post_devlogs.created_at < ?", at).order("post_devlogs.created_at desc")
+    previous_devlog = if key
+      known_names = User::HackatimeProject.snapshot_candidates_for(id).distinct.pluck(:name)
+      previous_devlogs.find { |devlog| devlog_covers_key?(devlog, key, known_names: known_names) }
+    else
+      previous_devlogs.first
+    end
     previous_devlog&.created_at || [ created_at, Date.parse(HackatimeService::START_DATE).beginning_of_day ].min
+  end
+
+  # The earliest window any linked key is still open from.
+  def earliest_devlog_window_start(at)
+    hackatime_keys.map { |key| devlog_window_start(at, key: key) }.min || devlog_window_start(at)
   end
 
   aasm column: :ship_status do
@@ -666,7 +712,8 @@ class Project < ApplicationRecord
     end
 
     event :resubmit_for_review do
-      transitions from: :needs_changes, to: :submitted, guard: :links_complete?
+      transitions from: :needs_changes, to: :submitted,
+                  guard: -> { !ship_blocked? && links_complete? && !hardware_review_blocked? }
     end
 
     # A ship that was withdrawn rather than judged (see
@@ -700,11 +747,38 @@ class Project < ApplicationRecord
 
   LINK_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.fetch_values(:demo_url, :repo_url, :readme_url).flatten.freeze
 
+  SHIPPING_CLOSED_MESSAGE = "Stardance has ended, so new ships are closed.".freeze
+
+  def self.shipping_closed?(at = Time.current)
+    close_at = Rails.application.config.stardance_ships_close_at
+    close_at.present? && at >= close_at
+  end
+
   def shipping_requirements
     owner_vote_balance = memberships.owner.first&.user&.vote_balance.to_i
     votes_needed = [ -owner_vote_balance, 0 ].max
     mission_review = blocking_mission_submission
     [
+      {
+        key: :shipping_open,
+        label: "Ship before Stardance ends",
+        fail_label: SHIPPING_CLOSED_MESSAGE,
+        tooltip: "Ships close at the end of Saturday, October 31st (11:59 PM ET).",
+        passed: !Project.shipping_closed?
+      },
+      {
+        key: :not_ship_blocked,
+        label: "Your project must not be blocked from shipping",
+        tooltip: Project::ShipBlock::BLOCKED_MESSAGE,
+        passed: !ship_blocked?
+      },
+      {
+        key: :hardware_review_decision,
+        label: "Your project must be eligible for another review",
+        fail_label: permanently_rejected? ? "This project was permanently rejected" : "Your project is still under review",
+        tooltip: permanently_rejected? ? "This decision is final. This project cannot be submitted for funding or certification again. See the review explanation on this page." : "We'll let you know when a decision has been made.",
+        passed: !hardware_review_blocked?
+      },
       {
         key: :demo_url,
         label: "Add a demo link so anyone can try your project",
@@ -917,6 +991,19 @@ class Project < ApplicationRecord
     first_unmet_requirement(LINK_REQUIREMENT_KEYS)&.dig(:label)
   end
 
+  RECERTIFICATION_COOLDOWN_CAP_HOURS = 24
+
+  def recertification_available_at
+    requested_at = recertification_request_times
+    return nil if requested_at.empty?
+
+    hours = [ (requested_at.size**2) - 1, RECERTIFICATION_COOLDOWN_CAP_HOURS ].min
+    return nil if hours.zero?
+
+    available_at = requested_at.max + hours.hours
+    available_at if available_at.future?
+  end
+
   # The editable info fields (see FIELD_REQUIREMENT_MAP) that still have an
   # unmet requirement for the current stage — used to highlight what's left to
   # fill in on the form. Stage-aware like #stage_info_complete?, so a demo link
@@ -940,6 +1027,20 @@ class Project < ApplicationRecord
 
   def total_ship_hours
     ship_events.sum(&:hours).to_f
+  end
+
+  # Devlog hours a ship posted now would cover: everything since the last ship,
+  # capped per devlog the way Post::ShipEvent#hours caps it. Hardware design
+  # time is dropped as it is at payout; the funding cutoff isn't applied, so
+  # this can run high for a funded hardware build.
+  def unshipped_hours
+    scope = Post.where(project_id: id).of_devlogs(join: true).where(post_devlogs: { deleted_at: nil })
+    last_ship_at = Post.where(project_id: id).of_ship_events.maximum(:created_at)
+    scope = scope.where("posts.created_at > ?", last_ship_at) if last_ship_at
+    scope = scope.where("post_devlogs.phase IS DISTINCT FROM 'design'") if hardware?
+
+    cap = Post::ShipEvent::MAX_PAYOUT_SECONDS_PER_DEVLOG
+    scope.sum(Arel.sql("LEAST(post_devlogs.duration_seconds, #{cap})")).to_f / 1.hour
   end
 
   def fire?
@@ -1025,7 +1126,11 @@ class Project < ApplicationRecord
     crates.io
     curseforge.com
     makerworld.com
+    thingiverse.com
+    printables.com
     streamlit.app
+    figma.com
+    nexusmods.com
   ].freeze
 
   # Public so ProjectUrlProbeService and the controller can probe URLs.
@@ -1053,6 +1158,16 @@ class Project < ApplicationRecord
 
   private
 
+  # A devlog with no key list (test time, journal import) covers every key. A
+  # legacy CSV snapshot that can't be split unambiguously (#1426) falls back to
+  # matching the key as a comma-bounded run.
+  def devlog_covers_key?(devlog, key, known_names:)
+    names = devlog.hackatime_project_names(known_names: known_names)
+    return names.empty? || names.include?(key) unless names.nil?
+
+    ",#{devlog.hackatime_projects_key_snapshot},".include?(",#{key},")
+  end
+
   # Whether every shipping requirement in `keys` currently passes. Shared by
   # #info_complete? (all info keys) and #funding_info_complete? (info minus demo).
   def info_requirements_met?(keys)
@@ -1065,6 +1180,19 @@ class Project < ApplicationRecord
     shipping_requirements
       .select { |r| keys.include?(r[:key]) }
       .find { |r| !r[:passed] }
+  end
+
+  def recertification_request_times
+    attributed, unattributed = ship_reviews
+      .select(:id, :post_ship_event_id, :created_at, :returned_by_id, :status)
+      .order(:created_at, :id).to_a
+      .partition(&:post_ship_event_id)
+
+    openers_dropped = attributed.group_by(&:post_ship_event_id).flat_map { |_event_id, certs| certs.drop(1) }
+
+    (openers_dropped + unattributed)
+      .reject { |cert| cert.returned_by_id || cert.misfiled? || cert.withdrawn? }
+      .map(&:created_at)
   end
 
   def do_url_probe(url)
@@ -1085,11 +1213,7 @@ class Project < ApplicationRecord
     # a "previous ship awaiting payout" — it's the one currently being
     # (re-)certified, so it must not block re-certification.
     return true unless last_ship_event.certification_status == "approved"
-    # with_deleted so a fixed-prize ship whose mission was detached doesn't
-    # strand the project: Post::ShipEvent.voteable keeps that ship out of the
-    # rating pool either way, so no payout is ever coming for it.
-    sub = Mission::Submission.with_deleted.find_by(ship_event_id: last_ship_event.id)
-    return true if sub&.payout_path == "static_prize"
+    return true if last_ship_event.mission_submission&.payout_path == "static_prize"
     false
   end
 

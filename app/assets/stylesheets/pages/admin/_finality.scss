@@ -1,0 +1,76 @@
+.finality {
+  display: grid;
+  gap: var(--space-l);
+  margin: 0 auto;
+  max-width: 1400px;
+
+  &__back,
+  &__subtitle,
+  &__note,
+  &__tile-label {
+    color: var(--color-space-text-muted);
+  }
+
+  &__subtitle,
+  &__note {
+    margin: 0;
+  }
+
+  &__header {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    justify-content: space-between;
+  }
+
+  &__controls {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  // Scoped under .admin-content to outrank that sheet's generic button styling.
+  .admin-content &__action button,
+  .admin-content &__action input[type="submit"] {
+    background: none;
+    border: 1px solid var(--color-space-border);
+    border-radius: 999px;
+    color: var(--color-brand-cream);
+    min-height: 0;
+    padding: var(--space-xxs) var(--space-s);
+  }
+
+  &__tiles {
+    display: grid;
+    gap: var(--space-s);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  &__tile {
+    background: var(--color-set-2-bg);
+    border-radius: 8px;
+    display: grid;
+    gap: var(--space-xxs);
+    padding: var(--space-s);
+  }
+
+  &__tile-value {
+    color: var(--color-brand-mint);
+    font-size: var(--font-size-xl);
+    line-height: 1.1;
+  }
+
+  &__tile-label {
+    font-size: var(--font-size-s);
+  }
+
+  &__table {
+    margin: 0;
+
+    td {
+      white-space: nowrap;
+    }
+  }
+}

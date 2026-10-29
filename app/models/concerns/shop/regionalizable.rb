@@ -70,11 +70,11 @@ module Shop
     private
 
     def apply_sale_discount(price)
-      return price unless sale_percentage.present? && sale_percentage > 0 && sale_percentage <= 100
+      percentage = current_sale_percentage.to_i
+      return price unless percentage.between?(1, 100)
 
-      discount_multiplier = (100 - sale_percentage) / 100.0
-      discounted_price = price * discount_multiplier
-      discounted_price.ceil
+      # Multiply before dividing so 45% off 100 is exactly 55, not 55.000001 ceiled to 56.
+      (price * (100 - percentage)).fdiv(100).ceil
     end
 
     def self.country_to_region(country_code)

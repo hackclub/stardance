@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   include TimelinePostPreloading
 
-  discover_rail_widgets :certificate, :achievements, :upcoming_events, :feedback_promo,
+  discover_rail_widgets :clearance_sale, :certificate, :achievements, :upcoming_events, :feedback_promo,
                         context: -> { { profile_user: @user } }
 
   before_action :set_user
@@ -87,7 +87,7 @@ class UsersController < ApplicationController
 
   def profile_projects
     @user.projects
-         .includes(:users, banner_attachment: :blob, mission_attachments: { mission: { banner_attachment: :blob } })
+         .includes(:users, banner_attachment: :blob, mission_attachments: { mission: [ { banner_attachment: :blob }, { icon_attachment: :blob } ] })
          .order(created_at: :desc)
   end
 
@@ -98,6 +98,9 @@ class UsersController < ApplicationController
                 .where("projects.id IS NOT NULL OR posts.postable_type = ?", "Post::Repost")
                 .visible_to(current_user)
                 .where(user_id: @user.id)
+                # Super Star posts are authored by the admin who granted them;
+                # they belong on the project, not in that admin's own activity.
+                .where.not(postable_type: "Post::FireEvent")
                 .preload(:postable)
                 .order(created_at: :desc)
 
@@ -108,7 +111,10 @@ class UsersController < ApplicationController
     build_posts = -> {
       @pagy, posts = pagy(:offset, scope, limit: ACTIVITY_LIMIT)
       preload_timeline_postables(posts)
-      posts.select { |post| !post.repost? || post.visible_repost_original_for?(current_user) }
+      posts = posts.select { |post| !post.repost? || post.visible_repost_original_for?(current_user) }
+      @reposted_post_ids = reposted_post_ids_for(posts)
+      @liked_devlog_ids = liked_devlog_ids_for(posts)
+      posts
     }
 
     # Post::Devlog has its own default_scope (SoftDeletable), which the

@@ -10,29 +10,12 @@ module ShopHelper
   ITEMS_WITH_CONFIGURABLE_SOURCE_REGION = %w[
     ShopItem::HackClubberItem
     ShopItem::ThirdPartyDigital
+    ShopItem::ThirdPartyPhysical
     ShopItem::HQMailItem
   ].freeze
 
-  def should_show_customs_warning?(shop_item, address_country = nil)
-    return false unless shop_item.present?
-
-    if shop_item.source_region.present? && ITEMS_WITH_CONFIGURABLE_SOURCE_REGION.include?(shop_item.type)
-      return address_country.present? && !region_matches_country?(shop_item.source_region, address_country)
-    end
-
-    case shop_item.type
-    when "ShopItem::WarehouseItem", "ShopItem::ThirdPartyPhysical"
-      address_country.present? && address_country != "United States"
-    when "ShopItem::HQMailItem"
-      address_country.present? && address_country != "United States"
-    when "ShopItem::HackClubberItem"
-      true
-    when "ShopItem::Inkthreadable"
-      address_country.present? && address_country != "United Kingdom"
-    else
-      false
-    end
-  end
+  THIRD_PARTY_CUSTOMS_WARNING = "⚠️ This item is ordered from a third-party retailer and may ship from another country. " \
+    "Customs or import fees may apply and are the recipient's responsibility.".freeze
 
   def customs_warning_message(shop_item)
     if shop_item.source_region.present? && ITEMS_WITH_CONFIGURABLE_SOURCE_REGION.include?(shop_item.type)
@@ -49,6 +32,8 @@ module ShopHelper
       "⚠️ Origin unknown - Customs fees may apply depending on destination country. Check the description for more details."
     when "ShopItem::Inkthreadable"
       "⚠️ This item is shipped from the United Kingdom. Customs fees may apply if the destination country is not the United Kingdom."
+    when "ShopItem::ThirdPartyPhysical"
+      THIRD_PARTY_CUSTOMS_WARNING
     end
   end
 
@@ -72,6 +57,8 @@ module ShopHelper
       "uk_origin"
     when "ShopItem::HackClubberItem"
       "unknown_origin"
+    when "ShopItem::ThirdPartyPhysical"
+      "third_party"
     else
       "none"
     end
@@ -81,25 +68,21 @@ module ShopHelper
     shop_item.source_region if ITEMS_WITH_CONFIGURABLE_SOURCE_REGION.include?(shop_item.type)
   end
 
-  private
+  # Renders a tracking code as a link to where it can be tracked, or as plain
+  # text when it has nowhere to link (see TrackingLink.for's `universal`).
+  def tracking_link_tag(code_or_link, universal: true)
+    link = code_or_link.is_a?(TrackingLink) ? code_or_link : TrackingLink.for(code_or_link, universal: universal)
+    return if link.nil?
+    return link.label if link.url.nil?
 
-  def region_matches_country?(region_code, country_name)
-    region_config = Shop::Regionalizable::REGIONS[region_code]
-    return false unless region_config
-
-    country_codes = region_config[:countries]
-    region_name = region_config[:name]
-
-    country_name == region_name || country_codes.any? { |code| country_name_matches_code?(country_name, code) }
+    link_to link.label, link.url, target: "_blank", rel: "noopener noreferrer"
   end
+
+  private
 
   def country_name_from_code(code)
     return code unless code.present?
     country = ISO3166::Country.new(code)
     country ? (country.common_name.presence || country.iso_short_name) : code
-  end
-
-  def country_name_matches_code?(country_name, country_code)
-    country_name_from_code(country_code) == country_name
   end
 end

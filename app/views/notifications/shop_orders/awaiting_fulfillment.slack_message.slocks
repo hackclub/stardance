@@ -10,13 +10,7 @@ section "Order Details:",
     mrkdwn_text("*Total:* :stardust: #{order.total_cost}"),
   ]
 
-if order.tracking_number.present?
-  if order.tracking_number.start_with?("pkg!", "ltr!")
-    section "*Tracking:* <https://mail.hackclub.com/#{order.tracking_number}|#{order.tracking_number}>", markdown: true
-  else
-    section "*Tracking:* #{order.tracking_number}", markdown: true
-  end
-end
+section "*Tracking:* #{order.tracking_link.to_slack_mrkdwn}", markdown: true if order.tracking_link
 
 divider
 

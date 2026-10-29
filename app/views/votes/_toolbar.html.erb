@@ -27,7 +27,7 @@
           <span class="vote-page__info-count">
             <%= @ratings_needed.positive? ? "#{@ratings_needed} left" : "#{@banked_votes} / #{Vote::MAX_BANKED_VOTES}" %>
           </span>
-          <%= link_to "#", class: "vote-page__past-ratings" do %>
+          <%= link_to my_ratings_path, class: "vote-page__past-ratings" do %>
             Past ratings →
           <% end %>
         </div>

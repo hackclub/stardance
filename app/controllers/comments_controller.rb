@@ -32,7 +32,7 @@ class CommentsController < ApplicationController
 
   def set_commentable
     if params[:devlog_id].present?
-      @commentable = Post::Devlog.find(params[:devlog_id])
+      @commentable = Post::Devlog.visible_to(current_user).find(params[:devlog_id])
     else
       raise ActiveRecord::RecordNotFound, "Commentable not found"
     end

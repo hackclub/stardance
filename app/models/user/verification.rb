@@ -11,7 +11,9 @@ module User::Verification
   def ysws_eligible?
     return manual_ysws_override if manual_ysws_override.in?([ true, false ])
 
-    self[:ysws_eligible]
+    # HCA stops reporting ysws_eligible once someone turns 19, but projects they
+    # built before then still count.
+    self[:ysws_eligible] || aged_out?
   end
 
   def eligible_for_shop? = identity_verified? && ysws_eligible?
@@ -43,6 +45,11 @@ module User::Verification
     fatal_ineligible = status == "ineligible" && fatal_rejection
     ysws_eligible = payload["ysws_eligible"] == true
     attrs = { verification_status: status, ysws_eligible: ysws_eligible }
+    # Notice someone turning 19 here too, so their waiting orders aren't
+    # rejected when HCA drops ysws_eligible before they next sign in.
+    birthday = (Date.parse(payload["birthday"].to_s) rescue nil)
+    turned_19 = turned_19_on(birthday) if aged_out_on.nil?
+    attrs[:aged_out_on] = turned_19 if turned_19
     changed = attrs.any? { |key, value| self[key] != value }
 
     if changed

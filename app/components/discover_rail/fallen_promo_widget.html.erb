@@ -1,0 +1,33 @@
+<section class="fallen-promo"
+         aria-label="Fallen, a Hack Club YSWS"
+         data-controller="fallen-dust fallen-launch"
+         data-fallen-launch-url-value="<%= URL %>">
+  <link rel="preconnect" href="https://fallen.hackclub.com">
+  <canvas class="fallen-promo__dust" data-fallen-dust-target="canvas" aria-hidden="true"></canvas>
+
+  <%= link_to helpers.fallen_promo_path, class: "fallen-promo__card", data: { action: "fallen-launch#launch" } do %>
+    <%= image_tag "fallen/logo.svg", alt: "Hack Club Fallen", class: "fallen-promo__logo" %>
+    <p class="fallen-promo__date"><%= DATES %></p>
+
+    <div class="fallen-promo__nest" aria-hidden="true">
+      <% CHARACTERS.each do |slot, image| %>
+        <%= image_tag image, alt: "", class: "fallen-promo__character fallen-promo__character--#{slot}" %>
+      <% end %>
+    </div>
+
+    <p class="fallen-promo__tagline">Build a hardware project<br>for free, come to China.</p>
+  <% end %>
+
+  <template data-fallen-launch-target="takeover">
+    <div class="fallen-takeover" aria-hidden="true">
+      <div class="fallen-takeover__wash fallen-takeover__wash--gold"></div>
+      <div class="fallen-takeover__wash fallen-takeover__wash--night"></div>
+      <div class="fallen-takeover__sky"></div>
+      <div class="fallen-takeover__hero">
+        <%= image_tag "fallen/logo.svg", alt: "", class: "fallen-takeover__logo" %>
+        <p class="fallen-takeover__date"><%= DATES %></p>
+      </div>
+      <div class="fallen-takeover__dusk"></div>
+    </div>
+  </template>
+</section>

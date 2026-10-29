@@ -6,7 +6,6 @@ module Notifications
       HCB_GRANT_RESPONSE = { "id" => "test_grant_notify" }.freeze
 
       setup do
-        Flipper.enable(:hardware_flow)
         @owner = create_user(slack_id: "U_FRR_OWNER", display_name: "frr_owner", verified: true)
         @reviewer = create_user(slack_id: "U_FRR_REVIEWER", display_name: "frr_reviewer")
 

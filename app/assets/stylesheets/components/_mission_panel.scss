@@ -89,6 +89,17 @@
   padding: 4px 12px;
   border-radius: 999px;
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.mission-panel__review-lock {
+  margin: 0;
+  color: var(--color-space-text-muted);
+  font-size: var(--font-size-s);
 }
 
 .mission-panel__current-step {

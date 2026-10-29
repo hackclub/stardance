@@ -16,4 +16,25 @@ class HackatimeServiceTest < ActiveSupport::TestCase
     assert_nil HackatimeService.fetch_api_key("")
     assert_nil HackatimeService.fetch_api_key(nil)
   end
+
+  test "fetch_total_seconds_for_projects sends each project name as its own array element" do
+    query = nil
+    stubs = Faraday::Adapter::Test::Stubs.new do |stub|
+      stub.get(%r{/api/v1/users/HT1/stats}) do |env|
+        query = env.url.query
+        [ 200, { "Content-Type" => "application/json" }, { total_seconds: 2101 }.to_json ]
+      end
+    end
+    connection = Faraday.new(url: "#{HackatimeService::BASE_URL}/api/v1") { |conn| conn.adapter :test, stubs }
+
+    HackatimeService.stub(:connection, connection) do
+      assert_equal 2101, HackatimeService.fetch_total_seconds_for_projects("HT1", [ "my,project", "api" ])
+    end
+
+    assert_equal [ "my,project", "api" ], Rack::Utils.parse_nested_query(query)["filter_by_project"]
+  end
+
+  test "fetch_total_seconds_for_projects refuses a project named only a comma" do
+    assert_nil HackatimeService.fetch_total_seconds_for_projects("HT1", [ "," ])
+  end
 end

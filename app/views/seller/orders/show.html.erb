@@ -45,11 +45,16 @@
     </div>
   <% end %>
 
-  <% if o.external_ref.present? %>
+  <% if o.order_reference || o.tracking_link %>
     <div class="admin-section">
       <h2 class="admin-section__header">Fulfillment Info</h2>
       <div class="info-rows">
-        <div><b>Tracking/Reference:</b> <%= o.external_ref %></div>
+        <% if o.order_reference %>
+          <div><b>Order reference:</b> <%= o.order_reference %></div>
+        <% end %>
+        <% if (tracking = o.tracking_link) %>
+          <div><b>Tracking:</b> <%= tracking_link_tag(tracking) %></div>
+        <% end %>
         <% if o.fulfilled_by.present? %>
           <div><b>Fulfilled By:</b> <%= o.fulfilled_by %></div>
         <% end %>
@@ -61,7 +66,8 @@
     <div class="admin-section">
       <h2 class="admin-section__header">Mark as Fulfilled</h2>
       <%= form_with url: mark_fulfilled_seller_order_path(o), method: :post, local: true, class: "seller-portal__fulfill-form" do %>
-        <label>Tracking / Order #<input type="text" name="external_ref" placeholder="e.g. 1Z999AA10123456784" autocomplete="off" class="input-primary"></label>
+        <label>Supplier order #<input type="text" name="external_ref" placeholder="e.g. ORD-12345" autocomplete="off" class="input-primary"></label>
+        <label>Tracking (optional)<input type="text" name="tracking_number" placeholder="Tracking number or URL" autocomplete="off" class="input-primary"></label>
         <label>Fulfillment Cost (USD)<input type="number" name="fulfillment_cost" step="0.01" min="0" placeholder="0.00" autocomplete="off" class="input-primary"></label>
         <button type="submit" class="btn-primary" onclick="return confirm('Mark this order as fulfilled?')">✓ Mark Fulfilled</button>
       <% end %>

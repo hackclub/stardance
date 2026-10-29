@@ -4,6 +4,7 @@
 #
 #  id                               :bigint           not null, primary key
 #  age_attestation                  :string
+#  aged_out_on                      :date
 #  api_key                          :string
 #  approx_balance                   :integer          default(0), not null
 #  approx_total_earned              :integer          default(0), not null
@@ -61,9 +62,9 @@
 # Indexes
 #
 #  index_users_on_api_key                    (api_key) UNIQUE
-#  index_users_on_approx_balance             (approx_balance)
-#  index_users_on_approx_total_earned        (approx_total_earned)
-#  index_users_on_display_name_trgm          (display_name) USING gin
+#  index_users_on_approx_balance             (approx_balance DESC)
+#  index_users_on_approx_total_earned        (approx_total_earned DESC)
+#  index_users_on_display_name_trgm          (display_name gin_trgm_ops) USING gin
 #  index_users_on_email                      (email)
 #  index_users_on_guest_email                (guest_email)
 #  index_users_on_lower_display_name_unique  (lower((display_name)::text)) UNIQUE WHERE ((display_name IS NOT NULL) AND ((display_name)::text <> ''::text))

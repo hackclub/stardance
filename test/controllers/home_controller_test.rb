@@ -23,6 +23,59 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#home_feed[src=?]", home_feed_path
   end
 
+  teardown { Flipper.disable(Finality::RAFFLE_FEATURE_FLAG) }
+
+  test "raffle promo is hidden when its flag is disabled" do
+    Flipper.disable(Finality::RAFFLE_FEATURE_FLAG)
+    get home_path
+
+    assert_response :success
+    assert_select ".finality-promo", count: 0
+  end
+
+  test "enabled raffle promo sits below the fight and links to the dedicated page" do
+    Flipper.enable(Finality::RAFFLE_FEATURE_FLAG)
+    travel_to Finality.window.begin do
+      get home_path
+    end
+
+    assert_response :success
+    assert_select "turbo-frame#buku_x3_home_status + a.finality-promo[href=?]", finality_raffle_path
+    assert_select ".finality-promo img", count: 2
+    assert_select ".finality-raffle-page", count: 0
+  end
+
+  test "composer chips read hackatime keys from preloaded rows instead of one query per project" do
+    linked = 3.times.map do |i|
+      project = Project.create!(title: "Linked project #{i}")
+      project.memberships.create!(user: @user, role: :owner)
+      User::HackatimeProject.create!(user: @user, project: project, name: "linked-#{i}")
+      project
+    end
+    sign_in @user
+
+    assert_queries_match(/SELECT DISTINCT "user_hackatime_projects"\."name"/, count: 0) do
+      get home_path
+    end
+
+    assert_response :success
+    linked.each do |project|
+      assert_select ".feed-composer__chip[data-composer-hackatime-linked-param='true']", text: project.title
+    end
+    assert_select ".feed-composer__chip[data-composer-hackatime-linked-param='false']", text: @project.title
+  end
+
+  test "the ended GPU raffle no longer appears in the home rail, even for participants" do
+    @user.raffle_participant || Raffle::Participant.find_or_enroll!(@user)
+    sign_in @user
+
+    get home_path
+
+    assert_response :success
+    assert_select ".raffle-widget", count: 0
+    assert_select "a", text: /GPU Raffle/, count: 0
+  end
+
   test "for you candidate selection keeps authors and projects diverse" do
     posts = [
       Post.new(id: 1, user_id: 1, project_id: 1, postable_type: "Post::Devlog"),
@@ -38,7 +91,58 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ 1, 4, 5 ], selected.map(&:id)
   end
 
+  test "guests see team progress without a role hover or legacy rocket bar" do
+    Flipper.enable(:bukux2)
+    BukuX3::Assignment.stub(:buku?, ->(_) { flunk "guest must not receive a role" }) do
+      get home_path
+    end
+    assert_response :success
+    assert_select ".buku-x3-status [role='meter']", count: 1
+    assert_select ".buku-x3-status__toggle, .buku-x3-status__identity, .rocket-progress", count: 0
+  ensure
+    Flipper.disable(:bukux2)
+  end
+
+  test "ship prompt pops up for a builder with unshipped time and links to the ship flow" do
+    project = owned_project_with_devlog("Rocket Garden")
+    sign_in @user
+
+    get home_path
+
+    assert_response :success
+    assert_select "dialog.ship-prompt" do
+      assert_select "#ship-prompt-title", text: "Ship Rocket Garden!"
+      assert_select "a[href=?][data-action=?]", project_path(project, ship: 1), "dismissable#dismiss"
+    end
+  end
+
+  test "ship prompt stays away once dismissed today" do
+    owned_project_with_devlog("Rocket Garden")
+    sign_in @user
+    cookies["ship_prompt_#{Time.current.in_time_zone("America/New_York").to_date}"] = "1"
+
+    get home_path
+
+    assert_select "dialog.ship-prompt", 0
+  end
+
+  test "ship prompt stops once shipping has closed" do
+    owned_project_with_devlog("Rocket Garden")
+    sign_in @user
+
+    Project.stub(:shipping_closed?, true) { get home_path }
+
+    assert_select "dialog.ship-prompt", 0
+  end
+
   private
+
+  def owned_project_with_devlog(title)
+    project = Project.create!(title: title)
+    Project::Membership.create!(project: project, user: @user, role: :owner)
+    Post.create!(project: project, user: @user, postable: create_devlog(body: "work log"))
+    project
+  end
 
   def create_devlog(body:)
     devlog = Post::Devlog.new(body: body, duration_seconds: 1.hour)

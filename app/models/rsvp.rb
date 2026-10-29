@@ -50,7 +50,7 @@ class Rsvp < ApplicationRecord
   before_validation :downcase_email
   after_commit :deliver_signup_confirmation, on: :create
   after_commit :enqueue_geocode_job, on: :create
-  after_commit :increment_signup_counter, on: :create, if: -> { Flipper.enabled?(:new_onboarding) }
+  after_commit :increment_signup_counter, on: :create
 
   scope :ambassador_referrals, -> {
     where(arel_table[:ref].lower.matches("#{AMBASSADOR_REFERRAL_PREFIX}%"))

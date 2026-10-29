@@ -56,6 +56,7 @@ class CertificatesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to certificate_path
     assert @user.reload.certificate.approved?
+    assert @user.achievements.exists?(achievement_slug: "certificate_earned")
   end
 
   test "request with a custom name goes to review" do
@@ -72,6 +73,26 @@ class CertificatesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "My Real Name", certificate.name
     assert certificate.pending?
     assert_in_delta 31.0, certificate.hours_at_issue
+    assert_not @user.achievements.exists?(achievement_slug: "certificate_earned")
+  end
+
+  test "existing approved holders receive the achievement on the achievements page" do
+    certificate = @user.create_certificate!(name: "Existing Holder", hours_at_issue: 31)
+    certificate.update_column(:status, "approved")
+    Flipper.enable(:week_2_release)
+    sign_in @user
+
+    assert_difference -> { @user.achievements.where(achievement_slug: "certificate_earned").count }, 1 do
+      get my_achievements_path
+    end
+
+    assert_response :success
+    assert_select "#achievement-certificate_earned.achievements__card--earned", text: /Certified Stardancer/
+    assert_no_difference -> { @user.achievements.where(achievement_slug: "certificate_earned").count } do
+      get my_achievements_path
+    end
+  ensure
+    Flipper.disable(:week_2_release)
   end
 
   test "request without a certificate param falls back to the verified name" do

@@ -2,7 +2,7 @@ class MissionsController < ApplicationController
   before_action :set_body_class
   before_action :set_mission, only: [ :show, :guide, :gallery ]
   before_action -> { @active_nav_slug = "missions" }
-  discover_rail_widgets :certificate, :upcoming_events
+  discover_rail_widgets :clearance_sale, :certificate, :upcoming_events
 
   def search
     authorize Mission, :index?

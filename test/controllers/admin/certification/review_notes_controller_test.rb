@@ -2,8 +2,6 @@ require "test_helper"
 
 class Admin::Certification::ReviewNotesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:hardware_flow)
-
     @reviewer = create_user(slack_id: "U_RN_REV", display_name: "rn-reviewer")
     @reviewer.grant_role!(:admin)
 
@@ -12,8 +10,6 @@ class Admin::Certification::ReviewNotesControllerTest < ActionDispatch::Integrat
 
     sign_in @reviewer
   end
-
-  teardown { Flipper.disable(:hardware_flow) }
 
   test "a reviewer can add an internal note" do
     assert_difference -> { @project.review_notes.count }, 1 do

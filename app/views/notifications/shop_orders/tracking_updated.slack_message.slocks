@@ -1,0 +1,6 @@
+tracking = TrackingLink.for(tracking_number)
+track_it = tracking.url ? "<#{tracking.url}|here>" : "with #{tracking.to_slack_mrkdwn}"
+
+section "hi! your #{order.shop_item.name} from stardance is on the way! you can track it #{track_it} :)", markdown: true
+
+section "if there's any issues with anything please send a message in <#C0AP0NMSP3P> and you can show it off when it arrives in <#C07UMRYJ1LH>!", markdown: true

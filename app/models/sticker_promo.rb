@@ -7,8 +7,8 @@
 # the dismissal key, so appending automatically re-shows the popup to everyone
 # who dismissed the previous week.
 class StickerPromo
-  Week = Data.define(:number, :deadline, :label, :window_start) do
-    def initialize(number:, deadline:, label:, window_start: deadline - 7.days) = super
+  Week = Data.define(:number, :deadline, :label, :window_start, :shop_item_id) do
+    def initialize(number:, deadline:, label:, window_start: deadline - 7.days, shop_item_id: nil) = super
 
     def window = window_start...deadline
 
@@ -17,14 +17,18 @@ class StickerPromo
 
   # Deadlines are the machine cutoff and are set in UTC. Labels are the
   # human-readable copy shown in the popup. A week opens 7 days before its
-  # deadline unless window_start says otherwise.
+  # deadline unless window_start says otherwise. shop_item_id is the unlisted
+  # 0-stardust sticker item that shippers claim it from.
   WEEKS = [
     Week.new(number: 1, deadline: Time.new(2026, 6, 30, 4, 59, 0, "+00:00"), label: "NEXT MONDAY (29th June 2359 EST)"),
     # Opens where week 1 closes rather than a full 7 days back, so the two
     # weeks don't both claim the 24 hours they were originally live for.
     Week.new(number: 2, deadline: Time.new(2026, 7, 6, 4, 59, 0, "+00:00"), label: "THIS SUNDAY (July 5th, 11:59 PM EST)",
              window_start: Time.new(2026, 6, 30, 4, 59, 0, "+00:00")),
-    Week.new(number: 3, deadline: Time.new(2026, 7, 20, 4, 59, 0, "+00:00"), label: "THIS SUNDAY (July 19th, 11:59 PM EST)")
+    Week.new(number: 3, deadline: Time.new(2026, 7, 20, 4, 59, 0, "+00:00"), label: "THIS SUNDAY (July 19th, 11:59 PM EST)"),
+    # The final week runs Monday to Saturday, closing when Stardance ends.
+    Week.new(number: 4, deadline: Rails.application.config.stardance_ends_at, label: "THIS SATURDAY (October 31st, 11:59 PM ET)",
+             window_start: Time.find_zone!("America/New_York").local(2026, 10, 26), shop_item_id: 385)
   ].freeze
 
   CURRENT_WEEK = WEEKS.last
@@ -39,6 +43,8 @@ class StickerPromo
     def window_start = CURRENT_WEEK.window_start
 
     def deadline_iso = DEADLINE.iso8601
+
+    def shop_item_id = CURRENT_WEEK.shop_item_id
 
     # Week-scoped so each new DEADLINE is treated as a fresh, undismissed promo.
     def dismissal_key = "sticker_promo_#{DEADLINE.strftime('%Y_%m_%d')}"

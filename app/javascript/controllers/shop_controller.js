@@ -164,6 +164,12 @@ export default class extends Controller {
       });
     }
 
+    // Clearance items always lead; the sort is stable, so the chosen order
+    // still holds within the sale and non-sale groups.
+    const onSale = (item) =>
+      item.classList.contains("shop-item-card--on-sale") ? 1 : 0;
+    items.sort((a, b) => onSale(b) - onSale(a));
+
     items.forEach((item) => itemsContainer.appendChild(item));
   }
 

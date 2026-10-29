@@ -22,6 +22,10 @@
         </span>
       </div>
       <div class="ship-queue__header-actions">
+        <% if current_user.admin? %>
+          <%= link_to "Permanent reject nominations", admin_certification_permanent_rejection_nominations_path,
+                class: "action-btn action-btn--small action-btn--secondary" %>
+        <% end %>
         <button type="button" class="action-btn action-btn--large action-btn--secondary"
                 onclick="document.getElementById('hardware-my-stats').showModal()">
           My Stats
@@ -159,7 +163,15 @@
                     <% end %>
                   </div>
                 </td>
-                <td><%= item[:owner]&.display_name || "—" %></td>
+                <td>
+                  <% if item[:owner] %>
+                    <span class="hardware-queue__submitter">
+                      <%= render "shared/username_link", user: item[:owner], link_class: nil %>
+                    </span>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
                 <td class="hardware-queue__cell-ask">
                   <%= render "admin/certification/hardware_reviews/queue_ask", item: item, design: design %>
                 </td>
@@ -178,10 +190,11 @@
       <div class="ship-queue__cards">
         <% @review_items.each do |item| %>
           <% wait_days = ((Time.current - item[:submitted_at]) / 1.day).floor %>
-          <%= link_to hardware_review_path(item[:project]), class: "ship-queue__card" do %>
+          <div class="ship-queue__card hardware-queue__card">
             <div class="ship-queue__card-top">
               <span class="ship-queue__project-title">
-                <%= item[:project].title %>
+                <%= link_to item[:project].title, hardware_review_path(item[:project]),
+                      class: "ship-queue__project-title ship-queue__row-link" %>
                 <%= render "admin/certification/hardware_reviews/hackpad_tag", project: item[:project], hackpad_project_ids: @hackpad_project_ids %>
               </span>
               <span class="status-pill status-pill--<%= item[:record].status %>"><%= item[:record].status.capitalize %></span>
@@ -189,11 +202,17 @@
             <div class="ship-queue__project-meta">
               <%= render "admin/certification/hardware_reviews/queue_ask", item: item, design: design %>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
-              <span>by <%= item[:owner]&.display_name || "—" %></span>
+              <span class="hardware-queue__submitter">by
+                <% if item[:owner] %>
+                  <%= render "shared/username_link", user: item[:owner], link_class: nil %>
+                <% else %>
+                  —
+                <% end %>
+              </span>
               <span class="ship-queue__dot" aria-hidden="true">·</span>
               <span class="ship-queue__wait-badge <%= "is-negative" if wait_days >= @stats[:sla_days] %>"><%= wait_days %>d</span>
             </div>
-          <% end %>
+          </div>
         <% end %>
       </div>
 

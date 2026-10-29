@@ -97,7 +97,7 @@ class InsightsBuffer
     ActiveInsights::Request.insert_all(records)
   rescue => e
     Rails.logger.error("[InsightsBuffer] Failed to batch insert requests: #{e.message}")
-    Sentry.capture_exception(e) if defined?(Sentry)
+    Rails.error.report(e)
   end
 
   def insert_jobs(records)
@@ -116,6 +116,6 @@ class InsightsBuffer
     ActiveInsights::Job.insert_all(records)
   rescue => e
     Rails.logger.error("[InsightsBuffer] Failed to batch insert jobs: #{e.message}")
-    Sentry.capture_exception(e) if defined?(Sentry)
+    Rails.error.report(e)
   end
 end

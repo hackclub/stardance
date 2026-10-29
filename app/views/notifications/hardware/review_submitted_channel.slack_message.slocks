@@ -1,5 +1,5 @@
 owner_mention = owner_slack_id.present? ? "<@#{owner_slack_id}>" : owner_name
 
-section "*new #{submission_type} submission!* *<#{project_url}|#{project_title}>* by #{owner_mention} :yay:", markdown: true
+section ":stardance: *new #{submission_type} submission!!* *<#{project_url}|#{project_title}>* by #{owner_mention} :yay:", markdown: true
 
 section "*github repo:* <#{repo_url}|#{repo_url}>", markdown: true if repo_url.present?

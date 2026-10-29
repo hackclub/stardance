@@ -35,7 +35,7 @@
     <% end %>
 
     <% if on_sale %>
-      <span class="shop-item-card__sale-badge"><%= sale_percentage %>% OFF</span>
+      <span class="shop-item-card__sale-badge<%= ' shop-item-card__sale-badge--below-ribbon' if purchase_count || is_new %>"><%= sale_percentage %>% OFF</span>
     <% end %>
 
     <% if show_stock_indicator? %>
@@ -44,7 +44,15 @@
       </span>
     <% end %>
 
-    <% if time_ago_text %>
+    <% if on_sale && sale_ends_at %>
+      <span class="shop-item-card__time-ago shop-item-card__time-ago--sale">
+        Ends in
+        <span data-controller="countdown"
+              data-countdown-reset-at-value="<%= sale_ends_at.iso8601 %>"
+              data-countdown-seconds-value="true"
+              data-countdown-expired-text-value="no time"></span>
+      </span>
+    <% elsif time_ago_text %>
       <span class="shop-item-card__time-ago">Added <%= time_ago_text %></span>
     <% end %>
   <% end %>
@@ -76,13 +84,13 @@
               data-tooltip-message-value="Stardust payout varies based on how your project is rated, so your actual hours may be higher or lower than this estimate."
               data-tooltip-position-value="top"><%= hours %> hours</span>
       <% end %>
-      <% if on_sale && original_price %>
-        <span class="shop-item-card__price shop-item-card__price--strike">
-          <%= helpers.stardust_icon %>
-          <span class="shop-item-card__original-price"><%= number_to_currency(original_price, precision: 0).delete('$') %></span>
-        </span>
-      <% end %>
     </div>
+
+    <% if on_sale && next_sale_percentage %>
+      <p class="shop-item-card__sale-next">Grab it before it slips to <%= next_sale_percentage %>% off</p>
+    <% elsif on_sale && sale_decays %>
+      <p class="shop-item-card__sale-next">Rock bottom. It won't get any cheaper.</p>
+    <% end %>
 
     <% case cta_mode %>
     <% when :tutorial_buy %>
@@ -117,7 +125,16 @@
             class: "shop-item-card__order-cta",
             disabled: !can_buy,
             data: can_buy ? { turbo_frame: "_top" } : {}
-          ) %>
+          ) do %>
+        <span class="action-btn__label">
+          <% if on_sale && original_price %>
+            <span class="shop-item-card__sr-only">Was</span>
+            <s class="shop-item-card__was-price"><%= number_to_currency(original_price, precision: 0).delete("$") %></s>
+            <span class="shop-item-card__sr-only">now</span>
+          <% end %>
+          <%= cta_price_label %>
+        </span>
+      <% end %>
     <% end %>
   </div>
 </div>

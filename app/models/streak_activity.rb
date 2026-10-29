@@ -28,7 +28,7 @@ class StreakActivity < ApplicationRecord
 
   # The months the streak calendar can page through, program start to end.
   CALENDAR_FIRST_MONTH = Date.new(2026, 6, 1)
-  CALENDAR_LAST_MONTH = Date.new(2026, 9, 1)
+  CALENDAR_LAST_MONTH = Date.new(2026, 10, 1)
 
   belongs_to :user
   belongs_to :manual_credit_by, class_name: "User", optional: true

@@ -46,8 +46,23 @@
     transition: opacity 0.15s ease;
   }
 
+  // The button renders both the outline and filled heart so the liked state can
+  // be toggled instantly client-side (no icon swap round-trip). CSS decides
+  // which one is visible.
+  &__icon--fill {
+    display: none;
+  }
+
   &__btn--liked &__icon {
     opacity: 1;
+  }
+
+  &__btn--liked &__icon--outline {
+    display: none;
+  }
+
+  &__btn--liked &__icon--fill {
+    display: inline-block;
   }
 
   &__btn--animate &__icon {

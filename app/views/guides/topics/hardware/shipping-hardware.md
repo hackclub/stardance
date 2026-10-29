@@ -58,7 +58,56 @@ One snippet you can add to your project is this. It adds a PCB button to your RE
 
 [![View PCB on KiCanvas](https://hack.club/pcb-badge)](https://kicanvas.org/?repo=https://github.com/hackclub/orpheus-pico)
 
-## 5. Submit!
+## 5. Double check the requirements!
+
+HOLD ON! Right before you actually submit, you should double check your project actually follows all the requirements! Make sure you tick off each of the following:
+
+### Your project is actually complete:
+
+- [x] It has a complete CAD assembly, with all components (including electronics!)
+- [x] You have firmware present, even if it's untested
+- [x] You have asked for feedback from other people about your design
+
+### Your GitHub repository contains all of your files:
+
+- [x] a BOM, in CSV format in the root directory, WITH LINKS AND PRICES IN USD. You must include ALL items (including shipping)
+- [x] the source files for your PCB, if you have one (.kicad_pro, .kicad_sch, gerbers.zip, etc)
+- [x] A .STEP file of your project's 3D CAD model (and ideally the source design file format as well - .f3d, .FCStd, etc)
+- [x] ANY other files that are part of your project (firmware, libraries, references, etc)
+
+_if you're missing a .STEP file with all of your electronics and CAD, your project will not be approved. .blend files are allowed_
+
+### Your README.md is actually finished and has:
+
+- [x] A short description of what your project is
+- [x] A couple sentences on how it would be used
+- [x] A couple sentences on why you made the project
+
+Pictures of your project:
+
+- [x] A screenshot of a full 3D model with your project
+- [x] A screenshot of your PCB, if you have one
+- [x] A wiring diagram, if you're doing any wiring that isn't on a PCB
+
+### And lastly, you do _not_ have:
+
+- [ ] AI Generated READMEs
+- [ ] Work that is not your own / copied from tutorials or other projects
+- [ ] missing firmware/software
+
+### Note on builds:
+
+If you have a build, you also need the following:
+
+- [x] a public facing demo video of your build. Google drive / Mega / etc links DO NOT COUNT. I recommend YouTube or Reddit!
+- [x] devlogs of your physical build in real life
+- [x] an image of your built project in your README.md
+
+---
+
+We know it's a lot! It's really important that you go through each item so that your project is shipped and high quality.
+
+## 6. Submit!
 
 Once you're done with your project, you're ready to submit it!
 

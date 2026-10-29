@@ -1,0 +1,75 @@
+.poll-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  width: 100%;
+  font-family: var(--font-family-text);
+
+  &__label {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+    margin-bottom: var(--space-xs);
+    font-weight: 700;
+  }
+
+  &__bar {
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 0.875rem;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+
+    &::-webkit-progress-bar {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    &::-webkit-progress-value {
+      background: var(--poll-results-color);
+      transition: width 300ms ease;
+    }
+
+    &::-moz-progress-bar {
+      background: var(--poll-results-color);
+    }
+
+    &--justin {
+      --poll-results-color: var(--color-brand-lilac);
+    }
+
+    &--melena {
+      --poll-results-color: var(--color-brand-yellow);
+    }
+  }
+
+  &__total {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    font-size: var(--font-size-s);
+    opacity: 0.8;
+  }
+
+  &__tagline {
+    margin-left: auto;
+    font-style: italic;
+  }
+
+  &__live-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--color-brand-salmon);
+    animation: poll-results-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes poll-results-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}

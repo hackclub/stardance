@@ -2,7 +2,6 @@ require "test_helper"
 
 class ProjectsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    Flipper.enable(:hardware_flow)
     @owner = User.create!(slack_id: "U_PROJECT_OWNER", display_name: "owner", email: "owner@example.test")
     @owner.identities.create!(provider: "hack_club", uid: "hca_project_owner", access_token: "fake-token-project-owner")
     @viewer = User.create!(slack_id: "U_PROJECT_VIEWER", display_name: "viewer", email: "viewer@example.test")
@@ -83,6 +82,43 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form.project-show--editing", 0
     assert_select ".project-show__title", text: "Forest Odyssey"
+  end
+
+  test "the ship link sends signed-out visitors to sign in and back" do
+    get project_path(@project, ship: 1)
+
+    assert_redirected_to root_path
+    assert_equal project_path(@project, ship: 1), session[:return_to]
+  end
+
+  test "the ship link doesn't open the ship flow for non-members" do
+    sign_in @viewer
+
+    get project_path(@project, ship: 1)
+
+    assert_response :success
+    assert_select "[data-controller='open-dialog']", 0
+  end
+
+  test "the ship link lists what's missing when the project can't ship yet" do
+    sign_in @owner
+
+    get project_path(@project, ship: 1)
+
+    assert_response :success
+    assert_select "[data-controller='open-dialog']", 0
+    assert_select "dialog.ship-prompt" do
+      assert_select "li", text: "Link Hackatime so your time is tracked"
+      assert_select "li", text: "Add a demo link so anyone can try your project"
+    end
+  end
+
+  test "projects without the ship link don't show the missing list" do
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_select "dialog.ship-prompt", 0
   end
 
   test "owner of empty project sees the onboarding welcome prompting a Hackatime link" do
@@ -382,32 +418,6 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button", text: /Record a timelapse/, count: 0
   end
 
-  test "software ship feedback renders as prose, not an action-item checklist" do
-    Flipper.enable(:week_1_release)
-    @project.update!(ship_status: "submitted")
-    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- rework the CSS")
-    sign_in @owner
-
-    get project_path(@project)
-
-    assert_response :success
-    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items", 0
-    assert_select ".ship-decision-card__feedback-body", text: /rework the CSS/
-  end
-
-  test "hardware ship feedback renders reviewer action items as a checklist" do
-    Flipper.enable(:week_1_release)
-    Flipper.enable(:hardware_action_items)
-    @project.update!(hardware_stage: "build", ship_status: "submitted")
-    @project.ship_reviews.create!(status: :returned, reviewer: certifier, feedback: "not ready\n- add a BOM")
-    sign_in @owner
-
-    get project_path(@project)
-
-    assert_response :success
-    assert_select ".ship-decision-card__feedback-body ul.review-feedback__items li", text: "add a BOM"
-  end
-
   test "the fund-request submit explains itself instead of a dead button" do
     @project.update!(hardware_stage: "design")
     sign_in @owner
@@ -438,7 +448,31 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a.project-show__pill--review", 0
   end
 
+  test "an earlier ship keeps its rating reasons after the project ships again" do
+    Flipper.enable(:ship_event_payouts)
+    first_ship = create_ship_with_locked_ratings(locked_at: 3.weeks.ago, payout: 120)
+    second_ship = create_ship_with_locked_ratings(locked_at: 1.hour.ago)
+    sign_in @owner
+
+    get project_path(@project)
+
+    assert_response :success
+    assert_select "dialog#payout-review-modal-#{first_ship.id}"
+    assert_select "dialog#payout-review-modal-#{second_ship.id}"
+    assert_select "button", text: "View rating reasons →", count: 1
+    assert_select "button", text: "Review payout →", count: 1
+  ensure
+    Flipper.disable(:ship_event_payouts)
+  end
+
   private
+
+  def create_ship_with_locked_ratings(locked_at:, payout: nil)
+    ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true, certification_status: "approved", hours_at_ship: 1)
+    Post.create!(project: @project, user: @owner, postable: ship_event)
+    ship_event.update_columns(payout_basis_locked_at: locked_at, payout: payout)
+    ship_event
+  end
 
   def certifier
     @certifier ||= begin

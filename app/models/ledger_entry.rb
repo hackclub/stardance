@@ -36,6 +36,13 @@ class LedgerEntry < ApplicationRecord
     "other" => { label: "Other", types: [] }
   }.freeze
 
+  # Positive entries on these hand back stardust the user spent (shop order
+  # refunds, accepted shop suggestion fee refunds) rather than earn new
+  # stardust, so they don't count towards the all-time leaderboard.
+  REFUND_LEDGERABLE_TYPES = %w[ShopOrder ShopSuggestion].freeze
+
+  scope :earnings, -> { where("ledger_entries.amount > 0").where.not(ledgerable_type: REFUND_LEDGERABLE_TYPES) }
+
   belongs_to :ledgerable, polymorphic: true
   belongs_to :user
 
@@ -92,7 +99,7 @@ class LedgerEntry < ApplicationRecord
   def notify_balance_change
     source = case ledgerable_type
     when "ShopOrder" then "shop purchase"
-    when "Post::ShipEvent" then "ship event payout"
+    when "Post::ShipEvent" then created_by == Finality::BONUS_CREATED_BY ? "finality bonus" : "ship event payout"
     when "User" then "user grant"
     when "User::Achievement" then "achievement: #{ledgerable.achievement.name}"
     when "FulfillmentPayoutLine" then "fulfillment payout"

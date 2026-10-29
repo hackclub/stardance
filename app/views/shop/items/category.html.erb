@@ -1,4 +1,5 @@
 <% content_for :title, @category_title %>
+<% content_for :head, render("shop/items/view_transition") %>
 
 <div class="shop-category"
      data-controller="shop"
@@ -11,6 +12,10 @@
   </header>
 
   <% if @shop_open %>
+    <% if @clearance_sale_enabled %>
+      <%= render ShopClearanceBannerComponent.new(items: @available_shop_items, show_cta: @slug != ShopCategory::SALE_SLUG, class: "shop-category__clearance") %>
+    <% end %>
+
     <% if current_user&.admin? %>
       <div class="admin-banner">
         <div class="admin-banner__content">

@@ -1,5 +1,9 @@
 class Admin::Certification::YswsController < Admin::Certification::ApplicationController
   FILTER_SESSION_KEY = :admin_ysws_review_filters
+  MAX_FLOW_SKIP_IDS = 100
+  FLOW_STEP_LIMIT = 100
+
+  helper_method :ysws_review_flow_enabled?, :flow_mode?, :flow_params, :flow_step, :flow_step_limit
 
   def index
     authorize ::Certification::Ysws
@@ -32,18 +36,14 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @project_type   = filters["project_type"].presence
     @sort           = filters["sort"].presence_in(%w[length todo age ai])
     @dir            = filters["dir"] == "asc" ? "asc" : "desc"
-    @with_integrity = filters["with_integrity"] != "0"
 
     @search = params[:search].to_s.strip
 
     # Every pending review, whatever its integrity state: the GOI goes first, and
     # integrity waits on it (Certification::Integrity.past_goi).
-    queue = ::Certification::Ysws.pending.unclaimed_or_claimed_by(current_user)
+    queue = ::Certification::Ysws.software_only.reviewable.pending.unclaimed_or_claimed_by(current_user)
 
-    software_counts = queue.joins(:project).where(projects: { hardware_stage: nil }).group("projects.project_type").count
-    hardware_count = queue.joins(:project).where.not(projects: { hardware_stage: nil }).count
-    software_counts.delete("Hardware")
-    @type_counts = software_counts.merge("Hardware" => hardware_count).reject { |_k, v| v.zero? }
+    @type_counts = queue.group("projects.project_type").count
 
     scope =
       if @search.present?
@@ -70,13 +70,6 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       @reviews.sort_by! { |review| Float(review.mac_analysis&.core_signals&.dig("ai_coding_pct"), exception: false) || -1 }
       @reviews.reverse! if @dir == "desc"
     end
-
-    if !turbo_frame_request? &&
-       Flipper.enabled?(:devlog_review_pace, current_user) &&
-       !Flipper.enabled?(:reviewer_progress_panel, current_user)
-      @devlog_pace  = ::Certification::Ysws.reviewer_devlog_pace(current_user.id)
-      @project_pace = ::Certification::Ysws.reviewer_project_pace(current_user.id)
-    end
   end
 
   def show
@@ -89,6 +82,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       redirect_to admin_certification_ysws_reviews_path, alert: "Review ##{@review.id} has no associated project."
       return
     end
+    @flow_mode = flow_mode?
 
     # Claim this review for the current admin so it drops off everyone else's
     # queue. Already-decided reviews (reached via "prior reviews" history
@@ -144,9 +138,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       @contribution_data = ::Certification::YswsService.fetch_contributions(platform, username)
     end
 
-    # The MAC pre-screen is flagged per reviewer: left nil when it's off so the
-    # banner and the per-devlog notes both disappear from a single check.
-    @mac_analysis = @review.mac_analysis if Flipper.enabled?(:mac_analysis, current_user)
+    @mac_analysis = @review.mac_analysis
 
     # Flag-gated keyboard-shortcut layer for the review GUI (j/k nav, verdict
     # keys, lapse lightbox). Off by default; attaches its Stimulus controller
@@ -183,6 +175,18 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       Rails.logger.error("CommitGraph load failed: #{e.message}")
       {}
     end
+  end
+
+  def next
+    authorize ::Certification::Ysws, :update?
+
+    unless ysws_review_flow_enabled?
+      redirect_to admin_certification_ysws_reviews_path,
+                  alert: "The faster review flow isn't enabled for your account."
+      return
+    end
+
+    redirect_to_next_flow_review(empty_notice: "Nothing in the queue to review right now.", step: flow_step)
   end
 
   # Whether this repo is already in the unified DB under another YSWS program.
@@ -254,6 +258,120 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
 
   def ysws_review_filter_params?
     params.key?(:project_type) || params.key?(:sort) || params.key?(:dir)
+  end
+
+  def ysws_review_flow_enabled?
+    Flipper.enabled?(:ysws_review_flow, current_user)
+  end
+
+  def flow_mode?
+    ActiveModel::Type::Boolean.new.cast(params[:flow]) && ysws_review_flow_enabled?
+  end
+
+  def skipped_review_ids
+    params[:skip].to_s.split(",")
+      .filter_map { |id| Integer(id, exception: false) }
+      .select(&:positive?)
+      .uniq
+      .first(MAX_FLOW_SKIP_IDS)
+  end
+
+  def flow_step
+    requested = Integer(params[:step], exception: false)
+    return 1 unless requested
+
+    requested.clamp(1, flow_step_limit)
+  end
+
+  def flow_step_limit
+    FLOW_STEP_LIMIT
+  end
+
+  def next_flow_step
+    flow_step + 1
+  end
+
+  def flow_params(skip_ids = skipped_review_ids, step: flow_step)
+    { flow: 1, step: step, skip: skip_ids.join(",").presence }.compact
+  end
+
+  def current_review_params
+    flow_mode? ? flow_params : {}
+  end
+
+  def complete_blocked(message, status: :unprocessable_entity)
+    respond_to do |format|
+      format.html do
+        redirect_to admin_certification_ysws_review_path(@review || params[:id], current_review_params),
+                    alert: message
+      end
+      format.json do
+        render json: { success: false, error: message }, status: status
+      end
+    end
+  end
+
+  def claimed_for_completion?
+    return true if @review.claimed_by?(current_user)
+
+    claimed = ::Certification::Ysws.atomic_claim!(@review.id, current_user)
+    if claimed
+      @review.claimed_by_id = claimed.claimed_by_id
+      @review.claimed_at = claimed.claimed_at
+    end
+    claimed.present?
+  end
+
+  def redirect_to_next_flow_review(skipped_ids: skipped_review_ids, step: flow_step, empty_notice:)
+    if step > flow_step_limit
+      redirect_to admin_certification_ysws_reviews_path,
+                  notice: "Review flow finished. You reached the #{flow_step_limit}-project limit."
+      return
+    end
+
+    if (review = next_flow_review(skipped_ids))
+      redirect_to admin_certification_ysws_review_path(review, flow_params(skipped_ids, step: step))
+    else
+      redirect_to admin_certification_ysws_reviews_path, notice: empty_notice
+    end
+  end
+
+  def next_flow_review(skipped_ids)
+    candidates = flow_candidate_scope(skipped_ids)
+    candidates = candidates.is_a?(Array) ? candidates.first(MAX_FLOW_SKIP_IDS) : candidates.limit(MAX_FLOW_SKIP_IDS)
+    candidates.each do |review|
+      claimed = ::Certification::Ysws.atomic_claim!(review.id, current_user)
+      return claimed if claimed
+    end
+
+    nil
+  end
+
+  def flow_candidate_scope(skipped_ids)
+    filters = ysws_review_filters
+    project_type = filters["project_type"].presence
+    sort = filters["sort"].presence_in(%w[length todo age ai])
+    dir = filters["dir"] == "asc" ? "asc" : "desc"
+
+    scope = ::Certification::Ysws.software_only.reviewable.pending.unclaimed_or_claimed_by(current_user)
+    scope = scope.by_project_type(project_type) if project_type
+    scope = scope.where.not(id: skipped_ids) if skipped_ids.any?
+    scope = scope.with_todo_devlog_count
+    scope = scope.includes(:mac_analysis) if sort == "ai"
+
+    scope = case sort
+    when "length" then scope.order(Arel.sql("certification_ysws_reviews.original_minutes #{dir}"))
+    when "todo"   then scope.order(Arel.sql("todo_devlog_count #{dir}"))
+    when "age"    then scope.order(Arel.sql("certification_ysws_reviews.created_at #{dir}"))
+    else               scope.order(created_at: :asc)
+    end
+
+    if sort == "ai"
+      reviews = scope.to_a.sort_by { |review| Float(review.mac_analysis&.core_signals&.dig("ai_coding_pct"), exception: false) || -1 }
+      dir == "desc" ? reviews.reverse : reviews
+    else
+      scope
+    end
   end
 
 
@@ -367,52 +485,56 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     @review = ::Certification::Ysws.includes(:devlog_reviews).find(params[:id])
     authorize @review, :update?
 
-    @review.check_and_update_unified_db_status!
-
-    if @review.in_unified_db.present?
-      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: already in unified DB (#{@review.in_unified_db})"
-      return render json: { success: false, error: "This review is already in the unified DB" }, status: :unprocessable_entity
+    if (blocker = @review.completion_blocker)
+      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: #{blocker}"
+      return complete_blocked(blocker)
     end
 
-    devlog_reviews = @review.devlog_reviews
-    pending = devlog_reviews.select(&:pending?)
-    if pending.any?
-      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: #{pending.count} unreviewed devlog(s): #{pending.map(&:id).inspect}"
-      return render json: { success: false, error: "Review all devlogs before completing." }, status: :unprocessable_entity
+    unless claimed_for_completion?
+      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: claim lost"
+      return complete_blocked("This review is no longer claimed by you.", status: :conflict)
     end
 
-    approved = devlog_reviews.select(&:approved?)
-    if approved.any? && approved.none? { |dr| dr.justification.present? }
-      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: no justification on any of #{approved.count} approved devlog(s)"
-      return render json: { success: false, error: "Add a justification to at least one approved devlog." }, status: :unprocessable_entity
-    end
-
-    unjustified_rejections = devlog_reviews.select { |dr| dr.rejected? && dr.justification.blank? }
-    if unjustified_rejections.any?
-      Rails.logger.warn "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Blocked: #{unjustified_rejections.count} rejected devlog(s) missing justification: #{unjustified_rejections.map(&:id).inspect}"
-      return render json: { success: false, error: "Add a justification to every rejected devlog." }, status: :unprocessable_entity
-    end
-
-    @review.update_columns(reviewer_id: current_user.id, reviewed_at: Time.current)
-    @review.touch
+    @review.complete_by!(current_user)
     Rails.logger.info "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} Marked reviewed_at=#{@review.reviewed_at}; enqueuing AirtableSyncJob"
 
     ::Certification::YswsAirtableSyncJob.perform_later(@review.id)
     Rails.logger.info "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} AirtableSyncJob enqueued successfully"
 
-    render json: {
-      success: true,
-      message: "Review completed! It syncs to Airtable once integrity has signed off.",
-      redirect_url: admin_certification_ysws_reviews_path
-    }, status: :ok
+    if flow_mode?
+      redirect_to_next_flow_review(step: next_flow_step, empty_notice: "Review completed. No more reviews in this flow.")
+    else
+      redirect_to admin_certification_ysws_reviews_path,
+                  notice: "Review completed! It syncs to Airtable once integrity has signed off."
+    end
+  rescue Pundit::NotAuthorizedError
+    raise
   rescue StandardError => e
     skip_authorization unless pundit_policy_authorized?
     Rails.logger.error "[YSWS#complete] user=#{current_user&.id} review=#{params[:id]} #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
-    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
-    render json: {
-      success: false,
-      error: "Failed to complete review: #{e.message}. Let AVD know!"
-    }, status: :unprocessable_entity
+    Rails.error.report(e, context: { category: "certification.ysws", ysws_review_id: params[:id], user_id: current_user&.id })
+    complete_blocked("Failed to complete review: #{e.message}. Let AVD know!")
+  end
+
+  def skip
+    @review = ::Certification::Ysws.find(params[:id])
+    authorize @review, :update?
+
+    unless ysws_review_flow_enabled?
+      redirect_to admin_certification_ysws_reviews_path,
+                  alert: "The faster review flow isn't enabled for your account."
+      return
+    end
+
+    skip_ids = (skipped_review_ids | [ @review.id ]).last(MAX_FLOW_SKIP_IDS)
+    released = @review.claimed_by?(current_user) && @review.release_claim!
+    Rails.logger.info "[YSWS#skip] user=#{current_user&.id} review=#{@review.id} claim_released=#{!!released}"
+
+    redirect_to_next_flow_review(
+      skipped_ids: skip_ids,
+      step: next_flow_step,
+      empty_notice: "No more reviews in this flow."
+    )
   end
 
   def resync
@@ -459,7 +581,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
     raise
   rescue StandardError => e
     Rails.logger.error "[YSWS#undo] user=#{current_user&.id} review=#{params[:id]} #{e.class}: #{e.message}"
-    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    Rails.error.report(e, context: { category: "certification.ysws", ysws_review_id: params[:id], user_id: current_user&.id })
     redirect_to admin_certification_ysws_review_path(params[:id]),
                 alert: "Failed to undo review: #{e.message}"
   end
@@ -501,11 +623,10 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
         # response, and the job chains the return itself once it lands.
         ::ExternalDashboard::ShipWebhookJob.perform_later(approved_cert.id)
       else
-        Sentry.capture_message(
+        OperationalAlert.report(
           "YSWS return has no approved ship cert to chain from",
-          level: :error,
-          tags: { category: "certification.ysws" },
-          extra: { ysws_review_id: @review.id, project_id: @review.project_id, new_cert_id: new_cert.id }
+          severity: :error,
+          context: { category: "certification.ysws", ysws_review_id: @review.id, project_id: @review.project_id, new_cert_id: new_cert.id }
         )
       end
     end
@@ -516,7 +637,7 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       redirect_url: admin_certification_ysws_reviews_path
     }, status: :ok
   rescue StandardError => e
-    Sentry.capture_exception(e, tags: { category: "certification.ysws" }, extra: { ysws_review_id: params[:id], user_id: current_user&.id })
+    Rails.error.report(e, context: { category: "certification.ysws", ysws_review_id: params[:id], user_id: current_user&.id })
     render json: { success: false, error: "Failed to return to ship certs: #{e.message}" }, status: :unprocessable_entity
   end
 end

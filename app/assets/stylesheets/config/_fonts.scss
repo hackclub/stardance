@@ -38,3 +38,45 @@
   font-display: swap;
   src: url("PlayfairDisplay-latin-italic.woff2") format("woff2");
 }
+
+// Forge's display face, for its promo card.
+@font-face {
+  font-family: "IM Fell English";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("IMFellEnglish-latin.woff2") format("woff2");
+}
+
+// Mipmap's display and text faces, for its promo card.
+@font-face {
+  font-family: "Phudu";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("Phudu-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Sansation";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("Sansation-latin-bold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Shantell Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("ShantellSans-latin-semibold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("Lora-latin.woff2") format("woff2");
+}

@@ -3,6 +3,9 @@
   --sidebar-inset: 16px;
   --sidebar-inset-y: var(--space-s); // tiny top + bottom edges
 
+  // Stays put during page view transitions while the content cross-fades.
+  view-transition-name: sidebar;
+
   position: fixed;
   top: var(--sidebar-inset-y);
   bottom: var(--sidebar-inset-y);
@@ -244,6 +247,23 @@ button.sidebar__nav-link {
 
 // Small pip rendered when a nav item is asking for attention (e.g. the shop
 // tutorial nudge). Sits just to the right of the label text.
+// Short label beside a nav item ("sale"); takes the notify dot's place.
+.sidebar__nav-tag {
+  align-self: center;
+  margin-left: calc(var(--space-s) * -0.4);
+  padding: 0.1rem 0.45rem 0.15rem;
+  border-radius: 999px;
+  background: var(--color-brand-salmon);
+  color: var(--color-space-bg);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
 .sidebar__nav-notify-dot {
   align-self: center;
   width: 0.6rem;

@@ -76,8 +76,56 @@ class HackatimeService
       nil
     end
 
+    # works in all circumstances, even if the user is banned (api locked) and has private data
+    def fetch_trust_level(hackatime_uid)
+      return nil if hackatime_uid.blank?
+
+      response = connection.get("users/#{hackatime_uid}/trust_factor")
+      if response.success?
+        JSON.parse(response.body)["trust_level"]
+      else
+        Rails.logger.error "HackatimeService trust_factor error: #{response.status} - #{response.body}"
+        nil
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService trust_factor timeout: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "HackatimeService trust_factor exception: #{e.message}"
+      nil
+    end
+
+    # raw trust levels from Hackatime (admin batch api, fast, max 2000 uids)
+    def fetch_trust_levels(hackatime_uids)
+      return {} if hackatime_uids.blank?
+
+      response = admin_connection.get("user/info_batch", ids: hackatime_uids.join(",")) do |req|
+        req.headers["Authorization"] = "Bearer #{ENV["HACKATIME_ADMIN_KEY"]}"
+      end
+
+      if response.success?
+        JSON.parse(response.body).fetch("users").to_h { |user| [ user["id"].to_s, user["trust_level"] ] }
+      else
+        Rails.logger.error "HackatimeService user/info_batch error: #{response.status} - #{response.body}"
+        nil
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      Rails.logger.error "HackatimeService user/info_batch timeout: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "HackatimeService user/info_batch exception: #{e.message}"
+      nil
+    end
+
     def fetch_total_seconds_for_projects(hackatime_uid, project_keys, start_date: START_DATE, end_date: nil, access_token: nil)
       return nil if hackatime_uid.blank? || project_keys.blank?
+
+      # Hackatime splits this array on the element ",". Refuse the whole
+      # calculation rather than silently dropping that project's time.
+      if Array(project_keys).include?(",")
+        Rails.logger.error "HackatimeService cannot filter a project named exactly a comma"
+        return nil
+      end
 
       params = {
         features: "projects",
@@ -85,7 +133,8 @@ class HackatimeService
         test_param: true,
         total_seconds: true,
         no_ai_coding: false,
-        filter_by_project: Array(project_keys).join(","),
+        # Rack preserves commas inside array elements, unlike a CSV string.
+        filter_by_project: Array(project_keys),
         _t: Time.now.to_i
       }
       params[:end_date] = end_date if end_date
@@ -96,11 +145,12 @@ class HackatimeService
       if response.success?
         data = JSON.parse(response.body)
         seconds = data["total_seconds"]
-        if seconds.nil?
-          projects = data.dig("data", "projects") || []
-          seconds = projects.sum { |p| p["total_seconds"].to_i }
+        unless seconds.is_a?(Integer) && seconds >= 0
+          # Per-project breakdowns do not use the same boundary-aware timeline.
+          Rails.logger.error "HackatimeService.fetch_total_seconds_for_projects missing or invalid total_seconds"
+          return nil
         end
-        seconds.to_i
+        seconds
       else
         Rails.logger.error "HackatimeService.fetch_total_seconds_for_projects error: #{response.status} - #{response.body}"
         nil
@@ -209,7 +259,7 @@ class HackatimeService
       return [] if hackatime_uid.blank?
 
       params = { start_date: start_date, end_date: end_date }
-      params[:filter_by_project] = Array(project_keys).join(",") if project_keys.present?
+      params[:project] = Array(project_keys) if project_keys.present?
 
       response = spans_request(hackatime_uid, params, access_token: access_token)
 

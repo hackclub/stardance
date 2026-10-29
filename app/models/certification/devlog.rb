@@ -29,6 +29,8 @@ module Certification
     belongs_to :post_devlog, class_name: "Post::Devlog"
     belongs_to :ysws_review, class_name: "Certification::Ysws"
 
+    scope :orphaned, -> { where.not(post_devlog_id: Post::Devlog.select(:id)) }
+
     # Status enum for tracking review state
     enum :status, {
       pending: "pending",
