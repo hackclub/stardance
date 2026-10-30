@@ -214,10 +214,13 @@ class Post::ShipEvent < ApplicationRecord
   # before it is pre-funding and doesn't count, whatever its phase. A project
   # that skipped funding has no cutoff, so all of its non-design time counts
   # back to the project's start.
-  def devlogs_in_ship_window
+  def devlogs_in_ship_window(phase_overrides: {})
     return window_devlogs unless project.hardware?
 
-    scope = window_devlogs.where("post_devlogs.phase IS DISTINCT FROM 'design'")
+    unchanged = window_devlogs.where.not(post_devlogs: { id: phase_overrides.keys })
+                             .where("post_devlogs.phase IS DISTINCT FROM 'design'")
+    build_ids = phase_overrides.select { |_, phase| phase == "build" }.keys
+    scope = unchanged.or(window_devlogs.where(post_devlogs: { id: build_ids }))
     cutoff = hardware_payout_cutoff
     cutoff ? scope.where("posts.created_at >= ?", cutoff) : scope
   end
