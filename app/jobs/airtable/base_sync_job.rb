@@ -1,12 +1,7 @@
 class Airtable::BaseSyncJob < ApplicationJob
   queue_as :literally_whenever
+  limits_concurrency to: 1, key: "sync", duration: 15.minutes, on_conflict: :discard
   notify_maintainers_on_exhaustion Norairrecord::Error, maintainers_slack_ids: [ "U05F4B48GBF" ], wait: :polynomially_longer, attempts: 3
-
-  def self.perform_later(*args)
-    return if SolidQueue::Job.where(class_name: name, finished_at: nil).exists?
-
-    super
-  end
 
   def perform
     synced_records = records_to_sync.to_a
