@@ -1,0 +1,61 @@
+<%= turbo_frame_tag "devlog-phase-preview" do %>
+  <% if @error %>
+    <p class="project-show__phase-error" role="alert"><%= @error %></p>
+  <% elsif @preview %>
+    <div class="project-show__phase-impact">
+      <h3><%= pluralize(@preview[:changes].size, "devlog") %> to change</h3>
+      <% if @preview[:ships].empty? %>
+        <p>Update phases only. No shipped payouts affected.</p>
+      <% end %>
+      <% @preview[:ships].each do |ship| %>
+        <section class="project-show__phase-ship" aria-label="Ship #<%= ship[:id] %>">
+          <h4>Ship #<%= ship[:id] %> · <%= ship[:recipient] || "No recipient" %></h4>
+          <dl class="project-show__phase-numbers">
+            <div>
+              <dt>Payable hours</dt>
+              <dd><%= number_with_precision(ship[:before_hours], precision: 2, strip_insignificant_zeros: true) %> → <strong><%= number_with_precision(ship[:after_hours], precision: 2, strip_insignificant_zeros: true) %></strong></dd>
+            </div>
+            <% if ship[:payment] == "paid" && ship[:blockers].empty? %>
+              <div>
+                <dt>Stardust</dt>
+                <dd><%= number_with_precision(ship[:accounted_amount], precision: 0) %> → <strong><%= number_with_precision(ship[:after_amount], precision: 0) %></strong></dd>
+              </div>
+            <% elsif ship[:payment] == "locked" && ship[:blockers].empty? %>
+              <div>
+                <dt>Stardust estimate</dt>
+                <dd><%= ship[:before_amount] || "Not set" %> → <strong><%= ship[:after_amount] || "Not set" %></strong></dd>
+              </div>
+            <% end %>
+          </dl>
+          <% if ship[:blockers].any? %>
+            <% if ship[:payment] == "paid" %>
+              <p class="project-show__phase-error">Paid <%= number_with_precision(ship[:accounted_amount], precision: 0) %> stardust · calculated <%= ship[:before_amount] || "unknown" %>.</p>
+            <% end %>
+            <details class="project-show__phase-error">
+              <summary>What needs fixing?</summary>
+              <ul><% ship[:blockers].each do |blocker| %><li><%= blocker %></li><% end %></ul>
+            </details>
+          <% elsif ship[:payment] == "paid" %>
+            <% if ship[:before_amount] != ship[:accounted_amount] %>
+              <p class="project-show__phase-note">Recorded payment differs from the current calculated payout (<%= ship[:before_amount] %> stardust). Saving reconciles the full corrected payout, including that existing difference.</p>
+            <% end %>
+            <p class="project-show__phase-effect"><%= ship[:adjustment].zero? ? "No payment change." : "#{ship[:adjustment].negative? ? 'Deduct' : 'Add'} #{number_with_precision(ship[:adjustment].abs, precision: 0)} stardust." %></p>
+            <% unless ship[:adjustment].zero? %><p class="project-show__phase-note">Separate adjustment; original payment unchanged.</p><% end %>
+          <% elsif ship[:payment] == "static" %>
+            <p>Update hours only. Prize unchanged.</p>
+          <% else %>
+            <p>Update payout hours. No payment now.</p>
+          <% end %>
+        </section>
+      <% end %>
+      <% if @preview[:ships].any? { |ship| ship[:blockers].any? } %>
+        <p class="project-show__phase-error" role="alert">Nothing will be saved. Resolve the issues above first.</p>
+      <% else %>
+        <%= form_with url: admin_project_devlog_phases_path(@project), method: :patch, data: { turbo: true, turbo_frame: "_top" } do %>
+          <%= hidden_field_tag :confirmation, @confirmation %>
+          <%= render ActionButtonComponent.new(text: "Save changes", size: :small, disable_with: "Saving…") %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

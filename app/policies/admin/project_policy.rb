@@ -31,6 +31,10 @@ class Admin::ProjectPolicy < ApplicationPolicy
     user&.admin?
   end
 
+  def reassign_devlog_phases?
+    user&.admin? && record.hardware? && !record.deleted?
+  end
+
   def convert_to_software?
     user&.admin?
   end

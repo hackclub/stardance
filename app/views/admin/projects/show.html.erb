@@ -133,6 +133,9 @@
       <% if payout_ship_event && Post::ShipEvent.payout_feature_enabled?(current_user) && policy(:payout_review).show? %>
         <%= render ActionButtonComponent.new(text: "Payout details", href: admin_payout_review_path(payout_ship_event), size: :small, variant: :secondary) %>
       <% end %>
+      <% if policy(@project).reassign_devlog_phases? %>
+        <%= render ActionButtonComponent.new(text: "Reassign devlog phases", href: admin_project_devlog_phases_path(@project), size: :small, variant: :secondary) %>
+      <% end %>
       <% if policy(current_user).view_order_full_details? %>
         <% if @project.deleted? %>
           <%= button_to "Restore Project", restore_admin_project_path(@project), method: :post,

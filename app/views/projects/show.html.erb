@@ -22,6 +22,8 @@
   can_edit_project = @can_edit_project
   is_owner = @is_owner
   admin_editing_project = @admin_editing_project
+  can_reassign_devlogs = !impersonating? && policy([:admin, @project]).reassign_devlog_phases?
+  reassigning_devlogs = can_reassign_devlogs && params[:reassign_devlogs] == "1"
   # Only highlight the unfinished sections when the user arrived via the
   # "Complete project info" button (which adds ?complete=1).
   highlight_incomplete_fields = (can_edit_project && params[:complete].present?) ? @project.incomplete_info_fields : []
@@ -488,6 +490,15 @@
                 <% if !@project.draft? && is_member && Flipper.enabled?(:virality_bonus, current_user) %>
                   <%= link_to "Submit viral mention", new_project_mention_path(@project), class: "project-show__pill project-show__pill--outline", data: { turbo_frame: "_top" } %>
                   <%= render "shared/help_tooltip", text: "Got traction on Reddit, HN, GitHub, or another platform? Submit a link and earn bonus stardust.", position: "top" %>
+                <% end %>
+
+                <% if can_reassign_devlogs %>
+                  <%= admin_tool do %>
+                    <%= link_to reassigning_devlogs ? "Cancel reassigning" : "Reassign devlogs",
+                                project_path(@project, reassign_devlogs: reassigning_devlogs ? nil : 1),
+                                class: "project-show__pill project-show__pill--outline",
+                                data: { turbo_frame: "_top" } %>
+                  <% end %>
                 <% end %>
 
                 <% if (safe_repo_url = safe_external_url(@project.repo_url)) %>
@@ -1000,7 +1011,15 @@
     <% end %>
 
     <% if @timeline_entries.any? %>
-      <section class="project-show__feed" aria-label="Project feed">
+      <section class="project-show__feed<%= ' project-show__feed--reassigning' if reassigning_devlogs %>" aria-label="Project feed"
+               <%= tag.attributes(data: { controller: "devlog-phases", action: "turbo:before-cache@document->devlog-phases#clear" }) if reassigning_devlogs %>>
+        <% if reassigning_devlogs %>
+          <div class="project-show__phase-intro">
+            <h2>Reassign devlogs</h2>
+            <p>Choose a stage for each devlog. Logged time stays unchanged.</p>
+            <%= link_to "Payout preview ↓", "#devlog-phase-form" %>
+          </div>
+        <% end %>
         <% ship_count = @posts.count { |p| p.postable_type == "Post::ShipEvent" } %>
         <% ship_index = 0 %>
         <% @timeline_entries.each do |entry| %>
@@ -1037,7 +1056,43 @@
                        payout_review: @payout_reviews[entry.postable_id],
                        mission_resubmit_modal_id: mission_modal_id %>
           <% else %>
-            <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
+            <% if reassigning_devlogs && entry.postable_type == "Post::Devlog" && !entry.postable.deleted? %>
+              <div class="project-show__phase-entry">
+                <div class="project-show__phase-toolbar" role="group" aria-label="Stage for devlog #<%= entry.postable_id %>">
+                  <span class="project-show__phase-caption">Stage</span>
+                  <div class="project-show__phase-options">
+                    <% choices = entry.postable.phase.blank? ? [["Keep unclassified", ""], ["Design", "design"], ["Build", "build"]] : [["Design", "design"], ["Build", "build"]] %>
+                    <% choices.each do |label, value| %>
+                      <%= radio_button_tag "phases[#{entry.postable_id}]", value, entry.postable.phase.to_s == value,
+                                           id: "phase_#{entry.postable_id}_#{value.presence || 'keep'}", form: "devlog-phase-form",
+                                           class: "project-show__phase-input", data: { devlog_phases_target: "field", action: "change->devlog-phases#reset" } %>
+                      <%= label_tag "phase_#{entry.postable_id}_#{value.presence || 'keep'}", label, class: "project-show__phase-option" %>
+                    <% end %>
+                  </div>
+                </div>
+                <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
+              </div>
+            <% else %>
+              <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
+            <% end %>
+          <% end %>
+        <% end %>
+        <% if reassigning_devlogs %>
+          <%= form_with url: admin_project_devlog_phases_path(@project), method: :patch,
+                        id: "devlog-phase-form", class: "project-show__phase-save",
+                        data: { devlog_phases_target: "form", turbo: true, turbo_frame: "devlog-phase-preview", action: "turbo:submit-start->devlog-phases#start turbo:submit-end->devlog-phases#finish" } do %>
+            <%= label_tag :reason, "Reason for correction (optional)" %>
+            <%= text_area_tag :reason, nil, maxlength: 1000, rows: 2, data: { devlog_phases_target: "field", action: "input->devlog-phases#reset" } %>
+            <div class="project-show__phase-actions">
+              <span data-devlog-phases-target="previewButton" hidden>
+                <%= render ActionButtonComponent.new(text: "Retry calculation", size: :small, disable_with: "Calculating…") %>
+              </span>
+              <%= link_to "Cancel", project_path(@project) %>
+            </div>
+          <% end %>
+          <%= turbo_frame_tag "devlog-phase-preview", class: "project-show__phase-preview", tabindex: -1,
+                              data: { devlog_phases_target: "preview", action: "turbo:frame-load->devlog-phases#loaded turbo:frame-missing->devlog-phases#failed" }, aria: { live: "polite" } do %>
+            <p>No changes selected.</p>
           <% end %>
         <% end %>
       </section>

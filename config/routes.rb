@@ -738,6 +738,7 @@ Rails.application.routes.draw do
 
     resource :impersonation, only: [ :destroy ], controller: "users/impersonations"
     resources :projects, only: [ :index, :show ] do
+      resource :devlog_phases, only: [ :show, :update ], controller: "projects/devlog_phases"
       member do
         post :restore
         post :delete

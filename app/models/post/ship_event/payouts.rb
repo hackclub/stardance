@@ -214,12 +214,24 @@ module Post::ShipEvent::Payouts
     post&.user
   end
 
-  def hours
+  # Overrides let the admin phase-correction preview use the real accounting
+  # rules without temporarily writing different phases to the database.
+  def hours(phase_overrides: {})
     if reviewed_hardware_devlogs
-      capped_reviewed_hardware_minutes / 60.0
+      capped_reviewed_hardware_minutes(phase_overrides: phase_overrides) / 60.0
     else
-      capped_logged_seconds / 1.hour.to_f
+      capped_logged_seconds(phase_overrides: phase_overrides) / 1.hour.to_f
     end
+  end
+
+  def payout_amount_for(amount_hours, amount_multiplier, blessing)
+    return nil if amount_hours.nil? || amount_multiplier.nil?
+
+    apply_payout_blessing((amount_hours * amount_multiplier).round, blessing)
+  end
+
+  def payout_devlog_ids(phase_overrides: {})
+    devlogs_in_ship_window(phase_overrides: phase_overrides).pluck(:postable_id)
   end
 
   def payout_review_open?
@@ -385,22 +397,11 @@ module Post::ShipEvent::Payouts
       review.devlog_reviews if project&.hardware? && review&.devlog_reviews&.any?(&:reviewed?)
     end
 
-    def capped_reviewed_hardware_minutes
-      reviewed_hardware_devlogs.sum do |devlog_review|
-        next 0 unless counts_toward_hardware_payout?(devlog_review)
-
+    def capped_reviewed_hardware_minutes(phase_overrides: {})
+      eligible_ids = payout_devlog_ids(phase_overrides: phase_overrides)
+      reviewed_hardware_devlogs.approved.where(post_devlog_id: eligible_ids).sum do |devlog_review|
         [ devlog_review.approved_minutes.to_i, Post::ShipEvent::MAX_PAYOUT_HOURS_PER_DEVLOG * 60 ].min
       end
-    end
-
-    # Only work done once funding was asked for is paid. Time logged before that
-    # belongs to the design the grant was awarded against, not to the build.
-    def counts_toward_hardware_payout?(devlog_review)
-      cutoff = hardware_payout_cutoff
-      return true if cutoff.nil?
-
-      logged_at = Post::Devlog.unscoped { devlog_review.reload_post_devlog&.created_at }
-      logged_at.present? && logged_at >= cutoff
     end
 
     # The funding request that unlocked this build. A hardware project that took
@@ -414,12 +415,12 @@ module Post::ShipEvent::Payouts
                &.minimum(:created_at)
     end
 
-    def capped_logged_seconds
+    def capped_logged_seconds(phase_overrides: {})
       return 0 unless post&.project && post.created_at
 
       # devlogs_in_ship_window already drops pre-funding and design-phase time
       # on hardware, so the funding cutoff is applied there.
-      devlogs_in_ship_window.pluck("post_devlogs.duration_seconds").sum do |duration_seconds|
+      devlogs_in_ship_window(phase_overrides: phase_overrides).pluck("post_devlogs.duration_seconds").sum do |duration_seconds|
         [ duration_seconds.to_i, Post::ShipEvent::MAX_PAYOUT_SECONDS_PER_DEVLOG ].min
       end
     end
@@ -467,12 +468,6 @@ module Post::ShipEvent::Payouts
 
     def payout_blessing_for_snapshot
       payout_recipient.vote_verdict&.verdict || "neutral"
-    end
-
-    def payout_amount_for(amount_hours, amount_multiplier, blessing)
-      return nil if amount_hours.nil? || amount_multiplier.nil?
-
-      apply_payout_blessing((amount_hours * amount_multiplier).round, blessing)
     end
 
     def apply_payout_blessing(amount, blessing = payout_blessing)
