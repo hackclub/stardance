@@ -51,6 +51,25 @@ class UsersProfileActivityTest < ActionDispatch::IntegrationTest
     assert_equal few, many
   end
 
+  test "profile devlog cards don't load each devlog's post again" do
+    3.times do |i|
+      devlog = Post::Devlog.new(body: "Devlog #{i}", duration_seconds: 1.hour)
+      devlog.uploading_attachments = true
+      devlog.save!
+      Post.create!(project: @project, user: @owner, postable: devlog)
+    end
+    sign_in @owner
+
+    # Each card's Post::DevlogPolicy#owns? reads devlog.post; the profile has
+    # those posts loaded already, so none should be fetched by postable_id.
+    assert_queries_match(/FROM "posts" WHERE "posts"\."postable_id" = /, count: 0) do
+      get user_path(@owner)
+    end
+
+    assert_response :success
+    3.times { |i| assert_includes response.body, "Devlog #{i}" }
+  end
+
   test "super star post is still shown on the project" do
     sign_in @admin
 
