@@ -300,7 +300,7 @@ GEM
       zeitwerk
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
-    image_processing (2.0.3)
+    image_processing (2.2.0)
     importmap-rails (2.2.3)
       actionpack (>= 6.0.0)
       activesupport (>= 6.0.0)
@@ -843,7 +843,7 @@ DEPENDENCIES
   flipper-active_support_cache_store
   flipper-ui
   hotwire-spark
-  image_processing (~> 2.0)
+  image_processing (~> 2.2)
   inline_svg
   jbuilder
   jsbundling-rails (~> 1.3)
