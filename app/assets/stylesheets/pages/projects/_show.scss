@@ -1746,6 +1746,133 @@ turbo-frame#project_hero {
   color: var(--color-space-text);
 }
 
+// Flagging: a checkbox that reveals a required explanation, then one
+// "Flag selected" button for the whole batch.
+.payout-review-modal__flag {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  width: 100%;
+}
+
+.payout-review-modal__flag-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-s);
+  width: fit-content;
+  color: var(--color-space-text);
+  font-size: var(--font-size-m);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+// Same box as the settings form checkbox: set-1 fill, muted border, lilac when
+// checked.
+.payout-review-modal__flag-checkbox {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  border: 2px solid var(--color-border-input);
+  border-radius: 4px;
+  background-color: var(--color-set-1-bg);
+  cursor: pointer;
+
+  &::before {
+    content: "";
+    width: 0.65rem;
+    height: 0.65rem;
+    transform: scale(0);
+    background-color: var(--color-set-1-bg);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-lilac);
+    box-shadow: 0 0 0 3px var(--color-brand-lilac-soft);
+  }
+
+  &:checked {
+    background-color: var(--color-brand-lilac);
+    border-color: var(--color-brand-lilac);
+
+    &::before {
+      transform: scale(1);
+    }
+  }
+}
+
+.payout-review-modal__flag-details {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.payout-review-modal__flag:has(.payout-review-modal__flag-checkbox:checked)
+  .payout-review-modal__flag-details {
+  display: flex;
+}
+
+.payout-review-modal__flag-label {
+  color: var(--color-space-text);
+  font-size: var(--font-size-m);
+}
+
+// Grows with its text, up to the max, then scrolls inside itself.
+.payout-review-modal__flag-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 6rem;
+  max-height: 16rem;
+  padding: var(--space-s) var(--space-m);
+  border: 1px solid var(--color-set-1-fg-secondary);
+  border-radius: 8px;
+  background: var(--color-set-1-bg);
+  color: var(--color-space-text);
+  font-family: var(--font-family-text);
+  font-size: var(--font-size-m);
+  line-height: 1.5;
+  field-sizing: content;
+  resize: vertical;
+
+  &::placeholder {
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-highlight);
+    outline-offset: 2px;
+  }
+}
+
+.payout-review-modal__flag-hint {
+  color: var(--color-set-1-fg-secondary);
+  font-size: var(--font-size-xs);
+  text-align: right;
+
+  &--short {
+    color: var(--color-brand-salmon);
+  }
+}
+
+.payout-review-modal__flag-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-m);
+}
+
+.payout-review-modal__flag-summary {
+  margin: 0;
+  color: var(--color-set-1-fg-secondary);
+  font-size: var(--font-size-s);
+}
+
 @media (max-width: 720px) {
   .payout-review-modal__panel {
     padding: var(--space-m);

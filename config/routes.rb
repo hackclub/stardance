@@ -522,10 +522,9 @@ Rails.application.routes.draw do
   get "rate/new", to: "votes#new", as: :new_rate
   resources :ship_events, only: [] do
     resource :payout_acceptance, only: :create, controller: "ship_events/payout_acceptances"
+    resources :vote_flags, only: :create, controller: "ship_events/vote_flags"
   end
-  resources :votes, only: [ :new, :create ] do
-    resource :flag, only: :create, controller: "votes/flags"
-  end
+  resources :votes, only: [ :new, :create ]
   namespace :votes do
     resource :skip, only: :create
     resources :assignments, only: [] do

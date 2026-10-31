@@ -505,6 +505,9 @@ application.register("vimeo-player", VimeoPlayerController);
 import VisualNovelController from "./visual_novel_controller";
 application.register("visual-novel", VisualNovelController);
 
+import VoteFlagsController from "./vote_flags_controller";
+application.register("vote-flags", VoteFlagsController);
+
 import VoteScorecardController from "./vote_scorecard_controller";
 application.register("vote-scorecard", VoteScorecardController);
 
