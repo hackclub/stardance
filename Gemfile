@@ -126,7 +126,7 @@ gem "aws-sdk-s3"
 gem "rubyzip", "~> 3.7"
 gem "faraday"
 # json 3.0 breaks faraday response parsing (hcb grants) and db:schema:dump
-gem "json", "< 3"
+gem "json", "< 4"
 gem "faraday-retry"
 
 gem "faker", "~> 3.6"
