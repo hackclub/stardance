@@ -202,6 +202,9 @@ application.register("decision-tree", DecisionTreeController);
 import DevlogEditController from "./devlog_edit_controller";
 application.register("devlog-edit", DevlogEditController);
 
+import DevlogPhasesController from "./devlog_phases_controller";
+application.register("devlog-phases", DevlogPhasesController);
+
 import DiscoverRailSearchController from "./discover_rail_search_controller";
 application.register("discover-rail-search", DiscoverRailSearchController);
 
