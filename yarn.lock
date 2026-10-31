@@ -335,52 +335,53 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@videojs/core@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/core@npm:10.0.1"
+"@videojs/core@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/core@npm:10.1.0"
   dependencies:
-    "@videojs/media": "npm:10.0.1"
-    "@videojs/store": "npm:10.0.1"
-    "@videojs/utils": "npm:10.0.1"
-  checksum: 10c0/ac19445569203258c8384347f603dea3b8463a3f47a0cff77d24a36fc84b83ff1b225d9ae1d19b513bd5f2d3488d2e3b392daeb6649ec5bcf115720c6ee7ecfd
+    "@videojs/media": "npm:10.1.0"
+    "@videojs/store": "npm:10.1.0"
+    "@videojs/utils": "npm:10.1.0"
+  checksum: 10c0/28634704b9b7bd97c3ed56bf6c5e1c6f5d8bf72dc6c66052f1fe0dd02bc94ac58cad996894455230a14ae54c0c865e9e66c61c42a04c6d1742560ca3837a4451
   languageName: node
   linkType: hard
 
-"@videojs/element@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/element@npm:10.0.1"
+"@videojs/element@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/element@npm:10.1.0"
   dependencies:
     "@lit/context": "npm:^1.1.0"
-  checksum: 10c0/79182902fd826584f2ccba0fff0e26dd939d9597a5b8f0617a0da432ee1f2c42e155774e855d2efe180debf28d9d95054cc4e23696e91eeb75141247f422b13e
+  checksum: 10c0/6bd278334575659197623103a92fade133964e3268282e4b4d511db71921197bf97667be2b7dd24264acf22f13877d64750f8b0eb3ce4a9395f7cf84f3cf2f1a
   languageName: node
   linkType: hard
 
-"@videojs/html@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/html@npm:10.0.1"
+"@videojs/html@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/html@npm:10.1.0"
   dependencies:
-    "@videojs/core": "npm:10.0.1"
-    "@videojs/element": "npm:10.0.1"
-    "@videojs/media": "npm:10.0.1"
-    "@videojs/native-hls-video": "npm:10.0.1"
-    "@videojs/spf": "npm:10.0.1"
-    "@videojs/store": "npm:10.0.1"
-    "@videojs/utils": "npm:10.0.1"
+    "@videojs/core": "npm:10.1.0"
+    "@videojs/element": "npm:10.1.0"
+    "@videojs/media": "npm:10.1.0"
+    "@videojs/native-hls-video": "npm:10.1.0"
+    "@videojs/spf": "npm:10.1.0"
+    "@videojs/store": "npm:10.1.0"
+    "@videojs/utils": "npm:10.1.0"
   peerDependencies:
-    "@videojs/cloudflare-video": 10.0.1
-    "@videojs/dash-video": 10.0.1
-    "@videojs/google-cast": 10.0.1
-    "@videojs/hlsjs-video": 10.0.1
-    "@videojs/mux-audio": 10.0.1
-    "@videojs/mux-data": 10.0.1
-    "@videojs/mux-video": 10.0.1
-    "@videojs/shaka-video": 10.0.1
-    "@videojs/spotify-audio": 10.0.1
-    "@videojs/tiktok-video": 10.0.1
-    "@videojs/twitch-video": 10.0.1
-    "@videojs/vimeo-video": 10.0.1
-    "@videojs/wistia-video": 10.0.1
-    "@videojs/youtube-video": 10.0.1
+    "@videojs/cloudflare-video": 10.1.0
+    "@videojs/dash-video": 10.1.0
+    "@videojs/google-cast": 10.1.0
+    "@videojs/hlsjs-video": 10.1.0
+    "@videojs/mux-audio": 10.1.0
+    "@videojs/mux-data": 10.1.0
+    "@videojs/mux-video": 10.1.0
+    "@videojs/playerjs-video": 10.1.0
+    "@videojs/shaka-video": 10.1.0
+    "@videojs/spotify-audio": 10.1.0
+    "@videojs/tiktok-video": 10.1.0
+    "@videojs/twitch-video": 10.1.0
+    "@videojs/vimeo-video": 10.1.0
+    "@videojs/wistia-video": 10.1.0
+    "@videojs/youtube-video": 10.1.0
   peerDependenciesMeta:
     "@videojs/cloudflare-video":
       optional: true
@@ -396,6 +397,8 @@ __metadata:
       optional: true
     "@videojs/mux-video":
       optional: true
+    "@videojs/playerjs-video":
+      optional: true
     "@videojs/shaka-video":
       optional: true
     "@videojs/spotify-audio":
@@ -410,62 +413,63 @@ __metadata:
       optional: true
     "@videojs/youtube-video":
       optional: true
-  checksum: 10c0/85ebb1e81580273ab04ce6a3c47520244b6a8c4450b0acab7a82f523fe27f94e80ad91bb9e3a0fbb27cc3cf136641ff3e164796e866e0f8852daa889e20ca80a
+  checksum: 10c0/af390aa79206296bcd7778eaf4845ee161a63bc63ade4cf71a0a9dae7e0dec4c97187a4e329a32016416b1781bf9afe97f2df2abe994284f8231990d1eca5adf
   languageName: node
   linkType: hard
 
-"@videojs/media@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/media@npm:10.0.1"
+"@videojs/media@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/media@npm:10.1.0"
   dependencies:
-    "@videojs/utils": "npm:10.0.1"
-  checksum: 10c0/56c12b86928276704ada64b827107f1e41635fc644c3df728360b0f1c2f2b3e8b6428906b795bf2afa112f3affd00a608d3f5600192e5190c0980b7667b421fa
+    "@videojs/utils": "npm:10.1.0"
+  checksum: 10c0/09fd84ba97c63d9bbde7a95fd87b63f47f245f5a086db315dd0725cc36f8c1970a3faa1f09ddfd496467891f6ce8afd49e55fd3bf72f02469915e6bf98618b47
   languageName: node
   linkType: hard
 
-"@videojs/native-hls-video@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/native-hls-video@npm:10.0.1"
+"@videojs/native-hls-video@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/native-hls-video@npm:10.1.0"
   dependencies:
-    "@videojs/media": "npm:10.0.1"
-    "@videojs/utils": "npm:10.0.1"
-  checksum: 10c0/041f0c6a298cf9408b87d366b29cca5fb3856cf8c525915a4e069ebd67bdfec4e0549dff90c99798f0f17ecab550998e15b207a4f905af93f3b35f5c8773a715
+    "@videojs/media": "npm:10.1.0"
+    "@videojs/spf": "npm:10.1.0"
+    "@videojs/utils": "npm:10.1.0"
+  checksum: 10c0/e441fdb492f44e8d2301a2490edc1b1ede765ac99110989484340e991623f3c072ccf1fd2441d35c113c7b67802e8af315fc394f649be5e5c0725bc3dbe6b428
   languageName: node
   linkType: hard
 
-"@videojs/spf@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/spf@npm:10.0.1"
+"@videojs/spf@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/spf@npm:10.1.0"
   dependencies:
-    "@videojs/media": "npm:10.0.1"
-    "@videojs/utils": "npm:10.0.1"
+    "@videojs/media": "npm:10.1.0"
+    "@videojs/utils": "npm:10.1.0"
     signal-polyfill: "npm:^0.2.2"
-  checksum: 10c0/75219f9294b7f011a335a4afa9e1dcc93b4c76bef84b28c14cf8121a64d60fc0d0c8c12ff2ebf65e6d9725f1598cc4b11a1f2210cb03fcd5da6f9c78a4f00d62
+  checksum: 10c0/8c14f731b9440e3c2aaa94b0e9cd196d711bbdb4be53df809f798a87a8c52d1e3a8a8f80976c46092f9f7d159ebd00421c22e18e40fcb5ad681ae7e87805d2fd
   languageName: node
   linkType: hard
 
-"@videojs/store@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/store@npm:10.0.1"
+"@videojs/store@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/store@npm:10.1.0"
   dependencies:
-    "@videojs/utils": "npm:10.0.1"
+    "@videojs/utils": "npm:10.1.0"
     react-compiler-runtime: "npm:^1.0.0"
   peerDependencies:
-    "@videojs/element": 10.0.1
+    "@videojs/element": 10.1.0
     react: ^18.0.0 || ^19.0.0
   peerDependenciesMeta:
     "@videojs/element":
       optional: true
     react:
       optional: true
-  checksum: 10c0/67c43a285745e44761f10f0a39762decf9d6092ccfd60a3b6f3240ffc8f50ff5d5999d83df473729c030741b20c61749de4a75865ecbb53896ff7803c19f3c08
+  checksum: 10c0/dd27c219b06eae816e945b8ad7cf96e8df3d8cdd7061244b173ad4660e238834d7ccf84a1b2ec9d917d9a6a746e5255a067eb023f9992451d339ee1022f60b26
   languageName: node
   linkType: hard
 
-"@videojs/utils@npm:10.0.1":
-  version: 10.0.1
-  resolution: "@videojs/utils@npm:10.0.1"
-  checksum: 10c0/9661338c13251970cd945586b81c79d0d6e15ee37088b733bb61226781be746ad425b25e47771762d8f0ae9429f5aef2d3359851d6cf5c7461bb43612ebe3d5f
+"@videojs/utils@npm:10.1.0":
+  version: 10.1.0
+  resolution: "@videojs/utils@npm:10.1.0"
+  checksum: 10c0/c007e2f5fafc3bae418566d021c36afd9396eec239f395a8cb0ee463e5533fd94236842a9139b98ece2899c0034710be48bcc945628ab306a349cabfad599880
   languageName: node
   linkType: hard
 
@@ -509,7 +513,7 @@ __metadata:
     "@hotwired/turbo-rails": "npm:^8.0.23"
     "@rails/actioncable": "npm:^8.1.400"
     "@rails/activestorage": "npm:^8.1.400"
-    "@videojs/html": "npm:10.0.1"
+    "@videojs/html": "npm:10.1.0"
     canvas-confetti: "npm:^1.9.4"
     chart.js: "npm:^4.5.1"
     chartkick: "npm:^5.0.1"
