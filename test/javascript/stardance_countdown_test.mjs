@@ -5,7 +5,7 @@ import CountdownController from "../../app/javascript/controllers/countdown_cont
 import { serverClock } from "../../app/javascript/lib/server_clock.js";
 
 const endsAt = "2026-10-31T23:59:59.999-04:00";
-const explodesAt = "2026-11-01T12:10:00.000-05:00";
+const explodesAt = "2026-11-01T12:15:00.000-05:00";
 
 function controller() {
   const c = {
@@ -62,7 +62,7 @@ test("fresh and resumed pages select the current stage from server time, includi
     element: { classList: { toggle() {} } },
   };
   CountdownController.prototype.render.call(clock);
-  assert.equal(clock.element.innerHTML.replace(/<[^>]*>/g, ""), "00:13:10:00");
+  assert.equal(clock.element.innerHTML.replace(/<[^>]*>/g, ""), "00:13:15:00");
 });
 
 test("no server clock sample preserves the server-rendered stage instead of guessing", (t) => {
