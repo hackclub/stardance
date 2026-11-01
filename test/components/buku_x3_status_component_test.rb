@@ -75,7 +75,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
       assert_selector ".buku-x3-status__countdown-caption + .buku-x3-status__clock[data-controller='countdown'][data-countdown-clock-value='true'][aria-hidden='true']"
       assert_selector ".buku-x3-status__countdown-caption", text: "stardance ends in"
       assert_selector "[data-countdown-reset-at-value='2026-10-31T23:59:59.999-04:00']", count: 2, visible: :all
-      assert_selector ".buku-x3-status__countdown[data-controller='stardance-countdown'][data-stardance-countdown-explodes-at-value='2026-11-01T12:00:00.000-05:00']"
+      assert_selector ".buku-x3-status__countdown[data-controller='stardance-countdown'][data-stardance-countdown-explodes-at-value='2026-11-01T12:10:00.000-05:00']"
       # No leaderboard passed in, so no tab.
       assert_no_selector ".buku-x3-status__leaderboard-tab"
     end
@@ -90,9 +90,9 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
   test "the countdown remains visible after shipping closes and targets the finale" do
     travel_to Rails.application.config.stardance_ends_at + 1.hour do
       render_inline BukuX3StatusComponent.new(user: nil)
-      assert_selector ".buku-x3-status__clock[data-countdown-reset-at-value='2026-11-01T12:00:00.000-05:00']"
+      assert_selector ".buku-x3-status__clock[data-countdown-reset-at-value='2026-11-01T12:10:00.000-05:00']"
       assert_selector ".buku-x3-status__countdown-caption", text: "stardance explodes in"
-      assert_selector "[data-countdown-reset-at-value='2026-11-01T12:00:00.000-05:00']", count: 2, visible: :all
+      assert_selector "[data-countdown-reset-at-value='2026-11-01T12:10:00.000-05:00']", count: 2, visible: :all
     end
   end
 
@@ -101,7 +101,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
       [ @user, nil ].each do |viewer|
         render_inline BukuX3StatusComponent.new(user: viewer)
         assert_selector ".buku-x3-status__countdown-caption", text: "stardance explodes in"
-        assert_selector ".buku-x3-status__clock[data-countdown-reset-at-value='2026-11-01T12:00:00.000-05:00']"
+        assert_selector ".buku-x3-status__clock[data-countdown-reset-at-value='2026-11-01T12:10:00.000-05:00']"
       end
     end
   end
