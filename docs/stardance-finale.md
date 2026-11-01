@@ -22,8 +22,7 @@ countdown visibility preference still applies. Admin pages remain excluded.
 Enable **`finaleondemand`** to show **replay the finale** before the live
 countdown ends. It is registered disabled by default. Enable it for just your
 user (an actor in Flipper) to review on production, or globally to offer it to
-everyone, including signed-out visitors. The video URL and runtime must be
-configured. Open pages pick up flag changes on their next server-clock sync
+everyone, including signed-out visitors. The video file must be included in the deployment. Open pages pick up flag changes on their next server-clock sync
 (at most about 30 seconds); refresh for an immediate check.
 
 This starts a private replay from the beginning, restores the site afterward,
@@ -34,34 +33,20 @@ with the flag off, so it can also be left enabled after the event.
 
 ## Supplying the finished video
 
-Set these on the deployed application and restart it:
+Put the finished MP4 at **`public/videos/finale.mp4`**, commit it, and deploy.
+No environment variables or manual duration settings are needed. The application
+reads its full runtime once at boot using ffprobe (already included in both Docker
+images). The first 10 seconds of the file play under destruction/fade.
+Clips shorter than that still allow the visual sequence to finish.
 
-```text
-STARDANCE_FINALE_VIDEO_URL=https://your-asset-host.example/finale-v1.mp4
-STARDANCE_FINALE_VIDEO_DURATION_SECONDS=123.456
-```
+Use H.264 video/AAC audio and MP4 fast-start metadata. The file is served directly
+as `/videos/finale.mp4`, outside the JavaScript bundle; the published URL includes
+a file version to avoid reusing an older cached clip. The static server must
+support byte ranges for late-arrival seeking. Deploy the same file to every server.
 
-The runtime above is an example: use the exact duration of the entire final
-file, including its first 10 seconds of audio over the destruction/fade.
-Do not add 10 seconds to the runtime. Clips shorter than the destruction/fade
-still allow that sequence to finish before restoring the page.
-An MP3 contains audio only; use an MP4 containing video and audio. An existing
-asset host/CDN is preferred. A file at `public/videos/finale-v1.mp4` also works
-with the URL `/videos/finale-v1.mp4`, if the production static file server
-serves byte ranges. A relative URL means public assets, not an asset pipeline
-logical filename. Do not put the file inside the JavaScript bundle.
-
-Use H.264 video/AAC audio, a sensible resolution/bitrate (720p is a useful
-starting point), and MP4 fast-start metadata. The host should send
-`Content-Type: video/mp4`, support byte ranges (`206 Partial Content`), and
-cache an immutable, versioned URL. Check seeking at a late timestamp before
-launch. Use the same file/runtime on every server; changing runtime during the
-event changes the shared end time.
-
-The URL and runtime are read from `/server_time` every 30 seconds, so pages
-already open receive configuration updates without reloading. Configure both
-before the event. If either is missing or invalid, the destruction/fade still
-ends after 10 seconds, restores the site, and does not offer a broken replay.
+Open pages receive the URL and duration through `/server_time` on their next
+30-second sync. If the file is missing or unreadable, the destruction/fade ends
+after 10 seconds, restores the site, and does not offer a broken replay.
 
 ## Loading and playback
 

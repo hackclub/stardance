@@ -172,17 +172,10 @@ No real GPU timing or throttled-browser FPS measurement was available here.
 
 ## Finale configuration
 
-After `stardance_ends_at`, every signed-in viewer outside admin pages gets the existing clock’s final
-three seconds in red, the site disintegration, then the finale video. Late arrivals start the
-same sequence on their first visit. The existing account dismissal
-`stardance_finale` records completion when the video ends or Continue is selected.
-Interrupted scenes retry next visit; reduced-motion and visual opt-out settings
-are respected.
-
-Set `STARDANCE_FINALE_VIDEO_URL` to a direct browser-playable video file URL
-(such as an MP4) and restart the app. If unset, the finale ends on a blank screen and records completion automatically.
-Browsers blocking autoplay get a Play finale button. The local event simulator's
-**preview finale · 3–2–1** button replays without marking the account as seen.
+See [Finale playback](stardance-finale.md) for the current shared timeline,
+replay behavior, and video setup. Include `public/videos/finale.mp4` in the
+deployment; the app reads its runtime automatically at boot. No environment
+variables are required. Missing media restores the page after the visual sequence.
 
 The countdown synchronizes with `/server_time` every 30 seconds and on tab
 resume/focus. Between samples it uses `performance.now()`, never the device’s
