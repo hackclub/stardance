@@ -269,12 +269,27 @@ test("live clock starts its final three seconds without adding another countdown
   assert.deepEqual(c.events, ["disintegrate"]);
 });
 
-test("preview updates the existing clock and restores its real deadline on reset", (t) => {
-  let deadline = "2026-11-01T17:00:00Z";
+test("the October 31 countdown ending never starts the disintegration", (t) => {
+  browser(t);
+  const c = controller();
+  for (const instant of [
+    "2026-10-31T23:59:59.999-04:00",
+    "2026-11-01T00:00:00-04:00",
+    "2026-11-01T11:59:56-05:00",
+  ]) {
+    c.tick(Date.parse(instant));
+    assert.equal(c.phase, "idle");
+    assert.deepEqual(c.events, []);
+  }
+});
+
+test("preview overrides the staged clock and restores its automatic stage on reset", (t) => {
+  let deadline = "";
   const original = deadline;
   const clock = {
     getAttribute: () => deadline,
     setAttribute(name, value) {
+      assert.equal(name, "data-stardance-countdown-override-at-value");
       deadline = value;
     },
   };

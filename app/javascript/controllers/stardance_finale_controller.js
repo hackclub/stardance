@@ -113,14 +113,16 @@ export default class extends Controller {
     this.countdownEndsAt = deadline;
     this.originalClocks = new Map();
     document
-      .querySelectorAll(".buku-x3-status [data-countdown-reset-at-value]")
+      .querySelectorAll(
+        ".buku-x3-status [data-stardance-countdown-override-at-value]",
+      )
       .forEach((clock) => {
         this.originalClocks.set(
           clock,
-          clock.getAttribute("data-countdown-reset-at-value"),
+          clock.getAttribute("data-stardance-countdown-override-at-value"),
         );
         clock.setAttribute(
-          "data-countdown-reset-at-value",
+          "data-stardance-countdown-override-at-value",
           new Date(deadline).toISOString(),
         );
       });
@@ -247,7 +249,10 @@ export default class extends Controller {
     if (this.hasVideoTarget) this.videoTarget.pause();
     this.dialogTarget.close();
     this.originalClocks?.forEach((deadline, clock) =>
-      clock.setAttribute("data-countdown-reset-at-value", deadline),
+      clock.setAttribute(
+        "data-stardance-countdown-override-at-value",
+        deadline,
+      ),
     );
     this.originalClocks?.clear();
     if (restore && this.phase !== "idle") this.dispatch("reset");

@@ -24,14 +24,17 @@ class BukuX3StatusComponent < ViewComponent::Base
 
   # Keep the existing clock for unseen late-arrival finales, respecting settings.
   def countdown?
-    (Time.current < ends_at || (@user.present? && !@user.has_dismissed?("stardance_finale"))) && @user&.preference&.countdown_enabled? != false
+    (Time.current < finale_at || (@user.present? && !@user.has_dismissed?("stardance_finale"))) && @user&.preference&.countdown_enabled? != false
   end
 
   # The home page passes the leaderboard as content; its tab hangs off the bottom edge.
   # (home always passes a block, which is empty when the viewer can't see the leaderboard).
   def leaderboard? = !compact? && content.present?
 
-  def ends_at = Rails.application.config.stardance_finale_at
+  def ends_at = Rails.application.config.stardance_ends_at
+  def finale_at = Rails.application.config.stardance_finale_at
+  def countdown_deadline = countdown_explodes? ? finale_at : ends_at
+  def countdown_label = countdown_explodes? ? "stardance explodes in" : "stardance ends in"
   def compact? = @compact
   def preview? = @preview && Rails.env.development?
   def buku?
@@ -54,5 +57,6 @@ class BukuX3StatusComponent < ViewComponent::Base
   def display_hours(team) = helpers.number_with_precision(team_hours.fetch(team), precision: 1, delimiter: ",", strip_insignificant_zeros: true)
 
   private
+    def countdown_explodes? = Time.current >= ends_at
     def event = @event ||= BukuX3::Event.current
 end

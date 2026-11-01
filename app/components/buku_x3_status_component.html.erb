@@ -15,10 +15,15 @@
   <% unless compact? %>
     <% if countdown? %>
       <%# Screen readers get "6d 8h 19min" instead of the bare DD:HH:MM:SS clock. %>
-      <div class="buku-x3-status__countdown">
-        <p class="buku-x3-status__countdown-caption">stardance ends in<span class="buku-x3-status__countdown-text"> <span data-controller="countdown" data-countdown-reset-at-value="<%= ends_at.iso8601(3) %>"></span></span></p>
+      <div class="buku-x3-status__countdown" data-controller="stardance-countdown"
+           data-stardance-countdown-ends-at-value="<%= ends_at.iso8601(3) %>"
+           data-stardance-countdown-explodes-at-value="<%= finale_at.iso8601(3) %>"
+           data-stardance-countdown-override-at-value="">
+        <p class="buku-x3-status__countdown-caption">
+          <span data-stardance-countdown-target="label"><%= countdown_label %></span><span class="buku-x3-status__countdown-text"> <span data-controller="countdown" data-stardance-countdown-target="clock" data-countdown-reset-at-value="<%= countdown_deadline.iso8601(3) %>"></span></span>
+        </p>
         <p class="buku-x3-status__clock" aria-hidden="true" data-controller="countdown"
-           data-countdown-reset-at-value="<%= ends_at.iso8601(3) %>" data-countdown-clock-value="true"></p>
+           data-stardance-countdown-target="clock" data-countdown-reset-at-value="<%= countdown_deadline.iso8601(3) %>" data-countdown-clock-value="true"></p>
       </div>
     <% end %>
     <div class="buku-x3-status__damage">
