@@ -1,4 +1,4 @@
 class ServerTimePolicy < ApplicationPolicy
-  # Public timestamps only; no account or event participation information.
+  # Public clock/media metadata and the current viewer's playback availability.
   def show? = true
 end

@@ -5,7 +5,7 @@ import CountdownController from "../../app/javascript/controllers/countdown_cont
 import { serverClock } from "../../app/javascript/lib/server_clock.js";
 
 const endsAt = "2026-10-31T23:59:59.999-04:00";
-const explodesAt = "2026-11-01T12:10:00.000-05:00";
+const explodesAt = "2026-11-01T12:15:00.000-05:00";
 
 function controller() {
   const c = {
@@ -62,7 +62,7 @@ test("fresh and resumed pages select the current stage from server time, includi
     element: { classList: { toggle() {} } },
   };
   CountdownController.prototype.render.call(clock);
-  assert.equal(clock.element.innerHTML.replace(/<[^>]*>/g, ""), "00:13:10:00");
+  assert.equal(clock.element.innerHTML.replace(/<[^>]*>/g, ""), "00:13:15:00");
 });
 
 test("no server clock sample preserves the server-rendered stage instead of guessing", (t) => {
@@ -128,4 +128,78 @@ test("navigation releases the clock subscription and interval", (t) => {
   StardanceCountdownController.prototype.disconnect.call(c);
   assert.equal(unsubscribed, true);
   assert.equal(clear.mock.calls[0].arguments[0], 42);
+});
+
+test("replay appears only after the entire broadcast and the clock remains at zero forever", (t) => {
+  const original = serverClock.data;
+  serverClock.data = {
+    ends_at: explodesAt,
+    finale: { video_url: "/finale.mp4", duration_seconds: 60 },
+  };
+  t.after(() => {
+    serverClock.data = original;
+  });
+  const c = controller();
+  c.hasReplayTarget = true;
+  c.replayTarget = {};
+  const start = Date.parse(explodesAt);
+  c.render(start + 59999);
+  assert.equal(c.replayTarget.hidden, true);
+  c.render(start + 60000);
+  assert.equal(c.replayTarget.hidden, false);
+  c.render(start + 86400000);
+  assert.equal(c.replayTarget.hidden, false);
+  assert.deepEqual(
+    c.clockTargets.map((clock) => clock.deadline),
+    [explodesAt, explodesAt],
+  );
+  const clock = {
+    resetAtValue: explodesAt,
+    clockValue: true,
+    element: { classList: { toggle() {} } },
+  };
+  t.mock.method(serverClock, "now", () => start + 86400000);
+  CountdownController.prototype.render.call(clock);
+  assert.equal(clock.element.innerHTML.replace(/<[^>]*>/g, ""), "00:00:00:00");
+});
+
+test("the on-demand flag updates the early button and click permission without moving the countdown", (t) => {
+  const original = serverClock.data;
+  serverClock.data = {
+    ends_at: explodesAt,
+    finale: {
+      video_url: "/finale.mp4",
+      duration_seconds: 60,
+      on_demand: false,
+    },
+  };
+  t.after(() => {
+    serverClock.data = original;
+  });
+  const now = Date.parse(explodesAt) - 3600000;
+  t.mock.method(serverClock, "now", () => now);
+  const c = controller();
+  c.hasReplayTarget = true;
+  c.replayTarget = {};
+  const events = [];
+  c.dispatch = (name) => events.push(name);
+  const click = () => StardanceCountdownController.prototype.replay.call(c);
+  c.render();
+  click();
+  assert.equal(c.replayTarget.hidden, true);
+  assert.deepEqual(events, []);
+  serverClock.data.finale.on_demand = true;
+  c.render();
+  assert.equal(c.replayTarget.hidden, false);
+  click();
+  assert.deepEqual(events, ["replay"]);
+  assert.deepEqual(
+    c.clockTargets.map((clock) => clock.deadline),
+    [explodesAt, explodesAt],
+  );
+  serverClock.data.finale.on_demand = false;
+  c.render();
+  click();
+  assert.equal(c.replayTarget.hidden, true);
+  assert.deepEqual(events, ["replay"]);
 });

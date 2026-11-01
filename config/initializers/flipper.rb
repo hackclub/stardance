@@ -34,6 +34,7 @@ Rails.application.config.after_initialize do
         hardware_review_undo
         ship_event_payouts
         finality_bonus
+        finaleondemand
         disable_internal_sw_dash_reviews
         disable_recertification
         limit_recertifications

@@ -105,15 +105,14 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "late arrivals get the finale independently of the team flag and visual preferences" do
+  test "finale player is available independently of the team flag and visual preferences" do
     sign_in(@user)
     @user.preference.update!(countdown_enabled: false, disintegration_effects_enabled: false, particle_effects_enabled: false)
     travel_to Rails.application.config.stardance_finale_at + 2.days do
       get home_path
       assert_response :success
-      assert_select "[data-stardance-finale-seen-value='false'][data-stardance-finale-viewer-id-value='#{@user.id}']"
-      assert_select ".stardance-finale__placeholder", text: "", count: 1
-      assert_select ".stardance-finale__panel button, .stardance-finale__panel p", count: 0
+      assert_select ".stardance-finale__video[preload='none']:not([src])"
+      assert_select ".stardance-finale__panel[hidden]"
       assert_select ".buku-x3-status__clock", count: 0
       assert_select ".blackhole[data-blackhole-disintegration-enabled-value='false'][data-blackhole-particles-enabled-value='false']"
       assert_not @user.preference.reload.disintegration_effects_enabled?
@@ -121,24 +120,19 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "finale completion is idempotent and belongs only to the current user" do
-    sign_in(@user)
-    2.times do
-      post my_dismissals_path, params: { thing_name: "stardance_finale" }, as: :json
-      assert_response :success
-    end
-    assert_equal 1, @user.reload.things_dismissed.count("stardance_finale")
-    assert_not users(:two).has_dismissed?("stardance_finale")
+  test "guests also have a player and replay control without account dismissal state" do
     get home_path
-    assert_select "[data-stardance-finale-seen-value='true']"
+    assert_select ".stardance-finale__video[preload='none']:not([src])"
+    assert_select "[data-stardance-countdown-target='replay']"
+    assert_select "[data-stardance-finale-seen-value], [data-stardance-finale-dismiss-url-value]", count: 0
   end
 
-  test "configured finale video replaces the placeholder and keeps replay local" do
+  test "configured finale video is not downloaded on page load and debug controls stay local" do
     sign_in(@user)
     original_url = Rails.application.config.stardance_finale_video_url
     Rails.application.config.stardance_finale_video_url = "https://example.test/finale.mp4"
     get home_path
-    assert_select ".stardance-finale__video[src='https://example.test/finale.mp4'][controls][playsinline]"
+    assert_select ".stardance-finale__video[preload='none'][playsinline]:not([src])"
     assert_select ".stardance-finale__placeholder", count: 0
     assert_select "[data-stardance-finale-preview-enabled-value='false']"
   ensure

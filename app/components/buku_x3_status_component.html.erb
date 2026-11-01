@@ -24,6 +24,7 @@
         </p>
         <p class="buku-x3-status__clock" aria-hidden="true" data-controller="countdown"
            data-stardance-countdown-target="clock" data-countdown-reset-at-value="<%= countdown_deadline.iso8601(3) %>" data-countdown-clock-value="true"></p>
+        <button type="button" class="buku-x3-status__replay" data-stardance-countdown-target="replay" data-action="stardance-countdown#replay" hidden>replay the finale</button>
       </div>
     <% end %>
     <div class="buku-x3-status__damage">

@@ -52,6 +52,7 @@ export class ServerClock {
         server: server + (receivedAt - sentAt) / 2,
         local: receivedAt,
       };
+      this.data = data;
       this.listeners.forEach((listener) => listener());
       return data;
     } catch {

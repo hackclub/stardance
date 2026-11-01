@@ -139,6 +139,33 @@
     text-transform: uppercase;
   }
 
+  &__replay {
+    position: relative;
+    z-index: 3;
+    margin-top: var(--space-xs);
+    padding: var(--space-xxxs) var(--space-m);
+    border: 1px solid var(--color-brand-cream);
+    border-radius: var(--space-xl);
+    background: var(--color-set-1-bg);
+    color: var(--color-brand-cream);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-brand-cream);
+      color: var(--color-set-1-bg);
+    }
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &:has(&__replay:not([hidden])) &__tug {
+    margin-top: 0;
+  }
+
   &__clock {
     margin: 0;
     color: var(--color-brand-cream);
