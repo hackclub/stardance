@@ -1,11 +1,11 @@
 # Finale playback
 
-The live finale uses the server clock: November 1, 2026 at 12:15 PM Eastern
-(17:15 UTC). Shipping still closes at noon Eastern; the October 31 event and
+The live finale uses the server clock: November 1, 2026 at 12:20 PM Eastern
+(17:20 UTC). Shipping still closes at noon Eastern; the October 31 event and
 time-logging cutoffs are unchanged.
 The video/audio starts immediately with 8 seconds of disintegration and
 2 seconds fading to black. Its first 10 seconds play underneath the page;
-at 12:15:10 PM EST the picture is revealed without restarting the file.
+at 12:20:10 PM EST the picture is revealed without restarting the file.
 A visitor joining 40 seconds after the finale starts joins 40 seconds into the video.
 Buffering and returning from a background
 tab catch up to that same timeline. This is scheduled playback of a static

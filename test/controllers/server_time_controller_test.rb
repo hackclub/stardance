@@ -49,8 +49,8 @@ class ServerTimeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "countdown targets 12:15 PM Eastern November 1 without moving the October 31 event deadline" do
-    assert_equal Time.utc(2026, 11, 1, 17, 15), Rails.application.config.stardance_finale_at
+  test "countdown targets 12:20 PM Eastern November 1 without moving the October 31 event deadline" do
+    assert_equal Time.utc(2026, 11, 1, 17, 20), Rails.application.config.stardance_finale_at
     assert_equal Time.find_zone!("America/New_York").local(2026, 10, 31).end_of_day,
                  Rails.application.config.stardance_ends_at
 
@@ -58,7 +58,7 @@ class ServerTimeControllerTest < ActionDispatch::IntegrationTest
       get server_time_path, as: :json
       assert_response :success
       assert_equal false, response.parsed_body["ended"]
-      assert_equal "2026-11-01T12:15:00.000-05:00", response.parsed_body["ends_at"]
+      assert_equal "2026-11-01T12:20:00.000-05:00", response.parsed_body["ends_at"]
     end
   end
 
