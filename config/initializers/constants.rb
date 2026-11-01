@@ -2,5 +2,7 @@ Rails.application.config.telescreen_url = (Rails.application.credentials.dig(:co
 # Direct video file URL (e.g. MP4); blank shows the finale placeholder.
 Rails.application.config.stardance_finale_video_url = ENV["STARDANCE_FINALE_VIDEO_URL"].presence
 Rails.application.config.stardance_ends_at = Time.find_zone!("America/New_York").local(2026, 10, 31).end_of_day
+# The public countdown and finale run later; eligibility cutoffs still use stardance_ends_at.
+Rails.application.config.stardance_finale_at = Time.find_zone!("America/New_York").local(2026, 11, 1, 12)
 # New ships close when Stardance ends. test_helper.rb clears it so ship tests keep passing after the date.
 Rails.application.config.stardance_ships_close_at = Rails.application.config.stardance_ends_at

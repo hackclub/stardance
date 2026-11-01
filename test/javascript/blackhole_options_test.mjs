@@ -15,17 +15,79 @@ function finaleController(overrides = {}) {
   };
 }
 
-test("finale ramps over twenty seconds from the viewer's starting damage", () => {
+test("finale ramps over eight seconds from the viewer's starting damage", () => {
   const controller = finaleController();
   const update = (offset) =>
     BlackholeController.prototype.updateFinale.call(controller, 1000 + offset);
   update(0);
   assert.equal(controller.requested, 0.25);
-  update(10_000);
+  update(4000);
   assert.equal(controller.requested, 0.625);
-  update(20_000);
+  update(8000);
   assert.equal(controller.requested, 1);
   assert.equal(controller.level, 1);
+});
+
+test("local finale duration is captured at the start and production keeps eight seconds", (t) => {
+  t.mock.method(performance, "now", () => 1000);
+  for (const [local, seconds, expectedMs] of [
+    [true, 5, 5000],
+    [true, 60, 60000],
+    [true, undefined, 8000],
+    [false, 5, 8000],
+  ]) {
+    const controller = finaleController({
+      simulatorEnabledValue: local,
+      simulation: { finaleDuration: seconds },
+      resetFinale() {},
+      updateFinale() {},
+    });
+    BlackholeController.prototype.startFinale.call(controller);
+    const start = controller.finale.startedAt;
+    assert.equal(controller.finale.duration, expectedMs);
+
+    controller.simulation.finaleDuration = 120;
+    BlackholeController.prototype.updateFinale.call(
+      controller,
+      start + expectedMs / 2,
+    );
+    assert.equal(controller.requested, 0.625);
+    BlackholeController.prototype.updateFinale.call(
+      controller,
+      start + expectedMs,
+    );
+    assert.equal(controller.level, 1);
+  }
+});
+
+test("simulator duration handles missing, invalid and out-of-range values", () => {
+  for (const [input, expected] of [
+    ["5", 5],
+    ["0.5", 1],
+    ["999", 120],
+    ["", 8],
+    ["0", 8],
+    ["-1", 8],
+    ["Infinity", 8],
+    ["invalid", 8],
+    [undefined, 8],
+  ]) {
+    const fields = {
+      damage: { value: "25" },
+      buku: { value: "0" },
+      bean: { value: "0" },
+      strength: { value: "100" },
+      particles: { checked: true },
+      cursorRepair: { checked: true },
+      finaleDuration: input === undefined ? undefined : { value: input },
+    };
+    const controller = {
+      simulatorFormTarget: { elements: { namedItem: (name) => fields[name] } },
+      simulatorStatusTarget: {},
+    };
+    BlackholeController.prototype.readSimulation.call(controller);
+    assert.equal(controller.simulation.finaleDuration, expected);
+  }
 });
 
 test("disintegration waits for the cutscene to start", () => {
@@ -34,7 +96,8 @@ test("disintegration waits for the cutscene to start", () => {
   assert.equal(controller.requested, 0.25);
 });
 
-test("the finale overrides every preference combination, then resets to the saved settings", () => {
+test("the finale overrides every preference combination, then resets to the saved settings", (t) => {
+  t.mock.method(performance, "now", () => 1000);
   for (const effects of [false, true]) {
     for (const particles of [false, true]) {
       const controller = finaleController({
@@ -60,7 +123,7 @@ test("the finale overrides every preference combination, then resets to the save
       controller.startFinale();
       const start = controller.finale.startedAt;
       assert.equal(controller.finale.from, effects ? 0.25 : 0);
-      controller.updateFinale(start + 10_000);
+      controller.updateFinale(start + 4000);
       const halfway = effects ? 0.625 : 0.5;
       assert.equal(controller.requested, halfway);
       controller.setIntensity(10);
@@ -70,7 +133,7 @@ test("the finale overrides every preference combination, then resets to the save
         "polls cannot undo the finale",
       );
       assert.equal(controller.reported, 10, "team score stays real");
-      controller.updateFinale(start + 20_000);
+      controller.updateFinale(start + 8000);
       assert.equal(controller.level, 1);
 
       controller.resetFinale();
@@ -257,7 +320,7 @@ test("particle opt-out disables both ambient dust and destruction bursts", () =>
   assert.equal(controller.dustBudget, undefined);
 });
 
-test("finale dust overrides particle opt-outs, paints and settles before handing off", () => {
+test("finale dust overrides particle opt-outs and keeps drifting during the fade", () => {
   let painted = 0;
   const controller = {
     finale: { progress: 0.5 },
@@ -302,11 +365,15 @@ test("finale dust overrides particle opt-outs, paints and settles before handing
     30,
     "completed destruction stops new ambient dust",
   );
-  for (let frame = 0; frame < 60; frame++) controller.draw(0.05);
-  assert.equal(controller.particles.length, 0);
   BlackholeController.prototype.tick.call(controller, 1000);
   assert.equal(controller.event, "finale-complete");
-  assert.equal(controller.woke, undefined);
+  assert.ok(controller.particles.length > 0, "dust must not delay the fade");
+  assert.equal(controller.woke, true);
+  controller.event = undefined;
+  BlackholeController.prototype.tick.call(controller, 1016);
+  assert.equal(controller.event, undefined, "completion fires only once");
+  for (let frame = 0; frame < 60; frame++) controller.draw(0.05);
+  assert.equal(controller.particles.length, 0);
 
   controller.finale = null;
   controller.emitAmbientDust(1);

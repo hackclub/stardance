@@ -1,5 +1,6 @@
 <%# locals: (video_url: nil) %>
 <dialog class="stardance-finale" aria-label="Stardance finale" data-stardance-finale-target="dialog" data-action="cancel->stardance-finale#preventClose">
+  <div class="stardance-finale__fade" data-stardance-finale-target="fade" aria-hidden="true"></div>
   <div class="stardance-finale__panel" data-stardance-finale-target="panel" hidden>
     <% if video_url.present? %>
       <video class="stardance-finale__video" src="<%= video_url %>" controls playsinline preload="none" aria-label="Stardance finale video"

@@ -6,7 +6,7 @@ import FinaleController from "../../app/javascript/controllers/stardance_finale_
 function controller(overrides = {}) {
   const state = {
     phase: "idle",
-    endsAtValue: "2026-11-01T04:00:00Z",
+    endsAtValue: "2026-11-01T17:00:00Z",
     seenValue: false,
     previewEnabledValue: false,
     viewerIdValue: "1",
@@ -76,9 +76,6 @@ test("deadline gates the finale, and even days-late arrivals see the full red co
   assert.equal(c.phase, "disintegrating");
   assert.deepEqual(c.events, ["disintegrate"]);
   assert.equal(c.panelTarget.hidden, true);
-  FinaleController.prototype.showVideo.call(c);
-  assert.equal(c.phase, "video");
-  assert.equal(c.panelTarget.hidden, false);
 });
 
 test("seen viewers, invalid deadlines, active stories and background tabs do not start", (t) => {
@@ -100,9 +97,87 @@ test("seen viewers, invalid deadlines, active stories and background tabs do not
 });
 
 test("video cannot start before destruction completes", () => {
-  const c = controller({ phase: "countdown", panelTarget: { hidden: true } });
-  FinaleController.prototype.showVideo.call(c);
+  for (const phase of ["idle", "countdown", "disintegrating"]) {
+    const c = controller({ phase, panelTarget: { hidden: true } });
+    FinaleController.prototype.showVideo.call(c);
+    assert.equal(c.panelTarget.hidden, true);
+  }
+});
+
+test("destruction fades to black for two seconds before playing the video", async () => {
+  let resolveFade;
+  let fades = 0;
+  let plays = 0;
+  const animation = {
+    finished: new Promise((resolve) => {
+      resolveFade = resolve;
+    }),
+  };
+  const c = controller({
+    phase: "disintegrating",
+    panelTarget: { hidden: true },
+    hasVideoTarget: true,
+    videoTarget: { currentTime: 10 },
+    playVideo() {
+      plays++;
+    },
+    fadeTarget: {
+      animate(frames, options) {
+        fades++;
+        assert.deepEqual(frames, [{ opacity: 0 }, { opacity: 1 }]);
+        assert.deepEqual(options, {
+          duration: 2000,
+          easing: "linear",
+          fill: "forwards",
+        });
+        return animation;
+      },
+    },
+    showVideo: FinaleController.prototype.showVideo,
+  });
+  const faded = FinaleController.prototype.fadeToBlack.call(c);
+  assert.equal(c.phase, "fading");
   assert.equal(c.panelTarget.hidden, true);
+  assert.equal(plays, 0);
+  await FinaleController.prototype.fadeToBlack.call(c);
+  assert.equal(fades, 1, "duplicate completion cannot restart the fade");
+
+  resolveFade();
+  await faded;
+  assert.equal(c.phase, "video");
+  assert.equal(c.panelTarget.hidden, false);
+  assert.equal(c.videoTarget.currentTime, 0);
+  assert.equal(plays, 1);
+});
+
+test("reset or navigation during the fade cancels it without playing the video", async () => {
+  for (const restore of [true, false]) {
+    let rejectFade;
+    let cancelled = false;
+    const animation = {
+      finished: new Promise((resolve, reject) => {
+        rejectFade = reject;
+      }),
+      cancel() {
+        cancelled = true;
+        rejectFade(new Error("cancelled"));
+      },
+    };
+    const c = controller({
+      phase: "disintegrating",
+      fadeTarget: { animate: () => animation },
+      showVideo() {
+        assert.fail("cancelled fade must not start the video");
+      },
+    });
+    const faded = FinaleController.prototype.fadeToBlack.call(c);
+    c.cleanup({ restore });
+    await faded;
+    assert.equal(cancelled, true);
+    assert.equal(c.phase, "idle");
+    assert.equal(c.fadeAnimation, null);
+    assert.deepEqual(c.events, restore ? ["reset"] : []);
+  }
 });
 
 test("local replay works for seen users and never records completion", async (t) => {
@@ -195,7 +270,7 @@ test("live clock starts its final three seconds without adding another countdown
 });
 
 test("preview updates the existing clock and restores its real deadline on reset", (t) => {
-  let deadline = "2026-11-01T04:00:00Z";
+  let deadline = "2026-11-01T17:00:00Z";
   const original = deadline;
   const clock = {
     getAttribute: () => deadline,
@@ -238,7 +313,7 @@ test("blank placeholder hides preview controls and saves completion without rest
     localStorage: { setItem() {} },
   });
   const c = controller({
-    phase: "disintegrating",
+    phase: "fading",
     hasVideoTarget: false,
     hasStatusTarget: false,
     hasContinueTarget: false,

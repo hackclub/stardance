@@ -31,7 +31,7 @@ class BukuX3StatusComponent < ViewComponent::Base
   # (home always passes a block, which is empty when the viewer can't see the leaderboard).
   def leaderboard? = !compact? && content.present?
 
-  def ends_at = Rails.application.config.stardance_ends_at
+  def ends_at = Rails.application.config.stardance_finale_at
   def compact? = @compact
   def preview? = @preview && Rails.env.development?
   def buku?

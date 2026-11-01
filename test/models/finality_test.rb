@@ -42,6 +42,16 @@ class FinalityTest < ActiveSupport::TestCase
     assert_equal ship_event, entry.ledgerable
   end
 
+  test "the delayed finale does not extend raffle entries or shipping bonuses" do
+    ship_event = create_ship(shipped_at: Rails.application.config.stardance_finale_at - 1.hour, payout: 100)
+
+    assert_equal Time.utc(2026, 11, 1, 4), Finality.window.end
+    assert_not_includes Finality.ships, ship_event
+    assert_not_includes Finality.raffle_entry_ids, ship_event.id
+    assert_nil Finality.rate_for(ship_event)
+    assert_not Finality.award_bonus!(ship_event)
+  end
+
   test "award_bonus! does nothing while the flag is off or before the payout" do
     paid = create_ship(shipped_at: Time.utc(2026, 10, 27, 16), payout: 100)
     unpaid = create_ship(shipped_at: Time.utc(2026, 10, 27, 17))

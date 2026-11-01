@@ -68,8 +68,8 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     assert_selector ".buku-x3-status__scores > .buku-x3-status__score--bean:last-child", exact_text: "67 hrs beans"
   end
 
-  test "countdown to the end of stardance sits above the rope until it ends" do
-    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+  test "countdown to the finale sits above the rope until it ends" do
+    Rails.application.config.stub(:stardance_finale_at, 2.days.from_now) do
       render_inline BukuX3StatusComponent.new(user: @user)
     end
     assert_selector ".buku-x3-status__countdown + .buku-x3-status__damage"
@@ -79,14 +79,21 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
     assert_no_selector ".buku-x3-status__leaderboard-tab"
 
     @user.dismiss_thing!("stardance_finale")
-    Rails.application.config.stub(:stardance_ends_at, 1.minute.ago) do
+    Rails.application.config.stub(:stardance_finale_at, 1.minute.ago) do
       render_inline BukuX3StatusComponent.new(user: @user)
     end
     assert_no_selector ".buku-x3-status__countdown"
   end
 
+  test "the countdown remains visible after shipping closes and targets the finale" do
+    travel_to Rails.application.config.stardance_ends_at + 1.hour do
+      render_inline BukuX3StatusComponent.new(user: nil)
+      assert_selector ".buku-x3-status__clock[data-countdown-reset-at-value='2026-11-01T12:00:00.000-05:00']"
+    end
+  end
+
   test "leaderboard opens from an attached tab, with or without the clock" do
-    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+    Rails.application.config.stub(:stardance_finale_at, 2.days.from_now) do
       render_inline(BukuX3StatusComponent.new(user: @user)) { "leaderboard" }
       assert_selector ".buku-x3-status[data-controller='buku-x3-status buku-leaderboard-panel']"
       assert_selector ".buku-x3-status > button.buku-x3-status__leaderboard-tab[aria-expanded='false'][aria-controls='buku-leaderboard-panel']", exact_text: "leaderboard"
@@ -99,7 +106,7 @@ class BukuX3StatusComponentTest < ViewComponent::TestCase
   end
 
   test "countdown respects the viewer's setting and shows for guests" do
-    Rails.application.config.stub(:stardance_ends_at, 2.days.from_now) do
+    Rails.application.config.stub(:stardance_finale_at, 2.days.from_now) do
       @user.preference.update!(countdown_enabled: false)
       render_inline BukuX3StatusComponent.new(user: @user)
       assert_no_selector ".buku-x3-status__countdown"
