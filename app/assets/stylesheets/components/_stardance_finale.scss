@@ -29,6 +29,14 @@
     pointer-events: none;
   }
 
+  &__countdown {
+    padding: var(--space-l);
+    border-radius: var(--border-radius);
+    background: var(--color-set-2-bg);
+    font-size: var(--font-size-xl);
+    text-align: center;
+  }
+
   &__panel {
     position: absolute;
     inset: 0;

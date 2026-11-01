@@ -6,10 +6,18 @@ import {
   DISINTEGRATION_MS,
   FADE_MS,
   COUNTDOWN_MS,
+  REPLAY_COUNTDOWN_MS,
 } from "../lib/stardance_finale_timeline.js";
 
+const ARRIVAL_DISMISSAL = "stardance_finale_arrival_v1";
+
 export default class extends Controller {
-  static values = { endsAt: String, previewEnabled: Boolean };
+  static values = {
+    endsAt: String,
+    previewEnabled: Boolean,
+    viewerId: String,
+    arrivalSeen: Boolean,
+  };
   static targets = [
     "dialog",
     "fade",
@@ -19,12 +27,17 @@ export default class extends Controller {
     "status",
     "continue",
     "previewReset",
+    "countdown",
   ];
 
   connect() {
     this.phase = "idle";
     this.generation = 0;
+    this.interaction = (event) => this.playOnArrival(event);
+    document.addEventListener("click", this.interaction, true);
+    document.addEventListener("keydown", this.interaction, true);
     this.beforeCache = () => {
+      this.removeInteractionListeners();
       clearInterval(this.timer);
       this.unsubscribeClock?.();
       this.cleanup({ restore: false });
@@ -40,6 +53,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this.removeInteractionListeners();
     this.unsubscribeClock?.();
     clearInterval(this.timer);
     document.removeEventListener("turbo:before-cache", this.beforeCache);
@@ -50,6 +64,8 @@ export default class extends Controller {
   tick(now = serverClock.now()) {
     if (document.hidden || !Number.isFinite(now)) return;
     if (this.mode === "preview" || this.mode === "replay") {
+      if (this.phase === "countdown" && this.hasCountdownTarget)
+        this.countdownTarget.textContent = `stardance explodes in ${Math.max(0, Math.ceil((this.localDeadline - performance.now()) / 1000))}`;
       if (this.phase === "countdown" && performance.now() >= this.localDeadline)
         this.beginDisintegration();
       if (this.phase !== "video") this.updatePlayback();
@@ -93,6 +109,52 @@ export default class extends Controller {
     this.updatePlayback();
   }
 
+  removeInteractionListeners() {
+    document.removeEventListener("click", this.interaction, true);
+    document.removeEventListener("keydown", this.interaction, true);
+  }
+
+  playOnArrival(event) {
+    if (!event.isTrusted || this.arrivalSeenValue || this.phase !== "idle")
+      return;
+    if (event.type === "keydown" && !["Enter", " "].includes(event.key)) return;
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey)
+      return;
+    const timeline = finaleTimeline(serverClock.data);
+    // Let the shared live show finish before offering the full catch-up sequence.
+    if (!timeline?.ready || !(serverClock.now() >= timeline.finishesAt)) return;
+    if (document.querySelector("dialog[open], .visual-novel, .buku-x3-reveal"))
+      return;
+    const key = `${ARRIVAL_DISMISSAL}:${this.viewerIdValue || "guest"}`;
+    try {
+      if (localStorage.getItem(key)) return;
+    } catch {
+      /* Playback still works when browser storage is unavailable. */
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.replay();
+    this.arrivalSeenValue = true;
+    try {
+      localStorage.setItem(key, "1");
+    } catch {
+      /* Keep the in-memory guard. */
+    }
+    if (this.viewerIdValue) {
+      const token = document.querySelector("meta[name='csrf-token']")?.content;
+      fetch("/my/dismissals", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": token || "",
+        },
+        body: JSON.stringify({ thing_name: ARRIVAL_DISMISSAL }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+  }
+
   async confirmFinale() {
     if (this.checkingEnd || performance.now() < (this.nextEndCheck || 0))
       return;
@@ -119,7 +181,10 @@ export default class extends Controller {
     this.needsInitialSeek = true;
     this.videoTarget.controls = false;
     this.videoTarget.muted = false;
-    if (mode !== "live") this.localDeadline = performance.now() + COUNTDOWN_MS;
+    if (mode !== "live")
+      this.startCountdown(
+        mode === "replay" ? REPLAY_COUNTDOWN_MS : COUNTDOWN_MS,
+      );
     if (timeline?.ready) this.prepareVideo(timeline.url);
   }
 
@@ -129,6 +194,10 @@ export default class extends Controller {
     if (!Number.isFinite(serverClock.now())) return;
     this.cleanup();
     this.start("preview", finaleTimeline(serverClock.data));
+  }
+
+  startCountdown(durationMs) {
+    this.localDeadline = performance.now() + durationMs;
     this.originalClocks = new Map();
     document
       .querySelectorAll("[data-stardance-countdown-override-at-value]")
@@ -139,9 +208,14 @@ export default class extends Controller {
         );
         clock.setAttribute(
           "data-stardance-countdown-override-at-value",
-          new Date(serverClock.now() + COUNTDOWN_MS).toISOString(),
+          new Date(serverClock.now() + durationMs).toISOString(),
         );
       });
+    if (this.hasCountdownTarget && this.originalClocks.size === 0) {
+      this.countdownTarget.hidden = false;
+      this.countdownTarget.textContent = `stardance explodes in ${durationMs / 1000}`;
+      this.openDialog();
+    }
   }
 
   replay() {
@@ -156,6 +230,7 @@ export default class extends Controller {
   }
 
   beginDisintegration(elapsedMs = 0) {
+    if (this.hasCountdownTarget) this.countdownTarget.hidden = true;
     this.phase = "disintegrating";
     this.openDialog();
     if (this.timeline?.ready) {
@@ -377,6 +452,7 @@ export default class extends Controller {
   }
 
   cleanup({ restore = true } = {}) {
+    if (this.hasCountdownTarget) this.countdownTarget.hidden = true;
     this.generation++;
     this.playing = false;
     this.fadeAnimation?.cancel();

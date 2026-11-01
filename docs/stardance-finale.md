@@ -12,9 +12,16 @@ tab catch up to that same timeline. This is scheduled playback of a static
 file; no livestream server or Rails video proxy is needed.
 
 After the scheduled video runtime, the page restores its normal pre-finale
-damage and preferences. Refreshes and future visits never automatically replay
-the event. The clock remains at zero and offers **replay the finale**, which
-replays the full sequence independently with normal video controls. The
+damage and preferences. After the live window, each viewer's first click/tap or Enter/Space interaction
+starts a full catch-up replay with a 12-second countdown. This is offered once:
+signed-in viewers are recorded through the existing account dismissals endpoint,
+and guests are remembered in browser storage. The marker is saved when the
+sequence starts, so exiting or navigating away does not repeatedly interrupt them.
+Browser storage also guards against repeats before the account save completes.
+If browser storage is unavailable, guests are remembered only for the current page.
+Existing intro dialogs finish first; admin pages remain excluded. The clock remains at zero and offers **replay the finale**, which
+starts a fresh 12-second countdown, then replays the full sequence independently
+with normal video controls. The
 countdown visibility preference still applies. Admin pages remain excluded.
 
 ### Production review with Flipper
