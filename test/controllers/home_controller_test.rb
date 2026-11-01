@@ -106,14 +106,18 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
   test "ship prompt pops up for a builder with unshipped time and links to the ship flow" do
     project = owned_project_with_devlog("Rocket Garden")
     sign_in @user
+    Rails.application.config.stardance_ships_close_at = Time.find_zone!("America/New_York").local(2099, 11, 1, 12)
 
     get home_path
 
     assert_response :success
     assert_select "dialog.ship-prompt" do
       assert_select "#ship-prompt-title", text: "Ship Rocket Garden!"
+      assert_select ".ship-prompt__note strong", text: "Sunday, November 1 at 12:00pm ET"
       assert_select "a[href=?][data-action=?]", project_path(project, ship: 1), "dismissable#dismiss"
     end
+  ensure
+    Rails.application.config.stardance_ships_close_at = nil
   end
 
   test "ship prompt stays away once dismissed today" do

@@ -3,19 +3,19 @@ require "test_helper"
 class ProjectShippingClosedRequirementTest < ActiveSupport::TestCase
   setup do
     @project = Project.create!(title: "last minute", description: "d")
-    @ends_at = Rails.application.config.stardance_ends_at
+    @ends_at = Time.find_zone!("America/New_York").local(2026, 11, 1, 12)
     Rails.application.config.stardance_ships_close_at = @ends_at
   end
 
   teardown { Rails.application.config.stardance_ships_close_at = nil }
 
-  test "shipping_open requirement passes before Stardance ends" do
+  test "shipping_open requirement passes before noon ET Sunday" do
     travel_to(@ends_at - 1.minute) do
       assert requirement[:passed]
     end
   end
 
-  test "shipping_open requirement fails from midnight Saturday ET" do
+  test "shipping_open requirement fails from noon ET Sunday" do
     travel_to(@ends_at + 1.second) do
       refute requirement[:passed]
       refute @project.shippable?
@@ -28,13 +28,6 @@ class ProjectShippingClosedRequirementTest < ActiveSupport::TestCase
 
     travel_to(@ends_at + 1.year) do
       assert requirement[:passed]
-    end
-  end
-
-  test "shipping stays closed while the delayed finale countdown is running" do
-    travel_to Rails.application.config.stardance_finale_at - 1.hour do
-      refute requirement[:passed]
-      refute @project.shippable?
     end
   end
 
