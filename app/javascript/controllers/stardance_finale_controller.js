@@ -25,7 +25,6 @@ export default class extends Controller {
     "video",
     "play",
     "status",
-    "continue",
     "previewReset",
     "countdown",
   ];
@@ -275,11 +274,9 @@ export default class extends Controller {
       return;
     }
     this.phase = "video";
-    this.videoTarget.controls = this.mode !== "live";
     this.openDialog();
     this.panelTarget.hidden = false;
     this.panelTarget.classList.remove("stardance-finale__panel--intro");
-    this.continueTarget.focus();
     this.dispatch("video");
     this.prepareVideo(this.timeline.url);
     if (this.videoTarget.readyState < 3)
@@ -423,7 +420,7 @@ export default class extends Controller {
     this.playTarget.textContent = "try again";
     this.playTarget.hidden = false;
     this.statusTarget.textContent =
-      "the video couldn’t load — try again or return to stardance";
+      "the video couldn’t load — try again or press escape to return";
   }
 
   videoEnded() {
