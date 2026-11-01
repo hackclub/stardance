@@ -78,7 +78,6 @@ function controller(overrides = {}) {
     statusTarget: {},
     previewResetTarget: {},
     playTarget: {},
-    continueTarget: { focus() {} },
     videoTarget: {
       paused: true,
       readyState: 1,
@@ -408,21 +407,21 @@ test("public replay becomes available only after the live window and plays indep
   assert.equal(
     c.videoTarget.controls,
     false,
-    "native controls wait until the picture is revealed",
+    "native controls remain hidden throughout playback",
   );
   performance.now.mock.mockImplementation(() => 13000);
   c.tick();
   assert.equal(c.phase, "disintegrating");
   assert.equal(c.events[0].detail.durationMs, 8000);
   c.showVideo();
-  assert.equal(c.videoTarget.controls, true);
+  assert.equal(c.videoTarget.controls, false);
   assert.equal(c.videoTarget.currentTime, 0);
   c.videoTarget.currentTime = 40;
   c.tick(at(500000));
   assert.equal(
     c.videoTarget.currentTime,
     40,
-    "replay supports independent seeking and pausing",
+    "replay stays independent of the shared live timeline",
   );
   c.videoEnded();
   assert.equal(c.phase, "idle");
@@ -747,4 +746,22 @@ test("pages without a home clock show the countdown and storage failures do not 
   assert.equal(c.phase, "disintegrating");
   c.finish();
   assert.equal(c.dialogTarget.open, false);
+});
+
+test("escape exits playback and restores the site without a return button", (t) => {
+  const at = browser(t);
+  at(140000);
+  const c = controller();
+  c.replay();
+  c.showVideo();
+  let prevented = false;
+  c.preventClose({
+    preventDefault() {
+      prevented = true;
+    },
+  });
+  assert.equal(prevented, true);
+  assert.equal(c.phase, "idle");
+  assert.equal(c.dialogTarget.open, false);
+  assert.equal(c.videoTarget.hasAttribute("src"), false);
 });

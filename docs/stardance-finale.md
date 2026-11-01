@@ -21,7 +21,8 @@ Browser storage also guards against repeats before the account save completes.
 If browser storage is unavailable, guests are remembered only for the current page.
 Existing intro dialogs finish first; admin pages remain excluded. The clock remains at zero and offers **replay the finale**, which
 starts a fresh 12-second countdown, then replays the full sequence independently
-with normal video controls. The
+without native video controls or a return button. The page restores automatically
+when playback ends; Escape can also exit the sequence. The
 countdown visibility preference still applies. Admin pages remain excluded.
 
 ### Production review with Flipper
