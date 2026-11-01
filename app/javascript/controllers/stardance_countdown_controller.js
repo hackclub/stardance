@@ -1,9 +1,13 @@
 import { Controller } from "@hotwired/stimulus";
 import { serverClock } from "../lib/server_clock.js";
+import {
+  finaleTimeline,
+  canReplayFinale,
+} from "../lib/stardance_finale_timeline.js";
 
 // Switch the visible and accessible clocks together without starting a finale.
 export default class extends Controller {
-  static targets = ["label", "clock"];
+  static targets = ["label", "clock", "replay"];
   static values = { endsAt: String, explodesAt: String, overrideAt: String };
 
   connect() {
@@ -21,8 +25,16 @@ export default class extends Controller {
     this.render();
   }
 
+  replay() {
+    const timeline = finaleTimeline(serverClock.data);
+    if (canReplayFinale(timeline, serverClock.now())) this.dispatch("replay");
+  }
+
   render(now = serverClock.now()) {
     if (!this.hasLabelTarget || !Number.isFinite(now)) return;
+    const timeline = finaleTimeline(serverClock.data);
+    if (this.hasReplayTarget)
+      this.replayTarget.hidden = !canReplayFinale(timeline, now);
     const endsAt = Date.parse(this.endsAtValue);
     if (
       !Number.isFinite(endsAt) ||

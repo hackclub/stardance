@@ -295,7 +295,7 @@ export default class extends Controller {
     );
   }
 
-  startFinale() {
+  startFinale(event) {
     this.resetFinale();
     // Everyone gets the finale, even if they never opened the team reveal.
     this.awaitingRevealValue = false;
@@ -306,10 +306,12 @@ export default class extends Controller {
     this.finale = {
       from: this.requested,
       progress: -1,
-      startedAt: performance.now(),
-      duration: this.simulatorEnabledValue
-        ? finaleDurationSeconds(this.simulation?.finaleDuration) * 1000
-        : FINALE_DURATION,
+      startedAt: performance.now() - Math.max(0, event?.detail?.elapsedMs || 0),
+      duration:
+        event?.detail?.durationMs ||
+        (this.simulatorEnabledValue
+          ? finaleDurationSeconds(this.simulation?.finaleDuration) * 1000
+          : FINALE_DURATION),
     };
     this.updateFinale();
   }
@@ -336,9 +338,16 @@ export default class extends Controller {
   }
 
   resetFinale() {
+    this.finaleVideoPlaying = false;
     this.finale = null;
     this.reset();
     this.setIntensity(this.latestIntensity, { immediate: true });
+  }
+
+  pauseForFinale() {
+    this.finaleVideoPlaying = true;
+    cancelAnimationFrame(this.frame);
+    this.frame = null;
   }
 
   readSimulation() {
@@ -411,7 +420,7 @@ export default class extends Controller {
 
   wake() {
     if (!this.requested && !this.level) return;
-    if (!this.frame && !document.hidden)
+    if (!this.frame && !document.hidden && !this.finaleVideoPlaying)
       this.frame = requestAnimationFrame((time) => this.tick(time));
   }
 

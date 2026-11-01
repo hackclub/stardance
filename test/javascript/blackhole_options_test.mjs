@@ -28,6 +28,40 @@ test("finale ramps over eight seconds from the viewer's starting damage", () => 
   assert.equal(controller.level, 1);
 });
 
+test("late arrivals receive elapsed live progress regardless of local simulator timing", (t) => {
+  t.mock.method(performance, "now", () => 10000);
+  const c = finaleController({
+    simulatorEnabledValue: true,
+    simulation: { finaleDuration: 120 },
+    resetFinale() {},
+    updateFinale() {},
+  });
+  BlackholeController.prototype.startFinale.call(c, {
+    detail: { elapsedMs: 4000, durationMs: 8000 },
+  });
+  assert.equal(c.finale.startedAt, 6000);
+  assert.equal(c.finale.duration, 8000);
+  BlackholeController.prototype.updateFinale.call(c, 10000);
+  assert.equal(c.requested, 0.625);
+});
+
+test("video pauses the disintegration render loop and reset restores rendering", (t) => {
+  const originalCancel = globalThis.cancelAnimationFrame;
+  const cancelled = t.mock.fn();
+  globalThis.cancelAnimationFrame = cancelled;
+  t.after(() => {
+    globalThis.cancelAnimationFrame = originalCancel;
+  });
+  const c = { frame: 42, finale: {}, reset() {}, setIntensity() {} };
+  BlackholeController.prototype.pauseForFinale.call(c);
+  assert.equal(cancelled.mock.calls[0].arguments[0], 42);
+  assert.equal(c.finaleVideoPlaying, true);
+  assert.equal(c.frame, null);
+  BlackholeController.prototype.resetFinale.call(c);
+  assert.equal(c.finaleVideoPlaying, false);
+  assert.equal(c.finale, null);
+});
+
 test("local finale duration is captured at the start and production keeps eight seconds", (t) => {
   t.mock.method(performance, "now", () => 1000);
   for (const [local, seconds, expectedMs] of [

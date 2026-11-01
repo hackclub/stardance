@@ -48,6 +48,35 @@
     object-fit: contain;
   }
 
+  &__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-s);
+  }
+
+  // Keep media playing, but reveal its picture only after destruction/fade.
+  // Sound/play controls remain reachable if the browser blocks autoplay.
+  &__panel--intro {
+    background: transparent;
+
+    .stardance-finale__video {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .stardance-finale__controls {
+      position: absolute;
+      bottom: var(--space-l);
+      inset-inline: var(--space-l);
+    }
+
+    .stardance-finale__button--continue {
+      display: none;
+    }
+  }
+
   &__status {
     margin: 0;
     text-align: center;

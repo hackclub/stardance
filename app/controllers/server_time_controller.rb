@@ -6,6 +6,14 @@ class ServerTimeController < ApplicationController
     response.headers["Cache-Control"] = "no-store"
     now = Time.current
     deadline = Rails.application.config.stardance_finale_at
-    render json: { now: now.iso8601(3), ends_at: deadline.iso8601(3), ended: now >= deadline }
+    duration = Rails.application.config.stardance_finale_video_duration_seconds
+    render json: {
+      now: now.iso8601(3), ends_at: deadline.iso8601(3), ended: now >= deadline,
+      finale: {
+        video_url: Rails.application.config.stardance_finale_video_url,
+        duration_seconds: duration.finite? && duration.positive? ? duration : 0,
+        on_demand: Flipper.enabled?(:finaleondemand, current_user)
+      }
+    }
   end
 end

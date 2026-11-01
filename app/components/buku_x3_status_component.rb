@@ -22,9 +22,9 @@ class BukuX3StatusComponent < ViewComponent::Base
       @user.has_dismissed?(BukuX3RevealComponent::DISMISS_THING)
   end
 
-  # Keep the existing clock for unseen late-arrival finales, respecting settings.
+  # The clock stays at zero after the finale, with an optional replay below it.
   def countdown?
-    (Time.current < finale_at || (@user.present? && !@user.has_dismissed?("stardance_finale"))) && @user&.preference&.countdown_enabled? != false
+    @user&.preference&.countdown_enabled? != false
   end
 
   # The home page passes the leaderboard as content; its tab hangs off the bottom edge.

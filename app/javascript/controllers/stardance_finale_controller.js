@@ -1,18 +1,15 @@
 import { Controller } from "@hotwired/stimulus";
 import { serverClock } from "../lib/server_clock.js";
-
-const DISMISSAL = "stardance_finale";
-const COUNTDOWN_MS = 3000;
-const FADE_DURATION_MS = 2000;
+import {
+  finaleTimeline,
+  canReplayFinale,
+  DISINTEGRATION_MS,
+  FADE_MS,
+  COUNTDOWN_MS,
+} from "../lib/stardance_finale_timeline.js";
 
 export default class extends Controller {
-  static values = {
-    endsAt: String,
-    seen: Boolean,
-    viewerId: String,
-    previewEnabled: Boolean,
-    dismissUrl: String,
-  };
+  static values = { endsAt: String, previewEnabled: Boolean };
   static targets = [
     "dialog",
     "fade",
@@ -26,14 +23,19 @@ export default class extends Controller {
 
   connect() {
     this.phase = "idle";
+    this.generation = 0;
     this.beforeCache = () => {
       clearInterval(this.timer);
       this.unsubscribeClock?.();
       this.cleanup({ restore: false });
     };
+    this.visibility = () => {
+      if (document.hidden) this.videoTarget.pause();
+    };
     document.addEventListener("turbo:before-cache", this.beforeCache);
+    document.addEventListener("visibilitychange", this.visibility);
     this.unsubscribeClock = serverClock.subscribe(() => this.tick());
-    this.timer = setInterval(() => this.tick(), 100);
+    this.timer = setInterval(() => this.tick(), 250);
     this.tick();
   }
 
@@ -41,48 +43,54 @@ export default class extends Controller {
     this.unsubscribeClock?.();
     clearInterval(this.timer);
     document.removeEventListener("turbo:before-cache", this.beforeCache);
+    document.removeEventListener("visibilitychange", this.visibility);
     this.cleanup({ restore: false });
-  }
-
-  get storageKey() {
-    return `${DISMISSAL}:${this.viewerIdValue}`;
-  }
-
-  alreadySeen() {
-    if (this.seenValue) return true;
-    try {
-      return localStorage.getItem(this.storageKey) === "seen";
-    } catch {
-      return false;
-    }
   }
 
   tick(now = serverClock.now()) {
     if (document.hidden || !Number.isFinite(now)) return;
-    if (this.phase === "idle") {
-      const deadline = Date.parse(this.endsAtValue);
-      if (
-        !Number.isFinite(deadline) ||
-        now < deadline - COUNTDOWN_MS ||
-        this.alreadySeen()
-      )
-        return;
-      // Let an active story finish; an unseen team reveal does not block this.
-      if (document.querySelector(".visual-novel, .buku-x3-reveal")) return;
-      this.start(now, false, now < deadline ? deadline : now + COUNTDOWN_MS);
+    if (this.mode === "preview" || this.mode === "replay") {
+      if (this.phase === "countdown" && performance.now() >= this.localDeadline)
+        this.beginDisintegration();
+      if (this.phase !== "video") this.updatePlayback();
+      return;
     }
-    if (this.phase !== "countdown") return;
-    const seconds = Math.max(0, Math.ceil((this.countdownEndsAt - now) / 1000));
-    if (seconds === 0) {
-      if (this.previewing) this.beginDisintegration();
-      else this.confirmFinale();
+    const timeline = finaleTimeline(serverClock.data);
+    if (!this.endsAtValue || !timeline) return;
+    if (now >= timeline.finishesAt) {
+      if (this.mode === "live") this.cleanup();
+      else if (this.videoTarget.hasAttribute("src")) this.releaseVideo();
+      return;
     }
-  }
-
-  beginDisintegration() {
-    this.phase = "disintegrating";
-    this.dialogTarget.showModal();
-    this.dispatch("disintegrate");
+    if (this.skipLive) return;
+    // A small warm-up window; no media requests during ordinary site visits.
+    if (
+      timeline.ready &&
+      now >= timeline.startsAt - 30000 &&
+      !navigator.connection?.saveData
+    )
+      this.prepareVideo(timeline.url);
+    if (now < timeline.startsAt - COUNTDOWN_MS) return;
+    if (document.querySelector(".visual-novel, .buku-x3-reveal")) return;
+    if (now >= timeline.startsAt && !serverClock.data?.ended) {
+      this.confirmFinale();
+      return;
+    }
+    if (this.phase === "idle") this.start("live", timeline);
+    this.timeline = timeline;
+    if (now < timeline.startsAt) return;
+    if (now < timeline.revealAt - FADE_MS) {
+      if (this.phase === "countdown")
+        this.beginDisintegration(now - timeline.startsAt);
+    } else if (now < timeline.revealAt) {
+      if (this.phase === "countdown")
+        this.beginDisintegration(DISINTEGRATION_MS);
+      if (this.phase === "disintegrating")
+        this.beginFade(timeline.revealAt - now);
+    } else if (this.phase !== "video") {
+      this.showVideo();
+    }
+    this.updatePlayback();
   }
 
   async confirmFinale() {
@@ -90,32 +98,40 @@ export default class extends Controller {
       return;
     this.checkingEnd = true;
     try {
-      const result = await serverClock.sync();
-      if (
-        this.phase === "countdown" &&
-        !this.previewing &&
-        !document.hidden &&
-        result?.ended
-      ) {
-        this.beginDisintegration();
-      }
+      await serverClock.sync();
     } finally {
       this.checkingEnd = false;
       this.nextEndCheck = performance.now() + 1000;
     }
   }
 
-  start(now, preview, deadline = now + COUNTDOWN_MS) {
-    this.previewing = preview;
-    this.previewResetTarget.hidden = !preview;
-    this.previousFocus = document.activeElement;
+  start(mode, timeline) {
+    this.mode = mode;
+    this.timeline = timeline;
     this.phase = "countdown";
-    this.countdownEndsAt = deadline;
+    this.generation++;
+    this.previousFocus = document.activeElement;
+    this.previewResetTarget.hidden = mode !== "preview";
+    this.panelTarget.hidden = true;
+    this.statusTarget.textContent = "";
+    this.playTarget.hidden = true;
+    this.playBlocked = this.mediaFailed = this.mediaEnded = false;
+    this.needsInitialSeek = true;
+    this.videoTarget.controls = false;
+    this.videoTarget.muted = false;
+    if (mode !== "live") this.localDeadline = performance.now() + COUNTDOWN_MS;
+    if (timeline?.ready) this.prepareVideo(timeline.url);
+  }
+
+  async preview() {
+    if (!this.previewEnabledValue) return;
+    if (!Number.isFinite(serverClock.now())) await serverClock.sync();
+    if (!Number.isFinite(serverClock.now())) return;
+    this.cleanup();
+    this.start("preview", finaleTimeline(serverClock.data));
     this.originalClocks = new Map();
     document
-      .querySelectorAll(
-        ".buku-x3-status [data-stardance-countdown-override-at-value]",
-      )
+      .querySelectorAll("[data-stardance-countdown-override-at-value]")
       .forEach((clock) => {
         this.originalClocks.set(
           clock,
@@ -123,131 +139,252 @@ export default class extends Controller {
         );
         clock.setAttribute(
           "data-stardance-countdown-override-at-value",
-          new Date(deadline).toISOString(),
+          new Date(serverClock.now() + COUNTDOWN_MS).toISOString(),
         );
       });
-    this.panelTarget.hidden = true;
-    if (this.hasStatusTarget) this.statusTarget.textContent = "";
-    if (this.hasContinueTarget) this.continueTarget.disabled = false;
   }
 
-  async preview() {
-    if (!this.previewEnabledValue) return;
-    if (!Number.isFinite(serverClock.now())) await serverClock.sync();
-    const now = serverClock.now();
-    if (!Number.isFinite(now)) return;
-    this.cleanup();
-    this.start(now, true);
+  replay() {
+    const timeline = finaleTimeline(serverClock.data);
+    if (!canReplayFinale(timeline, serverClock.now())) return;
+    if (this.phase !== "idle") return;
+    this.start("replay", timeline);
   }
 
   resetPreview() {
-    if (!this.previewEnabledValue || !this.previewing) return;
-    this.cleanup();
+    if (this.previewEnabledValue && this.mode === "preview") this.cleanup();
   }
 
-  async fadeToBlack() {
-    if (this.phase !== "disintegrating") return;
+  beginDisintegration(elapsedMs = 0) {
+    this.phase = "disintegrating";
+    this.openDialog();
+    if (this.timeline?.ready) {
+      this.panelTarget.classList.add("stardance-finale__panel--intro");
+      this.panelTarget.hidden = false;
+      this.videoReady();
+    }
+    // Only the local preview may use the simulator's duration override.
+    const detail =
+      this.mode === "preview"
+        ? {}
+        : { elapsedMs, durationMs: DISINTEGRATION_MS };
+    this.dispatch("disintegrate", { detail });
+  }
+
+  fadeToBlack() {
+    // Rendering performance never changes the shared live broadcast's timing.
+    if (this.mode !== "live" && this.phase === "disintegrating")
+      this.beginFade(FADE_MS);
+  }
+
+  async beginFade(remaining) {
     this.phase = "fading";
     const animation = this.fadeTarget.animate(
-      [{ opacity: 0 }, { opacity: 1 }],
-      {
-        duration: FADE_DURATION_MS,
-        easing: "linear",
-        fill: "forwards",
-      },
+      [{ opacity: 1 - remaining / FADE_MS }, { opacity: 1 }],
+      { duration: remaining, easing: "linear", fill: "forwards" },
     );
     this.fadeAnimation = animation;
     try {
       await animation.finished;
     } catch {
-      // Resetting a preview or navigating away cancels the fade.
       return;
     }
-    if (this.phase === "fading" && this.fadeAnimation === animation)
-      this.showVideo();
+    if (this.phase !== "fading" || this.fadeAnimation !== animation) return;
+    if (this.mode === "live") this.tick();
+    else this.showVideo();
   }
 
   showVideo() {
-    if (this.phase !== "fading") return;
+    if (!this.timeline?.ready || (this.mediaEnded && this.mode !== "live")) {
+      this.finish();
+      return;
+    }
     this.phase = "video";
+    this.videoTarget.controls = this.mode !== "live";
+    this.openDialog();
     this.panelTarget.hidden = false;
-    if (this.hasVideoTarget) {
-      this.continueTarget.focus();
-      this.videoTarget.currentTime = 0;
-      this.playVideo();
-    } else {
-      this.previewResetTarget.hidden = true;
-      this.finish({ keepBlank: true });
+    this.panelTarget.classList.remove("stardance-finale__panel--intro");
+    this.continueTarget.focus();
+    this.dispatch("video");
+    this.prepareVideo(this.timeline.url);
+    if (this.videoTarget.readyState < 3)
+      this.statusTarget.textContent = "loading the finale…";
+    this.videoReady();
+  }
+
+  mediaActive() {
+    return (
+      this.timeline?.ready &&
+      ["disintegrating", "fading", "video"].includes(this.phase)
+    );
+  }
+
+  updatePlayback() {
+    if (!this.mediaActive()) return;
+    this.syncVideo();
+    if (
+      this.videoTarget.paused &&
+      !this.playBlocked &&
+      !this.mediaFailed &&
+      !this.mediaEnded
+    )
+      this.attemptPlayback();
+  }
+
+  openDialog() {
+    if (!this.dialogTarget.open) this.dialogTarget.showModal();
+  }
+
+  prepareVideo(url) {
+    if (this.videoTarget.getAttribute("src") === url) return;
+    this.videoTarget.preload = "auto";
+    this.videoTarget.src = url;
+    this.videoTarget.load();
+  }
+
+  videoReady() {
+    if (!this.mediaActive()) return;
+    this.syncVideo(true);
+    if (!this.playBlocked && !this.mediaEnded) this.attemptPlayback();
+  }
+
+  syncVideo(force = false) {
+    if (
+      !this.mediaActive() ||
+      (this.mode !== "live" &&
+        this.phase === "video" &&
+        !this.needsInitialSeek) ||
+      this.mediaEnded ||
+      this.videoTarget.readyState < 1
+    )
+      return;
+    const now = this.mode === "live" ? serverClock.now() : performance.now();
+    if (!Number.isFinite(now)) return;
+    if (this.mode === "live" && now >= this.timeline.finishesAt) {
+      this.finish();
+      return;
+    }
+    const duration = this.videoTarget.duration;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const target = Math.max(
+      0,
+      Math.min(
+        (now -
+          (this.mode === "live"
+            ? this.timeline.startsAt
+            : this.localDeadline)) /
+          1000,
+        duration - 0.05,
+      ),
+    );
+    // Correct drift after buffering/sleep; don't continuously restart a slow seek.
+    if (
+      (force ||
+        (!this.videoTarget.seeking &&
+          performance.now() >= (this.nextSeek || 0))) &&
+      Math.abs(this.videoTarget.currentTime - target) > 1
+    ) {
+      this.videoTarget.currentTime = target;
+      this.nextSeek = performance.now() + 2000;
+    }
+    this.needsInitialSeek = false;
+  }
+
+  async attemptPlayback() {
+    if (this.playing || !this.mediaActive()) return;
+    const generation = this.generation;
+    this.playing = true;
+    try {
+      await this.videoTarget.play();
+      if (generation === this.generation && this.mediaActive())
+        this.statusTarget.textContent = "";
+    } catch (error) {
+      if (generation !== this.generation || !this.mediaActive()) return;
+      if (error.name === "NotAllowedError" && !this.videoTarget.muted) {
+        this.videoTarget.muted = true;
+        try {
+          await this.videoTarget.play();
+          if (generation !== this.generation || !this.mediaActive()) return;
+          this.statusTarget.textContent = "";
+          this.playTarget.textContent = "turn sound on";
+          this.playTarget.hidden = false;
+          return;
+        } catch {
+          /* A click will retry at the current live position. */
+        }
+      }
+      if (generation !== this.generation || !this.mediaActive()) return;
+      this.playBlocked = true;
+      this.playTarget.textContent = "play finale";
+      this.playTarget.hidden = false;
+      this.statusTarget.textContent =
+        "press play to join the finale, or return to stardance";
+    } finally {
+      if (generation === this.generation) this.playing = false;
     }
   }
 
-  async playVideo() {
+  playVideo() {
+    if (!this.mediaActive()) return;
+    this.playBlocked = false;
     this.playTarget.hidden = true;
-    try {
-      await this.videoTarget.play();
-    } catch {
-      if (this.phase !== "video") return;
-      this.playTarget.hidden = false;
-      this.statusTarget.textContent = "Press play to watch the finale.";
-      this.playTarget.focus();
+    this.videoTarget.muted = false;
+    if (this.mediaFailed) {
+      this.mediaFailed = false;
+      this.videoTarget.load();
     }
+    this.syncVideo(true);
+    this.attemptPlayback();
+  }
+
+  videoWaiting() {
+    if (this.mediaActive()) this.statusTarget.textContent = "buffering…";
   }
 
   videoError() {
+    this.mediaFailed = true;
+    if (!this.mediaActive()) return;
+    this.playBlocked = true;
+    this.playTarget.textContent = "try again";
     this.playTarget.hidden = false;
     this.statusTarget.textContent =
-      "The video couldn’t load. Try play again, or continue.";
+      "the video couldn’t load — try again or return to stardance";
   }
 
-  async finish({ keepBlank = false } = {}) {
-    if (this.phase !== "video" || this.saving) return;
-    this.saving = true;
-    if (this.hasContinueTarget) this.continueTarget.disabled = true;
-    try {
-      if (!this.previewing) {
-        const token = document.querySelector(
-          "meta[name='csrf-token']",
-        )?.content;
-        const response = await fetch(this.dismissUrlValue, {
-          method: "POST",
-          credentials: "same-origin",
-          keepalive: true,
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": token || "",
-          },
-          body: JSON.stringify({ thing_name: DISMISSAL }),
-        });
-        if (!response.ok) throw new Error("Could not save completion");
-        this.seenValue = true;
-        try {
-          localStorage.setItem(this.storageKey, "seen");
-        } catch {
-          /* Server state is authoritative on the next visit. */
-        }
-      }
-      if (keepBlank) this.phase = "complete";
-      else this.cleanup();
-    } catch {
-      if (this.hasStatusTarget) {
-        this.statusTarget.textContent =
-          "Couldn’t save your progress. Please try continue again.";
-      }
-      if (this.hasContinueTarget) this.continueTarget.disabled = false;
-    } finally {
-      this.saving = false;
-    }
+  videoEnded() {
+    if (!this.mediaActive()) return;
+    this.mediaEnded = true;
+    if (this.mode === "live") {
+      this.tick();
+    } else if (this.phase === "video") this.finish();
+  }
+
+  finish() {
+    if (this.mode === "live") this.skipLive = true;
+    this.cleanup();
   }
 
   preventClose(event) {
     event.preventDefault();
+    this.finish();
+  }
+
+  releaseVideo() {
+    this.videoTarget.pause();
+    this.videoTarget.removeAttribute("src");
+    this.videoTarget.preload = "none";
+    this.videoTarget.load();
   }
 
   cleanup({ restore = true } = {}) {
+    this.generation++;
+    this.playing = false;
     this.fadeAnimation?.cancel();
     this.fadeAnimation = null;
-    if (this.hasVideoTarget) this.videoTarget.pause();
+    this.releaseVideo();
     this.dialogTarget.close();
+    this.panelTarget.hidden = true;
+    this.panelTarget.classList.remove("stardance-finale__panel--intro");
     this.originalClocks?.forEach((deadline, clock) =>
       clock.setAttribute(
         "data-stardance-countdown-override-at-value",
@@ -257,8 +394,8 @@ export default class extends Controller {
     this.originalClocks?.clear();
     if (restore && this.phase !== "idle") this.dispatch("reset");
     this.phase = "idle";
-    this.previewing = false;
-    if (this.previousFocus?.isConnected)
+    this.mode = null;
+    if (restore && this.previousFocus?.isConnected)
       this.previousFocus.focus({ preventScroll: true });
   }
 }

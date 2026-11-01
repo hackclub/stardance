@@ -1,347 +1,604 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { serverClock } from "../../app/javascript/lib/server_clock.js";
+import { finaleTimeline } from "../../app/javascript/lib/stardance_finale_timeline.js";
 import FinaleController from "../../app/javascript/controllers/stardance_finale_controller.js";
 
-function controller(overrides = {}) {
-  const state = {
-    phase: "idle",
-    endsAtValue: "2026-11-01T17:00:00Z",
-    seenValue: false,
-    previewEnabledValue: false,
-    viewerIdValue: "1",
-    storageKey: "stardance_finale:1",
-    dialogTarget: { showModal() {}, close() {} },
-    panelTarget: {},
-    hasStatusTarget: true,
-    hasContinueTarget: true,
-    statusTarget: {},
-    previewResetTarget: {},
-    continueTarget: { focus() {} },
-    dispatch(name) {
-      this.events.push(name);
-    },
-    events: [],
-    alreadySeen: () => false,
-    finish() {},
-    confirmFinale() {
-      this.beginDisintegration();
-    },
-    ...overrides,
-  };
-  for (const name of ["start", "cleanup", "tick", "beginDisintegration"])
-    state[name] = FinaleController.prototype[name].bind(state);
-  return state;
-}
+const start = Date.parse("2026-11-01T17:00:00Z");
+const sample = () => ({
+  ends_at: new Date(start).toISOString(),
+  ended: true,
+  finale: { video_url: "/videos/finale.mp4", duration_seconds: 120 },
+});
 
-function browser(t, overrides = {}) {
-  const anchor = serverClock.anchor;
-  serverClock.anchor = {
-    server: Date.parse("2026-10-26T12:00:00Z"),
-    local: performance.now(),
+function browser(t) {
+  const data = serverClock.data;
+  serverClock.data = sample();
+  t.after(() => {
+    serverClock.data = data;
+  });
+  t.mock.method(serverClock, "now", () => start);
+  t.mock.method(performance, "now", () => 1000);
+  const originalDocument = globalThis.document;
+  globalThis.document = {
+    hidden: false,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    addEventListener() {},
+    removeEventListener() {},
   };
   t.after(() => {
-    serverClock.anchor = anchor;
+    globalThis.document = originalDocument;
   });
-  for (const [name, value] of Object.entries({
-    document: {
-      hidden: false,
-      querySelector: () => null,
-      querySelectorAll: () => [],
-    },
-    ...overrides,
-  })) {
-    const original = globalThis[name];
-    globalThis[name] = value;
-    t.after(() => {
-      globalThis[name] = original;
-    });
-  }
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: {},
+  });
+  t.after(() => {
+    if (descriptor) Object.defineProperty(globalThis, "navigator", descriptor);
+    else delete globalThis.navigator;
+  });
+  return (offset) => {
+    serverClock.now.mock.mockImplementation(() => start + offset);
+    return start + offset;
+  };
 }
 
-test("deadline gates the finale, and even days-late arrivals see the full red countdown", (t) => {
-  browser(t);
-  const c = controller();
-  const end = Date.parse(c.endsAtValue);
-  c.tick(end - 3001);
-  assert.equal(c.phase, "idle");
-  c.tick(end + 86400000);
-  assert.equal(c.phase, "countdown");
-  assert.equal(c.countdownEndsAt, end + 86403000);
-  c.tick(end + 86401000);
-  assert.equal(c.phase, "countdown");
-  c.tick(end + 86402000);
-  assert.equal(c.phase, "countdown");
-  c.tick(end + 86403000);
-  assert.equal(c.phase, "disintegrating");
-  assert.deepEqual(c.events, ["disintegrate"]);
-  assert.equal(c.panelTarget.hidden, true);
-});
-
-test("seen viewers, invalid deadlines, active stories and background tabs do not start", (t) => {
-  browser(t);
-  for (const overrides of [{ alreadySeen: () => true }, { endsAtValue: "" }]) {
-    const c = controller(overrides);
-    c.tick(Date.parse("2026-11-05"));
-    assert.equal(c.phase, "idle");
-  }
-  for (const doc of [
-    { hidden: true },
-    { hidden: false, querySelector: () => ({}) },
-  ]) {
-    globalThis.document = doc;
-    const c = controller();
-    c.tick(Date.parse("2026-11-05"));
-    assert.equal(c.phase, "idle");
-  }
-});
-
-test("video cannot start before destruction completes", () => {
-  for (const phase of ["idle", "countdown", "disintegrating"]) {
-    const c = controller({ phase, panelTarget: { hidden: true } });
-    FinaleController.prototype.showVideo.call(c);
-    assert.equal(c.panelTarget.hidden, true);
-  }
-});
-
-test("destruction fades to black for two seconds before playing the video", async () => {
-  let resolveFade;
-  let fades = 0;
-  let plays = 0;
-  const animation = {
-    finished: new Promise((resolve) => {
-      resolveFade = resolve;
-    }),
-  };
-  const c = controller({
-    phase: "disintegrating",
-    panelTarget: { hidden: true },
-    hasVideoTarget: true,
-    videoTarget: { currentTime: 10 },
-    playVideo() {
-      plays++;
+function controller(overrides = {}) {
+  const c = {
+    phase: "idle",
+    generation: 0,
+    endsAtValue: new Date(start).toISOString(),
+    previewEnabledValue: false,
+    events: [],
+    dialogTarget: {
+      open: false,
+      showModal() {
+        this.open = true;
+      },
+      close() {
+        this.open = false;
+      },
+    },
+    panelTarget: { hidden: true, classList: { add() {}, remove() {} } },
+    statusTarget: {},
+    previewResetTarget: {},
+    playTarget: {},
+    continueTarget: { focus() {} },
+    videoTarget: {
+      paused: true,
+      readyState: 1,
+      duration: 120,
+      currentTime: 0,
+      loadCalls: 0,
+      playCalls: 0,
+      hasAttribute(name) {
+        return !!this[name];
+      },
+      getAttribute(name) {
+        return this[name] || null;
+      },
+      removeAttribute(name) {
+        delete this[name];
+      },
+      load() {
+        this.loadCalls++;
+      },
+      pause() {
+        this.paused = true;
+      },
+      async play() {
+        this.playCalls++;
+        this.paused = false;
+      },
     },
     fadeTarget: {
       animate(frames, options) {
-        fades++;
-        assert.deepEqual(frames, [{ opacity: 0 }, { opacity: 1 }]);
-        assert.deepEqual(options, {
-          duration: 2000,
-          easing: "linear",
-          fill: "forwards",
-        });
+        this.frames = frames;
+        this.options = options;
+        const animation = {
+          finished: new Promise((resolve, reject) => {
+            this.resolve = resolve;
+            this.reject = reject;
+          }),
+          cancel: () => this.reject(new Error("cancelled")),
+        };
         return animation;
       },
     },
-    showVideo: FinaleController.prototype.showVideo,
-  });
-  const faded = FinaleController.prototype.fadeToBlack.call(c);
-  assert.equal(c.phase, "fading");
-  assert.equal(c.panelTarget.hidden, true);
-  assert.equal(plays, 0);
-  await FinaleController.prototype.fadeToBlack.call(c);
-  assert.equal(fades, 1, "duplicate completion cannot restart the fade");
-
-  resolveFade();
-  await faded;
-  assert.equal(c.phase, "video");
-  assert.equal(c.panelTarget.hidden, false);
-  assert.equal(c.videoTarget.currentTime, 0);
-  assert.equal(plays, 1);
-});
-
-test("reset or navigation during the fade cancels it without playing the video", async () => {
-  for (const restore of [true, false]) {
-    let rejectFade;
-    let cancelled = false;
-    const animation = {
-      finished: new Promise((resolve, reject) => {
-        rejectFade = reject;
-      }),
-      cancel() {
-        cancelled = true;
-        rejectFade(new Error("cancelled"));
-      },
-    };
-    const c = controller({
-      phase: "disintegrating",
-      fadeTarget: { animate: () => animation },
-      showVideo() {
-        assert.fail("cancelled fade must not start the video");
-      },
-    });
-    const faded = FinaleController.prototype.fadeToBlack.call(c);
-    c.cleanup({ restore });
-    await faded;
-    assert.equal(cancelled, true);
-    assert.equal(c.phase, "idle");
-    assert.equal(c.fadeAnimation, null);
-    assert.deepEqual(c.events, restore ? ["reset"] : []);
+    dispatch(name, options) {
+      this.events.push({ name, ...options });
+    },
+  };
+  for (const name of Object.getOwnPropertyNames(FinaleController.prototype)) {
+    if (name !== "constructor")
+      c[name] = FinaleController.prototype[name].bind(c);
   }
-});
+  return Object.assign(c, overrides);
+}
 
-test("local replay works for seen users and never records completion", async (t) => {
-  browser(t, { fetch: () => assert.fail("preview must never save") });
-  const c = controller({ previewEnabledValue: true, seenValue: true });
-  await FinaleController.prototype.preview.call(c);
-  assert.equal(c.phase, "countdown");
-  assert.equal(c.previewing, true);
-  c.phase = "video";
-  await FinaleController.prototype.finish.call(c);
-  assert.equal(c.phase, "idle");
-  assert.deepEqual(c.events, ["reset"]);
-});
-
-test("production cannot invoke local replay", async () => {
+test("new viewers join the current video position instead of repeating destruction", async (t) => {
+  const at = browser(t);
   const c = controller();
-  await FinaleController.prototype.preview.call(c);
-  assert.equal(c.phase, "idle");
-});
-
-test("completion saves once and suppresses replay on cached pages", async (t) => {
-  let calls = 0;
-  const saved = new Map();
-  browser(t, {
-    fetch: async (url, options) => {
-      calls++;
-      assert.equal(url, "/my/dismissals");
-      assert.equal(JSON.parse(options.body).thing_name, "stardance_finale");
-      return { ok: true };
-    },
-    localStorage: {
-      setItem: (key, value) => saved.set(key, value),
-      getItem: (key) => saved.get(key),
-    },
-  });
-  const c = controller({ phase: "video", dismissUrlValue: "/my/dismissals" });
-  await FinaleController.prototype.finish.call(c);
-  await FinaleController.prototype.finish.call(c);
-  assert.equal(calls, 1);
-  assert.equal(c.seenValue, true);
-  assert.equal(FinaleController.prototype.alreadySeen.call(controller()), true);
-  assert.equal(
-    FinaleController.prototype.alreadySeen.call(
-      controller({ storageKey: "stardance_finale:2" }),
-    ),
-    false,
+  c.tick(at(40000));
+  await Promise.resolve();
+  assert.equal(c.phase, "video");
+  assert.equal(c.videoTarget.currentTime, 40);
+  assert.equal(c.videoTarget.controls, false);
+  assert.equal(c.videoTarget.paused, false);
+  assert.deepEqual(
+    c.events.map((e) => e.name),
+    ["video"],
   );
 });
 
-test("failed completion stays retryable and does not mark the account seen", async (t) => {
-  browser(t, { fetch: async () => ({ ok: false }) });
-  const c = controller({ phase: "video" });
-  await FinaleController.prototype.finish.call(c);
-  assert.equal(c.phase, "video");
-  assert.equal(c.seenValue, false);
-  assert.equal(c.continueTarget.disabled, false);
-  assert.match(c.statusTarget.textContent, /try continue again/);
-});
-
-test("blocked autoplay exposes a play button", async () => {
-  const c = controller({
-    phase: "video",
-    playTarget: { focus() {} },
-    videoTarget: {
-      play: async () => {
-        throw new Error("blocked");
-      },
-    },
+test("live arrivals during destruction start at elapsed progress and fade only for the remaining time", (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.tick(at(4000));
+  assert.equal(c.phase, "disintegrating");
+  assert.equal(c.videoTarget.currentTime, 4);
+  assert.equal(
+    c.videoTarget.paused,
+    false,
+    "audio already plays during destruction",
+  );
+  assert.deepEqual(c.events[0], {
+    name: "disintegrate",
+    detail: { elapsedMs: 4000, durationMs: 8000 },
   });
-  await FinaleController.prototype.playVideo.call(c);
-  assert.equal(c.playTarget.hidden, false);
-  assert.match(c.statusTarget.textContent, /Press play/);
+  c.fadeToBlack();
+  assert.equal(
+    c.phase,
+    "disintegrating",
+    "a fast renderer cannot advance the live broadcast",
+  );
+  c.tick(at(9000));
+  assert.equal(c.phase, "fading");
+  assert.equal(c.fadeTarget.options.duration, 1000);
+  assert.deepEqual(c.fadeTarget.frames, [{ opacity: 0.5 }, { opacity: 1 }]);
+  c.tick(at(10000));
+  assert.equal(c.phase, "video");
+  assert.equal(
+    c.videoTarget.currentTime,
+    10,
+    "revealing the picture must not restart playback",
+  );
 });
 
-test("navigation cleanup does not reapply damage to a Turbo snapshot", () => {
-  const c = controller({ phase: "video" });
-  c.cleanup({ restore: false });
-  assert.equal(c.phase, "idle");
-  assert.deepEqual(c.events, []);
-});
-
-test("live clock starts its final three seconds without adding another countdown at zero", (t) => {
-  browser(t);
+test("media starts at countdown zero and stays underneath the full destruction and fade", async (t) => {
+  const at = browser(t);
   const c = controller();
-  const deadline = Date.parse(c.endsAtValue);
-  c.tick(deadline - 3000);
-  assert.equal(c.countdownEndsAt, deadline);
-  c.tick(deadline);
-  assert.deepEqual(c.events, ["disintegrate"]);
-});
-
-test("the October 31 countdown ending never starts the disintegration", (t) => {
-  browser(t);
-  const c = controller();
-  for (const instant of [
-    "2026-10-31T23:59:59.999-04:00",
-    "2026-11-01T00:00:00-04:00",
-    "2026-11-01T11:59:56-05:00",
-  ]) {
-    c.tick(Date.parse(instant));
-    assert.equal(c.phase, "idle");
-    assert.deepEqual(c.events, []);
-  }
-});
-
-test("preview overrides the staged clock and restores its automatic stage on reset", (t) => {
-  let deadline = "";
-  const original = deadline;
-  const clock = {
-    getAttribute: () => deadline,
-    setAttribute(name, value) {
-      assert.equal(name, "data-stardance-countdown-override-at-value");
-      deadline = value;
-    },
+  const classes = new Set();
+  c.panelTarget.classList = {
+    add: (name) => classes.add(name),
+    remove: (name) => classes.delete(name),
   };
-  browser(t, { document: { hidden: false, querySelectorAll: () => [clock] } });
-  const c = controller();
-  c.start(1000, true);
-  assert.equal(deadline, new Date(4000).toISOString());
-  c.cleanup();
-  assert.equal(deadline, original);
+  c.tick(at(-3000));
+  assert.equal(c.videoTarget.playCalls, 0);
+  c.tick(at(0));
+  await Promise.resolve();
+  assert.equal(c.phase, "disintegrating");
+  assert.equal(
+    c.panelTarget.hidden,
+    false,
+    "sound controls are available immediately",
+  );
+  assert.equal(classes.has("stardance-finale__panel--intro"), true);
+  assert.equal(c.videoTarget.currentTime, 0);
+  assert.equal(c.videoTarget.paused, false);
+  c.videoTarget.currentTime = 8;
+  c.tick(at(8000));
+  assert.equal(c.phase, "fading");
+  assert.equal(classes.has("stardance-finale__panel--intro"), true);
+  c.videoTarget.currentTime = 10;
+  c.tick(at(10000));
+  assert.equal(c.phase, "video");
+  assert.equal(classes.has("stardance-finale__panel--intro"), false);
+  assert.equal(c.videoTarget.currentTime, 10);
+  assert.equal(
+    c.videoTarget.loadCalls,
+    1,
+    "the same media element/source continues through the transition",
+  );
 });
 
-test("the finale waits for server confirmation even if estimated time is past zero", async (t) => {
-  browser(t);
-  const c = controller({ phase: "countdown" });
-  t.mock.method(serverClock, "sync", async () => ({ ended: false }));
-  await FinaleController.prototype.confirmFinale.call(c);
-  assert.equal(c.phase, "countdown");
-  assert.deepEqual(c.events, []);
-  c.nextEndCheck = 0;
-  serverClock.sync.mock.mockImplementation(async () => ({ ended: true }));
-  await FinaleController.prototype.confirmFinale.call(c);
+test("replay begins audio with destruction and preserves its position when the fade ends", async (t) => {
+  const at = browser(t);
+  const c = controller();
+  at(140000);
+  c.replay();
+  performance.now.mock.mockImplementation(() => 4000);
+  c.tick();
+  await Promise.resolve();
+  assert.equal(c.phase, "disintegrating");
+  assert.equal(c.videoTarget.currentTime, 0);
+  assert.equal(c.videoTarget.paused, false);
+  performance.now.mock.mockImplementation(() => 12000);
+  c.videoTarget.currentTime = 8;
+  const fading = c.beginFade(2000);
+  performance.now.mock.mockImplementation(() => 14000);
+  c.videoTarget.currentTime = 10;
+  c.fadeTarget.resolve();
+  await fading;
+  assert.equal(c.phase, "video");
+  assert.equal(c.videoTarget.currentTime, 10);
+});
+
+test("late replay metadata catches up to the intro even after the picture is revealed", (t) => {
+  const at = browser(t);
+  const c = controller();
+  at(140000);
+  c.videoTarget.readyState = 0;
+  c.replay();
+  performance.now.mock.mockImplementation(() => 4000);
+  c.tick();
+  performance.now.mock.mockImplementation(() => 16000);
+  c.showVideo();
+  c.videoTarget.readyState = 1;
+  c.videoReady();
+  assert.equal(c.videoTarget.currentTime, 12);
+});
+
+test("autoplay blocked during destruction offers sound immediately without exposing the picture", async (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.videoTarget.play = async function () {
+    if (!this.muted) throw new DOMException("blocked", "NotAllowedError");
+    this.paused = false;
+  };
+  c.tick(at(0));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(c.phase, "disintegrating");
+  assert.equal(c.panelTarget.hidden, false);
+  assert.equal(c.playTarget.hidden, false);
+  assert.equal(c.playTarget.textContent, "turn sound on");
+  c.videoTarget.play = async function () {
+    this.paused = false;
+  };
+  at(4000);
+  c.playVideo();
+  assert.equal(c.videoTarget.muted, false);
+  assert.equal(c.videoTarget.currentTime, 4);
   assert.equal(c.phase, "disintegrating");
 });
 
-test("an offline server confirmation never starts destruction", async (t) => {
-  browser(t);
-  const c = controller({ phase: "countdown" });
-  t.mock.method(serverClock, "sync", async () => null);
-  await FinaleController.prototype.confirmFinale.call(c);
-  assert.deepEqual(c.events, []);
+test("a short file cannot cut off destruction or the fade", (t) => {
+  const at = browser(t);
+  serverClock.data.finale.duration_seconds = 5;
+  assert.equal(finaleTimeline(serverClock.data).finishesAt, start + 10000);
+  const c = controller();
+  c.tick(at(0));
+  at(5000);
+  c.videoEnded();
+  assert.equal(c.phase, "disintegrating");
+  c.tick(at(9000));
+  assert.equal(c.phase, "fading");
+  c.tick(at(10000));
+  assert.equal(c.phase, "idle");
 });
 
-test("blank placeholder hides preview controls and saves completion without restoring the site", async (t) => {
-  browser(t, {
-    fetch: async () => ({ ok: true }),
-    localStorage: { setItem() {} },
-  });
-  const c = controller({
-    phase: "fading",
-    hasVideoTarget: false,
-    hasStatusTarget: false,
-    hasContinueTarget: false,
-  });
-  let completion;
-  c.finish = (options) => {
-    completion = FinaleController.prototype.finish.call(c, options);
-  };
-  FinaleController.prototype.showVideo.call(c);
-  await completion;
-  assert.equal(c.previewResetTarget.hidden, true);
-  assert.equal(c.panelTarget.hidden, false);
-  assert.equal(c.phase, "complete");
-  assert.equal(c.seenValue, true);
+test("initial visits during the fade catch up without a fresh eight-second animation", (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.tick(at(9500));
+  assert.equal(c.phase, "fading");
+  assert.equal(c.events[0].detail.elapsedMs, 8000);
+  assert.equal(c.fadeTarget.options.duration, 500);
+});
+
+test("the live event restores the page at its end, including a stalled video, and later visits do nothing", (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.tick(at(20000));
+  c.mediaFailed = true;
+  c.tick(at(120000));
+  assert.equal(c.phase, "idle");
+  assert.equal(c.dialogTarget.open, false);
+  assert.equal(c.videoTarget.hasAttribute("src"), false);
+  assert.equal(c.events.at(-1).name, "reset");
+  c.tick(at(140000));
+  assert.equal(c.phase, "idle");
+  const fresh = controller();
+  fresh.tick(at(86400000));
+  assert.equal(fresh.phase, "idle");
+  assert.equal(fresh.videoTarget.loadCalls, 0);
+});
+
+test("metadata and buffering delays seek to the current shared time, not the arrival time", (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.videoTarget.readyState = 0;
+  c.tick(at(30000));
+  assert.equal(c.videoTarget.currentTime, 0);
+  c.videoTarget.readyState = 1;
+  at(60000);
+  c.videoReady();
+  assert.equal(c.videoTarget.currentTime, 60);
+  c.videoTarget.currentTime = 51;
+  performance.now.mock.mockImplementation(() => 5000);
+  c.tick(at(80000));
+  assert.equal(c.videoTarget.currentTime, 80);
+  c.videoTarget.seeking = true;
+  c.tick(at(90000));
+  assert.equal(
+    c.videoTarget.currentTime,
+    80,
+    "do not restart an ongoing slow seek on every tick",
+  );
+});
+
+test("background tabs pause and join the current live moment after server clock resynchronization", (t) => {
+  const at = browser(t);
+  t.mock.method(serverClock, "subscribe", () => () => {});
+  t.mock.method(globalThis, "setInterval", () => 1);
+  const c = controller();
+  at(-60000);
+  c.connect();
+  c.tick(at(20000));
+  document.hidden = true;
+  c.visibility();
+  assert.equal(c.videoTarget.paused, true);
+  c.tick(at(50000));
+  assert.equal(c.videoTarget.currentTime, 20);
+  document.hidden = false;
+  performance.now.mock.mockImplementation(() => 10000);
+  c.tick(at(70000));
+  assert.equal(c.videoTarget.currentTime, 70);
+  c.tick(at(200000));
+  assert.equal(c.phase, "idle");
+});
+
+test("ordinary visits never fetch the video; near-start warmup respects Data Saver", (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.tick(at(-60000));
+  assert.equal(c.videoTarget.loadCalls, 0);
+  navigator.connection = { saveData: true };
+  c.tick(at(-15000));
+  assert.equal(c.videoTarget.loadCalls, 0);
+  navigator.connection.saveData = false;
+  c.tick(at(-15000));
+  c.tick(at(-5000));
+  assert.equal(c.videoTarget.loadCalls, 1);
+  assert.equal(c.videoTarget.preload, "auto");
+  assert.equal(c.videoTarget.playCalls, 0);
+});
+
+test("the October 31 deadline does not start a finale, and the explosion requires server confirmation", async (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.tick(Date.parse("2026-11-01T00:00:00-04:00"));
+  assert.equal(c.phase, "idle");
+  serverClock.data.ended = false;
+  t.mock.method(serverClock, "sync", async () => null);
+  c.tick(at(0));
+  await Promise.resolve();
   assert.deepEqual(c.events, []);
+  serverClock.data.ended = true;
+  c.tick(at(500));
+  assert.equal(c.phase, "disintegrating");
+});
+
+test("public replay becomes available only after the live window and plays independently from zero", (t) => {
+  const at = browser(t);
+  const c = controller();
+  at(119999);
+  c.replay();
+  assert.equal(c.phase, "idle");
+  at(140000);
+  c.replay();
+  assert.equal(c.phase, "countdown");
+  assert.equal(c.mode, "replay");
+  assert.equal(
+    c.videoTarget.controls,
+    false,
+    "native controls wait until the picture is revealed",
+  );
+  performance.now.mock.mockImplementation(() => 4000);
+  c.tick();
+  assert.equal(c.phase, "disintegrating");
+  assert.equal(c.events[0].detail.durationMs, 8000);
+  c.showVideo();
+  assert.equal(c.videoTarget.controls, true);
+  assert.equal(c.videoTarget.currentTime, 0);
+  c.videoTarget.currentTime = 40;
+  c.tick(at(500000));
+  assert.equal(
+    c.videoTarget.currentTime,
+    40,
+    "replay supports independent seeking and pausing",
+  );
+  c.videoEnded();
+  assert.equal(c.phase, "idle");
+  assert.equal(c.events.at(-1).name, "reset");
+});
+
+test("on-demand permits a private production replay before the deadline without starting the live finale early", (t) => {
+  const at = browser(t);
+  const c = controller();
+  at(-3600000);
+  c.replay();
+  assert.equal(c.phase, "idle");
+  serverClock.data.finale.on_demand = true;
+  c.tick();
+  assert.equal(
+    c.phase,
+    "idle",
+    "enabling the flag never automatically plays it",
+  );
+  assert.equal(c.videoTarget.hasAttribute("src"), false);
+  c.replay();
+  assert.equal(c.phase, "countdown");
+  assert.equal(c.mode, "replay");
+  assert.equal(
+    c.previewEnabledValue,
+    false,
+    "does not require local debug tools",
+  );
+  assert.equal(c.timeline.startsAt, start);
+  serverClock.data.finale.on_demand = false;
+  performance.now.mock.mockImplementation(() => 4000);
+  c.tick();
+  assert.equal(
+    c.phase,
+    "disintegrating",
+    "revocation doesn't interrupt an existing replay",
+  );
+  c.finish();
+  assert.equal(c.skipLive, undefined);
+  c.replay();
+  assert.equal(c.phase, "idle", "revocation blocks new early playback");
+  c.tick(at(0));
+  assert.equal(c.mode, "live", "reviewing does not suppress the real event");
+});
+
+test("on-demand still requires a configured video and valid server time", (t) => {
+  const at = browser(t);
+  const c = controller();
+  serverClock.data.finale.on_demand = true;
+  serverClock.now.mock.mockImplementation(() => NaN);
+  c.replay();
+  assert.equal(c.phase, "idle");
+  at(-60000);
+  serverClock.data.finale.video_url = null;
+  c.replay();
+  assert.equal(c.phase, "idle");
+});
+
+test("local preview keeps the existing override and cannot be invoked in production", async (t) => {
+  const at = browser(t);
+  const c = controller();
+  await c.preview();
+  assert.equal(c.phase, "idle");
+  c.previewEnabledValue = true;
+  at(-60000);
+  let value = "";
+  document.querySelectorAll = () => [
+    {
+      getAttribute: () => value,
+      setAttribute: (_, v) => {
+        value = v;
+      },
+    },
+  ];
+  await c.preview();
+  assert.equal(c.mode, "preview");
+  assert.equal(value, new Date(start - 57000).toISOString());
+  c.beginDisintegration();
+  assert.deepEqual(
+    c.events.at(-1).detail,
+    {},
+    "preview lets the renderer use its configured duration",
+  );
+  c.resetPreview();
+  assert.equal(value, "");
+  assert.equal(c.phase, "idle");
+});
+
+test("replay fades for two seconds and cancelled fades never show a video", async (t) => {
+  browser(t);
+  for (const cancel of [false, true]) {
+    const c = controller();
+    c.start("replay", finaleTimeline(sample()));
+    c.beginDisintegration();
+    const fading = c.beginFade(2000);
+    assert.equal(c.fadeTarget.options.duration, 2000);
+    if (cancel) c.cleanup();
+    else c.fadeTarget.resolve();
+    await fading;
+    assert.equal(c.phase, cancel ? "idle" : "video");
+  }
+});
+
+test("autoplay falls back to muted video and offers sound without restarting", async (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.videoTarget.play = async function () {
+    if (!this.muted) throw new DOMException("blocked", "NotAllowedError");
+    this.paused = false;
+  };
+  c.tick(at(40000));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(c.videoTarget.muted, true);
+  assert.equal(c.playTarget.hidden, false);
+  assert.equal(c.playTarget.textContent, "turn sound on");
+  c.videoTarget.play = async function () {
+    this.paused = false;
+  };
+  at(50000);
+  c.playVideo();
+  assert.equal(c.videoTarget.currentTime, 50);
+  assert.equal(c.videoTarget.muted, false);
+});
+
+test("fully blocked autoplay is retryable and live completion still releases the page", async (t) => {
+  const at = browser(t);
+  const c = controller();
+  c.videoTarget.play = async () => {
+    throw new DOMException("blocked", "NotAllowedError");
+  };
+  c.tick(at(40000));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(c.playTarget.textContent, "play finale");
+  assert.equal(c.playTarget.hidden, false);
+  assert.equal(c.playBlocked, true);
+  c.tick(at(120000));
+  assert.equal(c.phase, "idle");
+});
+
+test("skipping a live video does not immediately reopen it or write account state", (t) => {
+  const at = browser(t);
+  const c = controller();
+  t.mock.method(globalThis, "fetch", () => assert.fail("no dismissal request"));
+  c.tick(at(40000));
+  c.finish();
+  c.tick(at(50000));
+  assert.equal(c.phase, "idle");
+  assert.equal(c.skipLive, true);
+});
+
+test("missing video configuration always restores the site instead of a permanent black screen", (t) => {
+  const at = browser(t);
+  serverClock.data.finale.video_url = null;
+  const c = controller();
+  c.tick(at(0));
+  assert.equal(c.phase, "disintegrating");
+  c.tick(at(10000));
+  assert.equal(c.phase, "idle");
+  assert.equal(c.videoTarget.hasAttribute("src"), false);
+  c.replay();
+  assert.equal(c.phase, "idle");
+});
+
+test("navigation aborts media and prevents a pending autoplay promise from reopening controls", async (t) => {
+  const at = browser(t);
+  const c = controller();
+  let reject;
+  c.videoTarget.play = () =>
+    new Promise((_, fail) => {
+      reject = fail;
+    });
+  c.tick(at(40000));
+  c.cleanup({ restore: false });
+  reject(new Error("navigation"));
+  await Promise.resolve();
+  assert.equal(c.phase, "idle");
+  assert.equal(c.playTarget.hidden, true);
+  assert.equal(c.videoTarget.hasAttribute("src"), false);
+  assert.ok(!c.events.some((e) => e.name === "reset"));
+});
+
+test("timeline uses a finite runtime and never creates an infinite broadcast", () => {
+  for (const duration of [undefined, -1, 0, NaN, Infinity]) {
+    const data = sample();
+    data.finale.duration_seconds = duration;
+    assert.equal(finaleTimeline(data).finishesAt, start + 10000);
+    assert.equal(finaleTimeline(data).ready, false);
+  }
+  assert.equal(finaleTimeline({}), null);
 });
