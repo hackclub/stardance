@@ -12,6 +12,19 @@ const sample = () => ({
 });
 
 function browser(t) {
+  const stored = new Map();
+  const storage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key) => stored.get(key),
+      setItem: (key, value) => stored.set(key, value),
+    },
+  });
+  t.after(() => {
+    if (storage) Object.defineProperty(globalThis, "localStorage", storage);
+    else delete globalThis.localStorage;
+  });
   const data = serverClock.data;
   serverClock.data = sample();
   t.after(() => {
@@ -209,16 +222,16 @@ test("replay begins audio with destruction and preserves its position when the f
   const c = controller();
   at(140000);
   c.replay();
-  performance.now.mock.mockImplementation(() => 4000);
+  performance.now.mock.mockImplementation(() => 13000);
   c.tick();
   await Promise.resolve();
   assert.equal(c.phase, "disintegrating");
   assert.equal(c.videoTarget.currentTime, 0);
   assert.equal(c.videoTarget.paused, false);
-  performance.now.mock.mockImplementation(() => 12000);
+  performance.now.mock.mockImplementation(() => 21000);
   c.videoTarget.currentTime = 8;
   const fading = c.beginFade(2000);
-  performance.now.mock.mockImplementation(() => 14000);
+  performance.now.mock.mockImplementation(() => 23000);
   c.videoTarget.currentTime = 10;
   c.fadeTarget.resolve();
   await fading;
@@ -232,9 +245,9 @@ test("late replay metadata catches up to the intro even after the picture is rev
   at(140000);
   c.videoTarget.readyState = 0;
   c.replay();
-  performance.now.mock.mockImplementation(() => 4000);
+  performance.now.mock.mockImplementation(() => 13000);
   c.tick();
-  performance.now.mock.mockImplementation(() => 16000);
+  performance.now.mock.mockImplementation(() => 25000);
   c.showVideo();
   c.videoTarget.readyState = 1;
   c.videoReady();
@@ -397,7 +410,7 @@ test("public replay becomes available only after the live window and plays indep
     false,
     "native controls wait until the picture is revealed",
   );
-  performance.now.mock.mockImplementation(() => 4000);
+  performance.now.mock.mockImplementation(() => 13000);
   c.tick();
   assert.equal(c.phase, "disintegrating");
   assert.equal(c.events[0].detail.durationMs, 8000);
@@ -414,6 +427,36 @@ test("public replay becomes available only after the live window and plays indep
   c.videoEnded();
   assert.equal(c.phase, "idle");
   assert.equal(c.events.at(-1).name, "reset");
+});
+
+test("replay shows twelve seconds, waits for zero, and restores the shared clocks on exit", (t) => {
+  const at = browser(t);
+  const values = ["", ""];
+  document.querySelectorAll = () =>
+    values.map((_, i) => ({
+      getAttribute: () => values[i],
+      setAttribute: (_, value) => {
+        values[i] = value;
+      },
+    }));
+  const c = controller();
+  at(140000);
+  c.replay();
+  assert.deepEqual(
+    values,
+    Array(2).fill(new Date(start + 152000).toISOString()),
+  );
+  performance.now.mock.mockImplementation(() => 12999);
+  c.tick();
+  assert.equal(c.phase, "countdown");
+  assert.equal(c.videoTarget.playCalls, 0);
+  performance.now.mock.mockImplementation(() => 13000);
+  c.tick();
+  assert.equal(c.phase, "disintegrating");
+  assert.equal(c.videoTarget.currentTime, 0);
+  c.finish();
+  assert.deepEqual(values, ["", ""]);
+  assert.equal(serverClock.data.ends_at, new Date(start).toISOString());
 });
 
 test("on-demand permits a private production replay before the deadline without starting the live finale early", (t) => {
@@ -440,7 +483,7 @@ test("on-demand permits a private production replay before the deadline without 
   );
   assert.equal(c.timeline.startsAt, start);
   serverClock.data.finale.on_demand = false;
-  performance.now.mock.mockImplementation(() => 4000);
+  performance.now.mock.mockImplementation(() => 13000);
   c.tick();
   assert.equal(
     c.phase,
@@ -601,4 +644,107 @@ test("timeline uses a finite runtime and never creates an infinite broadcast", (
     assert.equal(finaleTimeline(data).ready, false);
   }
   assert.equal(finaleTimeline({}), null);
+});
+
+function interaction(overrides = {}) {
+  return {
+    isTrusted: true,
+    type: "click",
+    preventDefault() {},
+    stopImmediatePropagation() {},
+    ...overrides,
+  };
+}
+
+test("first interaction offers guests one full replay, including after navigation", (t) => {
+  const at = browser(t);
+  const c = controller();
+  at(140000);
+  c.playOnArrival(interaction());
+  assert.equal(c.mode, "replay");
+  assert.equal(c.localDeadline, 13000);
+  assert.equal(c.arrivalSeenValue, true);
+  c.finish();
+  c.playOnArrival(interaction());
+  assert.equal(c.phase, "idle");
+  const nextPage = controller();
+  nextPage.playOnArrival(interaction());
+  assert.equal(nextPage.phase, "idle");
+  nextPage.replay();
+  assert.equal(nextPage.mode, "replay", "manual replay remains available");
+});
+
+test("arrival requires real interaction, finished live show, ready media, and no other modal", (t) => {
+  const at = browser(t);
+  const c = controller();
+  serverClock.data.finale.on_demand = true;
+  at(-1000);
+  c.playOnArrival(interaction());
+  assert.equal(c.phase, "idle");
+  at(140000);
+  for (const options of [
+    { isTrusted: false },
+    { type: "keydown", key: "a" },
+    { ctrlKey: true },
+  ]) {
+    c.playOnArrival(interaction(options));
+    assert.equal(c.phase, "idle");
+  }
+  document.querySelector = () => ({});
+  c.playOnArrival(interaction());
+  assert.equal(c.phase, "idle");
+  document.querySelector = () => null;
+  serverClock.data.finale.video_url = null;
+  c.playOnArrival(interaction());
+  assert.equal(c.phase, "idle");
+  serverClock.data.finale.video_url = "/videos/finale.mp4";
+  c.playOnArrival(interaction({ type: "keydown", key: "Enter" }));
+  assert.equal(c.mode, "replay");
+});
+
+test("signed-in arrival is recorded on the account and seen accounts do not repeat it", async (t) => {
+  const at = browser(t);
+  at(140000);
+  const requests = [];
+  t.mock.method(globalThis, "fetch", async (...args) => {
+    requests.push(args);
+    return { ok: true };
+  });
+  const seen = controller({ viewerIdValue: "1", arrivalSeenValue: true });
+  seen.playOnArrival(interaction());
+  assert.equal(seen.phase, "idle");
+  assert.equal(requests.length, 0);
+  const c = controller({ viewerIdValue: "2" });
+  c.playOnArrival(interaction());
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0][0], "/my/dismissals");
+  assert.deepEqual(JSON.parse(requests[0][1].body), {
+    thing_name: "stardance_finale_arrival_v1",
+  });
+  assert.equal(requests[0][1].credentials, "same-origin");
+});
+
+test("pages without a home clock show the countdown and storage failures do not break playback", (t) => {
+  const at = browser(t);
+  at(140000);
+  t.mock.method(localStorage, "getItem", () => {
+    throw new Error("blocked");
+  });
+  t.mock.method(localStorage, "setItem", () => {
+    throw new Error("blocked");
+  });
+  const c = controller({
+    hasCountdownTarget: true,
+    countdownTarget: { hidden: true },
+  });
+  c.playOnArrival(interaction());
+  assert.equal(c.dialogTarget.open, true);
+  assert.equal(c.countdownTarget.hidden, false);
+  assert.equal(c.countdownTarget.textContent, "stardance explodes in 12");
+  performance.now.mock.mockImplementation(() => 13000);
+  c.tick();
+  assert.equal(c.countdownTarget.hidden, true);
+  assert.equal(c.phase, "disintegrating");
+  c.finish();
+  assert.equal(c.dialogTarget.open, false);
 });

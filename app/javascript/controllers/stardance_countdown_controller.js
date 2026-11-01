@@ -42,7 +42,7 @@ export default class extends Controller {
     )
       return;
 
-    // Local previews and late arrivals temporarily replay the final 3–2–1.
+    // Replays and local previews temporarily override the shared deadline.
     const overridden = Number.isFinite(Date.parse(this.overrideAtValue));
     const exploding = overridden || now >= endsAt;
     const deadline = overridden

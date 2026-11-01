@@ -1,6 +1,7 @@
 export const DISINTEGRATION_MS = 8000;
 export const FADE_MS = 2000;
 export const COUNTDOWN_MS = 3000;
+export const REPLAY_COUNTDOWN_MS = 12000;
 
 // A scheduled broadcast of a static file, not a stream through the Rails app.
 export function finaleTimeline(sample) {

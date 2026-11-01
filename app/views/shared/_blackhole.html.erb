@@ -7,6 +7,8 @@
      data-blackhole-simulator-enabled-value="<%= simulator %>"
      data-stardance-finale-ends-at-value="<%= ends_at&.iso8601(3) %>"
      data-stardance-finale-preview-enabled-value="<%= simulator %>"
+     data-stardance-finale-viewer-id-value="<%= current_user&.id %>"
+     data-stardance-finale-arrival-seen-value="<%= current_user&.has_dismissed?("stardance_finale_arrival_v1") || false %>"
      data-blackhole-awaiting-reveal-value="<%= awaiting_reveal %>"
      data-action="stardance-finale:disintegrate->blackhole#startFinale stardance-finale:reset->blackhole#resetFinale stardance-finale:video->blackhole#pauseForFinale blackhole:finale-complete->stardance-finale#fadeToBlack stardance-countdown:replay@window->stardance-finale#replay buku-x3-reveal:complete@window->blackhole#revealComplete buku-x3-reveal:preview-complete@window->blackhole#revealComplete"
      data-blackhole-progress-url-value="<%= progress_url %>">
