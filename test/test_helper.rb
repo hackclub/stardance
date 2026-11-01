@@ -50,9 +50,11 @@ end
 
 Dir[Rails.root.join("test/support/**/*.rb")].each { |f| require f }
 
-# Ships close at the real end of Stardance, so tests that ship would start
-# failing once that date passes. Keep them open; tests of the cutoff set it.
+# Ships and time logging close at the real end of Stardance, so tests that ship
+# or log time would start failing once that date passes. Keep them open; tests
+# of the cutoffs set them.
 Rails.application.config.stardance_ships_close_at = nil
+Rails.application.config.stardance_time_logging_ends_at = nil
 
 module ActiveSupport
   class TestCase

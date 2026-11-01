@@ -178,7 +178,10 @@ class User < ApplicationRecord
   # still recorded so the cutoff comes back if the override is removed.
   def aged_out? = aged_out_on.present? && manual_ysws_override != true
 
-  def time_logging_cutoff = aged_out? ? aged_out_on.beginning_of_day : nil
+  # Time coded after Stardance ends never counts, aged out or not.
+  def time_logging_cutoff
+    [ (aged_out_on.beginning_of_day if aged_out?), Rails.application.config.stardance_time_logging_ends_at ].compact.min
+  end
 
   # The day they turned 19, if they onboarded at 13-18 and are 19 or older now.
   def turned_19_on(birthday)

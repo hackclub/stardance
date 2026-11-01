@@ -804,7 +804,7 @@ class Project < ApplicationRecord
         key: :shipping_open,
         label: "Ship before Stardance ends",
         fail_label: SHIPPING_CLOSED_MESSAGE,
-        tooltip: "Ships close at the end of Saturday, October 31st (11:59 PM ET).",
+        tooltip: "Ships close at noon ET on Sunday, November 1st. Only time coded before midnight ET on October 31st counts.",
         passed: !Project.shipping_closed?
       },
       {

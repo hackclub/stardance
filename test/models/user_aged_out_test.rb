@@ -52,6 +52,18 @@ class UserAgedOutTest < ActiveSupport::TestCase
     assert_equal Time.zone.local(2026, 9, 1), @user.time_logging_cutoff
   end
 
+  test "time logging stops at the end of Stardance, or earlier for aged-out users" do
+    ends_at = Rails.application.config.stardance_ends_at
+    Rails.application.config.stardance_time_logging_ends_at = ends_at
+
+    assert_equal ends_at, @user.time_logging_cutoff
+
+    @user.update!(aged_out_on: Date.new(2026, 9, 1), ysws_eligible: false)
+    assert_equal Time.zone.local(2026, 9, 1), @user.time_logging_cutoff
+  ensure
+    Rails.application.config.stardance_time_logging_ends_at = nil
+  end
+
   test "an HCA refresh after turning 19 marks them aged out instead of rejecting orders" do
     @user.apply_hca_verification_payload!(
       { "verification_status" => "verified", "ysws_eligible" => false, "birthday" => BIRTHDAY.iso8601 }
