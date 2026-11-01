@@ -9,14 +9,14 @@
         data-action="cancel->dismissable#dismiss"
         aria-labelledby="ship-prompt-title">
   <div class="ship-prompt__panel">
-    <p class="ship-prompt__eyebrow">Stardance ends Saturday</p>
+    <p class="ship-prompt__eyebrow">Ships close at noon ET</p>
     <h2 class="ship-prompt__title" id="ship-prompt-title">Ship <%= project.title %>!</h2>
     <p class="ship-prompt__hours">
       <strong><%= number_with_precision(hours, precision: 1, strip_insignificant_zeros: true) %>h</strong> unshipped
     </p>
 
     <p class="ship-prompt__note">
-      Ships close <strong><%= Rails.application.config.stardance_ends_at.strftime("%A, %B %-d at %-l:%M%P ET") %></strong>.
+      Ships close <strong><%= Rails.application.config.stardance_ships_close_at.strftime("%A, %B %-d at %-l:%M%P ET") %></strong>.
       Time you haven't shipped by then won't turn into stardust.
       <% if other_projects.positive? %>
         You've also got <%= pluralize(other_projects, "other project") %> with unshipped time.
