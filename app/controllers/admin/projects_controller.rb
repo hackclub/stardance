@@ -102,8 +102,17 @@ class Admin::ProjectsController < Admin::ApplicationController
     when "needs_changes" then "returned"
     else "pending"
     end
-    return if ship_event.certification_status == new_cert
-    ship_event.update!(certification_status: new_cert)
+    review = @project.latest_ship_review
+    head = review.post_ship_event if review&.status.in?(%w[pending returned permanently_rejected])
+    queued = head ? head.queued_ship_events.reject { |event| event.certification_status == "approved" } : []
+    unless ship_event == head || queued.include?(ship_event)
+      head = ship_event
+      queued = []
+    end
+
+    head.update!(certification_status: new_cert) unless head.certification_status == new_cert
+    queued_cert = new_cert == "returned" ? "pending" : new_cert
+    queued.each { |event| event.update!(certification_status: queued_cert) unless event.certification_status == queued_cert }
   end
 
   # An admin override that leaves the cert pending would keep it live in both

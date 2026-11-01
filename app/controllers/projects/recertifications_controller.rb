@@ -38,7 +38,7 @@ class Projects::RecertificationsController < ApplicationController
       return if action_items_block_resubmission?(latest_review)
 
       @project.resubmit_for_review!
-      ship_event = @project.last_ship_event
+      ship_event = @project.recertification_ship
       cert = @project.ship_reviews.create!(status: :pending, post_ship_event_id: ship_event&.id)
       ship_event&.update!(certification_status: "pending")
 

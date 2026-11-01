@@ -1,6 +1,13 @@
 require "test_helper"
 
 class StickerPromoTest < ActiveSupport::TestCase
+  test "sticker eligibility closes before the delayed finale countdown" do
+    travel_to Rails.application.config.stardance_finale_at - 1.hour do
+      assert_not StickerPromo.active?
+      assert_equal Rails.application.config.stardance_ends_at, StickerPromo::DEADLINE
+    end
+  end
+
   setup do
     @user = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "star#{SecureRandom.hex(4)}")
   end

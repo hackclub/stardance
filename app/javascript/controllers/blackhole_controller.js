@@ -17,8 +17,14 @@ const PROTECTED_CONTENT =
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SIMULATOR_KEY = "stardance-event-simulator-v1";
 const MESH_OVERSCAN = 128;
-const FINALE_DURATION = 20_000;
+const FINALE_DURATION = 8000;
 const clamp = (n, min = 0, max = 1) => Math.min(max, Math.max(min, n));
+const finaleDurationSeconds = (value) => {
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds > 0
+    ? clamp(seconds, 1, 120)
+    : FINALE_DURATION / 1000;
+};
 // The finale temporarily overrides preferences without changing saved settings.
 const particlesEnabled = (controller) =>
   !!controller.finale ||
@@ -301,13 +307,18 @@ export default class extends Controller {
       from: this.requested,
       progress: -1,
       startedAt: performance.now(),
+      duration: this.simulatorEnabledValue
+        ? finaleDurationSeconds(this.simulation?.finaleDuration) * 1000
+        : FINALE_DURATION,
     };
     this.updateFinale();
   }
 
   updateFinale(now = performance.now()) {
     if (!this.finale) return;
-    const elapsed = clamp((now - this.finale.startedAt) / FINALE_DURATION);
+    const elapsed = clamp(
+      (now - this.finale.startedAt) / (this.finale.duration ?? FINALE_DURATION),
+    );
     const progress = this.reducedMotion.matches
       ? 1
       : elapsed * elapsed * (3 - 2 * elapsed);
@@ -341,6 +352,9 @@ export default class extends Controller {
       strength: number("strength", 200),
       particles: fields.namedItem("particles").checked,
       cursorRepair: fields.namedItem("cursorRepair").checked,
+      finaleDuration: finaleDurationSeconds(
+        fields.namedItem("finaleDuration")?.value,
+      ),
     };
     this.simulatorStatusTarget.textContent = `${this.simulation.damage}% damaged · ${this.simulation.strength}% visual intensity · preview active`;
   }
@@ -439,13 +453,9 @@ export default class extends Controller {
     }
     this.emitAmbientDust(dt);
     this.draw(dt);
-    // Hand over only after the final masks are painted and the dust settles.
-    if (
-      this.finale?.progress === 1 &&
-      !this.dirty &&
-      !this.particles.length &&
-      !this.finale.notified
-    ) {
+    // Start the fade after the final masks are painted; remaining dust fades
+    // with the page instead of extending the finale's duration.
+    if (this.finale?.progress === 1 && !this.dirty && !this.finale.notified) {
       this.finale.notified = true;
       this.dispatch("finale-complete");
     }

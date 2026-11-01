@@ -4,9 +4,9 @@ class RefreshMaterializedAllSignupsJob < ApplicationJob
   queue_as :literally_whenever
 
   # The refresh runs every 2 minutes (config/recurring.yml). If a refresh ever
-  # takes longer than that, this keeps the next tick from piling a second
+  # takes longer than that, this drops the next tick instead of piling a second
   # refresh on top of the running one.
-  limits_concurrency to: 1, key: "refresh_materialized_all_signups", duration: 5.minutes
+  limits_concurrency to: 1, key: "refresh_materialized_all_signups", duration: 5.minutes, on_conflict: :discard
 
   def perform
     # CONCURRENTLY keeps the view readable (no AccessExclusive lock) while it

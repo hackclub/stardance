@@ -31,6 +31,13 @@ class ProjectShippingClosedRequirementTest < ActiveSupport::TestCase
     end
   end
 
+  test "shipping stays closed while the delayed finale countdown is running" do
+    travel_to Rails.application.config.stardance_finale_at - 1.hour do
+      refute requirement[:passed]
+      refute @project.shippable?
+    end
+  end
+
   private
     def requirement = @project.shipping_requirements.find { |r| r[:key] == :shipping_open }
 end

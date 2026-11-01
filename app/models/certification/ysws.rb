@@ -215,6 +215,7 @@ module Certification
       @effective_ship_cert = ship_cert || begin
         project_certs = Certification::Ship.where(project_id: project_id)
         project_certs.find_by(post_ship_event_id: post_ship_event_id) ||
+          project_certs.approved.nearest_before(post_ship_event).first ||
           project_certs.approved.order(Arel.sql("decided_at DESC NULLS LAST"), id: :desc).first
       end
     end

@@ -575,7 +575,7 @@ class Project < ApplicationRecord
   # pre-lock snapshot into the locked section. Drop them whenever the record
   # reloads. remove_instance_variable, not nil: the memos guard on `defined?`.
   def reload(*)
-    %i[@_latest_ship_review @_latest_funding_request @_has_any_funding_request].each do |ivar|
+    %i[@_latest_ship_review @_latest_funding_request @_has_any_funding_request @_ship_queue_head].each do |ivar|
       remove_instance_variable(ivar) if instance_variable_defined?(ivar)
     end
     super
@@ -961,9 +961,25 @@ class Project < ApplicationRecord
 
   def shippable? = ship_blocking_errors.empty?
 
-  # True while a ship is waiting on a reviewer decision. Blocks re-shipping
-  # until that ship is approved or returned for changes.
+  # True while a ship is waiting on a reviewer decision.
   def awaiting_ship_review? = ship_reviews.pending.exists?
+
+  def ship_queue_head
+    return @_ship_queue_head if defined?(@_ship_queue_head)
+
+    @_ship_queue_head = queueable_review_ship
+  end
+
+  def ships_queued_for_review?
+    review = latest_ship_review
+    return false unless review&.pending? || review&.returned?
+
+    review.post_ship_event&.queued_ship_events&.any? { |event| event.certification_status == "pending" } || false
+  end
+
+  def recertification_ship
+    ship_events.where(certification_status: "returned").first || last_ship_event
+  end
 
   def ship_blocking_errors = shipping_requirements.reject { |r| r[:passed] }.map { |r| r[:label] }
 
@@ -1221,6 +1237,23 @@ class Project < ApplicationRecord
     shipping_requirements
       .select { |r| keys.include?(r[:key]) }
       .find { |r| !r[:passed] }
+  end
+
+  def queueable_review_ship
+    return if hardware?
+
+    review = latest_ship_review
+    return unless review&.pending? || (review&.returned? && needs_changes?)
+
+    head = review.post_ship_event
+    return unless head
+
+    return if head.mission_submission || (current_mission && !shipped_to_mission?(current_mission))
+
+    newer_reviewed = ship_reviews.where.not(post_ship_event_id: head.id)
+                                 .joins(post_ship_event: :post)
+                                 .exists?([ "posts.created_at > ?", head.post.created_at ])
+    head unless newer_reviewed
   end
 
   def recertification_request_times

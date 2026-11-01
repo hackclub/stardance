@@ -599,12 +599,17 @@ class Admin::Certification::YswsController < Admin::Certification::ApplicationCo
       return render json: { success: false, error: "This project already has a pending ship certification." }, status: :unprocessable_entity
     end
 
+    if @review.project.ships_queued_for_review?
+      return render json: { success: false, error: "Ships are queued behind this project's returned review. Resolve that review first." }, status: :unprocessable_entity
+    end
+
     ActiveRecord::Base.transaction do
       approved_certs = ::Certification::Ship
         .where(project_id: @review.project_id, status: :approved)
         .lock
       approved_cert = approved_certs.find_by(id: @review.ship_cert_id) ||
                       approved_certs.find_by(post_ship_event_id: @review.post_ship_event_id) ||
+                      approved_certs.nearest_before(@review.post_ship_event).first ||
                       approved_certs.order(Arel.sql("decided_at DESC NULLS LAST"), id: :desc).first
 
       new_cert = ::Certification::Ship.create!(

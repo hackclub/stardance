@@ -227,7 +227,7 @@
             <% @ships.each do |ship| %>
               <% owner       = ship.project&.memberships&.find(&:owner?)&.user %>
               <% own_project = @own_project_ids.include?(ship.project_id) %>
-              <% ship_event  = ship.project.last_ship_event %>
+              <% ship_event  = ship.verdict_ship_event %>
               <% wait_days   = ((Time.current - ship.created_at) / 1.day).floor %>
               <% overdue     = wait_days > ::Certification::Ship::SLA_DAYS %>
               <% review_path  = ship.project&.hardware? ? admin_certification_hardware_review_path(ship.project) : admin_certification_ship_path(ship) %>
@@ -300,7 +300,7 @@
         <% @ships.each do |ship| %>
           <% owner       = ship.project&.memberships&.find(&:owner?)&.user %>
           <% own_project = @own_project_ids.include?(ship.project_id) %>
-          <% ship_event  = ship.project.last_ship_event %>
+          <% ship_event  = ship.verdict_ship_event %>
           <% wait_days   = ((Time.current - ship.created_at) / 1.day).floor %>
           <% overdue     = wait_days > ::Certification::Ship::SLA_DAYS %>
           <% review_path  = ship.project&.hardware? ? admin_certification_hardware_review_path(ship.project) : admin_certification_ship_path(ship) %>

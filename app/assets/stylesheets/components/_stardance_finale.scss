@@ -20,6 +20,15 @@
     background: transparent;
   }
 
+  &__fade {
+    position: absolute;
+    inset: 0;
+    // The finale fades to true black to match the video frame.
+    background: black;
+    opacity: 0;
+    pointer-events: none;
+  }
+
   &__panel {
     position: absolute;
     inset: 0;
@@ -29,7 +38,7 @@
     justify-content: center;
     gap: var(--space-m);
     padding: var(--space-l);
-    background: var(--color-space-bg);
+    background: black;
     overflow: auto;
   }
 

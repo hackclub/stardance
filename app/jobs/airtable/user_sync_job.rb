@@ -13,7 +13,7 @@ class Airtable::UserSyncJob < Airtable::BaseSyncJob
   # ~30min, so Loops properties for emails are fresh soon after a deploy.
   # Norairrecord's Faraday middleware paces requests to Airtable's 5 req/s
   # per-base limit on its own.
-  def sync_limit = 1000
+  def sync_limit = 100
 
   def field_mapping(user)
     address = user.addresses.first

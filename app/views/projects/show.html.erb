@@ -738,7 +738,7 @@
                     tooltip_position_value: "top"
                   }
                 ) %>
-          <% elsif @project.awaiting_ship_review? %>
+          <% elsif @project.awaiting_ship_review? && @project.ship_queue_head.nil? %>
             <%= render ActionButtonComponent.new(
                   text: "Ship your project!",
                   variant: :secondary,
@@ -751,7 +751,7 @@
                     tooltip_position_value: "top"
                   }
                 ) %>
-          <% elsif @project.needs_changes? %>
+          <% elsif @project.needs_changes? && !(@project.ship_queue_head && @project.shippable?) %>
             <%# Changes requested: the ship CTA resubmits this same ship for
                 re-certification instead of opening a fresh ship. %>
             <% if (recert_blocker = recert_visible_blocker || recert_link_blocker) %>
@@ -1002,6 +1002,7 @@
       <section class="project-show__feed" aria-label="Project feed">
         <% ship_count = @posts.count { |p| p.postable_type == "Post::ShipEvent" } %>
         <% ship_index = 0 %>
+        <% recert_ship_id = @project.recertification_ship&.id if @project.needs_changes? %>
         <% @timeline_entries.each do |entry| %>
           <% if entry.is_a?(Certification::Ship) %>
             <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes?) ? "recert-modal-#{@project.id}" : nil %>
@@ -1020,7 +1021,8 @@
                        resubmit_modal_id: resubmit_id %>
           <% elsif entry.postable_type == "Post::ShipEvent" %>
             <% ship_index += 1 %>
-            <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes? && ship_index == 1) ? "recert-modal-#{@project.id}" : nil %>
+            <% recert_ship = entry.postable_id == recert_ship_id %>
+            <% recert_id = ((is_member || current_user&.can_review?) && @project.needs_changes? && recert_ship) ? "recert-modal-#{@project.id}" : nil %>
             <%
               mission_sub = entry.postable&.mission_submission
               mission_modal_id = if (is_member || current_user&.admin?) && @rejected_mission_sub && mission_sub == @rejected_mission_sub
@@ -1063,7 +1065,7 @@
           rather than leaving them at a greyed-out button. %>
       <%
         ship_todo =
-          if @project.awaiting_ship_review?
+          if @project.awaiting_ship_review? && @project.ship_queue_head.nil?
             [ "Your last ship is still in review. You can ship again once it's approved." ]
           elsif @project.needs_changes?
             [ recert_visible_blocker || recert_link_blocker ].compact

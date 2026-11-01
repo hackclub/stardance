@@ -3,6 +3,7 @@ import { serverClock } from "../lib/server_clock.js";
 
 const DISMISSAL = "stardance_finale";
 const COUNTDOWN_MS = 3000;
+const FADE_DURATION_MS = 2000;
 
 export default class extends Controller {
   static values = {
@@ -14,6 +15,7 @@ export default class extends Controller {
   };
   static targets = [
     "dialog",
+    "fade",
     "panel",
     "video",
     "play",
@@ -111,14 +113,16 @@ export default class extends Controller {
     this.countdownEndsAt = deadline;
     this.originalClocks = new Map();
     document
-      .querySelectorAll(".buku-x3-status [data-countdown-reset-at-value]")
+      .querySelectorAll(
+        ".buku-x3-status [data-stardance-countdown-override-at-value]",
+      )
       .forEach((clock) => {
         this.originalClocks.set(
           clock,
-          clock.getAttribute("data-countdown-reset-at-value"),
+          clock.getAttribute("data-stardance-countdown-override-at-value"),
         );
         clock.setAttribute(
-          "data-countdown-reset-at-value",
+          "data-stardance-countdown-override-at-value",
           new Date(deadline).toISOString(),
         );
       });
@@ -141,8 +145,30 @@ export default class extends Controller {
     this.cleanup();
   }
 
-  showVideo() {
+  async fadeToBlack() {
     if (this.phase !== "disintegrating") return;
+    this.phase = "fading";
+    const animation = this.fadeTarget.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      {
+        duration: FADE_DURATION_MS,
+        easing: "linear",
+        fill: "forwards",
+      },
+    );
+    this.fadeAnimation = animation;
+    try {
+      await animation.finished;
+    } catch {
+      // Resetting a preview or navigating away cancels the fade.
+      return;
+    }
+    if (this.phase === "fading" && this.fadeAnimation === animation)
+      this.showVideo();
+  }
+
+  showVideo() {
+    if (this.phase !== "fading") return;
     this.phase = "video";
     this.panelTarget.hidden = false;
     if (this.hasVideoTarget) {
@@ -218,10 +244,15 @@ export default class extends Controller {
   }
 
   cleanup({ restore = true } = {}) {
+    this.fadeAnimation?.cancel();
+    this.fadeAnimation = null;
     if (this.hasVideoTarget) this.videoTarget.pause();
     this.dialogTarget.close();
     this.originalClocks?.forEach((deadline, clock) =>
-      clock.setAttribute("data-countdown-reset-at-value", deadline),
+      clock.setAttribute(
+        "data-stardance-countdown-override-at-value",
+        deadline,
+      ),
     );
     this.originalClocks?.clear();
     if (restore && this.phase !== "idle") this.dispatch("reset");

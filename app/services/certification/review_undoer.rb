@@ -53,6 +53,7 @@ module Certification
       return outcome([ block(:permanent_rejection, "This project is on hold or permanently rejected. Its reviews cannot be undone.") ]) if project&.hardware_review_blocked?
       return outcome([ block(:decided, "This review hasn't been decided, so there's nothing to undo.") ]) unless review.decided?
       return outcome([ block(:latest, "A newer review has superseded this one. Undo the most recent decision first.") ]) unless latest_decided_review?
+      return outcome([ block(:queued_ships, "Ships were queued behind this review, so undoing it alone would strand them. Use the admin ship status override instead.") ]) if queued_ships_behind?
 
       effects = [ reverse(:review, review_reversal_detail) ]
       funding? ? funding_effects(effects) : ship_effects(effects)
@@ -229,6 +230,14 @@ module Certification
       return false unless submission
 
       submission.approved? || submission.prize_redemptions.exists?
+    end
+
+    def queued_ships_behind?
+      return false unless ship?
+
+      (review.verdict_ship_event&.queued_ship_events || []).any? do |event|
+        event.certification_status == "pending" || review.decided_at.nil? || event.post.created_at <= review.decided_at
+      end
     end
 
     def latest_ship?(ship_event)

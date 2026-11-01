@@ -29,7 +29,7 @@ class Admin::Certification::ShipsController < Admin::Certification::ApplicationC
 
     @pagy, @ships = pagy(:offset,
                          scope.includes(
-                           :reviewer, :returned_by,
+                           :reviewer, :returned_by, :post_ship_event,
                            project: {
                              memberships: :user,
                              posts: :postable

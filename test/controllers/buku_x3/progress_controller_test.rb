@@ -38,7 +38,7 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
     assert_select ".blackhole__panel", count: 0
     assert_select ".buku-x3-simulator", count: 0
     assert_select ".blackhole[data-blackhole-progress-url-value='#{buku_x3_progress_path(format: :json)}']"
-    assert_select ".blackhole[data-stardance-finale-ends-at-value='#{Rails.application.config.stardance_ends_at.iso8601(3)}']"
+    assert_select ".blackhole[data-stardance-finale-ends-at-value='#{Rails.application.config.stardance_finale_at.iso8601(3)}']"
     assert_select "[data-action='stardance-finale#preview']", count: 0
   end
 
@@ -48,7 +48,7 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
     @user.preference.update!(countdown_enabled: false)
     get home_path
     assert_select ".buku-x3-status__clock", count: 0
-    assert_select ".blackhole[data-stardance-finale-ends-at-value='#{Rails.application.config.stardance_ends_at.iso8601(3)}']"
+    assert_select ".blackhole[data-stardance-finale-ends-at-value='#{Rails.application.config.stardance_finale_at.iso8601(3)}']"
   end
 
   test "only exposes shared intensity and team totals, not individual contributions" do
@@ -108,7 +108,7 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
   test "late arrivals get the finale independently of the team flag and visual preferences" do
     sign_in(@user)
     @user.preference.update!(countdown_enabled: false, disintegration_effects_enabled: false, particle_effects_enabled: false)
-    travel_to Rails.application.config.stardance_ends_at + 2.days do
+    travel_to Rails.application.config.stardance_finale_at + 2.days do
       get home_path
       assert_response :success
       assert_select "[data-stardance-finale-seen-value='false'][data-stardance-finale-viewer-id-value='#{@user.id}']"

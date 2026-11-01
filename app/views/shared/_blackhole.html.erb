@@ -11,7 +11,7 @@
      data-stardance-finale-preview-enabled-value="<%= simulator %>"
      data-stardance-finale-dismiss-url-value="<%= my_dismissals_path %>"
      data-blackhole-awaiting-reveal-value="<%= awaiting_reveal %>"
-     data-action="stardance-finale:disintegrate->blackhole#startFinale stardance-finale:reset->blackhole#resetFinale blackhole:finale-complete->stardance-finale#showVideo buku-x3-reveal:complete@window->blackhole#revealComplete buku-x3-reveal:preview-complete@window->blackhole#revealComplete"
+     data-action="stardance-finale:disintegrate->blackhole#startFinale stardance-finale:reset->blackhole#resetFinale blackhole:finale-complete->stardance-finale#fadeToBlack buku-x3-reveal:complete@window->blackhole#revealComplete buku-x3-reveal:preview-complete@window->blackhole#revealComplete"
      data-blackhole-progress-url-value="<%= progress_url %>">
   <svg class="blackhole__masks" aria-hidden="true" width="0" height="0" data-blackhole-target="masks"><defs></defs></svg>
   <div class="blackhole__text" aria-hidden="true" inert data-blackhole-target="text"></div>

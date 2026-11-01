@@ -5,11 +5,12 @@ class Projects::ShipsController < ApplicationController
   def create
     authorize @project, :ship?
 
+    queue_head = @project.ship_queue_head
     latest_review = @project.latest_ship_review
-    if latest_review&.pending?
+    if queue_head.nil? && latest_review&.pending?
       redirect_to project_path(@project),
                   alert: "Your project is being reviewed. You can ship again once it's approved." and return
-    elsif latest_review&.returned? && @project.needs_changes?
+    elsif queue_head.nil? && latest_review&.returned? && @project.needs_changes?
       redirect_to project_path(@project),
                   alert: "Your last review wasn't approved — address the feedback and request re-certification instead." and return
     end
@@ -27,10 +28,15 @@ class Projects::ShipsController < ApplicationController
     end
 
     reship = has_previous_approved_ships?
-    probe_result = reship ? ProjectUrlProbeService.new(@project).call : nil
+    probe_result = reship && !queue_head ? ProjectUrlProbeService.new(@project).call : nil
 
     @project.with_lock do
-      @project.submit_for_review!
+      if @project.ship_queue_head != queue_head
+        redirect_to project_path(@project), alert: "Your review just changed. Try shipping again." and return
+      end
+      queue_head = @project.ship_queue_head
+
+      @project.submit_for_review! unless queue_head
       ship_event = Post::ShipEvent.new(body: params[:ship_update].to_s.strip)
       ship_event.uploading_attachments = params.dig(:ship_event, :attachments).present?
       ship_event.save!
@@ -43,26 +49,32 @@ class Projects::ShipsController < ApplicationController
 
       # First Ship: Always create ship certification for manual review    ----------- Ask @AVD if you want to change this! - May need to notify teams of any changes!
       # Reships: If links alive - approves project, create a 'reship' YSWS review, if links dead - Creates ship cert for manual review
-      if !reship
-        cert = @project.ship_reviews.create!(status: :pending, post_ship_event_id: ship_event.id)
-        ExternalDashboard::ShipWebhookJob.perform_later(cert.id)
-      elsif probe_result.ok?
-        @project.start_review! if @project.may_start_review?
-        @project.approve! if @project.may_approve?
-        @post.postable.update!(certification_status: "approved")
-        create_ysws_review(ship_event)
-      else
-        @project.ship_reviews.create!(
-          status: :returned,
-          post_ship_event_id: ship_event.id,
-          feedback: "Automated URL check failed: #{probe_result.failures.join('; ')}. Please make sure your links are online and public, then re-ship!"
-        )
+      unless queue_head
+        if !reship
+          cert = @project.ship_reviews.create!(status: :pending, post_ship_event_id: ship_event.id)
+          ExternalDashboard::ShipWebhookJob.perform_later(cert.id)
+        elsif probe_result.ok?
+          @project.start_review! if @project.may_start_review?
+          @project.approve! if @project.may_approve?
+          @post.postable.update!(certification_status: "approved")
+          create_ysws_review(ship_event)
+        else
+          @project.ship_reviews.create!(
+            status: :returned,
+            post_ship_event_id: ship_event.id,
+            feedback: "Automated URL check failed: #{probe_result.failures.join('; ')}. Please make sure your links are online and public, then re-ship!"
+          )
+        end
       end
     end
 
-    track_event "project_shipped", { project_id: @project.id, reship: reship }
+    track_event "project_shipped", { project_id: @project.id, reship: reship, queued: queue_head.present? }
 
-    if !reship
+    if queue_head&.certification_status == "returned"
+      redirect_to project_path(@project, just_shipped: 1), notice: "Ship added! It'll be reviewed together with your returned ship once you request re-certification."
+    elsif queue_head
+      redirect_to project_path(@project, just_shipped: 1), notice: "Ship added! It'll be approved together with the review that's already in progress."
+    elsif !reship
       redirect_to project_path(@project, just_shipped: 1), notice: "Congratulations! Your project has been submitted for review! While you wait, rate other projects at the voting booth."
     elsif probe_result.ok?
       redirect_to project_path(@project, just_shipped: 1), notice: "Ship submitted! Your project is now out for voting. Rate other projects to help yours get noticed too."

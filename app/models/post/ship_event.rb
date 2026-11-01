@@ -170,6 +170,22 @@ class Post::ShipEvent < ApplicationRecord
     window_devlogs.sum("post_devlogs.duration_seconds").to_f / 3600
   end
 
+  def queued_ship_events
+    return [] unless post
+
+    later = Post::ShipEvent.eager_load(:post)
+                           .where(posts: { project_id: post.project_id })
+                           .where("posts.created_at > ?", post.created_at)
+                           .order("posts.created_at ASC, post_ship_events.id ASC")
+                           .to_a
+    certified = Certification::Ship.where(post_ship_event_id: later.map(&:id)).distinct.pluck(:post_ship_event_id)
+    later.take_while { |event| certified.exclude?(event.id) }
+  end
+
+  def review_bundle
+    [ self, *queued_ship_events.select { |event| event.certification_status == "pending" } ]
+  end
+
   private
 
   def stamp_rating_lifecycle

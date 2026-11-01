@@ -41,16 +41,32 @@ export default class extends Controller {
       return;
     }
 
+    // Hackatime project names are user-controlled (Hackatime accepts any
+    // string), so build the tag from DOM nodes rather than an HTML string.
     const tag = document.createElement("span");
     tag.className = "project-show__hackatime-tag";
     tag.dataset.hackatimeId = id;
     tag.dataset.previouslyLinked = previouslyLinked.toString();
-    tag.innerHTML = `
-      <span class="project-show__hackatime-tag-name">${this.escapeHtml(name)}</span>
-      <span class="project-show__hackatime-tag-time">${this.escapeHtml(hours)}h</span>
-      <button type="button" class="project-show__hackatime-tag-remove" data-action="hackatime-link#remove" data-id="${id}" aria-label="Remove ${this.escapeHtml(name)}">&times;</button>
-      <input type="hidden" name="project[hackatime_project_ids][]" value="${id}">
-    `;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "project-show__hackatime-tag-remove";
+    removeBtn.dataset.action = "hackatime-link#remove";
+    removeBtn.dataset.id = id;
+    removeBtn.setAttribute("aria-label", `Remove ${name}`);
+    removeBtn.textContent = "×";
+
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "project[hackatime_project_ids][]";
+    input.value = id;
+
+    tag.append(
+      this.textSpan("project-show__hackatime-tag-name", name),
+      this.textSpan("project-show__hackatime-tag-time", `${hours}h`),
+      removeBtn,
+      input,
+    );
 
     this.tagsTarget.appendChild(tag);
     btn.remove();
@@ -78,10 +94,10 @@ export default class extends Controller {
     btn.dataset.name = name;
     btn.dataset.hours = hours;
     btn.dataset.previouslyLinked = tag.dataset.previouslyLinked;
-    btn.innerHTML = `
-      <span class="project-show__hackatime-dropdown-name">${this.escapeHtml(name)}</span>
-      <span class="project-show__hackatime-dropdown-time">${this.escapeHtml(hours)}h</span>
-    `;
+    btn.append(
+      this.textSpan("project-show__hackatime-dropdown-name", name),
+      this.textSpan("project-show__hackatime-dropdown-time", `${hours}h`),
+    );
 
     this.dropdownTarget.appendChild(btn);
     tag.remove();
@@ -90,9 +106,10 @@ export default class extends Controller {
       0;
   }
 
-  escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+  textSpan(className, text) {
+    const span = document.createElement("span");
+    span.className = className;
+    span.textContent = text;
+    return span;
   }
 }

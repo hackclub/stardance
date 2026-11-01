@@ -199,6 +199,14 @@ module Certification
     # queue builds on those, so narrowing them there would empty it.
     scope :software_only, -> { joins(:project).where(projects: { hardware_stage: nil }) }
 
+    scope :nearest_before, ->(ship_event) {
+      next none unless ship_event&.post
+
+      joins(post_ship_event: :post)
+        .where("posts.created_at < ?", ship_event.post.created_at)
+        .reorder(Arel.sql("posts.created_at DESC, certification_ship_reviews.decided_at DESC NULLS LAST, certification_ship_reviews.id DESC"))
+    }
+
     # The other half: what the global hardware build queue can actually hand a
     # reviewer. A cert on a soft-deleted project is unreachable from every dash,
     # and a hardware mission's certs are reviewed on that mission's own dash, so
@@ -566,16 +574,17 @@ module Certification
       return unless decided?
       project.with_lock do
         ship_event = verdict_ship_event
-        latest = ship_event.nil? || ship_event == project.last_ship_event
+        ship_events = ship_event&.review_bundle || []
+        latest = ship_event.nil? || ship_events.include?(project.last_ship_event)
 
         case status.to_sym
         when :approved
-          ship_event&.update!(certification_status: "approved")
+          ship_events.each { |event| event.update!(certification_status: "approved") }
           if latest
             project.start_review! if project.may_start_review?
             project.approve! if project.may_approve?
           end
-          create_ysws_review_for_ship(ship_event) if ship_event
+          ship_events.each { |event| create_ysws_review_for_ship(event, queued: event != ship_event) }
           collapse_mission_build_review!(ship_event)
         when :returned
           ship_event&.update!(certification_status: "returned")
@@ -584,7 +593,7 @@ module Certification
             project.return_for_changes! if project.may_return_for_changes?
           end
         when :permanently_rejected
-          ship_event&.update!(certification_status: "rejected", feedback_reason: feedback)
+          ship_events.each { |event| event.update!(certification_status: "rejected", feedback_reason: feedback) }
           project.update!(ship_status: :rejected)
         end
       end
@@ -604,7 +613,7 @@ module Certification
       submission.grant_rewards!(reviewer_id: reviewer&.id)
     end
 
-    def create_ysws_review_for_ship(ship_event)
+    def create_ysws_review_for_ship(ship_event, queued: false)
       unless owner
         OperationalAlert.report(
           "Ship certification approved but no owner found to create YSWS review",
@@ -623,7 +632,7 @@ module Certification
         ship_event: ship_event,
         user: owner,
         project: project,
-        ship_cert_id: id
+        ship_cert_id: (id unless queued)
       ).call
     end
 
