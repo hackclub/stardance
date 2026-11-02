@@ -2,6 +2,7 @@ class Projects::SetupController < ApplicationController
   layout "onboarding"
 
   before_action :require_signed_in!
+  before_action :block_creation_after_stardance!, except: %i[welcome]
   before_action :redirect_if_setup_complete, except: %i[welcome]
   before_action :load_setup_project_for_prefill, only: %i[name missions]
   before_action :load_setup_project, only: %i[link_account welcome]

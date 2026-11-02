@@ -6,6 +6,7 @@ class ProjectsController < ApplicationController
   discover_rail_widgets :clearance_sale, :project_mission_expanded, :mission_browse, :ship_intro, :payout_votes, :upcoming_events,
                         context: -> { { project: @project, votes_for_payout: @votes_for_payout } }
 
+  before_action :block_creation_after_stardance!, only: [ :new, :create ]
   before_action :set_project_minimal, only: [ :edit, :update, :destroy ]
   before_action :set_project, only: [ :show, :readme, :add_test_time ]
   before_action :redirect_guest_owner_to_link!, only: [ :show, :readme, :edit, :update ]
