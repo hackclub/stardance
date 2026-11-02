@@ -765,6 +765,7 @@ class Project < ApplicationRecord
   LINK_REQUIREMENT_KEYS = FIELD_REQUIREMENT_MAP.fetch_values(:demo_url, :repo_url, :readme_url).flatten.freeze
 
   SHIPPING_CLOSED_MESSAGE = "Stardance has ended, so new ships are closed.".freeze
+  CREATION_CLOSED_MESSAGE = "Stardance has ended, so new projects are closed.".freeze
 
   def self.shipping_closed?(at = Time.current)
     close_at = Rails.application.config.stardance_ships_close_at

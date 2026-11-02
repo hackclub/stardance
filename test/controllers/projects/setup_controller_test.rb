@@ -2,7 +2,7 @@ require "test_helper"
 
 class Projects::SetupControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @guest = User.create!(email: "setup_guest@example.com", display_name: "Setup Guest")
+    @guest = User.create!(email: "setup_guest@example.com", display_name: "setup_guest")
     post onboarding_start_path, params: { email: @guest.email }
   end
 
@@ -10,6 +10,16 @@ class Projects::SetupControllerTest < ActionDispatch::IntegrationTest
     get projects_setup_path
     assert_response :success
     assert_select "h1", text: /Do you have an idea/
+  end
+
+  test "setup is closed once Stardance ends" do
+    Project.stub(:shipping_closed?, true) do
+      assert_no_difference "Project.count" do
+        post projects_setup_submit_name_path, params: { title: "Late Project" }
+      end
+    end
+    assert_redirected_to home_path
+    assert_equal Project::CREATION_CLOSED_MESSAGE, flash[:alert]
   end
 
   test "POST submit_idea with yes routes to name step and does not create a project" do

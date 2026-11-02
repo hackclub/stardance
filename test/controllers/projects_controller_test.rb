@@ -9,6 +9,27 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     @project.memberships.create!(user: @owner, role: :owner)
   end
 
+  test "project creation is closed once Stardance ends" do
+    sign_in @owner
+
+    Project.stub(:shipping_closed?, true) do
+      assert_no_difference "Project.count" do
+        post projects_path, params: { project: { title: "Late Project" } }
+      end
+    end
+
+    assert_redirected_to home_path
+    assert_equal Project::CREATION_CLOSED_MESSAGE, flash[:alert]
+  end
+
+  test "ended banner shows once Stardance ends" do
+    sign_in @owner
+
+    Project.stub(:shipping_closed?, true) { get project_path(@project) }
+
+    assert_select ".top-banner--ended", text: /Stardance has ended/
+  end
+
   test "owner sees inline project editing form on show" do
     sign_in @owner
 

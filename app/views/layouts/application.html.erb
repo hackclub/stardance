@@ -90,6 +90,11 @@
       </div>
     <% end %>
     <div class="top-banners">
+      <% if current_user && Project.shipping_closed? %>
+        <div class="top-banner top-banner--ended">
+          <strong>Stardance has ended</strong> &mdash; Ships are closed, so new coding time won't earn stardust.
+        </div>
+      <% end %>
       <% if in_beta? %>
         <div class="top-banner top-banner--beta">
           <strong>Beta</strong> &mdash; This is a testing environment. Your data may be reset at any time.

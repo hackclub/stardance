@@ -18,6 +18,13 @@
   border-bottom: 2px solid #92400e;
 }
 
+.top-banner--ended {
+  text-align: center;
+  color: var(--color-space-bg);
+  text-shadow: none;
+  background: var(--color-brand-lilac);
+}
+
 .top-banner--impersonation {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   border-bottom: 3px solid #991b1b;
