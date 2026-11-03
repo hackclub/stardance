@@ -1,6 +1,15 @@
+// The finale covers the whole viewport, so the page behind it must not scroll
+// or show its scrollbar along the edge. The landing page reserves a stable
+// scrollbar gutter, which would otherwise stay behind as an empty stripe.
+html:has(.stardance-finale[open]) {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
 .stardance-finale {
   position: fixed;
   inset: 0;
+  box-sizing: border-box;
   width: 100%;
   height: 100dvh;
   max-width: none;
@@ -51,7 +60,9 @@
   }
 
   &__video {
-    width: min(100%, calc(80dvh * 16 / 9));
+    // Also leave room for the panel padding and controls on short viewports,
+    // so the panel never needs its own scrollbar.
+    width: min(100%, calc(80dvh * 16 / 9), calc((100dvh - 7rem) * 16 / 9));
     aspect-ratio: 16 / 9;
     flex-shrink: 0;
 
