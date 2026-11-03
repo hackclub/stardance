@@ -173,9 +173,9 @@ No real GPU timing or throttled-browser FPS measurement was available here.
 ## Finale configuration
 
 See [Finale playback](stardance-finale.md) for the current shared timeline,
-replay behavior, and video setup. Include `public/videos/finale.mp4` in the
-deployment; the app reads its runtime automatically at boot. No environment
-variables are required. Missing media restores the page after the visual sequence.
+replay behavior, and video setup. The finale video is a YouTube embed configured
+in `config/initializers/constants.rb`. No environment variables are required.
+Missing media restores the page after the visual sequence.
 
 The countdown synchronizes with `/server_time` every 30 seconds and on tab
 resume/focus. Between samples it uses `performance.now()`, never the device’s

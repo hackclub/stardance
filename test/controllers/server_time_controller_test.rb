@@ -29,12 +29,12 @@ class ServerTimeControllerTest < ActionDispatch::IntegrationTest
     assert_equal false, response.parsed_body.dig("finale", "on_demand")
   end
 
-  test "public timeline publishes the configured file and exact duration without fetching media" do
-    Rails.application.config.stub(:stardance_finale_video_url, "/videos/finale.mp4") do
+  test "public timeline publishes the configured YouTube video and exact duration" do
+    Rails.application.config.stub(:stardance_finale_youtube_id, "QDDlOxdq-Ak") do
       Rails.application.config.stub(:stardance_finale_video_duration_seconds, 123.456) do
         get server_time_path, as: :json
         assert_response :success
-        assert_equal({ "video_url" => "/videos/finale.mp4", "duration_seconds" => 123.456, "on_demand" => false }, response.parsed_body["finale"])
+        assert_equal({ "youtube_id" => "QDDlOxdq-Ak", "duration_seconds" => 123.456, "on_demand" => false }, response.parsed_body["finale"])
       end
     end
   end

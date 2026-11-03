@@ -127,16 +127,13 @@ class BukuX3::ProgressControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-stardance-finale-seen-value], [data-stardance-finale-dismiss-url-value]", count: 0
   end
 
-  test "configured finale video is not downloaded on page load and debug controls stay local" do
+  test "finale video is not embedded on page load and debug controls stay local" do
     sign_in(@user)
-    original_url = Rails.application.config.stardance_finale_video_url
-    Rails.application.config.stardance_finale_video_url = "https://example.test/finale.mp4"
     get home_path
-    assert_select ".stardance-finale__video[preload='none'][playsinline]:not([src])"
+    assert_select ".stardance-finale__video"
+    assert_select ".stardance-finale__video iframe", count: 0
     assert_select ".stardance-finale__placeholder", count: 0
     assert_select "[data-stardance-finale-preview-enabled-value='false']"
-  ensure
-    Rails.application.config.stardance_finale_video_url = original_url
   end
 
   test "admin pages are not interrupted by the finale" do

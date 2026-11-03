@@ -2,9 +2,9 @@
   <p class="stardance-finale__countdown" data-stardance-finale-target="countdown" role="status" hidden></p>
   <div class="stardance-finale__fade" data-stardance-finale-target="fade" aria-hidden="true"></div>
   <div class="stardance-finale__panel" data-stardance-finale-target="panel" hidden>
-    <%# No src until the event approaches or the viewer chooses replay. %>
-    <video class="stardance-finale__video" playsinline preload="none" aria-label="Stardance finale video"
-           data-stardance-finale-target="video" data-action="loadedmetadata->stardance-finale#videoReady canplay->stardance-finale#videoReady ended->stardance-finale#videoEnded error->stardance-finale#videoError waiting->stardance-finale#videoWaiting"></video>
+    <%# The YouTube player is only embedded once the event approaches or the viewer chooses replay. %>
+    <div class="stardance-finale__video" role="region" aria-label="Stardance finale video"
+         data-stardance-finale-target="video" data-action="loadedmetadata->stardance-finale#videoReady canplay->stardance-finale#videoReady ended->stardance-finale#videoEnded error->stardance-finale#videoError waiting->stardance-finale#videoWaiting"></div>
     <div class="stardance-finale__controls">
       <button class="stardance-finale__button" type="button" data-stardance-finale-target="play" data-action="stardance-finale#playVideo" hidden>play with sound</button>
       <p class="stardance-finale__status" role="status" data-stardance-finale-target="status"></p>
