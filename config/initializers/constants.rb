@@ -1,10 +1,8 @@
 Rails.application.config.telescreen_url = (Rails.application.credentials.dig(:constants, :telescreen_url) || ENV["TELESCREEN_URL"]) || "https://telescreen.hackclub.com"
-require Rails.root.join("lib/stardance_finale_media")
-
-# Drop the finished video here and deploy; no environment configuration needed.
-finale_media = StardanceFinaleMedia.load(Rails.root.join("public/videos/finale.mp4"))
-Rails.application.config.stardance_finale_video_url = finale_media[:url]
-Rails.application.config.stardance_finale_video_duration_seconds = finale_media.fetch(:duration, 0.0)
+# The finale plays from YouTube (https://youtu.be/QDDlOxdq-Ak). Its runtime bounds the
+# shared live window, so update both together when swapping the video.
+Rails.application.config.stardance_finale_youtube_id = "QDDlOxdq-Ak"
+Rails.application.config.stardance_finale_video_duration_seconds = 154.541
 Rails.application.config.stardance_ends_at = Time.find_zone!("America/New_York").local(2026, 10, 31).end_of_day
 # The public countdown and finale run later; eligibility cutoffs still use stardance_ends_at.
 Rails.application.config.stardance_finale_at = Time.find_zone!("America/New_York").local(2026, 11, 1, 12, 35)

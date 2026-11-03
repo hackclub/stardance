@@ -134,7 +134,7 @@ test("replay appears only after the entire broadcast and the clock remains at ze
   const original = serverClock.data;
   serverClock.data = {
     ends_at: explodesAt,
-    finale: { video_url: "/finale.mp4", duration_seconds: 60 },
+    finale: { youtube_id: "QDDlOxdq-Ak", duration_seconds: 60 },
   };
   t.after(() => {
     serverClock.data = original;
@@ -168,7 +168,7 @@ test("the on-demand flag updates the early button and click permission without m
   serverClock.data = {
     ends_at: explodesAt,
     finale: {
-      video_url: "/finale.mp4",
+      youtube_id: "QDDlOxdq-Ak",
       duration_seconds: 60,
       on_demand: false,
     },

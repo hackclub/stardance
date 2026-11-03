@@ -51,9 +51,19 @@
   }
 
   &__video {
-    width: 100%;
-    max-height: 80dvh;
-    object-fit: contain;
+    width: min(100%, calc(80dvh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    flex-shrink: 0;
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      // Playback is driven by the finale controls; clicks on the embed would
+      // pause it or open YouTube instead.
+      pointer-events: none;
+    }
   }
 
   &__controls {

@@ -10,7 +10,7 @@ class ServerTimeController < ApplicationController
     render json: {
       now: now.iso8601(3), ends_at: deadline.iso8601(3), ended: now >= deadline,
       finale: {
-        video_url: Rails.application.config.stardance_finale_video_url,
+        youtube_id: Rails.application.config.stardance_finale_youtube_id,
         duration_seconds: duration.finite? && duration.positive? ? duration : 0,
         on_demand: Flipper.enabled?(:finaleondemand, current_user)
       }

@@ -8,6 +8,7 @@ import {
   COUNTDOWN_MS,
   REPLAY_COUNTDOWN_MS,
 } from "../lib/stardance_finale_timeline.js";
+import { YoutubeVideo } from "../lib/youtube_video.js";
 
 const ARRIVAL_DISMISSAL = "stardance_finale_arrival_v1";
 
@@ -29,6 +30,10 @@ export default class extends Controller {
     "countdown",
   ];
 
+  initialize() {
+    this.video = new YoutubeVideo(this.videoTarget);
+  }
+
   connect() {
     this.phase = "idle";
     this.generation = 0;
@@ -42,7 +47,7 @@ export default class extends Controller {
       this.cleanup({ restore: false });
     };
     this.visibility = () => {
-      if (document.hidden) this.videoTarget.pause();
+      if (document.hidden) this.video.pause();
     };
     document.addEventListener("turbo:before-cache", this.beforeCache);
     document.addEventListener("visibilitychange", this.visibility);
@@ -74,7 +79,7 @@ export default class extends Controller {
     if (!this.endsAtValue || !timeline) return;
     if (now >= timeline.finishesAt) {
       if (this.mode === "live") this.cleanup();
-      else if (this.videoTarget.hasAttribute("src")) this.releaseVideo();
+      else if (this.video.src) this.releaseVideo();
       return;
     }
     if (this.skipLive) return;
@@ -84,7 +89,7 @@ export default class extends Controller {
       now >= timeline.startsAt - 30000 &&
       !navigator.connection?.saveData
     )
-      this.prepareVideo(timeline.url);
+      this.prepareVideo(timeline.videoId);
     if (now < timeline.startsAt - COUNTDOWN_MS) return;
     if (document.querySelector(".visual-novel, .buku-x3-reveal")) return;
     if (now >= timeline.startsAt && !serverClock.data?.ended) {
@@ -178,13 +183,12 @@ export default class extends Controller {
     this.playTarget.hidden = true;
     this.playBlocked = this.mediaFailed = this.mediaEnded = false;
     this.needsInitialSeek = true;
-    this.videoTarget.controls = false;
-    this.videoTarget.muted = false;
+    this.video.muted = false;
     if (mode !== "live")
       this.startCountdown(
         mode === "replay" ? REPLAY_COUNTDOWN_MS : COUNTDOWN_MS,
       );
-    if (timeline?.ready) this.prepareVideo(timeline.url);
+    if (timeline?.ready) this.prepareVideo(timeline.videoId);
   }
 
   async preview() {
@@ -278,8 +282,8 @@ export default class extends Controller {
     this.panelTarget.hidden = false;
     this.panelTarget.classList.remove("stardance-finale__panel--intro");
     this.dispatch("video");
-    this.prepareVideo(this.timeline.url);
-    if (this.videoTarget.readyState < 3)
+    this.prepareVideo(this.timeline.videoId);
+    if (this.video.readyState < 3)
       this.statusTarget.textContent = "loading the finale…";
     this.videoReady();
   }
@@ -295,7 +299,7 @@ export default class extends Controller {
     if (!this.mediaActive()) return;
     this.syncVideo();
     if (
-      this.videoTarget.paused &&
+      this.video.paused &&
       !this.playBlocked &&
       !this.mediaFailed &&
       !this.mediaEnded
@@ -307,11 +311,10 @@ export default class extends Controller {
     if (!this.dialogTarget.open) this.dialogTarget.showModal();
   }
 
-  prepareVideo(url) {
-    if (this.videoTarget.getAttribute("src") === url) return;
-    this.videoTarget.preload = "auto";
-    this.videoTarget.src = url;
-    this.videoTarget.load();
+  prepareVideo(videoId) {
+    if (this.video.src === videoId) return;
+    this.video.src = videoId;
+    this.video.load();
   }
 
   videoReady() {
@@ -327,7 +330,7 @@ export default class extends Controller {
         this.phase === "video" &&
         !this.needsInitialSeek) ||
       this.mediaEnded ||
-      this.videoTarget.readyState < 1
+      this.video.readyState < 1
     )
       return;
     const now = this.mode === "live" ? serverClock.now() : performance.now();
@@ -336,7 +339,7 @@ export default class extends Controller {
       this.finish();
       return;
     }
-    const duration = this.videoTarget.duration;
+    const duration = this.video.duration;
     if (!Number.isFinite(duration) || duration <= 0) return;
     const target = Math.max(
       0,
@@ -352,11 +355,11 @@ export default class extends Controller {
     // Correct drift after buffering/sleep; don't continuously restart a slow seek.
     if (
       (force ||
-        (!this.videoTarget.seeking &&
+        (!this.video.seeking &&
           performance.now() >= (this.nextSeek || 0))) &&
-      Math.abs(this.videoTarget.currentTime - target) > 1
+      Math.abs(this.video.currentTime - target) > 1
     ) {
-      this.videoTarget.currentTime = target;
+      this.video.currentTime = target;
       this.nextSeek = performance.now() + 2000;
     }
     this.needsInitialSeek = false;
@@ -367,15 +370,15 @@ export default class extends Controller {
     const generation = this.generation;
     this.playing = true;
     try {
-      await this.videoTarget.play();
+      await this.video.play();
       if (generation === this.generation && this.mediaActive())
         this.statusTarget.textContent = "";
     } catch (error) {
       if (generation !== this.generation || !this.mediaActive()) return;
-      if (error.name === "NotAllowedError" && !this.videoTarget.muted) {
-        this.videoTarget.muted = true;
+      if (error.name === "NotAllowedError" && !this.video.muted) {
+        this.video.muted = true;
         try {
-          await this.videoTarget.play();
+          await this.video.play();
           if (generation !== this.generation || !this.mediaActive()) return;
           this.statusTarget.textContent = "";
           this.playTarget.textContent = "turn sound on";
@@ -400,10 +403,10 @@ export default class extends Controller {
     if (!this.mediaActive()) return;
     this.playBlocked = false;
     this.playTarget.hidden = true;
-    this.videoTarget.muted = false;
+    this.video.muted = false;
     if (this.mediaFailed) {
       this.mediaFailed = false;
-      this.videoTarget.load();
+      this.video.load();
     }
     this.syncVideo(true);
     this.attemptPlayback();
@@ -442,10 +445,9 @@ export default class extends Controller {
   }
 
   releaseVideo() {
-    this.videoTarget.pause();
-    this.videoTarget.removeAttribute("src");
-    this.videoTarget.preload = "none";
-    this.videoTarget.load();
+    this.video.pause();
+    this.video.src = null;
+    this.video.load();
   }
 
   cleanup({ restore = true } = {}) {

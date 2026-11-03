@@ -3,20 +3,20 @@ export const FADE_MS = 2000;
 export const COUNTDOWN_MS = 3000;
 export const REPLAY_COUNTDOWN_MS = 12000;
 
-// A scheduled broadcast of a static file, not a stream through the Rails app.
+// A scheduled broadcast of a YouTube video, not a livestream.
 export function finaleTimeline(sample) {
   const startsAt = Date.parse(sample?.ends_at);
   if (!Number.isFinite(startsAt)) return null;
   const duration = Number(sample?.finale?.duration_seconds);
-  const url = sample?.finale?.video_url;
-  const ready = !!url && Number.isFinite(duration) && duration > 0;
+  const videoId = sample?.finale?.youtube_id;
+  const ready = !!videoId && Number.isFinite(duration) && duration > 0;
   const revealAt = startsAt + DISINTEGRATION_MS + FADE_MS;
   return {
     startsAt,
     revealAt,
-    // The first ten seconds of the file play under the destruction and fade.
+    // The first ten seconds of the video play under the destruction and fade.
     finishesAt: Math.max(revealAt, startsAt + (ready ? duration * 1000 : 0)),
-    url: ready ? url : null,
+    videoId: ready ? videoId : null,
     ready,
     onDemand: sample?.finale?.on_demand === true,
   };
