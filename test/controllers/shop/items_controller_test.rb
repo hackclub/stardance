@@ -69,6 +69,31 @@ class Shop::ItemsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".shop-item-card--mission-locked", text: /USB Blaster/
   end
 
+  test "item page disables ordering when the item is out of stock" do
+    @out_cat.update!(limited: true, stock: 0)
+    sign_in create_user(slack_id: "U-shop-oos", display_name: "shopoos", verified: true)
+
+    HCAService.stub(:identity!, { "addresses" => [], "phone_number" => "+15551234567" }) do
+      get shop_item_path(@out_cat)
+    end
+
+    assert_response :success
+    assert_select "button.shop-order__submit[disabled]", text: /Out of stock/
+    assert_select "[data-order-form-target='submitButton']", 0
+  end
+
+  test "item page offers ordering when the item is in stock" do
+    @out_cat.update!(limited: true, stock: 3)
+    sign_in create_user(slack_id: "U-shop-instock", display_name: "shopinstock", verified: true)
+
+    HCAService.stub(:identity!, { "addresses" => [], "phone_number" => "+15551234567" }) do
+      get shop_item_path(@out_cat)
+    end
+
+    assert_response :success
+    assert_select "[data-order-form-target='submitButton']", text: /Get!/
+  end
+
   private
 
   def build_item(name)
