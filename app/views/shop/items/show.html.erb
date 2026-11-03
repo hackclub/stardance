@@ -366,6 +366,17 @@
                 <p class="shop-order__no-phone-text">You need a phone number on file to place an order. Please update your profile on the <a href="https://auth.hackclub.com/identity/edit">address portal</a>.</p>
               </div>
             <% end %>
+            <% if @shop_item.out_of_stock? %>
+            <%# No order-form target here, so the order summary JS can't re-enable it %>
+            <%= render ActionButtonComponent.new(
+                  size: :large,
+                  variant: :primary,
+                  type: :button,
+                  text: "Out of stock",
+                  disabled: true,
+                  class: "shop-order__submit"
+                ) %>
+            <% else %>
             <%= render ActionButtonComponent.new(
                   size: :large,
                   variant: :primary,
@@ -377,6 +388,7 @@
                   class: "shop-order__submit",
                   data: { "order-form-target": "submitButton" }
                 ) %>
+            <% end %>
         </div>
         <% else %>
         <div class="shop-order__details">
