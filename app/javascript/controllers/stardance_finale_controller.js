@@ -355,8 +355,7 @@ export default class extends Controller {
     // Correct drift after buffering/sleep; don't continuously restart a slow seek.
     if (
       (force ||
-        (!this.video.seeking &&
-          performance.now() >= (this.nextSeek || 0))) &&
+        (!this.video.seeking && performance.now() >= (this.nextSeek || 0))) &&
       Math.abs(this.video.currentTime - target) > 1
     ) {
       this.video.currentTime = target;
