@@ -1,10 +1,10 @@
 class Admin::Certification::PermanentRejectionNominationsController < Admin::Certification::ApplicationController
   before_action -> { @body_class = "app-layout-page" }
-  before_action :set_nomination, only: [ :show, :approve, :deny ]
+  before_action :set_nomination, only: [ :show, :approve, :deny, :undo ]
 
   def index
     authorize ::Certification::PermanentRejectionNomination
-    @status = params[:status].presence_in(%w[pending approved denied]) || "pending"
+    @status = params[:status].presence_in(::Certification::PermanentRejectionNomination.statuses.keys) || "pending"
     @pending_count = ::Certification::PermanentRejectionNomination.pending.count
     @pagy, @nominations = pagy(:offset, ::Certification::PermanentRejectionNomination
       .where(status: @status).includes(:project, :reviewer, :decided_by)
@@ -47,6 +47,20 @@ class Admin::Certification::PermanentRejectionNominationsController < Admin::Cer
   def deny
     authorize @nomination
     decide(approve: false)
+  end
+
+  def undo
+    authorize @nomination
+    redirect_path = if params[:redirect_to_hardware].present?
+      hardware_review_path_for(@nomination.project)
+    else
+      admin_certification_permanent_rejection_nomination_path(@nomination)
+    end
+    @nomination.undo!(admin: current_user)
+    redirect_to redirect_path,
+      notice: "Permanent rejection undone. The submission is back in its original queue and the builder will receive a correction."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to redirect_path, alert: e.record.errors.full_messages.to_sentence
   end
 
   private

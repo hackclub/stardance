@@ -305,13 +305,20 @@
                 <summary><%= nomination.status.capitalize %> · <%= nomination.reviewer.display_name %> · <%= l(nomination.created_at.to_date, format: :long) %></summary>
                 <p class="permanent-rejection__reason"><%= nomination.reason %></p>
                 <% if nomination.decided_at %>
-                  <p><%= nomination.status.capitalize %> by <%= nomination.decided_by.display_name %> on <%= l(nomination.decided_at, format: :long) %>.</p>
+                  <p><%= nomination.undone? ? "Originally approved" : nomination.status.capitalize %> by <%= nomination.decided_by.display_name %> on <%= l(nomination.decided_at, format: :long) %>.</p>
                 <% end %>
-                <p><%= nomination.approved? ? "The final decision is visible to the builder." : "This nomination is not visible to the builder." %></p>
+                <p><%= nomination.undone? ? "This rejection was undone. The builder was sent a correction." : nomination.approved? ? "The final decision is visible to the builder." : "This nomination is not visible to the builder." %></p>
                 <% if current_user.admin? %>
                   <%= link_to "View nomination and decision", admin_certification_permanent_rejection_nomination_path(nomination) %>
                 <% end %>
               </details>
+              <% if policy([:admin, nomination]).undo? %>
+                <%= button_to "Undo permanent rejection", undo_admin_certification_permanent_rejection_nomination_path(nomination),
+                      params: { redirect_to_hardware: true },
+                      class: "action-btn action-btn--large action-btn--secondary",
+                      form: { data: { controller: "confirm", action: "submit->confirm#confirm",
+                        confirm_message_value: "Undo this permanent rejection? The submission will return to its original review queue and the builder will receive a correction." } } %>
+              <% end %>
             <% end %>
           </section>
         <% end %>

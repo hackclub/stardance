@@ -18,4 +18,6 @@ class Admin::Certification::PermanentRejectionNominationPolicy < ApplicationPoli
   end
 
   def deny? = approve?
+
+  def undo? = approve? && record.approved?
 end
