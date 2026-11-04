@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_29_191139) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_100012) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -285,7 +285,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_29_191139) do
     t.index ["project_id"], name: "index_permanent_rejections_active_project", unique: true, where: "(status = ANY (ARRAY[0, 1]))"
     t.index ["reviewable_type", "reviewable_id"], name: "index_permanent_rejections_reviewable"
     t.index ["reviewer_id"], name: "idx_on_reviewer_id_b6dd573175"
-    t.check_constraint "status = ANY (ARRAY[0, 1, 2])", name: "permanent_rejection_status"
+    t.check_constraint "status = ANY (ARRAY[0, 1, 2, 3])", name: "permanent_rejection_status"
   end
 
   create_table "certification_review_notes", force: :cascade do |t|

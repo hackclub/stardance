@@ -992,6 +992,7 @@ Rails.application.routes.draw do
       resources :permanent_rejection_nominations, only: [ :index, :show, :create ] do
         post :approve, on: :member
         post :deny, on: :member
+        post :undo, on: :member
       end
 
       # Hardware review surface: two separate queues (design funding requests and

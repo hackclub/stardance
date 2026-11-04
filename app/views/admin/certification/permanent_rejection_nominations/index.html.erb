@@ -8,7 +8,7 @@
     </header>
 
     <nav class="permanent-rejections__tabs" aria-label="Nomination status">
-      <% %w[pending approved denied].each do |status| %>
+      <% Certification::PermanentRejectionNomination.statuses.each_key do |status| %>
         <%= link_to admin_certification_permanent_rejection_nominations_path(status: status),
               class: "permanent-rejections__tab", aria: { current: @status == status ? "page" : nil } do %>
           <%= status.capitalize %>

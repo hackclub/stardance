@@ -82,6 +82,10 @@ class Mission::Submission < ApplicationRecord
       transitions from: :awaiting_certification, to: :rejected
     end
 
+    event :reopen_certification do
+      transitions from: :rejected, to: :awaiting_certification, guard: -> { reviewed_by_id.nil? }
+    end
+
     # Reviewer.
     event :approve do
       transitions from: :pending, to: :approved

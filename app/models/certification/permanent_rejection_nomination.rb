@@ -37,7 +37,7 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
   belongs_to :decided_by, class_name: "User", optional: true
   has_paper_trail
 
-  enum :status, { pending: 0, approved: 1, denied: 2 }, default: :pending
+  enum :status, { pending: 0, approved: 1, denied: 2, undone: 3 }, default: :pending
   scope :blocking, -> { where(status: [ :pending, :approved ]) }
 
   normalizes :reason, with: ->(value) { value&.strip }
@@ -100,7 +100,57 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
     reviewable_type == "Certification::FundingRequest" ? "Design" : "Build"
   end
 
+  def undo!(admin:)
+    raise Pundit::NotAuthorizedError unless admin&.admin? && !project.memberships.exists?(user_id: admin.id)
+
+    reviewable.with_lock do
+      project.with_lock do
+        reload
+        unless approved? && reviewable.permanently_rejected?
+          errors.add(:base, "This permanent rejection has already been undone or the review has changed.")
+          raise ActiveRecord::RecordInvalid, self
+        end
+        if project.deleted? || reviewable.class.where(project_id: project_id).where("id > ?", reviewable.id).exists? ||
+            (reviewable.is_a?(Certification::Ship) && reviewable.verdict_ship_event != project.last_ship_event)
+          errors.add(:base, "This project was deleted or a newer submission supersedes this review. It cannot be reopened.")
+          raise ActiveRecord::RecordInvalid, self
+        end
+
+        # Retain the original approval and justification. PaperTrail records
+        # who undid it and when, separately from the original decision.
+        self.paper_trail_event = "undo_permanent_rejection"
+        update!(status: :undone)
+        reviewable.assign_attributes(status: :pending, feedback: nil, reviewer: nil,
+                                     claimed_at: nil, claim_expires_at: nil, decided_at: nil,
+                                     stardust_earned: nil, reversed_at: Time.current)
+        # Reopening must work even if eligibility changed since submission.
+        reviewable.save!(validate: false)
+        if reviewable.is_a?(Certification::Ship)
+          ship_event = reviewable.verdict_ship_event
+          ship_event&.update!(certification_status: "pending", feedback_reason: nil)
+          submission = ship_event&.mission_submission
+          if submission&.may_reopen_certification?
+            submission.rejection_message = nil
+            submission.reopen_certification!
+          end
+        end
+        if project.rejected?
+          project.update!(ship_status: review_stage == "Design" ? :draft : :under_review)
+        end
+      end
+    end
+
+    ActiveRecord.after_all_transactions_commit { notify_owner_of_undo!(admin) }
+  end
+
   private
+
+  def notify_owner_of_undo!(admin)
+    Notifications::Hardware::ReviewUndone.notify(recipient: reviewable.owner, actor: admin, record: reviewable)
+  rescue StandardError => e
+    Rails.logger.error("PermanentRejectionNomination ##{id} undo notification failed: #{e.message}")
+    Rails.error.report(e)
+  end
 
   def hardware_review_matches_project
     unless project&.hardware? && reviewable&.project_id == project_id
