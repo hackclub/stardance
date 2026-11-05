@@ -53,7 +53,7 @@ class LedgerEntry < ApplicationRecord
   before_destroy :prevent_destruction
 
   after_create :create_audit_log
-  after_create :notify_balance_change
+  after_create_commit :notify_balance_change
   after_create :invalidate_user_balance_cache
 
   def self.category_key_for(ledgerable_type)
