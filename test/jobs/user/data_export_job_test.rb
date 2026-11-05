@@ -108,6 +108,15 @@ class User::DataExportJobTest < ActiveJob::TestCase
     refute @export.zip_file.attached?
   end
 
+  test "marks export as failed when an attachment stream is truncated" do
+    attachment = @devlog.attachments.first
+    attachment.stub(:open, ->(&block) { block.call(StringIO.new("short")) }) do
+      assert_raises(IOError) do
+        User::DataExportJob.new.send(:download_attachment, Zip::OutputStream.write_buffer, attachment, "truncated")
+      end
+    end
+  end
+
   test "does nothing when the user deleted the queued export" do
     export_id = @export.id
     @export.destroy!

@@ -24,11 +24,13 @@ class User::DataExportJob < ApplicationJob
       end
 
       # Upload synchronously before entering a transaction.
-      blob = ActiveStorage::Blob.create_and_upload!(
-        io: File.open(temp_zip.path),
-        filename: zip_filename,
-        content_type: "application/zip"
-      )
+      blob = File.open(temp_zip.path) do |file|
+        ActiveStorage::Blob.create_and_upload!(
+          io: file,
+          filename: zip_filename,
+          content_type: "application/zip"
+        )
+      end
 
       @data_export.with_lock do
         # The user may delete an export while it is being generated.
@@ -122,7 +124,11 @@ class User::DataExportJob < ApplicationJob
     return unless attachment&.blob
 
     zip.put_next_entry(entry_name)
-    attachment.open { |file| IO.copy_stream(file, zip) }
+    bytes_written = attachment.open { |file| IO.copy_stream(file, zip) }
+    expected_bytes = attachment.blob.byte_size
+    return if bytes_written == expected_bytes
+
+    raise IOError, "Incomplete attachment export for #{attachment.blob.filename}: expected #{expected_bytes} bytes, wrote #{bytes_written}"
   end
 
   def write_readme(zip, user)
