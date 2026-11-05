@@ -24,7 +24,9 @@ module TheseusService
         first_order = shop_orders.first
 
         line_groups = shop_orders.group_by { |o| [ o.shop_item.name, o.selected_modifiers.map(&:name).sort ] }
-        rubber_stamps = line_groups.map do |(name, modifier_names), group|
+        # Packers read this top to bottom, so Sticky Streak #2 has to come before #10.
+        sorted_groups = line_groups.sort_by { |(name, modifier_names), _| [ natural_sort_key(name), modifier_names ] }
+        rubber_stamps = sorted_groups.map do |(name, modifier_names), group|
           qty = group.sum(&:quantity)
           label = modifier_names.any? ? "#{name} (#{modifier_names.join(", ")})" : name
           "#{qty}x #{label}"
@@ -48,6 +50,11 @@ module TheseusService
 
       def get_letter(letter_id)
         _conn.get("/api/v1/letters/#{letter_id}").body
+      end
+
+      # Orders names by their numbers as numbers, so "Sticky Streak #2" comes before "#10".
+      def natural_sort_key(name)
+        name.downcase.split(/(\d+)/).map { |part| part.match?(/\A\d+\z/) ? [ 0, part.to_i ] : [ 1, part ] }
       end
     end
 end

@@ -3,7 +3,7 @@
 class Shop::ProcessLetterMailOrdersJob < ApplicationJob
   queue_as :literally_whenever
 
-  LETTER_TYPES = ShopItem::LetterMail::BULK_BATCHED_TYPES
+  LETTER_TYPES = ShopItem::LetterMail::TYPES
 
   def perform
     orders = ShopOrder.joins(:shop_item)
@@ -14,14 +14,18 @@ class Shop::ProcessLetterMailOrdersJob < ApplicationJob
 
     return if orders.empty?
 
-    grouped_orders = orders.group_by { |order| [ order.user_id, order.frozen_address, order.shop_item.type ] }
+    # Grouped by queue rather than item type, so one person's streak and shop
+    # stickers share an envelope.
+    grouped_orders = orders.group_by { |order| [ order.user_id, order.frozen_address, order.shop_item.class::THESEUS_QUEUE ] }
 
     grouped_orders.each_value do |group|
       # Same lock format as individual send_to_theseus runs
       user = group.first.user
       user.with_advisory_lock("theseus_send/#{user.id}", timeout_seconds: 10) do
         # reload to prevent a race or double send
+        # Lowest numbers first, so a 21 sticker streak ships as #1-#11 and #12-#21.
         sendable = group.select { |order| order.reload.awaiting_periodical_fulfillment? }
+                        .sort_by { |order| [ TheseusService.natural_sort_key(order.shop_item.name), order.id ] }
         next if sendable.empty?
 
         cap = sendable.first.shop_item.class::MAX_ITEMS_PER_LETTER
