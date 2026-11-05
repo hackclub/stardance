@@ -109,11 +109,16 @@ class User::DataExportJobTest < ActiveJob::TestCase
   end
 
   test "marks export as failed when an attachment stream is truncated" do
-    attachment = @devlog.attachments.first
-    attachment.stub(:open, ->(&block) { block.call(StringIO.new("short")) }) do
-      assert_raises(IOError) do
-        User::DataExportJob.new.send(:download_attachment, Zip::OutputStream.write_buffer, attachment, "truncated")
+    blob = Struct.new(:byte_size, :filename).new(10, "test.png")
+    attachment = Struct.new(:blob) do
+      def open
+        yield StringIO.new("short")
       end
+    end.new(blob)
+    zip = Zip::OutputStream.new(StringIO.new, stream: true)
+
+    assert_raises(IOError) do
+      User::DataExportJob.new.send(:download_attachment, zip, attachment, "truncated")
     end
   end
 
