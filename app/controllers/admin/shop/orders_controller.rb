@@ -24,12 +24,12 @@ class Admin::Shop::OrdersController < Admin::ApplicationController
   # they're worked as one pile. New LetterMail subclasses join the mail group
   # through ShopItem::LetterMail::TYPES, so they fold with the rest of it.
   # Sticky Streak stickers get their own toggle rather than folding in with the
-  # mail: they are sent one at a time from the order, not swept up in a batch,
-  # so the mail pile's count means nothing with them mixed in.
+  # mail: there are thousands of them, so the mail pile's count means nothing
+  # with them mixed in.
   ITEM_TYPE_TOGGLES = [
     { label: "Free Stickers", hidden_by_default: true, types: %w[ShopItem::FreeStickers] },
     { label: "Warehouse Item", hidden_by_default: true, types: %w[ShopItem::WarehouseItem] },
-    { label: "HQ Mail", hidden_by_default: false, types: %w[ShopItem::HQMailItem] + ShopItem::LetterMail::BULK_BATCHED_TYPES },
+    { label: "HQ Mail", hidden_by_default: false, types: %w[ShopItem::HQMailItem] + (ShopItem::LetterMail::TYPES - %w[ShopItem::StickyStreakSticker]) },
     { label: "Streak Stickers", hidden_by_default: false, types: %w[ShopItem::StickyStreakSticker] }
   ].freeze
 

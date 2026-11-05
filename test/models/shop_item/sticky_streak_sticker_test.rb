@@ -25,18 +25,19 @@ class ShopItem::StickyStreakStickerTest < ActiveSupport::TestCase
     assert_includes Admin::Shop::OrdersController::TOGGLEABLE_ITEM_TYPES, "ShopItem::StickyStreakSticker"
   end
 
-  test "the batch send sweep leaves stickers alone but still takes ordinary letter mail" do
-    assert_not_includes Shop::ProcessLetterMailOrdersJob::LETTER_TYPES, "ShopItem::StickyStreakSticker"
+  test "the batch send sweep takes stickers along with ordinary letter mail" do
+    assert_includes Shop::ProcessLetterMailOrdersJob::LETTER_TYPES, "ShopItem::StickyStreakSticker"
     assert_includes Shop::ProcessLetterMailOrdersJob::LETTER_TYPES, "ShopItem::LetterMail"
     assert_includes Shop::ProcessLetterMailOrdersJob::LETTER_TYPES, "ShopItem::NonmachinableLetterMail"
   end
 
-  test "a sticker order awaiting fulfillment is not swept up by the batch job" do
+  test "a sticker order awaiting fulfillment is swept into a letter by the batch job" do
     order = sticker_order
 
-    Shop::ProcessLetterMailOrdersJob.perform_now
+    TheseusService.stub(:create_letter_v1, { id: "ltr!sticker" }) { Shop::ProcessLetterMailOrdersJob.perform_now }
 
-    assert_equal "awaiting_periodical_fulfillment", order.reload.aasm_state
+    assert_equal "fulfilled", order.reload.aasm_state
+    assert_equal "ltr!sticker", order.external_ref
   end
 
   test "a sticker order is still sendable on its own, through the same queue" do
