@@ -283,6 +283,16 @@ module Post::ShipEvent::Payouts
     payout / hours_at_payout
   end
 
+  # Reuse the original payout basis, including rounding and the blessing. Never
+  # re-rank old votes or rewrite the original ship payout to grant a viral bonus.
+  def virality_extra_payout
+    return 0 if payout.nil? || hardware_payout? || !voting_payout_path?
+    raise ArgumentError, "Ship ##{id} is missing its saved payout basis" if payout_basis_percentile.nil? || hours_at_payout.nil?
+
+    rate = payout_multiplier_for_percentile(payout_basis_percentile, ceiling: 30)
+    [ payout_amount_for(hours_at_payout, rate, payout_blessing) - payout.to_i, 0 ].max
+  end
+
   def payout_preview(sample = self.class.payout_score_sample, votes_count: nil, pending_flags_count: nil)
     scores = payout_preview_scores(sample)
     preview_hours = payout_basis_locked_at? ? hours_at_payout.to_f : hours
@@ -454,15 +464,15 @@ module Post::ShipEvent::Payouts
       project&.hardware? || false
     end
 
-    def payout_multiplier_for_percentile(percentile)
+    def payout_multiplier_for_percentile(percentile, ceiling: nil)
       return nil if percentile.nil?
 
-      (dollars_per_hour_for_percentile(percentile) * game_constants.tickets_per_dollar.to_f).round(6)
+      (dollars_per_hour_for_percentile(percentile, ceiling: ceiling) * game_constants.tickets_per_dollar.to_f).round(6)
     end
 
-    def dollars_per_hour_for_percentile(percentile)
+    def dollars_per_hour_for_percentile(percentile, ceiling: nil)
       low = game_constants.lowest_dollar_per_hour.to_f
-      high = game_constants.highest_dollar_per_hour.to_f
+      high = ceiling ? ceiling / game_constants.tickets_per_dollar.to_f : game_constants.highest_dollar_per_hour.to_f
       low + (high - low) * ((percentile.to_f / 100.0).clamp(0.0, 1.0) ** 1.745427173)
     end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_100012) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_06_153719) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1084,8 +1084,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_100012) do
     t.text "submitter_notes"
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.string "approved_tier"
     t.index ["project_id"], name: "index_project_mentions_on_project_id"
     t.index ["reviewer_id"], name: "index_project_mentions_on_reviewer_id"
+    t.check_constraint "approved_tier IS NULL OR (approved_tier::text = ANY (ARRAY['good'::character varying, 'great'::character varying]::text[]))", name: "project_mentions_approved_tier"
   end
 
   create_table "project_mission_attachments", force: :cascade do |t|
@@ -1893,6 +1895,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_100012) do
     t.index ["object_changes"], name: "index_versions_on_object_changes", using: :gin
   end
 
+  create_table "virality_decisions", force: :cascade do |t|
+    t.bigint "project_mention_id", null: false
+    t.bigint "reviewer_id", null: false
+    t.bigint "cancelled_by_id"
+    t.string "action", null: false
+    t.string "tier"
+    t.string "status", default: "scheduled", null: false
+    t.text "reason"
+    t.jsonb "evidence", default: {}, null: false
+    t.jsonb "result", default: {}, null: false
+    t.datetime "process_at", null: false
+    t.datetime "processed_at"
+    t.datetime "cancelled_at"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cancelled_by_id"], name: "index_virality_decisions_on_cancelled_by_id"
+    t.index ["process_at"], name: "due_virality_decisions", where: "((status)::text = 'scheduled'::text)"
+    t.index ["project_mention_id"], name: "index_virality_decisions_on_project_mention_id"
+    t.index ["project_mention_id"], name: "one_scheduled_virality_decision_per_mention", unique: true, where: "((status)::text = 'scheduled'::text)"
+    t.index ["reviewer_id"], name: "index_virality_decisions_on_reviewer_id"
+    t.check_constraint "action::text <> 'approve'::text OR tier IS NOT NULL AND (tier::text = ANY (ARRAY['good'::character varying, 'great'::character varying]::text[]))", name: "virality_decisions_approval_tier"
+    t.check_constraint "action::text = ANY (ARRAY['approve'::character varying, 'reject'::character varying, 'reverse'::character varying]::text[])", name: "virality_decisions_action"
+    t.check_constraint "status::text = ANY (ARRAY['scheduled'::character varying, 'cancelled'::character varying, 'processed'::character varying, 'failed'::character varying]::text[])", name: "virality_decisions_status"
+  end
+
   create_table "vote_assignments", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "first_viewed_at"
@@ -2180,6 +2208,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_100012) do
   add_foreign_key "user_preference", "users"
   add_foreign_key "user_preferences", "users"
   add_foreign_key "user_vote_verdicts", "users"
+  add_foreign_key "virality_decisions", "project_mentions"
+  add_foreign_key "virality_decisions", "users", column: "cancelled_by_id"
+  add_foreign_key "virality_decisions", "users", column: "reviewer_id"
   add_foreign_key "vote_assignments", "post_ship_events", column: "ship_event_id"
   add_foreign_key "vote_assignments", "users"
   add_foreign_key "vote_assignments", "votes"

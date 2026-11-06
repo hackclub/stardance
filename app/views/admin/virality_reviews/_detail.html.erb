@@ -1,0 +1,110 @@
+<div class="virality-review__heading">
+  <div>
+    <h2><%= @mention.project.title %></h2>
+    <p class="virality-review__muted"><%= link_to "Project ##{@mention.project_id}", admin_project_path(@mention.project) %> · Mention #<%= @mention.id %> · <%= @mention.created_at.strftime("%b %-d, %Y") %></p>
+  </div>
+  <span class="virality-review__status"><%= @scheduled ? "Scheduled" : [@mention.approved_tier&.capitalize, @mention.status.to_s.humanize].compact.join(" ") %></span>
+</div>
+<section class="virality-review__section">
+  <h3>Evidence</h3>
+  <div class="virality-review__evidence">
+    <% @mention.evidence_urls.each do |url| %>
+      <p><%= link_to url, url, target: "_blank", rel: "noopener noreferrer" %></p>
+    <% end %>
+    <% if @mention.evidence_urls.empty? %><p><%= @mention.url %></p><% end %>
+    <div class="virality-review__notes"><%= @mention.submitter_notes.presence || "No submitter notes." %></div>
+  </div>
+  <p class="virality-review__muted">Project status: <%= @mention.project.ship_status.humanize %></p>
+  <% if @mention.metric_value.present? %>
+    <p>Recorded evidence: <%= number_with_delimiter(@mention.metric_value) %> <%= @mention.metric_name %> on <%= @mention.platform %></p>
+  <% end %>
+</section>
+<% if @scheduled %>
+  <section class="virality-review__scheduled" data-controller="virality-review"
+    data-virality-review-deadline-value="<%= @scheduled.process_at.iso8601 %>"
+    data-virality-review-server-time-value="<%= Time.current.iso8601 %>"
+    data-virality-review-status-url-value="<%= admin_virality_review_path(@scheduled) %>">
+    <div class="virality-review__heading"><h3><%= @scheduled.action.humanize %> scheduled</h3><span class="virality-review__countdown" data-virality-review-target="countdown"></span></div>
+    <p><%= @scheduled.tier&.capitalize %> · <%= number_with_delimiter(@scheduled.result["delta"]) %> stardust adjustment</p>
+    <p data-virality-review-target="message">Nothing changes until this decision processes.</p>
+    <%= button_to "Stop decision", cancel_admin_virality_review_path(@scheduled), class: "action-btn action-btn--small action-btn--primary" %>
+  </section>
+<% elsif @mention.status == :pending %>
+  <% if @decisions.first&.status == "failed" %><p class="virality-review__error" role="alert"><%= @decisions.first.error_message %></p><% end %>
+  <%= form_with url: admin_virality_review_path(@mention), scope: :decision, class: "virality-review__form", data: { controller: "virality-review", virality_review_thresholds_value: Virality::Evidence::THRESHOLDS.to_json } do |form| %>
+    <section class="virality-review__section">
+      <h3>Verified reach</h3>
+      <div class="virality-review__fields">
+        <%= fields_for "decision[evidence]" do |evidence| %>
+          <div><%= evidence.label :platform %><%= evidence.select :platform, Virality::Evidence::THRESHOLDS.keys, { selected: @mention.platform, include_blank: "Choose platform" }, data: { virality_review_target: "platform", action: "change->virality-review#platformChanged" } %></div>
+          <div><%= evidence.label :metric_name, "Metric" %><%= evidence.select :metric_name, [@mention.metric_name].compact, { include_blank: "Choose metric" }, data: { virality_review_target: "metric", action: "change->virality-review#thresholdChanged" } %></div>
+          <div><%= evidence.label :metric_value, "Count" %><%= evidence.number_field :metric_value, value: @mention.metric_value, min: 0, step: 1 %></div>
+        <% end %>
+      </div>
+      <p class="virality-review__muted" data-virality-review-target="threshold" aria-live="polite"></p>
+    </section>
+    <section class="virality-review__section">
+      <h3>Reward</h3>
+      <div class="virality-review__choices">
+        <% %w[good great].each do |tier| %>
+          <label class="virality-review__choice">
+            <%= form.radio_button :tier, tier, checked: tier == "good", data: { action: "change->virality-review#tierChanged" } %>
+            <span><strong><%= tier.capitalize %></strong><span><%= tier == "good" ? "50 stardust flat bonus" : "Extended curve + Good bonus" %></span></span>
+          </label>
+        <% end %>
+      </div>
+      <% %w[good great].each do |tier| %>
+        <div data-virality-review-target="preview" data-tier="<%= tier %>" <%= "hidden" if tier == "great" %>>
+          <%= render "preview", action: tier %>
+        </div>
+      <% end %>
+    </section>
+    <section class="virality-review__section">
+      <%= fields_for "decision[evidence]" do |evidence| %>
+        <label class="virality-review__check"><%= evidence.check_box :eligibility_confirmed %><span>I verified this is original work, credits Hack Club, and has organic reach outside Hack Club.</span></label>
+        <details class="virality-review__exception"><summary>Manual exception</summary><label class="virality-review__check"><%= evidence.check_box :manual_override %><span>Approve an unlisted platform or discretionary feature. Explain why in the review note.</span></label></details>
+      <% end %>
+      <%= form.label :reason, "Review note" %>
+      <%= form.text_area :reason, maxlength: 2_000, rows: 3, placeholder: "Required for rejection or a manual exception" %>
+      <div class="virality-review__actions">
+        <%= button_tag "Approve", name: "decision[action]", value: "approve", class: "action-btn action-btn--small action-btn--primary", disabled: @mention.project.ship_status != "approved" %>
+        <%= button_tag "Reject", name: "decision[action]", value: "reject", class: "virality-review__danger" %>
+      </div>
+      <p class="virality-review__muted">Decisions process after 30 seconds. You can stop them before processing.</p>
+      <% unless @mention.project.ship_status == "approved" %><p class="virality-review__error">The project must pass normal review before a viral bonus can be approved.</p><% end %>
+    </section>
+  <% end %>
+<% else %>
+  <section class="virality-review__section">
+    <p><%= @mention.reviewer_notes %></p>
+    <details>
+      <summary>Reverse decision</summary>
+      <p>Return this mention to review. Other approved mentions still count toward the project’s reward.</p>
+      <%= render "preview", action: "reverse" %>
+      <%= form_with url: admin_virality_review_path(@mention), scope: :decision do |form| %>
+        <%= form.hidden_field :action, value: "reverse" %>
+        <%= form.label :reason, "Reason for reversal" %>
+        <%= form.text_area :reason, required: true, maxlength: 2_000, rows: 3 %>
+        <div class="virality-review__actions"><%= form.submit "Schedule reversal · 30 seconds", class: "virality-review__danger" %></div>
+      <% end %>
+    </details>
+  </section>
+<% end %>
+<section class="virality-review__section">
+  <h3>Review history</h3>
+  <% if @decisions.empty? %><p class="virality-review__muted">No review actions yet.</p><% end %>
+  <ol class="virality-review__history">
+    <% @decisions.each do |decision| %>
+      <li>
+        <strong><%= decision.action.humanize %><%= " #{decision.tier.capitalize}" if decision.tier %> · <%= decision.status.humanize %></strong>
+        <p class="virality-review__muted"><%= decision.reviewer.display_name %> · <%= decision.created_at.strftime("%b %-d, %Y %H:%M:%S %Z") %></p>
+        <% if decision.cancelled_by %><p>Stopped by <%= decision.cancelled_by.display_name %></p><% end %>
+        <p><%= decision.reason %></p>
+        <% if decision.error_message %><p class="virality-review__error"><%= decision.error_message %></p><% end %>
+        <%= link_to "Audit details", admin_audit_logs_path(item_type: "ViralityDecision", item_id: decision.id, show_system: "1") %>
+      </li>
+    <% end %>
+  </ol>
+  <%= render "admin/shared/audit_log", record: @mention %>
+  <%= link_to "Project payout audit", admin_audit_logs_path(item_type: "Project", item_id: @mention.project_id, event: "virality_bonus_reconciled", show_system: "1") %>
+</section>

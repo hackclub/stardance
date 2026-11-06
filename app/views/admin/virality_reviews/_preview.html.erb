@@ -1,0 +1,21 @@
+<% if @preview_errors[action] %>
+  <p class="virality-review__error"><%= @preview_errors[action] %></p>
+<% elsif (preview = @previews[action]) %>
+  <div class="virality-review__payout">
+    <span><%= action == "reverse" ? "Stardust adjustment" : "Extra stardust to pay" %></span>
+    <strong><%= number_with_delimiter(preview[:delta]) %></strong>
+  </div>
+  <% preview[:changes].each do |user_id, change| %>
+    <p class="virality-review__muted"><%= @recipients[user_id]&.display_name %>: <%= number_with_delimiter(change) %> stardust</p>
+  <% end %>
+  <% if action == "great" %>
+    <p class="virality-review__muted">Uses each paid ship’s saved percentile and blessing on the curve extended to 30. Future eligible payouts receive their extra bonus automatically.</p>
+    <% if preview[:ships].any? %>
+      <details><summary>Ship breakdown</summary><div class="virality-review__table-wrap"><table>
+        <thead><tr><th>Ship</th><th>Percentile</th><th>Hours</th><th>Extra</th></tr></thead>
+        <tbody><% preview[:ships].each do |ship| %><tr><td><%= link_to "##{ship[:id]}", admin_payout_review_path(ship[:id]) %></td><td><%= ship[:percentile] %></td><td><%= number_with_precision(ship[:hours], precision: 2) %></td><td><%= number_with_delimiter(ship[:extra]) %></td></tr><% end %></tbody>
+      </table></div></details>
+    <% end %>
+  <% end %>
+  <p class="virality-review__muted">One flat bonus per project. Total virality bonus capped at 5,000 stardust.</p>
+<% end %>

@@ -6,6 +6,7 @@ require 'rails_helper'
 #
 #  id              :bigint           not null, primary key
 #  approved_at     :datetime
+#  approved_tier   :string
 #  metric_name     :string
 #  metric_value    :integer
 #  platform        :string

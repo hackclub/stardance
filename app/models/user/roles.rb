@@ -3,6 +3,8 @@ module User::Roles
 
   included do
     User::Role.all_slugs.each do |role_name|
+      next if role_name == :admin # Keep the explicit admin/super-admin predicate below.
+
       define_method "#{role_name}?" do
         has_role?(role_name)
       end

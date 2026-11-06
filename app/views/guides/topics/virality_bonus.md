@@ -18,6 +18,12 @@ Your project blew up.
 Payout ceiling goes from **20 to 30 stardust :stardust: per hour**.
 Plus the Great Viral Project achievement and everything from Good.
 
+We keep each paid ship's original percentile, approved payout hours, and
+blessing or curse, and map that percentile onto the payout curve extended to
+30. You receive the difference, not a flat 30 stardust per hour. The Good
+bonus is paid once per project, including when you upgrade to Great. Total
+virality bonuses are capped at 5,000 stardust per project.
+
 ## Thresholds
 
 Hit one on one platform to qualify.

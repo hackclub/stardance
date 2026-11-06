@@ -6,6 +6,9 @@ module Admin
       authorize ::PaperTrail::Version
 
       @versions = ::PaperTrail::Version.order(created_at: :desc)
+      unless ViralityDecision.reviewer?(current_user)
+        @versions = @versions.where.not(item_type: %w[ProjectMention ViralityDecision]).where.not(event: "virality_bonus_reconciled")
+      end
 
       # Show system activities by default; opt out via checkbox
       @show_system = params[:show_system] == "1"
@@ -85,6 +88,8 @@ module Admin
       "User::Identity" => "User::Identity",
       "User::HackatimeProject" => "User::HackatimeProject",
       "Project" => "Project",
+      "ProjectMention" => "ProjectMention",
+      "ViralityDecision" => "ViralityDecision",
       "Project::Membership" => "Project::Membership",
       "Project::Report" => "Project::Report",
       "ShopOrder" => "ShopOrder",

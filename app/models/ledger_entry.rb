@@ -28,6 +28,7 @@ class LedgerEntry < ApplicationRecord
     "shop" => { label: "Shop purchases & refunds", types: [ "ShopOrder" ] },
     "manual" => { label: "Manual grants & adjustments", types: [ "User" ] },
     "achievement" => { label: "Achievements", types: [ "User::Achievement" ] },
+    "virality" => { label: "Virality bonuses", types: [ "Project" ] },
     "fulfillment" => { label: "Fulfillment payouts", types: [ "FulfillmentPayoutLine" ] },
     "reviewer" => { label: "Reviewer payouts", types: [ "ReviewerPayoutRequest" ] },
     "mission" => { label: "Mission payouts", types: [ "Mission::Submission" ] },
@@ -101,6 +102,7 @@ class LedgerEntry < ApplicationRecord
     when "ShopOrder" then "shop purchase"
     when "Post::ShipEvent" then created_by == Finality::BONUS_CREATED_BY ? "finality bonus" : "ship event payout"
     when "User" then "user grant"
+    when "Project" then "virality bonus adjustment"
     when "User::Achievement" then "achievement: #{ledgerable.achievement.name}"
     when "FulfillmentPayoutLine" then "fulfillment payout"
     when "ShowAndTellAttendance" then "show and tell payout"

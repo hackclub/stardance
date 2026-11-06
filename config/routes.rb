@@ -780,6 +780,10 @@ Rails.application.routes.draw do
       end
     end
     resources :payout_reviews, only: [ :index, :show ]
+    resources :virality_reviews, only: [ :index, :show ] do
+      post :create, on: :member
+      post :cancel, on: :member
+    end
     resources :ledger_entries, only: [ :index ]
     get "super_stars", to: "super_stars#show", as: :super_stars
     get "user-perms", to: "users#user_perms"

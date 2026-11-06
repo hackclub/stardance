@@ -4,6 +4,7 @@
 #
 #  id              :bigint           not null, primary key
 #  approved_at     :datetime
+#  approved_tier   :string
 #  metric_name     :string
 #  metric_value    :integer
 #  platform        :string
@@ -31,6 +32,28 @@ class ProjectMention < ApplicationRecord
 
   belongs_to :project
   belongs_to :reviewer, class_name: "User", optional: true
+  has_many :virality_decisions, dependent: :restrict_with_exception
+
+  scope :awaiting_review, -> { where(approved_at: nil, rejected_at: nil) }
+  scope :approved, -> { where.not(approved_at: nil) }
+
+  validates :approved_tier, inclusion: { in: %w[good great] }, allow_nil: true
 
   validates :url, presence: true
+
+  def status
+    return :approved if approved_at?
+    return :rejected if rejected_at?
+
+    :pending
+  end
+
+  def evidence_urls
+    url.to_s.split(/[\s,]+/).filter_map do |value|
+      uri = URI.parse(value)
+      value if uri.is_a?(URI::HTTP) && uri.host.present?
+    rescue URI::InvalidURIError
+      nil
+    end
+  end
 end

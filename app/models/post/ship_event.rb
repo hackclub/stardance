@@ -124,6 +124,7 @@ class Post::ShipEvent < ApplicationRecord
 
   after_commit :decrement_user_vote_balance, on: :create
   after_commit :schedule_type_check, on: :create
+  after_update_commit :reconcile_virality_bonus, if: :saved_change_to_payout?
 
   validates :body, presence: { message: "Update message can't be blank" }
   validates :body, length: { maximum: BODY_MAX_LENGTH }, on: :create
@@ -131,6 +132,12 @@ class Post::ShipEvent < ApplicationRecord
   validates :lifecycle_data_quality, inclusion: { in: LIFECYCLE_DATA_QUALITIES }, allow_nil: true
   validate :project_can_be_shipped, on: :create
   has_paper_trail ignore: [ :votes_count, :synced_at ]
+
+  def reconcile_virality_bonus
+    return unless project&.mentions&.approved&.where(approved_tier: "great")&.exists?
+
+    ReconcileViralityBonusJob.perform_later(project.id)
+  end
 
   def self.recalculate_hours_for_devlog_post(post)
     return unless post&.project

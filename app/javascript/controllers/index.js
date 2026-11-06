@@ -543,3 +543,6 @@ application.register("stardance-countdown", StardanceCountdownController);
 
 import StardanceFinaleController from "./stardance_finale_controller";
 application.register("stardance-finale", StardanceFinaleController);
+
+import ViralityReviewController from "./virality_review_controller";
+application.register("virality-review", ViralityReviewController);

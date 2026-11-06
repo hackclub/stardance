@@ -67,6 +67,7 @@
       <%= admin_page_button "Audit Logs", admin_audit_logs_path, enabled: policy(PaperTrail::Version).index? %>
       <%= admin_page_button "Ledger Entries", admin_ledger_entries_path, enabled: policy(LedgerEntry).index? %>
       <%= admin_page_button "Payout Reviews", admin_payout_reviews_path, enabled: policy(:payout_review).index? %>
+      <%= admin_page_button "Virality Reviews", admin_virality_reviews_path, enabled: policy(:virality_review).index? %>
       <%= admin_page_button "Fulfillment Payouts", admin_fulfillment_payouts_path, enabled: policy(FulfillmentPayoutRun).index? %>
       <%= admin_page_button "Fraud Payouts", admin_fraud_payouts_path, enabled: policy(FraudPayoutRun).index? %>
       <%= admin_page_button "Vote Flags", admin_vote_flags_path, enabled: policy(Vote::Event).index? %>

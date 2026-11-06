@@ -1,0 +1,33 @@
+<% content_for :title, "Virality reviews" %>
+<div class="app-layout app-layout--wide">
+  <section class="app-layout__main app-layout__main--wide virality-review">
+    <h1>Virality reviews</h1>
+    <nav class="virality-review__tabs" aria-label="Review queues">
+      <% { "pending" => "Needs review", "scheduled" => "Scheduled", "reviewed" => "Reviewed" }.each do |queue, label| %>
+        <%= link_to admin_virality_reviews_path(queue: queue), class: "virality-review__tab", aria: { current: (@queue == queue ? "page" : nil) } do %>
+          <%= label %> <span><%= @counts[queue] %></span>
+        <% end %>
+      <% end %>
+    </nav>
+    <div class="virality-review__layout">
+      <aside class="virality-review__queue" aria-label="Submissions">
+        <% @mentions.each do |mention| %>
+          <%= link_to admin_virality_reviews_path(queue: @queue, mention_id: mention.id, page: params[:page]), class: "virality-review__item", aria: { current: (@mention == mention ? "true" : nil) } do %>
+            <strong><%= mention.project.title %></strong>
+            <span>#<%= mention.id %> · <%= mention.created_at.strftime("%b %-d") %></span>
+            <span><%= mention.platform.presence || "Platform not recorded" %></span>
+          <% end %>
+        <% end %>
+        <% if @mentions.empty? %><p class="virality-review__muted">Nothing in this queue.</p><% end %>
+        <%== @pagy.series_nav if @pagy.pages > 1 %>
+      </aside>
+      <div class="virality-review__detail">
+        <% if @mention %>
+          <%= render "detail" %>
+        <% else %>
+          <p class="virality-review__muted">Choose another queue to continue.</p>
+        <% end %>
+      </div>
+    </div>
+  </section>
+</div>

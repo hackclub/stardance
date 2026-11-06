@@ -244,3 +244,9 @@ production:
     schedule: every day at 4am UTC
     concurrency: 1
     description: "Recover missing certification UUIDs from the dashboard and retry outbound pushes/returns that never landed"
+
+  recover_virality_decisions:
+    class: RecoverViralityDecisionsJob
+    schedule: every minute
+    concurrency: 1
+    description: "Recover due virality decisions whose delayed job was not delivered"
