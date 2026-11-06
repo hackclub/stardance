@@ -35,6 +35,8 @@
 #
 class Vote < ApplicationRecord
   FLAG_COST = 5
+  FLAG_DETAILS_MIN_LENGTH = 20
+  FLAG_DETAILS_MAX_LENGTH = 200
   MAX_BANKED_VOTES = 6
   MIN_SCORE = 1
   MAX_SCORE = 9
@@ -125,18 +127,20 @@ class Vote < ApplicationRecord
     ship_event&.payout_basis_vote_ids&.include?(id) || false
   end
 
-  def flag_for_review_by(user)
-    if flaggable_by?(user)
-      events.create!(
-        event_type: "vote_flagged",
-        user: user,
-        project: project,
-        ship_event: ship_event,
-        properties: { status: "pending" }
-      )
-    else
-      false
-    end
+  def flag_for_review_by(user, details:)
+    flaggable_by?(user) && record_flag_for_review(user, details: details)
+  end
+
+  # Callers must check flaggable_by? first. A batch checks every rating before
+  # recording any, because the first flag closes the review window for the rest.
+  def record_flag_for_review(user, details:)
+    events.create!(
+      event_type: "vote_flagged",
+      user: user,
+      project: project,
+      ship_event: ship_event,
+      properties: { status: "pending", details: details }
+    )
   end
 
   def accept_flag(reviewer:)
