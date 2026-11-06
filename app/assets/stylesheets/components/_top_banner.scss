@@ -1,3 +1,13 @@
+// The whole banner stack is pinned above everything (sidebar, modals, overlays).
+// top_banner_controller publishes its height so the page and sidebar start below it.
+.top-banners {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100000;
+}
+
 .top-banner {
   padding: 0.5rem 1rem;
   color: white;

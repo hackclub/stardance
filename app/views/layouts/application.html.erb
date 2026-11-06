@@ -89,7 +89,7 @@
         </div>
       </div>
     <% end %>
-    <div class="top-banners">
+    <div class="top-banners" data-controller="top-banner">
       <% if current_user && Project.shipping_closed? %>
         <div class="top-banner top-banner--ended">
           <strong>Stardance has ended</strong> &mdash; Ships are closed, so new coding time won't earn stardust.
