@@ -25,10 +25,16 @@ class User::DataExportJob < ApplicationJob
 
       # Upload synchronously before entering a transaction.
       blob = File.open(temp_zip.path) do |file|
-        ActiveStorage::Blob.create_and_upload!(
+        # R2 uploads of export archives use a separate service with a raised multipart threshold
+        blob_options = {
           io: file,
           filename: zip_filename,
           content_type: "application/zip"
+        }
+        blob_options[:service_name] = "cloudflare_exports" if Rails.env.production?
+
+        ActiveStorage::Blob.create_and_upload!(
+          **blob_options
         )
       end
 
