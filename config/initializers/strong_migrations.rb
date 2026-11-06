@@ -6,6 +6,10 @@ StrongMigrations.start_after = 20260304152838
 StrongMigrations.lock_timeout = 10.seconds
 StrongMigrations.statement_timeout = 1.hour
 
+# Retry transient contention; transactional migrations roll back before each retry.
+StrongMigrations.lock_timeout_retries = 3
+StrongMigrations.lock_timeout_retry_delay = 10.seconds
+
 # Analyze tables after indexes are added
 # Outdated statistics can sometimes hurt performance
 StrongMigrations.auto_analyze = true
