@@ -37,6 +37,37 @@ class Admin::ViralityReviewsControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "deleted projects remain visible in the queue and detail without allowing approval" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+    @mention.project.update!(deleted_at: Time.current)
+
+    [ admin_virality_reviews_path, admin_virality_reviews_path(mention_id: @mention.id) ].each do |path|
+      get path
+      assert_response :success
+      assert_select "h2", @mention.project.title
+      assert_select "p", "Project status: Deleted"
+      assert_select "button[value='approve'][disabled]"
+      assert_select "button[value='reject']:not([disabled])"
+    end
+  end
+
+  test "admins can stop a scheduled decision after its project is deleted" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+    post admin_virality_review_path(@mention), params: { decision: { action: "reject", reason: "No independent reach" } }
+    decision = @mention.virality_decisions.last
+    @mention.project.update!(deleted_at: Time.current)
+
+    get admin_virality_reviews_path(queue: "scheduled", mention_id: @mention.id)
+    assert_response :success
+    assert_select "form[action=?]", cancel_admin_virality_review_path(decision)
+    post cancel_admin_virality_review_path(decision)
+    assert_equal "cancelled", decision.reload.status
+    follow_redirect!
+    assert_response :success
+  end
+
   test "admin schedules and stops a decision with an accessible audit trail" do
     @user.update!(granted_roles: [ "admin" ])
     sign_in @user

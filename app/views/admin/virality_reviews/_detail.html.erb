@@ -14,7 +14,7 @@
     <% if @mention.evidence_urls.empty? %><p><%= @mention.url %></p><% end %>
     <div class="virality-review__notes"><%= @mention.submitter_notes.presence || "No submitter notes." %></div>
   </div>
-  <p class="virality-review__muted">Project status: <%= @mention.project.ship_status.humanize %></p>
+  <p class="virality-review__muted">Project status: <%= @mention.project.deleted? ? "Deleted" : @mention.project.ship_status.humanize %></p>
   <% if @mention.metric_value.present? %>
     <p>Recorded evidence: <%= number_with_delimiter(@mention.metric_value) %> <%= @mention.metric_name %> on <%= @mention.platform %></p>
   <% end %>
@@ -67,11 +67,15 @@
       <%= form.label :reason, "Review note" %>
       <%= form.text_area :reason, maxlength: 2_000, rows: 3, placeholder: "Required for rejection or a manual exception" %>
       <div class="virality-review__actions">
-        <%= button_tag "Approve", name: "decision[action]", value: "approve", class: "action-btn action-btn--small action-btn--primary", disabled: @mention.project.ship_status != "approved" %>
+        <%= button_tag "Approve", name: "decision[action]", value: "approve", class: "action-btn action-btn--small action-btn--primary", disabled: @mention.project.deleted? || @mention.project.ship_status != "approved" %>
         <%= button_tag "Reject", name: "decision[action]", value: "reject", class: "virality-review__danger" %>
       </div>
       <p class="virality-review__muted">Decisions process after 30 seconds. You can stop them before processing.</p>
-      <% unless @mention.project.ship_status == "approved" %><p class="virality-review__error">The project must pass normal review before a viral bonus can be approved.</p><% end %>
+      <% if @mention.project.deleted? %>
+        <p class="virality-review__error">Deleted projects cannot receive new approvals.</p>
+      <% elsif @mention.project.ship_status != "approved" %>
+        <p class="virality-review__error">The project must pass normal review before a viral bonus can be approved.</p>
+      <% end %>
     </section>
   <% end %>
 <% else %>

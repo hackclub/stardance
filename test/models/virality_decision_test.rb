@@ -151,6 +151,41 @@ class ViralityDecisionTest < ActiveSupport::TestCase
     assert_equal 0, paid
   end
 
+  test "deleted projects cannot receive new approvals" do
+    @project.update!(deleted_at: Time.current)
+    @mention.reload
+
+    assert_equal @project, @mention.project
+    error = assert_raises(ArgumentError) { schedule }
+    assert_match "Deleted projects", error.message
+    assert_equal 0, paid
+  end
+
+  test "deleting a project during the delay prevents its approval from paying" do
+    decision = schedule
+    @project.update!(deleted_at: Time.current)
+
+    travel_to(decision.process_at + 1.second) { refute decision.reload.process! }
+
+    assert_equal "failed", decision.reload.status
+    assert_match "Deleted projects", decision.error_message
+    assert_equal :pending, @mention.reload.status
+    assert_equal 0, paid
+  end
+
+  test "an approval can still be reversed after its project is deleted" do
+    decision = schedule
+    travel_to(decision.process_at + 1.second) { assert decision.process! }
+    @project.update!(deleted_at: Time.current)
+
+    reversal = schedule(action: "reverse", reason: "Remove the invalid bonus")
+    travel_to(reversal.process_at + 1.second) { assert reversal.process! }
+
+    assert_equal :pending, @mention.reload.status
+    assert_equal 0, paid
+    assert_equal [ 50, -50 ], entries.order(:id).pluck(:amount)
+  end
+
   test "processing rolls back the decision when ledger creation fails" do
     decision = schedule
     LedgerEntry.stub(:create!, ->(**) { raise ActiveRecord::RecordInvalid.new(LedgerEntry.new) }) do

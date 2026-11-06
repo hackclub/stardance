@@ -30,7 +30,7 @@
 class ProjectMention < ApplicationRecord
   has_paper_trail
 
-  belongs_to :project
+  belongs_to :project, -> { with_deleted }
   belongs_to :reviewer, class_name: "User", optional: true
   has_many :virality_decisions, dependent: :restrict_with_exception
 

@@ -146,6 +146,7 @@ class ViralityDecision < ApplicationRecord
       raise ArgumentError, "Reverse the previous decision before reviewing again" unless project_mention.status == :pending
     end
     if action == "approve"
+      raise ArgumentError, "Deleted projects cannot be approved for virality" if project_mention.project.deleted?
       raise ArgumentError, "The project must be approved first" unless project_mention.project.ship_status == "approved"
     end
   end
