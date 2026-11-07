@@ -308,7 +308,7 @@
                   <p><%= nomination.undone? ? "Originally approved" : nomination.status.capitalize %> by <%= nomination.decided_by.display_name %> on <%= l(nomination.decided_at, format: :long) %>.</p>
                 <% end %>
                 <p><%= nomination.undone? ? "This rejection was undone. The builder was sent a correction." : nomination.approved? ? "The final decision is visible to the builder." : "This nomination is not visible to the builder." %></p>
-                <% if current_user.admin? %>
+                <% if policy([:admin, nomination]).show? %>
                   <%= link_to "View nomination and decision", admin_certification_permanent_rejection_nomination_path(nomination) %>
                 <% end %>
               </details>
@@ -406,7 +406,7 @@
 
             <button type="button" class="action-btn action-btn--small action-btn--destructive"
                     aria-haspopup="dialog" onclick="document.getElementById('hardware-permanent-rejection').showModal()">
-              <%= current_user.admin? ? "Permanently reject project" : "Nominate for permanent rejection" %>
+              <%= current_user.can_manage_hardware_permanent_rejections? ? "Permanently reject project" : "Nominate for permanent rejection" %>
             </button>
             <dialog id="hardware-permanent-rejection" class="hardware-review__fraud-modal"
                     data-controller="modal" aria-labelledby="permanent-rejection-title">

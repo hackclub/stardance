@@ -59,7 +59,7 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
         end
         nomination.save!
         review.update!(reviewer: nil, claimed_at: nil, claim_expires_at: nil)
-        nomination.decide!(admin: reviewer, approve: true) if reviewer.admin?
+        nomination.decide!(admin: reviewer, approve: true) if reviewer.can_manage_hardware_permanent_rejections?
       end
     end
     nomination
@@ -68,7 +68,7 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
   # Lock in the same order as nomination/verdicts: review, then project. A
   # repeated or competing decision must not send another builder notification.
   def decide!(admin:, approve:)
-    raise Pundit::NotAuthorizedError unless admin&.admin? && !project.memberships.exists?(user_id: admin.id)
+    raise Pundit::NotAuthorizedError unless Admin::Certification::PermanentRejectionNominationPolicy.new(admin, self).approve?
 
     reviewable.with_lock do
       project.with_lock do
@@ -171,6 +171,7 @@ class Certification::PermanentRejectionNomination < ApplicationRecord
         project_url: routes.project_url(project, **url_opts),
         nomination_url: routes.admin_certification_permanent_rejection_nomination_url(self, **url_opts),
         reviewer_name: reviewer.display_name,
+        reviewer_admin: reviewer.admin?,
         review_stage: review_stage,
         reason: reason,
         automatically_approved: approved?

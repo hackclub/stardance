@@ -1,5 +1,5 @@
 class Admin::Certification::PermanentRejectionNominationPolicy < ApplicationPolicy
-  def index? = user&.admin?
+  def index? = user&.can_manage_hardware_permanent_rejections?
   def show? = index?
 
   def create?
@@ -14,10 +14,10 @@ class Admin::Certification::PermanentRejectionNominationPolicy < ApplicationPoli
   end
 
   def approve?
-    user&.admin? && !record.project.memberships.exists?(user_id: user.id)
+    index? && !record.project.memberships.exists?(user_id: user.id)
   end
 
   def deny? = approve?
 
-  def undo? = approve? && record.approved?
+  def undo? = user&.admin? && approve? && record.approved?
 end

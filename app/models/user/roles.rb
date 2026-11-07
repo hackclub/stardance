@@ -26,6 +26,8 @@ module User::Roles
 
   def can_review? = admin? || has_role?(:project_certifier)
 
+  def can_manage_hardware_permanent_rejections? = admin? || hardware_permanent_rejection_manager?
+
   def can_nominate_super_star? = can_review? || has_role?(:guardian_of_integrity)
 
   def highest_role
