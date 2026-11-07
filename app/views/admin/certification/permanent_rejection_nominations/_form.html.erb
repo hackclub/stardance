@@ -1,4 +1,4 @@
-<% direct = current_user.admin? %>
+<% direct = current_user.can_manage_hardware_permanent_rejections? %>
 <div class="hardware-review__fraud-modal-card">
   <% if local_assigns[:modal] %>
     <button type="button" class="hardware-review__fraud-modal-close"
@@ -6,7 +6,7 @@
   <% end %>
   <h3 id="permanent-rejection-title" class="hardware-review__fraud-modal-title"><%= direct ? "Permanently reject project" : "Nominate for permanent rejection" %></h3>
   <p id="permanent-rejection-reason-help" class="hardware-review__fraud-modal-note">
-    <%= direct ? "This takes effect immediately and prevents future funding or certification. The builder will receive your justification." : "An admin will decide. Until then, this project leaves the review queue and the builder is not notified. Your justification is shared only if approved." %>
+    <%= direct ? "This takes effect immediately and prevents future funding or certification. The builder will receive your justification." : "An authorized reviewer will decide. Until then, this project leaves the review queue and the builder is not notified. Your justification is shared only if approved." %>
   </p>
   <% if nomination.errors.any? %>
     <div class="permanent-rejection__warning" role="alert"><%= nomination.errors.full_messages.to_sentence %></div>

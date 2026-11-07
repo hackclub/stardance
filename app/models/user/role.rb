@@ -10,6 +10,7 @@ class User
       new(2, :fraud_dept, "Can issue negative payouts, cancel grants & shop orders, but not reject or ban users; access to Blazer; access to read-only admin User w/o PII"),
       new(13, :fraud_fraud_squad_squad, "Everything fraud_dept can do, plus the unified fraud review dashboard: integrity checks, shop orders and fraud flags, per person"),
       new(3, :project_certifier, "Approve/reject if project work meets Shipwright standards"),
+      new(14, :hardware_permanent_rejection_manager, "Auto-approve own hardware permanent rejection nominations and approve/deny other reviewers' nominations; requires existing review access to nominate"),
       new(4, :guardian_of_integrity, "Can approve/reject projects for YSWS DB"),
       new(5, :fulfillment_person, "Can approve/reject/on-hold shop orders, fulfill them, and see addresses; access to read-only admin User w/ pII"),
       new(6, :helper, "Support team with read-only access to users (no PII), projects, shop orders and vote data"),

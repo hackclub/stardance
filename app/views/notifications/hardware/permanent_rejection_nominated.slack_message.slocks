@@ -4,9 +4,10 @@ section "#{reviewer_name} nominated <#{project_url}|#{project_title}> (#{review_
 section "Justification:"
 reason.scan(/.{1,2900}/m).each { |part| section part, markdown: false }
 if automatically_approved
-  section "Automatically approved because the reviewer is an administrator. The builder will receive the final decision through their review notifications."
+  approval_reason = local_assigns.fetch(:reviewer_admin, true) ? "the reviewer is an administrator" : "they’re Really Special And Awesome :3"
+  section "Automatically approved because #{approval_reason}. The builder will receive the final decision through their review notifications."
 else
-  section "Removed from the normal review queue and awaiting an administrator's decision. The builder has not been notified. Denying this nomination returns it to the original queue without notifying the builder."
+  section "Removed from the normal review queue and awaiting an authorized reviewer's decision. The builder has not been notified. Denying this nomination returns it to the original queue without notifying the builder."
 end
 
 actions [

@@ -49,7 +49,7 @@
                     data: { turbo_confirm: project.deleted? ? "Close this nomination? The deleted project will stay out of the queue and the builder will not be notified." : "Deny this nomination and return the submission to its original queue? The builder will not be notified." } %>
             </div>
           <% else %>
-            <p class="permanent-rejections__warning">Another admin must decide this nomination because you belong to the project.</p>
+            <p class="permanent-rejections__warning">Another authorized reviewer must decide this nomination because you belong to the project.</p>
           <% end %>
         <% elsif @nomination.undone? %>
           <h2 id="decision-title">Permanent rejection undone</h2>

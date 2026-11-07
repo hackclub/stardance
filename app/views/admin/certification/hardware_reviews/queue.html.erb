@@ -22,7 +22,7 @@
         </span>
       </div>
       <div class="ship-queue__header-actions">
-        <% if current_user.admin? %>
+        <% if policy([:admin, Certification::PermanentRejectionNomination]).index? %>
           <%= link_to "Permanent reject nominations", admin_certification_permanent_rejection_nominations_path,
                 class: "action-btn action-btn--small action-btn--secondary" %>
         <% end %>
