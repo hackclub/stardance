@@ -24,6 +24,7 @@ module Admin
         {
           arrivals: arrivals_in_period.size,
           depth: open_waits.size,
+          awaiting_first_review: queue.awaiting_first_review,
           median_decision_hours: percentile_hours(decided_latencies, 50),
           decided_sample: decided_latencies.size
         }

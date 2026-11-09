@@ -9,6 +9,12 @@
 
     <div class="mega-dash__tiles">
       <%= render "admin/mega_dashboard/tile", label: "Outstanding", value: number_with_delimiter(@payload[:tiles][:depth]) %>
+      <% unless @payload[:tiles][:awaiting_first_review].nil? %>
+        <%= render "admin/mega_dashboard/tile",
+              label: "Never reviewed",
+              value: number_with_delimiter(@payload[:tiles][:awaiting_first_review]),
+              note: "of #{number_with_delimiter(@payload[:tiles][:depth])} outstanding" %>
+      <% end %>
       <%= render "admin/mega_dashboard/tile",
             label: "Avg done per day", value: @payload[:metrics][:decisions_per_day],
             note: "#{@payload[:metrics][:arrivals_per_day]} arriving" %>

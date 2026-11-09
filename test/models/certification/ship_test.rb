@@ -127,6 +127,51 @@ class Certification::ShipTest < ActiveSupport::TestCase
     assert_in_delta 24.0, stats[:avg_decision_hours], 0.5
   end
 
+  test "awaiting_first_review counts only projects without a shipwright verdict" do
+    first_ship = @project.ship_reviews.create!(status: :pending)
+
+    recert = second_project
+    recert.ship_reviews.create!(status: :returned, feedback: "Fix the README.", reviewer: @reviewer)
+    recert_pending = recert.ship_reviews.create!(status: :pending)
+
+    ysws_return = second_project
+    ysws_return.ship_reviews.create!(status: :approved, reviewer: @reviewer)
+    ysws_pending = ysws_return.ship_reviews.create!(status: :pending, returned_by: @reviewer)
+
+    ids = Certification::Ship.awaiting_first_review.pluck(:id)
+
+    assert_equal [ first_ship.id ], ids
+    refute_includes ids, recert_pending.id
+    refute_includes ids, ysws_pending.id
+  end
+
+  test "awaiting_first_review ignores reroutes, which are not verdicts" do
+    @project.ship_reviews.create!(status: :misfiled)
+    pending = @project.ship_reviews.create!(status: :pending)
+
+    assert_equal [ pending.id ], Certification::Ship.awaiting_first_review.pluck(:id)
+  end
+
+  test "awaiting_first_review still finds verdicts when chained after other scopes" do
+    @project.ship_reviews.create!(status: :approved, reviewer: @reviewer)
+    @project.ship_reviews.create!(status: :pending)
+
+    assert_empty Certification::Ship.software_only.where(status: :pending).awaiting_first_review
+  end
+
+  test "dashboard_stats counts software ships awaiting a first review" do
+    @project.ship_reviews.create!(status: :pending)
+    hardware_project.ship_reviews.create!(status: :pending)
+    recert = second_project
+    recert.ship_reviews.create!(status: :returned, feedback: "Fix the README.", reviewer: @reviewer)
+    recert.ship_reviews.create!(status: :pending)
+
+    stats = Certification::Ship.dashboard_stats
+
+    assert_equal 2, stats[:pending]
+    assert_equal 1, stats[:awaiting_first_review]
+  end
+
   test "next_eligible never hands a shipwright a hardware ship" do
     @reviewer.grant_role!(:project_certifier)
     hardware = hardware_project.ship_reviews.create!(status: :pending)
@@ -156,6 +201,12 @@ class Certification::ShipTest < ActiveSupport::TestCase
   end
 
   private
+
+  def second_project
+    project = Project.create!(title: "Another Ship", description: "Another software project", ship_status: "submitted")
+    project.memberships.create!(user: @owner, role: :owner)
+    project
+  end
 
   def hardware_project(stage: "build")
     project = Project.create!(title: "Hardware Ship", description: "A hardware build", ship_status: "submitted")

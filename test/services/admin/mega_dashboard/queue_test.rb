@@ -41,6 +41,16 @@ module Admin
         assert_not_includes pending, on_mission
       end
 
+      test "only the ship certification queue reports a never-reviewed count" do
+        ship(software_project)
+        ship(hardware_project("build"))
+
+        assert_equal 1, Queue.find("ship_certifications").awaiting_first_review
+        Queue.all.reject { |queue| queue.key == "ship_certifications" }.each do |queue|
+          assert_nil queue.awaiting_first_review, "#{queue.key} should not report a never-reviewed count"
+        end
+      end
+
       test "hardware build certifications stay out of the software ship queue" do
         hardware = ship(hardware_project("build"))
 
