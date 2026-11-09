@@ -51,6 +51,7 @@ module Certification
     # Read-only classification of every side effect. Safe to call from a GET.
     def preflight
       return outcome([ block(:permanent_rejection, "This project is on hold or permanently rejected. Its reviews cannot be undone.") ]) if project&.hardware_review_blocked?
+      return outcome([ block(:moved_to_fabricate, "This project moved to Fabricate, so its reviews cannot be reopened here.") ]) if project&.fabricate_transfer
       return outcome([ block(:decided, "This review hasn't been decided, so there's nothing to undo.") ]) unless review.decided?
       return outcome([ block(:latest, "A newer review has superseded this one. Undo the most recent decision first.") ]) unless latest_decided_review?
       return outcome([ block(:queued_ships, "Ships were queued behind this review, so undoing it alone would strand them. Use the admin ship status override instead.") ]) if queued_ships_behind?

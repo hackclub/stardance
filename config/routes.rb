@@ -1116,6 +1116,7 @@ Rails.application.routes.draw do
     resource :recertification, only: [ :create ], module: :projects
     resource :mission_resubmission, only: [ :create ], module: :projects
     resource :funding_request, only: [ :create ], module: :projects
+    resource :fabricate_transfer, only: [ :create ], module: :projects
     # The builder's answer to a reviewer's "wrong queue" flag. Singular: a
     # project can only have one submission awaiting an answer at a time.
     resource :queue_mismatch, only: [ :update, :destroy ], module: :projects

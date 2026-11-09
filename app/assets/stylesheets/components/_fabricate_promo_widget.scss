@@ -7,10 +7,10 @@
 .fabricate-promo,
 .fabricate-promo__overlay {
   --fabricate-promo-ground: #071d1a;
-  --fabricate-promo-deep: #0c322c;
+  --fabricate-promo-deep: var(--color-fabricate-mat);
   --fabricate-promo-mat-line: #15463e;
-  --fabricate-promo-gridline: #1e5c52;
-  --fabricate-promo-bone: #edf7f6;
+  --fabricate-promo-gridline: var(--color-fabricate-line);
+  --fabricate-promo-bone: var(--color-fabricate-bone);
   --fabricate-promo-ink: #04110f;
   --fabricate-promo-hazard: #f1c40f;
   --fabricate-promo-steel: #465250;

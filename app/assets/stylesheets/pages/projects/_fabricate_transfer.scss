@@ -1,0 +1,132 @@
+// "Move to Fabricate" confirmation popup on the project page
+// (projects/_fabricate_transfer). A set-1 main container with Fabricate's
+// green mat edge, set in Fabricate's own logo and type (Nippo: Bold for
+// display, Regular for reading, as on fabricate.hackclub.com) since it hands
+// the project off to Fabricate.
+
+.fabricate-transfer {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 100%;
+  max-width: min(560px, 94vw);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #fff;
+  // Every element takes its font straight from --font-family-text (the base
+  // `*` rule), so redefine the token for the popup and its buttons.
+  --font-family-text: "Nippo", "Exo 2", sans-serif;
+
+  &::backdrop {
+    background: var(--color-backdrop);
+    backdrop-filter: blur(2px);
+  }
+
+  &__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--space-l);
+    background-color: var(--color-set-1-bg);
+    border: 2px solid var(--color-fabricate-line);
+    border-radius: 8px;
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--space-s);
+    right: var(--space-s);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-overlay-light-soft);
+    color: var(--color-set-1-fg-secondary);
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-overlay-light);
+      color: #fff;
+    }
+  }
+
+  &__logo {
+    display: block;
+    width: min(240px, 70%);
+    height: auto;
+  }
+
+  &__title {
+    margin: 0;
+    padding-right: var(--space-xl); // clear the close button
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    line-height: var(--line-height-headers);
+  }
+
+  &__link {
+    color: var(--color-fabricate-green);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-fabricate-bone);
+    }
+  }
+
+  &__lead {
+    margin: 0;
+    font-size: var(--font-size-l);
+    line-height: 1.45;
+  }
+
+  &__docs {
+    margin: 0;
+    font-size: var(--font-size-m);
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  &__steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: 0;
+    padding-left: var(--space-l);
+    font-size: var(--font-size-m);
+    line-height: 1.45;
+    color: var(--color-set-1-fg-secondary);
+  }
+
+  &__step {
+    &::marker {
+      color: var(--color-fabricate-green);
+    }
+
+    &--warning {
+      color: var(--color-brand-peach);
+
+      &::marker {
+        color: var(--color-brand-peach);
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-s);
+  }
+}

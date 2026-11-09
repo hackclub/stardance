@@ -209,7 +209,7 @@
                 <% if @project.hardware_stage_locked? %>
                   <% fr = @project.latest_funding_request %>
                   <div class="project-show__stage-toggle project-show__stage-toggle--locked" aria-label="Project stage (locked)">
-                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked">
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked <%= "project-show__stage-choice-label--selected" if @project.design_stage? %>">
                       <% if fr.nil? %>
                         Design Stage
                       <% elsif fr.issues_grant? %>
@@ -222,11 +222,11 @@
                         Design Stage — funding returned
                       <% end %>
                     </span>
-                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked project-show__stage-choice-label--selected">
+                    <span class="project-show__stage-choice-label project-show__stage-choice-label--locked <%= "project-show__stage-choice-label--selected" if @project.build_stage? %>">
                       Build Stage
                     </span>
                   </div>
-                  <%# Keep hardware_stage as "build" so the form still submits correctly %>
+                  <%# Keep the locked hardware_stage so the form still submits correctly %>
                   <%= form.hidden_field :hardware_stage, value: @project.hardware_stage %>
                 <% else %>
                   <div class="project-show__stage-toggle" role="radiogroup" aria-label="Project stage">
@@ -589,6 +589,7 @@
                        project: @project,
                        disabled_message: (@hackatime_linked ? nil : "Link your Hackatime account to start recording") %>
           <% end %>
+          <%= render "projects/fabricate_transfer", project: @project if @project.hardware? %>
           <% devlog_variant = devlog_primary ? :primary : :secondary %>
           <% if devlog_disabled_message %>
             <%= render ActionButtonComponent.new(
@@ -655,7 +656,7 @@
               <% end %>
             <% end %>
           <% end %>
-          <% if is_member && @project.design_stage? %>
+          <% if is_member && @project.design_stage? && !@project.fabricate_transfer %>
             <% if @project.permanently_rejected? %>
               <%= render ActionButtonComponent.new(text: "Project permanently rejected", variant: :secondary, type: :button, disabled: :hard) %>
             <% elsif @project.has_pending_funding_request? %>
@@ -841,6 +842,7 @@
                        project: @project,
                        disabled_message: "Link your Hackatime account to start recording" %>
           <% end %>
+          <%= render "projects/fabricate_transfer", project: @project if @project.hardware? %>
           <%= button_to "/auth/hackatime",
                         method: :post,
                         params: { origin: request.fullpath },
@@ -1014,7 +1016,7 @@
                 while the project is still in the design stage. It belongs on the
                 latest review only - older returned reviews are history the
                 builder has already moved past. %>
-            <% resubmit_available = is_member && @project.design_stage? %>
+            <% resubmit_available = is_member && @project.design_stage? && !@project.fabricate_transfer %>
             <% resubmit_id = (resubmit_available && entry == @project.latest_funding_request) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
@@ -1320,7 +1322,7 @@
 
   <%# Funding request popup — design-stage hardware only. Mirrors the ship
       post modal but collects a complexity tier + requested amount. %>
-  <% if is_member && @project.design_stage? && !@project.permanently_rejected? %>
+  <% if is_member && @project.design_stage? && !@project.permanently_rejected? && !@project.fabricate_transfer %>
     <dialog id="funding-request-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post funding-modal"
             data-controller="modal"

@@ -78,6 +78,11 @@ class ProjectPolicy < ApplicationPolicy
         member?
     end
 
+    # Fabricate trusts the owner's email, so it has to be one Hack Club verified.
+    def transfer_to_fabricate?
+        owns? && user.hca_linked? && record.transferable_to_fabricate?
+    end
+
     private
 
     def member?

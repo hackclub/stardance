@@ -158,6 +158,7 @@ class Project < ApplicationRecord
   has_many :reports, class_name: "Project::Report", dependent: :destroy
   has_many :ship_reviews, class_name: "Certification::Ship", dependent: :restrict_with_exception
   has_many :certification_funding_requests, class_name: "Certification::FundingRequest", dependent: :destroy
+  has_one :fabricate_transfer, class_name: "Project::FabricateTransfer", dependent: :destroy
   has_many :review_notes, class_name: "Certification::ReviewNote", dependent: :destroy
   has_many :permanent_rejection_nominations, class_name: "Certification::PermanentRejectionNomination", dependent: :restrict_with_exception
   has_many :integrity_checks, through: :ship_events, source: :integrity_check
@@ -372,6 +373,8 @@ class Project < ApplicationRecord
       errors.add(:hardware_stage, "cannot be changed after a funding request has been submitted")
     elsif shipped_at_least_once?
       errors.add(:hardware_stage, "cannot be changed after the project has shipped")
+    elsif fabricate_transfer
+      errors.add(:hardware_stage, "cannot be changed after the project moved to Fabricate")
     end
   end
 
@@ -385,7 +388,7 @@ class Project < ApplicationRecord
   # The edit form asks this so it can render a locked display instead of a
   # control that would only fail validation.
   def hardware_stage_locked?
-    has_any_funding_request? || shipped_at_least_once?
+    has_any_funding_request? || shipped_at_least_once? || fabricate_transfer.present?
   end
 
   # A project on a hardware mission can't drop back to software while attached —
@@ -540,6 +543,13 @@ class Project < ApplicationRecord
 
   def hardware_review_pending?
     hardware? && (has_pending_funding_request? || awaiting_ship_review?)
+  end
+
+  # A design-stage hardware project can move to Fabricate while nothing about
+  # it is waiting on, or blocked by, a Stardance reviewer.
+  def transferable_to_fabricate?
+    design_stage? && !fabricate_transfer && !ship_blocked? && !hardware_review_blocked? &&
+      !hardware_review_pending? && review_awaiting_queue_answer.nil?
   end
 
   def permanently_rejected?
@@ -820,6 +830,11 @@ class Project < ApplicationRecord
         fail_label: permanently_rejected? ? "This project was permanently rejected" : "Your project is still under review",
         tooltip: permanently_rejected? ? "This decision is final. This project cannot be submitted for funding or certification again. See the review explanation on this page." : "We'll let you know when a decision has been made.",
         passed: !hardware_review_blocked?
+      },
+      {
+        key: :not_moved_to_fabricate,
+        label: "Your project must not have moved to Fabricate",
+        passed: !fabricate_transfer
       },
       {
         key: :demo_url,
