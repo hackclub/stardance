@@ -8,8 +8,12 @@ module Admin
     # the SQL for when an item entered and left the queue; everything else is
     # derived.
     class Queue
-      Definition = Data.define(:key, :label, :entered_at, :decided_at, :sla_hours, :scope, :pending, :path, :pairs, :open_at) do
+      Definition = Data.define(:key, :label, :entered_at, :decided_at, :sla_hours, :scope, :pending, :path, :pairs, :open_at, :first_review) do
         def url = path.call(Rails.application.routes.url_helpers)
+
+        # How many open items have never had a verdict, for queues where an
+        # item can come back after one. Nil for every other queue.
+        def awaiting_first_review = first_review&.call&.count
 
         # When each item sitting in the queue right now entered it. Read from
         # the same relation the linked page counts, never inferred from a null
@@ -42,6 +46,7 @@ module Admin
           label: "Ship certifications",
           scope: -> { ::Certification::Ship.software_only.pending_or_decided },
           pending: -> { ::Certification::Ship.software_only.where(status: :pending) },
+          first_review: -> { ::Certification::Ship.software_only.awaiting_first_review },
           entered_at: "certification_ship_reviews.created_at",
           decided_at: "certification_ship_reviews.decided_at",
           sla_hours: ::Certification::Ship::SLA_DAYS * 24,
@@ -194,7 +199,7 @@ module Admin
       ].freeze
 
       def self.all
-        @all ||= REGISTRY.map { |attrs| Definition.new(**{ pairs: nil, open_at: nil }.merge(attrs)) }
+        @all ||= REGISTRY.map { |attrs| Definition.new(**{ pairs: nil, open_at: nil, first_review: nil }.merge(attrs)) }
       end
 
       # Resolved at call time rather than held in a constant so the classes

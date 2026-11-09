@@ -68,6 +68,11 @@ class Admin::MegaDashboardControllerTest < ActionDispatch::IntegrationTest
 
       assert_response :success, "queue section #{key} did not render"
       assert_match "mega-dash-queue-#{key}", response.body
+      if key == "ship_certifications"
+        assert_match "Never reviewed", response.body
+      else
+        assert_no_match "Never reviewed", response.body
+      end
     end
   end
 

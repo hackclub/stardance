@@ -183,6 +183,14 @@ module Certification
         .where.not(project_id: user.memberships.select(:project_id))
     }
 
+    # Pending certs on projects no shipwright has given a verdict on yet, so
+    # recertifications after a return and YSWS send-backs drop out. Verdicts
+    # synced from the external Shipwrights dashboard count too. `unscoped` keeps
+    # the outer chain (e.g. `pending`) from leaking into the subquery.
+    scope :awaiting_first_review, -> {
+      pending.where.not(project_id: unscoped.decided.select(:project_id))
+    }
+
     scope :by_project_type, ->(type) {
       type == "unclassified" \
         ? joins(:project).where(projects: { project_type: nil })
@@ -285,6 +293,7 @@ module Certification
 
       {
         pending: pending_ages.size,
+        awaiting_first_review: base.awaiting_first_review.count,
         approved: approved_count,
         returned: returned_count,
         decided: decided_count,

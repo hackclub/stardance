@@ -72,6 +72,14 @@
           </div>
 
           <div class="ship-queue__metric">
+            <span class="ship-queue__label">Never reviewed</span>
+            <span class="ship-queue__metric-value">
+              <%= @stats[:awaiting_first_review] %>
+            </span>
+            <span class="ship-queue__metric-hint">awaiting a first verdict</span>
+          </div>
+
+          <div class="ship-queue__metric">
             <span class="ship-queue__label">Oldest waiting</span>
             <% if @stats[:oldest_pending] %>
               <%= link_to time_ago_in_words(@stats[:oldest_pending].created_at),

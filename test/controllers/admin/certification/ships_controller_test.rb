@@ -38,6 +38,15 @@ class Admin::Certification::ShipsControllerTest < ActionDispatch::IntegrationTes
     assert_select ".ship-queue__table .ship-queue__project-title", count: 1
   end
 
+  test "the never-reviewed count leaves out software ships that already had a verdict" do
+    @software_ship.project.ship_reviews.create!(status: :returned, feedback: "Fix the README.", reviewer: @reviewer)
+
+    get admin_certification_ships_path
+
+    assert_response :success
+    assert_select ".ship-queue__metric", text: /Never reviewed\s+0\s+awaiting a first verdict/
+  end
+
   test "the review logs hide decided hardware ships" do
     @software_ship.update!(reviewer: @reviewer, status: :approved)
     @hardware_ship.update!(reviewer: @reviewer, status: :approved)
