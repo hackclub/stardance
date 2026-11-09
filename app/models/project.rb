@@ -546,10 +546,13 @@ class Project < ApplicationRecord
   end
 
   # A design-stage hardware project can move to Fabricate while nothing about
-  # it is waiting on, or blocked by, a Stardance reviewer.
+  # it is waiting on, or blocked by, a Stardance reviewer, and Stardance has
+  # never funded or shipped it (an undone review can put either back in design).
+  # On a mission, only a hardware one: a software mission's prizes don't move.
   def transferable_to_fabricate?
     design_stage? && !fabricate_transfer && !ship_blocked? && !hardware_review_blocked? &&
-      !hardware_review_pending? && review_awaiting_queue_answer.nil?
+      !hardware_review_pending? && review_awaiting_queue_answer.nil? &&
+      !received_grant? && !shipped_at_least_once? && current_mission&.hardware? != false
   end
 
   def permanently_rejected?

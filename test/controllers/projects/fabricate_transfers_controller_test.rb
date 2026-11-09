@@ -32,6 +32,40 @@ class Projects::FabricateTransfersControllerTest < ActionDispatch::IntegrationTe
     assert_not_transferred
   end
 
+  test "a project Stardance already funded stays put, even back in design" do
+    add_devlog
+    @project.certification_funding_requests.create!(user: @owner, complexity_tier: 2, requested_amount_cents: 4_000, status: :pending)
+                                           .update_columns(status: Certification::FundingRequest.statuses[:approved])
+
+    assert_not_transferred
+  end
+
+  test "a project that already shipped to Stardance stays put" do
+    ship = Post::ShipEvent.new(body: "shipped", uploading_attachments: true)
+    ActiveRecord::Base.transaction do
+      ship.save!(validate: false)
+      Post.create!(project: @project, user: @owner, postable: ship)
+    end
+
+    assert_not_transferred
+  end
+
+  test "a project on a hardware mission like Hackpad can move" do
+    mission = create_mission
+    mission.update!(hardware: true)
+    @project.mission_attachments.create!(mission: mission)
+
+    assert_difference -> { Project::FabricateTransfer.count }, 1 do
+      post project_fabricate_transfer_path(@project)
+    end
+  end
+
+  test "a hardware project on a software mission stays put" do
+    @project.mission_attachments.create!(mission: create_mission)
+
+    assert_not_transferred
+  end
+
   test "a teammate who doesn't own the project can't move it" do
     teammate = create_user(slack_id: "U_FAB_MATE", display_name: "fab-mate")
     @project.memberships.create!(user: teammate, role: :contributor)
