@@ -52,8 +52,10 @@ module Admin
           label: "YSWS reviews (GOI)",
           # Hardware ships still create YSWS reviews nobody works here, so they
           # would sit at the front of the queue's oldest-waiting age forever.
-          scope: -> { ::Certification::Ysws.software_only },
-          pending: -> { ::Certification::Ysws.software_only.pending },
+          # Reviews from banned users or on deleted projects are hidden from the
+          # queue page, so they're left out here too.
+          scope: -> { ::Certification::Ysws.software_only.reviewable },
+          pending: -> { ::Certification::Ysws.software_only.reviewable.pending },
           entered_at: "certification_ysws_reviews.created_at",
           decided_at: "COALESCE(certification_ysws_reviews.reviewed_at, certification_ysws_reviews.returned_at)",
           sla_hours: 72,
