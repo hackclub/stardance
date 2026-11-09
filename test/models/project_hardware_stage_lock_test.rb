@@ -36,7 +36,7 @@ class ProjectHardwareStageLockTest < ActiveSupport::TestCase
 
   test "a project moved to Fabricate can't change stage or ship" do
     @project.update!(hardware_stage: "design")
-    @project.create_fabricate_transfer!(user: @user, fabricate_project_id: 77)
+    @project.create_fabricate_transfer!(user: @user)
 
     assert @project.hardware_stage_locked?
     assert_not @project.update(hardware_stage: "build")

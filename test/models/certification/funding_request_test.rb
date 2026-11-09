@@ -99,7 +99,7 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
   end
 
   test "a project moved to Fabricate can't ask for funding" do
-    @project.create_fabricate_transfer!(user: @owner, fabricate_project_id: 77)
+    @project.create_fabricate_transfer!(user: @owner)
     fr = @project.certification_funding_requests.new(user: @owner, complexity_tier: 2, requested_amount_cents: 3_000)
 
     assert_not fr.valid?

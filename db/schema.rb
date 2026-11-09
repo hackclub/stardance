@@ -1038,7 +1038,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_005516) do
 
   create_table "project_fabricate_transfers", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "fabricate_project_id", null: false
     t.bigint "project_id", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false

@@ -174,7 +174,7 @@ class Certification::ReviewUndoerTest < ActiveSupport::TestCase
       user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
     )
     fr.update!(reviewer: @reviewer, status: :returned, feedback: "needs work")
-    @project.create_fabricate_transfer!(user: @owner, fabricate_project_id: 77)
+    @project.create_fabricate_transfer!(user: @owner)
 
     result = Certification::ReviewUndoer.new(fr, actor: @reviewer).undo!
 

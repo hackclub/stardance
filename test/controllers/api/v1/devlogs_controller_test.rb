@@ -39,6 +39,7 @@ class Api::V1::DevlogsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 3600, devlog["duration_seconds"]
     assert_equal 0, devlog["likes_count"]
     assert_equal 1, devlog["comments_count"]
+    assert_equal @user.id, devlog["author_id"]
 
     assert_equal 1, devlog["media"].size
     assert_equal "image/png", devlog["media"].first["content_type"]

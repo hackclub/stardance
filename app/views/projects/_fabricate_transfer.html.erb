@@ -29,7 +29,7 @@
       <%= image_tag "fabricate/logo-hc.webp", alt: "Fabricate", width: 2393, height: 500, class: "fabricate-transfer__logo" %>
       <h3 id="<%= dialog_id %>-title" class="fabricate-transfer__title">Move this project to Fabricate?</h3>
       <p class="fabricate-transfer__lead">
-        <%= link_to "Fabricate", FabricateService::BASE_URL, class: "fabricate-transfer__link", target: "_blank", rel: "noopener" %>
+        <%= link_to "Fabricate", Project::FabricateTransfer::BASE_URL, class: "fabricate-transfer__link", target: "_blank", rel: "noopener" %>
         is Hack Club's newest hardware program. Here's what happens when you move
         <strong><%= project.title %></strong> there:
       </p>
@@ -41,7 +41,7 @@
       </ul>
       <p class="fabricate-transfer__docs">
         Want to see how Fabricate works first?
-        <%= link_to "Read the overview", FabricateService::OVERVIEW_URL, class: "fabricate-transfer__link", target: "_blank", rel: "noopener" %>
+        <%= link_to "Read the overview", Project::FabricateTransfer::OVERVIEW_URL, class: "fabricate-transfer__link", target: "_blank", rel: "noopener" %>
       </p>
       <%= form_with url: project_fabricate_transfer_path(project),
                     method: :post,

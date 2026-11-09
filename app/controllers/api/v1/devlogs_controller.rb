@@ -11,7 +11,7 @@ class Api::V1::DevlogsController < Api::V1::PublicApiController
     def api_scope
       Post::Devlog
         .where(id: visible_devlog_posts.select(:postable_id))
-        .preload(comments: :user, attachments_attachments: :blob)
+        .preload(:post, comments: :user, attachments_attachments: :blob)
     end
 
     # Devlogs the caller is allowed to see: attached to a live project and
