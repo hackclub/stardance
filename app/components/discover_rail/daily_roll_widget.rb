@@ -8,7 +8,7 @@ module DiscoverRail
     register_as :daily_roll
 
     def render?
-      user.present?
+      user.present? && DailyRoll.open?
     end
 
     def roll

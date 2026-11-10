@@ -42,6 +42,8 @@ class DailyRoll < ApplicationRecord
   # The Monday rng goes live. Days are numbered from it (day 1, day 2, …);
   # pre-launch test rolls show "day -1".
   LAUNCH_ON = Date.new(2026, 6, 15)
+  # The last day anyone can roll. Past days stay browsable on the board.
+  LAST_ROLL_ON = Date.new(2026, 11, 10)
 
   # How a roll's magnitude is built: append digits one at a time, and after
   # each one flip a coin that's slightly less likely to come up "keep going."
@@ -116,6 +118,10 @@ class DailyRoll < ApplicationRecord
     end
 
     [ digits.to_i, MAX_VALUE ].min
+  end
+
+  def self.open?
+    Date.current <= LAST_ROLL_ON
   end
 
   def self.for_today(user)

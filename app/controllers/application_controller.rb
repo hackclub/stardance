@@ -60,13 +60,17 @@ class ApplicationController < ActionController::Base
     return @clearance_sale if defined?(@clearance_sale)
 
     @clearance_sale =
-      if Flipper.enabled?(:shop_open, current_user) && Flipper.enabled?(:clearance_sale, current_user)
+      if shop_open? && Flipper.enabled?(:clearance_sale, current_user)
         region = current_user ? ShopItem.recommended_region_for(current_user) : "US"
         items = ShopItem.cached_shop_page_data[:buyable_standalone].select { |item| item.enabled_in_region?(region) }
         Shop::ClearanceSale.new(items).then { |sale| sale if sale.live? }
       end
   end
   helper_method :clearance_sale
+
+  def shop_open?
+    Flipper.enabled?(:shop_open, current_user) && !current_user&.shop_closed?
+  end
 
   def discover_rail_context
     proc = self.class.discover_rail_context_proc
