@@ -8,6 +8,10 @@ class Projects::FundingRequestsController < ApplicationController
   def create
     authorize @project, :ship?
 
+    if Project.recertification_disabled? && !policy(@project).bypass_recertification_restrictions?
+      redirect_to project_path(@project), alert: Project::FUNDING_DISABLED_MESSAGE and return
+    end
+
     @project.with_lock do
       return if action_items_block_resubmission?(@project.latest_funding_request)
 
