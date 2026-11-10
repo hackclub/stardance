@@ -11,14 +11,26 @@
   <% if nomination.errors.any? %>
     <div class="permanent-rejection__warning" role="alert"><%= nomination.errors.full_messages.to_sentence %></div>
   <% end %>
-  <%= form_with url: admin_certification_permanent_rejection_nominations_path, class: "hardware-review__fraud-form" do |form| %>
+  <%= form_with url: admin_certification_permanent_rejection_nominations_path, class: "hardware-review__fraud-form",
+        data: local_assigns[:modal] ? { controller: "certification--hardware-triage",
+          certification__hardware_triage_guidelines_value: Certification::HardwareTriage.guidelines } : {} do |form| %>
     <%= hidden_field_tag :review_type, nomination.reviewable.is_a?(Certification::FundingRequest) ? "funding" : "ship" %>
     <%= hidden_field_tag :review_id, nomination.reviewable_id %>
     <%= form.label :reason, "Justification (required)", for: "permanent-rejection-reason" %>
     <%= form.text_area :reason, value: nomination.reason, required: true, maxlength: 10_000, rows: 6,
           id: "permanent-rejection-reason", class: "hardware-review__fraud-form-input",
           placeholder: "Why should this project be rejected permanently, rather than returned for changes?",
+          data: local_assigns[:modal] ? { certification__hardware_triage_target: "justification" } : {},
           aria: { describedby: "permanent-rejection-reason-help" } %>
+    <% if local_assigns[:modal] %>
+      <button type="button" class="action-btn action-btn--small action-btn--secondary"
+              aria-controls="permanent-rejection-reason"
+              data-certification--hardware-triage-target="insert"
+              data-action="pointerdown->certification--hardware-triage#preserveSelection click->certification--hardware-triage#insert">
+        Insert shipping guidelines
+      </button>
+      <p class="hardware-triage__status" role="status" data-certification--hardware-triage-target="status"></p>
+    <% end %>
     <div class="hardware-review__fraud-form-actions">
       <% if local_assigns[:modal] %>
         <button type="button" class="action-btn action-btn--small action-btn--secondary"

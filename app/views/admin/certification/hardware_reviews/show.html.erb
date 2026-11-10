@@ -53,6 +53,9 @@
 
     <div class="ship-review__body hardware-review__body">
       <section class="ship-review__details">
+        <%= render "admin/certification/hardware_reviews/triage",
+              triage: Certification::HardwareTriage.new(review_type: @active_review_type, project_id: @project.id) %>
+
         <% if @project.description.present? %>
           <div class="ship-review__panel">
             <h2 class="ship-review__panel-title">What they're building</h2>
