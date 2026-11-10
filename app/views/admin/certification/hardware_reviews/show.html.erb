@@ -60,6 +60,47 @@
           </div>
         <% end %>
 
+        <%
+          phase_devlogs = @project.devlogs.reorder(nil)
+          phase_counts = phase_devlogs.group(:phase).count
+          phase_seconds = phase_devlogs.group(:phase).sum(:duration_seconds)
+        %>
+        <div class="ship-review__panel">
+          <h2 class="ship-review__panel-title">Devlog phases</h2>
+          <dl class="hardware-review__phase-split">
+            <% [["Design", "design"], ["Build", "build"]].each do |label, phase| %>
+              <div>
+                <dt><%= label %></dt>
+                <dd><strong><%= number_with_precision(phase_seconds.fetch(phase, 0) / 3600.0, precision: 2, strip_insignificant_zeros: true) %>h</strong> · <%= pluralize(phase_counts.fetch(phase, 0), "devlog") %></dd>
+              </div>
+            <% end %>
+            <% if (unclassified_count = phase_counts.except("design", "build").values.sum).positive? %>
+              <div>
+                <dt>Unclassified</dt>
+                <dd><strong><%= number_with_precision(phase_seconds.except("design", "build").values.sum / 3600.0, precision: 2, strip_insignificant_zeros: true) %>h</strong> · <%= pluralize(unclassified_count, "devlog") %></dd>
+              </div>
+            <% end %>
+          </dl>
+          <% if phase_counts.any? && !impersonating? && policy([:admin, @project]).reassign_devlog_phases? %>
+            <div>
+              <button type="button" class="action-btn action-btn--small action-btn--secondary"
+                      onclick="document.getElementById('devlog-phase-dialog').showModal()">View and reassign devlogs</button>
+            </div>
+            <dialog id="devlog-phase-dialog" class="devlog-phase-dialog" data-controller="modal"
+                    data-action="turbo:before-cache@document->modal#close" aria-labelledby="devlog-phase-dialog-title">
+              <header class="devlog-phase-dialog__header">
+                <h2 id="devlog-phase-dialog-title">Reassign devlogs · #<%= @project.id %></h2>
+                <button type="button" class="action-btn action-btn--small action-btn--secondary" data-action="click->modal#close">Close</button>
+              </header>
+              <div class="devlog-phase-dialog__body">
+                <%= turbo_frame_tag "devlog-phase-editor", src: admin_project_devlog_phases_path(@project, return_to: request.fullpath), loading: :lazy do %>
+                  <p role="status">Loading devlogs…</p>
+                <% end %>
+              </div>
+            </dialog>
+          <% end %>
+        </div>
+
         <%= turbo_frame_tag "hardware-recordings", src: hardware_recordings_path(@project), loading: "lazy" do %>
           <div class="ship-review__panel" style="min-height: 120px;">
             <p class="ship-review__loading">Loading recordings…</p>

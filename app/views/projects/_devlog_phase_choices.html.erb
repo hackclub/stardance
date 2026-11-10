@@ -1,0 +1,12 @@
+<div class="project-show__phase-toolbar" role="group" aria-label="Stage for devlog #<%= devlog.id %>">
+  <span class="project-show__phase-caption">Stage</span>
+  <div class="project-show__phase-options">
+    <% choices = devlog.phase.blank? ? [["Keep unclassified", ""], ["Design", "design"], ["Build", "build"]] : [["Design", "design"], ["Build", "build"]] %>
+    <% choices.each do |label, value| %>
+      <%= radio_button_tag "phases[#{devlog.id}]", value, devlog.phase.to_s == value,
+            id: "phase_#{devlog.id}_#{value.presence || 'keep'}", form: "devlog-phase-form",
+            class: "project-show__phase-input", data: { devlog_phases_target: "field", action: "change->devlog-phases#reset" } %>
+      <%= label_tag "phase_#{devlog.id}_#{value.presence || 'keep'}", label, class: "project-show__phase-option" %>
+    <% end %>
+  </div>
+</div>

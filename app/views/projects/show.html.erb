@@ -1011,12 +1011,13 @@
 
     <% if @timeline_entries.any? %>
       <section class="project-show__feed<%= ' project-show__feed--reassigning' if reassigning_devlogs %>" aria-label="Project feed"
-               <%= tag.attributes(data: { controller: "devlog-phases", action: "turbo:before-cache@document->devlog-phases#clear" }) if reassigning_devlogs %>>
+               <%= tag.attributes(data: { controller: "devlog-phases", action: "turbo:before-cache@document->devlog-phases#beforeCache" }) if reassigning_devlogs %>>
         <% if reassigning_devlogs %>
           <div class="project-show__phase-intro">
             <h2>Reassign devlogs</h2>
             <p>Choose a stage for each devlog. Logged time stays unchanged.</p>
             <%= link_to "Payout preview ↓", "#devlog-phase-form" %>
+            <%= render "projects/devlog_phase_import", project: @project %>
           </div>
         <% end %>
         <% ship_count = @posts.count { |p| p.postable_type == "Post::ShipEvent" } %>
@@ -1059,18 +1060,7 @@
           <% else %>
             <% if reassigning_devlogs && entry.postable_type == "Post::Devlog" && !entry.postable.deleted? %>
               <div class="project-show__phase-entry">
-                <div class="project-show__phase-toolbar" role="group" aria-label="Stage for devlog #<%= entry.postable_id %>">
-                  <span class="project-show__phase-caption">Stage</span>
-                  <div class="project-show__phase-options">
-                    <% choices = entry.postable.phase.blank? ? [["Keep unclassified", ""], ["Design", "design"], ["Build", "build"]] : [["Design", "design"], ["Build", "build"]] %>
-                    <% choices.each do |label, value| %>
-                      <%= radio_button_tag "phases[#{entry.postable_id}]", value, entry.postable.phase.to_s == value,
-                                           id: "phase_#{entry.postable_id}_#{value.presence || 'keep'}", form: "devlog-phase-form",
-                                           class: "project-show__phase-input", data: { devlog_phases_target: "field", action: "change->devlog-phases#reset" } %>
-                      <%= label_tag "phase_#{entry.postable_id}_#{value.presence || 'keep'}", label, class: "project-show__phase-option" %>
-                    <% end %>
-                  </div>
-                </div>
+                <%= render "projects/devlog_phase_choices", devlog: entry.postable %>
                 <%= render PostComponent.new(post: entry, current_user: current_user, theme: :profile_dark, lazy_media: true, current_user_reposted_post_ids: @reposted_post_ids) %>
               </div>
             <% else %>
@@ -1079,22 +1069,7 @@
           <% end %>
         <% end %>
         <% if reassigning_devlogs %>
-          <%= form_with url: admin_project_devlog_phases_path(@project), method: :patch,
-                        id: "devlog-phase-form", class: "project-show__phase-save",
-                        data: { devlog_phases_target: "form", turbo: true, turbo_frame: "devlog-phase-preview", action: "turbo:submit-start->devlog-phases#start turbo:submit-end->devlog-phases#finish" } do %>
-            <%= label_tag :reason, "Reason for correction (optional)" %>
-            <%= text_area_tag :reason, nil, maxlength: 1000, rows: 2, data: { devlog_phases_target: "field", action: "input->devlog-phases#reset" } %>
-            <div class="project-show__phase-actions">
-              <span data-devlog-phases-target="previewButton" hidden>
-                <%= render ActionButtonComponent.new(text: "Retry calculation", size: :small, disable_with: "Calculating…") %>
-              </span>
-              <%= link_to "Cancel", project_path(@project) %>
-            </div>
-          <% end %>
-          <%= turbo_frame_tag "devlog-phase-preview", class: "project-show__phase-preview", tabindex: -1,
-                              data: { devlog_phases_target: "preview", action: "turbo:frame-load->devlog-phases#loaded turbo:frame-missing->devlog-phases#failed" }, aria: { live: "polite" } do %>
-            <p>No changes selected.</p>
-          <% end %>
+          <%= render "projects/devlog_phase_form", project: @project %>
         <% end %>
       </section>
     <% end %>

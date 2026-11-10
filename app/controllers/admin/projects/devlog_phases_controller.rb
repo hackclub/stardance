@@ -2,19 +2,27 @@ class Admin::Projects::DevlogPhasesController < Admin::ApplicationController
   before_action :set_project
 
   def show
-    redirect_to project_path(@project, reassign_devlogs: 1)
+    if turbo_frame_request?
+      @devlogs = @project.devlogs.with_attached_attachments.preload(:post).reorder("posts.created_at ASC", "post_devlogs.id ASC")
+      @return_to = url_from(params[:return_to])
+      render partial: "editor", layout: false
+    else
+      redirect_to project_path(@project, reassign_devlogs: 1)
+    end
   end
 
   def update
+    @return_to = url_from(params[:return_to])
     if params[:confirmation].present?
       data = verifier.verified(params[:confirmation])
       unless data && data["project_id"] == @project.id && data["actor_id"] == current_user.id
         raise Admin::DevlogPhaseChange::Error, "This preview expired or is invalid. Preview the changes again."
       end
 
+      @return_to = url_from(data["return_to"])
       service = Admin::DevlogPhaseChange.new(@project, actor: current_user, phases: data.fetch("phases"), reason: data.fetch("reason"))
       result = service.apply!(fingerprint: data.fetch("fingerprint"))
-      redirect_to project_path(@project), status: :see_other,
+      redirect_to @return_to || project_path(@project), status: :see_other,
                   notice: "Updated #{result[:changes].size} devlog(s). Payout changes recorded in the audit log."
     else
       @phases = params.permit(phases: {}).fetch(:phases, {}).to_h
@@ -22,7 +30,7 @@ class Admin::Projects::DevlogPhasesController < Admin::ApplicationController
       @preview = Admin::DevlogPhaseChange.new(@project, actor: current_user, phases: @phases, reason: @reason).preview
       @confirmation = verifier.generate(
         { "project_id" => @project.id, "actor_id" => current_user.id, "phases" => @phases,
-          "reason" => @reason, "fingerprint" => @preview[:fingerprint] }, expires_in: 15.minutes
+          "reason" => @reason, "fingerprint" => @preview[:fingerprint], "return_to" => @return_to }, expires_in: 15.minutes
       )
       render :show, layout: false
     end
@@ -32,7 +40,7 @@ class Admin::Projects::DevlogPhasesController < Admin::ApplicationController
       @error = e.message
       render :show, layout: false, status: :unprocessable_entity
     else
-      redirect_to project_path(@project, reassign_devlogs: 1, anchor: "devlog-phase-form"),
+      redirect_to @return_to || project_path(@project, reassign_devlogs: 1, anchor: "devlog-phase-form"),
                   status: :see_other, alert: e.message
     end
   end
