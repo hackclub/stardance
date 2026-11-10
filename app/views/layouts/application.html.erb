@@ -71,7 +71,7 @@
         data-mihi-mode-activation-url-value="<%= mihi_activations_path %>"
         data-mihi-mode-image-url-value="<%= asset_path('mihi/portrait.jpg') %>">
     <% buku_enabled = current_user.present? && Flipper.enabled?(:bukux3, current_user) %>
-    <% if !controller_path.start_with?("admin/") %>
+    <% if !controller_path.start_with?("admin/") && controller_path != "landing" %>
       <% buku_event = BukuX3::Event.current %>
       <%= render "shared/blackhole", intensity: buku_enabled ? (buku_event&.percent || BukuX3::Event::STARTING_PERCENT) : 0,
                  visual_intensity: buku_event&.visual_intensity || 100, progress_url: buku_enabled ? buku_x3_progress_path(format: :json) : nil,
