@@ -28,6 +28,7 @@
   can_delete_project = policy(@project).destroy? && (!@project.shipped? || policy(@project).force_destroy?)
   ship_block_message = Project::ShipBlock::BLOCKED_MESSAGE if @project.ship_blocked?
   recert_restriction = @project.recertification_restriction_message if policy(@project).request_recertification? && !policy(@project).bypass_recertification_restrictions?
+  funding_disabled = @project.design_stage? && Project.recertification_disabled? && !policy(@project).bypass_recertification_restrictions?
   # Shared by the ship CTA, the returned decision card and the recert modal, and
   # computed once because link_blocker_message probes the live URLs every call.
   # Members only: a reviewer opening a returned project shouldn't pay for HTTP
@@ -671,6 +672,8 @@
                       tooltip_position_value: "top"
                     }
                   ) %>
+            <% elsif funding_disabled %>
+              <%= render ActionButtonComponent.new(text: "Funding submissions closed", variant: :secondary, type: :button, disabled: :hard) %>
             <% elsif !@project.has_devlog_since_last_ship? %>
               <%= render ActionButtonComponent.new(
                     text: "Submit for funding",
@@ -1016,7 +1019,7 @@
                 while the project is still in the design stage. It belongs on the
                 latest review only - older returned reviews are history the
                 builder has already moved past. %>
-            <% resubmit_available = is_member && @project.design_stage? && !@project.fabricate_transfer %>
+            <% resubmit_available = is_member && @project.design_stage? && !funding_disabled && !@project.fabricate_transfer %>
             <% resubmit_id = (resubmit_available && entry == @project.latest_funding_request) ? "funding-request-modal-#{@project.id}" : nil %>
             <%= render "projects/funding_request_card",
                        funding_request: entry, project: @project, owner: owner,
@@ -1322,7 +1325,7 @@
 
   <%# Funding request popup — design-stage hardware only. Mirrors the ship
       post modal but collects a complexity tier + requested amount. %>
-  <% if is_member && @project.design_stage? && !@project.permanently_rejected? && !@project.fabricate_transfer %>
+  <% if is_member && @project.design_stage? && !@project.permanently_rejected? && !funding_disabled && !@project.fabricate_transfer %>
     <dialog id="funding-request-modal-<%= @project.id %>"
             class="ship-modal ship-modal--post funding-modal"
             data-controller="modal"

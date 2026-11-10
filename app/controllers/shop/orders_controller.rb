@@ -24,6 +24,11 @@ class Shop::OrdersController < Shop::BaseController
       return
     end
 
+    if @redeemable.nil? && current_user.shop_closed?
+      redirect_to shop_path, alert: "The shop has closed."
+      return
+    end
+
     if @redeemable.nil? && @shop_item.mission_prize_only?
       redirect_to shop_path, alert: "This item can only be claimed by redeeming a prize you have earned."
       return

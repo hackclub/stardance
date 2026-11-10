@@ -21,6 +21,7 @@ Rails.application.config.after_initialize do
     Flipper::Adapters::Strict.with_sync_mode do
       %w[
         shop_open
+        shop_unlocked
         git_commit_2025-12-25
         voting
         shop_backlogged
