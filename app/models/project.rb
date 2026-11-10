@@ -774,6 +774,7 @@ class Project < ApplicationRecord
 
   RECERTIFICATION_DISABLED_MESSAGE = "Stardance has ended, so re-certification is closed.".freeze
   RECERTIFICATION_LIMIT_MESSAGE = "This project has already used its one re-certification.".freeze
+  FUNDING_DISABLED_MESSAGE = "Stardance has ended, so funding submissions are closed.".freeze
 
   def self.recertification_disabled?
     Flipper.enabled?(:disable_recertification)
