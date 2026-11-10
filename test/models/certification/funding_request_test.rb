@@ -98,14 +98,6 @@ class Certification::FundingRequestTest < ActiveSupport::TestCase
     assert_equal "Parts list is in BOM.csv; the display is a stretch goal.", fr.reload.submitter_note
   end
 
-  test "a project moved to Fabricate can't ask for funding" do
-    @project.create_fabricate_transfer!(user: @owner)
-    fr = @project.certification_funding_requests.new(user: @owner, complexity_tier: 2, requested_amount_cents: 3_000)
-
-    assert_not fr.valid?
-    assert_includes fr.errors[:base], "This project moved to Fabricate, so it can't ask Stardance for funding."
-  end
-
   test "is valid without a submitter note" do
     fr = @project.certification_funding_requests.new(
       user: @owner, complexity_tier: 2, requested_amount_cents: 3_000

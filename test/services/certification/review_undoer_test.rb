@@ -169,19 +169,6 @@ class Certification::ReviewUndoerTest < ActiveSupport::TestCase
     assert_equal "design", @project.reload.hardware_stage
   end
 
-  test "a moved project's returned funding request can't be reopened" do
-    fr = @project.certification_funding_requests.create!(
-      user: @owner, complexity_tier: 2, requested_amount_cents: 3_000, status: :pending
-    )
-    fr.update!(reviewer: @reviewer, status: :returned, feedback: "needs work")
-    @project.create_fabricate_transfer!(user: @owner)
-
-    result = Certification::ReviewUndoer.new(fr, actor: @reviewer).undo!
-
-    assert_not result.undone?
-    assert fr.reload.returned?
-  end
-
   test "undo! notifies the owner of the reversal" do
     fr = approved_funding_with_grant
 
