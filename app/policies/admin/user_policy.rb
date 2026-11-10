@@ -70,6 +70,10 @@ class Admin::UserPolicy < ApplicationPolicy
     user&.admin? || user&.fraud_dept?
   end
 
+  def unlock_shop?
+    user&.admin?
+  end
+
   # Narrower than the other fraud actions on purpose: this decides whether
   # someone gets paid, so it sits with approving payout runs rather than with
   # working the queue.

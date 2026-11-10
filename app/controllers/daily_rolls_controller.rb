@@ -11,6 +11,7 @@ class DailyRollsController < ApplicationController
 
   def create
     authorize :daily_roll
+    head :forbidden and return unless DailyRoll.open?
 
     streams = current_user ? roll_for_user : roll_for_anonymous
 

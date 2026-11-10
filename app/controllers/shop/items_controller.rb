@@ -32,6 +32,11 @@ class Shop::ItemsController < Shop::BaseController
       return
     end
 
+    if @redeemable.nil? && current_user&.shop_closed?
+      redirect_to shop_path, alert: "The shop has closed."
+      return
+    end
+
     unless @shop_item.buyable_by_self? || tutorial_item?(@shop_item)
       redirect_to shop_path, alert: "This item cannot be ordered on its own."
       return
@@ -79,7 +84,8 @@ class Shop::ItemsController < Shop::BaseController
   private
 
   def prepare_shop_chrome
-    @shop_open = Flipper.enabled?(:shop_open, current_user)
+    @shop_open = shop_open?
+    @shop_closed = current_user&.shop_closed?
     @clearance_sale_enabled = clearance_sale_enabled?
 @user_region = user_region
     @body_class = "shop-page"

@@ -373,6 +373,16 @@
         <% end %>
       <% end %>
 
+      <% if policy(@user).unlock_shop? %>
+        <% if Flipper.enabled?(:shop_unlocked, @user) %>
+          <%= button_to "Remove shop unlock", admin_user_shop_unlock_path(@user), method: :delete,
+              form: { onsubmit: "return confirm(#{("Let the shop close for #{@user.display_name} again?").to_json})" } %>
+        <% else %>
+          <%= button_to "Unlock shop", admin_user_shop_unlock_path(@user),
+              form: { onsubmit: "return confirm(#{("Reopen the shop for #{@user.display_name}?").to_json})" } %>
+        <% end %>
+      <% end %>
+
       <% if policy(@user).ban? %>
         <% if @user.manual_ysws_override? %>
           <%= button_to "Remove YSWS override", admin_user_ysws_override_path(@user), method: :patch,

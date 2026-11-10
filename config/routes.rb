@@ -738,6 +738,7 @@ Rails.application.routes.draw do
         resource  :ysws_override,            only: [ :update ]
         resources :certificate_credits,      only: [ :create ]
         resource  :fraud_payout_eligibility, only: [ :update ]
+        resource  :shop_unlock,              only: [ :create, :destroy ]
         resources :identities,               only: [ :destroy ]
         resources :streak_credits,           only: [ :create, :destroy ]
         resource  :streak_calendar,          only: [ :show ]

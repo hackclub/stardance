@@ -97,6 +97,6 @@
       <%= link_to "← Back to shop", shop_path, class: "shop-category__back-link" %>
     </p>
   <% else %>
-    <h2>The shop is not opened yet!</h2>
+    <h2><%= @shop_closed ? "The shop has closed." : "The shop is not opened yet!" %></h2>
   <% end %>
 </div>

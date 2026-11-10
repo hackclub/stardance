@@ -51,6 +51,10 @@
         <%= button_to "clear roll (dev)", clear_daily_roll_path, method: :delete, class: "rng-hero__dev-clear" %>
       <% end %>
     <% end %>
+  <% elsif for_today && !DailyRoll.open? %>
+    <span class="rng-hero__label">rng has ended</span>
+    <span class="rng-hero__number rng-hero__number--placeholder">—</span>
+    <%= link_to "see history", rng_history_path, class: "rng-hero__history-link" unless anonymous %>
   <% elsif for_today %>
     <span class="rng-hero__label">You haven't rolled today</span>
     <span class="rng-hero__number rng-hero__number--placeholder">???</span>
