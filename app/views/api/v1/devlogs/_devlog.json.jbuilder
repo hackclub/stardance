@@ -1,5 +1,6 @@
 json.extract! devlog, :id, :body, :duration_seconds, :likes_count, :comments_count,
                       :created_at, :updated_at
+json.author_id devlog.post&.user_id
 
 json.media devlog.attachments do |attachment|
   json.url rails_blob_url(attachment)

@@ -103,6 +103,13 @@
   // featured/super-star surfaces (e.g. .project-show__latest-ship).
   --color-set-4-bg: #66625c;
 
+  // Fabricate (fabricate.hackclub.com), Hack Club's newest hardware program,
+  // on its green workshop mat. Only for things that hand off to Fabricate.
+  --color-fabricate-mat: #0c322c;
+  --color-fabricate-line: #1e5c52;
+  --color-fabricate-bone: #edf7f6;
+  --color-fabricate-green: #33d6a6;
+
   // Subtle white overlays for tinting decorative surfaces atop the dark
   // backdrop (e.g. bio input chrome, kbd hint, hover wash). Branding doc
   // doesn't formalise these — kept as named tokens so usages don't drift.

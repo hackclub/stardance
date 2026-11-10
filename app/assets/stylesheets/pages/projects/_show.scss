@@ -865,6 +865,9 @@ turbo-frame#project_hero {
 // the illustrative rocket/arrow PNGs this row was originally tuned for.
 .project-show__actions {
   display: flex;
+  // Hardware design projects can show five buttons here; wrap rather than
+  // push the last one past the edge.
+  flex-wrap: wrap;
   gap: 14px;
   align-items: stretch;
   position: sticky;

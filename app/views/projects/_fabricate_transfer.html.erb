@@ -1,0 +1,60 @@
+<%# Beside "Post a devlog": hands a design-stage hardware project to Fabricate
+    (fabricate.hackclub.com). The owner of a project that isn't waiting on a
+    Stardance review gets "Move to Fabricate", which opens a popup explaining
+    the move before anything happens; once moved, members get a link to it.
+    Locals: project (required). %>
+<% if project.fabricate_transfer %>
+  <%= render ActionButtonComponent.new(
+        text: "View on Fabricate",
+        variant: :fabricate,
+        href: project.fabricate_transfer.fabricate_url
+      ) %>
+<% elsif policy(project).transfer_to_fabricate? %>
+  <% dialog_id = "fabricate-transfer-#{project.id}" %>
+  <%= render ActionButtonComponent.new(
+        text: "Move to Fabricate",
+        variant: :fabricate,
+        type: :button,
+        onclick: "document.getElementById(#{dialog_id.to_json}).showModal()"
+      ) %>
+  <dialog id="<%= dialog_id %>"
+          class="fabricate-transfer"
+          data-controller="modal"
+          aria-labelledby="<%= dialog_id %>-title">
+    <div class="fabricate-transfer__panel">
+      <button type="button"
+              class="fabricate-transfer__close"
+              aria-label="Close"
+              onclick="this.closest('dialog').close()">&times;</button>
+      <%= image_tag "fabricate/logo-hc.webp", alt: "Fabricate", width: 2393, height: 500, class: "fabricate-transfer__logo" %>
+      <h3 id="<%= dialog_id %>-title" class="fabricate-transfer__title">Move this project to Fabricate?</h3>
+      <p class="fabricate-transfer__lead">
+        <%= link_to "Fabricate", Project::FabricateTransfer::BASE_URL, class: "fabricate-transfer__link", target: "_blank", rel: "noopener" %>
+        is Hack Club's newest hardware program. Here's what happens when you move
+        <strong><%= project.title %></strong> there:
+      </p>
+      <ul class="fabricate-transfer__steps">
+        <li class="fabricate-transfer__step">Its details, banner and the devlogs you posted are copied to Fabricate.</li>
+        <li class="fabricate-transfer__step">If you haven't used Fabricate before, your account there is set up with your Stardance name and bio.</li>
+        <li class="fabricate-transfer__step">You'll sign in to Fabricate with Hack Club and land on the project, ready to keep working on it there.</li>
+        <li class="fabricate-transfer__step fabricate-transfer__step--warning">It stays on Stardance, but it can't be submitted to Stardance for funding anymore. This can't be undone.</li>
+      </ul>
+      <p class="fabricate-transfer__docs">
+        Want to see how Fabricate works first?
+        <%= link_to "Read the overview", Project::FabricateTransfer::OVERVIEW_URL, class: "fabricate-transfer__link", target: "_blank", rel: "noopener" %>
+      </p>
+      <%= form_with url: project_fabricate_transfer_path(project),
+                    method: :post,
+                    class: "fabricate-transfer__actions",
+                    html: { onsubmit: "this.querySelector('[type=submit]').disabled = true" } do %>
+        <%= render ActionButtonComponent.new(
+              text: "Cancel",
+              variant: :secondary,
+              type: :button,
+              onclick: "this.closest('dialog').close()"
+            ) %>
+        <%= render ActionButtonComponent.new(text: "Move to Fabricate", variant: :fabricate, type: :submit) %>
+      <% end %>
+    </div>
+  </dialog>
+<% end %>

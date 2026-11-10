@@ -78,6 +78,12 @@ class ProjectPolicy < ApplicationPolicy
         member?
     end
 
+    # Fabricate matches the owner by the Slack ID Hack Club gave us, and only
+    # sees the devlogs of ID-verified authors through the public API.
+    def transfer_to_fabricate?
+        owns? && user.hca_linked? && user.identity_verified? && record.transferable_to_fabricate?
+    end
+
     private
 
     def member?

@@ -167,6 +167,7 @@ module Certification
     validate :requested_within_tier_max
     validate :approved_within_tier_max
     validate :project_in_design_stage, on: :create
+    validate :project_not_moved_to_fabricate, on: :create
     validate :project_has_devlogs, on: :create
     validate :no_pending_request_exists, on: :create
     validate :owner_eligible_for_funding, on: :create
@@ -431,6 +432,10 @@ module Certification
 
     def project_in_design_stage
       errors.add(:base, "Only projects in the design stage can request funding.") unless project&.design_stage?
+    end
+
+    def project_not_moved_to_fabricate
+      errors.add(:base, "This project moved to Fabricate, so it can't ask Stardance for funding.") if project&.fabricate_transfer
     end
 
     def project_has_devlogs

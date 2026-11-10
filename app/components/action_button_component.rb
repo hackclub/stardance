@@ -2,7 +2,7 @@
 
 class ActionButtonComponent < ViewComponent::Base
   SIZES = %i[small large].freeze
-  VARIANTS = %i[primary secondary destructive].freeze
+  VARIANTS = %i[primary secondary destructive fabricate].freeze
   SURFACES = %i[dark light].freeze
 
   attr_reader :text, :size, :variant, :surface, :icon, :leading_icon,

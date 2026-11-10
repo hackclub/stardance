@@ -12,6 +12,6 @@ class Api::V1::ProjectsController < Api::V1::PublicApiController
 
   private
     def api_scope
-      Project.preload(:devlog_posts, banner_attachment: :blob)
+      Project.preload(:devlog_posts, { fabricate_transfer: :user }, banner_attachment: :blob)
     end
 end

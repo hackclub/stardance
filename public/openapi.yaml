@@ -38,6 +38,19 @@ components:
           items: { type: integer }
         banner_url: { type: string, format: uri, nullable: true, description: Full-size banner image }
         banner_thumb_url: { type: string, format: uri, nullable: true, description: 400x210 webp thumbnail }
+        fabricate_transfer:
+          type: object
+          nullable: true
+          description: Set once the owner moved this design-stage hardware project to Fabricate (fabricate.hackclub.com), which imports it for the owner.
+          properties:
+            moved_at: { type: string, format: date-time }
+            owner:
+              type: object
+              properties:
+                id: { type: integer }
+                slack_id: { type: string }
+                display_name: { type: string }
+                bio: { type: string, nullable: true }
     Comment:
       type: object
       properties:
@@ -57,6 +70,7 @@ components:
         id: { type: integer }
         body: { type: string }
         duration_seconds: { type: integer, nullable: true, description: Time logged for this devlog }
+        author_id: { type: integer, nullable: true, description: The user who posted the devlog }
         likes_count: { type: integer }
         comments_count: { type: integer }
         created_at: { type: string, format: date-time }

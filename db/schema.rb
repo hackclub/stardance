@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_06_153719) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_005516) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1034,6 +1034,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_153719) do
   create_table "privacy_token_uses", primary_key: "jti", id: :string, force: :cascade do |t|
     t.datetime "used_at", null: false
     t.index ["used_at"], name: "index_privacy_token_uses_on_used_at"
+  end
+
+  create_table "project_fabricate_transfers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["project_id"], name: "index_project_fabricate_transfers_on_project_id", unique: true
+    t.index ["user_id"], name: "index_project_fabricate_transfers_on_user_id"
   end
 
   create_table "project_follows", force: :cascade do |t|
@@ -2127,6 +2136,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_153719) do
   add_foreign_key "post_views", "users"
   add_foreign_key "posts", "projects"
   add_foreign_key "posts", "users"
+  add_foreign_key "project_fabricate_transfers", "projects"
+  add_foreign_key "project_fabricate_transfers", "users"
   add_foreign_key "project_follows", "projects"
   add_foreign_key "project_follows", "users"
   add_foreign_key "project_languages", "projects"

@@ -1,6 +1,7 @@
 // Small + large action buttons per docs/branding.md §4.1 / §4.2.
 // Pill-shaped, 2px border, three variants (primary / secondary / destructive),
-// background-aware via the --light-bg modifier per §4.0.
+// background-aware via the --light-bg modifier per §4.0. A fourth, fabricate,
+// is only for handing a project off to Fabricate.
 
 .action-btn {
   display: inline-flex;
@@ -193,6 +194,26 @@
       background-color: var(--color-brand-salmon);
       color: var(--color-set-1-bg);
       filter: brightness(0.92);
+    }
+  }
+
+  // Hands a project off to Fabricate: the secondary button on Fabricate's
+  // green mat instead of a Stardance set.
+  &--fabricate {
+    background-color: var(--color-fabricate-mat);
+    border-color: var(--color-fabricate-line);
+    color: var(--color-fabricate-bone);
+
+    &:hover:not(:disabled):not([aria-disabled="true"]),
+    &:focus-visible:not(:disabled):not([aria-disabled="true"]) {
+      border-color: var(--color-fabricate-green);
+      color: var(--color-fabricate-green);
+    }
+
+    &:active:not([aria-disabled="true"]) {
+      background-color: var(--color-fabricate-green);
+      border-color: var(--color-fabricate-green);
+      color: var(--color-fabricate-mat);
     }
   }
 
