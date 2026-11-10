@@ -1,0 +1,22 @@
+<% return_to = local_assigns[:return_to] %>
+<%= form_with url: admin_project_devlog_phases_path(project), method: :patch,
+      id: "devlog-phase-form", class: "project-show__phase-save",
+      data: { devlog_phases_target: "form", turbo: true, turbo_frame: "devlog-phase-preview", action: "turbo:submit-start->devlog-phases#start turbo:submit-end->devlog-phases#finish" } do %>
+  <%= hidden_field_tag :return_to, return_to if return_to %>
+  <%= label_tag :reason, "Reason for correction (optional)" %>
+  <%= text_area_tag :reason, nil, maxlength: 1000, rows: 2, data: { devlog_phases_target: "field", action: "input->devlog-phases#reset" } %>
+  <div class="project-show__phase-actions">
+    <span data-devlog-phases-target="previewButton" hidden>
+      <%= render ActionButtonComponent.new(text: "Retry calculation", size: :small, disable_with: "Calculating…") %>
+    </span>
+    <% if return_to %>
+      <button type="button" class="action-btn action-btn--small action-btn--secondary" data-action="click->modal#close">Cancel</button>
+    <% else %>
+      <%= link_to "Cancel", project_path(project) %>
+    <% end %>
+  </div>
+<% end %>
+<%= turbo_frame_tag "devlog-phase-preview", class: "project-show__phase-preview", tabindex: -1,
+      data: { devlog_phases_target: "preview", action: "turbo:frame-load->devlog-phases#loaded turbo:frame-missing->devlog-phases#failed" }, aria: { live: "polite" } do %>
+  <p>No changes selected.</p>
+<% end %>

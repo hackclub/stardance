@@ -853,3 +853,90 @@
     }
   }
 }
+
+.hardware-review__phase-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m) var(--space-xl);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+
+  dt {
+    color: var(--color-space-text-muted);
+  }
+
+  dd {
+    margin: var(--space-xs) 0 0;
+  }
+
+  strong {
+    color: var(--color-brand-blue);
+  }
+}
+
+.devlog-phase-dialog {
+  width: min(900px, calc(100vw - var(--space-l) * 2));
+  max-width: none;
+  max-height: calc(100dvh - var(--space-l) * 2);
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 2px solid var(--color-space-border);
+  border-radius: var(--border-radius);
+  background: var(--color-set-1-bg);
+  color: var(--color-space-text);
+
+  &::backdrop {
+    background: color-mix(in srgb, var(--color-set-1-bg) 80%, transparent);
+    backdrop-filter: blur(4px);
+  }
+
+  &__header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    padding: var(--space-m) var(--space-l);
+    background: var(--color-set-1-bg);
+    border-bottom: 1px solid var(--color-space-border);
+  }
+
+  & &__header h2 {
+    margin: 0;
+    font-size: var(--font-size-l);
+  }
+
+  &__body {
+    padding: 0 var(--space-l) var(--space-l);
+    overflow-wrap: anywhere;
+  }
+
+  .project-show__phase-entry {
+    margin-block: var(--space-m);
+  }
+
+  &__log {
+    padding: var(--space-m);
+
+    summary {
+      cursor: pointer;
+    }
+
+    strong,
+    span {
+      display: block;
+    }
+
+    span {
+      margin-top: var(--space-xs);
+      color: var(--color-space-text-muted);
+    }
+  }
+
+  &__text {
+    margin-top: var(--space-m);
+  }
+}

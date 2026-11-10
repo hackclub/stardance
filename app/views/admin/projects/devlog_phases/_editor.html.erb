@@ -1,0 +1,29 @@
+<%= turbo_frame_tag "devlog-phase-editor" do %>
+  <div data-controller="devlog-phases" data-action="turbo:before-cache@document->devlog-phases#beforeCache">
+    <div class="project-show__phase-intro">
+      <p>Choose Design or Build for each devlog. Logged time stays unchanged; preview payout changes before saving.</p>
+      <%= render "projects/devlog_phase_import", project: @project %>
+      <button type="button" class="action-btn action-btn--small action-btn--secondary" data-action="click->devlog-phases#scrollToPreview">Payout preview ↓</button>
+    </div>
+    <% @devlogs.each do |devlog| %>
+      <div class="project-show__phase-entry">
+        <%= render "projects/devlog_phase_choices", devlog: devlog %>
+        <details class="devlog-phase-dialog__log">
+          <summary>
+            <strong>Devlog #<%= devlog.id %> · <%= devlog.post.created_at.strftime("%b %-d, %Y") %> · <%= number_with_precision(devlog.duration_seconds.to_i / 3600.0, precision: 2, strip_insignificant_zeros: true) %>h</strong>
+            <span><%= truncate(devlog.body, length: 140) %></span>
+          </summary>
+          <div class="devlog-phase-dialog__text"><%= simple_format(devlog.body) %></div>
+        </details>
+        <% images = devlog.attachments.select(&:image?) %>
+        <% if images.any? %>
+          <details class="devlog-phase-dialog__log">
+            <summary><%= pluralize(images.size, "image") %></summary>
+            <%= render "shared/post_media", attachments: images, variant: :large, lazy: true %>
+          </details>
+        <% end %>
+      </div>
+    <% end %>
+    <%= render "projects/devlog_phase_form", project: @project, return_to: @return_to %>
+  </div>
+<% end %>

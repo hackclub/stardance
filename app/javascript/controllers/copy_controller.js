@@ -40,9 +40,10 @@ export default class extends Controller {
     const ta = document.createElement("textarea");
     ta.value = text;
     ta.style.cssText = "position:fixed;opacity:0";
-    document.body.appendChild(ta);
+    (this.element.closest("dialog[open]") || document.body).appendChild(ta);
     ta.select();
     document.execCommand("copy");
     ta.remove();
+    this.element.focus();
   }
 }
