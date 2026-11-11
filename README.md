@@ -29,3 +29,7 @@ In the worker resource's **General** tab, add this to **Custom Docker Options**:
 ```sh
 --entrypoint "./bin/rails solid_queue:start"
 ```
+
+## License
+
+Stardance is licensed under the [Apache License 2.0](LICENSE)
