@@ -9,6 +9,7 @@ class Shop::OrdersControllerSaleTest < ActionDispatch::IntegrationTest
     Flipper.enable(:clearance_sale)
     @user = create_user(slack_id: "U-sale-checkout", display_name: "salecheckout", verified: true)
     @user.update!(has_gotten_free_stickers: true)
+    Flipper.enable(:shop_unlocked, @user)
     @user.ledger_entries.create!(amount: 1_000, reason: "test grant", ledgerable: @user, created_by: "test")
     @item = ShopItem.new(name: "Clearance Widget", description: "test item", ticket_cost: 100,
                          type: "ShopItem::ThirdPartyPhysical", enabled: true,
@@ -20,6 +21,7 @@ class Shop::OrdersControllerSaleTest < ActionDispatch::IntegrationTest
 
   teardown do
     Flipper.disable(:clearance_sale)
+    Flipper.disable(:shop_unlocked)
   end
 
   test "checking out at the discount the buyer saw charges that price" do

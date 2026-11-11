@@ -141,15 +141,15 @@
         </ul>
       </section>
 
-      <div class="shop-hub__rail">
-        <%= render DiscoverRailComponent.new %>
-      </div>
-
       <%= render "shop/items/items_row", items: @new_items, title: "New", modifier: "new" %>
       <%= render "shop/items/items_row", items: @popular_items, title: "Popular", modifier: "popular" %>
     <% else %>
       <h2 class="shop-hub__closed"><%= @shop_closed ? "The shop has closed." : "The shop is not opened yet!" %></h2>
     <% end %>
+
+    <div class="shop-hub__rail">
+      <%= render DiscoverRailComponent.new %>
+    </div>
   </div>
 
   <% if current_user&.admin? %>
