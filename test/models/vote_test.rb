@@ -72,7 +72,7 @@ class VoteTest < ActiveSupport::TestCase
     owner, vote = create_reviewable_vote
 
     assert_difference -> { Vote::Event.pending_vote_flags.count }, 1 do
-      assert vote.flag_for_review_by(owner)
+      assert vote.flag_for_review_by(owner, details: "This rating ignored the demo entirely.")
     end
 
     assert vote.pending_flag?
@@ -82,7 +82,7 @@ class VoteTest < ActiveSupport::TestCase
   test "accepted flag discards vote and sends project back to voting" do
     owner, vote = create_reviewable_vote
     reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
-    vote.flag_for_review_by(owner)
+    vote.flag_for_review_by(owner, details: "This rating ignored the demo entirely.")
 
     assert_difference -> { Vote.payout_countable.count }, -1 do
       assert vote.accept_flag(reviewer: reviewer)
@@ -130,7 +130,7 @@ class VoteTest < ActiveSupport::TestCase
   test "rejected flag charges owner and releases payout" do
     owner, vote = create_reviewable_vote
     reviewer = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "reviewer#{SecureRandom.hex(4)}")
-    vote.flag_for_review_by(owner)
+    vote.flag_for_review_by(owner, details: "This rating ignored the demo entirely.")
 
     assert_difference -> { owner.ledger_entries.where(created_by: "vote_flag_review").sum(:amount) }, -Vote::FLAG_COST do
       assert vote.reject_flag(reviewer: reviewer)
@@ -143,8 +143,12 @@ class VoteTest < ActiveSupport::TestCase
   private
     def create_reviewable_vote
       owner = create_user(slack_id: "U#{SecureRandom.hex(8)}", display_name: "owner#{SecureRandom.hex(4)}")
-      project = Project.create!(title: "Project #{SecureRandom.hex(4)}")
+      project = Project.create!(title: "Project #{SecureRandom.hex(4)}", demo_url: "https://example.com/demo", repo_url: "https://github.com/example/project")
       Project::Membership.create!(project: project, user: owner, role: :owner)
+      devlog =Post::Devlog.new(body: "Built the first prototype", duration_seconds: 2.hours.to_i)
+      devlog.uploading_attachments = true
+      devlog.save!
+      Post.create!(project: project, user: owner, postable: devlog)
       ship_event = Post::ShipEvent.create!(body: "Ship it", uploading_attachments: true, certification_status: "approved", hours_at_ship: 2)
       Post.create!(project: project, user: owner, postable: ship_event)
       ship_event.update!(hours_at_ship: 2)
@@ -159,7 +163,8 @@ class VoteTest < ActiveSupport::TestCase
           originality_score: 6,
           technical_score: 6,
           usability_score: 6,
-          storytelling_score: 6
+          storytelling_score: 6,
+          auto_discard_checked_at: Time.current
         )
       end
 
