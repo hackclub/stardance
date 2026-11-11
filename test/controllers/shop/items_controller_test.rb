@@ -15,6 +15,7 @@ class Shop::ItemsControllerTest < ActionDispatch::IntegrationTest
   teardown do
     Flipper.disable(:shop_open)
     Flipper.disable(:clearance_sale)
+    Flipper.disable(:shop_unlocked)
   end
 
   test "category page for a real slug returns 200 with filtered items" do
@@ -71,7 +72,7 @@ class Shop::ItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "item page disables ordering when the item is out of stock" do
     @out_cat.update!(limited: true, stock: 0)
-    sign_in create_user(slack_id: "U-shop-oos", display_name: "shopoos", verified: true)
+    sign_in shop_unlocked_user(slack_id: "U-shop-oos", display_name: "shopoos")
 
     HCAService.stub(:identity!, { "addresses" => [], "phone_number" => "+15551234567" }) do
       get shop_item_path(@out_cat)
@@ -84,7 +85,7 @@ class Shop::ItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "item page offers ordering when the item is in stock" do
     @out_cat.update!(limited: true, stock: 3)
-    sign_in create_user(slack_id: "U-shop-instock", display_name: "shopinstock", verified: true)
+    sign_in shop_unlocked_user(slack_id: "U-shop-instock", display_name: "shopinstock")
 
     HCAService.stub(:identity!, { "addresses" => [], "phone_number" => "+15551234567" }) do
       get shop_item_path(@out_cat)
@@ -94,7 +95,28 @@ class Shop::ItemsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-order-form-target='submitButton']", text: /Get!/
   end
 
+  test "the orders rail still shows once the shop has closed" do
+    sign_in create_user(slack_id: "U-shop-closed", display_name: "shopclosed", verified: true)
+
+    travel_to(User::ShopAccess::SHOP_CLOSES_AT + 1.day) do
+      HCAService.stub(:identity!, { "addresses" => [], "phone_number" => "+15551234567" }) do
+        get shop_path
+      end
+    end
+
+    assert_response :success
+    assert_select "h2.shop-hub__closed", "The shop has closed."
+    assert_select "section[aria-label='Your orders']"
+  end
+
   private
+
+  # The shop has closed for anyone without a pending payout; item pages need it open.
+  def shop_unlocked_user(slack_id:, display_name:)
+    create_user(slack_id: slack_id, display_name: display_name, verified: true).tap do |user|
+      Flipper.enable(:shop_unlocked, user)
+    end
+  end
 
   def build_item(name)
     item = ShopItem.new(
