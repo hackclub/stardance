@@ -163,7 +163,8 @@ class OneTime::RefreshUnsubmittedYswsJustificationJob < ApplicationJob
     project_updated = review.project&.update_description.present? || prior_review?(review)
 
     intro = "The user logged #{original_formatted} on hackatime.#{adjusted_note}"
-    intro += "\n#{commit_activity_sentence(review, total_original_minutes)}"
+    commit_sentence = commit_activity_sentence(review, total_original_minutes)
+    intro += "\n#{commit_sentence}" if commit_sentence
     intro += "\nThis is a project update." if project_updated
     if deducted_minutes.positive?
       deducted_hours = (deducted_minutes / 60.0).round(2)
@@ -245,18 +246,19 @@ class OneTime::RefreshUnsubmittedYswsJustificationJob < ApplicationJob
     ship_cert&.reviewer&.display_name || ship_cert&.reviewer&.email || "Unknown"
   end
 
-  # Rates whole-project commit activity against total logged hours. Degrades to
-  # an "unavailable" line instead of raising — git-host flakiness or a missing
-  # repo URL shouldn't block the rewrite.
+  # Rates whole-project commit activity against total logged hours. Returns nil
+  # when there's no commit data, so the line is left out.
   def commit_activity_sentence(review, total_original_minutes)
     project = review.project
     provider = GitHost::Base.for(project&.repo_url)
-    return "Commit activity could not be checked (no supported repo URL)." unless provider
+    return unless provider
 
     commit_count = provider.fetch_commits(
       since: project.created_at,
       before: review.post_ship_event&.created_at || Time.current
     ).size
+    return if commit_count.zero?
+
     hours = total_original_minutes / 60.0
     return "They had #{commit_count} commits, but no logged hours to compare against." unless hours.positive?
 
@@ -266,7 +268,7 @@ class OneTime::RefreshUnsubmittedYswsJustificationJob < ApplicationJob
     "They had #{commit_count} commits, which compared to the original #{hours.round(1)} logged hours is \"#{rating}\" (#{per_hour.round(2)} commits/hour)."
   rescue StandardError => e
     Rails.logger.warn "#{LOG_PREFIX} commit activity check failed: #{e.class}: #{e.message}"
-    "Commit activity could not be checked (fetch failed)."
+    nil
   end
 
   def format_minutes(minutes)
