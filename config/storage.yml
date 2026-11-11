@@ -17,6 +17,20 @@ cloudflare:
   force_path_style: true
   request_checksum_calculation: "when_required"
   response_checksum_validation: "when_required"
+
+# Data exports on a separate service so their S3 multipart threshold can be raised without changing other R2 uploads.
+cloudflare_exports:
+  service: S3
+  endpoint: https://<%= Rails.application.credentials.dig(:cloudflare, :account_id) %>.r2.cloudflarestorage.com
+  access_key_id: <%= Rails.application.credentials.dig(:cloudflare, :access_key_id) %>
+  secret_access_key: <%= Rails.application.credentials.dig(:cloudflare, :secret_access_key) %>
+  region: auto
+  bucket: <%= Rails.application.credentials.dig(:cloudflare, :bucket) %>
+  force_path_style: true
+  request_checksum_calculation: "when_required"
+  response_checksum_validation: "when_required"
+  upload:
+    multipart_threshold: <%= 5.gigabytes %>
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3
