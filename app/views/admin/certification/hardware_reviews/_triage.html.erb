@@ -1,0 +1,86 @@
+<section class="ship-review__panel hardware-triage" aria-labelledby="hardware-triage-title"
+         data-controller="certification--hardware-triage">
+  <header class="hardware-triage__header">
+    <h2 id="hardware-triage-title" class="ship-review__panel-title"><%= triage.stage ? "#{triage.stage.capitalize} queue triage" : "Queue triage" %></h2>
+    <% if (record = triage.project) %>
+      <span class="hardware-triage__verdict hardware-triage__verdict--<%= record.fetch("verdict") %>"><%= record.fetch("verdict") == "ready" ? "Looks ready" : "Not shipped" %></span>
+    <% end %>
+  </header>
+
+  <% if triage.snapshot %>
+    <p class="hardware-triage__meta">
+      Snapshot checked <time datetime="<%= triage.snapshot.fetch("checkedAt") %>"><%= Date.iso8601(triage.snapshot.fetch("checkedAt")).to_fs(:long) %></time>
+      · Not a live check · Bundled SDHWEX snapshot
+    </p>
+    <% if record %>
+      <p><strong><%= record.fetch("title") %> · #<%= record.fetch("project_id") %></strong></p>
+      <p class="hardware-triage__meta">
+        Submitted <%= record.fetch("submitted") %>
+        <% if triage.stage == "design" %>
+          · Tier <%= record.fetch("tier") %> · Requested <%= number_to_currency(record.fetch("requested")) %>
+          <% unless record["bom_total"].nil? %> · BOM total <%= number_to_currency(record.fetch("bom_total")) %><% end %>
+        <% else %>
+          · Devlogs: <%= record.fetch("build_devlogs") %> build / <%= record.fetch("devlogs") %> total
+        <% end %>
+      </p>
+      <% if record.fetch("fail").any? %>
+        <section class="hardware-triage__failures">
+          <h3>Failed checks (<%= record.fetch("fail").length %>)</h3>
+          <ul><% record.fetch("fail").each do |finding| %><li><%= finding %></li><% end %></ul>
+        </section>
+      <% else %>
+        <p>No automated checks failed in this snapshot. This is not an approval.</p>
+      <% end %>
+      <% if record.fetch("warn").any? %>
+        <section class="hardware-triage__warnings">
+          <h3>Warnings — verify by hand (<%= record.fetch("warn").length %>)</h3>
+          <ul><% record.fetch("warn").each do |warning| %><li><%= warning %></li><% end %></ul>
+        </section>
+      <% end %>
+      <div class="hardware-triage__actions">
+        <% if (repo = triage.safe_link(record["repo"])) %>
+          <%= link_to "Repository ↗", repo, target: "_blank", rel: "noopener noreferrer" %>
+        <% end %>
+        <% if triage.stage == "build" && (demo = triage.safe_link(record["demo"])) %>
+          <%= link_to "Demo link ↗", demo, target: "_blank", rel: "noopener noreferrer" %>
+        <% end %>
+        <% if triage.feedback %>
+          <button type="button" class="action-btn action-btn--small action-btn--secondary"
+                  data-action="certification--hardware-triage#copy">Copy feedback draft</button>
+        <% end %>
+      </div>
+      <% if triage.feedback %>
+        <p role="status" data-certification--hardware-triage-target="status"></p>
+        <div hidden data-certification--hardware-triage-target="fallback">
+          <label for="hardware-triage-draft">Feedback draft — copy manually</label>
+          <%= text_area_tag :hardware_triage_draft, triage.feedback, id: "hardware-triage-draft",
+                readonly: true, rows: 7, class: "hardware-triage__draft",
+                data: { certification__hardware_triage_target: "draft" } %>
+        </div>
+      <% end %>
+    <% else %>
+      <p>Project #<%= @project.id %> is not in this <%= triage.snapshot.fetch("projects").length %>-project <%= triage.stage %> snapshot. This does not mean it passed or failed.</p>
+      <p>Review the current project manually. No live checks are run.</p>
+    <% end %>
+    <details class="hardware-triage__methodology">
+      <summary>About these checks</summary>
+      <p>
+        Imported from <%= triage.stage.capitalize %> Queue Triage. Repo trees, READMEs and root CSVs were checked on GitHub;
+        <% if triage.stage == "design" %>
+          tier and requested amount came from the Stardance database. Build-only requirements (demo video, build devlogs, build photo) were skipped.
+        <% else %>
+          demo hosts were classified; devlog phase and media counts came from the Stardance database.
+        <% end %>
+        Firmware was required when the README or BOM named a microcontroller; PCB source when the README mentioned a PCB.
+      </p>
+      <p>
+        Still needs a human: full STEP assembly with electronics,
+        <%= triage.stage == "design" ? "design screenshots" : "render vs. build photos" %>, originality, and AI-writing flags.
+        Links, files and project details may have changed since the snapshot. Verify draft feedback against current evidence before sending.
+        These tools never submit or decide a review.
+      </p>
+    </details>
+  <% else %>
+    <p>No active design funding or build certification review. No snapshot findings are shown to avoid mixing stages.</p>
+  <% end %>
+</section>
