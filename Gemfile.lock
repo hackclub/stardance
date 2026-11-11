@@ -165,7 +165,7 @@ GEM
     bigdecimal (3.3.1)
     bindata (3.0.0)
     bindex (0.8.1)
-    blazer (3.5.1)
+    blazer (3.5.2)
       activerecord (>= 7.2)
       csv
       railties (>= 7.2)
