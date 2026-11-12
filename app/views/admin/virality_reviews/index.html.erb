@@ -1,21 +1,50 @@
 <% content_for :title, "Virality reviews" %>
 <div class="app-layout app-layout--wide">
-  <section class="app-layout__main app-layout__main--wide virality-review">
-    <h1>Virality reviews</h1>
+  <section class="app-layout__main app-layout__main--wide virality-review" data-controller="hotkeys" data-action="keydown@document->hotkeys#press">
+    <header class="virality-review__top">
+      <h1>Virality reviews</h1>
+      <p class="virality-review__legend" aria-label="Keyboard shortcuts">
+        <span><kbd>J</kbd><kbd>K</kbd> next / previous</span>
+        <span><kbd>O</kbd> open evidence</span>
+        <span><kbd>C</kbd> count</span>
+        <span><kbd>1</kbd><kbd>2</kbd> tier</span>
+        <span><kbd>E</kbd> checklist</span>
+        <span><kbd>N</kbd> note</span>
+        <span><kbd>Esc</kbd> leave field</span>
+      </p>
+    </header>
+    <% @undoable.each do |decision| %>
+      <div class="virality-review__undo" data-controller="virality-review"
+        data-virality-review-deadline-value="<%= decision.process_at.iso8601 %>"
+        data-virality-review-server-time-value="<%= Time.current.iso8601 %>">
+        <span>
+          <strong><%= decision.action.humanize %><%= " #{decision.tier.capitalize}" if decision.action == "approve" %></strong>
+          · <%= link_to decision.project_mention.project.title, admin_virality_reviews_path(queue: "scheduled", mention_id: decision.project_mention_id) %>
+          · <span class="virality-review__countdown" data-virality-review-target="countdown"></span>
+        </span>
+        <%= button_to "Stop", cancel_admin_virality_review_path(decision), class: "virality-review__button virality-review__button--danger" %>
+      </div>
+    <% end %>
     <nav class="virality-review__tabs" aria-label="Review queues">
-      <% { "pending" => "Needs review", "scheduled" => "Scheduled", "reviewed" => "Reviewed" }.each do |queue, label| %>
+      <% Admin::ViralityReviewsController::QUEUES.each do |queue, label| %>
         <%= link_to admin_virality_reviews_path(queue: queue), class: "virality-review__tab", aria: { current: (@queue == queue ? "page" : nil) } do %>
           <%= label %> <span><%= @counts[queue] %></span>
         <% end %>
       <% end %>
     </nav>
+    <% if @queue == "reviewed" && @awaiting_confirmation.positive? %>
+      <p class="virality-review__muted"><%= pluralize(@awaiting_confirmation, "imported verdict") %> awaiting confirmation. Nothing is applied or paid until a reviewer confirms.</p>
+    <% end %>
     <div class="virality-review__layout">
       <aside class="virality-review__queue" aria-label="Submissions">
-        <% @mentions.each do |mention| %>
-          <%= link_to admin_virality_reviews_path(queue: @queue, mention_id: mention.id, page: params[:page]), class: "virality-review__item", aria: { current: (@mention == mention ? "true" : nil) } do %>
+        <% current_index = @mentions.index(@mention) || -1 %>
+        <% @mentions.each_with_index do |mention, index| %>
+          <%= link_to admin_virality_reviews_path(queue: @queue, mention_id: mention.id, page: params[:page]), class: "virality-review__item",
+                aria: { current: (@mention == mention ? "true" : nil) }, data: { hotkey: { current_index + 1 => "j", current_index - 1 => "k" }[index] } do %>
             <strong><%= mention.project.title %></strong>
-            <span>#<%= mention.id %> · <%= mention.created_at.strftime("%b %-d") %></span>
-            <span><%= mention.platform.presence || "Platform not recorded" %></span>
+            <span>#<%= mention.id %> · <%= mention.created_at.strftime("%b %-d") %> · <%= mention.suggested_platform || "Unknown platform" %></span>
+            <% if mention.proposed_action && mention.status == :pending %><span class="virality-review__item-proposal"><%= [mention.proposed_action.humanize, mention.proposed_tier&.capitalize].compact.join(" ") %> · awaiting confirmation</span><% end %>
+            <% if mention.internal_notes.present? %><span class="virality-review__item-note"><%= truncate(mention.internal_notes, length: 60) %></span><% end %>
           <% end %>
         <% end %>
         <% if @mentions.empty? %><p class="virality-review__muted">Nothing in this queue.</p><% end %>

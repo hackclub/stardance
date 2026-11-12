@@ -1,0 +1,29 @@
+<section class="virality-review__panel">
+  <h3>Evidence</h3>
+  <ul class="virality-review__evidence">
+    <% @mention.evidence_urls.each do |url| %>
+      <li>
+        <%= link_to url, url, target: "_blank", rel: "noopener noreferrer", data: { hotkey: "o" } %>
+        <% if (platform = Virality::Evidence.platform_for(url)) %><span class="virality-review__tag"><%= platform %></span><% end %>
+      </li>
+    <% end %>
+    <% if @mention.evidence_urls.empty? %><li><%= @mention.url %></li><% end %>
+  </ul>
+  <div class="virality-review__notes"><%= @mention.submitter_notes.presence || "No submitter notes." %></div>
+  <p class="virality-review__muted">Project status: <%= @mention.project.deleted? ? "Deleted" : @mention.project.ship_status.humanize %></p>
+  <% if @mention.metric_value.present? %>
+    <p>Recorded evidence: <%= number_with_delimiter(@mention.metric_value) %> <%= @mention.metric_name %> on <%= @mention.platform %></p>
+  <% end %>
+  <% if @siblings.any? %>
+    <h3 class="virality-review__subheading">Other mentions for this project</h3>
+    <ul class="virality-review__siblings">
+      <% @siblings.each do |sibling| %>
+        <li>
+          <%= link_to "##{sibling.id}", admin_virality_reviews_path(mention_id: sibling.id) %>
+          <span class="virality-review__tag virality-review__tag--<%= sibling.status %>"><%= [sibling.approved_tier&.capitalize, sibling.status.to_s.humanize].compact.join(" ") %></span>
+          <span class="virality-review__muted"><%= truncate(sibling.url, length: 48) %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

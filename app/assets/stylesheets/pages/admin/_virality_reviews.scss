@@ -1,69 +1,175 @@
+// Virality review workbench. Built for throughput: a dense two-column detail
+// view, a sticky decision column, and visible keyboard hints.
 .virality-review {
   color: var(--color-space-text);
   background: var(--color-set-1-bg);
-  padding: var(--space-xl);
+  padding: var(--space-l);
   border-radius: 8px;
+  font-size: var(--font-size-s);
 
-  h1 {
-    font-size: var(--font-size-xxxxl);
-    margin: 0 0 var(--space-l);
-  }
-  h2 {
-    font-size: var(--font-size-xxl);
-    margin: 0;
-  }
-  h3 {
-    font-size: var(--font-size-l);
-    margin: 0 0 var(--space-m);
-  }
-  p {
-    margin: var(--space-xs) 0;
-  }
-  a {
-    color: var(--color-brand-blue);
-    overflow-wrap: anywhere;
-  }
-  [hidden] {
-    display: none !important;
-  }
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-  }
-  textarea,
-  select,
-  input[type="number"] {
-    display: block;
-    width: 100%;
-    background: var(--color-set-1-bg);
-    color: var(--color-space-text);
-    border: 1px solid var(--color-space-border);
-    border-radius: 8px;
-    padding: var(--space-s);
-    margin-top: var(--space-xs);
-  }
-  textarea {
-    resize: vertical;
-  }
-  summary {
-    cursor: pointer;
+  // The admin layout styles bare elements under .admin-content; match its
+  // specificity so the workbench keeps its own compact scale.
+  .admin-content & {
+    h1 {
+      font-size: var(--font-size-xxl);
+      margin: 0;
+    }
+    h2 {
+      font-size: var(--font-size-xl);
+      margin: 0;
+    }
+    h3 {
+      font-size: var(--font-size-m);
+      margin: 0 0 var(--space-xs);
+    }
+    p {
+      margin: var(--space-xxxs) 0;
+    }
+    a {
+      color: var(--color-brand-blue);
+      overflow-wrap: anywhere;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+    label {
+      display: block;
+      color: var(--color-space-text-muted);
+      margin-top: var(--space-xs);
+    }
+    textarea,
+    select,
+    input[type="number"] {
+      display: block;
+      width: 100%;
+      background: var(--color-set-1-bg);
+      color: var(--color-space-text);
+      border: 1px solid var(--color-space-border);
+      border-radius: 6px;
+      padding: var(--space-xxs) var(--space-xs);
+      margin-top: var(--space-xxxs);
+      &:focus-visible {
+        outline: 2px solid var(--color-brand-lilac);
+        outline-offset: 1px;
+      }
+    }
+    textarea {
+      resize: vertical;
+    }
+    summary {
+      cursor: pointer;
+    }
+    kbd {
+      display: inline-block;
+      min-width: 1.4em;
+      padding: 0 var(--space-xxxs);
+      border: 1px solid var(--color-space-border);
+      border-radius: 4px;
+      font: inherit;
+      font-size: var(--font-size-xs);
+      line-height: 1.4;
+      text-align: center;
+      color: var(--color-space-text-muted);
+    }
+    // Buttons need the extra weight to beat the admin button defaults.
+    .virality-review__chip,
+    .virality-review__button {
+      background: var(--color-set-1-bg);
+      color: var(--color-space-text);
+      border: 1px solid var(--color-space-border);
+      border-radius: 100px;
+      cursor: pointer;
+      &:hover:not(:disabled),
+      &:focus-visible {
+        border-color: var(--color-brand-lilac);
+      }
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+    .virality-review__chip {
+      padding: 0 var(--space-xs);
+      font-size: var(--font-size-xs);
+    }
+    .virality-review__button {
+      padding: var(--space-xxs) var(--space-s);
+      font-weight: 600;
+      &--primary {
+        background: var(--color-brand-mint);
+        border-color: var(--color-brand-mint);
+        color: var(--color-set-1-bg);
+        kbd {
+          color: inherit;
+          border-color: currentColor;
+        }
+      }
+      &--danger {
+        color: var(--color-brand-salmon);
+        border-color: var(--color-brand-salmon);
+      }
+    }
+    ul,
+    ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      li {
+        padding: var(--space-xxxs) 0;
+      }
+    }
   }
 
+  &__top,
+  &__heading,
+  &__payout,
+  &__undo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-m);
+  }
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-m);
+    color: var(--color-space-text-muted);
+    font-size: var(--font-size-xs);
+    kbd {
+      margin-right: var(--space-xxxs);
+    }
+  }
   &__muted,
   &__item span {
     color: var(--color-space-text-muted);
-    font-size: var(--font-size-m);
+  }
+  &__undo {
+    margin-top: var(--space-s);
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--color-brand-highlight);
+    border-radius: 8px;
+    background: var(--color-brand-highlight-faint);
+  }
+  &__countdown {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-brand-highlight);
   }
   &__tabs {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-l);
+    margin-top: var(--space-s);
     border-bottom: 1px solid var(--color-set-2-bg);
   }
   &__tab {
-    padding: var(--space-s) 0;
+    padding: var(--space-xs) 0;
     text-decoration: none;
     border-bottom: 2px solid transparent;
     &[aria-current="page"] {
@@ -71,82 +177,138 @@
       border-color: var(--color-brand-highlight);
     }
     span {
-      margin-left: var(--space-xs);
+      margin-left: var(--space-xxxs);
       color: var(--color-space-text-muted);
     }
   }
   &__layout {
     display: grid;
-    grid-template-columns: minmax(200px, 25%) minmax(0, 1fr);
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
   }
   &__queue {
     border-right: 1px solid var(--color-set-2-bg);
-    padding: var(--space-l) var(--space-m) var(--space-l) 0;
+    padding: var(--space-s) var(--space-s) var(--space-s) 0;
   }
   &__item {
     display: flex;
     flex-direction: column;
     gap: var(--space-xxxs);
-    padding: var(--space-m);
-    margin-bottom: var(--space-xs);
-    border: 2px solid transparent;
-    border-radius: 8px;
+    padding: var(--space-xs) var(--space-s);
+    border-left: 2px solid transparent;
+    border-radius: 0 6px 6px 0;
     text-decoration: none;
     strong {
       color: var(--color-space-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    span {
+      font-size: var(--font-size-xs);
     }
     &[aria-current="true"] {
       background: var(--color-set-2-bg);
       border-color: var(--color-brand-lilac);
     }
   }
+  span.virality-review__item-note {
+    color: var(--color-brand-peach);
+  }
+  span.virality-review__item-proposal {
+    color: var(--color-brand-yellow);
+  }
   &__detail {
-    padding: var(--space-l) 0 0 var(--space-l);
+    padding: var(--space-s) 0 0 var(--space-m);
     min-width: 0;
   }
-  &__heading,
-  &__payout {
+  &__links {
     display: flex;
-    justify-content: space-between;
-    gap: var(--space-m);
-    align-items: center;
     flex-wrap: wrap;
+    gap: var(--space-s);
+    margin-left: auto;
   }
-  &__status {
-    color: var(--color-brand-blue);
+  &__columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-m);
+    align-items: start;
+    margin-top: var(--space-s);
   }
-  &__section {
-    padding: var(--space-l) 0;
-    border-bottom: 1px solid var(--color-set-2-bg);
-  }
-  &__evidence {
+  &__panel {
+    padding: var(--space-s);
+    margin-bottom: var(--space-s);
     border: 1px solid var(--color-set-2-bg);
-    padding: var(--space-m);
     border-radius: 8px;
+  }
+  &__subheading {
+    margin-top: var(--space-m);
+  }
+  &__evidence a {
+    font-size: var(--font-size-m);
   }
   &__notes {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    margin-top: var(--space-m);
+    margin: var(--space-xs) 0;
+    padding: var(--space-xs) var(--space-s);
+    border-left: 2px solid var(--color-set-3-bg);
+  }
+  &__tag {
+    display: inline-block;
+    padding: 0 var(--space-xs);
+    border: 1px solid currentColor;
+    border-radius: 100px;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    color: var(--color-brand-blue);
+    &--approved {
+      color: var(--color-brand-mint);
+    }
+    &--rejected {
+      color: var(--color-brand-salmon);
+    }
+    &--on-hold {
+      color: var(--color-brand-peach);
+    }
+    &--scheduled,
+    &--awaiting-confirmation {
+      color: var(--color-brand-yellow);
+    }
+  }
+  &__proposal {
+    padding: var(--space-xs) var(--space-s);
+    margin-bottom: var(--space-s);
+    border: 1px solid var(--color-brand-yellow);
+    border-radius: 8px;
+    background: var(--color-brand-highlight-faint);
   }
   &__fields {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
-    gap: var(--space-s);
+    gap: var(--space-xs);
+    label {
+      margin-top: 0;
+    }
   }
   &__choices {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-m);
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+  }
+  label.virality-review__choice,
+  label.virality-review__check {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    margin-top: 0;
+    color: var(--color-space-text);
+    cursor: pointer;
   }
   &__choice {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-s);
-    padding: var(--space-m);
-    border: 2px solid var(--color-set-2-bg);
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--color-set-2-bg);
     border-radius: 8px;
-    cursor: pointer;
     &:has(input:checked) {
       border-color: var(--color-brand-lilac);
       background: var(--color-set-2-bg);
@@ -157,59 +319,46 @@
     }
     span span {
       color: var(--color-space-text-muted);
-      margin-top: var(--space-xxxs);
+      font-size: var(--font-size-xs);
     }
   }
   &__payout {
-    margin-top: var(--space-l);
+    margin-top: var(--space-xs);
     strong {
       color: var(--color-brand-mint);
-      font-size: var(--font-size-xxl);
+      font-size: var(--font-size-l);
     }
   }
-  &__check {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-s);
-    margin-bottom: var(--space-m);
+  &__checklist {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xxxs) var(--space-s);
   }
   &__exception {
-    margin: var(--space-m) 0;
+    margin-top: var(--space-xs);
   }
+  &__chips,
   &__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-s);
-    margin-top: var(--space-m);
+    gap: var(--space-xxs);
+    margin-top: var(--space-xxs);
   }
-  &__danger {
-    background: var(--color-set-1-bg);
-    color: var(--color-brand-salmon);
-    border: 2px solid var(--color-brand-salmon);
-    padding: var(--space-xs) var(--space-m);
-    border-radius: 100px;
-    cursor: pointer;
+  &__actions {
+    margin-top: var(--space-s);
   }
   &__scheduled {
-    border: 2px solid var(--color-brand-highlight);
-    padding: var(--space-l);
-    margin-top: var(--space-l);
+    border: 1px solid var(--color-brand-highlight);
+    padding: var(--space-s);
+    margin-bottom: var(--space-s);
     border-radius: 8px;
-  }
-  &__countdown {
-    font-variant-numeric: tabular-nums;
-    color: var(--color-brand-highlight);
   }
   &__error {
     color: var(--color-brand-salmon);
   }
-  &__history {
-    list-style: none;
-    padding: 0;
-    li {
-      padding: var(--space-m) 0;
-      border-bottom: 1px solid var(--color-set-2-bg);
-    }
+  &__history li {
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--color-set-2-bg);
   }
   &__table-wrap {
     overflow-x: auto;
@@ -219,12 +368,20 @@
     }
     th,
     td {
-      padding: var(--space-xs);
+      padding: var(--space-xxxs);
     }
   }
 
+  @media (max-width: 1100px) {
+    &__columns {
+      grid-template-columns: 1fr;
+    }
+  }
   @media (max-width: 800px) {
     padding: var(--space-m);
+    &__legend {
+      display: none;
+    }
     &__layout {
       grid-template-columns: 1fr;
     }
@@ -242,7 +399,8 @@
       padding-left: 0;
     }
     &__fields,
-    &__choices {
+    &__choices,
+    &__checklist {
       grid-template-columns: 1fr;
     }
   }

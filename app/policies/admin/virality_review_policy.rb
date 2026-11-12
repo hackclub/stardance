@@ -3,4 +3,5 @@ class Admin::ViralityReviewPolicy < ApplicationPolicy
   def show? = ViralityDecision.reviewer?(user)
   def create? = ViralityDecision.reviewer?(user)
   def cancel? = ViralityDecision.reviewer?(user)
+  def triage? = ViralityDecision.reviewer?(user)
 end

@@ -37,6 +37,18 @@ class ViralityDecision < ApplicationRecord
   DELAY = 30.seconds
   ACTIONS = %w[approve reject reverse].freeze
   STATUSES = %w[scheduled cancelled processed failed].freeze
+  # One-click review notes. "%{threshold}" is filled in from the selected
+  # platform and metric.
+  REPLIES = {
+    "Not a traction link" => "Hi! This link points to your project itself, not a post or page showing traction. Submit the post that went viral!",
+    "Below threshold" => "Hi! This doesn't hit the %{threshold}. Feel free to submit it again once it gets there!",
+    "Built before Stardance" => "Hi! Traction on projects made before Stardance doesn't count toward the virality bonus sadly :( If you have any questions, ask in #stardance-help on Slack :)",
+    "Heavy AI usage" => "Hi! Unfortunately we cannot accept your submission due to heavy AI usage. For more information ask in #stardance-help on Slack.",
+    "Not eligible" => "Hi! Unfortunately we cannot accept your submission. For more information ask in #stardance-help on Slack.",
+    "Duplicate" => "Seems like a duplicate!",
+    "Unsupported platform" => "Hi! Unfortunately this isn't one of the platforms we can give virality bonuses for yet, but this is still cool!",
+    "Well done" => "Well done! :)"
+  }.freeze
 
   has_paper_trail
   belongs_to :project_mention
@@ -174,7 +186,7 @@ class ViralityDecision < ApplicationRecord
   end
 
   def mention_changes
-    common = { reviewer: reviewer, reviewer_notes: reason }
+    common = { reviewer: reviewer, reviewer_notes: reason, on_hold_at: nil, proposed_action: nil, proposed_tier: nil }
     case action
     when "approve"
       common.merge(approved_at: Time.current, rejected_at: nil, approved_tier: tier,

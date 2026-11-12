@@ -785,6 +785,7 @@ Rails.application.routes.draw do
     resources :virality_reviews, only: [ :index, :show ] do
       post :create, on: :member
       post :cancel, on: :member
+      post :triage, on: :member
     end
     resources :ledger_entries, only: [ :index ]
     get "super_stars", to: "super_stars#show", as: :super_stars
