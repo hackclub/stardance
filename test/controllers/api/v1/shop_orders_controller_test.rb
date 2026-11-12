@@ -52,7 +52,7 @@ class Api::V1::ShopOrdersControllerTest < ActionDispatch::IntegrationTest
       {
         "id" => @order.id, "aasm_state" => "fulfilled", "item_name" => "API Printer",
         "external_ref" => "Bambu AU AU787303367675330561", "tracking_number" => nil,
-        "fulfilled_at" => @order.fulfilled_at.as_json, "region" => "AU"
+        "fulfillment_cost" => nil, "fulfilled_at" => @order.fulfilled_at.as_json, "region" => "AU"
       },
       response.parsed_body
     )
@@ -99,6 +99,86 @@ class Api::V1::ShopOrdersControllerTest < ActionDispatch::IntegrationTest
     assert_response :bad_request
   end
 
+  test "address returns the decrypted address and is audit logged under the key's owner" do
+    assert_difference -> { @order.versions.where(event: "address_access").count }, 1 do
+      get address_api_v1_shop_order_path(@order), headers: auth_headers
+    end
+
+    assert_response :success
+    assert_equal({ "id" => @order.id, "address" => @order.frozen_address }, response.parsed_body)
+    assert_equal @packer.id.to_s, @order.versions.find_by!(event: "address_access").whodunnit
+
+    revealed = PaperTrail::Version.find_by!(item_type: "User", item_id: @buyer.id, event: "address_revealed")
+    assert_equal @packer.id.to_s, revealed.whodunnit
+  end
+
+  test "address respects the packer's assigned regions" do
+    @packer.update!(regions: [ "US" ])
+
+    get address_api_v1_shop_order_path(@order), headers: auth_headers
+
+    assert_response :forbidden
+    assert_not @order.versions.exists?(event: "address_access")
+  end
+
+  test "address is hidden for digital items" do
+    @order.shop_item.update_columns(type: ShopOrder::DIGITAL_FULFILLMENT_TYPES.first)
+
+    get address_api_v1_shop_order_path(@order), headers: auth_headers
+
+    assert_response :forbidden
+  end
+
+  test "fulfill marks an awaiting order fulfilled with cost, reference and tracking" do
+    await_fulfillment!
+
+    assert_difference -> { Notifications::ShopOrders::StatusChanged.where(record: @order).count }, 1 do
+      post fulfill_api_v1_shop_order_path(@order),
+           params: { external_ref: "Amazon 113-1234567", fulfillment_cost: "24.99", tracking_number: " #{UPS} " },
+           headers: auth_headers, as: :json
+    end
+
+    assert_response :success
+    assert_equal "fulfilled", response.parsed_body["aasm_state"]
+
+    @order.reload
+    assert @order.fulfilled?
+    assert_equal "Amazon 113-1234567", @order.external_ref
+    assert_equal BigDecimal("24.99"), @order.fulfillment_cost
+    assert_equal UPS, @order.tracking_number
+    assert_equal @packer.display_name, @order.fulfilled_by
+
+    audit = @order.versions.where(event: "update").last
+    assert_equal @packer.id.to_s, audit.whodunnit
+  end
+
+  test "fulfill works without any details, like the admin page" do
+    await_fulfillment!
+
+    post fulfill_api_v1_shop_order_path(@order), params: {}, headers: auth_headers, as: :json
+
+    assert_response :success
+    assert @order.reload.fulfilled?
+  end
+
+  test "fulfill rejects orders that are not awaiting fulfillment" do
+    post fulfill_api_v1_shop_order_path(@order), params: { external_ref: "X" }, headers: auth_headers, as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "Bambu AU AU787303367675330561", @order.reload.external_ref
+  end
+
+  test "fulfill rejects a negative or non-numeric cost" do
+    await_fulfillment!
+
+    [ "-1", "lots" ].each do |cost|
+      post fulfill_api_v1_shop_order_path(@order), params: { fulfillment_cost: cost }, headers: auth_headers, as: :json
+
+      assert_response :bad_request
+    end
+    assert @order.reload.awaiting_periodical_fulfillment?
+  end
+
   test "an unknown order is not found" do
     get api_v1_shop_order_path(0), headers: auth_headers
 
@@ -117,6 +197,18 @@ class Api::V1::ShopOrdersControllerTest < ActionDispatch::IntegrationTest
     patch api_v1_shop_order_path(@order), params: { tracking_number: UPS }, headers: headers
     assert_response :forbidden
     assert_nil @order.reload.tracking_number
+
+    get address_api_v1_shop_order_path(@order), headers: headers
+    assert_response :forbidden
+
+    await_fulfillment!
+    post fulfill_api_v1_shop_order_path(@order), params: { external_ref: "X" }, headers: headers
+    assert_response :forbidden
+    assert @order.reload.awaiting_periodical_fulfillment?
+  end
+
+  def await_fulfillment!
+    @order.update_columns(aasm_state: "awaiting_periodical_fulfillment", fulfilled_at: nil, external_ref: nil)
   end
 
   def auth_headers
