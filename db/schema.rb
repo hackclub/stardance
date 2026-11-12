@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_005516) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_12_190353) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1094,6 +1094,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_005516) do
     t.datetime "updated_at", null: false
     t.string "url", null: false
     t.string "approved_tier"
+    t.text "internal_notes"
+    t.text "extra_links"
+    t.string "review_checklist", default: [], null: false, array: true
+    t.datetime "on_hold_at"
+    t.string "proposed_action"
+    t.string "proposed_tier"
     t.index ["project_id"], name: "index_project_mentions_on_project_id"
     t.index ["reviewer_id"], name: "index_project_mentions_on_reviewer_id"
     t.check_constraint "approved_tier IS NULL OR (approved_tier::text = ANY (ARRAY['good'::character varying::text, 'great'::character varying::text]))", name: "project_mentions_approved_tier"

@@ -552,3 +552,6 @@ application.register("stardance-finale", StardanceFinaleController);
 
 import ViralityReviewController from "./virality_review_controller";
 application.register("virality-review", ViralityReviewController);
+
+import HotkeysController from "./hotkeys_controller";
+application.register("hotkeys", HotkeysController);
