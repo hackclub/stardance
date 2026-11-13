@@ -797,8 +797,36 @@ class Project < ApplicationRecord
     Flipper::Adapters::ActiveRecord::Gate.where(feature_key: "limit_recertifications", key: "boolean", value: "true").pick(:created_at)
   end
 
+  # A fixed rollout boundary makes this a second chance for existing returns,
+  # not a new allowance every time a reviewer returns another submission.
+  HARDWARE_EXTRA_RESUBMISSION_STARTS_AT = Time.utc(2026, 11, 12, 19, 9, 8).freeze
+  HARDWARE_EXTRA_RESUBMISSION_USED_MESSAGE = "This project has already used its extra hardware resubmission.".freeze
+
+  def hardware_extra_resubmission_eligible?
+    hardware? && !hardware_review_blocked? &&
+      [ certification_funding_requests, ship_reviews ].any? do |reviews|
+        reviews.returned.where("decided_at < ?", HARDWARE_EXTRA_RESUBMISSION_STARTS_AT).exists?
+      end
+  end
+
+  def hardware_extra_resubmission_used?
+    [ certification_funding_requests, ship_reviews ].any? do |reviews|
+      reviews.where("created_at >= ?", HARDWARE_EXTRA_RESUBMISSION_STARTS_AT).exists?
+    end
+  end
+
+  def funding_restriction_message
+    if hardware_extra_resubmission_eligible?
+      HARDWARE_EXTRA_RESUBMISSION_USED_MESSAGE if hardware_extra_resubmission_used?
+    elsif Project.recertification_disabled?
+      FUNDING_DISABLED_MESSAGE
+    end
+  end
+
   def recertification_restriction_message
-    if Project.recertification_disabled?
+    if hardware_extra_resubmission_eligible?
+      HARDWARE_EXTRA_RESUBMISSION_USED_MESSAGE if hardware_extra_resubmission_used?
+    elsif Project.recertification_disabled?
       RECERTIFICATION_DISABLED_MESSAGE
     elsif recertification_limit_reached?
       RECERTIFICATION_LIMIT_MESSAGE

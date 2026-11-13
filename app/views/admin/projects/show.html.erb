@@ -162,6 +162,18 @@
           </form>
         <% end %>
       <% end %>
+      <% if policy(@project).force_review? && !@project.hardware_review_blocked? && !@project.ship_blocked? && !@project.fabricate_transfer && !@project.has_pending_funding_request? && !@project.ship_reviews.pending.exists? %>
+        <% if @project.certification_funding_requests.exists? %>
+          <%= button_to "Force Funding Review", force_review_admin_project_path(@project),
+                params: { review_type: "funding" }, method: :post,
+                form: { onsubmit: "return confirm('Resubmit the last funding request for review? This does not approve or issue funding.')" } %>
+        <% end %>
+        <% if @project.ship_reviews.exists? %>
+          <%= button_to "Force Build Review", force_review_admin_project_path(@project),
+                params: { review_type: "build" }, method: :post,
+                form: { onsubmit: "return confirm('Resubmit this build for review? This does not approve the project or issue funding.')" } %>
+        <% end %>
+      <% end %>
       <% if policy(@project).convert_to_software? && @project.hardware? %>
         <%= button_to "Convert to Software",
               convert_to_software_admin_project_path(@project),

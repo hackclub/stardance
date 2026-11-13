@@ -757,6 +757,7 @@ Rails.application.routes.draw do
         post :restore
         post :delete
         post :update_ship_status
+        post :force_review
         post :force_state
         post :reset_devlogs
         post :resync_hackatime
