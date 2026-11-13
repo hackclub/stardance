@@ -30,7 +30,8 @@
   can_delete_project = policy(@project).destroy? && (!@project.shipped? || policy(@project).force_destroy?)
   ship_block_message = Project::ShipBlock::BLOCKED_MESSAGE if @project.ship_blocked?
   recert_restriction = @project.recertification_restriction_message if policy(@project).request_recertification? && !policy(@project).bypass_recertification_restrictions?
-  funding_disabled = @project.design_stage? && Project.recertification_disabled? && !policy(@project).bypass_recertification_restrictions?
+  funding_restriction = @project.funding_restriction_message if @project.design_stage? && !policy(@project).bypass_recertification_restrictions?
+  funding_disabled = funding_restriction.present?
   # Shared by the ship CTA, the returned decision card and the recert modal, and
   # computed once because link_blocker_message probes the live URLs every call.
   # Members only: a reviewer opening a returned project shouldn't pay for HTTP
@@ -684,7 +685,7 @@
                     }
                   ) %>
             <% elsif funding_disabled %>
-              <%= render ActionButtonComponent.new(text: "Funding submissions closed", variant: :secondary, type: :button, disabled: :hard) %>
+              <%= render ActionButtonComponent.new(text: funding_restriction, variant: :secondary, type: :button, disabled: :hard) %>
             <% elsif !@project.has_devlog_since_last_ship? %>
               <%= render ActionButtonComponent.new(
                     text: "Submit for funding",

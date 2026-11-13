@@ -92,6 +92,57 @@ class Admin::ProjectsController < Admin::ApplicationController
     redirect_to admin_project_path(@project), notice: "Ship status changed from #{old_status} to #{new_status}."
   end
 
+  def force_review
+    @project = ::Project.find(params[:id])
+    authorize @project, :force_review?
+
+    @project.with_lock do
+      if @project.hardware_review_blocked? || @project.ship_blocked? || @project.fabricate_transfer
+        redirect_to admin_project_path(@project), alert: "Resolve this project's review or shipping block before reopening review." and return
+      end
+
+      if @project.has_pending_funding_request? || @project.ship_reviews.pending.exists?
+        redirect_to admin_project_path(@project), alert: "A review is already pending for this project." and return
+      end
+
+      old_stage = @project.hardware_stage
+      old_status = @project.ship_status
+      case params[:review_type]
+      when "funding"
+        previous = @project.certification_funding_requests.order(created_at: :desc, id: :desc).first!
+        # Explicit admin stage override; the project audit entry below records
+        # the rewind without undoing any previously issued grant or verdict.
+        @project.update_columns(hardware_stage: "design", ship_status: "draft")
+        review = @project.certification_funding_requests.create!(
+          user: previous.user, status: :pending, complexity_tier: previous.complexity_tier,
+          requested_amount_cents: previous.requested_amount_cents, submitter_note: previous.submitter_note
+        )
+      when "build"
+        @project.ship_reviews.order(created_at: :desc, id: :desc).first!
+        @project.update_columns(hardware_stage: "build", ship_status: "submitted")
+        ship_event = @project.recertification_ship
+        review = @project.ship_reviews.create!(status: :pending, post_ship_event: ship_event)
+        ship_event&.update!(certification_status: "pending")
+        ::ExternalDashboard::ShipWebhookJob.perform_later(review.id)
+      else
+        redirect_to admin_project_path(@project), alert: "Choose funding or build review." and return
+      end
+
+      @project.versions.create!(
+        event: "force_hardware_review", whodunnit: current_user.id.to_s,
+        object_changes: {
+          hardware_stage: [ old_stage, @project.hardware_stage ],
+          ship_status: [ old_status, @project.ship_status ],
+          review: [ nil, "#{review.class.name} ##{review.id}" ]
+        }
+      )
+    end
+
+    redirect_to admin_project_path(@project), notice: "Project resubmitted for review. No approval or funding has been issued."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to admin_project_path(@project), alert: e.record.errors.full_messages.to_sentence
+  end
+
   def sync_last_ship_event_certification(new_status)
     ship_event = @project.last_ship_event
     return unless ship_event
