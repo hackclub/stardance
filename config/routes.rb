@@ -789,6 +789,8 @@ Rails.application.routes.draw do
     end
     resources :payout_reviews, only: [ :index, :show ]
     resources :virality_reviews, only: [ :index, :show ] do
+      # Before the member routes, or POST /:id (create) swallows it.
+      post :batch, on: :collection
       post :create, on: :member
       post :cancel, on: :member
       post :triage, on: :member
@@ -1132,7 +1134,7 @@ Rails.application.routes.draw do
     resource :mission, only: [ :create, :destroy ], module: :projects, controller: "missions"
     resource :magic, only: [ :create, :destroy ], module: :projects, controller: "magic"
     resource :fire_nomination, only: [ :create, :destroy ], module: :projects
-    resources :mentions, only: [ :new, :create ], module: :projects
+    resources :mentions, only: [ :index, :new, :create ], module: :projects
     # shallow: false — the guide JS deletes at the nested path, and the
     # controller needs :project_id to scope the completion.
     resources :mission_section_completions,

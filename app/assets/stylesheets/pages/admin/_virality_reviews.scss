@@ -45,7 +45,9 @@
     }
     textarea,
     select,
-    input[type="number"] {
+    input[type="number"],
+    input[type="text"],
+    input[type="search"] {
       display: block;
       width: 100%;
       background: var(--color-set-1-bg);
@@ -284,7 +286,7 @@
   }
   &__fields {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: var(--space-xs);
     label {
       margin-top: 0;
@@ -370,6 +372,98 @@
     td {
       padding: var(--space-xxxs);
     }
+  }
+
+  &__search {
+    display: grid;
+    gap: var(--space-xxs);
+    margin-bottom: var(--space-xs);
+    padding-left: var(--space-s);
+  }
+  &__item-states {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxxs);
+  }
+  span.virality-review__item-flags {
+    color: var(--color-brand-salmon);
+  }
+  &__back {
+    display: inline-block;
+    margin-bottom: var(--space-xs);
+  }
+  &__flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xxs);
+    margin-top: var(--space-s);
+  }
+  &__flag {
+    padding: var(--space-xxxs) var(--space-xs);
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    color: var(--color-brand-salmon);
+    &--good {
+      color: var(--color-brand-mint);
+    }
+  }
+  &__selection {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: var(--space-s) 0 var(--space-xs);
+    color: var(--color-space-text-muted);
+  }
+  &__groups {
+    display: grid;
+    gap: var(--space-xs);
+  }
+  &__group {
+    padding: var(--space-s);
+    border: 1px solid var(--color-set-2-bg);
+    border-radius: 8px;
+    &--selected {
+      border-color: var(--color-brand-lilac);
+    }
+  }
+  &__group-top,
+  &__group-mention-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xxs) var(--space-xs);
+  }
+  &__group-url {
+    font-size: var(--font-size-m);
+    font-weight: 600;
+    min-width: 0;
+  }
+  &__repeat {
+    padding: 0 var(--space-xxs);
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--color-brand-salmon);
+    background: var(--color-set-2-bg);
+  }
+  &__warning {
+    color: var(--color-brand-salmon);
+  }
+  &__group-mentions {
+    margin-top: var(--space-xs);
+  }
+  .admin-content & li.virality-review__group-mention {
+    padding: var(--space-xs) 0 0;
+    border-top: 1px solid var(--color-set-2-bg);
+  }
+  p.virality-review__item-note {
+    color: var(--color-brand-peach);
+  }
+  &__open {
+    margin-left: auto;
+  }
+  &__decide {
+    margin-top: var(--space-s);
   }
 
   @media (max-width: 1100px) {

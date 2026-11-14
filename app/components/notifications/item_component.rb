@@ -23,7 +23,8 @@ module Notifications
       "Notifications::Missions::SubmissionPendingForReviewer"   => "clipboard",
       "Notifications::ShopOrders::StatusChanged"                => "bag",
       "Notifications::ShopOrders::TrackingUpdated"              => "bag",
-      "Notifications::Hardware::FundingRequestReviewed"         => "check-circle"
+      "Notifications::Hardware::FundingRequestReviewed"         => "check-circle",
+      "Notifications::Virality::MentionReviewed"                => "sparkle"
     }.freeze
 
     attr_reader :notification

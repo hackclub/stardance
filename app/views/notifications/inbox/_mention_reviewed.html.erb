@@ -1,0 +1,16 @@
+<% decision = notification.record %>
+<% project = decision&.project_mention&.project %>
+<span class="notifications-item__verb">Your viral mention</span>
+<% if decision&.action == "approve" %>
+  <span class="notifications-item__verb">was</span>
+  <strong>approved (<%= decision.tier.to_s.capitalize %>)</strong>
+<% elsif decision&.action == "reject" %>
+  <strong>wasn't approved</strong>
+<% else %>
+  <span class="notifications-item__verb">is</span>
+  <strong>back in review</strong>
+<% end %>
+<% if project %>
+  <span class="notifications-item__verb">on</span>
+  <%= link_to project.title, project_path(project), class: "notifications-item__actor" %>
+<% end %>

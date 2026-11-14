@@ -2,6 +2,11 @@ class Projects::MentionsController < ApplicationController
   before_action :set_project
   before_action :require_feature_flag
 
+  def index
+    authorize @project, :mentions?
+    @mentions = @project.mentions.order(created_at: :desc, id: :desc)
+  end
+
   def new
     @mention = @project.mentions.build
     authorize @mention
@@ -12,7 +17,8 @@ class Projects::MentionsController < ApplicationController
     authorize @mention
 
     if @mention.save
-      redirect_to project_path(@project), notice: "Mention submitted! A reviewer will verify it."
+      destination = policy(@project).mentions? ? project_mentions_path(@project) : project_path(@project)
+      redirect_to destination, notice: "Mention submitted! A reviewer will verify it."
     else
       render :new, status: :unprocessable_entity
     end

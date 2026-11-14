@@ -4,12 +4,12 @@
     <header class="virality-review__top">
       <h1>Virality reviews</h1>
       <p class="virality-review__legend" aria-label="Keyboard shortcuts">
-        <span><kbd>J</kbd><kbd>K</kbd> next / previous</span>
-        <span><kbd>O</kbd> open evidence</span>
-        <span><kbd>C</kbd> count</span>
-        <span><kbd>1</kbd><kbd>2</kbd> tier</span>
+        <span><kbd>J</kbd><kbd>K</kbd> next / previous project</span>
+        <span><kbd>/</kbd> search</span>
+        <span><kbd>O</kbd> open first link</span>
         <span><kbd>E</kbd> checklist</span>
         <span><kbd>N</kbd> note</span>
+        <span><kbd>A</kbd><kbd>R</kbd><kbd>H</kbd> approve / reject / hold selected</span>
         <span><kbd>Esc</kbd> leave field</span>
       </p>
     </header>
@@ -36,23 +36,36 @@
       <p class="virality-review__muted"><%= pluralize(@awaiting_confirmation, "imported verdict") %> awaiting confirmation. Nothing is applied or paid until a reviewer confirms.</p>
     <% end %>
     <div class="virality-review__layout">
-      <aside class="virality-review__queue" aria-label="Submissions">
-        <% current_index = @mentions.index(@mention) || -1 %>
-        <% @mentions.each_with_index do |mention, index| %>
-          <%= link_to admin_virality_reviews_path(queue: @queue, mention_id: mention.id, page: params[:page]), class: "virality-review__item",
-                aria: { current: (@mention == mention ? "true" : nil) }, data: { hotkey: { current_index + 1 => "j", current_index - 1 => "k" }[index] } do %>
-            <strong><%= mention.project.title %></strong>
-            <span>#<%= mention.id %> · <%= mention.created_at.strftime("%b %-d") %> · <%= mention.suggested_platform || "Unknown platform" %></span>
-            <% if mention.proposed_action && mention.status == :pending %><span class="virality-review__item-proposal"><%= [mention.proposed_action.humanize, mention.proposed_tier&.capitalize].compact.join(" ") %> · awaiting confirmation</span><% end %>
-            <% if mention.internal_notes.present? %><span class="virality-review__item-note"><%= truncate(mention.internal_notes, length: 60) %></span><% end %>
+      <aside class="virality-review__queue" aria-label="Projects">
+        <%= form_with url: admin_virality_reviews_path, method: :get, class: "virality-review__search", data: { turbo_action: "replace" } do %>
+          <%= hidden_field_tag :queue, @queue, id: nil %>
+          <%= search_field_tag :q, @search, placeholder: "Search projects, links, notes", autocomplete: "off", aria: { label: "Search projects" }, data: { hotkey: "/" } %>
+          <%= select_tag :sort, options_for_select(Admin::ViralityReviewsController::SORTS.invert, @sort), aria: { label: "Sort" }, onchange: "this.form.requestSubmit()" %>
+        <% end %>
+        <% current_project = (@review || @mention)&.project %>
+        <% current_index = @reviews.index { |review| review.project == current_project } || -1 %>
+        <% @reviews.each_with_index do |review, index| %>
+          <%= link_to admin_virality_reviews_path(queue: @queue, project_id: review.project.id, q: @search.presence, sort: @sort, page: params[:page]), class: "virality-review__item",
+                aria: { current: (review.project == current_project ? "true" : nil) }, data: { hotkey: { current_index + 1 => "j", current_index - 1 => "k" }[index] } do %>
+            <strong><%= review.project.title %></strong>
+            <span><%= pluralize(review.groups.size, "link") %> · <%= pluralize(review.mentions.size, "mention") %><% if review.oldest_pending_at %> · <%= time_ago_in_words(review.oldest_pending_at) %> old<% end %></span>
+            <span class="virality-review__item-states">
+              <% Virality::ProjectReview::STATES.each do |state, label| %>
+                <% if (count = review.counts[state]) %><span class="virality-review__tag virality-review__tag--<%= state.dasherize %>"><%= count %> <%= label.downcase %></span><% end %>
+              <% end %>
+            </span>
+            <% if review.red_flags.positive? %><span class="virality-review__item-flags"><%= pluralize(review.red_flags, "red flag") %></span><% end %>
           <% end %>
         <% end %>
-        <% if @mentions.empty? %><p class="virality-review__muted">Nothing in this queue.</p><% end %>
+        <% if @reviews.empty? %><p class="virality-review__muted"><%= @search.present? ? "Nothing matches “#{@search}”." : "Nothing in this queue." %></p><% end %>
         <%== @pagy.series_nav if @pagy.pages > 1 %>
       </aside>
       <div class="virality-review__detail">
         <% if @mention %>
+          <%= link_to "← All mentions for #{@mention.project.title}", admin_virality_reviews_path(queue: @queue, project_id: @mention.project_id), class: "virality-review__back" %>
           <%= render "detail" %>
+        <% elsif @review %>
+          <%= render "project" %>
         <% else %>
           <p class="virality-review__muted">Choose another queue to continue.</p>
         <% end %>

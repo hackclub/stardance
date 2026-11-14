@@ -42,14 +42,18 @@ class Admin::ViralityReviewsControllerTest < ActionDispatch::IntegrationTest
     sign_in @user
     @mention.project.update!(deleted_at: Time.current)
 
-    [ admin_virality_reviews_path, admin_virality_reviews_path(mention_id: @mention.id) ].each do |path|
-      get path
-      assert_response :success
-      assert_select "h2", @mention.project.title
-      assert_select "p", "Project status: Deleted"
-      assert_select "button[value='approve'][disabled]"
-      assert_select "button[value='reject']:not([disabled])"
-    end
+    get admin_virality_reviews_path
+    assert_response :success
+    assert_select "h2", @mention.project.title
+    assert_select ".virality-review__flag--bad", "Project is deleted"
+    assert_select "button[value='approve'][disabled]"
+    assert_select "button[value='reject']:not([disabled])"
+
+    get admin_virality_reviews_path(mention_id: @mention.id)
+    assert_response :success
+    assert_select "p", "Project status: Deleted"
+    assert_select "button[value='approve'][disabled]"
+    assert_select "button[value='reject']:not([disabled])"
   end
 
   test "admins can stop a scheduled decision after its project is deleted" do
@@ -119,6 +123,10 @@ class Admin::ViralityReviewsControllerTest < ActionDispatch::IntegrationTest
 
     get admin_virality_reviews_path(queue: "on_hold")
     assert_select ".virality-review__item strong", @mention.project.title
+    assert_select ".virality-review__item-note", "Internal: waiting for DM answer"
+    assert_select "button[value='release']"
+
+    get admin_virality_reviews_path(queue: "on_hold", mention_id: @mention.id)
     assert_select "textarea[name='mention[internal_notes]']", "waiting for DM answer"
   end
 
@@ -153,7 +161,11 @@ class Admin::ViralityReviewsControllerTest < ActionDispatch::IntegrationTest
 
     get admin_virality_reviews_path(queue: "reviewed")
     assert_response :success
-    assert_select ".virality-review__item-proposal", "Reject · awaiting confirmation"
+    assert_select ".virality-review__item .virality-review__tag--awaiting-confirmation", "1 awaiting confirmation"
+    assert_select ".virality-review__group-mention", text: /Imported: Reject/
+    assert_select "textarea[name='reason']", "Seems like a duplicate!"
+
+    get admin_virality_reviews_path(queue: "reviewed", mention_id: @mention.id)
     assert_select ".virality-review__proposal"
     assert_select "textarea[name='decision[reason]']", "Seems like a duplicate!"
     assert_equal :pending, @mention.reload.status
@@ -176,5 +188,112 @@ class Admin::ViralityReviewsControllerTest < ActionDispatch::IntegrationTest
     @mention.reload
     assert_nil @mention.proposed_action
     assert_nil @mention.proposed_tier
+  end
+  test "a project opens with every mention, repeats grouped" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+    repeat = @mention.project.mentions.create!(url: "#{@mention.url}/")
+
+    get admin_virality_reviews_path(project_id: @mention.project_id)
+    assert_response :success
+    assert_select ".virality-review__group", 2
+    assert_select ".virality-review__repeat", "×2"
+    assert_select "input[name='mention_ids[]'][value=?]", repeat.id.to_s
+    assert_select "input[name='mention_ids[]'][value=?]", project_mentions(:virality_second).id.to_s
+    assert_select ".virality-review__flag--bad", /repeat submission/
+  end
+
+  test "search finds projects by link and keeps the queue" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+
+    get admin_virality_reviews_path(q: "example/project")
+    assert_select ".virality-review__item strong", @mention.project.title
+    get admin_virality_reviews_path(q: "nothing-matches-this")
+    assert_select ".virality-review__item", 0
+  end
+
+  test "batch approval schedules every selected mention with its own evidence" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+    second = project_mentions(:virality_second)
+
+    post batch_admin_virality_reviews_path, params: {
+      project_id: @mention.project_id, mention_ids: [ @mention.id, second.id ], operation: "approve",
+      reason: "Nice reach", review_checklist: ProjectMention::ELIGIBILITY_CHECKS,
+      evidence: {
+        @mention.id => { platform: "GitHub", metric_name: "stars", metric_value: "30", tier: "good" },
+        second.id => { platform: "Hacker News", metric_name: "points", metric_value: "120", tier: "great" }
+      }
+    }
+    assert_redirected_to admin_virality_reviews_path(queue: "pending")
+
+    decisions = ViralityDecision.where(project_mention: [ @mention, second ])
+    assert_equal({ @mention.id => "good", second.id => "great" }, decisions.to_h { |decision| [ decision.project_mention_id, decision.tier ] })
+    assert_equal [ "scheduled" ], decisions.map(&:status).uniq
+    assert_equal [ "Nice reach" ], decisions.map(&:reason).uniq
+    assert_equal ProjectMention::ELIGIBILITY_CHECKS, second.reload.review_checklist
+    assert_equal 120, second.metric_value
+  end
+
+  test "batch rejection covers repeat submissions without their own evidence" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+    repeat = @mention.project.mentions.create!(url: @mention.url)
+
+    post batch_admin_virality_reviews_path, params: {
+      project_id: @mention.project_id, mention_ids: [ @mention.id, repeat.id ], operation: "reject", reason: "Seems like a duplicate!",
+      evidence: { @mention.id => { platform: "GitHub", metric_name: "stars", metric_value: "3" } }
+    }
+
+    assert_equal 2, ViralityDecision.where(project_mention: [ @mention, repeat ], action: "reject").count
+    assert_equal "GitHub", ViralityDecision.find_by!(project_mention: repeat).evidence["platform"]
+  end
+
+  test "batch review is all or nothing and names the mention that failed" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+    second = project_mentions(:virality_second)
+
+    post batch_admin_virality_reviews_path, params: {
+      project_id: @mention.project_id, mention_ids: [ @mention.id, second.id ], operation: "approve",
+      review_checklist: ProjectMention::ELIGIBILITY_CHECKS, internal_note: "batch note",
+      evidence: {
+        @mention.id => { platform: "GitHub", metric_name: "stars", metric_value: "30", tier: "good" },
+        second.id => { platform: "GitHub", metric_name: "stars", metric_value: "2", tier: "good" }
+      }
+    }
+
+    assert_redirected_to admin_virality_reviews_path(queue: "pending", project_id: @mention.project_id)
+    assert_match "Mention ##{second.id}", flash[:alert]
+    assert_empty ViralityDecision.where(project_mention: [ @mention, second ])
+    assert_nil @mention.reload.internal_notes
+  end
+
+  test "batch hold and release move the selected mentions together" do
+    @user.update!(granted_roles: [ "admin" ])
+    sign_in @user
+    second = project_mentions(:virality_second)
+    params = { project_id: @mention.project_id, mention_ids: [ @mention.id, second.id ] }
+
+    post batch_admin_virality_reviews_path, params: params.merge(operation: "hold", internal_note: "Asked about paid promotion")
+    assert [ @mention, second ].all? { |mention| mention.reload.on_hold_at? }
+    assert_equal "Asked about paid promotion", second.internal_notes
+
+    post batch_admin_virality_reviews_path, params: params.merge(operation: "release")
+    assert [ @mention, second ].none? { |mention| mention.reload.on_hold_at? }
+  end
+
+  test "batch review is admin only and limited to the project's mentions" do
+    @user.update!(granted_roles: [ "project_certifier" ])
+    sign_in @user
+    post batch_admin_virality_reviews_path, params: { project_id: @mention.project_id, mention_ids: [ @mention.id ], operation: "reject", reason: "x" }
+    assert_response :forbidden
+
+    @user.update!(granted_roles: [ "admin" ])
+    other = projects(:two).mentions.create!(url: "https://github.com/other/repo")
+    post batch_admin_virality_reviews_path, params: { project_id: @mention.project_id, mention_ids: [ other.id ], operation: "reject", reason: "x" }
+    assert_equal "Select at least one mention", flash[:alert]
+    assert_empty other.virality_decisions
   end
 end
