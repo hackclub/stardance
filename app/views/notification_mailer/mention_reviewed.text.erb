@@ -1,0 +1,29 @@
+<% mention = @record&.project_mention %>
+<% project = mention&.project %>
+<% note = @record&.reason %>
+<% project_name = project ? %( for "#{project.title}") : "" %>
+<% reviewed_by = @actor ? ", reviewed by @#{@actor.display_name}" : "" %>
+<% if @record&.action == "approve" %>
+Your viral mention was approved!
+
+Your viral mention<%= project_name %> qualified for the <%= @record.tier.to_s.capitalize %> virality bonus<%= reviewed_by %>. Your stardust is on its way.
+<% elsif @record&.action == "reject" %>
+Your viral mention wasn't approved
+
+Your viral mention<%= project_name %> didn't qualify for the virality bonus<%= reviewed_by %>.
+<% else %>
+Your viral mention is back in review
+
+A reviewer reopened your viral mention<%= project_name %>. Your virality bonus has been recalculated.
+<% end %>
+<% if mention %>
+
+Mention: <%= mention.url %>
+<% end %>
+<% if note.present? %>
+
+Reviewer note:
+<%= note %>
+<% end %>
+
+View project: <%= project ? project_url(project) : root_url %>

@@ -67,6 +67,7 @@ class ViralityDecision < ApplicationRecord
   validate :approval_evidence, on: :create
 
   after_create_commit :enqueue_processing
+  after_update_commit :notify_owner, if: -> { saved_change_to_status?(to: "processed") }
 
   def self.reviewer?(user)
     user.present? && (user.has_role?(:admin) || user.has_role?(:super_admin))
@@ -111,6 +112,8 @@ class ViralityDecision < ApplicationRecord
     project_mention.project.with_lock do
       with_lock do
         return false unless status == "scheduled" && process_at <= Time.current
+        # Previews assume earlier decisions on this project applied first.
+        return false if earlier_scheduled.exists?
 
         PaperTrail.request(whodunnit: reviewer_id.to_s) do
           raise ArgumentError, "The reviewing admin no longer has permission" unless self.class.reviewer?(reviewer.reload)
@@ -146,9 +149,26 @@ class ViralityDecision < ApplicationRecord
   end
 
   def preview
-    service = Virality::ReconcileBonus.new(project_mention.project)
-    proposed_tier = service.tier(excluding: project_mention, adding: action == "approve" ? tier : nil)
-    service.preview(tier: proposed_tier).deep_stringify_keys
+    earlier = earlier_scheduled.to_a
+    tiers = project_mention.project.mentions.approved.pluck(:id, :approved_tier).to_h
+    (earlier + [ self ]).each do |decision|
+      if decision.action == "approve"
+        tiers[decision.project_mention_id] = decision.tier
+      else
+        tiers.delete(decision.project_mention_id)
+      end
+    end
+    proposed_tier = if tiers.value?("great") then "great" elsif tiers.value?("good") then "good" end
+    scheduled = earlier.each_with_object(Hash.new(0)) do |decision, sums|
+      decision.result.fetch("changes", {}).each { |user_id, amount| sums[user_id.to_i] += amount.to_i }
+    end
+    Virality::ReconcileBonus.new(project_mention.project).preview(tier: proposed_tier, scheduled: scheduled).deep_stringify_keys
+  end
+
+  def earlier_scheduled
+    scope = ViralityDecision.scheduled.where.not(id: id)
+      .joins(:project_mention).where(project_mentions: { project_id: project_mention.project_id }).order(:id)
+    persisted? ? scope.where(id: ...id) : scope
   end
 
   def check_state!
@@ -163,7 +183,29 @@ class ViralityDecision < ApplicationRecord
     end
   end
 
+  def notification_locals
+    project = project_mention.project
+    url_options = (Rails.application.config.action_controller.default_url_options || {})
+      .reverse_merge(host: "stardance.hackclub.com", protocol: "https")
+    {
+      action: action,
+      tier: tier,
+      note: reason.to_s,
+      project_title: project.title,
+      project_url: Rails.application.routes.url_helpers.project_url(project, **url_options),
+      # Builder-supplied, so dropped if it could break the Slack link.
+      mention_url: project_mention.url.presence_in(project_mention.evidence_urls)&.then { |url| url unless url.match?(/[<>|]/) }
+    }
+  end
+
   private
+
+  def notify_owner
+    owner = project_mention.project.memberships.owner.order(:id).first&.user
+    Notifications::Virality::MentionReviewed.notify(recipient: owner, actor: reviewer, record: self)
+  rescue StandardError => error
+    Rails.logger.error("ViralityDecision ##{id} notify_owner failed: #{error.message}")
+  end
 
   def enqueue_processing
     ProcessViralityDecisionJob.set(wait_until: process_at).perform_later(id)

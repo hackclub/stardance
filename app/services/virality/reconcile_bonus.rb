@@ -16,7 +16,7 @@ module Virality
       "good" if tiers.include?("good")
     end
 
-    def preview(tier: self.tier)
+    def preview(tier: self.tier, scheduled: {})
       amounts = Hash.new(0)
       ships = []
       if tier.present?
@@ -40,7 +40,7 @@ module Virality
         end
       end
 
-      paid = entries.group(:user_id).sum(:amount)
+      paid = entries.group(:user_id).sum(:amount).merge(scheduled) { |_, ledger, pending| ledger + pending }
       changes = (paid.keys | amounts.keys).to_h { |id| [ id, amounts[id] - paid.fetch(id, 0) ] }
       { tier: tier, amounts: amounts, changes: changes, total: amounts.values.sum, delta: changes.values.sum, ships: ships }
     end

@@ -1037,10 +1037,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_190353) do
   end
 
   create_table "project_fabricate_transfers", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "project_id", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_project_fabricate_transfers_on_project_id", unique: true
     t.index ["user_id"], name: "index_project_fabricate_transfers_on_user_id"
   end

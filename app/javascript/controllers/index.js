@@ -555,3 +555,6 @@ application.register("virality-review", ViralityReviewController);
 
 import HotkeysController from "./hotkeys_controller";
 application.register("hotkeys", HotkeysController);
+
+import ViralityBatchController from "./virality_batch_controller";
+application.register("virality-batch", ViralityBatchController);

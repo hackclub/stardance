@@ -196,6 +196,39 @@ class ViralityDecisionTest < ActiveSupport::TestCase
     assert_equal 0, paid
   end
 
+  test "decisions on one project apply in order and each preview assumes the ones before it" do
+    second = project_mentions(:virality_second)
+    first_decision = schedule
+    second_decision = ViralityDecision.schedule!(mention: second, reviewer: @admin,
+      attributes: { action: "approve", tier: "great", reason: "Front page", evidence: evidence.merge("platform" => "Hacker News", "metric_name" => "points", "metric_value" => "150") })
+    assert_equal({ @owner.id.to_s => 50 }, first_decision.result["changes"])
+    assert_equal({ @owner.id.to_s => 0 }, second_decision.result["changes"], "the second preview already counts the first approval")
+
+    travel_to second_decision.process_at + 1.second do
+      refute second_decision.process!, "waits for the decision scheduled before it"
+      assert_equal "scheduled", second_decision.reload.status
+      assert first_decision.process!
+      assert second_decision.process!
+    end
+    assert_equal "great", second.reload.approved_tier
+    assert_equal 50, paid
+  end
+
+  test "a later decision fails safely when the one before it is stopped" do
+    second = project_mentions(:virality_second)
+    first_decision = schedule
+    second_decision = ViralityDecision.schedule!(mention: second, reviewer: @admin,
+      attributes: { action: "approve", tier: "good", reason: "Feature", evidence: evidence })
+    first_decision.cancel!(actor: @admin)
+
+    travel_to second_decision.process_at + 1.second do
+      refute second_decision.process!
+    end
+    assert_equal "failed", second_decision.reload.status
+    assert_match "Payout amounts changed", second_decision.error_message
+    assert_equal 0, paid
+  end
+
   private
 
   def evidence
