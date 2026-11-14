@@ -3,6 +3,7 @@ module Notifications
     class MentionReviewed < ::Notification
       self.default_priority     = :high
       self.aggregatable         = false
+      self.allow_self_notify    = true
       self.slack_template_path  = "notifications/virality/mention_reviewed"
       self.category_key         = :virality_mention_reviewed
       self.category_label       = "Viral mention reviewed"
