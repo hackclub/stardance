@@ -1,39 +1,46 @@
-<% content_for :title, "Viral mentions" %>
+<% content_for :title, "Viral mentions · #{@project.title}" %>
 
-<h2>Viral mentions</h2>
+<main class="project-mentions">
+  <header class="project-mentions__header">
+    <%= link_to "← #{@project.title}", project_path(@project), class: "project-mentions__back", data: { turbo_frame: "_top" } %>
+    <h1 class="project-mentions__title">Viral mentions</h1>
+    <p class="project-mentions__hint">
+      Links you've submitted for the virality bonus, and what reviewers decided.
+      <%= link_to "How it works", guide_path(:virality_bonus), class: "project-mentions__link" %>
+    </p>
+    <%= link_to "Submit a mention", new_project_mention_path(@project), class: "action-btn action-btn--small action-btn--primary" %>
+  </header>
 
-<%= link_to "Submit a mention", new_project_mention_path(@project), class: "action-btn action-btn--small action-btn--primary" %>
-
-<% if @mentions.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th>URL</th>
-        <th>Platform</th>
-        <th>Status</th>
-        <th>Submitted</th>
-      </tr>
-    </thead>
-    <tbody>
+  <% if @mentions.any? %>
+    <ol class="project-mentions__list">
       <% @mentions.each do |mention| %>
-        <tr>
-          <td><%= link_to truncate(mention.url, length: 60), mention.url, target: "_blank", rel: "noopener noreferrer" %></td>
-          <td><%= mention.platform&.titleize || "—" %></td>
-          <td>
+        <li class="project-mentions__item">
+          <div class="project-mentions__item-top">
             <% case mention.status %>
             <% when :approved %>
-              <span class="status-pill status-pill--approved">Approved</span>
+              <span class="status-pill status-pill--approved">Approved · <%= mention.approved_tier.to_s.capitalize %></span>
             <% when :rejected %>
-              <span class="status-pill status-pill--rejected">Rejected</span>
+              <span class="status-pill status-pill--rejected">Not approved</span>
             <% else %>
               <span class="status-pill status-pill--pending">Pending review</span>
             <% end %>
-          </td>
-          <td><%= time_ago_in_words(mention.created_at) %> ago</td>
-        </tr>
+            <span class="project-mentions__date">Submitted <%= time_ago_in_words(mention.created_at) %> ago</span>
+          </div>
+          <%= link_to mention.url, mention.url, class: "project-mentions__url", target: "_blank", rel: "noopener noreferrer" %>
+          <% if mention.submitter_notes.present? %>
+            <p class="project-mentions__notes"><%= mention.submitter_notes %></p>
+          <% end %>
+          <% if mention.status == :approved && mention.metric_value %>
+            <p class="project-mentions__metric"><%= number_with_delimiter(mention.metric_value) %> <%= mention.metric_name %> on <%= mention.platform %></p>
+          <% end %>
+          <%# Pending notes may be an unconfirmed imported reply. %>
+          <% if mention.status != :pending && mention.reviewer_notes.present? %>
+            <p class="project-mentions__reply"><span class="project-mentions__reply-label">Reviewer:</span> <%= mention.reviewer_notes %></p>
+          <% end %>
+        </li>
       <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No mentions submitted yet.</p>
-<% end %>
+    </ol>
+  <% else %>
+    <p class="project-mentions__empty">No mentions submitted yet. Got traction on Reddit, Hacker News, GitHub or somewhere else? Submit the link!</p>
+  <% end %>
+</main>

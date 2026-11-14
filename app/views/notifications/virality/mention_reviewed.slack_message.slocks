@@ -1,0 +1,22 @@
+mention = mention_url.present? ? "<#{mention_url}|viral mention>" : "viral mention"
+
+case action
+when "approve"
+  header ":tada: Your viral mention was approved!"
+
+  section "Your #{mention} for *<#{project_url}|#{project_title}>* qualified for the *#{tier.to_s.capitalize}* virality bonus. Your stardust is on its way.", markdown: true
+when "reject"
+  header ":mag: Your viral mention wasn't approved"
+
+  section "Your #{mention} for *<#{project_url}|#{project_title}>* didn't qualify for the virality bonus.", markdown: true
+else
+  header ":arrows_counterclockwise: Your viral mention is back in review"
+
+  section "A reviewer reopened your #{mention} for *<#{project_url}|#{project_title}>*. Your virality bonus has been recalculated.", markdown: true
+end
+
+section "*Reviewer note:* #{note}", markdown: true if note.present?
+
+actions [
+  button("View project", "view_project", url: project_url)
+]

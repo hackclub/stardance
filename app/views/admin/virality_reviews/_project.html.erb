@@ -1,0 +1,180 @@
+<% review = @review %>
+<% project = review.project %>
+<% approvable = !project.deleted? && project.ship_status == "approved" %>
+<% editable = review.mentions.select { |mention| review.editable?(mention) } %>
+<% checked = editable.flat_map(&:review_checklist).uniq %>
+<% imported_replies = editable.filter_map { |mention| mention.reviewer_notes.presence if mention.proposed_action }.uniq %>
+<header class="virality-review__heading">
+  <div>
+    <h2><%= project.title %></h2>
+    <p class="virality-review__muted">Project #<%= project.id %> · <%= project.deleted? ? "Deleted" : "Ship status: #{project.ship_status.humanize.downcase}" %> · <%= pluralize(review.mentions.size, "mention") %></p>
+  </div>
+  <nav class="virality-review__links" aria-label="Project links">
+    <%= link_to "Admin page", admin_project_path(project), target: "_blank", rel: "noopener" %>
+    <%= link_to "Public page", project_path(project), target: "_blank", rel: "noopener" %>
+    <% @project_links.each do |label, url| %>
+      <%= link_to label, url, target: "_blank", rel: "noopener noreferrer" %>
+    <% end %>
+  </nav>
+</header>
+
+<% if review.flags.any? %>
+  <ul class="virality-review__flags" aria-label="Flags">
+    <% review.flags.each do |severity, message| %>
+      <li class="virality-review__flag virality-review__flag--<%= severity %>"><%= message %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%= form_with url: batch_admin_virality_reviews_path, class: "virality-review__form",
+      data: { controller: "virality-batch", virality_batch_thresholds_value: Virality::Evidence::THRESHOLDS.to_json, virality_batch_current_tier_value: @current_tier.to_s } do %>
+  <%= hidden_field_tag :queue, @queue, id: nil %>
+  <%= hidden_field_tag :project_id, project.id, id: nil %>
+
+  <div class="virality-review__selection">
+    <span data-virality-batch-target="summary" aria-live="polite"></span>
+    <% if editable.any? %>
+      <%= button_tag "Select open", type: "button", class: "virality-review__chip", data: { action: "virality-batch#selectOpen" } %>
+      <%= button_tag "Select none", type: "button", class: "virality-review__chip", data: { action: "virality-batch#selectNone" } %>
+    <% end %>
+  </div>
+
+  <ol class="virality-review__groups">
+    <% review.groups.each_with_index do |group, index| %>
+      <% leader = group.mentions.find { |mention| review.editable?(mention) } %>
+      <li class="virality-review__group" data-virality-batch-target="group">
+        <div class="virality-review__group-top">
+          <%= link_to group.url, group.url, class: "virality-review__group-url", target: "_blank", rel: "noopener noreferrer", data: ({ hotkey: "o" } if index.zero?) %>
+          <% if group.mentions.size > 1 %><span class="virality-review__repeat" title="Submitted <%= group.mentions.size %> times">×<%= group.mentions.size %></span><% end %>
+        </div>
+        <% if group.warning %><p class="virality-review__warning"><%= group.warning %></p><% end %>
+
+        <% if leader %>
+          <% platform = leader.suggested_platform %>
+          <div class="virality-review__fields">
+            <div>
+              <%= label_tag "evidence_#{leader.id}_platform", "Platform" %>
+              <%= select_tag "evidence[#{leader.id}][platform]", options_for_select(Virality::Evidence::THRESHOLDS.keys, platform), include_blank: "Choose platform",
+                    id: "evidence_#{leader.id}_platform", data: { role: "platform", action: "change->virality-batch#platformChanged" } %>
+            </div>
+            <div>
+              <%= label_tag "evidence_#{leader.id}_metric_name", "Metric" %>
+              <%= select_tag "evidence[#{leader.id}][metric_name]", options_for_select([ leader.metric_name ].compact, leader.metric_name), include_blank: "Choose metric",
+                    id: "evidence_#{leader.id}_metric_name", data: { role: "metric", action: "change->virality-batch#evidenceChanged" } %>
+            </div>
+            <div>
+              <%= label_tag "evidence_#{leader.id}_metric_value", "Count" %>
+              <%= number_field_tag "evidence[#{leader.id}][metric_value]", leader.metric_value, min: 0, step: 1, autocomplete: "off",
+                    id: "evidence_#{leader.id}_metric_value", data: { role: "count", action: "input->virality-batch#evidenceChanged" } %>
+            </div>
+            <div>
+              <%= label_tag "evidence_#{leader.id}_tier", "Tier" %>
+              <%= select_tag "evidence[#{leader.id}][tier]", options_for_select([ %w[Good good], %w[Great great] ], leader.proposed_tier || "good"),
+                    id: "evidence_#{leader.id}_tier", data: { role: "tier", action: "change->virality-batch#refresh" } %>
+            </div>
+          </div>
+          <p class="virality-review__muted" data-role="verdict" aria-live="polite"></p>
+        <% end %>
+
+        <ul class="virality-review__group-mentions">
+          <% group.mentions.each do |mention| %>
+            <% state = review.state_of(mention) %>
+            <li class="virality-review__group-mention">
+              <div class="virality-review__group-mention-top">
+                <% if review.editable?(mention) %>
+                  <%= check_box_tag "mention_ids[]", mention.id, true, id: "mention_#{mention.id}", data: { role: "select", action: "virality-batch#refresh" }, aria: { label: "Select mention ##{mention.id}" } %>
+                <% end %>
+                <span class="virality-review__tag virality-review__tag--<%= state.dasherize %>"><%= [ mention.approved_tier&.capitalize, Virality::ProjectReview::STATES[state] ].compact.join(" ") %></span>
+                <span class="virality-review__muted">#<%= mention.id %> · <%= mention.created_at.strftime("%b %-d, %Y") %></span>
+                <% if state == "awaiting_confirmation" %><span class="virality-review__muted">Imported: <%= [ mention.proposed_action.humanize, mention.proposed_tier&.capitalize ].compact.join(" ") %></span><% end %>
+                <% if mention.metric_value && !review.editable?(mention) %><span class="virality-review__muted"><%= number_with_delimiter(mention.metric_value) %> <%= mention.metric_name %> on <%= mention.platform %></span><% end %>
+                <%= link_to "Open", admin_virality_reviews_path(queue: @queue, mention_id: mention.id), class: "virality-review__open" %>
+              </div>
+              <p class="virality-review__notes"><%= mention.submitter_notes.presence || "No description from the submitter." %></p>
+              <% if mention.reviewer_notes.present? %><p class="virality-review__muted">Reply: <%= mention.reviewer_notes %></p><% end %>
+              <% if mention.internal_notes.present? %><p class="virality-review__item-note">Internal: <%= mention.internal_notes %></p><% end %>
+              <% if mention.extra_links.present? %><p class="virality-review__muted">Extra links: <%= mention.extra_links %></p><% end %>
+            </li>
+          <% end %>
+        </ul>
+      </li>
+    <% end %>
+  </ol>
+
+  <% if editable.any? %>
+    <section class="virality-review__panel virality-review__decide">
+      <div class="virality-review__columns">
+        <div>
+          <div class="virality-review__heading">
+            <h3>Checklist</h3>
+            <%= button_tag "Check all", type: "button", class: "virality-review__chip", data: { hotkey: "e", action: "virality-batch#checkAll" } %>
+          </div>
+          <div class="virality-review__checklist">
+            <% ProjectMention::ELIGIBILITY_CHECKS.each do |item| %>
+              <label class="virality-review__check">
+                <%= check_box_tag "review_checklist[]", item, checked.include?(item), id: "batch_check_#{item.parameterize(separator: '_')}", data: { role: "check" } %>
+                <span><%= item %></span>
+              </label>
+            <% end %>
+          </div>
+          <p class="virality-review__muted">Saved on every selected mention. Every item must be ticked to approve.</p>
+          <details class="virality-review__exception">
+            <summary>Manual exception</summary>
+            <label class="virality-review__check"><%= check_box_tag :manual_override, "1", false, id: "batch_manual_override" %><span>Approve an unlisted platform or discretionary feature. Explain why in the review note.</span></label>
+          </details>
+          <% %w[good great].each do |tier| %>
+            <div data-virality-batch-target="preview" data-tier="<%= tier %>" hidden>
+              <p class="virality-review__muted">Project ends at <strong><%= tier.capitalize %></strong></p>
+              <%= render "preview", action: tier %>
+            </div>
+          <% end %>
+        </div>
+        <div>
+          <%= label_tag :batch_reason, "Review note · shown to the builder" %>
+          <div class="virality-review__chips">
+            <% ViralityDecision::REPLIES.each do |label, text| %>
+              <%= button_tag label, type: "button", class: "virality-review__chip", data: { action: "virality-batch#useReply", virality_batch_text_param: text } %>
+            <% end %>
+          </div>
+          <%= text_area_tag :reason, (imported_replies.first if imported_replies.one?), id: "batch_reason", maxlength: 2_000, rows: 3, placeholder: "Required for rejection or a manual exception",
+                data: { hotkey: "n", virality_batch_target: "note" } %>
+          <%= label_tag :batch_internal_note, "Internal note · reviewers only, added to each selected mention" %>
+          <%= text_field_tag :internal_note, nil, id: "batch_internal_note", maxlength: 1_000, autocomplete: "off", data: { hotkey: "i" } %>
+          <div class="virality-review__actions">
+            <%= button_tag name: "operation", value: "approve", class: "virality-review__button virality-review__button--primary", disabled: !approvable,
+                  data: { hotkey: "a", virality_batch_target: "submit", blocked: (true unless approvable) } do %>Approve selected <kbd>A</kbd><% end %>
+            <%= button_tag name: "operation", value: "reject", class: "virality-review__button virality-review__button--danger", data: { hotkey: "r", virality_batch_target: "submit" } do %>Reject selected <kbd>R</kbd><% end %>
+            <%= button_tag name: "operation", value: "hold", class: "virality-review__button", data: { hotkey: "h", virality_batch_target: "submit" } do %>Hold <kbd>H</kbd><% end %>
+            <% if editable.any?(&:on_hold_at?) %>
+              <%= button_tag name: "operation", value: "release", class: "virality-review__button", data: { virality_batch_target: "submit" } do %>Release from hold<% end %>
+            <% end %>
+            <%= button_tag name: "operation", value: "save", class: "virality-review__button", data: { hotkey: "s", virality_batch_target: "submit" } do %>Save <kbd>S</kbd><% end %>
+          </div>
+          <p class="virality-review__muted">Each approval uses its link's own count and tier. Decisions process after 30 seconds, and you can stop each one before then.</p>
+          <% if project.deleted? %>
+            <p class="virality-review__error">Deleted projects cannot receive new approvals.</p>
+          <% elsif !approvable %>
+            <p class="virality-review__error">The project must pass normal review before a viral bonus can be approved.</p>
+          <% end %>
+        </div>
+      </div>
+    </section>
+  <% end %>
+<% end %>
+
+<% if @decisions.any? %>
+  <details class="virality-review__panel">
+    <summary>Review history (<%= @decisions.size %>)</summary>
+    <ol class="virality-review__history">
+      <% @decisions.each do |decision| %>
+        <li>
+          <strong><%= decision.action.humanize %><%= " #{decision.tier.capitalize}" if decision.tier %> · <%= decision.status.humanize %></strong>
+          <span class="virality-review__muted">mention #<%= decision.project_mention_id %> · <%= decision.reviewer.display_name %> · <%= decision.created_at.strftime("%b %-d, %Y %H:%M") %></span>
+          <% if decision.reason.present? %><p><%= decision.reason %></p><% end %>
+          <% if decision.error_message %><p class="virality-review__error"><%= decision.error_message %></p><% end %>
+        </li>
+      <% end %>
+    </ol>
+    <%= link_to "Project payout audit", admin_audit_logs_path(item_type: "Project", item_id: project.id, event: "virality_bonus_reconciled", show_system: "1") %>
+  </details>
+<% end %>

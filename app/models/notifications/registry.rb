@@ -21,6 +21,7 @@ module Notifications
       Notifications::AchievementEarned
       Notifications::RngWinner
       Notifications::StardustBalanceChanged
+      Notifications::Virality::MentionReviewed
       Notifications::Payouts::ShipEventIssued
       Notifications::Payouts::VoteDeficitBlocked
       Notifications::Votes::Discarded

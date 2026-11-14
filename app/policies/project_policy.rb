@@ -63,6 +63,10 @@ class ProjectPolicy < ApplicationPolicy
         member? || user&.admin?
     end
 
+    def mentions?
+        member? || user&.admin?
+    end
+
     # well, we shoudn't be doing this. but i think i goofed up a lil and authorize @devlog won't work without passing @project and Post::Devlog does not have @project
     def create_devlog?
         member?
