@@ -26,7 +26,11 @@
             <% end %>
             <span class="project-mentions__date">Submitted <%= time_ago_in_words(mention.created_at) %> ago</span>
           </div>
-          <%= link_to mention.url, mention.url, class: "project-mentions__url", target: "_blank", rel: "noopener noreferrer" %>
+          <% if (url = safe_external_url(mention.url)) %>
+            <%= link_to mention.url, url, class: "project-mentions__url", target: "_blank", rel: "noopener noreferrer" %>
+          <% else %>
+            <span class="project-mentions__url"><%= mention.url %></span>
+          <% end %>
           <% if mention.submitter_notes.present? %>
             <p class="project-mentions__notes"><%= mention.submitter_notes %></p>
           <% end %>
