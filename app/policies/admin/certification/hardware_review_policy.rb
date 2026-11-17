@@ -37,12 +37,6 @@ class Admin::Certification::HardwareReviewPolicy < ApplicationPolicy
     user&.can_review?
   end
 
-  # Sends every approved build that hasn't reached Airtable yet. Admin-only:
-  # it writes records the downstream YSWS automations act on.
-  def sync_builds_to_airtable?
-    user&.admin?
-  end
-
   private
 
   def not_own_project?

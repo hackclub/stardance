@@ -23,14 +23,14 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
   # POST /admin/certification/hardware/sync_builds_to_airtable
   # Safe to press again: builds already in Airtable are skipped by the sync job.
   def sync_builds_to_airtable
-    authorize Project, policy_class: Admin::Certification::HardwareReviewPolicy
+    authorize :admin, :sync_hardware_builds_to_airtable?
 
     result = OneTime::BackfillHardwareBuildAirtableJob.perform_now(dry_run: false)
     log_airtable_sync!(result)
 
     notice = "Queued #{result.enqueued.size} build(s) for Airtable. Builds already there are skipped."
     notice += " #{result.missing_cert.size} skipped with no approved ship cert." if result.missing_cert.any?
-    redirect_to build_admin_certification_hardware_reviews_path, notice: notice
+    redirect_to admin_root_path, notice: notice
   end
 
   private

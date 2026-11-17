@@ -26,11 +26,6 @@
           <%= link_to "Permanent reject nominations", admin_certification_permanent_rejection_nominations_path,
                 class: "action-btn action-btn--small action-btn--secondary" %>
         <% end %>
-        <% if !design && Admin::Certification::HardwareReviewPolicy.new(current_user, Project).sync_builds_to_airtable? %>
-          <%= button_to "Sync approved builds to Airtable", sync_builds_to_airtable_admin_certification_hardware_reviews_path,
-                class: "action-btn action-btn--small action-btn--secondary",
-                form: { data: { turbo_confirm: "Send every approved build that isn't in Airtable yet?" } } %>
-        <% end %>
         <button type="button" class="action-btn action-btn--large action-btn--secondary"
                 onclick="document.getElementById('hardware-my-stats').showModal()">
           My Stats
