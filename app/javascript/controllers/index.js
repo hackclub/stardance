@@ -43,6 +43,12 @@ application.register(
   Certification__FeedbackTemplatesController,
 );
 
+import Certification__HardwareTriageController from "./certification/hardware_triage_controller";
+application.register(
+  "certification--hardware-triage",
+  Certification__HardwareTriageController,
+);
+
 import Certification__LapsePlayerController from "./certification/lapse_player_controller";
 application.register(
   "certification--lapse-player",
