@@ -193,6 +193,33 @@ class Post::ShipEvent < ApplicationRecord
     [ self, *queued_ship_events.select { |event| event.certification_status == "pending" } ]
   end
 
+  # Hardware pays for build time, not the design work the grant was awarded
+  # against. Explicit design-phase time is dropped; build time counts, and so
+  # does software time (phase nil) carried over from a project that started as
+  # software and converted to hardware later. On top of that the funding
+  # request, when there is one, is the real build boundary: anything logged
+  # before it is pre-funding and doesn't count, whatever its phase. A project
+  # that skipped funding has no cutoff, so all of its non-design time counts
+  # back to the project's start.
+  def devlogs_in_ship_window(phase_overrides: {})
+    return window_devlogs unless project.hardware?
+
+    unchanged = window_devlogs.where.not(post_devlogs: { id: phase_overrides.keys })
+                             .where("post_devlogs.phase IS DISTINCT FROM 'design'")
+    build_ids = phase_overrides.select { |_, phase| phase == "build" }.keys
+    scope = unchanged.or(window_devlogs.where(post_devlogs: { id: build_ids }))
+    cutoff = hardware_payout_cutoff
+    cutoff ? scope.where("posts.created_at >= ?", cutoff) : scope
+  end
+
+  # The ship before this one closes the earlier window. Without one the window
+  # runs back to the project's first devlog.
+  def previous_ship_at
+    project_posts.of_ship_events
+                 .where("posts.created_at < ?", post.created_at)
+                 .maximum(:created_at)
+  end
+
   private
 
   def stamp_rating_lifecycle
@@ -213,39 +240,12 @@ class Post::ShipEvent < ApplicationRecord
     devlogs_in_ship_window.sum("post_devlogs.duration_seconds").to_f / 3600
   end
 
-  # Hardware pays for build time, not the design work the grant was awarded
-  # against. Explicit design-phase time is dropped; build time counts, and so
-  # does software time (phase nil) carried over from a project that started as
-  # software and converted to hardware later. On top of that the funding
-  # request, when there is one, is the real build boundary: anything logged
-  # before it is pre-funding and doesn't count, whatever its phase. A project
-  # that skipped funding has no cutoff, so all of its non-design time counts
-  # back to the project's start.
-  def devlogs_in_ship_window(phase_overrides: {})
-    return window_devlogs unless project.hardware?
-
-    unchanged = window_devlogs.where.not(post_devlogs: { id: phase_overrides.keys })
-                             .where("post_devlogs.phase IS DISTINCT FROM 'design'")
-    build_ids = phase_overrides.select { |_, phase| phase == "build" }.keys
-    scope = unchanged.or(window_devlogs.where(post_devlogs: { id: build_ids }))
-    cutoff = hardware_payout_cutoff
-    cutoff ? scope.where("posts.created_at >= ?", cutoff) : scope
-  end
-
   def window_devlogs
     scope = project_posts.of_devlogs(join: true)
                          .where("posts.created_at <= ?", post.created_at)
                          .where(post_devlogs: { deleted_at: nil })
 
     previous_ship_at ? scope.where("posts.created_at >= ?", previous_ship_at) : scope
-  end
-
-  # The ship before this one closes the earlier window. Without one the window
-  # runs back to the project's first devlog.
-  def previous_ship_at
-    project_posts.of_ship_events
-                 .where("posts.created_at < ?", post.created_at)
-                 .maximum(:created_at)
   end
 
   # Found by id rather than through the association: Project's default scope

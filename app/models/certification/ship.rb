@@ -594,6 +594,7 @@ module Certification
             project.approve! if project.may_approve?
           end
           ship_events.each { |event| create_ysws_review_for_ship(event, queued: event != ship_event) }
+          sync_build_to_airtable!(ship_events) if project.hardware?
           collapse_mission_build_review!(ship_event)
         when :returned
           ship_event&.update!(certification_status: "returned")
@@ -643,6 +644,12 @@ module Certification
         project: project,
         ship_cert_id: (id unless queued)
       ).call
+    end
+
+    # Hardware builds skip the YSWS queue, so the certified build goes to
+    # Airtable directly. The job enqueues after commit.
+    def sync_build_to_airtable!(ship_events)
+      ship_events.each { |event| Certification::HardwareBuildAirtableSyncJob.perform_later(id, event.id) }
     end
 
     # Software keeps the direct DM: its approval copy sends the project off to
