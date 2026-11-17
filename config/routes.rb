@@ -1021,6 +1021,7 @@ Rails.application.routes.draw do
           get :build
           get :next
           post :skip
+          post :sync_builds_to_airtable
         end
         member do
           post :flag_for_fraud

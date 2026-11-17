@@ -20,6 +20,19 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
     )
   end
 
+  # POST /admin/certification/hardware/sync_builds_to_airtable
+  # Safe to press again: builds already in Airtable are skipped by the sync job.
+  def sync_builds_to_airtable
+    authorize Project, policy_class: Admin::Certification::HardwareReviewPolicy
+
+    result = OneTime::BackfillHardwareBuildAirtableJob.perform_now(dry_run: false)
+    log_airtable_sync!(result)
+
+    notice = "Queued #{result.enqueued.size} build(s) for Airtable. Builds already there are skipped."
+    notice += " #{result.missing_cert.size} skipped with no approved ship cert." if result.missing_cert.any?
+    redirect_to build_admin_certification_hardware_reviews_path, notice: notice
+  end
+
   private
 
   # Hardware projects not attached to a hardware mission.
@@ -33,6 +46,19 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
 
   def authorize_hardware_review(project, query = nil)
     authorize project, query, policy_class: Admin::Certification::HardwareReviewPolicy
+  end
+
+  def log_airtable_sync!(result)
+    ::PaperTrail::Version.create!(
+      item_type: "Certification::HardwareBuildAirtableSync",
+      item_id: "backfill",
+      event: "airtable_sync_triggered",
+      whodunnit: current_user.id.to_s,
+      object_changes: {
+        enqueued: result.enqueued,
+        missing_cert_ysws_review_ids: result.missing_cert
+      }
+    )
   end
 
   def set_project
