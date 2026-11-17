@@ -48,17 +48,18 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
     authorize project, query, policy_class: Admin::Certification::HardwareReviewPolicy
   end
 
+  # One audit entry per queued build, on its ship cert, so the trigger shows up
+  # in that cert's history and under the Certification::Ship audit log filter.
   def log_airtable_sync!(result)
-    ::PaperTrail::Version.create!(
-      item_type: "Certification::HardwareBuildAirtableSync",
-      item_id: "backfill",
-      event: "airtable_sync_triggered",
-      whodunnit: current_user.id.to_s,
-      object_changes: {
-        enqueued: result.enqueued,
-        missing_cert_ysws_review_ids: result.missing_cert
-      }
-    )
+    result.enqueued.each do |ship_cert_id, ship_event_id|
+      ::PaperTrail::Version.create!(
+        item_type: "Certification::Ship",
+        item_id: ship_cert_id,
+        event: "airtable_build_sync_triggered",
+        whodunnit: current_user.id.to_s,
+        object_changes: { ship_event_id: ship_event_id }
+      )
+    end
   end
 
   def set_project
