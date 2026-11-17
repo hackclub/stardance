@@ -27,6 +27,10 @@ class AdminPolicy < ApplicationPolicy
     user.admin?
   end
 
+  def sync_hardware_builds_to_airtable?
+    user.admin?
+  end
+
   def view_leaderboard?
     user.admin? || user.fulfillment_person? || user.fraud_dept?
   end

@@ -20,6 +20,19 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
     )
   end
 
+  # POST /admin/certification/hardware/sync_builds_to_airtable
+  # Safe to press again: builds already in Airtable are skipped by the sync job.
+  def sync_builds_to_airtable
+    authorize :admin, :sync_hardware_builds_to_airtable?
+
+    result = OneTime::BackfillHardwareBuildAirtableJob.perform_now(dry_run: false)
+    log_airtable_sync!(result)
+
+    notice = "Queued #{result.enqueued.size} build(s) for Airtable. Builds already there are skipped."
+    notice += " #{result.missing_cert.size} skipped with no approved ship cert." if result.missing_cert.any?
+    redirect_to admin_root_path, notice: notice
+  end
+
   private
 
   # Hardware projects not attached to a hardware mission.
@@ -33,6 +46,20 @@ class Admin::Certification::HardwareReviewsController < Admin::Certification::Ap
 
   def authorize_hardware_review(project, query = nil)
     authorize project, query, policy_class: Admin::Certification::HardwareReviewPolicy
+  end
+
+  # One audit entry per queued build, on its ship cert, so the trigger shows up
+  # in that cert's history and under the Certification::Ship audit log filter.
+  def log_airtable_sync!(result)
+    result.enqueued.each do |ship_cert_id, ship_event_id|
+      ::PaperTrail::Version.create!(
+        item_type: "Certification::Ship",
+        item_id: ship_cert_id,
+        event: "airtable_build_sync_triggered",
+        whodunnit: current_user.id.to_s,
+        object_changes: { ship_event_id: ship_event_id }
+      )
+    end
   end
 
   def set_project

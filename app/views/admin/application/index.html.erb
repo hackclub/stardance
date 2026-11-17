@@ -92,6 +92,13 @@
               class: "btn-secondary admin-dashboard__button",
               data: { turbo_confirm: "This will enqueue all approved funding requests for Airtable sync. Requests already in Airtable are skipped. Continue?" } %>
       <% end %>
+      <% if policy(:admin).sync_hardware_builds_to_airtable? %>
+        <%= button_to "Sync Hardware Builds to Airtable",
+              sync_builds_to_airtable_admin_certification_hardware_reviews_path,
+              method: :post,
+              class: "btn-secondary admin-dashboard__button",
+              data: { turbo_confirm: "This will enqueue all approved hardware builds for Airtable sync. Builds already in Airtable are skipped. Continue?" } %>
+      <% end %>
     </div>
   </section>
 </div>
