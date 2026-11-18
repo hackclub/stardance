@@ -15,8 +15,13 @@ class Shop::OrdersControllerRegionPricingTest < ActionDispatch::IntegrationTest
     @user = create_user(slack_id: "U-region-bug", display_name: "regionbuyer", verified: true)
     @user.update!(has_gotten_free_stickers: true, shop_region: "US") # prefers the cheaper region on display
     # EU costs more to ship: usd_offset_eu is well above usd_offset_us.
+    Flipper.enable(:shop_unlocked, @user)
     @item = build_item(ticket_cost: 100, usd_offset_us: 0, usd_offset_eu: 40)
     sign_in @user
+  end
+
+  teardown do
+    Flipper.disable(:shop_unlocked)
   end
 
   test "a balance that only covers the preferred region's price is rejected, not charged the real shipping price" do
