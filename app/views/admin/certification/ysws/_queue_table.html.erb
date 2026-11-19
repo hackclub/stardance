@@ -11,6 +11,11 @@
         </span>
         <span class="ysws-queue__summary-count"><%= @reviews.size %></span>
       </div>
+
+      <% if @project_type.present? || @sort.present? %>
+        <%= link_to "Clear my filters", admin_certification_ysws_reviews_path(reset_filters: 1),
+                    class: "ysws-queue__reset-filters" %>
+      <% end %>
     </div>
 
     <%
@@ -135,8 +140,7 @@
       <%# The type filter lives in the table header, which isn't rendered when the
           queue is empty — so an emptied-out filter needs its own way back. %>
       <% if @project_type.present? %>
-        <%= link_to "Show all types",
-                    admin_certification_ysws_reviews_path(project_type: "", sort: @sort, dir: @dir) %>
+        <%= link_to "Clear my filters", admin_certification_ysws_reviews_path(reset_filters: 1) %>
       <% end %>
     </div>
   <% end %>
