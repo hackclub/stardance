@@ -43,6 +43,24 @@ class Shop::StickyStreakRedemptionTest < ActionDispatch::IntegrationTest
     assert_not @streak.reload.claimable_day?(1)
   end
 
+  test "the item page carries which run the day belongs to" do
+    with_address do
+      get shop_item_path(@item, sticky_streak_day: 1, sticky_streak_id: @streak.id)
+    end
+
+    assert_select "input[name='sticky_streak_id'][value='#{@streak.id}']"
+  end
+
+  test "a day from an older run can still be claimed once a newer run has started" do
+    StickyStreak.create!(user: @user, kind: :second, started_on: @streak.started_on + 1)
+
+    with_address do
+      post shop_orders_path, params: { shop_item_id: @item.id, quantity: 1, sticky_streak_day: 1, sticky_streak_id: @streak.id }
+    end
+
+    assert_equal @streak, StickyStreakClaim.sole.sticky_streak
+  end
+
   test "a day that was not earned is not a valid gate" do
     StreakActivity.find_by(user: @user).update!(coded_seconds: 0)
 
