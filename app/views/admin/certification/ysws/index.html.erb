@@ -56,11 +56,6 @@
         </button>
       </div>
     </div>
-
-    <%# Reset filters, hidden from the UI for now. %>
-    <%# if @project_type.present? || @sort.present? %>
-    <%#   link_to "Reset filters", admin_certification_ysws_reviews_path(reset_filters: 1), class: "btn-secondary slim ysws-queue__reset-filters" %>
-    <%# end %>
   <% end %>
 
   <%= render "queue_table" %>

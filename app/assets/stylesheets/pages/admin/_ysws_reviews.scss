@@ -207,17 +207,17 @@
     }
   }
 
+  // Small pill on the right of the summary bar; only rendered while a saved
+  // filter or sort is active.
   & &__reset-filters {
     display: inline-flex;
     align-items: center;
-    align-self: flex-end;
-    min-height: 3rem;
-    padding-inline: var(--space-s);
+    padding: var(--space-xxs) var(--space-s);
     background: var(--color-set-1-bg);
     border: 2px solid var(--color-set-1-fg-secondary);
     border-radius: var(--profile-radius);
     color: var(--color-space-text);
-    font-size: var(--font-size-s);
+    font-size: var(--font-size-xs);
     font-weight: 700;
     text-decoration: none;
 
