@@ -1,0 +1,20 @@
+<div class="mega-dash__table-scroll">
+  <table class="mega-dash__table">
+    <thead>
+      <tr>
+        <th scope="col">Group</th>
+        <th scope="col">Awaiting</th>
+        <th scope="col">Fulfilled</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% groups.each do |group| %>
+        <tr>
+          <th scope="row"><%= group[:label] %></th>
+          <td><%= number_with_delimiter(group[:awaiting]) %></td>
+          <td><%= number_with_delimiter(group[:fulfilled]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

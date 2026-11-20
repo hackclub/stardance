@@ -1,7 +1,7 @@
 module Admin
   module MegaDashboard
-    # What is sitting in fulfillment, grouped the way the fulfillment team
-    # actually splits the work rather than by raw item class.
+    # What is sitting in fulfillment, split into the letter mail that goes out
+    # through Theseus and everything else, which is packed and shipped by hand.
     class FulfillmentStats
       # Warehouse orders older than this are the ones that quietly rot.
       STALE_WAREHOUSE_DAYS = 3
@@ -15,8 +15,11 @@ module Admin
         awaiting = countable.where(aasm_state: "awaiting_periodical_fulfillment").group("shop_items.type").count
         fulfilled = countable.where(aasm_state: "fulfilled").group("shop_items.type").count
 
+        letter_types, hand_types = (awaiting.keys | fulfilled.keys).partition { |type| Queue::LETTERMAIL_TYPES.include?(type) }
+
         {
-          groups: build_rows(awaiting, fulfilled),
+          lettermail_groups: build_rows(letter_types, awaiting, fulfilled),
+          groups: build_rows(hand_types, awaiting, fulfilled),
           stale_warehouse: stale_warehouse_count,
           stale_days: STALE_WAREHOUSE_DAYS,
           recent_items: ::ShopItem.recently_added.enabled.limit(RECENT_ITEM_LIMIT).pluck(:name)
@@ -25,18 +28,16 @@ module Admin
 
       private
 
-      # Both giveaways are left out: free stickers and Sticky Streak stickers
-      # arrive in bulk and would bury the items the team actually packs.
-      def countable = ::ShopOrder.real.without_streak_stickers
+      def countable = ::ShopOrder.joins(:shop_item)
 
       # One row per item type, biggest queue first, so nothing hides in a
       # catch-all bucket.
-      def build_rows(awaiting, fulfilled)
-        rows = (awaiting.keys | fulfilled.keys).map do |type|
+      def build_rows(types, awaiting, fulfilled)
+        rows = types.map do |type|
           { label: type.to_s.demodulize.underscore.humanize, awaiting: awaiting.fetch(type, 0), fulfilled: fulfilled.fetch(type, 0) }
         end
         rows = rows.sort_by { |row| [ -row[:awaiting], -row[:fulfilled] ] }
-        rows << { label: "All", awaiting: awaiting.values.sum, fulfilled: fulfilled.values.sum }
+        rows << { label: "All", awaiting: rows.sum { |row| row[:awaiting] }, fulfilled: rows.sum { |row| row[:fulfilled] } }
       end
 
       def stale_warehouse_count
