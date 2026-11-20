@@ -40,8 +40,8 @@ class ReviewerPayoutRequest < ApplicationRecord
   belongs_to :admin, class_name: "User", optional: true
 
   validates :amount, numericality: { greater_than_or_equal_to: MINIMUM_AMOUNT, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }
-  validates :adjusted_amount, numericality: { greater_than: 0, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }, allow_nil: true
-  validates :paid_amount, numericality: { greater_than: 0, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }, allow_nil: true
+  validates :adjusted_amount, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }, allow_nil: true
+  validates :paid_amount, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: MAX_AMOUNT, only_integer: true }, allow_nil: true
   validates :adjust_reason, presence: { message: "is required when adjusting the amount" },
     if: :adjusted?
   validate :sufficient_balance, on: :create
