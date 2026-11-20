@@ -86,7 +86,7 @@ class ReviewerPayoutRequest < ApplicationRecord
       return false unless requested_amount_available?
 
       pay!
-      create_payout_ledger_entry!(admin) if paid_amount.positive?
+      create_payout_ledger_entry!(admin)
 
       true
     end
