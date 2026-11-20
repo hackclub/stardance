@@ -4,7 +4,7 @@ module Admin
   module MegaDashboard
     # Sticky Streak stickers are earned a day at a time and clear review
     # unattended, so a single 21 day run adds 21 orders nobody worked. The
-    # dashboard leaves them out of every shop number it reports.
+    # hand-fulfilled numbers leave them out; the lettermail section counts them.
     class StreakStickerExclusionTest < ActiveSupport::TestCase
       include UserFactory
 
@@ -34,13 +34,44 @@ module Admin
         assert_not_includes pending, @sticker
       end
 
-      test "streak stickers stay out of the fulfillment mix" do
+      test "streak stickers stay out of the hand-fulfilled mix" do
         await_fulfillment
 
         groups = FulfillmentStats.new.to_h[:groups]
 
         assert_equal 1, groups.find { |group| group[:label] == "All" }[:awaiting]
         assert_nil groups.find { |group| group[:label] == "Sticky streak sticker" }
+      end
+
+      test "streak and free stickers are counted with letter mail" do
+        # Skips the "post a devlog first" validation, which has nothing to do with the counts.
+        free = @user.shop_orders.new(shop_item: build_item(type: "ShopItem::FreeStickers"), quantity: 1, frozen_address: @address)
+        free.save!(validate: false)
+        [ @sticker, free ].each { |order| order.update!(aasm_state: "awaiting_periodical_fulfillment") }
+
+        groups = FulfillmentStats.new.to_h[:lettermail_groups]
+
+        assert_equal [ "All", "Free stickers", "Sticky streak sticker" ], groups.map { |group| group[:label] }.sort
+        assert_equal 2, groups.find { |group| group[:label] == "All" }[:awaiting]
+      end
+
+      test "streak stickers are in the lettermail queue and not the hand-fulfilled one" do
+        await_fulfillment
+
+        assert_equal [ @sticker ], Queue.find("lettermail").pending.call.to_a
+        assert_equal [ @patch ], Queue.find("shop_fulfillment").pending.call.to_a
+      end
+
+      test "letter mail is counted apart from hand-fulfilled orders" do
+        letter = place_order(build_item(type: "ShopItem::LetterMail"))
+        [ @patch, letter ].each { |order| order.update!(aasm_state: "awaiting_periodical_fulfillment") }
+
+        stats = FulfillmentStats.new.to_h
+
+        assert_equal [ "Letter mail", "All" ], stats[:lettermail_groups].map { |group| group[:label] }
+        assert_equal [ 1, 1 ], stats[:lettermail_groups].map { |group| group[:awaiting] }
+        assert_equal [ "Third party physical", "All" ], stats[:groups].map { |group| group[:label] }
+        assert_equal [ 1, 1 ], stats[:groups].map { |group| group[:awaiting] }
       end
 
       private

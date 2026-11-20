@@ -40,6 +40,10 @@ module Admin
         end
       end
 
+      # Every item type that ships as lettermail, split out from the hand-fulfilled
+      # queue everywhere the dashboard reports on fulfillment.
+      LETTERMAIL_TYPES = (::ShopItem::LetterMail::TYPES + [ "ShopItem::FreeStickers" ]).freeze
+
       REGISTRY = [
         {
           key: "ship_certifications",
@@ -119,13 +123,23 @@ module Admin
           path: ->(h) { h.admin_fraud_subjects_path }
         },
         {
+          key: "lettermail",
+          label: "Lettermail",
+          # Includes the giveaway stickers: they ship in the same envelopes, and
+          # the batch sweep is what clears them.
+          scope: -> { ::ShopOrder.joins(:shop_item).where(shop_items: { type: LETTERMAIL_TYPES }) },
+          pending: -> { ::ShopOrder.joins(:shop_item).where(shop_items: { type: LETTERMAIL_TYPES }, aasm_state: "awaiting_periodical_fulfillment") },
+          entered_at: "shop_orders.awaiting_periodical_fulfillment_at",
+          decided_at: "shop_orders.fulfilled_at",
+          sla_hours: 7 * 24,
+          path: ->(h) { h.admin_shop_orders_path(view: "fulfillment", status: "awaiting_periodical_fulfillment", hidden_types: []) }
+        },
+        {
           key: "shop_fulfillment",
           label: "Shop fulfillment",
-          # Streak stickers sit approved-but-unfulfilled by design until a
-          # letter batch goes out, so they are a standing backlog rather than
-          # work the team is behind on.
-          scope: -> { ::ShopOrder.without_streak_stickers },
-          pending: -> { ::ShopOrder.without_streak_stickers.where(aasm_state: "awaiting_periodical_fulfillment") },
+          # Everything packed or bought by hand: the complement of lettermail.
+          scope: -> { ::ShopOrder.joins(:shop_item).where.not(shop_items: { type: LETTERMAIL_TYPES }) },
+          pending: -> { ::ShopOrder.joins(:shop_item).where.not(shop_items: { type: LETTERMAIL_TYPES }).where(aasm_state: "awaiting_periodical_fulfillment") },
           entered_at: "shop_orders.awaiting_periodical_fulfillment_at",
           decided_at: "shop_orders.fulfilled_at",
           sla_hours: 7 * 24,

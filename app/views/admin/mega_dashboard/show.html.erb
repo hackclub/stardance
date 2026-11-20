@@ -47,7 +47,7 @@
 
   <%= turbo_frame_tag "mega-dash-fulfillment",
         src: admin_mega_dashboard_section_path(section: "fulfillment", period: @period), loading: "lazy", target: "_top" do %>
-    <p class="mega-dash__loading">Loading fulfillment mix…</p>
+    <p class="mega-dash__loading">Loading fulfillment…</p>
   <% end %>
 
   <% @queues.each do |queue| %>

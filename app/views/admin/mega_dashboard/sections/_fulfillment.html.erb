@@ -1,8 +1,17 @@
 <%= turbo_frame_tag "mega-dash-fulfillment", target: "_top" do %>
+  <section class="mega-dash__section" aria-labelledby="mega-dash-lettermail-title">
+    <div class="mega-dash__section-heading">
+      <h2 id="mega-dash-lettermail-title">Lettermail</h2>
+      <span class="mega-dash__note">Includes free stickers and streak stickers</span>
+    </div>
+
+    <%= render "admin/mega_dashboard/sections/fulfillment_table", groups: @fulfillment[:lettermail_groups] %>
+  </section>
+
   <section class="mega-dash__section" aria-labelledby="mega-dash-fulfillment-title">
     <div class="mega-dash__section-heading">
-      <h2 id="mega-dash-fulfillment-title">Fulfillment mix</h2>
-      <span class="mega-dash__note">Free stickers and streak stickers excluded</span>
+      <h2 id="mega-dash-fulfillment-title">Fulfillment</h2>
+      <span class="mega-dash__note">Everything except lettermail</span>
     </div>
 
     <% if @fulfillment[:stale_warehouse].positive? %>
@@ -12,26 +21,7 @@
       </p>
     <% end %>
 
-    <div class="mega-dash__table-scroll">
-      <table class="mega-dash__table">
-        <thead>
-          <tr>
-            <th scope="col">Group</th>
-            <th scope="col">Awaiting</th>
-            <th scope="col">Fulfilled</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @fulfillment[:groups].each do |group| %>
-            <tr>
-              <th scope="row"><%= group[:label] %></th>
-              <td><%= number_with_delimiter(group[:awaiting]) %></td>
-              <td><%= number_with_delimiter(group[:fulfilled]) %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
+    <%= render "admin/mega_dashboard/sections/fulfillment_table", groups: @fulfillment[:groups] %>
 
     <% if @fulfillment[:recent_items].any? %>
       <div class="mega-dash__attention">
