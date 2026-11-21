@@ -517,7 +517,7 @@ __metadata:
     d3-sankey: "npm:^0.12.3"
     emoji-mart: "npm:^5.6.0"
     esbuild: "npm:^0.28.2"
-    gsap: "npm:^3.15.0"
+    gsap: "npm:^3.15.1"
     mjml: "npm:^5.4.1"
     prettier: "npm:^3.9.9"
     xp.css: "npm:^0.2.6"
@@ -1622,10 +1622,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"gsap@npm:^3.15.0":
-  version: 3.15.0
-  resolution: "gsap@npm:3.15.0"
-  checksum: 10c0/5d86de72cb0bd6b20502c34c329a83a7d679979731bb465164407b7a5225aa61d612beee740eea36258622897c116cd2ca35320d530b7cf68bad62522361fcf7
+"gsap@npm:^3.15.1":
+  version: 3.15.1
+  resolution: "gsap@npm:3.15.1"
+  checksum: 10c0/5e35682cc9d18af83b457b657c3c1aa1b9b49b187560059e187d079752a7f07c661150e3aa95eeefe0be279a71a60359d015698aba3db5d554049d3769975197
   languageName: node
   linkType: hard
 
