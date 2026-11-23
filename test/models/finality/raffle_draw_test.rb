@@ -57,15 +57,19 @@ class Finality::RaffleDrawTest < ActiveSupport::TestCase
     assert_equal 9, draw.entries.count
   end
 
-  test "cannot freeze before close or while reviews remain" do
+  test "can freeze and draw unreviewed ships once submissions close" do
     travel_to Finality.window.end - 1.second do
       assert_raises(Finality::RaffleDraw::Error) { freeze_pool }
     end
+    @ships.each { |ship| ship.update!(certification_status: "rejected") }
     pending = create_ship(@people.first, status: "pending")
-    assert_raises(Finality::RaffleDraw::Error) { freeze_pool }
-    assert_nil Finality::RaffleDraw.current
-    pending.update!(certification_status: "approved")
-    assert_equal 11, freeze_pool.entry_count
+    create_ship(@people.second, status: nil)
+    draw = freeze_pool
+    assert_equal 2, draw.entry_count
+    assert_equal({ @people.first.id => 1, @people.second.id => 1 }, draw.available_entry_counts)
+    pending.update!(certification_status: "misfiled")
+    assert_equal 1, draw.roll!(prize_key: "vip", actor: @admin)
+    assert_equal @people.second, draw.selections.sole.user
   end
 
   test "empty pools cannot freeze and nonadmins cannot mutate" do

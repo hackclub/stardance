@@ -84,7 +84,10 @@ class Admin::FinalityControllerTest < ActionDispatch::IntegrationTest
       Post.create!(project: @ship_event.project, user: person, postable: ship, created_at: @ship_event.post.created_at)
       person
     end
+    @ship_event.update!(certification_status: "pending")
     travel_to Finality.window.end + 1.day do
+      get admin_finality_path
+      assert_select "form[action=?] button:not([disabled])", freeze_pool_admin_finality_path
       post freeze_pool_admin_finality_path
       assert_redirected_to admin_finality_path
       post roll_admin_finality_path, params: { prize_key: "vip" }
@@ -118,6 +121,6 @@ class Admin::FinalityControllerTest < ActionDispatch::IntegrationTest
     sign_in @admin
     post roll_admin_finality_path, params: { prize_key: "vip" }
     assert_redirected_to admin_finality_path(prize: "vip")
-    assert_match(/Freeze the approved entry pool/, flash[:alert])
+    assert_match(/Freeze the raffle entry pool/, flash[:alert])
   end
 end

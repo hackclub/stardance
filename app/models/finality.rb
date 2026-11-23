@@ -41,17 +41,10 @@ module Finality
       RAFFLE_PRIZES.find { |prize| prize[:key] == key }
     end
 
-    def raffle_candidates
-      ships.unscope(:includes, :order).joins(post: :user).where(users: { banned: false })
-    end
-
-    def approved_raffle_ships
-      raffle_candidates.where(certification_status: "approved")
-    end
-
-    def pending_raffle_ships
-      raffle_candidates.where.not(certification_status: [ "approved", *INELIGIBLE_STATUSES ])
-                       .or(raffle_candidates.where(certification_status: nil))
+    def eligible_raffle_ships
+      candidates = ships.unscope(:includes, :order).joins(post: :user).where(users: { banned: false })
+      candidates.where.not(certification_status: INELIGIBLE_STATUSES)
+                .or(candidates.where(certification_status: nil))
     end
 
     def window
@@ -109,30 +102,16 @@ module Finality
            .where.not(payout: nil).to_a.count { |ship_event| award_bonus!(ship_event) }
     end
 
-    # Each approved ship is a separate entry. Later rejections remove that
-    # entry automatically; approval can happen after the submission window.
-    def raffle_entry_ids(ship_events = ships.to_a)
-      ship_events.select { |ship_event| ship_event.certification_status == "approved" && !raffle_ineligible?(ship_event) }
-                 .to_set(&:id)
+    def raffle_entry_ids
+      eligible_raffle_ships.pluck(:id).to_set
     end
 
-    # A small aggregate query for the public page, without loading the whole pool.
     def raffle_counts_for(user)
-      return { confirmed: 0, pending: 0 } unless user && !user.banned?
+      return { confirmed: 0, pending: 0 } unless user
 
-      counts = ships.unscope(:includes, :order)
-                    .where(posts: { user_id: user.id })
-                    .group(:certification_status).count
-                    .except(*INELIGIBLE_STATUSES)
+      counts = eligible_raffle_ships.where(posts: { user_id: user.id }).group(:certification_status).count
       confirmed = counts.fetch("approved", 0)
       { confirmed: confirmed, pending: counts.values.sum - confirmed }
-    end
-
-    def raffle_ineligible?(ship_event)
-      ship_event.payout_recipient.nil? ||
-        ship_event.payout_recipient.banned? ||
-        !window.cover?(ship_event.post.created_at) ||
-        ship_event.certification_status.in?(INELIGIBLE_STATUSES)
     end
   end
 end

@@ -8,7 +8,7 @@
       <h1>Finality</h1>
       <p class="finality__subtitle">
         Ship Oct 27–31 (New York time) for a stardust bonus on that ship's payout, bigger the earlier you ship.
-        Every approved ship earns another raffle entry. Pending reviews do not enter the draw yet.
+        Approved ships and ships awaiting review each earn a raffle entry.
       </p>
     </div>
     <div class="finality__controls">
@@ -35,7 +35,7 @@
       </div>
     <% end %>
     <div class="finality__tile">
-      <span class="finality__tile-label">Confirmed raffle entries</span>
+      <span class="finality__tile-label">Eligible raffle entries</span>
       <span class="finality__tile-value"><%= @raffle_entry_ids.size %></span>
       <span class="finality__tile-label"><%= number_with_delimiter(@bonus_paid) %> stardust in bonuses paid</span>
     </div>
@@ -72,7 +72,7 @@
             <td><%= (Finality.rate_for(ship_event) * 100).round %>%</td>
             <td><%= ship_event.payout ? number_with_delimiter(ship_event.payout.to_i) : "—" %></td>
             <td><%= bonus_entry ? number_with_delimiter(bonus_entry.amount) : "—" %></td>
-            <td><%= @raffle_entry_ids.include?(ship_event.id) ? "Confirmed" : (Finality.raffle_ineligible?(ship_event) ? "Excluded" : "Awaiting approval") %></td>
+            <td><%= @raffle_entry_ids.include?(ship_event.id) ? "Eligible" : "Excluded" %></td>
           </tr>
         <% end %>
       </tbody>

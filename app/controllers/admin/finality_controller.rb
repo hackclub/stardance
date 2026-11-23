@@ -6,14 +6,13 @@ module Admin
       authorize :finality
 
       @ship_events = Finality.ships.to_a
-      @raffle_entry_ids = Finality.raffle_entry_ids(@ship_events)
+      @raffle_entry_ids = Finality.raffle_entry_ids
       @days = Finality::BONUS_RATES.map do |day, rate|
         on_day = @ship_events.select { |ship_event| Finality.ship_day(ship_event) == day }
         { day: day, rate: rate, ships: on_day.size, people: on_day.filter_map { |ship_event| ship_event.payout_recipient&.id }.uniq.size }
       end
       @bonus_paid = @ship_events.sum { |ship_event| Finality.bonus_entry(ship_event)&.amount.to_i }
       @unpaid_count = @ship_events.count { |ship_event| Finality.bonus_for(ship_event).to_i.positive? && Finality.bonus_entry(ship_event).nil? }
-      @pending_count = @ship_events.count { |ship| ship.certification_status != "approved" && !Finality.raffle_ineligible?(ship) }
       @participant_count = @ship_events.select { |ship| @raffle_entry_ids.include?(ship.id) }.map { |ship| ship.post.user_id }.uniq.size
       @draw = Finality::RaffleDraw.current
       @prize = Finality.raffle_prize(params[:prize]) || Finality::RAFFLE_PRIZES.first
@@ -68,7 +67,7 @@ module Admin
     private
 
     def prepared_draw
-      Finality::RaffleDraw.current || raise(Finality::RaffleDraw::Error, "Freeze the approved entry pool first.")
+      Finality::RaffleDraw.current || raise(Finality::RaffleDraw::Error, "Freeze the raffle entry pool first.")
     end
   end
 end
