@@ -93,11 +93,11 @@ class FinalityTest < ActiveSupport::TestCase
     assert_includes entries, second.id
   end
 
-  test "pending and misfiled ships are excluded, and later approval or rejection updates entries" do
+  test "pending ships count until rejected and misfiled ships are excluded" do
     pending = create_ship(shipped_at: Time.utc(2026, 10, 28, 16), status: "pending")
     misfiled = create_ship(shipped_at: Time.utc(2026, 10, 28, 17), status: "misfiled")
 
-    assert_not_includes Finality.raffle_entry_ids, pending.id
+    assert_includes Finality.raffle_entry_ids, pending.id
     assert_not_includes Finality.raffle_entry_ids, misfiled.id
     assert_equal({ confirmed: 0, pending: 1 }, Finality.raffle_counts_for(@owner))
 
@@ -128,8 +128,7 @@ class FinalityTest < ActiveSupport::TestCase
   test "ships without a review status remain pending rather than disappearing" do
     ship = create_ship(shipped_at: Finality.window.begin + 1.hour, status: nil)
     assert_equal({ confirmed: 0, pending: 1 }, Finality.raffle_counts_for(@owner))
-    assert_includes Finality.pending_raffle_ships, ship
-    assert_not_includes Finality.approved_raffle_ships, ship
+    assert_includes Finality.eligible_raffle_ships, ship
   end
 
   private

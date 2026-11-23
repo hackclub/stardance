@@ -10,24 +10,23 @@
 
   <div class="finality-draw__stats">
     <div><strong><%= @draw&.frozen_at? ? @draw.participant_count : @participant_count %></strong><span>eligible people<%= " at freeze" if @draw&.frozen_at? %></span></div>
-    <div><strong><%= @draw&.frozen_at? ? @draw.entry_count : @raffle_entry_ids.size %></strong><span>approved entries<%= " at freeze" if @draw&.frozen_at? %></span></div>
+    <div><strong><%= @draw&.frozen_at? ? @draw.entry_count : @raffle_entry_ids.size %></strong><span>eligible entries<%= " at freeze" if @draw&.frozen_at? %></span></div>
     <div><strong><%= @active_selections.size %> / <%= Finality::RAFFLE_PRIZES.sum { |prize| prize[:quantity] } %></strong><span>prize spots filled</span></div>
-    <p>Every approved ship is another entry.<br>One prize per person across all prizes.</p>
+    <p>Every eligible ship is another entry.<br>One prize per person across all prizes.</p>
   </div>
 
   <% if @draw&.frozen_at? %>
     <p class="finality-draw__status">Pool frozen <%= @draw.frozen_at.in_time_zone(Finality::TIME_ZONE).strftime("%b %-d, %Y at %-l:%M %p %Z") %> by <%= link_to @draw.frozen_by.display_name, admin_user_path(@draw.frozen_by) %>. <%= @available_count %> people remain available. Later bans, rejected ships, and removed posts are excluded from future selections.</p>
   <% else %>
     <div class="finality-draw__prepare">
-      <p>Freeze approved entries once submissions close and reviews are resolved. This saves the pool used for every draw and reroll.</p>
+      <p>Freeze eligible entries once submissions close, including ships still awaiting review. This saves the pool used for every draw and reroll.</p>
       <% if Time.current < Finality.window.end %>
         <p>Draws open after <%= Finality.window.end.strftime("%B %-d, %Y at %-l:%M %p %Z") %>.</p>
       <% end %>
-      <% if @pending_count.positive? %><p><%= pluralize(@pending_count, "ship") %> still awaiting review.</p><% end %>
-      <%= button_to "Freeze approved entries", freeze_pool_admin_finality_path,
+      <%= button_to "Freeze eligible entries", freeze_pool_admin_finality_path,
                     class: "action-btn action-btn--small action-btn--primary",
-                    disabled: Time.current < Finality.window.end || @pending_count.positive? || @raffle_entry_ids.empty?,
-                    form: { data: { turbo_confirm: "Freeze the approved raffle pool? Later entries cannot be added. No winners will be selected or contacted yet." } } %>
+                    disabled: Time.current < Finality.window.end || @raffle_entry_ids.empty?,
+                    form: { data: { turbo_confirm: "Freeze the eligible raffle pool? Later entries cannot be added. No winners will be selected or contacted yet." } } %>
     </div>
   <% end %>
 

@@ -46,10 +46,9 @@ class Finality::RaffleDraw < ApplicationRecord
         draw.with_lock do
           unless draw.frozen_at?
             raise Error, "Wait until raffle submissions close before freezing entries." if Time.current < Finality.window.end
-            raise Error, "Resolve the remaining ship reviews before freezing entries." if Finality.pending_raffle_ships.exists?
 
-            ships = Finality.approved_raffle_ships.order(:id).pluck(:id, "posts.user_id", "posts.created_at")
-            raise Error, "There are no approved entries to draw from." if ships.empty?
+            ships = Finality.eligible_raffle_ships.order(:id).pluck(:id, "posts.user_id", "posts.created_at")
+            raise Error, "There are no eligible entries to draw from." if ships.empty?
 
             now = Time.current
             draw.entries.insert_all!(ships.map do |ship_id, user_id, shipped_at|
@@ -67,9 +66,8 @@ class Finality::RaffleDraw < ApplicationRecord
   # Recheck bans and rejected/deleted ships without admitting new entries into
   # the frozen pool. Every previous selection (including rerolls) is excluded.
   def available_entry_counts
-    entries.joins(:user, ship_event: :post)
-           .where(users: { banned: false }, post_ship_events: { certification_status: "approved" })
-           .where(posts: { created_at: Finality.window })
+    entries.joins(ship_event: :post)
+           .where(ship_event_id: Finality.eligible_raffle_ships.select(:id))
            .where("posts.user_id = finality_raffle_entries.user_id")
            .where.not(user_id: selections.select(:user_id))
            .group(:user_id).order(:user_id).count
@@ -119,7 +117,7 @@ class Finality::RaffleDraw < ApplicationRecord
 
     PaperTrail.request(whodunnit: actor.id) do
       with_lock do
-        raise Error, "Freeze the approved entry pool first." unless frozen_at?
+        raise Error, "Freeze the raffle entry pool first." unless frozen_at?
         yield
       end
     end
