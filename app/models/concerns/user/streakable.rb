@@ -19,6 +19,10 @@ module User::Streakable
     StreakActivity.streak_date_for(Time.current, timezone)
   end
 
+  def local_time_zone
+    StreakActivity.time_zone_for(timezone)
+  end
+
   def current_streak
     has_attribute?(:current_streak) ? super : 0
   end
@@ -159,8 +163,7 @@ module User::Streakable
   end
 
   def streak_next_day_at
-    tz = timezone.presence || "UTC"
-    local = Time.current.in_time_zone(tz)
+    local = Time.current.in_time_zone(local_time_zone)
     boundary = local.change(hour: 2)
     (local < boundary ? boundary : boundary + 1.day).utc
   end

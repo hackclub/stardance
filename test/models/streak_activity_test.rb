@@ -46,6 +46,16 @@ class StreakActivityTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 6, 21), StreakActivity.streak_date_for(Time.zone.parse("2026-06-22 01:30:00 UTC"), nil)
   end
 
+  test "streak_date_for falls back to UTC for a zone the server can't load" do
+    assert_equal Date.new(2026, 6, 21), StreakActivity.streak_date_for(Time.zone.parse("2026-06-22 01:30:00 UTC"), "Not/AZone")
+  end
+
+  test "local_time_zone falls back to UTC for a zone the server can't load" do
+    @user.update_column(:timezone, "Not/AZone")
+
+    assert_equal ActiveSupport::TimeZone["UTC"], @user.local_time_zone
+  end
+
   test "completed?" do
     assert StreakActivity.new(coded_seconds: 300).completed?
     assert_not StreakActivity.new(coded_seconds: 299).completed?

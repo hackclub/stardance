@@ -53,6 +53,7 @@ RUN apt-get update -qq && \
     imagemagick \
     file \
     git \
+    tzdata-legacy \
     libopenblas0 \
     liblapack3 \
     ffmpeg \

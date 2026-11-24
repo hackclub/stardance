@@ -118,14 +118,19 @@ class StreakActivity < ApplicationRecord
     end
 
     def streak_date_for(time, timezone)
-      tz = timezone.presence || "UTC"
-      (time.in_time_zone(tz) - 2.hours).to_date
+      (time.in_time_zone(time_zone_for(timezone)) - 2.hours).to_date
+    end
+
+    # Falls back to UTC for a stored zone this server can't load, so one odd
+    # value can't take down every page that shows the person's streak.
+    def time_zone_for(timezone)
+      ActiveSupport::TimeZone[timezone.presence || "UTC"] || ActiveSupport::TimeZone["UTC"]
     end
 
     private
 
     def bucket_spans_by_streak_day(spans, timezone)
-      tz = timezone.presence || "UTC"
+      tz = time_zone_for(timezone)
       buckets = Hash.new(0)
 
       spans.each do |span|
@@ -147,7 +152,7 @@ class StreakActivity < ApplicationRecord
           while remaining > 0
             day = (cursor - 2.hours).to_date
             next_day = day + 1.day
-            next_boundary = ActiveSupport::TimeZone[tz].local(next_day.year, next_day.month, next_day.day, 2, 0, 0)
+            next_boundary = tz.local(next_day.year, next_day.month, next_day.day, 2, 0, 0)
             secs = [ next_boundary - cursor, remaining ].min
             buckets[day] += secs.round
             remaining -= secs
