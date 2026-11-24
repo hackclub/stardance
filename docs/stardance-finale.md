@@ -72,6 +72,9 @@ after 10 seconds, restores the site, and does not offer a broken replay.
   Remove the YouTube player on exit or navigation.
 - Errors and blocked autoplay never trap someone: they can return to the site,
   and the live window ends even if the video fails to load.
+- A subtle **Skip** button sits in the bottom right whenever the finale is
+  showing. It does the same as Escape: it exits the sequence and restores the
+  site. Skipping the live finale doesn't restart it on that page.
 
 Replays also start audio with disintegration, then reveal the already-playing
 video at the end of the fade. The local simulator still previews the full sequence and supports its existing

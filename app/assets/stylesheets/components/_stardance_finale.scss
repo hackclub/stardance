@@ -128,6 +128,27 @@ html:has(.stardance-finale[open]) {
     right: var(--space-m);
   }
 
+  &__skip {
+    position: absolute;
+    right: var(--space-m);
+    bottom: var(--space-m);
+    padding: var(--space-xxs) var(--space-s);
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-brand-off-white);
+    font: inherit;
+    font-size: var(--font-size-s);
+    opacity: 0.4;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+    }
+  }
+
   [hidden] {
     display: none !important;
   }
