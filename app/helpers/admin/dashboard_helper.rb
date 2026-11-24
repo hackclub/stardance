@@ -19,7 +19,7 @@ module Admin
     def greeting_message(user)
       name = user.first_name.presence || user.display_name
       time_of_day =
-        case Time.current.in_time_zone(user.timezone.presence || "UTC").hour
+        case Time.current.in_time_zone(user.local_time_zone).hour
         when 0..4 then "burning the midnight oil, #{name}?"
         when 5..11 then "good morning, #{name}"
         when 12..16 then "good afternoon, #{name}"
