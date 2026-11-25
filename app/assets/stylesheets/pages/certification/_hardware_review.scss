@@ -2,6 +2,92 @@
 // has one reviewer surface, with a compact pipeline summary instead of separate
 // funding/build review cards.
 
+.hardware-triage {
+  display: grid;
+  gap: var(--space-m);
+  min-width: 0;
+  overflow-wrap: anywhere;
+
+  p,
+  h3,
+  ul {
+    margin: 0;
+  }
+
+  h3 {
+    margin-bottom: var(--space-xs);
+    font-size: var(--font-size-s);
+  }
+
+  li + li {
+    margin-top: var(--space-xs);
+  }
+
+  &__header,
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+
+  &__header {
+    justify-content: space-between;
+  }
+
+  &__meta,
+  &__status {
+    font-size: var(--font-size-s);
+  }
+
+  &__verdict {
+    font-weight: 700;
+
+    &--not_shipped {
+      color: var(--color-brand-salmon);
+    }
+
+    &--ready {
+      color: var(--color-brand-mint);
+    }
+  }
+
+  &__failures h3 {
+    color: var(--color-brand-salmon);
+  }
+
+  &__warnings h3 {
+    color: var(--color-brand-peach);
+  }
+
+  &__actions a {
+    color: var(--color-brand-blue);
+  }
+
+  &__draft {
+    display: block;
+    width: 100%;
+    margin-top: var(--space-xs);
+    padding: var(--space-s);
+    background: var(--color-set-1-bg);
+    color: var(--color-space-text);
+    border: 2px solid var(--color-set-1-fg-secondary);
+    border-radius: var(--border-radius);
+    font: inherit;
+    resize: vertical;
+  }
+
+  &__methodology {
+    summary {
+      cursor: pointer;
+    }
+
+    p {
+      margin-top: var(--space-s);
+    }
+  }
+}
+
 .permanent-rejection {
   display: grid;
   gap: var(--space-m);
