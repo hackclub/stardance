@@ -35,6 +35,10 @@ class Admin::ProjectPolicy < ApplicationPolicy
     user&.admin? && record.hardware? && !record.deleted?
   end
 
+  def force_review?
+    (user&.admin? || user&.super_admin?) && record.hardware? && !record.deleted?
+  end
+
   def convert_to_software?
     user&.admin?
   end

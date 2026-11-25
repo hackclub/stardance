@@ -11,10 +11,6 @@ class Projects::RecertificationsController < ApplicationController
       redirect_to project_path(@project), alert: Project::ShipBlock::BLOCKED_MESSAGE and return
     end
 
-    if !policy(@project).bypass_recertification_restrictions? && (restriction = @project.recertification_restriction_message)
-      redirect_to project_path(@project), alert: restriction and return
-    end
-
     if (cooldown = recertification_cooldown_block)
       redirect_to project_path(@project), alert: cooldown and return
     end
@@ -25,6 +21,10 @@ class Projects::RecertificationsController < ApplicationController
     end
 
     @project.with_lock do
+      if !policy(@project).bypass_recertification_restrictions? && (restriction = @project.recertification_restriction_message)
+        redirect_to project_path(@project), alert: restriction and return
+      end
+
       latest_review = @project.latest_ship_review
 
       if latest_review&.pending?
