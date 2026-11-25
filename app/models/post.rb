@@ -37,7 +37,7 @@ class Post < ApplicationRecord
     # integeration – git remotes – or a user post
     belongs_to :user, optional: true
 
-    delegated_type :postable, types: Postable.types
+    delegated_type :postable, types: Postable.types, inverse_of: :post
 
     has_many :post_views, dependent: :delete_all
 
