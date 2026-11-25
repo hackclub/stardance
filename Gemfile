@@ -39,7 +39,7 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # image_processing 2.x treats the backends as soft deps and requires whichever
 # one it needs, so Bundler does not have to load them itself.
-gem "image_processing", "~> 2.0"
+gem "image_processing", "~> 2.2"
 gem "ruby-vips", require: false
 gem "mini_magick", require: false
 
